@@ -53,17 +53,13 @@ savefile = datadir + savename
 
 # Initialize empty "vals" array for the time average
 az0 = AZ_Avgs(radatadir + file_list[index_first], '')
+rr = az0.radius
+tt = np.arccos(az0.costheta)
 nr = az0.nr
 nt = az0.ntheta
-qv = az0.qv
-nqv_tot = len(qv)
-qinds = np.arange(len(qv)) # initial indices of the qv in the AZ_Avgs 
-    # vals array
-counts = np.zeros_like(qv) # keep track of how many slices we averaged
-        # over for each variable separately (variables may be added 
-        # or removed mid-simulation because we are all human)
-iters1 = np.zeros_like(qv) + az0.iters[0]
-iters2 = np.zeros_like(qv) + az0.iters[0]
+
+count = 0
+iter1, iter2 = int_file_list[index_first], int_file_list[index_last]
 
 vals = np.zeros_like(az0.vals[:, :, :, 0])
 
@@ -78,48 +74,14 @@ for i in range(index_first, index_last + 1):
     else:   
         az = AZ_Avgs(radatadir + file_list[i], '')
 
-    current_qv = az.qv
-
-    if not np.array_equal(current_qv, qv): # the outputs have changed!
-        # must adjust array dimensions and qinds
-        old_qv = np.copy(qv)
-        nqv_before = len(old_qv)
-        nqv_now = len(current_qv)
-        nqv_tot = len(np.unique(np.append(old_qv, current_qv)))
-        print(nqv_before, nqv_now, nqv_tot)
-        print ('old_qv: ', old_qv)
-        print ('new_qv: ', current_qv)
-        nappended = 0
-        qinds = np.zeros(nqv_now, dtype=int)
-        for j in range(nqv_now):
-            qv_loc = current_qv[j]
-            if qv_loc in old_qv:
-                qinds[j] = np.argmin(np.abs(old_qv - qv_loc))
-                print('old output: ', qv_loc, j, qinds[j])
-            else:
-                qv = np.append(qv, qv_loc)
-                dummy = np.zeros((nt, nr, 1))
-                vals = np.append(vals, dummy, 2)
-                counts = np.append(counts, 0)
-                iters1 = np.append(iters1, az.iters[0])
-                iters2 = np.append(iters2, 0)
-
-                qinds[j] = nqv_before + nappended
-                nappended += 1
-                print('new output: ', qv_loc, j, qinds[j])
-                print (np.shape(vals))
-#                print(np.shape(vals))
-#    print(qv)
-#    print(qinds)
     local_ntimes = az.niter
     for j in range(local_ntimes):
-        vals[:, :, qinds] += az.vals[:, :, :, j]
-        counts[qinds] += 1
-        iters2[qinds] = az.iters[j]
+        vals += az.vals[:, :, :, j]
+        count += 1
 
-vals /= counts.reshape((1, 1, nqv_tot))
-#print ('Averaged over %i AZ_Avgs slice(s) ...' %count)
+vals /= count
+print ('Averaged over %i AZ_Avgs slice(s) ...' %count)
 
 # Save the avarage
 print ('Saving file at ' + savefile + ' ...')
-np.save(savefile, (vals, qv, counts, iters1, iters2))
+np.save(savefile, (vals, az0.lut, count, iter1, iter2))
