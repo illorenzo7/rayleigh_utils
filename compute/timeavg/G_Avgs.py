@@ -53,23 +53,26 @@ savefile = datadir + savename
 
 # Initialize empty "vals" array for the time average
 g0 = G_Avgs(radatadir + file_list[index_first], '')
-vals = np.zeros_like(g0.vals[:, 0, :, 0]) # 0 in second axis; get mean (not curtosis, etc.)
+vals = np.zeros_like(g0.vals[0, :]) # G_Avgs has just numbers: one for each quantity
 
 # Average over the relevant data range, summing everything and then dividing
 #   by the number of "slices" added at the end
 print ('Considering Shell_Avgs files %s through %s for the average ...'\
        %(file_list[index_first], file_list[index_last]))
+
 count = 0
+iter1, iter2 = int_file_list[index_first], int_file_list[index_last]
+
 for i in range(index_first, index_last + 1):
     print ('Adding Shell_Avgs/%s to the average ...' %file_list[i])
     if i == index_first:
-        sh = sh0
+        g = g0
     else:   
-        sh = Shell_Avgs(radatadir + file_list[i], '')
+        g = G_Avgs(radatadir + file_list[i], '')
 
-    local_ntimes = sh.niter
+    local_ntimes = g.niter
     for j in range(local_ntimes):
-        vals += sh.vals[:, 0, :, j]
+        vals += g.vals[j, :]
         count += 1
 
 vals /= count
@@ -77,4 +80,4 @@ print ('Averaged over %i Shell_Avgs slice(s) ...' %count)
 
 # Save the avarage
 print ('Saving file at ' + savefile + ' ...')
-np.save(savefile, (vals, sh0.lut))
+np.save(savefile, {'vals': vals, 'lut': g0.lut, 'count': count, 'iter1': iter1, 'iter2': iter2})

@@ -54,7 +54,11 @@ savefile = datadir + savename
 # Initialize empty "vals" array for the time average
 az0 = AZ_Avgs(radatadir + file_list[index_first], '')
 rr = az0.radius
+ri, ro = np.min(rr), np.max(rr)
+d = ro - ri
 tt = np.arccos(az0.costheta)
+sint = np.sin(tt)
+cost = np.cos(tt)
 nr = az0.nr
 nt = az0.ntheta
 
@@ -84,4 +88,5 @@ print ('Averaged over %i AZ_Avgs slice(s) ...' %count)
 
 # Save the avarage
 print ('Saving file at ' + savefile + ' ...')
-np.save(savefile, (vals, az0.lut, count, iter1, iter2))
+np.save(savefile, {'vals': vals, 'lut': az0.lut, 'count': count, 'iter1': iter1, 'iter2': iter2,\
+       'rr': rr, 'nr': nr, 'ri': ri, 'ro': ro, 'd': d, 'tt': tt, 'nt': nt, 'sint': sint, 'cost': cost})
