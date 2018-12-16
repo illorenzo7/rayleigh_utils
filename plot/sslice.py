@@ -49,6 +49,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sys, os
 sys.path.append(os.environ['rapp'])
+sys.path.append(os.environ['co'])
 #from diagnostic_reading import ShellSlice
 from rayleigh_diagnostics import Shell_Slices
 from matplotlib import ticker
