@@ -52,23 +52,37 @@ for i in range(nargs):
     elif (arg == '-usefile'):
         AZ_Avgs_file = args[i+1]
         AZ_Avgs_file = AZ_Avgs_file.split('/')[-1]
+# Read in AZ_Avgs data
+print ('Getting data from ' + datadir + AZ_Avgs_file + ' ...')
+mydict = (np.load(datadir + AZ_Avgs_file)).item()
+
+#iter1, iter2 = get_iters_from_file(AZ_Avgs_file)
+iter1, iter2 = mydict['iter1'], mydict['iter2']
+vals = mydict['vals']
+lut = mydict['lut']
+#ind_vr, ind_vt, ind_vp = np.argmin(np.abs(qv - 1)), np.argmin(np.abs(qv - 2)),\
+#    np.argmin(np.abs(qv - 3))
+
+vr_av, vt_av, vp_av = vals[:, :, lut[1]], vals[:, :, lut[2]],\
+        vals[:, :, lut[3]]
 
 # Get grid info
-rr,tt,cost,sint,rr_depth,ri,ro,d = np.load(datadir + 'grid_info.npy')
-nr, nt = len(rr), len(tt)
+rr = mydict['rr']
+nr = mydict['nr']
+tt = mydict['tt']
+nt = mydict['nt']
+cost = mydict['cost']
+sint = mydict['sint']
+ri = mydict['ri']
+ro = mydict['ro']
+d = mydict['d']
+
+#rr,tt,cost,sint,rr_depth,ri,ro,d = np.load(datadir + 'grid_info.npy')
+#nr, nt = len(rr), len(tt)
 rr_2d = rr.reshape((1,nr))
 sint_2d = sint.reshape((nt, 1))
 rsint = rr_2d*sint_2d
 
-# Read in AZ_Avgs data
-print ('Getting data from ' + datadir + AZ_Avgs_file + ' ...')
-vals, qv, counts, iters1, iters2 = np.load(datadir + AZ_Avgs_file)
-iter1, iter2 = get_iters_from_file(AZ_Avgs_file)
-ind_vr, ind_vt, ind_vp = np.argmin(np.abs(qv - 1)), np.argmin(np.abs(qv - 2)),\
-    np.argmin(np.abs(qv - 3))
-
-vr_av, vt_av, vp_av = vals[:, :, ind_vr], vals[:, :, ind_vt],\
-        vals[:, :, ind_vp]
 
 # Get differential rotation in the rotating frame. 
 Om = vp_av/rsint
