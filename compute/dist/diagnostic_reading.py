@@ -1,1 +1,0 @@
-../diagnostic_reading.py
