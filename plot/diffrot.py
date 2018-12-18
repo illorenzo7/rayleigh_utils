@@ -1,9 +1,9 @@
 # Author: Loren Matilsky
 # Created: 05/14/2018
 # This script generates differential rotation plotted in the meridional plane 
-# for the Rayleigh run directory indicated by [dirname]. To use a vavg file
+# for the Rayleigh run directory indicated by [dirname]. To use an AZ_Avgs file
 # different than the one associated with the longest averaging range, use
-# -usefile [complete name of desired vavg file]
+# -usefile [complete name of desired AZ_Avgs file]
 # Saves plot in
 # [dirname]_diffrot_[first iter]_[last iter].npy
 
@@ -12,12 +12,11 @@ import matplotlib as mpl
 mpl.use('TkAgg')
 import matplotlib.pyplot as plt
 from binormalized_cbar import MidpointNormalize
-import sys
-import os
+import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['co'])
 from azavg_util import plot_azav
-from common import get_widest_range_file, strip_dirname, get_iters_from_file
+from common import get_widest_range_file, strip_dirname
 
 # Get directory name and stripped_dirname for plotting purposes
 dirname = sys.argv[1]
@@ -52,45 +51,31 @@ for i in range(nargs):
     elif (arg == '-usefile'):
         AZ_Avgs_file = args[i+1]
         AZ_Avgs_file = AZ_Avgs_file.split('/')[-1]
+        
 # Read in AZ_Avgs data
 print ('Getting data from ' + datadir + AZ_Avgs_file + ' ...')
-mydict = (np.load(datadir + AZ_Avgs_file)).item()
+di = (np.load(datadir + AZ_Avgs_file)).item()
 
-#iter1, iter2 = get_iters_from_file(AZ_Avgs_file)
-iter1, iter2 = mydict['iter1'], mydict['iter2']
-vals = mydict['vals']
-lut = mydict['lut']
-#ind_vr, ind_vt, ind_vp = np.argmin(np.abs(qv - 1)), np.argmin(np.abs(qv - 2)),\
-#    np.argmin(np.abs(qv - 3))
+iter1, iter2 = di['iter1'], di['iter2']
+vals = di['vals']
+lut = di['lut']
 
 vr_av, vt_av, vp_av = vals[:, :, lut[1]], vals[:, :, lut[2]],\
         vals[:, :, lut[3]]
 
-# Get grid info
-rr = mydict['rr']
-nr = mydict['nr']
-tt = mydict['tt']
-nt = mydict['nt']
-cost = mydict['cost']
-sint = mydict['sint']
-ri = mydict['ri']
-ro = mydict['ro']
-d = mydict['d']
-
-#rr,tt,cost,sint,rr_depth,ri,ro,d = np.load(datadir + 'grid_info.npy')
-#nr, nt = len(rr), len(tt)
-rr_2d = rr.reshape((1,nr))
-sint_2d = sint.reshape((nt, 1))
-rsint = rr_2d*sint_2d
-
+# Get necessary grid info
+rr = di['rr']
+cost = di['cost']
+sint = di['sint']
+tt_lat = di['tt_lat']
+xx = di['xx']
 
 # Get differential rotation in the rotating frame. 
-Om = vp_av/rsint
+Om = vp_av/xx
 diffrot = Om*1.0e9/2/np.pi # rad/s --> nHz
 
 # Maximum differential rotation over whole meridional plane
-it15, it75 = np.argmin(np.abs(tt - 11*np.pi/12)),\
-    np.argmin(np.abs(tt - np.pi/12)) # ignore problematic poles 
+it15, it75 = np.argmin(np.abs(tt_lat - 15)), np.argmin(np.abs(tt_lat - 75)) # ignore problematic poles 
 global_min, global_max = np.min(diffrot[it15:it75, :]), np.max(diffrot[it15:it75, :])
 Delta_Om = global_max - global_min
 maxabs = np.max((np.abs(global_min), np.abs(global_max)))

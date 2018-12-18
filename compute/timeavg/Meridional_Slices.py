@@ -61,6 +61,7 @@ rr_height = (rr - ri)/d
 sint = mer0.sintheta
 cost = mer0.costheta
 tt = np.arccos(cost)
+tt_lat = (np.pi/2 - tt)*180/np.pi
 nr = mer0.nr
 nt = mer0.ntheta
 phivals = mer0.phi
@@ -103,4 +104,4 @@ print ('Averaged over %i Meridional_Slices ...' %count)
 # Save the avarage
 print ('Saving file at ' + savefile + ' ...')
 np.save(savefile, {'vals': vals, 'lut': mer0.lut, 'count': count, 'iter1': iter1, 'iter2': iter2,\
-       'qv': mer0.qv, 'nq': mer0.nq, 'phivals': phivals, 'phivals_lon': phivals_lon, 'nphi': nphi, 'rr': rr, 'rr_depth': rr_depth, 'rr_height': rr_height, 'nr': nr, 'ri': ri, 'ro': ro, 'd': d, 'tt': tt, 'sint': sint, 'cost': cost,'nt': nt, 'rr_2d': rr_2d, 'tt_2d': tt_2d, 'sint_2d': sint_2d, 'cost_2d': cost_2d, 'xx': xx, 'zz': zz})
+       'qv': mer0.qv, 'nq': mer0.nq, 'phivals': phivals, 'phivals_lon': phivals_lon, 'nphi': nphi, 'rr': rr, 'rr_depth': rr_depth, 'rr_height': rr_height, 'nr': nr, 'ri': ri, 'ro': ro, 'd': d, 'tt': tt, 'tt_lat': tt_lat, 'sint': sint, 'cost': cost,'nt': nt, 'rr_2d': rr_2d, 'tt_2d': tt_2d, 'sint_2d': sint_2d, 'cost_2d': cost_2d, 'xx': xx, 'zz': zz})

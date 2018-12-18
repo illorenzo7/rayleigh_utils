@@ -61,6 +61,7 @@ rr_height = (rr - ri)/d
 sint = az0.sintheta
 cost = az0.costheta
 tt = np.arccos(cost)
+tt_lat = (np.pi/2 - tt)*180/np.pi
 nr = az0.nr
 nt = az0.ntheta
 
@@ -97,4 +98,4 @@ print ('Averaged over %i AZ_Avgs slice(s) ...' %count)
 # Save the avarage
 print ('Saving file at ' + savefile + ' ...')
 np.save(savefile, {'vals': vals, 'lut': az0.lut, 'count': count, 'iter1': iter1, 'iter2': iter2,\
-       'qv': az0.qv, 'nq': az0.nq,  'rr': rr, 'rr_depth': rr_depth, 'rr_height': rr_height, 'nr': nr, 'ri': ri, 'ro': ro, 'd': d, 'tt': tt, 'sint': sint, 'cost': cost,'nt': nt, 'rr_2d': rr_2d, 'tt_2d': tt_2d, 'sint_2d': sint_2d, 'cost_2d': cost_2d, 'xx': xx, 'zz': zz})
+       'qv': az0.qv, 'nq': az0.nq,  'rr': rr, 'rr_depth': rr_depth, 'rr_height': rr_height, 'nr': nr, 'ri': ri, 'ro': ro, 'd': d, 'tt': tt, 'tt_lat': tt_lat, 'sint': sint, 'cost': cost,'nt': nt, 'rr_2d': rr_2d, 'tt_2d': tt_2d, 'sint_2d': sint_2d, 'cost_2d': cost_2d, 'xx': xx, 'zz': zz})
