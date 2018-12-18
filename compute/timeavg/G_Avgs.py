@@ -57,14 +57,14 @@ vals = np.zeros_like(g0.vals[0, :]) # G_Avgs has just numbers: one for each quan
 
 # Average over the relevant data range, summing everything and then dividing
 #   by the number of "slices" added at the end
-print ('Considering Shell_Avgs files %s through %s for the average ...'\
+print ('Considering G_Avgs files %s through %s for the average ...'\
        %(file_list[index_first], file_list[index_last]))
 
 count = 0
 iter1, iter2 = int_file_list[index_first], int_file_list[index_last]
 
 for i in range(index_first, index_last + 1):
-    print ('Adding Shell_Avgs/%s to the average ...' %file_list[i])
+    print ('Adding G_Avgs/%s to the average ...' %file_list[i])
     if i == index_first:
         g = g0
     else:   
@@ -76,8 +76,8 @@ for i in range(index_first, index_last + 1):
         count += 1
 
 vals /= count
-print ('Averaged over %i Shell_Avgs slice(s) ...' %count)
+print ('Averaged over %i G_Avgs slice(s) ...' %count)
 
 # Save the avarage
 print ('Saving file at ' + savefile + ' ...')
-np.save(savefile, {'vals': vals, 'lut': g0.lut, 'count': count, 'iter1': iter1, 'iter2': iter2})
+np.save(savefile, {'vals': vals, 'lut': g0.lut, 'count': count, 'iter1': iter1, 'iter2': iter2, 'qv': g0.qv, 'nq': g0.nq})

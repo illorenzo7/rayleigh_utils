@@ -60,7 +60,8 @@ rr = sh0.radius
 nr = sh0.nr
 ri, ro = np.min(rr), np.max(rr)
 d = ro - ri
-rr_height = 
+rr_height = (rr - ri)/d
+rr_depth = (ro - rr)/d
 
 # Average over the relevant data range, summing everything and then dividing
 #   by the number of "slices" added at the end
@@ -87,5 +88,4 @@ print ('Averaged over %i Shell_Avgs slice(s) ...' %count)
 
 # Save the avarage
 print ('Saving file at ' + savefile + ' ...')
-np.save(savefile, {'vals': vals, 'lut': sh0.lut, 'count': count, 'iter1': iter1, 'iter2': iter2},\
-       'rr': sh0.radius, 'nr': sh0.nr)
+np.save(savefile, {'vals': vals, 'lut': sh0.lut, 'count': count, 'iter1': iter1, 'iter2': iter2, 'qv': sh0.qv, 'nq': sh0.nq, 'rr': rr, 'rr_depth': rr_depth, 'rr_height': rr_height, 'nr': nr, 'ri': ri, 'ro': ro, 'd': d})

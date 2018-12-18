@@ -1,8 +1,8 @@
-# Routine to average Rayleigh AZ_Avgs data in time
+# Routine to average Rayleigh Meridional_Slices data in time
 # Created by: Loren Matilsky
-# On: 11/10/2018
+# On: 12/172018
 ##################################################################
-# This routine computes the average in time of the values in the AZ_Avgs data 
+# This routine computes the average in time of the values in the Meridional_Slices data 
 # for a particular simulation. 
 
 # By default, the routine averages over the last 100 files of datadir, though
@@ -16,7 +16,7 @@ import numpy as np
 import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['co'])
-from rayleigh_diagnostics import AZ_Avgs
+from rayleigh_diagnostics import Meridional_Slices
 from common import get_file_lists, get_desired_range, strip_dirname
 
 # Get the name of the run directory
@@ -30,7 +30,7 @@ datadir = dirname + '/data/'
 if (not os.path.isdir(datadir)):
     os.makedirs(datadir)
 
-radatadir = dirname + '/AZ_Avgs/'
+radatadir = dirname + '/Meridional_Slices/'
 
 # Get all the file names in datadir and their integer counterparts
 file_list, int_file_list, nfiles = get_file_lists(radatadir)
@@ -47,54 +47,60 @@ else:
 
 # Set the timeavg savename by the directory, what we are saving, and first and last
 # iteration files for the average
-savename = dirname_stripped + '_AZ_Avgs_' + file_list[index_first] + '_' +\
+savename = dirname_stripped + '_Meridional_Slices_' + file_list[index_first] + '_' +\
     file_list[index_last] + '.npy'
 savefile = datadir + savename    
 
-# Initialize empty "vals" array for the time average
-az0 = AZ_Avgs(radatadir + file_list[index_first], '')
-rr = az0.radius
+# Get grid info from first mer slice file
+mer0 = Meridional_Slices(radatadir + file_list[index_first], '')
+rr = mer0.radius
 ri, ro = np.min(rr), np.max(rr)
 d = ro - ri
 rr_depth = (ro - rr)/d
 rr_height = (rr - ri)/d
-sint = az0.sintheta
-cost = az0.costheta
+sint = mer0.sintheta
+cost = mer0.costheta
 tt = np.arccos(cost)
-nr = az0.nr
-nt = az0.ntheta
-
+nr = mer0.nr
+nt = mer0.ntheta
+phivals = mer0.phi
+# phiinds = mer0.phi_indices 
+# This attribute of Meridional_Slices does not actually seem to be there!
+nphi = mer0.nphi
+phivals_lon = 180*phivals/np.pi
 # compute some derivative quantities for the grid
 tt_2d, rr_2d = np.meshgrid(tt, rr, indexing='ij')
 sint_2d = np.sin(tt_2d); cost_2d = np.cos(tt_2d)
 xx = rr_2d*sint_2d
 zz = rr_2d*cost_2d
 
+# Initialize the count (will rise as the averaging commences)
 count = 0
 iter1, iter2 = int_file_list[index_first], int_file_list[index_last]
 
-vals = np.zeros_like(az0.vals[:, :, :, 0])
+# Initialize empty "vals" array for the time average
+vals = np.zeros_like(mer0.vals[:, :, :, :, 0])
 
 # Average over the relevant data range, summing everything and then dividing
 #   by the number of "slices" added at the end
-print ('Considering AZ_Avgs files %s through %s for the average ...'\
+print ('Considering Meridional_Slices files %s through %s for the average ...'\
        %(file_list[index_first], file_list[index_last]))
 for i in range(index_first, index_last + 1):
-    print ('Adding AZ_Avgs/%s to the average ...' %file_list[i])
+    print ('Adding Meridional_Slices/%s to the average ...' %file_list[i])
     if i == index_first:
-        az = az0
+        mer = mer0
     else:   
-        az = AZ_Avgs(radatadir + file_list[i], '')
+        mer = Meridional_Slices(radatadir + file_list[i], '')
 
-    local_ntimes = az.niter
+    local_ntimes = mer.niter
     for j in range(local_ntimes):
-        vals += az.vals[:, :, :, j]
+        vals += mer.vals[:, :, :, :, j]
         count += 1
 
 vals /= count
-print ('Averaged over %i AZ_Avgs slice(s) ...' %count)
+print ('Averaged over %i Meridional_Slices ...' %count)
 
 # Save the avarage
 print ('Saving file at ' + savefile + ' ...')
-np.save(savefile, {'vals': vals, 'lut': az0.lut, 'count': count, 'iter1': iter1, 'iter2': iter2,\
-       'qv': az0.qv, 'nq': az0.nq,  'rr': rr, 'rr_depth': rr_depth, 'rr_height': rr_height, 'nr': nr, 'ri': ri, 'ro': ro, 'd': d, 'tt': tt, 'sint': sint, 'cost': cost,'nt': nt, 'rr_2d': rr_2d, 'tt_2d': tt_2d, 'sint_2d': sint_2d, 'cost_2d': cost_2d, 'xx': xx, 'zz': zz})
+np.save(savefile, {'vals': vals, 'lut': mer0.lut, 'count': count, 'iter1': iter1, 'iter2': iter2,\
+       'qv': mer0.qv, 'nq': mer0.nq, 'phivals': phivals, 'phivals_lon': phivals_lon, 'nphi': nphi, 'rr': rr, 'rr_depth': rr_depth, 'rr_height': rr_height, 'nr': nr, 'ri': ri, 'ro': ro, 'd': d, 'tt': tt, 'sint': sint, 'cost': cost,'nt': nt, 'rr_2d': rr_2d, 'tt_2d': tt_2d, 'sint_2d': sint_2d, 'cost_2d': cost_2d, 'xx': xx, 'zz': zz})
