@@ -139,21 +139,24 @@ else:
 fig, axs = plt.subplots(3, 1, figsize=(5, 10), sharex=True, sharey=True)
 ax1 = axs[0]; ax2 = axs[1]; ax3 = axs[2]
 
+# Make thin lines to see structure of variation
+lw = 0.5
+
 # first plot: total kinetic energy trace      
 ax1.set_title(dirname_stripped + '\n ' +\
           str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8) +\
-          '\ntotal energy')
-ax1.plot(xaxis, ke, 'k', label=r'$\rm{KE_{tot}}$')
-ax1.plot(xaxis, rke, 'r', label=r'$\rm{KE}_r$')
-ax1.plot(xaxis, tke, 'g', label=r'$\rm{KE}_\theta$')
-ax1.plot(xaxis, pke, 'b', label=r'$\rm{KE}_\phi$')
+          '\n\ntotal energy')
+ax1.plot(xaxis, ke, 'k', linewidth=lw, label=r'$\rm{KE_{tot}}$')
+ax1.plot(xaxis, rke, 'r', linewidth=lw, label=r'$\rm{KE}_r$')
+ax1.plot(xaxis, tke, 'g', linewidth=lw, label=r'$\rm{KE}_\theta$')
+ax1.plot(xaxis, pke, 'b', linewidth=lw, label=r'$\rm{KE}_\phi$')
 
 # If magnetic, plot magnetic energies!
 if magnetism:
-    ax1.plot(xaxis, me, 'k--', label=r'$\rm{ME_{tot}}$')
-    ax1.plot(xaxis, rme, 'r--', label=r'$\rm{ME}_r$')
-    ax1.plot(xaxis, tme, 'g--', label=r'$\rm{ME}_\theta$')
-    ax1.plot(xaxis, pme, 'b--', label=r'$\rm{ME}_\phi$')
+    ax1.plot(xaxis, me, 'k--', linewidth=lw, label=r'$\rm{ME_{tot}}$')
+    ax1.plot(xaxis, rme, 'r--', linewidth=lw, label=r'$\rm{ME}_r$')
+    ax1.plot(xaxis, tme, 'g--', linewidth=lw, label=r'$\rm{ME}_\theta$')
+    ax1.plot(xaxis, pme, 'b--', linewidth=lw, label=r'$\rm{ME}_\phi$')
 
 if not ylog:
     ax1.set_ylim(0, mmax*1.05)
@@ -175,17 +178,17 @@ else:
     ax1.ticklabel_format(scilimits = (-3,4), useMathText=True)
 
 # Make the second plot (kinetic energy of the mean motions)
-ax2.plot(xaxis, mke, 'k')
-ax2.plot(xaxis, mrke, 'r')
-ax2.plot(xaxis, mtke, 'g')
-ax2.plot(xaxis, mpke, 'b')
+ax2.plot(xaxis, mke, 'k', linewidth=lw)
+ax2.plot(xaxis, mrke, 'r', linewidth=lw)
+ax2.plot(xaxis, mtke, 'g', linewidth=lw)
+ax2.plot(xaxis, mpke, 'b', linewidth=lw)
 
 # If magnetic, plot magnetic energies!
 if magnetism:
-    ax2.plot(xaxis, mme, 'k--')
-    ax2.plot(xaxis, mrme, 'r--')
-    ax2.plot(xaxis, mtme, 'g--')
-    ax2.plot(xaxis, mpme, 'b--')
+    ax2.plot(xaxis, mme, 'k--', linewidth=lw)
+    ax2.plot(xaxis, mrme, 'r--', linewidth=lw)
+    ax2.plot(xaxis, mtme, 'g--', linewidth=lw)
+    ax2.plot(xaxis, mpme, 'b--', linewidth=lw)
 
 # Title and axis label
 ax2.set_title('mean energy')
@@ -193,17 +196,17 @@ ax2.set_title('mean energy')
 ax2.set_ylabel(r'$\rm{energy\ density\ (erg}\ cm^{-3})$')
 
 # Third plot: fluctuating energy
-ax3.plot(xaxis, fke, 'k')
-ax3.plot(xaxis, frke, 'r')
-ax3.plot(xaxis, ftke, 'g')
-ax3.plot(xaxis, fpke, 'b')
+ax3.plot(xaxis, fke, 'k', linewidth=lw)
+ax3.plot(xaxis, frke, 'r', linewidth=lw)
+ax3.plot(xaxis, ftke, 'g', linewidth=lw)
+ax3.plot(xaxis, fpke, 'b', linewidth=lw)
 
 # If magnetic, plot magnetic energies!
 if magnetism:
-    ax3.plot(xaxis, fme, 'k--')
-    ax3.plot(xaxis, frme, 'r--')
-    ax3.plot(xaxis, ftme, 'g--')
-    ax3.plot(xaxis, fpme, 'b--')
+    ax3.plot(xaxis, fme, 'k--', linewidth=lw)
+    ax3.plot(xaxis, frme, 'r--', linewidth=lw)
+    ax3.plot(xaxis, ftme, 'g--', linewidth=lw)
+    ax3.plot(xaxis, fpme, 'b--', linewidth=lw)
 
 # title and x-axis label
 ax3.set_title('fluctuating energy')
@@ -232,7 +235,7 @@ plt.tick_params(top=True, right=True, direction='in', which='both')
 
 # Space the subplots to make them look pretty
 plt.tight_layout
-plt.subplots_adjust(left=0.15, bottom=0.08, top=0.9, wspace=0.4)
+plt.subplots_adjust(left=0.15, bottom=0.08, top=0.85, wspace=0.4)
 
 # Save the plot
 print ('Saving the etrace plot at ' + plotdir + savename + ' ...')
