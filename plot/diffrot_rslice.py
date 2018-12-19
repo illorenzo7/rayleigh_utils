@@ -28,7 +28,6 @@ if (not os.path.isdir(plotdir)):
     os.makedirs(plotdir)
 
 # Set defaults
-showplot = False
 user_specified_rnorm = False
 lats = [0, 15, 30, 45, 60, 75]
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
@@ -38,15 +37,11 @@ args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
-    if (arg == '-show'):
-        showplot = True
-    elif (arg == '-lats'):
+    if (arg == '-lats'):
         lats_str = args[i+1].split()
         lats = []
         for j in range(len(lats_str)):
             lats.append(float(lats_str[j]))
-    elif (arg == '-dimple'):
-        dimple = True
     elif (arg == '-usefile'):
         AZ_Avgs_file = args[i+1]
         AZ_Avgs_file = AZ_Avgs_file.split('/')[-1]
@@ -118,7 +113,7 @@ buffer = difference*0.2 # "Guard" the yrange of the plot with whitespace
 if not user_specified_rnorm:
     plt.xlabel(r'$r/R_\odot$',fontsize=12)
 else:
-    plt.xlabel(r'r/(%.1e cm)' %user_supplied_rnorm)
+    plt.xlabel(r'r/(%.1e cm)' %user_supplied_rnorm, fontsize=12)
     
 plt.ylabel(r'$\Omega/2\pi \ \rm{(nHz)}$',fontsize=12)
 
@@ -146,5 +141,4 @@ savefile = plotdir + dirname_stripped + '_diffrot_rslice_' +\
     str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.pdf'
 print('Saving plot at ' + savefile + ' ...')
 plt.savefig(savefile)
-if (showplot): plt.show()
-plt.close()
+plt.show()

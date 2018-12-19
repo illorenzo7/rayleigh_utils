@@ -9,7 +9,7 @@
 # the user can specify a different range in sevaral ways:
 # -n 10 (last 10 files)
 # -range iter1 iter2 (names of start and stop data files; iter2 can be "last")
-# -centerrange iter0 nfiles (average about central file iter0 over nfiles)
+# -centerrange iter0 nfiles (trace about central file iter0 over nfiles)
 
 # Import relevant modules
 import numpy as np
@@ -41,23 +41,21 @@ nargs = len(args)
 
 if (nargs == 0):
     index_first, index_last = nfiles - 101, nfiles - 1  
-    # By default average over the last 100 files
+    # By default trace over the last 100 files
 else:
     index_first, index_last = get_desired_range(int_file_list, args)
 
-# Set the timeavg savename by the directory, what we are saving, and first and last
-# iteration files for the average
+# Set the timetrace savename by the directory, what we are saving, and first and last
+# iteration files for the trace
 savename = dirname_stripped + '_trace_G_Avgs_' + file_list[index_first] + '_' +\
     file_list[index_last] + '.npy'
 savefile = datadir + savename    
 
-# Initialize empty "vals" array for the time average
+# Initialize empty "vals" array for the timetrace
 g0 = G_Avgs(radatadir + file_list[index_first], '')
 vals = np.zeros_like(g0.vals[0, :]) # G_Avgs has just numbers: one for each quantity
 
-# Average over the relevant data range, summing everything and then dividing
-#   by the number of "slices" added at the end
-print ('Considering G_Avgs files %s through %s for the average ...'\
+print ('Considering G_Avgs files %s through %s for the trace ...'\
        %(file_list[index_first], file_list[index_last]))
 
 count = 0
@@ -68,7 +66,7 @@ times = []
 iters = []
 
 for i in range(index_first, index_last + 1):
-    print ('Adding G_Avgs/%s to the average ...' %file_list[i])
+    print ('Adding G_Avgs/%s to the trace ...' %file_list[i])
     if i == index_first:
         g = g0
     else:   

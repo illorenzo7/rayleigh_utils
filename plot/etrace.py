@@ -140,7 +140,9 @@ fig, axs = plt.subplots(3, 1, figsize=(5, 10), sharex=True, sharey=True)
 ax1 = axs[0]; ax2 = axs[1]; ax3 = axs[2]
 
 # first plot: total kinetic energy trace      
-ax1.set_title('total energy')
+ax1.set_title(dirname_stripped + '\n ' +\
+          str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8) +\
+          '\ntotal energy')
 ax1.plot(xaxis, ke, 'k', label=r'$\rm{KE_{tot}}$')
 ax1.plot(xaxis, rke, 'r', label=r'$\rm{KE}_r$')
 ax1.plot(xaxis, tke, 'g', label=r'$\rm{KE}_\theta$')
@@ -230,7 +232,7 @@ plt.tick_params(top=True, right=True, direction='in', which='both')
 
 # Space the subplots to make them look pretty
 plt.tight_layout
-plt.subplots_adjust(left=0.15, bottom=0.08, top=0.95, wspace=0.4)
+plt.subplots_adjust(left=0.15, bottom=0.08, top=0.9, wspace=0.4)
 
 # Save the plot
 print ('Saving the etrace plot at ' + plotdir + savename + ' ...')

@@ -31,6 +31,7 @@ Shell_Avgs_file = get_widest_range_file(datadir, 'Shell_Avgs')
 
 # Get command-line arguments to adjust the interval of averaging files
 user_specified_minmax = False
+user_specified_rnorm = False
 magnetism = False
 args = sys.argv[2:]
 nargs = len(args)
@@ -44,6 +45,9 @@ for i in range(nargs):
         my_min, my_max = float(args[i+1]), float(args[i+2])
     elif (arg == '-mag'):
         magnetism = True
+    elif (arg == '-rnorm'):
+        user_specified_rnorm = True
+        user_supplied_rnorm = float(args[i+1])
 
 #Create the plot
 lw = 1.5 # Bit thicker lines
@@ -57,7 +61,7 @@ rr = di['rr']
 
 # Make the plot name, labelling the first/last iterations we average over
 savename = dirname_stripped + '_eflux_radial_' +\
-    str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
+    str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.pdf'
 
 qindex_hflux = lut[1433]
 qindex_eflux = lut[1455]
@@ -92,7 +96,13 @@ if magnetism:
 # Create the plot; start with plotting all the energy fluxes
 Lsun = 3.846e33 # Normalize the energy flux by the solar luminosity
 Rsun = 6.955e10 # Normalize the radius by the solar radius
-rr_n = rr/Rsun
+
+# User can specify what to normalize the radius by
+# By default, normalize by the solar radius
+if not user_specified_rnorm:
+    rr_n = rr/Rsun
+else:
+    rr_n = rr/user_supplied_rnorm                                           
 
 plt.plot(rr_n, hflux_int/Lsun, label=r'$\rm{F}_{heat}$', linewidth=lw)
 plt.plot(rr_n, eflux_int/Lsun, 'm', label = r'$\rm{F}_{enth}$',\
@@ -127,9 +137,16 @@ delta_y = ymax - ymin
 plt.ylim(ymin, ymax)
 
 # Label the axes
-plt.xlabel(r'$r/R_\odot$', fontsize=12)
-plt.ylabel(r'$4\pi r^2\ \rm{\times \ (Energy \ Flux)}\ /\ L_\odot$',\
+if not user_specified_rnorm:
+    plt.xlabel(r'$r/R_\odot$',fontsize=12)
+else:
+    plt.xlabel(r'r/(%.1e cm)' %user_supplied_rnorm, fontsize=12)
+plt.ylabel(r'$4\pi r^2\ \rm{\times \ (energy \ flux)}\ /\ L_\odot$',\
         fontsize=12)
+
+# Make title
+plt.title(dirname_stripped + '\n' + 'energy flux, ' +\
+          str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8))
 
 # Create a see-through legend
 plt.legend(loc='lower left', shadow=True, ncol=3, fontsize=10)
@@ -139,7 +156,7 @@ plt.tight_layout()
 
 # Save the plot
 print ('Saving the eflux plot at ' + plotdir + savename + ' ...')
-plt.savefig(plotdir + savename, dpi=300)
+plt.savefig(plotdir + savename)
 
 # Show the plot
 plt.show()

@@ -99,13 +99,13 @@ fig, ax = plt.subplots(figsize=(fig_width, fig_height))
 plt.subplots_adjust(left=margin_x, right=1-margin_x, bottom=margin_y, top=1-margin_y)
 plot_width, plot_height = 1 - 2*margin_x, 1 - 2*margin_y
 
-plot_azav (fig, ax, rhovm, rr, cost, sint, units = r'$\rm{g}\ \rm{cm}^{-1}\ \rm{s}^{-1}$',
+plot_azav (fig, ax, rhovm, rr, cost, sint, units = r'$\rm{g}\ \rm{cm}^{-2}\ \rm{s}^{-1}$',
         plotcontours=False, norm=MidpointNormalize(0),\
         boundstype=my_boundstype, caller_minmax = (my_min, my_max))
 
 lilbit = 0.02
 maxabs = np.max(np.abs(psi))
-plot_azav (fig, ax, psi, rr, cost, sint, units = r'$g\ cm^{-2}\ s^{-1}$', plotfield=False,
+plot_azav (fig, ax, psi, rr, cost, sint, plotfield=False,
         norm=MidpointNormalize(0), levels=(-maxabs/2, -maxabs/4,  -lilbit*maxabs, 0,\
                 lilbit*maxabs, maxabs/4, maxabs/2),\
         boundstype=my_boundstype, caller_minmax = (my_min, my_max))
