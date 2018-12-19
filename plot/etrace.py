@@ -1,27 +1,13 @@
-# Author Loren Matilsky
+# Author: Loren Matilsky
 # Date created: 06/08/2017
-
-#  This example routine makes use of the GlobalAverage
-#  data structure associated with the G_Avg output.
-#  Upon initializing a GlobalAverage object, the 
-#  object will contain the following attributes:
-#
-#    ----------------------------------
-#    self.nrec                  : number of time steps
-#    self.nq                     : number of diagnostic quantities output
-#    self.qv[0:nq-1]             : quantity codes for the diagnostics output
-#    self.vals[0:nrec-1,0:nq-1] : Globally averaged diagnostics as function of time and quantity index
-#    self.iters[0:nrec-1]       : The time step numbers stored in this output file
-#    self.time[0:nrec-1]        : The simulation time corresponding to each time step
-#    self.lut                    : Lookup table for the different diagnostics output
-
 import matplotlib as mpl
-mpl.use('Agg')
+mpl.use('TkAgg')
 import matplotlib.pyplot as plt
 import numpy as np
 import sys, os
 from subprocess import call
-from common import get_file_lists, get_widest_range_file
+from common import get_file_lists, get_widest_range_file, strip_dirname
+from get_parameter import get_parameter
 
 # Get the run directory on which to perform the analysis
 dirname = sys.argv[1]
@@ -31,45 +17,116 @@ datadir = dirname + '/data/'
 plotdir = dirname + '/plots/'
 if (not os.path.isdir(plotdir)):
     os.makedirs(plotdir)
-    
+dirname_stripped = strip_dirname(dirname)
+
 # Find the etrace file(s) in the data directory. If there are multiple, by
 # default choose the one with widest range in the trace.
-etrace_file = get_widest_range_file(datadir, 'etrace')
+trace_G_Avgs_file = get_widest_range_file(datadir, 'trace_G_Avgs')
 
 # Set defaults
-showplot = False
 xiter = False
 notfrom0 = False
+magnetism = False
+ylog = False
 
 # Get command-line arguments
 args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
-    if (arg == '-show'):
-        showplot = True
-    elif (arg == '-xiter'): # plot w.r.t. iterations
+    if (arg == '-xiter'): # plot w.r.t. iterations
         xiter = True
     elif (arg == '-usefile'):
-        etrace_file = args[i+1]
-        etrace_file = etrace_file.split('/')[-1]
+        trace_G_Avgs_file = args[i+1]
+        trace_G_Avgs_file = trace_G_Avgs_file.split('/')[-1]
     elif (arg == '-notfrom0'):
         notfrom0 = True
+    elif (arg == '-mag'):
+        magnetism = True
+    elif (arg == '-log'):
+        ylog = True
 
-# Get the stripped etrace file to use in the plot name
-etrace_file_stripped = etrace_file.split('.')[0]
+# Tag the plot by whether or not the x axis is in "time" or "iteration"
 if (xiter):
     tag = '_xiter'
 else:
     tag = '_xtime'
-savename = etrace_file_stripped + tag + '.png'
 
-# Read in the KE data
-print ('Reading in KE components data from ' + datadir + etrace_file + ' ...')
-aaaa
+# Read in the KE data (dictionary form)
+print ('Reading in KE components data from ' + datadir + trace_G_Avgs_file + ' ...')
+di = np.load(datadir + trace_G_Avgs_file).item()
+vals = di['vals']
+lut = di['lut']
+times = di['times']
+iters = di['iters']
+iter1 = di['iter1']
+iter2 = di['iter2']
+
+# Get global rotation rate, if present
+rotation = get_parameter(dirname, 'rotation')
+if rotation:
+    angular_velocity = get_parameter(dirname, 'angular_velocity')
+    Prot = 2*np.pi/angular_velocity
+    tnorm = Prot # normalize the time axis by rotation period if applicable
+else:
+    ktop = get_parameter(dirname, 'kappa_top')
+    try:
+        rmin = get_parameter(dirname, 'rmin')
+        rmax = get_parameter(dirname, 'rmax')
+    except: # two domains stitched together
+        domain_bounds = get_parameter(dirname, 'domain_bounds')
+        rmin = np.min(domain_bounds)
+        rmax = np.max(domain_bounds)
+    depth = rmax - rmin
+    tdt = d**2/ktop
+    tnorm = tdt
+
+# Make appropriate file name to save
+savename = dirname_stripped + '_etrace_' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + tag + '.pdf'
+
+ke = vals[lut[401]]
+rke = vals[lut[402]]
+tke = vals[lut[403]]
+pke = vals[lut[404]]
+
+mke = vals[lut[405]]
+mrke = vals[lut[406]]
+mtke = vals[lut[407]]
+mpke = vals[lut[408]]
+
+fke = vals[lut[409]]
+frke = vals[lut[410]]
+ftke = vals[lut[411]]
+fpke = vals[lut[412]]
+
+# Get the magnetic energies if they are available
+if (magnetism):
+    me = vals[lut[1101]]
+    rme = vals[lut[1102]]
+    tme = vals[lut[1103]]
+    pme = vals[lut[1104]]
+
+    mme = vals[lut[1105]]
+    mrme = vals[lut[1106]]
+    mtme = vals[lut[1107]]
+    mpme = vals[lut[1108]]
+
+    fme = vals[lut[1109]]
+    frme = vals[lut[1110]]
+    ftme = vals[lut[1111]]
+    fpme = vals[lut[1112]]
+
+# Get global min/max vals
+if magnetism:
+    mmax = np.max((np.max(ke), np.max(me)))
+    mmin = np.min((np.min(mrke), np.min(mtke), np.min(mpke), np.min(frke), np.min(ftke), np.min(fpke),\
+     np.min(mrme), np.min(mtme), np.min(mpme), np.min(frke), np.min(ftme), np.min(fpme)))
+else:
+    mmax = np.max(ke)
+    mmin = np.min((np.min(mrke), np.min(mtke), np.min(mpke), np.min(frke), np.min(ftke), np.min(fpke)))   
 
 if (not xiter):
-    xaxis = times
+    xaxis = times/tnorm
 else:
     xaxis = iters
 
@@ -78,151 +135,106 @@ if (notfrom0):
 else:
     x_min = 0
 
-# create figure
-fig=plt.figure(1,figsize=(15,10))
+# create figure with  3 panels in a row (total, mean and fluctuating energy)
+fig, axs = plt.subplots(3, 1, figsize=(5, 10), sharex=True, sharey=True)
+ax1 = axs[0]; ax2 = axs[1]; ax3 = axs[2]
 
-# first plot: total kinetic energy trace
-ax1 = fig.add_subplot(221)
-# actual plotting
-ax1.plot(xaxis,ke,'black', label = r'$\rm{KE_{total}}$'+\
-        r'$ \  = \ \frac{1}{2}\overline{\rho} v^2$')
-ax1.plot(xaxis,rke,'r', label = r'$\rm{KE}$' + \
-        r'$_r \  = \ \frac{1}{2}\overline{\rho} v_r^2$')
-ax1.plot(xaxis,tke,'g', label = r'$\rm{KE}$'+ \
-        r'$_\theta \  = \ \frac{1}{2}\overline{\rho} v_\theta^2$')
-ax1.plot(xaxis,pke,'b', label = r'$\rm{KE}$'+\
-        r'$_\phi \  = \ \frac{1}{2}\overline{\rho} v_\phi^2$')
-# yscale
-#ax1.set_yscale('log')
-# title and axis labels
-if (xiter):
-    ax1.set_xlabel('iteration #',fontsize=14)
+# first plot: total kinetic energy trace      
+ax1.set_title('total energy')
+ax1.plot(xaxis, ke, 'k', label=r'$\rm{KE_{tot}}$')
+ax1.plot(xaxis, rke, 'r', label=r'$\rm{KE}_r$')
+ax1.plot(xaxis, tke, 'g', label=r'$\rm{KE}_\theta$')
+ax1.plot(xaxis, pke, 'b', label=r'$\rm{KE}_\phi$')
+
+# If magnetic, plot magnetic energies!
+if magnetism:
+    ax1.plot(xaxis, me, 'k--', label=r'$\rm{ME_{tot}}$')
+    ax1.plot(xaxis, rme, 'r--', label=r'$\rm{ME}_r$')
+    ax1.plot(xaxis, tme, 'g--', label=r'$\rm{ME}_\theta$')
+    ax1.plot(xaxis, pme, 'b--', label=r'$\rm{ME}_\phi$')
+
+if not ylog:
+    ax1.set_ylim(0, mmax*1.05)
 else:
-    ax1.set_xlabel('t (days)',fontsize=14)
-ax1.set_ylabel(r'$\rm{Energy} \ \rm{Density}\ ( \rm{erg}\ \rm{cm}^{-3})$',\
-        fontsize=14)
-ax1.set_title('Global average of total KE', fontsize=16)
-# Set limits
-ax1.set_xlim((x_min,np.max(xaxis)))
-ax1.ticklabel_format(scilimits = (0,0), useMathText=True)
-#minval1 = min(np.min(rke),np.min(tke),np.min(pke))
-maxval1 = np.max(ke) 
-ax1.set_ylim((0.,maxval1*1.05))
-# legend
-#ax1.legend(bbox_to_anchor=(1.2,0.75),shadow=True) 
-ax1.legend()
+    ax1.set_yscale('log')
+    ax1.set_ylim((mmin/3.0, mmax*3.0))
+    
+# Set x limits  
+ax1.set_xlim((x_min, np.max(xaxis)))
 
-# Get ticks everywhere
-plt.minorticks_on()
-plt.tick_params(top='on', right='on', direction='in', which='both')
+# legend
+ax1.legend(ncol=2, fontsize=8)
+
+# Make axes use scientific notation
+# Only x-axis if on log scale
+if ylog:
+    ax1.ticklabel_format(axis='x', scilimits = (-3,4), useMathText=True)
+else:
+    ax1.ticklabel_format(scilimits = (-3,4), useMathText=True)
 
 # Make the second plot (kinetic energy of the mean motions)
-ax2 = fig.add_subplot(222)
-# actual plotting
-ax2.plot(xaxis,mke,'k', label =\
-        r'$\frac{1}{2}\overline{\rho}\langle |\mathbf{v}|\rangle^2$')
-ax2.plot(xaxis,mrke,'r', \
-        label = r'$\frac{1}{2}\overline{\rho}\langle v_r\rangle^2$')
-ax2.plot(xaxis,mtke,'g',\
-        label = r'$\frac{1}{2}\overline{\rho}\langle v_\theta\rangle^2$')
-ax2.plot(xaxis,mpke,'b',\
-        label = r'$\frac{1}{2}\overline{\rho}\langle v_\phi\rangle^2$')
-# yscale
-ax2.set_yscale('log')
-# set limits
-ax2.set_xlim((x_min, np.max(xaxis)))
-minval2 = min(np.min(mrke), np.min(mtke), np.min(mpke))
-maxval2 = np.max(mke)
-ax2.set_ylim((minval2/3., maxval2*3.))
-# title and axis labels
-ax2.set_title('mean KE', fontsize=16)
-if (xiter):
-    ax2.set_xlabel('iteration #',fontsize=14)
-else:
-    ax2.set_xlabel('t (days)',fontsize=14)
-ax2.set_ylabel(r'$\rm{Energy} \ \rm{Density}\ ( \rm{erg}\ \rm{cm}^{-3})$',\
-        fontsize=14)
-ax2.ticklabel_format(axis='x', scilimits = (0,0), useMathText=True)
-# Get ticks everywhere
-plt.minorticks_on()
-plt.tick_params(top='on', right='on', direction='in', which='both')
+ax2.plot(xaxis, mke, 'k')
+ax2.plot(xaxis, mrke, 'r')
+ax2.plot(xaxis, mtke, 'g')
+ax2.plot(xaxis, mpke, 'b')
 
-#ax2.ticklabel_format(scilimits = (0,0), useMathText=True)
+# If magnetic, plot magnetic energies!
+if magnetism:
+    ax2.plot(xaxis, mme, 'k--')
+    ax2.plot(xaxis, mrme, 'r--')
+    ax2.plot(xaxis, mtme, 'g--')
+    ax2.plot(xaxis, mpme, 'b--')
 
-# Make the third plot (kinetic energy of the fluctuating, or convective,
-        # motions
-ax3 = fig.add_subplot(223)
-# actual plotting
-ax3.plot(xaxis,fke,'k', label =\
-        r'$\frac{1}{2}\overline{\rho}\langle |\mathbf{v}^\prime|^2\rangle$')
-ax3.plot(xaxis,frke,'r', label =\
-        r'$\frac{1}{2}\overline{\rho}\langle (v_r^\prime)^2\rangle$')
-ax3.plot(xaxis,ftke,'g', label =\
-        r'$\frac{1}{2}\overline{\rho}\langle (v_\theta^\prime)^2\rangle$')
-ax3.plot(xaxis,fpke,'b', label =\
-        r'$\frac{1}{2}\overline{\rho}\langle v_\phi^\prime)^2\rangle$')
-# set limits
-ax3.set_xlim((x_min, np.max(xaxis)))
-minval3 = min(np.min(frke), np.min(ftke), np.min(mpke))
-maxval3 = np.max(fke)
-ax3.set_ylim((0., maxval3*1.05))
-# title and axis labels
-ax3.set_title(' fluc KE', fontsize=16)
+# Title and axis label
+ax2.set_title('mean energy')
+# Put the y-label on the middle plot
+ax2.set_ylabel(r'$\rm{energy\ density\ (erg}\ cm^{-3})$')
+
+# Third plot: fluctuating energy
+ax3.plot(xaxis, fke, 'k')
+ax3.plot(xaxis, frke, 'r')
+ax3.plot(xaxis, ftke, 'g')
+ax3.plot(xaxis, fpke, 'b')
+
+# If magnetic, plot magnetic energies!
+if magnetism:
+    ax3.plot(xaxis, fme, 'k--')
+    ax3.plot(xaxis, frme, 'r--')
+    ax3.plot(xaxis, ftme, 'g--')
+    ax3.plot(xaxis, fpme, 'b--')
+
+# title and x-axis label
+ax3.set_title('fluctuating energy')
+
+# Put the x-axis label on the bottom
 if (xiter):
-    ax3.set_xlabel('iteration #',fontsize=14)
+    ax3.set_xlabel('iteration #')
 else:
-    ax3.set_xlabel('t (days)',fontsize=14)
-ax3.set_ylabel(r'$\rm{Energy} \ \rm{Density}\ ( \rm{erg}\ \rm{cm}^{-3})$',\
-        fontsize=14)
-ax3.ticklabel_format(scilimits = (0,0), useMathText=True)
+    if rotation:
+        ax3.set_xlabel(r'$\rm{t\ (P_{rot})}$')
+    else:
+        ax3.set_xlabel(r'$\rm{t\ (T_{diff})}$')
 
 # Get ticks everywhere
+plt.sca(ax1)
 plt.minorticks_on()
-plt.tick_params(top='on', right='on', direction='in', which='both')
+plt.tick_params(top=True, right=True, direction='in', which='both')
 
-# Make the fourth plot (sum of mean and fluctuating KE, just to check that
-# it equals the total
-tke = fke + mke
-trke = frke + mrke
-ttke = ftke + mtke
-tpke = fpke + mpke
-
-ax4 = fig.add_subplot(224)
-# actual plotting
-ax4.plot(xaxis,tke,'k', label = 'mean + fluc (t)')
-ax4.plot(xaxis,trke,'r', label = 'mean + fluc (r)')
-ax4.plot(xaxis,ttke,'g', label = 'mean + fluc (t)')
-ax4.plot(xaxis,tpke,'b', label = 'mean + fluc (p)')
-# set limits
-ax4.set_xlim((x_min, np.max(xaxis)))
-maxval4 = np.max(tke)
-ax4.set_ylim((0., maxval4*1.05))
-# title and axis labels
-ax4.set_title(' mean + fluc KE', fontsize=16)
-if (xiter):
-    ax4.set_xlabel('iteration #',fontsize=14)
-else:
-    ax4.set_xlabel('t (days)',fontsize=14)
-ax4.set_ylabel(r'$\rm{Energy} \ \rm{Density}\ ( \rm{erg}\ \rm{cm}^{-3})$',\
-        fontsize=14)
-ax4.ticklabel_format(scilimits = (0,0), useMathText=True)
-
-# Get ticks everywhere
+plt.sca(ax2)
 plt.minorticks_on()
-plt.tick_params(top='on', right='on', direction='in', which='both')
+plt.tick_params(top=True, right=True, direction='in', which='both')
+
+plt.sca(ax3)
+plt.minorticks_on()
+plt.tick_params(top=True, right=True, direction='in', which='both')
 
 # Space the subplots to make them look pretty
 plt.tight_layout
-#plt.subplots_adjust(right=0.92, left=0.08, bottom=0.1, top=0.90,
-#        wspace=0.4, hspace=0.4)
-plt.subplots_adjust(right=0.92, left=0.08, bottom=0.1, top=0.90,
-        hspace=0.4)
+plt.subplots_adjust(left=0.15, bottom=0.08, top=0.95, wspace=0.4)
 
 # Save the plot
 print ('Saving the etrace plot at ' + plotdir + savename + ' ...')
 plt.savefig(plotdir + savename)
-plt.close()
 
-# Call 'eog' to show the plot if demanded by the user
-if (showplot):
-    call (['eog', plotdir + savename])
+# Show the plot
+plt.show()
