@@ -1,11 +1,9 @@
 ###############################################
 # Author: Loren Matilsky
 # Date created: 02/14/2018
-# Last modified: 11/24/2018
 #
-#  This script computes the hell-averages radial energy flux in the 
-#  spherical domain as a function of radius. 
-#  Plots various spherically intebrated energy fluxes 
+# This script plots the radial energy fluxes as functions of
+# radius using from the Shell_Avgs data
 
 import matplotlib as mpl
 mpl.use('TkAgg')
@@ -33,6 +31,7 @@ Shell_Avgs_file = get_widest_range_file(datadir, 'Shell_Avgs')
 
 # Get command-line arguments to adjust the interval of averaging files
 user_specified_minmax = False
+magnetism = False
 args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
@@ -43,34 +42,42 @@ for i in range(nargs):
     elif (arg == '-minmax'):
         user_specified_minmax = True
         my_min, my_max = float(args[i+1]), float(args[i+2])
-        
-# Make the plot name, labelling the first/last iterations we average over
-iter1, iter2 = get_iters_from_file(Shell_Avgs_file)
-savename = dirname_stripped + '_eflux_radial_' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
-
-# Get grid info
-rr,tt,cost,sint,rr_depth,ri,ro,d = np.load(datadir + 'grid_info.npy')
-rr_n = rr/1e8 # rr "normalized" by a 1 Mm
+    elif (arg == '-mag'):
+        magnetism = True
 
 #Create the plot
 lw = 1.5 # Bit thicker lines
 
 # Read in the flux data
-vals, lut = np.load(datadir + Shell_Avgs_file)
+di = np.load(datadir + Shell_Avgs_file).item()
+vals = di['vals']
+lut = di['lut']
+iter1, iter2 = di['iter1'], di['iter2']
+rr = di['rr']
+
+# Make the plot name, labelling the first/last iterations we average over
+savename = dirname_stripped + '_eflux_radial_' +\
+    str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
+
 qindex_hflux = lut[1433]
 qindex_eflux = lut[1455]
 qindex_cflux = lut[1470]
 qindex_kflux = lut[1923]
 qindex_vflux = lut[1935]
+if magnetism:
+    qindex_mflux = lut[2001]
+    mflux = vals[:, qindex_mflux]
 
 hflux = vals[:, qindex_hflux]
 eflux = vals[:, qindex_eflux]
 cflux = vals[:, qindex_cflux]
 kflux = vals[:, qindex_kflux]
 vflux = -vals[:, qindex_vflux]
+
 tflux = hflux + eflux + cflux + kflux + vflux # compute the total flux
-
-
+if magnetism:
+    tflux += mflux
+    
 # Compute the integrated fluxes
 fpr = 4*np.pi*rr**2
 hflux_int = hflux*fpr
@@ -79,17 +86,25 @@ cflux_int = cflux*fpr
 kflux_int = kflux*fpr
 vflux_int = vflux*fpr
 tflux_int = tflux*fpr
+if magnetism:
+    mflux_int = mflux*fpr
 
 # Create the plot; start with plotting all the energy fluxes
-solar_lum = 3.846e33 # Normalize by the solar luminosity
-plt.plot(rr_n, hflux_int/solar_lum, label = r'$\rm{F}_{heat}$', linewidth=lw)
-plt.plot(rr_n, eflux_int/solar_lum, 'm', label = r'$\rm{F}_{enth}$',\
+Lsun = 3.846e33 # Normalize the energy flux by the solar luminosity
+Rsun = 6.955e10 # Normalize the radius by the solar radius
+rr_n = rr/Rsun
+
+plt.plot(rr_n, hflux_int/Lsun, label=r'$\rm{F}_{heat}$', linewidth=lw)
+plt.plot(rr_n, eflux_int/Lsun, 'm', label = r'$\rm{F}_{enth}$',\
         linewidth=lw)
-plt.plot(rr_n, cflux_int/solar_lum, label = r'$\rm{F}_{cond}$', linewidth=lw)
-plt.plot(rr_n, kflux_int/solar_lum, label = r'$\rm{F}_{KE}$', linewidth=lw)
-plt.plot(rr_n, vflux_int/solar_lum, label = r'$\rm{F}_{visc}$', linewidth=lw)
-plt.plot(rr_n, tflux_int/solar_lum, label=r'$\rm{F}_{total}$',\
+plt.plot(rr_n, cflux_int/Lsun, label = r'$\rm{F}_{cond}$', linewidth=lw)
+plt.plot(rr_n, kflux_int/Lsun, label = r'$\rm{F}_{KE}$', linewidth=lw)
+plt.plot(rr_n, vflux_int/Lsun, label = r'$\rm{F}_{visc}$', linewidth=lw)
+plt.plot(rr_n, tflux_int/Lsun, label=r'$\rm{F}_{total}$',\
         linewidth=lw, color='black')
+if magnetism:
+    plt.plot(rr_n, mflux_int/Lsun, label=r'$\rm{F}_{Poynting}$',\
+        linewidth=lw)
 
 # Get the y-axis in scientific notation
 plt.ticklabel_format(useMathText=True, axis='y', scilimits=(0,0))
@@ -112,12 +127,12 @@ delta_y = ymax - ymin
 plt.ylim(ymin, ymax)
 
 # Label the axes
-plt.xlabel(r'$\rm{Radius} \ (Mm)$', fontsize=12)
+plt.xlabel(r'$r/R_\odot$', fontsize=12)
 plt.ylabel(r'$4\pi r^2\ \rm{\times \ (Energy \ Flux)}\ /\ L_\odot$',\
         fontsize=12)
 
 # Create a see-through legend
-plt.legend(loc='lower left',shadow=True, ncol=3,fontsize=10)
+plt.legend(loc='lower left', shadow=True, ncol=3, fontsize=10)
 
 # Last command
 plt.tight_layout()

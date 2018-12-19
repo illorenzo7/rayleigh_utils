@@ -32,7 +32,6 @@ if (not os.path.isdir(plotdir)):
 # Set defaults
 my_boundstype = 'manual'
 user_specified_minmax = False 
-showplot = False
 my_nlevs = 20
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
 
@@ -44,8 +43,6 @@ for i in range(nargs):
     if (arg == '-minmax'):
         my_min, my_max = float(args[i+1]), float(args[i+2])
         user_specified_minmax = True
-    elif (arg == '-show'):
-        showplot = True
     elif (arg == '-nlevs'):
         my_nlevs = int(args[i+1])
     elif (arg == '-usefile'):
@@ -54,7 +51,7 @@ for i in range(nargs):
         
 # Read in AZ_Avgs data
 print ('Getting data from ' + datadir + AZ_Avgs_file + ' ...')
-di = (np.load(datadir + AZ_Avgs_file)).item()
+di = np.load(datadir + AZ_Avgs_file).item()
 
 iter1, iter2 = di['iter1'], di['iter2']
 vals = di['vals']
@@ -107,7 +104,4 @@ savefile = plotdir + dirname_stripped + '_diffrot_' + str(iter1).zfill(8) +\
     '_' + str(iter2).zfill(8) + '.png'
 print ('Saving plot at %s ...' %savefile)
 plt.savefig(savefile, dpi=300)
-if showplot:
-    plt.show()
-else:
-    plt.close()
+plt.show()

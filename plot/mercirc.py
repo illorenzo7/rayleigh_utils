@@ -1,8 +1,9 @@
 # Author: Loren Matilsky
 # Created: 05/14/2018
-# This script generates differential rotation plotted in the meridional plane 
-# for the Rayleigh run directory indicated by [dirname]. To use a vavg file
-# different than the one associated with the longest averaging range, use
+# This script plots the meridional circulation cells the meridional plane 
+# for the Rayleigh run directory indicated by [dirname], using the AZ_Avgs
+# data. To use an AZ_Avgs file different than the one associated with the 
+# longest averaging range, run with option
 # -usefile [complete name of desired vavg file]
 # Saves plot in
 # [dirname]_diffrot_[first iter]_[last iter].npy
@@ -37,7 +38,6 @@ if (not os.path.isdir(plotdir)):
 # Set defaults
 my_boundstype = 'manual'
 user_specified_minmax = False 
-showplot = False
 my_nlevs = 20
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
 
@@ -49,30 +49,26 @@ for i in range(nargs):
     if (arg == '-minmax'):
         my_min, my_max = float(args[i+1]), float(args[i+2])
         user_specified_minmax = True
-    elif (arg == '-show'):
-        showplot = True
     elif (arg == '-nlevs'):
         my_nlevs = int(args[i+1])
     elif (arg == '-usefile'):
         AZ_Avgs_file = args[i+1]
         AZ_Avgs_file = AZ_Avgs_file.split('/')[-1]
 
-# Get grid info
-rr,tt,cost,sint,rr_depth,ri,ro,d = np.load(datadir + 'grid_info.npy')
-nr, nt = len(rr), len(tt)
-rr_2d = rr.reshape((1,nr))
-sint_2d = sint.reshape((nt, 1))
-rsint = rr_2d*sint_2d
-
 # Read in AZ_Avgs data
 print ('Getting data from ' + datadir + AZ_Avgs_file + ' ...')
-vals, qv, counts, iters1, iters2 = np.load(datadir + AZ_Avgs_file)
-iter1, iter2 = get_iters_from_file(AZ_Avgs_file)
-ind_vr, ind_vt, ind_vp = np.argmin(np.abs(qv - 1)), np.argmin(np.abs(qv - 2)),\
-    np.argmin(np.abs(qv - 3))
+di = np.load(datadir + AZ_Avgs_file).item()
+#vals, qv, counts, iters1, iters2 = np.load(datadir + AZ_Avgs_file)
+vals = di['vals']
+lut = di['lut']
+iter1, iter2 = di['iter1'], di['iter2']
+rr = di['rr']
+tt = di['tt']
+cost = di['cost']
+sint = di['sint']
 
-vr_av, vt_av, vp_av = vals[:, :, ind_vr], vals[:, :, ind_vt],\
-        vals[:, :, ind_vp]
+vr_av, vt_av, vp_av = vals[:, :, lut[1]], vals[:, :, lut[2]],\
+        vals[:, :, lut[3]]
 
 # Compute the mass flux
 rhovm = rho*np.sqrt(vr_av**2 + vt_av**2)
@@ -117,13 +113,8 @@ plot_azav (fig, ax, psi, rr, cost, sint, units = r'$g\ cm^{-2}\ s^{-1}$', plotfi
 # Make title
 plt.title(dirname_stripped + '\n ' +\
           str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8))
-#plt.text(1 - 2*margin_x, 1 - 2*margin_y,  r'$\Delta\Omega_{\rm{tot}} = %.1f$' %Delta_Om)
-#plt.text(1 - 2*margin_x, 1 - 3*margin_y, 'nlevs = %i' %my_nlevs)
 savefile = plotdir + dirname_stripped + '_mercirc_' + str(iter1).zfill(8) +\
     '_' + str(iter2).zfill(8) + '.png'
 print ('Saving plot at %s ...' %savefile)
 plt.savefig(savefile, dpi=300)
-if showplot:
-    plt.show()
-else:
-    plt.close()
+plt.show()

@@ -1,6 +1,5 @@
 # Author: Loren Matilsky
 # Created: 05/14/2018
-# Last Modified: 12/10/2018
 # This script generates differential rotation plotted along radial lines for
 # the Rayleigh run directory indicated by [dirname]. To use  time-averaged 
 # AZ_Avgs file different than the one associated with the longest averaging 
@@ -30,6 +29,7 @@ if (not os.path.isdir(plotdir)):
 
 # Set defaults
 showplot = False
+user_specified_rnorm = False
 lats = [0, 15, 30, 45, 60, 75]
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
 
@@ -50,34 +50,36 @@ for i in range(nargs):
     elif (arg == '-usefile'):
         AZ_Avgs_file = args[i+1]
         AZ_Avgs_file = AZ_Avgs_file.split('/')[-1]
+    elif (arg == '-rnorm'):
+        user_specified_rnorm = True
+        user_supplied_rnorm = float(args[i+1])
 
 # Get the spherical theta values associated with [lats]       
 lats = np.array(lats)
 colats = 90 - lats
 theta_vals = colats*np.pi/180
 
-# Get grid info
-rr, tt, cost, sint, rr_depth, ri, ro, d = np.load(datadir + 'grid_info.npy')
-nr, nt = len(rr), len(tt)
-rr_2d = rr.reshape((1, nr))
-sint_2d = sint.reshape((nt, 1))
-rsint = rr_2d*sint_2d
-
 # Read in vavg data
 print ('Reading AZ_Avgs data from ' + datadir + AZ_Avgs_file + ' ...')
-vals, qv, counts, iters1, iters2 = np.load(datadir + AZ_Avgs_file)
-ind_vr, ind_vt, ind_vp = np.argmin(np.abs(qv - 1)), np.argmin(np.abs(qv - 2)),\
-    np.argmin(np.abs(qv - 3))
+di = np.load(datadir + AZ_Avgs_file).item()
+vals = di['vals']
+lut = di['lut']
+iter1, iter2 = di['iter1'], di['iter2']
+rr = di['rr']
+tt = di['tt']
+cost, sint = di['cost'], di['sint']
+xx = di['xx']
+ri = di['ri']
 
-vr_av, vt_av, vp_av = vals[:, :, ind_vr], vals[:, :, ind_vt],\
-        vals[:, :, ind_vp]
+vr_av, vt_av, vp_av = vals[:, :, lut[1]], vals[:, :, lut[2]],\
+        vals[:, :, lut[3]]
 
-iter1, iter2 = get_iters_from_file(AZ_Avgs_file)
+#iter1, iter2 = get_iters_from_file(AZ_Avgs_file)
 
 # Get frame rate rotation and compute differential rotation in the 
 # lab frame. 
 Om0 = get_parameter(dirname, 'angular_velocity')
-Om = vp_av/rsint + Om0
+Om = vp_av/xx + Om0
 Om *= 1.0e9/2/np.pi # convert from rad/s --> nHz
 
 # Create the plot
@@ -87,13 +89,21 @@ ax = fig.add_subplot(111)
 # Get extrema values for diff. rot.
 maxes = [] # Get the max-value of Omega for plotting purposes
 mins = []  # ditto for the min-value
+                                               
+# User can specify what to normalize the radius by
+# By default, normalize by the solar radius
+Rsun = 6.955e10
+if not user_specified_rnorm:
+    rr_n = rr/Rsun
+else:
+    rr_n = rr/user_supplied_rnorm                                           
 
 # Plot rotation vs radius at the desired latitudes
 for theta_val in theta_vals:
     diffs = np.abs(tt - theta_val)
     index = np.argmin(diffs)
     latitude = 90 - theta_val*180/np.pi
-    ax.plot(rr/ro, Om[index,:], linewidth=2., 
+    ax.plot(rr_n, Om[index,:], linewidth=2., 
             label = r'$\rm{%2.1f}$' %latitude + r'$^\circ$')
     maxes.append(np.max(Om[index,:]))
     mins.append(np.min(Om[index,:]))
@@ -105,11 +115,15 @@ difference = mmax - mmin
 buffer = difference*0.2 # "Guard" the yrange of the plot with whitespace
 
 # Label the axes
-plt.xlabel(r'$r/r_o$',fontsize=12)
+if not user_specified_rnorm:
+    plt.xlabel(r'$r/R_\odot$',fontsize=12)
+else:
+    plt.xlabel(r'r/(%.1e cm)' %user_supplied_rnorm)
+    
 plt.ylabel(r'$\Omega/2\pi \ \rm{(nHz)}$',fontsize=12)
 
 # Set the axis limits
-xmin, xmax = ri/ro, 1
+xmin, xmax = np.min(rr_n), np.max(rr_n)
 ymin, ymax = mmin - buffer, mmax + buffer
 plt.xlim((xmin, xmax))
 plt.ylim((ymin, ymax))
@@ -119,13 +133,13 @@ xvals = np.linspace(xmin, xmax, 100)
 yvals = np.linspace(ymin, ymax, 100)
 
 # Create a title    
-plt.title(dirname_stripped + ', Diff. Rot., radial slice, ' +\
+plt.title(dirname_stripped + '\n' + r'$\Omega(r,\theta),\ \rm{rslice},\ $' +\
           str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8))
 plt.legend(title='latitude')
 
 # Get ticks everywhere
 plt.minorticks_on()
-plt.tick_params(top='on', right='on', direction='in', which='both')
+plt.tick_params(top=True, right=True, direction='in', which='both')
 plt.tight_layout()
 
 savefile = plotdir + dirname_stripped + '_diffrot_rslice_' +\
