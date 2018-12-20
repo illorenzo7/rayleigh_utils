@@ -98,7 +98,7 @@ for theta_val in theta_vals:
     diffs = np.abs(tt - theta_val)
     index = np.argmin(diffs)
     latitude = 90 - theta_val*180/np.pi
-    ax.plot(rr_n, Om[index,:], linewidth=2., 
+    ax.plot(rr_n, Om[index,:],\
             label = r'$\rm{%2.1f}$' %latitude + r'$^\circ$')
     maxes.append(np.max(Om[index,:]))
     mins.append(np.min(Om[index,:]))
@@ -138,7 +138,7 @@ plt.tick_params(top=True, right=True, direction='in', which='both')
 plt.tight_layout()
 
 savefile = plotdir + dirname_stripped + '_diffrot_rslice_' +\
-    str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.pdf'
+    str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
 print('Saving plot at ' + savefile + ' ...')
-plt.savefig(savefile)
+plt.savefig(savefile, dpi=300)
 plt.show()

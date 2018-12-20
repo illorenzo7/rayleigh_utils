@@ -82,7 +82,7 @@ else:
     tnorm = tdt
 
 # Make appropriate file name to save
-savename = dirname_stripped + '_etrace_' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + tag + '.pdf'
+savename = dirname_stripped + '_etrace_' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + tag + '.png'
 
 ke = vals[lut[401]]
 rke = vals[lut[402]]
@@ -239,7 +239,7 @@ plt.subplots_adjust(left=0.15, bottom=0.08, top=0.85, wspace=0.4)
 
 # Save the plot
 print ('Saving the etrace plot at ' + plotdir + savename + ' ...')
-plt.savefig(plotdir + savename)
+plt.savefig(plotdir + savename, dpi=300)
 
 # Show the plot
 plt.show()

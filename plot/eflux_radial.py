@@ -50,7 +50,8 @@ for i in range(nargs):
         user_supplied_rnorm = float(args[i+1])
 
 #Create the plot
-lw = 1.5 # Bit thicker lines
+lw = 1. # regular lines
+#lw = 1.5 # Bit thicker lines
 
 # Read in the flux data
 di = np.load(datadir + Shell_Avgs_file).item()
@@ -61,7 +62,7 @@ rr = di['rr']
 
 # Make the plot name, labelling the first/last iterations we average over
 savename = dirname_stripped + '_eflux_radial_' +\
-    str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.pdf'
+    str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
 
 qindex_hflux = lut[1433]
 qindex_eflux = lut[1455]
@@ -156,7 +157,7 @@ plt.tight_layout()
 
 # Save the plot
 print ('Saving the eflux plot at ' + plotdir + savename + ' ...')
-plt.savefig(plotdir + savename)
+plt.savefig(plotdir + savename, dpi=300)
 
 # Show the plot
 plt.show()
