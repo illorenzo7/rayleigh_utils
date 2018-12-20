@@ -122,7 +122,7 @@ plt.ticklabel_format(useMathText=True, axis='y', scilimits=(0,0))
 
 # Get ticks everywhere
 plt.minorticks_on()
-plt.tick_params(top='True', right='True', direction='in', which='both')
+plt.tick_params(top=True, right=True, direction='in', which='both')
 
 # Set the x limits
 xmin, xmax = np.min(rr_n), np.max(rr_n)
