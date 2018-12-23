@@ -26,4 +26,8 @@ def get_parameter(dirname, parameter):
     equals_index = line.index('=') # find where the actual number
         # or array starts (should be after the equals sign)
     num_string = line[equals_index + 1:]
+    if '!' in num_string: # there was a comment after the equals statement
+                        # throw it away!
+        excl_index = num_string.index('!')
+        num_string = num_string[:excl_index]
     return (string_to_number_or_array(num_string))
