@@ -1,12 +1,17 @@
 import matplotlib as mpl
-mpl.use('Agg')
+mpl.use('TkAgg')
 import matplotlib.pyplot as plt
 import numpy as np
-import sys
-sys.path.append('/altair/loma3853/rayleigh/plot')
+import sys, os
+sys.path.append(os.environ['co'])
+sys.path.append(os.environ['rapp'])
 from binormalized_cbar import MidpointNormalize
 from mpl_toolkits.basemap import Basemap, addcyclic
 from matplotlib import colors
+from varprops import texlabels, texunits, var_indices, var_indices_old
+from common import get_widest_range_file
+from get_parameter import get_parameter
+from rayleigh_diagnostics import ReferenceState
 
 def rms(array):
     if np.size(array) == 0:
@@ -14,6 +19,104 @@ def rms(array):
     else:
         return np.sqrt(np.mean(array**2))
 
+def show_ortho(field, varname, depth=0., aspect=0.8, minmax=None):
+    # Get inner and outer sphere radii and location of the shell slice radius
+    # (all normalized by ro)
+    ri = aspect
+    ro = 1.
+    d = ro - ri
+    r_loc = ro - d*depth
+    
+    # Get latitude and longitude grid from the shape of field
+    nphi, nt = np.shape(field)
+    dlon = 360.0/nphi
+    dlat = 180.0/(nt + 1)
+    lons = np.zeros(nphi)
+    for i in range(nphi):
+        lons[i] = dlon*i-180.0
+
+    lats = np.zeros(nt)
+    for i in range(nt):
+        lats[i] = (i+1)*dlat - 90    
+    
+    posdef = False
+    if 'sq' in varname:
+        posdef = True
+        
+    if not posdef:
+        rms_plus = rms(field[np.where(field > 0)])
+        rms_minus = rms(field[np.where(field < 0)])
+        if minmax is None:
+            my_min, my_max = -3*rms_minus, 3*rms_plus
+        else:
+            my_min, my_max = minmax
+        minexp = int(np.floor(np.log10(np.abs(my_min))))
+        maxexp = int(np.floor(np.log10(np.abs(my_max))))
+        maxabs_exp = max((minexp, maxexp))
+
+        field /= 10**maxabs_exp
+        my_min /= 10**maxabs_exp
+        my_max /= 10**maxabs_exp
+        
+    # Set up the lat/lon grid for the Basemap projections
+    xpixels = 512 
+    ypixels = 512
+
+    # Set up the cyclic grid to avoid "cuts" of whitespace between 
+    # 0 and 360 degrees
+    sslice_cycl, lons_cycl = addcyclic(field, lons)
+
+    # Convert to 2-D grids
+    llons_cycl, llats_cycl = np.meshgrid(lons_cycl, lats)
+    
+    #fig = plt.figure(figsize=(6,3), dpi=300)
+ #   fig = plt.figure()
+    m = Basemap(projection='ortho', lon_0=0, lat_0=20, resolution=None, rsphere=ro)
+
+    topodat,x,y = m.transform_scalar(field, lons, lats, xpixels, ypixels, returnxy=True, masked=True, order=1)
+
+    shrink_distance = ro - r_loc
+    shrink_factor = ro/r_loc
+    x = x/shrink_factor + shrink_distance
+    y = y/shrink_factor + shrink_distance 
+
+    # Saturation levels for a positive-definite quantity (like vsq)
+    if posdef:
+        logfield= np.log(field)
+        medlog = np.median(logfield)
+        shiftlog = logfield - medlog
+        minexp = medlog - 7*np.std(shiftlog[np.where(shiftlog < 0)].flatten())
+        maxexp = medlog + 7*np.std(shiftlog[np.where(shiftlog > 0)].flatten())
+        my_min, my_max = np.exp(minexp), np.exp(maxexp)
+        
+    #View the data
+    if not posdef:
+        m.pcolormesh(x, y, topodat, cmap=plt.cm.RdYlBu_r,\
+                     norm=MidpointNormalize(0), vmin=my_min, vmax=my_max)
+    else: 
+        m.pcolormesh(x,y, topodat, cmap='Greens',\
+            norm=colors.LogNorm(vmin=my_min, vmax=my_max))
+    # draw parallels and meridians. Draw two parallels at the tangent cylinder
+#    m.drawparallels((-tangent_lat, tangent_lat))
+#    m.drawmeridians(np.arange(0.,420.,60.))
+    
+    # convert desires lons/lats to draw into map projection coordinates
+    meridians = np.arange(0., 360., 60.)
+    
+    for meridian in meridians:
+        linex, liney = m(np.ones_like(lats)*meridian, lats)
+    
+        # must cut off all points on the far side of the sphere!
+        linex = linex[np.where(np.abs(linex) < 1.e20)]
+        liney = liney[np.where(np.abs(liney) < 1.e20)]
+    
+        linex = linex/shrink_factor + shrink_distance
+        liney = liney/shrink_factor + shrink_distance
+    
+        m.plot(linex, liney,color='k',linewidth=.75)
+    
+    plt.show()
+    
 def plot_ortho(fig, ax, field, lats, lons, r_loc, ri, ro,\
                cax=None, posdef=False, cbar_units = 'm/s', minmax='default',
                return_minmax = False):
@@ -133,6 +236,7 @@ def plot_ortho(fig, ax, field, lats, lons, r_loc, ri, ro,\
                 cbar.set_ticklabels(['%2.0f' %my_min, '0', '%2.0f' %my_max])
     if return_minmax:
         return my_min, my_max
+
     
 def cbar_axes_from_area(cbar_area_left, cbar_area_bottom, \
                         cbar_area_width, cbar_area_height, fig_aspect, aspect=1/20):
@@ -143,67 +247,3 @@ def cbar_axes_from_area(cbar_area_left, cbar_area_bottom, \
     cbar_left = cbar_area_centerx - cbar_width/2
     cbar_bottom = cbar_area_centery + cbar_area_height/4 - cbar_height/2
     return (cbar_left, cbar_bottom, cbar_width, cbar_height)
-
-var_indices = {\
-    'vr'    :       1, 
-    'vt'    :       2,
-    'vp'    :       3,
-    'omr'   :       103,
-    'omt'   :       104,
-    'omp'   :       105 }
-
-labels = {\
-    'vr'        :       r'$v_r$',
-    'vt'        :       r'$v_\theta$',
-    'vp'        :       r'$v_\phi$',
-    'vp_prime'  :       r'$v_\phi - \langle v_\phi\rangle$',
-    'vl'        :       r'$v_\lambda$',
-    'vz'        :       r'$v_z$',
-    'omr'       :       r'$\omega_r$',
-    'omt'       :       r'$\omega_\theta$',
-    'omp'       :       r'$\omega_\phi$',
-    'oml'       :       r'$\omega_\lambda$',
-    'omz'       :       r'$\omega_z$',
-    'vsq'       :       r'$v^2$',
-    'vhsq'      :       r'$v_h^2$',
-    'vrsq'      :       r'$v_r^2$',
-    'omsq'      :       r'$\omega^2$',
-    's'         :       r'$S - \langle S \rangle_s$',
-    
-    'vrs'       :       r'$v_r(S - \langle S\rangle_s)$',
-    'vrvp'      :       r'$v_r(v_\phi - \langle v_\phi\rangle)$',
-    'vrvt'      :       r'$v_rv_\theta$',
-    'vtvp'      :       r'$v_\theta (v_\phi - \langle v_\phi\rangle)$',
-    
-    'vlvp'      :       r'$v_\lambda (v_\phi - \langle v_\phi\rangle)$',
-    'vzvp'      :       r'$v_z (v_\phi - \langle v_\phi\rangle)$',
-    'vlvz'      :       r'$v_\lambda v_z$' }
-
-units = {\
-    'vr'        :       r'$\frac{\rm{m}}{\rm{s}}$',
-    'vt'        :       r'$\frac{\rm{m}}{\rm{s}}$',
-    'vp'        :       r'$\frac{\rm{m}}{\rm{s}}$',
-    'vp_prime'  :       r'$\frac{\rm{m}}{\rm{s}}$',
-    'vl'        :       r'$\frac{\rm{m}}{\rm{s}}$',
-    'vz'        :       r'$\frac{\rm{m}}{\rm{s}}$',
-
-    'omr'       :       r'$\frac{\rm{rad}}{\rm{s}}$',
-    'omt'       :       r'$\frac{\rm{rad}}{\rm{s}}$',
-    'omp'       :       r'$\frac{\rm{rad}}{\rm{s}}$',
-    'oml'       :       r'$\frac{\rm{rad}}{\rm{s}}$',
-    'omz'       :       r'$\frac{\rm{rad}}{\rm{s}}$',
-
-    'vsq'       :       r'$\frac{\rm{m}^2}{\rm{s}^2}$',
-    'vhsq'      :       r'$\frac{\rm{m}^2}{\rm{s}^2}$',
-    'vrsq'      :       r'$\frac{\rm{m}^2}{\rm{s}^2}$',
-    'omsq'      :       r'$\frac{\rm{rad}^2}{\rm{s}^2}$',
-    's'         :       r'$\frac{\rm{erg}}{\rm{K}\ \rm{g}}$',
-    
-    'vrs'       :       r'$\frac{\rm{erg}}{\rm{K}\ \rm{g}}\frac{\rm{m}}{\rm{s}}$',
-    'vrvp'      :       r'$\frac{\rm{m}^2}{\rm{s}^2}$',
-    'vrvt'      :       r'$\frac{\rm{m}^2}{\rm{s}^2}$',
-    'vtvp'      :       r'$\frac{\rm{m}^2}{\rm{s}^2}$',
-    
-    'vlvp'      :       r'$\frac{\rm{m}^2}{\rm{s}^2}$',
-    'vzvp'      :       r'$\frac{\rm{m}^2}{\rm{s}^2}$',
-    'vlvz'      :       r'$\frac{\rm{m}^2}{\rm{s}^2}$' }
