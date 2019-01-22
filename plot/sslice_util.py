@@ -72,7 +72,12 @@ def show_ortho(field, varname, depth=0., aspect=0.8, minmax=None):
     #fig = plt.figure(figsize=(6,3), dpi=300)
  #   fig = plt.figure()
     m = Basemap(projection='ortho', lon_0=0, lat_0=20, resolution=None, rsphere=ro)
-
+    print(np.shape(field))
+    print(np.shape(lons))
+    print(np.shape(lats))
+    print(xpixels)
+    print(ypixels)
+    field = np.transpose(field)
     topodat,x,y = m.transform_scalar(field, lons, lats, xpixels, ypixels, returnxy=True, masked=True, order=1)
 
     shrink_distance = ro - r_loc
