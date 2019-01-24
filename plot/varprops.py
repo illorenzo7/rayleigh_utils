@@ -86,7 +86,7 @@ texlabels = {\
     'vtvp'      :       r'$\overline{\rho}v_\theta^\prime v_\phi^\prime$',
     
     'vlvp'      :       r'$\overline{\rho}v_\lambda^\prime v_\phi^\prime$',
-    'vzvp'      :       r'$\overline{\rho}v_z^\prime v_\phi^\prime$',
+    'vpvz'      :       r'$\overline{\rho}v_\phi^\prime v_z^\prime$',
     'vlvz'      :       r'$\overline{\rho}v_\lambda^\prime v_z^\prime$',
              
     'brbp'      :       r'$(1/4\pi)B_r^\prime B_\phi^\prime$',
@@ -94,7 +94,7 @@ texlabels = {\
     'btbp'      :       r'$(1/4\pi)B_\theta^\prime B_\phi^\prime$',
     
     'blbp'      :       r'$(1/4\pi)B_\lambda^\prime B_\phi^\prime$',
-    'bzbp'      :       r'$(1/4\pi)B_z^\prime B_\phi^\prime$',
+    'bpbz'      :       r'$(1/4\pi)B_\phi^\prime B_z^\prime$',
     'blbz'      :       r'$(1/4\pi)B_\lambda^\prime B_z^\prime$' }
 
 texunits = {\
@@ -158,25 +158,25 @@ texunits = {\
     's'         :       r'$\rm{erg}\ \rm{K}^{-1}\ \rm{g}^{-1}$',
     's_prime'   :       r'$\rm{erg}\ \rm{K}^{-1}\ \rm{g}^{-1}$',
     's_prime_sph'   :       r'$\rm{erg}\ \rm{K}^{-1}\ \rm{g}^{-1}$',            
-    'p'         :       r'$\rm{dyn}\ \rm{cm}^2$',
-    'p_prime'   :       r'$\rm{dyn}\ \rm{cm}^2$',            
-    'p_prime_sph'   :       r'$\rm{dyn}\ \rm{cm}^2$',  
-    'rho'       :       r'$\rm{dyn}\ \rm{cm}^2$',
+    'p'         :       r'$\rm{dyn}\ \rm{cm}^{-2}$',
+    'p_prime'   :       r'$\rm{dyn}\ \rm{cm}^{-2}$',            
+    'p_prime_sph'   :       r'$\rm{dyn}\ \rm{cm}^{-2}$',  
+    'rho'       :       r'$\rm{g}\ \rm{cm}^{-3}$',
     'rho_prime' :       r'$\rm{g}\ \rm{cm}^{-3}$',            
     'rho_prime_sph' :   r'$\rm{g}\ \rm{cm}^{-3}$', 
-    't'       :       r'$\rm{K}$',
-    't_prime' :       r'$\rm{K}$',          
-    't_prime_sph' :   r'$\rm{K}$',            
+    't'       :         r'$\rm{K}$',
+    't_prime' :         r'$\rm{K}$',          
+    't_prime_sph' :     r'$\rm{K}$',            
     
-    'vrs'       :       r'$\rm{dyn}\ \rm{cm}^{-2}$', 
-    'vrs'       :       r'$\rm{dyn}\ \rm{cm}^{-2}$', 
+    'vrs'       :       r'$(cm\ s^{-1})(\rm{erg}\ \rm{K}^{-1}\ \rm{g}^{-1})$', 
+    'vrt'       :       r'$(cm\ s^{-1})(K)$', 
             
     'vrvp'      :       r'$\rm{dyn}\ \rm{cm}^{-2}$', 
     'vrvt'      :       r'$\rm{dyn}\ \rm{cm}^{-2}$', 
     'vtvp'      :       r'$\rm{dyn}\ \rm{cm}^{-2}$', 
     
     'vlvp'      :       r'$\rm{dyn}\ \rm{cm}^{-2}$', 
-    'vzvp'      :       r'$\rm{dyn}\ \rm{cm}^{-2}$', 
+    'vpvz'      :       r'$\rm{dyn}\ \rm{cm}^{-2}$', 
     'vlvz'      :       r'$\rm{dyn}\ \rm{cm}^{-2}$', 
            
     'brbp'      :       r'$\rm{dyn}\ \rm{cm}^{-2}$', 
@@ -184,7 +184,7 @@ texunits = {\
     'btbp'      :       r'$\rm{dyn}\ \rm{cm}^{-2}$', 
     
     'blbp'      :       r'$\rm{dyn}\ \rm{cm}^{-2}$', 
-    'bzbp'      :       r'$\rm{dyn}\ \rm{cm}^{-2}$', 
+    'bpbz'      :       r'$\rm{dyn}\ \rm{cm}^{-2}$', 
     'blbz'      :       r'$\rm{dyn}\ \rm{cm}^{-2}$' }
 
 var_indices = {\

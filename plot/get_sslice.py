@@ -347,8 +347,8 @@ def get_sslice(a, varname, dirname=None, old=False):
             azav_file = get_widest_range_file(dirname + '/data/', 'AZ_Avgs')
             di = np.load(dirname + '/data/' + azav_file).item()
             av_vals, lut = di['vals'], di['lut']
-            s_av = av_vals[:, a.inds, lut[qind_omr]]
-            p_av = av_vals[:, a.inds, lut[qind_omt]]
+            s_av = av_vals[:, a.inds, lut[qind_s]]
+            p_av = av_vals[:, a.inds, lut[qind_p]]
             rho_av = ref_rho*(p_av/ref_p/poly_gamma - s_av/cp)
             sslice = rho_slice - rho_av            
         except:
@@ -372,8 +372,8 @@ def get_sslice(a, varname, dirname=None, old=False):
             azav_file = get_widest_range_file(dirname + '/data/', 'AZ_Avgs')
             di = np.load(dirname + '/data/' + azav_file).item()
             av_vals, lut = di['vals'], di['lut']
-            s_av = av_vals[:, a.inds, lut[qind_omr]]
-            p_av = av_vals[:, a.inds, lut[qind_omt]]
+            s_av = av_vals[:, a.inds, lut[qind_s]]
+            p_av = av_vals[:, a.inds, lut[qind_p]]
             t_av = ref_temp*(p_av/ref_p*(1. - 1./poly_gamma) + s_av/cp)
             sslice = t_slice - t_av            
         except:
@@ -467,14 +467,15 @@ def get_sslice(a, varname, dirname=None, old=False):
     elif (varname == 'br_prime'):
         ind_br = a.lut[qind_br]
         br_slice = vals[:, :, :, ind_br]
+        print(np.max(br_slice))
         try: 
             azav_file = get_widest_range_file(dirname + '/data/', 'AZ_Avgs')
             di = np.load(dirname + '/data/' + azav_file).item()
             av_vals, lut = di['vals'], di['lut']
-            br_av = av_vals[:, a.inds, lut[3]]
+            br_av = av_vals[:, a.inds, lut[qind_br]]
             sslice = br_slice - br_av
         except:
-            sslice = br_slice - np.mean(br_slice, axis=0).reshape((1, a.ntheta, a.nr))
+            sslice = br_slice - np.mean(br_slice, axis=0)
     elif (varname == 'bt_prime'):
         ind_bt = a.lut[qind_bt]
         bt_slice = vals[:, :, :, ind_bt]
@@ -482,10 +483,10 @@ def get_sslice(a, varname, dirname=None, old=False):
             azav_file = get_widest_range_file(dirname + '/data/', 'AZ_Avgs')
             di = np.load(dirname + '/data/' + azav_file).item()
             av_vals, lut = di['vals'], di['lut']
-            bt_av = av_vals[:, a.inds, lut[3]]
+            bt_av = av_vals[:, a.inds, lut[qind_bt]]
             sslice = bt_slice - bt_av
         except:
-            sslice = bt_slice - np.mean(bt_slice, axis=0).reshape((1, a.ntheta, a.nr))        
+            sslice = bt_slice - np.mean(bt_slice, axis=0)      
     elif (varname == 'bp_prime'):
         ind_bp = a.lut[qind_bp]
         bp_slice = vals[:, :, :, ind_bp]
@@ -493,10 +494,10 @@ def get_sslice(a, varname, dirname=None, old=False):
             azav_file = get_widest_range_file(dirname + '/data/', 'AZ_Avgs')
             di = np.load(dirname + '/data/' + azav_file).item()
             av_vals, lut = di['vals'], di['lut']
-            bp_av = av_vals[:, a.inds, lut[3]]
+            bp_av = av_vals[:, a.inds, lut[qind_bp]]
             sslice = bp_slice - bp_av
         except:
-            sslice = bp_slice - np.mean(bp_slice, axis=0).reshape((1, a.ntheta, a.nr))
+            sslice = bp_slice - np.mean(bp_slice, axis=0)
             
     # Cylindrical magnetic fields
     elif (varname == 'bl'):

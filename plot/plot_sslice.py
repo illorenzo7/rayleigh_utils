@@ -21,7 +21,7 @@ nargs = len(args)
 file_list, int_file_list, nfiles = get_file_lists(dirn + '/Shell_Slices/')
 fname = file_list[-1] # By default plot the last shell slice
 var = 'vr' # By default plot the radial velocity
-
+idepth = 0 # By default plot the shell slice closest to surface
 for i in range(nargs):
     arg = args[i]
     if arg == '-n':
@@ -31,9 +31,20 @@ for i in range(nargs):
                %(str(desired_iter).zfill(8), fname))
     elif arg == '-var':
         var = args[i+1]
-
-
+    elif arg == '-idepth':
+        idepth = int(args[i+1])
+        
 a = Shell_Slices(fname, dirn + '/Shell_Slices/')
 
 sslice = get_sslice(a, var, dirname=dirn)
-show_ortho(sslice[:, :, 0], var)
+
+ri = 5.
+ro = 6.586
+rloc = 6.586
+try:
+    rr,tt,cost,sint,rr_depth,ri,ro,d = np.load(dirn + '/data/grid_info.npy')
+    rloc = a.radius[idepth]
+except:
+    print ('No grid_info.npy')
+    
+show_ortho(sslice[:, :, idepth], var, ri=ri, ro=ro, rloc=rloc, iterr=a.iters[0])
