@@ -1,14 +1,14 @@
 # Author: Loren Matilsky
 # Created: 01/28/2019
-# This script plots the zonal forces in the meridional plane (advection, 
-# Coriolis, pressure, viscosity, and JxB (if present))
+# This script plots the latitudinal energy fluxes in the meridional plane 
+# (convective (enthalpy), conductive, kinetic energy, viscous,
+# and Poynting flux (if present) 
 # ...for the Rayleigh run directory indicated by [dirname]. 
-# This should (by definition) resemble the "torques" plot!
 # To use an AZ_Avgs file
-# different than the one assocsiated with the longest averaging range, use
+# different than the one assosciated with the longest averaging range, use
 # -usefile [complete name of desired AZ_Avgs file]
 # Saves plot in
-# [dirname]_phi_force_[first iter]_[last iter].png
+# [dirname]_eflux_radial_merplane_[first iter]_[last iter].png
 
 import numpy as np
 import matplotlib as mpl
@@ -62,33 +62,34 @@ except:
 
 # Get AZ_Avgs file
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
-print ('Getting phi_forces from ' + datadir + AZ_Avgs_file + ' ...')
+print ('Getting latitudinal energy fluxes from ' + datadir +\
+       AZ_Avgs_file + ' ...')
 di = np.load(datadir + AZ_Avgs_file).item()
 
 iter1, iter2 = di['iter1'], di['iter2']
 vals = di['vals']
 lut = di['lut']
  
-ind_adv = lut[1203] # gets minus sign
-ind_cor = lut[1221]
-ind_prs = lut[1239]
-ind_visc = lut[1230]
+ind_enth = lut[1456] 
+ind_cond = lut[1471]
+ind_visc = lut[1936] # might get minus sign from error?
+ind_ke = lut[1924]
 
-phi_force_adv = -vals[:, :, ind_adv]
-phi_force_cor = vals[:, :, ind_cor]
-phi_force_prs = vals[:, :, ind_prs]
-phi_force_visc = vals[:, :, ind_visc]
-phi_force_tot = phi_force_adv + phi_force_cor + phi_force_prs +\
-    phi_force_visc
+efr_enth = vals[:, :, ind_enth]
+efr_cond = vals[:, :, ind_cond]
+efr_visc = vals[:, :, ind_visc]
+efr_ke = vals[:, :, ind_ke]
 
-max_sig = max(np.std(phi_force_adv), np.std(phi_force_cor),\
-              np.std(phi_force_prs), np.std(phi_force_visc))
+efr_tot = efr_enth + efr_cond + efr_visc + efr_ke
+
+max_sig = max(np.std(efr_enth), np.std(efr_cond), np.std(efr_visc),\
+              np.std(efr_ke))
 
 if magnetism:
-    ind_mag = lut[1250]
-    phi_force_mag = vals[:, :, ind_mag]       
-    max_sig = max(max_sig, np.std(phi_force_mag))
-    phi_force_tot += phi_force_mag
+    ind_Poynt = lut[2002]
+    efr_Poynt = vals[:, :, ind_Poynt]       
+    max_sig = max(max_sig, np.std(efr_Poynt))
+    efr_tot += efr_Poynt
     
 if not user_specified_minmax: 
     my_min, my_max = -3*max_sig, 3*max_sig
@@ -124,18 +125,18 @@ margin_top = margin_top_inches/fig_height_inches
 subplot_width = subplot_width_inches/fig_width_inches
 subplot_height = subplot_height_inches/fig_height_inches
 
-phi_forces = [phi_force_adv, phi_force_cor, phi_force_prs,\
-                phi_force_visc, phi_force_tot]
+efr_terms = [efr_enth, efr_cond, efr_visc, efr_ke, efr_tot]
 
-titles =\
-[r'$(\mathbf{f}_{\rm{adv}})_\phi$', r'$(\mathbf{f}_{\rm{cor}})_\phi$',\
- r'$(\mathbf{f}_{\rm{p}})_\phi$', r'$(\mathbf{f}_{\rm{v}})_\phi$',\
- r'$(\mathbf{f}_{\rm{tot}})_\phi$']
-units = r'$\rm{g}\ \rm{cm}^{-2}\ \rm{s}^{-2}$'
+titles = [r'$(\mathbf{\mathcal{F}}_{\rm{enth}})_\theta$',\
+          r'$(\mathbf{\mathcal{F}}_{\rm{cond}})_\theta$',\
+          r'$(\mathbf{\mathcal{F}}_{\rm{v}})_\theta$',\
+          r'$(\mathbf{\mathcal{F}}_{\rm{KE}})_\theta$',
+          r'$(\mathbf{\mathcal{F}}_{\rm{tot}})_\theta$']
+units = r'$\rm{g}\ \rm{s}^{-3}$'
 
 if magnetism:
-    phi_forces.insert(4, phi_force_mag)
-    titles.insert(4, r'$(\mathbf{f}_{\rm{mag}})_\phi$')
+    efr_terms.insert(4, efr_Poynt)
+    titles.insert(4, r'$(\mathbf{\mathcal{F}}_{\rm{Poynt}})_\theta$')
 
 # Generate the actual figure of the correct dimensions
 fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
@@ -144,16 +145,17 @@ for iplot in range(nplots):
     ax_left = margin_x + (iplot%ncol)*(subplot_width + margin_x)
     ax_bottom = 1 - ((iplot//ncol) + 1)*(subplot_height + margin_top)
     ax = fig.add_axes((ax_left, ax_bottom, subplot_width, subplot_height))
-    plot_azav (fig, ax, phi_forces[iplot], rr, cost, sint, plotcontours=False, 
+    plot_azav (fig, ax, efr_terms[iplot], rr, cost, sint, plotcontours=False, 
            units = units,
            boundstype = my_boundstype, caller_minmax = (my_min, my_max),\
            norm=MidpointNormalize(0))
 
     ax.set_title(titles[iplot], verticalalignment='top', **csfont)
 
-savefile = plotdir + dirname_stripped + '_phi_forces_' +\
+savefile = plotdir + dirname_stripped + '_eflux_latitudinal_merplane_' +\
     str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
 
-print ('Saving phi_forces at ' + savefile + ' ...')
+print ('Saving latitudinal energy fluxes (in the meridional plane) at ' +\
+       savefile + ' ...')
 plt.savefig(savefile, dpi=300)
 plt.show()

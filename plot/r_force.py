@@ -7,7 +7,7 @@
 # different than the one assocsiated with the longest averaging range, use
 # -usefile [complete name of desired AZ_Avgs file]
 # Saves plot in
-# [dirname]_theta_force_[first iter]_[last iter].png
+# [dirname]_r_force_[first iter]_[last iter].png
 
 import numpy as np
 import matplotlib as mpl
@@ -98,7 +98,7 @@ fig_width_inches = 7 # TOTAL figure width, in inches
 margin_inches = 1/8 # margin width in inches (for both x and y) and 
     # horizontally in between figures
 margin_top_inches = 3/8 # wider top margin to accommodate subplot titles
-nplots = 4 + 2*magnetism
+nplots = 5 + magnetism
 ncol = 3 # put three plots per row
 nrow = np.int(np.ceil(nplots/3))
 
