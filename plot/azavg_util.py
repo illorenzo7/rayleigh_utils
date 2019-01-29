@@ -16,7 +16,7 @@ def fmt(x, pos):
     b = int(b)
     return r'${} \times 10^{{{}}}$'.format(a, b)
 
-def get_lims(arr,boundstype='minmax', caller_minmax=(-10.,10.)): 
+def get_lims(arr, boundstype='minmax', caller_minmax=(-10.,10.)): 
                     # (Note the (-10, 10) are just placeholders so the
                     # calling function doesn't need to pass a required
                     # min/max tuple that is never used
