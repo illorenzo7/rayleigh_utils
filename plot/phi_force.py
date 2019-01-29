@@ -1,13 +1,14 @@
 # Author: Loren Matilsky
 # Created: 01/28/2019
-# This script plots the axial torques in the meridional plane (viscous, 
-# Meridional Circ., Reynolds stress, and Maxwell torques (mean and turbulent) 
-# if applicablein the meridional plane 
-# ...for the Rayleigh run directory indicated by [dirname]. To use an AZ_Avgs file
-# different than the one associated with the longest averaging range, use
+# This script plots the zonal forces in the meridional plane (advection, 
+# Coriolis, pressure, viscosity, and JxB (if present))
+# ...for the Rayleigh run directory indicated by [dirname]. 
+# This should (by definition) resemble the "torques" plot!
+# To use an AZ_Avgs file
+# different than the one assocsiated with the longest averaging range, use
 # -usefile [complete name of desired AZ_Avgs file]
 # Saves plot in
-# [dirname]_torque_[first iter]_[last iter].png
+# [dirname]_phi_force_[first iter]_[last iter].png
 
 import numpy as np
 import matplotlib as mpl
@@ -59,47 +60,44 @@ try:
 except:
     magnetism = False # if magnetism wasn't specified, it must be "off"
 
-# Get the torques:
+# Get AZ_Avgs file
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
-print ('Getting torques from ' + datadir + AZ_Avgs_file + ' ...')
+print ('Getting phi_forces from ' + datadir + AZ_Avgs_file + ' ...')
 di = np.load(datadir + AZ_Avgs_file).item()
 
 iter1, iter2 = di['iter1'], di['iter2']
 vals = di['vals']
 lut = di['lut']
  
-ind_pp = lut[1801]
-ind_mm = lut[1802]
-ind_cor = lut[1803]
-ind_visc = lut[1804]
+ind_adv = lut[1203] # gets minus sign
+ind_cor = lut[1221]
+ind_prs = lut[1239]
+ind_visc = lut[1230]
 
-torque_rs, torque_mc, torque_visc = -vals[:, :, ind_pp],\
-        -vals[:, :, ind_mm] + vals[:, :, ind_cor],\
-        vals[:, :, ind_visc]
-torque_tot = torque_rs + torque_mc + torque_visc
+phi_force_adv = -vals[:, :, ind_adv]
+phi_force_cor = vals[:, :, ind_cor]
+phi_force_prs = vals[:, :, ind_prs]
+phi_force_visc = vals[:, :, ind_visc]
+phi_force_tot = phi_force_adv + phi_force_cor + phi_force_prs +\
+    phi_force_visc
 
-max_sig = max(np.std(torque_rs), np.std(torque_mc), np.std(torque_visc))
+max_sig = max(np.std(phi_force_adv), np.std(phi_force_cor),\
+              np.std(phi_force_prs), np.std(phi_force_visc))
 
 if magnetism:
-    ind_Maxwell_mean = lut[1805]
-    ind_Maxwell_rs = lut[1806]
-    
-    torque_Maxwell_mean = vals[:, :, ind_Maxwell_mean]
-    torque_Maxwell_rs = vals[:, :, ind_Maxwell_rs]
-    
-    torque_tot += torque_Maxwell_mean + torque_Maxwell_rs
-    
-    max_sig = max(max_sig, np.std(torque_Maxwell_mean),\
-                  np.std(torque_Maxwell_rs))
+    ind_mag = lut[1250]
+    phi_force_mag = vals[:, :, ind_mag]       
+    max_sig = max(max_sig, np.std(phi_force_mag))
+    phi_force_tot += phi_force_mag
     
 if not user_specified_minmax: 
     my_min, my_max = -3*max_sig, 3*max_sig
 
 # Set up the actual figure from scratch
-fig_width_inches = 7 # TOTAL figure width, in inches (i.e., 8x11.5 paper with 1/2-inch
-                # margins)
-margin_inches = 1/8 # margin width in inches (for both x and y) and horizontally 
-            # in between figures
+fig_width_inches = 7 # TOTAL figure width, in inches
+    # (i.e., 8x11.5 paper with 1/2-inch margins)
+margin_inches = 1/8 # margin width in inches (for both x and y) and 
+    # horizontally in between figures
 margin_top_inches = 3/8 # wider top margin to accommodate subplot titles
 nplots = 4 + 2*magnetism
 ncol = 3 # put three plots per row
@@ -126,16 +124,18 @@ margin_top = margin_top_inches/fig_height_inches
 subplot_width = subplot_width_inches/fig_width_inches
 subplot_height = subplot_height_inches/fig_height_inches
 
-torques = [torque_rs, torque_mc, torque_visc, torque_tot]
-titles = [r'$\tau_{\rm{rs}}$', r'$\tau_{\rm{mc}}$', r'$\tau_{\rm{v}}$',\
-          r'$\tau_{\rm{tot}}$']
-units = r'$\rm{g}\ \rm{cm}^{-1}\ \rm{s}^{-2}$'
+phi_forces = [phi_force_adv, phi_force_cor, phi_force_prs,\
+                phi_force_visc, phi_force_tot]
+
+titles =\
+[r'$(\mathbf{f}_{\rm{adv}})_\phi$', r'$(\mathbf{f}_{\rm{cor}})_\phi$',\
+ r'$(\mathbf{f}_{\rm{p}})_\phi$', r'$(\mathbf{f}_{\rm{v}})_\phi$',\
+ r'$(\mathbf{f}_{\rm{tot}})_\phi$']
+units = r'$\rm{g}\ \rm{cm}^{-2}\ \rm{s}^{-2}$'
 
 if magnetism:
-    torques.insert(3, torque_Maxwell_mean)
-    torques.insert(3, torque_Maxwell_rs)
-    titles.insert(3, r'$\tau_{\rm{mm}}$')
-    titles.insert(3, r'$\tau_{\rm{ms}}$')
+    phi_forces.insert(4, phi_force_mag)
+    titles.insert(4, r'$(\mathbf{f}_{\rm{mag}})_\phi$')
 
 # Generate the actual figure of the correct dimensions
 fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
@@ -144,16 +144,16 @@ for iplot in range(nplots):
     ax_left = margin_x + (iplot%ncol)*(subplot_width + margin_x)
     ax_bottom = 1 - ((iplot//ncol) + 1)*(subplot_height + margin_top)
     ax = fig.add_axes((ax_left, ax_bottom, subplot_width, subplot_height))
-    plot_azav (fig, ax, torques[iplot], rr, cost, sint, plotcontours=False, 
+    plot_azav (fig, ax, phi_forces[iplot], rr, cost, sint, plotcontours=False, 
            units = units,
            boundstype = my_boundstype, caller_minmax = (my_min, my_max),\
            norm=MidpointNormalize(0))
 
     ax.set_title(titles[iplot], verticalalignment='top', **csfont)
 
-savefile = plotdir + dirname_stripped + '_torque_' + str(iter1).zfill(8) +\
-    '_' + str(iter2).zfill(8) + '.png'
+savefile = plotdir + dirname_stripped + '_phi_forces_' +\
+    str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
 
-print ('Saving torques at ' + savefile + ' ...')
+print ('Saving phi_forces at ' + savefile + ' ...')
 plt.savefig(savefile, dpi=300)
 plt.show()
