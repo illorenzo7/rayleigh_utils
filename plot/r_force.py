@@ -1,7 +1,7 @@
 # Author: Loren Matilsky
 # Created: 01/28/2019
 # This script plots the radial forces in the meridional plane (advection, 
-# Coriolis, pressure, viscosity, and JxB (if present))
+# Coriolis, pressure, buoyancy, viscosity, and JxB (if present))
 # ...for the Rayleigh run directory indicated by [dirname]. 
 # To use an AZ_Avgs file
 # different than the one assocsiated with the longest averaging range, use
@@ -71,17 +71,20 @@ lut = di['lut']
 ind_adv = lut[1201] # gets minus sign
 ind_cor = lut[1219]
 ind_prs = lut[1237]
+ind_buoy = lut[1216]
 ind_visc = lut[1228]
 
 r_force_adv = -vals[:, :, ind_adv]
 r_force_cor = vals[:, :, ind_cor]
 r_force_prs = vals[:, :, ind_prs]
+r_force_buoy = vals[:, :, ind_buoy]
 r_force_visc = vals[:, :, ind_visc]
 r_force_tot = r_force_adv + r_force_cor + r_force_prs +\
-    r_force_visc
+    r_force_buoy + r_force_visc 
 
 max_sig = max(np.std(r_force_adv), np.std(r_force_cor),\
-              np.std(r_force_prs), np.std(r_force_visc))
+              np.std(r_force_prs), np.std(r_force_buoy),\
+              np.std(r_force_visc))
 
 if magnetism:
     ind_mag = lut[1248]
@@ -98,7 +101,7 @@ fig_width_inches = 7 # TOTAL figure width, in inches
 margin_inches = 1/8 # margin width in inches (for both x and y) and 
     # horizontally in between figures
 margin_top_inches = 3/8 # wider top margin to accommodate subplot titles
-nplots = 5 + magnetism
+nplots = 6 + magnetism
 ncol = 3 # put three plots per row
 nrow = np.int(np.ceil(nplots/3))
 
@@ -124,17 +127,17 @@ subplot_width = subplot_width_inches/fig_width_inches
 subplot_height = subplot_height_inches/fig_height_inches
 
 r_forces = [r_force_adv, r_force_cor, r_force_prs,\
-                r_force_visc, r_force_tot]
+                r_force_buoy, r_force_visc, r_force_tot]
 
 titles =\
 [r'$(\mathbf{f}_{\rm{adv}})_r$', r'$(\mathbf{f}_{\rm{cor}})_r$',\
- r'$(\mathbf{f}_{\rm{p}})_r$', r'$(\mathbf{f}_{\rm{v}})_r$',\
- r'$(\mathbf{f}_{\rm{tot}})_r$']
+ r'$(\mathbf{f}_{\rm{p}})_r$', r'$(\mathbf{f}_{\rm{buoy}})_r$',\
+ r'$(\mathbf{f}_{\rm{v}})_r$', r'$(\mathbf{f}_{\rm{tot}})_r$']
 units = r'$\rm{g}\ \rm{cm}^{-2}\ \rm{s}^{-2}$'
 
 if magnetism:
-    r_forces.insert(4, r_force_mag)
-    titles.insert(4, r'$(\mathbf{f}_{\rm{mag}})_r$')
+    r_forces.insert(5, r_force_mag)
+    titles.insert(5, r'$(\mathbf{f}_{\rm{mag}})_r$')
 
 # Generate the actual figure of the correct dimensions
 fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
