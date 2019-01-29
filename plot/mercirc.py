@@ -12,12 +12,14 @@ import numpy as np
 import matplotlib as mpl
 mpl.use('TkAgg')
 import matplotlib.pyplot as plt
+plt.rcParams['mathtext.fontset'] = 'dejavuserif'
+csfont = {'fontname':'Times New Roman'}
 from binormalized_cbar import MidpointNormalize
 import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['co'])
 from azavg_util import plot_azav, streamfunction
-from common import get_widest_range_file, strip_dirname, get_iters_from_file
+from common import get_widest_range_file, strip_dirname
 from rayleigh_diagnostics import ReferenceState
 
 # Get directory name and stripped_dirname for plotting purposes
@@ -89,30 +91,50 @@ if (not user_specified_minmax):
     my_min, my_max = -maxabs, maxabs
 
 # Create plot
-fig_width, fig_height = 4, 7
-margin_inches = .5
-aspect = fig_height/fig_width
-margin_x = margin_inches/fig_width
-margin_y = margin_inches/fig_height
+subplot_width_inches = 2.5
+subplot_height_inches = 5.
+margin_inches = 1/8
+margin_top_inches = 5/8 # larger top margin to make room for titles
 
-fig, ax = plt.subplots(figsize=(fig_width, fig_height))
-plt.subplots_adjust(left=margin_x, right=1-margin_x, bottom=margin_y, top=1-margin_y)
-plot_width, plot_height = 1 - 2*margin_x, 1 - 2*margin_y
+fig_width_inches = subplot_width_inches + 2*margin_inches
+fig_height_inches = subplot_height_inches + margin_top_inches + margin_inches
 
-plot_azav (fig, ax, rhovm, rr, cost, sint, units = r'$\rm{g}\ \rm{cm}^{-2}\ \rm{s}^{-1}$',
-        plotcontours=False, norm=MidpointNormalize(0),\
-        boundstype=my_boundstype, caller_minmax = (my_min, my_max))
+fig_aspect = fig_height_inches/fig_width_inches
+margin_x = margin_inches/fig_width_inches
+margin_y = margin_inches/fig_height_inches
+margin_top = margin_top_inches/fig_height_inches
+subplot_width = subplot_width_inches/fig_width_inches
+subplot_height = subplot_height_inches/fig_height_inches
 
-lilbit = 0.02
+fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
+ax = fig.add_axes((margin_x, margin_y, subplot_width, subplot_height))
+
+# Plot mass flux
+plot_azav (fig, ax, rhovm, rr, cost, sint,\
+    units = r'$\rm{g}\ \rm{cm}^{-2}\ \rm{s}^{-1}$',
+    plotcontours=False, norm=MidpointNormalize(0),\
+    boundstype=my_boundstype, caller_minmax = (my_min, my_max))
+
+# Plot streamfunction contours
+lilbit = 0.01
 maxabs = np.max(np.abs(psi))
-plot_azav (fig, ax, psi, rr, cost, sint, plotfield=False,
-        norm=MidpointNormalize(0), levels=(-maxabs/2, -maxabs/4,  -lilbit*maxabs, 0,\
-                lilbit*maxabs, maxabs/4, maxabs/2),\
-        boundstype=my_boundstype, caller_minmax = (my_min, my_max))
+plot_azav (fig, ax, psi, rr, cost, sint, plotfield=False,\
+    norm=MidpointNormalize(0),\
+    levels=(-maxabs/2, -maxabs/4,  -lilbit*maxabs, 0,\
+            lilbit*maxabs, maxabs/4, maxabs/2),\
+    boundstype=my_boundstype, caller_minmax = (my_min, my_max))
 
 # Make title
-plt.title(dirname_stripped + '\n ' +\
-          str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8))
+fsize = 10
+fig.text(margin_x, 1 - 1/8*margin_top,\
+         r'$|\langle\overline{\rho}\mathbf{v}_m\rangle|$',\
+         ha='left', va='top', fontsize=fsize, **csfont)
+fig.text(margin_x, 1 - 3/8*margin_top, dirname_stripped,\
+         ha='left', va='top', fontsize=fsize, **csfont)
+fig.text(margin_x, 1 - 5/8*margin_top,\
+         str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8),\
+         ha='left', va='top', fontsize=fsize, **csfont)
+
 savefile = plotdir + dirname_stripped + '_mercirc_' + str(iter1).zfill(8) +\
     '_' + str(iter2).zfill(8) + '.png'
 print ('Saving plot at %s ...' %savefile)

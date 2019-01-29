@@ -11,6 +11,8 @@ import numpy as np
 import matplotlib as mpl
 mpl.use('TkAgg')
 import matplotlib.pyplot as plt
+plt.rcParams['mathtext.fontset'] = 'dejavuserif'
+csfont = {'fontname':'Times New Roman'}
 from binormalized_cbar import MidpointNormalize
 import sys, os
 sys.path.append(os.environ['rapp'])
@@ -72,8 +74,10 @@ Om = vp_av/xx
 diffrot = Om*1.0e9/2/np.pi # rad/s --> nHz
 
 # Maximum differential rotation over whole meridional plane
-it15, it75 = np.argmin(np.abs(tt_lat - 15)), np.argmin(np.abs(tt_lat - 75)) # ignore problematic poles 
-global_min, global_max = np.min(diffrot[it15:it75, :]), np.max(diffrot[it15:it75, :])
+it15, it75 = np.argmin(np.abs(tt_lat - 15)), np.argmin(np.abs(tt_lat - 75))
+     # ignore problematic poles 
+global_min, global_max = np.min(diffrot[it15:it75, :]),\
+     np.max(diffrot[it15:it75, :])
 Delta_Om = global_max - global_min
 maxabs = np.max((np.abs(global_min), np.abs(global_max)))
 
@@ -81,25 +85,42 @@ if (not user_specified_minmax):
     my_min, my_max = -maxabs, maxabs
 
 # Create plot
-fig_width, fig_height = 4, 7
-margin_inches = .5
-aspect = fig_height/fig_width
-margin_x = margin_inches/fig_width
-margin_y = margin_inches/fig_height
+subplot_width_inches = 2.5
+subplot_height_inches = 5.
+margin_inches = 1/8
+margin_top_inches = 1/2 # larger top margin to make room for titles
 
-fig, ax = plt.subplots(figsize=(fig_width, fig_height))
-plt.subplots_adjust(left=margin_x, right=1-margin_x, bottom=margin_y, top=1-margin_y)
-plot_width, plot_height = 1 - 2*margin_x, 1 - 2*margin_y
+fig_width_inches = subplot_width_inches + 2*margin_inches
+fig_height_inches = subplot_height_inches + margin_top_inches + margin_inches
+
+fig_aspect = fig_height_inches/fig_width_inches
+margin_x = margin_inches/fig_width_inches
+margin_y = margin_inches/fig_height_inches
+margin_top = margin_top_inches/fig_height_inches
+subplot_width = subplot_width_inches/fig_width_inches
+subplot_height = subplot_height_inches/fig_height_inches
+
+fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
+ax = fig.add_axes((margin_x, margin_y, subplot_width, subplot_height))
 
 plot_azav (fig, ax, diffrot, rr, cost, sint, units = 'nHz', nlevs=my_nlevs,
         norm=MidpointNormalize(0),\
         boundstype=my_boundstype, caller_minmax = (my_min, my_max))
 
-# Make title
-plt.title(dirname_stripped + '\n ' +\
-          str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8))
-plt.text(1 - 2*margin_x, 1 - 2*margin_y,  r'$\Delta\Omega_{\rm{tot}} = %.1f$' %Delta_Om)
-plt.text(1 - 2*margin_x, 1 - 3*margin_y, 'nlevs = %i' %my_nlevs)
+# Make title + label diff. rot. contrast and no. contours
+fsize = 8
+fig.text(margin_x, 1 - 1/8*margin_top, r'$\Omega - \Omega_0$',\
+         ha='left', va='top', fontsize=fsize, **csfont)
+fig.text(margin_x, 1 - 3/8*margin_top, dirname_stripped,\
+         ha='left', va='top', fontsize=fsize, **csfont)
+fig.text(margin_x, 1 - 5/8*margin_top,\
+         str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8),\
+         ha='left', va='top', fontsize=fsize, **csfont)
+fig.text(1 - margin_x, 1 - 0.2*margin_top,\
+         r'$\Delta\Omega_{\rm{tot}} = %.1f$' %Delta_Om,\
+         ha='right', va='top', fontsize=fsize, **csfont)
+fig.text(1 - margin_x, 1 - 0.6*margin_top, 'nlevs = %i' %my_nlevs,\
+         ha='right', va='top', fontsize=fsize, **csfont)
 savefile = plotdir + dirname_stripped + '_diffrot_' + str(iter1).zfill(8) +\
     '_' + str(iter2).zfill(8) + '.png'
 print ('Saving plot at %s ...' %savefile)

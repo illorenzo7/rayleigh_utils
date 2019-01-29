@@ -1,15 +1,13 @@
 ###########################################################################
-#  This file contains utilities useful for plotting the data from azimuthal
+# This file contains utilities useful for plotting the data from azimuthal
 # averages. (Files in the directory AZ_Avgs). 
 # Written by Nick Featherstone
-# Modified by Loren Matilsky, 03/09/2018
-# Last modified: 11/15/2018
+# First modified by Loren Matilsky, 03/09/2018
 
 import numpy as np
 import matplotlib as mpl
 mpl.use('TkAgg')
 import matplotlib.pyplot as plt
-#from matplotlib import ticker, font_manager
 
 plt.rcParams['contour.negative_linestyle'] = 'solid'
 
@@ -29,10 +27,10 @@ def get_lims(arr,boundstype='minmax', caller_minmax=(-10.,10.)):
     return min_val, max_val
 
 def plot_azav(fig, axis, field, radius, costheta, sintheta,
-        mycmap=plt.cm.RdYlBu_r, units = r'$\frac{m^2}{s^2}$', 
-        boundstype = 'minmax', nlevs = 10, caller_minmax=(-10.,10.), 
+        mycmap=plt.cm.RdYlBu_r, units = r'$\rm{m}\ \rm{s}^{-1}$', 
+        boundstype = 'minmax', nlevs = 10, caller_minmax=None, 
         plotcontours=True, plotfield=True,
-        norm=None, levels=None, fsize=10, plot_cbar=True):
+        norm=None, levels=None):
     '''Takes a figure with a subplot (axis) of aspect ratio 1x2 and adds
     a plot in the meridional plane to the axis, with colorbar in the "cavity"
     of the meridional plane'''
@@ -42,17 +40,15 @@ def plot_azav(fig, axis, field, radius, costheta, sintheta,
     elif (boundstype == 'manual'):
         mini, maxi = caller_minmax
 
-    # Get an exponent to factor out of large numbers for scientific notation
-    # colorbars
+    # Get the exponent to use for scientific notation
     extent = np.max((np.abs(mini), np.abs(maxi)))
     exp = int(np.floor(np.log10(extent)))
     divisor = 10**exp
     
-    # Normalize field by divisor to get it into "reasonable" units
-    if (exp > 2):
-        field /= divisor
-        mini /= divisor
-        maxi /= divisor
+    # Normalize field by divisor
+    field /= divisor
+    mini /= divisor
+    maxi /= divisor
    
     # Get the position of the axes on the figure
     pos = axis.get_position().get_points()
@@ -66,67 +62,55 @@ def plot_azav(fig, axis, field, radius, costheta, sintheta,
     # The colorbar height is set by making sure it "fits" in the cavity
     chi = np.min(radius)/np.max(radius)
     cavity_height = axis_height*chi
-    cbaxis_center_x = axis_left + 0.1*axis_width
+    cbaxis_center_x = axis_left + 0.3*axis_width
     cbaxis_center_y = axis_bottom + axis_height/2
     cbaxis_aspect = 10
-    cbaxis_height = 0.7*cavity_height
+    cbaxis_height = 0.5*cavity_height
     cbaxis_width = cbaxis_height/cbaxis_aspect / axis_aspect
     
     cbaxis_left = cbaxis_center_x - cbaxis_width/2
     cbaxis_bottom = cbaxis_center_y - cbaxis_height/2
     
     #Modified version of Antoine Strukarek's routine
-    r = radius/np.max(radius)*0.95 # scale the the outer radius to lie
-            # ALMOST exactly on the edge of the axis domain (not exactly,
-            # since then the plt.axis('off') command will cut off the curvy
-            # bounding black line))
-    n_r=len(r)
-    n_t=len(costheta)
-    rtmp = r.reshape(1,n_r)
-    cthtmp = costheta.reshape(n_t,1)
-    sthtmp = sintheta.reshape(n_t,1)
-    xr = np.dot(cthtmp,rtmp)
-    yr = np.dot(sthtmp,rtmp)
+    r = radius/np.max(radius)
+    n_r = len(r)
+    n_t = len(costheta)
+    rtmp = r.reshape(1, n_r)
+    cthtmp = costheta.reshape(n_t, 1)
+    sthtmp = sintheta.reshape(n_t, 1)
+    xr = np.dot(cthtmp, rtmp)
+    yr = np.dot(sthtmp, rtmp)
+    
     # Specify linewidths to be used in the meridional plane, one for the 
     # boundary (lw) and one for the contours (contour_lw)
     lw = 1
     contour_lw = .2
-#    img = plt.pcolormesh(yr,xr,field, vmin=mini, vmax=maxi,\
-#            cmap=mycmap,norm=MidpointNormalize(midpoint=0.))
+    
     if (plotfield):
-        
         plt.sca(axis)
         plt.pcolormesh(yr,xr,field, vmin=mini, vmax=maxi,\
                 cmap=mycmap, norm=norm)
      
-        if plot_cbar:
-            cbaxes = fig.add_axes([cbaxis_left, cbaxis_bottom,\
-                           cbaxis_width, cbaxis_height])
-            cbar = plt.colorbar(cax=cbaxes)
+        cbaxes = fig.add_axes([cbaxis_left, cbaxis_bottom,\
+                       cbaxis_width, cbaxis_height])
+        cbar = plt.colorbar(cax=cbaxes)
 
-            if exp > 2:
-                cbaxes.set_title((r'$\times10^{%i}\ $' %exp) + units,\
-                        fontsize=fsize,\
-                             pad=18, horizontalalignment='center')
-            else:
-#                cbaxes.set_title(units, fontsize=fsize,\
-#                             pad=18, horizontalalignment='center')
-                fig.text(0.7*cbaxis_left, cbaxis_center_y, units, rotation=90)
+        fsize = 8 # fontsize for colorbar ticks and labels
+        cbaxes.tick_params(labelsize=fsize)
+#        cbar.set_label(units, rotation=270, labelpad=25, fontsize=18)
+        cbar.ax.tick_params(labelsize=fsize)   #font size for the ticks
+        ticks = np.array([mini, 0, maxi])
+        ticklabels = []
+        for i in range(len(ticks)):
+            ticklabels.append(str(round(ticks[i],1)))
+        ticks = np.array(ticks)
+        cbar.set_ticks(ticks)
+        cbar.set_ticklabels(ticklabels)
 
-            cbaxes.tick_params(labelsize=fsize)
-    #        cbar.set_label(units, rotation=270, labelpad=25, fontsize=18)
-            cbar.ax.tick_params(labelsize=fsize)   #font size for the ticks
-            ticks = np.array([mini, 0, maxi])
-            ticklabels = []
-            for i in range(len(ticks)):
-                ticklabels.append(str(round(ticks[i],1)))
-            ticks = np.array(ticks)
-            cbar.set_ticks(ticks)
-            cbar.set_ticklabels(ticklabels)
-
-            t = cbar.ax.xaxis.label
-            t.set_fontsize(fsize)  # font size for the axis title
-
+        # Put the units and exponent to left of colorbar
+        cbar_label = (r'$10^{%i}\ $' %exp) + units
+        fig.text(cbaxis_left - 0.3*cbaxis_width, cbaxis_center_y, cbar_label,\
+            ha='right', va='center', rotation=90, fontsize=fsize)
 
     # Plot the boundary of the meridional plane
     plt.sca(axis)
@@ -136,15 +120,10 @@ def plot_azav(fig, axis, field, radius, costheta, sintheta,
     plt.plot([0,0], [-r[n_r-1],-r[0]], 'k', linewidth=lw)
 
     # Set axis ranges to be just outside the boundary lines
-    xmin, xmax = axis.get_xlim(); delta_x = xmax - xmin
-    ymin, ymax = axis.get_ylim(); delta_y = ymax - ymin
-    
     lilbit = 0.01
-    axis.set_xlim((xmin - lilbit*delta_x, xmax + lilbit*delta_x))
-    axis.set_ylim((ymin - lilbit*delta_y, ymax + lilbit*delta_y))
-    plt.axis('off')
-
-    
+    axis.set_xlim((-lilbit, 1 + lilbit))
+    axis.set_ylim((-1 - lilbit, 1 + lilbit))
+    plt.axis('off') 
 
     if (plotcontours):
         if levels is None:
