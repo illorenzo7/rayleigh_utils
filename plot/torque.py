@@ -62,7 +62,7 @@ except:
 # Get the torques:
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
 print ('Getting torques from ' + datadir + AZ_Avgs_file + ' ...')
-di = np.load(datadir + AZ_Avgs_file).item()
+di = np.load(datadir + AZ_Avgs_file, encoding='latin1').item()
 
 iter1, iter2 = di['iter1'], di['iter2']
 vals = di['vals']

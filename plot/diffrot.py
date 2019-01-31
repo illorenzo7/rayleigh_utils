@@ -53,7 +53,7 @@ for i in range(nargs):
         
 # Read in AZ_Avgs data
 print ('Getting data from ' + datadir + AZ_Avgs_file + ' ...')
-di = np.load(datadir + AZ_Avgs_file).item()
+di = np.load(datadir + AZ_Avgs_file, encoding='latin1').item()
 
 iter1, iter2 = di['iter1'], di['iter2']
 vals = di['vals']

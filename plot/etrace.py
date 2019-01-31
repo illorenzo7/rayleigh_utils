@@ -54,7 +54,7 @@ else:
 
 # Read in the KE data (dictionary form)
 print ('Reading in KE components data from ' + datadir + trace_G_Avgs_file + ' ...')
-di = np.load(datadir + trace_G_Avgs_file).item()
+di = np.load(datadir + trace_G_Avgs_file, encoding='latin1').item()
 vals = di['vals']
 lut = di['lut']
 times = di['times']

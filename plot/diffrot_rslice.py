@@ -56,7 +56,7 @@ theta_vals = colats*np.pi/180
 
 # Read in vavg data
 print ('Reading AZ_Avgs data from ' + datadir + AZ_Avgs_file + ' ...')
-di = np.load(datadir + AZ_Avgs_file).item()
+di = np.load(datadir + AZ_Avgs_file, encoding='latin1').item()
 vals = di['vals']
 lut = di['lut']
 iter1, iter2 = di['iter1'], di['iter2']

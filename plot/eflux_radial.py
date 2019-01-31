@@ -54,7 +54,7 @@ lw = 1. # regular lines
 #lw = 1.5 # Bit thicker lines
 
 # Read in the flux data
-di = np.load(datadir + Shell_Avgs_file).item()
+di = np.load(datadir + Shell_Avgs_file, encoding='latin1').item()
 vals = di['vals']
 lut = di['lut']
 iter1, iter2 = di['iter1'], di['iter2']
