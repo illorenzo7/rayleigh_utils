@@ -16,7 +16,7 @@ import matplotlib as mpl
 mpl.use('TkAgg')
 import matplotlib.pyplot as plt
 plt.rcParams['mathtext.fontset'] = 'dejavuserif'
-csfont = {'fontname':'Times New Roman'}
+csfont = {'fontname':'DejaVu Serif'}
 import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['co'])
@@ -65,7 +65,7 @@ except:
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
 print ('Getting zonal energy fluxes from ' + datadir +\
        AZ_Avgs_file + ' ...')
-di = np.load(datadir + AZ_Avgs_file).item()
+di = np.load(datadir + AZ_Avgs_file, encoding='latin1').item()
 
 iter1, iter2 = di['iter1'], di['iter2']
 vals = di['vals']
@@ -76,21 +76,21 @@ ind_cond = lut[1472]
 ind_visc = lut[1937] # might get minus sign from error?
 ind_ke = lut[1925]
 
-efr_enth = vals[:, :, ind_enth]
-efr_cond = vals[:, :, ind_cond]
-efr_visc = vals[:, :, ind_visc]
-efr_ke = vals[:, :, ind_ke]
+efp_enth = vals[:, :, ind_enth]
+efp_cond = vals[:, :, ind_cond]
+efp_visc = vals[:, :, ind_visc]
+efp_ke = vals[:, :, ind_ke]
 
-efr_tot = efr_enth + efr_cond + efr_visc + efr_ke
+efp_tot = efp_enth + efp_cond + efp_visc + efp_ke
 
-max_sig = max(np.std(efr_enth), np.std(efr_cond), np.std(efr_visc),\
-              np.std(efr_ke))
+max_sig = max(np.std(efp_enth), np.std(efp_cond), np.std(efp_visc),\
+              np.std(efp_ke))
 
 if magnetism:
     ind_Poynt = lut[2003]
-    efr_Poynt = vals[:, :, ind_Poynt]       
+    efp_Poynt = vals[:, :, ind_Poynt]       
     max_sig = max(max_sig, np.std(efr_Poynt))
-    efr_tot += efr_Poynt
+    efp_tot += efp_Poynt
     
 if not user_specified_minmax: 
     my_min, my_max = -3*max_sig, 3*max_sig
@@ -100,7 +100,8 @@ fig_width_inches = 7 # TOTAL figure width, in inches
     # (i.e., 8x11.5 paper with 1/2-inch margins)
 margin_inches = 1/8 # margin width in inches (for both x and y) and 
     # horizontally in between figures
-margin_top_inches = 3/8 # wider top margin to accommodate subplot titles
+margin_top_inches = 2 # wider top margin to accommodate subplot titles AND metadata
+margin_subplot_top_inches = 1 # margin to accommodate just subplot titles
 nplots = 5 + magnetism
 ncol = 3 # put three plots per row
 nrow = np.int(np.ceil(nplots/3))
@@ -110,9 +111,9 @@ subplot_width_inches = (fig_width_inches - (ncol + 1)*margin_inches)/ncol
     # with margins in between them and at the left and right.
 subplot_height_inches = 2*subplot_width_inches # Each subplot should have an
     # aspect ratio of y/x = 2/1 to accommodate meridional planes. 
-fig_height_inches = nrow*(subplot_height_inches + margin_top_inches) +\
-    margin_inches # Room for titles on each row and a regular margin on the 
-                  # bottom
+fig_height_inches = nrow*subplot_height_inches + margin_top_inches +\
+    (nrow - 1)*margin_subplot_top_inches + margin_inches 
+    # Room for titles on each row and a regular margin on the bottom
 fig_aspect = fig_height_inches/fig_width_inches
 
 # "Margin" in "figure units"; figure units extend from 0 to 1 in BOTH 
@@ -121,12 +122,13 @@ fig_aspect = fig_height_inches/fig_width_inches
 margin_x = margin_inches/fig_width_inches
 margin_y = margin_inches/fig_height_inches
 margin_top = margin_top_inches/fig_height_inches
+margin_subplot_top = margin_subplot_top_inches/fig_height_inches
 
 # Subplot dimensions in figure units
 subplot_width = subplot_width_inches/fig_width_inches
 subplot_height = subplot_height_inches/fig_height_inches
 
-efr_terms = [efr_enth, efr_cond, efr_visc, efr_ke, efr_tot]
+efp_terms = [efp_enth, efp_cond, efp_visc, efp_ke, efp_tot]
 
 titles = [r'$(\mathbf{\mathcal{F}}_{\rm{enth}})_\phi$',\
           r'$(\mathbf{\mathcal{F}}_{\rm{cond}})_\phi$',\
@@ -144,14 +146,25 @@ fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
 
 for iplot in range(nplots):
     ax_left = margin_x + (iplot%ncol)*(subplot_width + margin_x)
-    ax_bottom = 1 - ((iplot//ncol) + 1)*(subplot_height + margin_top)
+    ax_bottom = 1 - margin_top - subplot_height - \
+            (iplot//ncol)*(subplot_height + margin_subplot_top)
     ax = fig.add_axes((ax_left, ax_bottom, subplot_width, subplot_height))
-    plot_azav (fig, ax, efr_terms[iplot], rr, cost, sint, plotcontours=False, 
-           units = units,
+    plot_azav (fig, ax, efp_terms[iplot], rr, cost, sint,\
+           units = units,\
            boundstype = my_boundstype, caller_minmax = (my_min, my_max),\
            norm=MidpointNormalize(0))
 
-    ax.set_title(titles[iplot], verticalalignment='top', **csfont)
+    ax.set_title(titles[iplot], va='bottom', **csfont)
+
+# Put some metadata in upper left
+fsize = 12
+fig.text(margin_x, 1 - 0.1*margin_top, dirname_stripped,\
+         ha='left', va='top', fontsize=fsize, **csfont)
+fig.text(margin_x, 1 - 0.3*margin_top, 'Zonal energy flux (zonally averaged)',\
+         ha='left', va='top', fontsize=fsize, **csfont)
+fig.text(margin_x, 1 - 0.5*margin_top,\
+         str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8),\
+         ha='left', va='top', fontsize=fsize, **csfont)
 
 savefile = plotdir + dirname_stripped + '_eflux_zonal_merplane_' +\
     str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'

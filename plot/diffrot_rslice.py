@@ -12,6 +12,8 @@ import numpy as np
 import matplotlib as mpl
 mpl.use('TkAgg')
 import matplotlib.pyplot as plt
+plt.rcParams['mathtext.fontset'] = 'dejavuserif'
+csfont = {'fontname':'DejaVu Serif'}
 import sys, os
 from get_parameter import get_parameter
 from common import strip_dirname, get_widest_range_file, get_iters_from_file
@@ -111,11 +113,11 @@ buffer = difference*0.2 # "Guard" the yrange of the plot with whitespace
 
 # Label the axes
 if not user_specified_rnorm:
-    plt.xlabel(r'$r/R_\odot$',fontsize=12)
+    plt.xlabel(r'$r/R_\odot$',fontsize=12, **csfont)
 else:
-    plt.xlabel(r'r/(%.1e cm)' %user_supplied_rnorm, fontsize=12)
+    plt.xlabel(r'r/(%.1e cm)' %user_supplied_rnorm, fontsize=12, **csfont)
     
-plt.ylabel(r'$\Omega/2\pi \ \rm{(nHz)}$',fontsize=12)
+plt.ylabel(r'$\Omega/2\pi \ \rm{(nHz)}$',fontsize=12, **csfont)
 
 # Set the axis limits
 xmin, xmax = np.min(rr_n), np.max(rr_n)
@@ -129,7 +131,7 @@ yvals = np.linspace(ymin, ymax, 100)
 
 # Create a title    
 plt.title(dirname_stripped + '\n' + r'$\Omega(r,\theta),\ \rm{rslice},\ $' +\
-          str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8))
+          str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8), **csfont)
 plt.legend(title='latitude')
 
 # Get ticks everywhere

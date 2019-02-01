@@ -15,7 +15,7 @@ import matplotlib as mpl
 mpl.use('TkAgg')
 import matplotlib.pyplot as plt
 plt.rcParams['mathtext.fontset'] = 'dejavuserif'
-csfont = {'fontname':'Times New Roman'}
+csfont = {'fontname':'DejaVu Serif'}
 import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['co'])
@@ -51,31 +51,25 @@ for i in range(nargs):
     if (arg == '-show'):
         showplot = True
 
-# Get grid info
-rr,tt,cost,sint,rr_depth,ri,ro,d = np.load(datadir + 'grid_info.npy')
-nr, nt = len(rr), len(tt)
-
-# See if magnetism is "on"
-try:
-    magnetism = get_parameter(dirname, 'magnetism')
-except:
-    magnetism = False # if magnetism wasn't specified, it must be "off"
-
 # Get AZ_Avgs file
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
 Shell_Avgs_file = get_widest_range_file(datadir, 'Shell_Avgs') 
 
 print ('Getting zonally averaged thermo. vars from ' + datadir + AZ_Avgs_file + ' ...')
 print ('and the spherically averaged thermo. vars from ' + datadir + Shell_Avgs_file + ' ...')
-di = np.load(datadir + AZ_Avgs_file).item()
-di_sph = np.load(datadir + Shell_Avgs_file).item()
+di = np.load(datadir + AZ_Avgs_file, encoding='latin1').item()
+di_sph = np.load(datadir + Shell_Avgs_file, encoding='latin1').item()
 
 iter1, iter2 = di['iter1'], di['iter2']
 vals = di['vals']
 vals_sph = di_sph['vals']
 lut = di['lut']
 lut_sph = di_sph['lut']
- 
+
+# Get grid info
+rr, tt, cost, sint = di['rr'], di['tt'], di['cost'], di['sint'] 
+nr, nt = di['nr'], di['nt']
+
 # Compute the thermodynamic variables
 ref = ReferenceState(dirname + '/reference', '')
 ref_rho = (ref.density).reshape((1, nr))
@@ -102,28 +96,22 @@ rho_az = ref_rho*(prs_az/ref_prs + temp_az/ref_temp)
 entropy_sph = (vals_sph[:, lut_sph[501]]).reshape((1, nr))
 prs_sph = (vals_sph[:, lut_sph[502]]).reshape((1, nr))
 temp_sph = ref_temp*(prs_sph/ref_prs/(poly_n + 1.) + entropy_sph/prs_spec_heat)
-rho_sph = ref_rho*(prs_az/ref_prs + temp_az/ref_temp)
+rho_sph = ref_rho*(prs_sph/ref_prs + temp_sph/ref_temp)
 
-
-max_sig = max(np.std(efr_enth), np.std(efr_cond), np.std(efr_heat),\
-        np.std(efr_visc), np.std(efr_ke))
-
-if magnetism:
-    ind_Poynt = lut[2001]
-    efr_Poynt = vals[:, :, ind_Poynt]       
-    max_sig = max(max_sig, np.std(efr_Poynt))
-    efr_tot += efr_Poynt
-    
-if not user_specified_minmax: 
-    my_min, my_max = -3*max_sig, 3*max_sig
+# Now subtract the spherical mean from the zonal mean
+entropy_fluc = entropy_az - entropy_sph
+prs_fluc = prs_az - prs_sph
+temp_fluc = temp_az - temp_sph
+rho_fluc = rho_az - rho_sph
 
 # Set up the actual figure from scratch
 fig_width_inches = 7 # TOTAL figure width, in inches
     # (i.e., 8x11.5 paper with 1/2-inch margins)
 margin_inches = 1/8 # margin width in inches (for both x and y) and 
     # horizontally in between figures
-margin_top_inches = 3/8 # wider top margin to accommodate subplot titles
-nplots = 8 + magnetism
+margin_top_inches = 2 # wider top margin to accommodate subplot titles AND metadata
+margin_subplot_top_inches = 1/2 # margin to accommodate just subplot titles
+nplots = 4
 ncol = 3 # put three plots per row
 nrow = np.int(np.ceil(nplots/3))
 
@@ -132,9 +120,9 @@ subplot_width_inches = (fig_width_inches - (ncol + 1)*margin_inches)/ncol
     # with margins in between them and at the left and right.
 subplot_height_inches = 2*subplot_width_inches # Each subplot should have an
     # aspect ratio of y/x = 2/1 to accommodate meridional planes. 
-fig_height_inches = nrow*(subplot_height_inches + margin_top_inches) +\
-    margin_inches # Room for titles on each row and a regular margin on the 
-                  # bottom
+fig_height_inches = nrow*subplot_height_inches + margin_top_inches +\
+    (nrow - 1)*margin_subplot_top_inches + margin_inches 
+    # Room for titles on each row and a regular margin on the bottom
 fig_aspect = fig_height_inches/fig_width_inches
 
 # "Margin" in "figure units"; figure units extend from 0 to 1 in BOTH 
@@ -143,46 +131,47 @@ fig_aspect = fig_height_inches/fig_width_inches
 margin_x = margin_inches/fig_width_inches
 margin_y = margin_inches/fig_height_inches
 margin_top = margin_top_inches/fig_height_inches
+margin_subplot_top = margin_subplot_top_inches/fig_height_inches
 
 # Subplot dimensions in figure units
 subplot_width = subplot_width_inches/fig_width_inches
 subplot_height = subplot_height_inches/fig_height_inches
 
-efr_terms = [efr_enth_mean, efr_enth_fluc, efr_enth, efr_cond,\
-        efr_heat, efr_visc, efr_ke, efr_tot]
+thermo_terms = [entropy_fluc, prs_fluc, temp_fluc, rho_fluc]
 
-titles = [r'$(\overline{\mathbf{\mathcal{F}}}_{\rm{enth}})_r$',\
-          r'$(\mathbf{\mathcal{F}}^\prime_{\rm{enth}})_r$',\
-          r'$(\mathbf{\mathcal{F}}_{\rm{enth}})_r$',\
-          r'$(\mathbf{\mathcal{F}}_{\rm{cond}})_r$',\
-          r'$(\mathbf{\mathcal{F}}_{\rm{heat}})_r$',\
-          r'$(\mathbf{\mathcal{F}}_{\rm{v}})_r$',\
-          r'$(\mathbf{\mathcal{F}}_{\rm{KE}})_r$',
-          r'$(\mathbf{\mathcal{F}}_{\rm{tot}})_r$']
-units = r'$\rm{g}\ \rm{s}^{-3}$'
-
-if magnetism:
-    efr_terms.insert(7, efr_Poynt)
-    titles.insert(7, r'$(\mathbf{\mathcal{F}}_{\rm{Poynt}})_r$')
+titles = [r'$\langle S\rangle_{\rm{az}} - \langle S \rangle_{\rm{sph}}$',\
+        r'$\langle P\rangle_{\rm{az}} - \langle P \rangle_{\rm{sph}}$',\
+        r'$\langle T\rangle_{\rm{az}} - \langle T \rangle_{\rm{sph}}$',\
+        r'$\langle \rho\rangle_{\rm{az}} - \langle \rho \rangle_{\rm{sph}}$']
+units = [r'$\rm{erg}\ \rm{K}^{-1}\ \rm{g}^{-1}$',\
+        r'$\rm{dyn}\ \rm{cm}^{-2}$', r'$\rm{K}$', r'$\rm{g}\ \rm{cm}^{-3}$']
 
 # Generate the actual figure of the correct dimensions
 fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
 
 for iplot in range(nplots):
     ax_left = margin_x + (iplot%ncol)*(subplot_width + margin_x)
-    ax_bottom = 1 - ((iplot//ncol) + 1)*(subplot_height + margin_top)
+    ax_bottom = 1 - margin_top - subplot_height - \
+            (iplot//ncol)*(subplot_height + margin_subplot_top)
     ax = fig.add_axes((ax_left, ax_bottom, subplot_width, subplot_height))
-    plot_azav (fig, ax, efr_terms[iplot], rr, cost, sint, plotcontours=False, 
-           units = units,
-           boundstype = my_boundstype, caller_minmax = (my_min, my_max),\
-           norm=MidpointNormalize(0))
+    plot_azav (fig, ax, thermo_terms[iplot], rr, cost, sint,
+           units = units[iplot], norm=MidpointNormalize(0))
+    ax.set_title(titles[iplot], va='bottom', **csfont)
 
-    ax.set_title(titles[iplot], verticalalignment='top', **csfont)
+# Put some metadata in upper left
+fsize = 12
+fig.text(margin_x, 1 - 0.1*margin_top, 'Thermodynamic state (zonally averaged)',\
+         ha='left', va='top', fontsize=fsize, **csfont)
+fig.text(margin_x, 1 - 0.3*margin_top, dirname_stripped,\
+         ha='left', va='top', fontsize=fsize, **csfont)
+fig.text(margin_x, 1 - 0.5*margin_top,\
+         str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8),\
+         ha='left', va='top', fontsize=fsize, **csfont)
 
-savefile = plotdir + dirname_stripped + '_eflux_radial_merplane-2_' +\
+savefile = plotdir + dirname_stripped + '_thermo_merplane_' +\
     str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
 
-print ('Saving radial energy fluxes (in the meridional plane) at ' +\
+print ('Saving thermo. vars (in the meridional plane) at ' +\
        savefile + ' ...')
 plt.savefig(savefile, dpi=300)
 plt.show()

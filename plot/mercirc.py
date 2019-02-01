@@ -13,7 +13,7 @@ import matplotlib as mpl
 mpl.use('TkAgg')
 import matplotlib.pyplot as plt
 plt.rcParams['mathtext.fontset'] = 'dejavuserif'
-csfont = {'fontname':'Times New Roman'}
+csfont = {'fontname':'DejaVu Serif'}
 from binormalized_cbar import MidpointNormalize
 import sys, os
 sys.path.append(os.environ['rapp'])
@@ -94,7 +94,7 @@ if (not user_specified_minmax):
 subplot_width_inches = 2.5
 subplot_height_inches = 5.
 margin_inches = 1/8
-margin_top_inches = 5/8 # larger top margin to make room for titles
+margin_top_inches = 1 # larger top margin to make room for titles
 
 fig_width_inches = subplot_width_inches + 2*margin_inches
 fig_height_inches = subplot_height_inches + margin_top_inches + margin_inches
@@ -125,11 +125,11 @@ plot_azav (fig, ax, psi, rr, cost, sint, plotfield=False,\
     boundstype=my_boundstype, caller_minmax = (my_min, my_max))
 
 # Make title
-fsize = 10
-fig.text(margin_x, 1 - 1/8*margin_top,\
-         r'$|\langle\overline{\rho}\mathbf{v}_m\rangle|$',\
+fsize = 12
+fig.text(margin_x, 1 - 1/8*margin_top, dirname_stripped,\
          ha='left', va='top', fontsize=fsize, **csfont)
-fig.text(margin_x, 1 - 3/8*margin_top, dirname_stripped,\
+fig.text(margin_x, 1 - 3/8*margin_top,\
+         r'$|\langle\overline{\rho}\mathbf{v}_m\rangle|$',\
          ha='left', va='top', fontsize=fsize, **csfont)
 fig.text(margin_x, 1 - 5/8*margin_top,\
          str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8),\

@@ -12,7 +12,7 @@ import matplotlib as mpl
 mpl.use('TkAgg')
 import matplotlib.pyplot as plt
 plt.rcParams['mathtext.fontset'] = 'dejavuserif'
-csfont = {'fontname':'Times New Roman'}
+csfont = {'fontname':'DejaVu Serif'}
 from binormalized_cbar import MidpointNormalize
 import sys, os
 sys.path.append(os.environ['rapp'])
@@ -88,7 +88,7 @@ if (not user_specified_minmax):
 subplot_width_inches = 2.5
 subplot_height_inches = 5.
 margin_inches = 1/8
-margin_top_inches = 1/2 # larger top margin to make room for titles
+margin_top_inches = 3/2 # larger top margin to make room for titles
 
 fig_width_inches = subplot_width_inches + 2*margin_inches
 fig_height_inches = subplot_height_inches + margin_top_inches + margin_inches
@@ -108,19 +108,20 @@ plot_azav (fig, ax, diffrot, rr, cost, sint, units = 'nHz', nlevs=my_nlevs,
         boundstype=my_boundstype, caller_minmax = (my_min, my_max))
 
 # Make title + label diff. rot. contrast and no. contours
-fsize = 8
-fig.text(margin_x, 1 - 1/8*margin_top, r'$\Omega - \Omega_0$',\
+fsize = 12
+fig.text(margin_x, 1 - 0.05*margin_top, dirname_stripped,\
          ha='left', va='top', fontsize=fsize, **csfont)
-fig.text(margin_x, 1 - 3/8*margin_top, dirname_stripped,\
+fig.text(margin_x, 1 - 0.2*margin_top, r'$\Omega - \Omega_0$',\
          ha='left', va='top', fontsize=fsize, **csfont)
-fig.text(margin_x, 1 - 5/8*margin_top,\
+fig.text(margin_x, 1 - 0.35*margin_top,\
          str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8),\
          ha='left', va='top', fontsize=fsize, **csfont)
-fig.text(1 - margin_x, 1 - 0.2*margin_top,\
-         r'$\Delta\Omega_{\rm{tot}} = %.1f$' %Delta_Om,\
-         ha='right', va='top', fontsize=fsize, **csfont)
-fig.text(1 - margin_x, 1 - 0.6*margin_top, 'nlevs = %i' %my_nlevs,\
-         ha='right', va='top', fontsize=fsize, **csfont)
+fig.text(margin_x, 1 - 0.5*margin_top,\
+         r'$\Delta\Omega_{\rm{tot}} = %.1f\ nHz$' %Delta_Om,\
+         ha='left', va='top', fontsize=fsize, **csfont)
+fig.text(margin_x, 1 - 0.65*margin_top,\
+         'nlevs = %i' %my_nlevs,
+         ha='left', va='top', fontsize=fsize, **csfont)
 savefile = plotdir + dirname_stripped + '_diffrot_' + str(iter1).zfill(8) +\
     '_' + str(iter2).zfill(8) + '.png'
 print ('Saving plot at %s ...' %savefile)

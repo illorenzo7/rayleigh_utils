@@ -8,6 +8,8 @@
 import matplotlib as mpl
 mpl.use('TkAgg')
 import matplotlib.pyplot as plt
+plt.rcParams['mathtext.fontset'] = 'dejavuserif'
+csfont = {'fontname':'DejaVu Serif'}
 import numpy as np
 import sys, os
 sys.path.append(os.environ['rapp'])
@@ -139,15 +141,15 @@ plt.ylim(ymin, ymax)
 
 # Label the axes
 if not user_specified_rnorm:
-    plt.xlabel(r'$r/R_\odot$',fontsize=12)
+    plt.xlabel(r'$r/R_\odot$',fontsize=12, **csfont)
 else:
-    plt.xlabel(r'r/(%.1e cm)' %user_supplied_rnorm, fontsize=12)
+    plt.xlabel(r'r/(%.1e cm)' %user_supplied_rnorm, fontsize=12, **csfont)
 plt.ylabel(r'$4\pi r^2\ \rm{\times \ (energy \ flux)}\ /\ L_\odot$',\
-        fontsize=12)
+        fontsize=12, **csfont)
 
 # Make title
 plt.title(dirname_stripped + '\n' + 'energy flux, ' +\
-          str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8))
+          str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8), **csfont)
 
 # Create a see-through legend
 plt.legend(loc='lower left', shadow=True, ncol=3, fontsize=10)
