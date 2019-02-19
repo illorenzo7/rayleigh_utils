@@ -41,7 +41,7 @@ for i in range(nargs):
     arg = args[i]
     if (arg == '-usefile'):
         Shell_Avgs_file = args[i+1]
-        Shell_Avgs_file = eflux_file.split('/')[-1]
+        Shell_Avgs_file = Shell_Avgs_file.split('/')[-1]
     elif (arg == '-minmax'):
         user_specified_minmax = True
         my_min, my_max = float(args[i+1]), float(args[i+2])
@@ -56,6 +56,7 @@ lw = 1. # regular lines
 #lw = 1.5 # Bit thicker lines
 
 # Read in the flux data
+print ('Getting radial fluxes from ' + datadir + Shell_Avgs_file + ' ...')
 di = np.load(datadir + Shell_Avgs_file, encoding='latin1').item()
 vals = di['vals']
 lut = di['lut']
