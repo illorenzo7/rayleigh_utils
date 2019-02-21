@@ -102,7 +102,7 @@ margin_inches = 1/8 # margin width in inches (for both x and y) and
     # horizontally in between figures
 margin_top_inches = 2 # wider top margin to accommodate subplot titles AND metadata
 margin_subplot_top_inches = 1 # margin to accommodate just subplot titles
-nplots = 4
+nplots = 4 + 2*magnetism
 ncol = 3 # put three plots per row
 nrow = np.int(np.ceil(nplots/3))
 
