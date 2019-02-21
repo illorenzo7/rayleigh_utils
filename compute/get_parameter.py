@@ -7,7 +7,7 @@ def get_parameter(dirname, parameter):
     n = len(lines)
     try:
         for i in range(n):
-            if (parameter in lines[i]):
+            if (parameter + ' =' in lines[i]):
                 line = lines[i]
         line = line[:] # test if line was assigned
     except:
