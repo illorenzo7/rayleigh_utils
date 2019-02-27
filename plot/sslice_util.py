@@ -1,6 +1,8 @@
 import matplotlib as mpl
 mpl.use('TkAgg')
 import matplotlib.pyplot as plt
+plt.rcParams['mathtext.fontset'] = 'dejavuserif'
+csfont = {'fontname':'DejaVu Serif'}
 import numpy as np
 import sys, os
 sys.path.append(os.environ['co'])
@@ -36,6 +38,7 @@ def deal_with_nans(x, y):
     
     for iy in range(ny):
         good = mask[:, iy].nonzero()[0]
+        # Break "good" into blocks that are individually contiguous       
         if good.size == 0:
             continue
         elif not found_min_iy:
@@ -44,16 +47,26 @@ def deal_with_nans(x, y):
         else:
             max_iy = iy
             found_max_iy = True
+        dgood = np.diff(good)
+        if True in (dgood > 1): # The viewable longitudes cross over 180
+            # so the bad values occur as a chunk in the middle of the array
+            len_notgood = dgood[np.where(dgood > 1)][0] - 1
+            start_notgood = np.where(dgood > 1)[0][0] + 1
+            x_dealt[start_notgood:start_notgood + len_notgood, iy] =\
+                x_dealt[start_notgood - 1, iy]
+            y_dealt[start_notgood:start_notgood + len_notgood, iy] =\
+                y_dealt[start_notgood - 1, iy]                
+        else:
+            x_dealt[good[-1]:, iy] = x_dealt[good[-1], iy]
+            y_dealt[good[-1]:, iy] = y_dealt[good[-1], iy]
 
-        x_dealt[good[-1]:, iy] = x_dealt[good[-1], iy]
-        y_dealt[good[-1]:, iy] = y_dealt[good[-1], iy]
-
-        x_dealt[:good[0], iy] = x_dealt[good[0], iy]
-        y_dealt[:good[0], iy] = y_dealt[good[0], iy]
+            x_dealt[:good[0], iy] = x_dealt[good[0], iy]
+            y_dealt[:good[0], iy] = y_dealt[good[0], iy]
     
-    for ix in range(nx):
-        x_dealt[ix, :min_iy] = x_dealt[ix, min_iy]
-        y_dealt[ix, :min_iy] = y_dealt[ix, min_iy]
+    if found_min_iy:
+        for ix in range(nx):
+            x_dealt[ix, :min_iy] = x_dealt[ix, min_iy]
+            y_dealt[ix, :min_iy] = y_dealt[ix, min_iy]
 
     if found_max_iy:
         for ix in range(nx):
@@ -64,9 +77,11 @@ def deal_with_nans(x, y):
     return x_dealt/radius, y_dealt/radius
 
 def rbounds(dirname):
-    rmin = get_parameter(dirname, 'rmin')
-    rmax = get_parameter(dirname, 'rmax')
-    if rmin == 100 or rmax == 100: # get_parameter must have failed
+    try:
+        rmin = get_parameter(dirname, 'rmin')
+        rmax = get_parameter(dirname, 'rmax')
+#    if rmin == 100 or rmax == 100: # get_parameter must have failed
+    except:
         dom_bounds = get_parameter(dirname, 'domain_bounds')
         rmin, rmax = dom_bounds[0], dom_bounds[-1]
     return rmin, rmax
@@ -83,13 +98,10 @@ def axis_range(ax): # gets subplot coordinates on a figure in "normalized"
     
 #def get_ortho_parallels(lat, pc, ortho):
     
-def plot_ortho(fig, ax, dirname, varname, idepth=0, minmax=None, iiter=-1):
+def plot_ortho(fig, ax, a, dirname, varname, idepth=0, minmax=None,\
+               clon=0, clat=20):
     
-    # Get shell slice desired by caller
-    radatadir = dirname + '/Shell_Slices/'
-    file_list, int_file_list, nfiles = get_file_lists(radatadir)
-    fname = file_list[iiter]
-    a = Shell_Slices(radatadir + fname, '')
+    fname = str(a.iters[0]).zfill(8)
     vals = get_sslice(a, varname, dirname=dirname)
     field = vals[:, :, idepth]
     
@@ -110,7 +122,7 @@ def plot_ortho(fig, ax, dirname, varname, idepth=0, minmax=None, iiter=-1):
     # This one will be from PlateCarree (simple longitude/latitude equally 
     # spaced) to orthographic
     pc = crs.PlateCarree()
-    ortho = crs.Orthographic()
+    ortho = crs.Orthographic(central_latitude=clat, central_longitude=clon)
     
     # Determinate if "field" is positive-definite (inherently)
     posdef = False
@@ -144,6 +156,13 @@ def plot_ortho(fig, ax, dirname, varname, idepth=0, minmax=None, iiter=-1):
             my_min, my_max = np.exp(minexp), np.exp(maxexp)
     else: # minmax IS none
             my_min, my_max = minmax
+            minexp = int(np.floor(np.log10(np.abs(my_min))))
+            maxexp = int(np.floor(np.log10(np.abs(my_max))))
+            maxabs_exp = max((minexp, maxexp))
+    
+            field /= 10**maxabs_exp
+            my_min /= 10**maxabs_exp
+            my_max /= 10**maxabs_exp              
             
     # Get the orthographic projection coordinates of llon/llat by converting
     # between PlateCarree (lat/lon) and orthographic
@@ -158,7 +177,6 @@ def plot_ortho(fig, ax, dirname, varname, idepth=0, minmax=None, iiter=-1):
     x_unshrunk, y_unshrunk = deal_with_nans(x_withnan, y_withnan)
     
     # May possibly need to shrink coordinates to give depth perception
-    shrink_distance = 1. - rloc/ro
     shrink_factor = rloc/ro
     d = 1. - ri/ro
     depth = (1. - rloc/ro)/d    
@@ -178,42 +196,47 @@ def plot_ortho(fig, ax, dirname, varname, idepth=0, minmax=None, iiter=-1):
         im = ax.pcolormesh(x,y, field, cmap='Greys',\
             norm=colors.LogNorm(vmin=my_min, vmax=my_max))
         
-    # draw parallels and meridians, evenly spaced by 30 degrees
+    # Draw parallels and meridians, evenly spaced by 30 degrees
+    default_lw = 0.5 # default linewidth bit thinner
     parallels = np.arange(-60, 90, 30.)
     meridians = np.arange(0., 360., 30.)
     
-#    for meridian in meridians:
-#        linex, liney = m(np.ones_like(lats)*meridian, lats)
-#
-#        # must cut off all points on the far side of the sphere!
-#        linex = linex[np.where(np.abs(linex) < 1.e20)]
-#        liney = liney[np.where(np.abs(liney) < 1.e20)]
-#
-#        linex = linex*shrink_factor + shrink_distance
-#        liney = liney*shrink_factor + shrink_distance
-#
-#        m.plot(linex, liney, color='k', linewidth=.5)
-#        
-#    for parallel in parallels:
-#        linex, liney = m(lons, np.ones_like(lons)*parallel)
-#
-#        # must cut off all points on the far side of the sphere!
-#        linex = linex[np.where(np.abs(linex) < 1.e20)]
-#        liney = liney[np.where(np.abs(liney) < 1.e20)]
-#
-#        linex = linex*shrink_factor + shrink_distance
-#        liney = liney*shrink_factor + shrink_distance
-#
-#        m.plot(linex, liney, color='k', linewidth=.5)        
+    npoints = 100
+    for meridian in meridians:
+        if meridian == 0.: 
+            lw = 1.3 # make central longitude thicker
+        else:
+            lw = default_lw
+            
+        lonvals = meridian + np.zeros(npoints)
+        latvals = np.linspace(-90, 90, npoints)
+        linex_withnans, liney_withnans = np.zeros(npoints), np.zeros(npoints)
+        for i in range(npoints):
+            linex_withnans[i], liney_withnans[i] =\
+                ortho.transform_point(lonvals[i], latvals[i], pc)
+        linex, liney = deal_with_nans(linex_withnans.reshape((npoints, 1)),\
+                                      liney_withnans.reshape((npoints, 1)))
+        linex = linex[:, 0]*shrink_factor
+        liney = liney[:, 0]*shrink_factor
+        ax.plot(linex, liney, 'k', linewidth=lw)
     
-    # Now adjust axes slightly to get rid of whitespace
-    
-#    xmin, xmax = ax.get_xlim(); delta_x = xmax - xmin
-#    ax.set_xlim((xmin - offset_fraction*delta_x, xmax + offset_fraction*delta_x))
-#    ymin, ymax = ax.get_ylim(); delta_y = ymax - ymin
-#    ax.set_ylim((ymin - offset_fraction*delta_y, ymax + offset_fraction*delta_y))
+    for parallel in parallels:
+        if parallel == 0.: 
+            lw = 1.3 # make equator thicker
+        else:
+            lw = default_lw        
+        lonvals = np.linspace(-180, 180, npoints)
+        latvals = np.zeros(npoints) + parallel
+        linex_withnans, liney_withnans = np.zeros(npoints), np.zeros(npoints)
+        for i in range(npoints):
+            linex_withnans[i], liney_withnans[i] =\
+                ortho.transform_point(lonvals[i], latvals[i], pc)
+        linex, liney = deal_with_nans(linex_withnans.reshape((npoints, 1)),\
+                                      liney_withnans.reshape((npoints, 1)))
+        linex = linex[:, 0]*shrink_factor
+        liney = liney[:, 0]*shrink_factor
+        ax.plot(linex, liney, 'k', linewidth=lw)   
 
-   
     # Set up color bar
     ax_xmin, ax_xmax, ax_ymin, ax_ymax = axis_range(ax)
     ax_delta_x = ax_xmax - ax_xmin
@@ -227,15 +250,9 @@ def plot_ortho(fig, ax, dirname, varname, idepth=0, minmax=None, iiter=-1):
         # Mollweide))
     cbar_width = 0.5*ax_delta_x # make cbar half as long as plot is wide
     cbar_height = cbar_width*cbar_aspect/fig_aspect
-    cbar_bottom = ax_ymin - 1.5*cbar_height
+    cbar_bottom = ax_ymin - 2.5*cbar_height
     cbar_left = ax_xmin + 0.5*ax_delta_x - 0.5*cbar_width
     
-#    cbarregion_center_x = margin_x + 0.5*subplot_width
-#    cbarregion_center_y = 0.5*margin_bottom
-#    cbar_width = 0.5*subplot_width
-#    cbar_height = cbar_aspect*cbar_width/fig_aspect
-#    cbar_left = cbarregion_center_x - 0.5*cbar_width
-#    cbar_bottom = margin_bottom - 1.2*cbar_height
     cax = fig.add_axes((cbar_left, cbar_bottom, cbar_width, cbar_height))
     
     cbar = plt.colorbar(im, cax=cax, orientation='horizontal')
@@ -252,25 +269,12 @@ def plot_ortho(fig, ax, dirname, varname, idepth=0, minmax=None, iiter=-1):
     title = varlabel + '\t\t' + ('depth = %1.2f' %depth) + '\t\t' +\
         ('iter = ' + fname)
     fig.text(cbar_left + cbar_width, cbar_bottom + 0.5*cbar_height,\
-             cbar_units, verticalalignment='center')
+             cbar_units, verticalalignment='center', **csfont)
     fig.text(ax_center_x, ax_ymax + 0.02*ax_delta_y, title,\
              verticalalignment='bottom', horizontalalignment='center',\
-             fontsize=14)   
+             fontsize=14, **csfont)   
     
     # Plot outer boundary
     psivals = np.linspace(0, 2*np.pi, 100)
     xvals, yvals = np.cos(psivals), np.sin(psivals)
     ax.plot(xvals, yvals, 'k')
-#    plt.sca(ax)
-    plt.show()   
-
-    
-def cbar_axes_from_area(cbar_area_left, cbar_area_bottom, \
-                        cbar_area_width, cbar_area_height, fig_aspect, aspect=1/20):
-    cbar_area_centerx = cbar_area_left + cbar_area_width/2
-    cbar_area_centery = cbar_area_bottom + cbar_area_height/2
-    cbar_height = cbar_area_height/8
-    cbar_width = cbar_height/aspect*fig_aspect
-    cbar_left = cbar_area_centerx - cbar_width/2
-    cbar_bottom = cbar_area_centery + cbar_area_height/4 - cbar_height/2
-    return (cbar_left, cbar_bottom, cbar_width, cbar_height)

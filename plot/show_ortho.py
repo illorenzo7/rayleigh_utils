@@ -7,7 +7,6 @@ sys.path.append(os.environ['co'])
 sys.path.append(os.environ['rapp'])
 from common import get_file_lists
 from sslice_util import plot_ortho
-from varprops import texlabels, texunits, var_indices, var_indices_old
 from rayleigh_diagnostics import Shell_Slices
 
 # Get command line arguments
@@ -20,6 +19,8 @@ minmax = None
 iiter = nfiles - 1 # by default plot the last iteration
 idepth = 0 # by default plot just below the surface
 varname = 'vr' # by default plot the radial velocity
+clon = 0
+clat = 20
 
 args = sys.argv[2:]
 nargs = len(args)
@@ -30,18 +31,20 @@ for i in range(nargs):
     elif (arg == '-d'):
         idepth = int(args[i+1])
     elif (arg == '-var'):
-        varn = args[i+1]
+        varname = args[i+1]
     elif (arg == '-iter'):
         desired_iter = int(args[i+1])
         iiter = np.argmin(np.abs(int_file_list - desired_iter))
+    elif (arg == '-clat'):
+        clat = float(args[i+1])
+    elif (arg == '-clon'):
+        clon = float(args[i+1])
 
 iter_val = int_file_list[iiter]
 fname = file_list[iiter]
 
-print (radatadir + fname)
+# Read in desired shell slice
 a = Shell_Slices(radatadir + fname, '')
-iq = a.lut[var_indices[varname]]
-field = a.vals[:, :, idepth, iq, 0]
 
 # Create the plot using subplot axes
 # Offset axes slightly (at the end) to deal with annoying white space cutoff
@@ -72,5 +75,6 @@ subplot_height = subplot_height_inches/fig_height_inches
 fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
 ax = fig.add_axes([margin_x, margin_bottom, subplot_width, subplot_height])
 
-plot_ortho(fig, ax, dirname, varname, idepth=idepth, minmax=minmax, iiter=iiter) 
+plot_ortho(fig, ax, a, dirname, varname, idepth=idepth, minmax=minmax,\
+            clon=clon, clat=clat) 
 plt.show()   
