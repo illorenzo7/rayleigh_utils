@@ -1,5 +1,6 @@
 import matplotlib as mpl
 mpl.use('TkAgg')
+from matplotlib import ticker
 import matplotlib.pyplot as plt
 plt.rcParams['mathtext.fontset'] = 'dejavuserif'
 csfont = {'fontname':'DejaVu Serif'}
@@ -21,6 +22,10 @@ def rms(array):
         return 0
     else:
         return np.sqrt(np.mean(array**2))
+
+def saturate_array(arr, my_min, my_max):
+    arr[np.where(arr < my_min)] = my_min
+    arr[np.where(arr > my_max)] = my_max
 
 def deal_with_nans(x, y):
     """handles NaN in x and y by making quadrilateral corners on the "other
@@ -190,12 +195,19 @@ def plot_ortho(fig, ax, a, dirname, varname, idepth=0, minmax=None,\
             
     # Make the orthographic projection
     if not posdef:
-        im = ax.pcolormesh(x, y, field, cmap=plt.cm.RdYlBu_r,\
-                     norm=MidpointNormalize(0), vmin=my_min, vmax=my_max)
+        saturate_array(field, my_min, my_max)
+#        im = ax.pcolormesh(x, y, field, cmap=plt.cm.RdYlBu_r,\
+#                     norm=MidpointNormalize(0), vmin=my_min, vmax=my_max)
+        im = ax.contourf(x, y, field, cmap=plt.cm.RdYlBu_r,\
+                levels=np.linspace(my_min, my_max, 50),\
+                norm=MidpointNormalize(0))
     else: 
-        im = ax.pcolormesh(x,y, field, cmap='Greys',\
-            norm=colors.LogNorm(vmin=my_min, vmax=my_max))
-        
+#        im = ax.pcolormesh(x, y, field, cmap='Greys',\
+#            norm=colors.LogNorm(vmin=my_min, vmax=my_max))
+         im = ax.contourf(x, y, field, cmap='Greys',\
+            norm=colors.LogNorm(vmin=my_min, vmax=my_max),\
+            levels=np.logspace(minexp, maxexp, 50, base=np.exp(1.)))
+       
     # Draw parallels and meridians, evenly spaced by 30 degrees
     default_lw = 0.5 # default linewidth bit thinner
     parallels = np.arange(-60, 90, 30.)
@@ -262,6 +274,8 @@ def plot_ortho(fig, ax, a, dirname, varname, idepth=0, minmax=None,\
         cbar.set_ticks([my_min, 0, my_max])
         cbar.set_ticklabels(['%1.2f' %my_min, '0', '%1.2f' %my_max])
     else:
+        locator = ticker.LogLocator(base=10)
+        cbar.set_ticks(locator)
         cbar_units = ' ' + texunits[varname]
         
     varlabel = texlabels[varname]

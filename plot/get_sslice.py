@@ -275,7 +275,7 @@ def get_sslice(a, varname, dirname=None, old=False):
         sslice = vals[:, :, :, ind_p]
     elif (varname == 'rho'):
         # must have the reference state for these derivative variables
-        ref = ReferenceState('reference', dirname)
+        ref = ReferenceState('/reference', dirname)
         cp = get_parameter(dirname, 'pressure_specific_heat')
         ref_p = (ref.pressure)[a.inds]
         ref_rho = (ref.density)[a.inds]
@@ -291,7 +291,7 @@ def get_sslice(a, varname, dirname=None, old=False):
     elif (varname == 't'):
         # must have the reference state for these derivative variables
         # assume ideal gas law
-        ref = ReferenceState('reference', dirname)
+        ref = ReferenceState('/reference', dirname)
         cp = get_parameter(dirname, 'pressure_specific_heat')
         ref_p = (ref.pressure)[a.inds]
         ref_temp = (ref.temperature)[a.inds]
@@ -330,7 +330,7 @@ def get_sslice(a, varname, dirname=None, old=False):
             sslice = p_slice - np.mean(p_slice, axis=0)            
     elif (varname == 'rho_prime'):
         # Must have reference state for rho, t
-        ref = ReferenceState('reference', dirname)
+        ref = ReferenceState('/reference', dirname)
         cp = get_parameter(dirname, 'pressure_specific_heat')
         ref_p = (ref.pressure)[a.inds]
         ref_rho = (ref.density)[a.inds]
@@ -355,7 +355,7 @@ def get_sslice(a, varname, dirname=None, old=False):
             sslice = rho_slice - np.mean(rho_slice, axis=0)           
     elif (varname == 't_prime'):
         # Must have reference state for rho, t
-        ref = ReferenceState('reference', dirname)
+        ref = ReferenceState('/reference', dirname)
         cp = get_parameter(dirname, 'pressure_specific_heat')
         ref_p = (ref.pressure)[a.inds]
         ref_temp = (ref.temperature)[a.inds]
@@ -404,7 +404,7 @@ def get_sslice(a, varname, dirname=None, old=False):
             sslice = p_slice - np.mean(p_slice)  # Should probably fix this sloppy average          
     elif (varname == 'rho_prime_sph'):
         # must have the reference state for these derivative variables
-        ref = ReferenceState('reference', dirname)
+        ref = ReferenceState('/reference', dirname)
         cp = get_parameter(dirname, 'pressure_specific_heat')
         ref_p = (ref.pressure)[a.inds]
         ref_rho = (ref.density)[a.inds]
@@ -430,7 +430,7 @@ def get_sslice(a, varname, dirname=None, old=False):
     elif (varname == 't_prime_sph'):
         # must have the reference state for these derivative variables
         # assume ideal gas law                                     
-        ref = ReferenceState('reference', dirname)
+        ref = ReferenceState('/reference', dirname)
         cp = get_parameter(dirname, 'pressure_specific_heat')
         ref_p = (ref.pressure)[a.inds]
         ref_temp = (ref.temperature)[a.inds]
@@ -552,7 +552,7 @@ def get_sslice(a, varname, dirname=None, old=False):
     # Spherical fluctuating velocity products 
     # (multiply by rho first to get units of pressure)
     elif (varname == 'vsq'):
-        ref = ReferenceState('reference', dirname)
+        ref = ReferenceState('/reference', dirname)
         prefactor = ref.density[a.inds]
         ind_vr, ind_vt, ind_vp = a.lut[qind_vr], a.lut[qind_vt], a.lut[qind_vp]
         vr_slice = vals[:, :, :, ind_vr]
@@ -574,7 +574,7 @@ def get_sslice(a, varname, dirname=None, old=False):
             vp_prime_slice = vp_slice - np.mean(vp_slice, axis=0)
         sslice = prefactor*(vr_prime_slice**2 + vt_prime_slice**2 + vp_prime_slice**2)
     elif (varname == 'vrsq'):
-        ref = ReferenceState('reference', dirname)
+        ref = ReferenceState('/reference', dirname)
         prefactor = ref.density[a.inds]
         ind_vr = a.lut[qind_vr]
         vr_slice = vals[:, :, :, ind_vr]  
@@ -588,7 +588,7 @@ def get_sslice(a, varname, dirname=None, old=False):
             vr_prime_slice = vr_slice - np.mean(vr_slice, axis=0)
         sslice = prefactor*vr_prime_slice**2
     elif (varname == 'vtsq'):
-        ref = ReferenceState('reference', dirname)
+        ref = ReferenceState('/reference', dirname)
         prefactor = ref.density[a.inds]
         ind_vt = a.lut[qind_vt]
         vt_slice = vals[:, :, :, ind_vt]  
@@ -602,7 +602,7 @@ def get_sslice(a, varname, dirname=None, old=False):
             vt_prime_slice = vt_slice - np.mean(vt_slice, axis=0)
         sslice = prefactor*vt_prime_slice**2
     elif (varname == 'vpsq'):
-        ref = ReferenceState('reference', dirname)
+        ref = ReferenceState('/reference', dirname)
         prefactor = ref.density[a.inds]
         ind_vp = a.lut[qind_vp]
         vp_slice = vals[:, :, :, ind_vp]  
@@ -616,7 +616,7 @@ def get_sslice(a, varname, dirname=None, old=False):
             vp_prime_slice = vp_slice - np.mean(vp_slice, axis=0)
         sslice = prefactor*vp_prime_slice**2        
     elif (varname == 'vhsq'):
-        ref = ReferenceState('reference', dirname)
+        ref = ReferenceState('/reference', dirname)
         prefactor = ref.density[a.inds]        
         ind_vt, ind_vp = a.lut[qind_vt], a.lut[qind_vp]
         vt_slice = vals[:, :, :, ind_vt]
@@ -634,7 +634,7 @@ def get_sslice(a, varname, dirname=None, old=False):
             vp_prime_slice = vp_slice - np.mean(vp_slice, axis=0)
         sslice = prefactor*(vt_prime_slice**2 + vp_prime_slice**2)     
     elif (varname == 'vrvp'):
-        ref = ReferenceState('reference', dirname)
+        ref = ReferenceState('/reference', dirname)
         prefactor = ref.density[a.inds]        
         ind_vr, ind_vp = a.lut[qind_vr], a.lut[qind_vp]
         vr_slice = vals[:, :, :, ind_vr]
@@ -652,7 +652,7 @@ def get_sslice(a, varname, dirname=None, old=False):
             vp_prime_slice = vp_slice - np.mean(vp_slice, axis=0)    
         sslice = prefactor*vr_prime_slice*vp_prime_slice      
     elif (varname == 'vrvt'):
-        ref = ReferenceState('reference', dirname)
+        ref = ReferenceState('/reference', dirname)
         prefactor = ref.density[a.inds]        
         ind_vr, ind_vt = a.lut[qind_vr], a.lut[qind_vt]
         vr_slice = vals[:, :, :, ind_vr]
@@ -670,7 +670,7 @@ def get_sslice(a, varname, dirname=None, old=False):
             vt_prime_slice = vt_slice - np.mean(vt_slice, axis=0)
         sslice = prefactor*vr_prime_slice*vt_prime_slice
     elif (varname == 'vtvp'):
-        ref = ReferenceState('reference', dirname)
+        ref = ReferenceState('/reference', dirname)
         prefactor = ref.density[a.inds]        
         ind_vt, ind_vp = a.lut[qind_vt], a.lut[qind_vp]
         vt_slice = vals[:, :, :, ind_vt]
@@ -691,7 +691,7 @@ def get_sslice(a, varname, dirname=None, old=False):
     # Cylindrical fluctuating velocity products velocity products  
     # Multiplied by rho to get units of pressure
     elif (varname == 'vlsq'):
-        ref = ReferenceState('reference', dirname)
+        ref = ReferenceState('/reference', dirname)
         prefactor = ref.density[a.inds]          
         sint = (a.sintheta).reshape((1, a.ntheta, 1))
         cost = (a.costheta).reshape((1, a.ntheta, 1))        
@@ -711,7 +711,7 @@ def get_sslice(a, varname, dirname=None, old=False):
             vl_prime_slice = vl_slice - np.mean(vl_slice, axis=0) 
         sslice = prefactor*vl_prime_slice**2
     elif (varname == 'vzsq'):
-        ref = ReferenceState('reference', dirname)
+        ref = ReferenceState('/reference', dirname)
         prefactor = ref.density[a.inds]          
         sint = (a.sintheta).reshape((1, a.ntheta, 1))
         cost = (a.costheta).reshape((1, a.ntheta, 1))        
@@ -731,7 +731,7 @@ def get_sslice(a, varname, dirname=None, old=False):
             vz_prime_slice = vz_slice - np.mean(vz_slice, axis=0) 
         sslice = prefactor*vz_prime_slice**2 
     elif (varname == 'vpolsq'):
-        ref = ReferenceState('reference', dirname)
+        ref = ReferenceState('/reference', dirname)
         prefactor = ref.density[a.inds]                 
         ind_vr, ind_vt = a.lut[qind_vr], a.lut[qind_vt]        
         vr_slice = vals[:, :, :, ind_vr]
@@ -749,7 +749,7 @@ def get_sslice(a, varname, dirname=None, old=False):
             vt_prime_slice = vt_slice - np.mean(vt_slice, axis=0)             
         sslice = prefactor*(vr_prime_slice**2 + vt_prime_slice**2)        
     elif (varname == 'vlvp'):
-        ref = ReferenceState('reference', dirname)
+        ref = ReferenceState('/reference', dirname)
         prefactor = ref.density[a.inds]        
         sint = (a.sintheta).reshape((1, a.ntheta, 1))
         cost = (a.costheta).reshape((1, a.ntheta, 1))
@@ -774,7 +774,7 @@ def get_sslice(a, varname, dirname=None, old=False):
         vl_prime_slice = vr_prime_slice*sint + vt_prime_slice*cost    
         sslice = prefactor*vl_prime_slice*vp_prime_slice
     elif (varname == 'vlvz'):
-        ref = ReferenceState('reference', dirname)
+        ref = ReferenceState('/reference', dirname)
         prefactor = ref.density[a.inds]        
         sint = (a.sintheta).reshape((1, a.ntheta, 1))
         cost = (a.costheta).reshape((1, a.ntheta, 1))
@@ -800,7 +800,7 @@ def get_sslice(a, varname, dirname=None, old=False):
         vz_prime_slice = vr_prime_slice*cost - vt_prime_slice*sint  
         sslice = prefactor*vl_prime_slice*vz_prime_slice
     elif (varname == 'vpvz'):
-        ref = ReferenceState('reference', dirname)
+        ref = ReferenceState('/reference', dirname)
         prefactor = ref.density[a.inds]        
         sint = (a.sintheta).reshape((1, a.ntheta, 1))
         cost = (a.costheta).reshape((1, a.ntheta, 1))
@@ -1123,7 +1123,7 @@ def get_sslice(a, varname, dirname=None, old=False):
             vr_prime_slice = vr_slice - np.mean(vr_slice, axis=0)
             s_prime_slice = s_slice - np.mean(s_slice, axis=0)  
             p_prime_slice = p_slice - np.mean(p_slice, axis=0)               
-        ref = ReferenceState('reference', dirname)
+        ref = ReferenceState('/reference', dirname)
         cp = get_parameter(dirname, 'pressure_specific_heat')
         ref_p = (ref.pressure)[a.inds]
         ref_temp = (ref.temperature)[a.inds]

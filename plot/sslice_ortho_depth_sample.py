@@ -1,11 +1,13 @@
 import matplotlib as mpl
 mpl.use('TkAgg')
 import matplotlib.pyplot as plt
+plt.rcParams['mathtext.fontset'] = 'dejavuserif'
+csfont = {'fontname':'DejaVu Serif'}
 import numpy as np
 import sys, os
 sys.path.append(os.environ['co'])
 sys.path.append(os.environ['rapp'])
-from common import get_file_lists
+from common import get_file_lists, strip_dirname
 from sslice_util import plot_ortho
 from rayleigh_diagnostics import Shell_Slices
 
@@ -52,7 +54,7 @@ fig_width_inches = 6.
 
 # General parameters for main axis/color bar
 margin_bottom_inches = 1.
-margin_top_inches = 1/2
+margin_top_inches = 1.
 margin_inches = 1/8
 
 subplot_width_inches = fig_width_inches - 2*margin_inches
@@ -76,8 +78,7 @@ if not os.path.isdir(plotdir):
     os.makedirs(plotdir)
     
 for idepth in range(a.nr):
-    savename = 'ortho_' + varname + ('_depth%02i_' %idepth) +\
-        fname + '.png'
+    savename = 'ortho_' + varname + '_iter' + fname + ('_depth%02i' %idepth) + '.png'
     print('Plotting ortho: ' + varname + (', depth %02i, ' %idepth) +\
           'iter ' + fname + ' ...')
     fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
@@ -85,5 +86,7 @@ for idepth in range(a.nr):
     
     plot_ortho(fig, ax, a, dirname, varname, idepth=idepth, minmax=minmax,\
                 clon=clon, clat=clat) 
+    fig.text(margin_x + 0.5*subplot_width, 1. - 0.5*margin_top,\
+            strip_dirname(dirname), ha='center', va='bottom', **csfont, fontsize=14)
     plt.savefig(plotdir + savename, dpi=300)
     plt.close()
