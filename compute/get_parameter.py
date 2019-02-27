@@ -9,7 +9,7 @@ def get_parameter(dirname, parameter):
         for i in range(n):
             if (parameter in lines[i] and '=' in lines[i]):
                 line = lines[i]
-#        line = line[:] # test if line was assigned
+        line = line[:] # test if line was assigned
     except:
         print('Note: ' + parameter + ' was not')
         print('specified in run: ' + dirname + '. ')

@@ -9,7 +9,7 @@
 import numpy as np
 import sys, os
 sys.path.append(os.environ['rapp'])
-from varprops import texlabels, texunits, var_indices, var_indices_old
+from varprops import var_indices, var_indices_old
 from common import get_widest_range_file
 from get_parameter import get_parameter
 from rayleigh_diagnostics import ReferenceState
@@ -222,7 +222,7 @@ def get_sslice(a, varname, dirname=None, old=False):
             oml_av = omr_av*sint + omt_av*cost
             sslice = oml_slice - oml_av            
         except:
-            sslice = omz_slice - np.mean(omz_slice, axis=0)           
+            sslice = oml_slice - np.mean(oml_slice, axis=0)           
     elif (varname == 'omz_prime'):
         sint = (a.sintheta).reshape((1, a.ntheta, 1))
         cost = (a.costheta).reshape((1, a.ntheta, 1))        
