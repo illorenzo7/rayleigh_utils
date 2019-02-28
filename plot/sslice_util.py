@@ -292,3 +292,177 @@ def plot_ortho(fig, ax, a, dirname, varname, idepth=0, minmax=None,\
     psivals = np.linspace(0, 2*np.pi, 100)
     xvals, yvals = np.cos(psivals), np.sin(psivals)
     ax.plot(xvals, yvals, 'k')
+
+def plot_moll(fig, ax, a, dirname, varname, idepth=0, minmax=None,\
+               clon=0):
+    
+    fname = str(a.iters[0]).zfill(8)
+    vals = get_sslice(a, varname, dirname=dirname)
+    field = vals[:, :, idepth]
+    
+    # Get geometric parameters
+    ri, ro = rbounds(dirname)
+    rloc = a.radius[idepth]
+    d = 1. - ri/ro
+    depth = (1. - rloc/ro)/d    
+    
+    # Get latitude and longitude grid from the shape of field
+    nphi, ntheta = np.shape(field)
+    dlon = 360.0/nphi
+    dlat = 180.0/ntheta
+    lons = dlon*np.arange(nphi) - 180.0
+    lats = dlat*np.arange(ntheta) - 90.0
+    # Make 2d (meshed) grid of longitude/latitude
+    llon, llat = np.meshgrid(lons, lats, indexing='ij')
+    
+    # Essence of cartopy is transformations:
+    # This one will be from PlateCarree (simple longitude/latitude equally 
+    # spaced) to Mollweide
+    pc = crs.PlateCarree()
+    moll = crs.Mollweide()
+    
+    # Determinate if "field" is positive-definite (inherently)
+    posdef = False
+    if 'sq' in varname:
+        posdef = True
+    
+    # Get saturation values to be used if minmax is not specified
+    # Divide out the exponent to use scientific notation (but keep 
+    # track of it!)
+    if minmax is None:
+        if not posdef:
+            rms_plus = rms(field[np.where(field > 0)])
+            rms_minus = rms(field[np.where(field < 0)])
+            my_min, my_max = -3*rms_minus, 3*rms_plus
+            
+            minexp = int(np.floor(np.log10(np.abs(my_min))))
+            maxexp = int(np.floor(np.log10(np.abs(my_max))))
+            maxabs_exp = max((minexp, maxexp))
+    
+            field /= 10**maxabs_exp
+            my_min /= 10**maxabs_exp
+            my_max /= 10**maxabs_exp    
+            
+        # Saturation levels for a positive-definite quantity (like vsq)
+        else:
+            logfield= np.log(field)
+            medlog = np.median(logfield)
+            shiftlog = logfield - medlog
+            minexp = medlog - 7*np.std(shiftlog[np.where(shiftlog < 0)].flatten())
+            maxexp = medlog + 7*np.std(shiftlog[np.where(shiftlog > 0)].flatten())
+            my_min, my_max = np.exp(minexp), np.exp(maxexp)
+    else: # minmax IS none
+            my_min, my_max = minmax
+            minexp = int(np.floor(np.log10(np.abs(my_min))))
+            maxexp = int(np.floor(np.log10(np.abs(my_max))))
+            maxabs_exp = max((minexp, maxexp))
+    
+            field /= 10**maxabs_exp
+            my_min /= 10**maxabs_exp
+            my_max /= 10**maxabs_exp              
+            
+    # Get the Mollweide projection coordinates of llon/llat by converting
+    # between PlateCarree (lat/lon) and Mollweide
+    points_moll = moll.transform_points(pc, llon, llat) 
+        # must see why this doesn't work for othographic proj.
+    x = points_moll[:, :, 0]
+    y = points_moll[:, :, 1]
+
+    # "normalize coordinates":
+    radius = max(np.max(np.abs(x))/2., np.max(np.abs(y)))
+    x /= radius # now falls in [-2, 2]
+    y /= radius # now falls in [-1, 1]
+
+    ax.set_xlim((-2.02, 2.02)) # deal with annoying whitespace cutoff issue
+    ax.set_ylim((-1.01, 1.01))
+    plt.axis('off') # get rid of x/y axis coordinates
+            
+    # Make the Mollweide projection
+    if not posdef:
+        saturate_array(field, my_min, my_max)
+        im = ax.contourf(x, y, field, cmap=plt.cm.RdYlBu_r,\
+                levels=np.linspace(my_min, my_max, 50),\
+                norm=MidpointNormalize(0))
+    else: 
+         im = ax.contourf(x, y, field, cmap='Greys',\
+            norm=colors.LogNorm(vmin=my_min, vmax=my_max),\
+            levels=np.logspace(minexp, maxexp, 50, base=np.exp(1.)))
+       
+    # Draw parallels and meridians, evenly spaced by 30 degrees
+    default_lw = 0.5 # default linewidth bit thinner
+    parallels = np.arange(-60, 90, 30.)
+    meridians = np.arange(0., 360., 30.)
+    
+    npoints = 100
+    for meridian in meridians:
+        if meridian == 0.: 
+            lw = 1.3 # make central longitude thicker
+        else:
+            lw = default_lw
+            
+        lonvals = meridian + np.zeros(npoints)
+        latvals = np.linspace(-90, 90, npoints)
+        linepoints = moll.transform_points(pc, lonvals, latvals)
+        linex, liney = linepoints[:, 0], linepoints[:, 1]
+        linex /= radius
+        liney /= radius
+        
+        ax.plot(linex, liney, 'k', linewidth=lw)
+    
+    for parallel in parallels:
+        if parallel == 0.: 
+            lw = 1.3 # make equator thicker
+        else:
+            lw = default_lw        
+        lonvals = np.linspace(-180, 180, npoints)
+        latvals = np.zeros(npoints) + parallel
+        linepoints = moll.transform_points(pc, lonvals, latvals)
+        linex, liney = linepoints[:, 0], linepoints[:, 1]
+        linex /= radius
+        liney /= radius
+        
+        ax.plot(linex, liney, 'k', linewidth=lw)
+
+    # Set up color bar
+    ax_xmin, ax_xmax, ax_ymin, ax_ymax = axis_range(ax)
+    ax_delta_x = ax_xmax - ax_xmin
+    ax_delta_y = ax_ymax - ax_ymin
+    ax_center_x = ax_xmin + 0.5*ax_delta_x
+#    ax_center_y = ax_ymin + 0.5*ax_delta_y   
+    
+    cbar_aspect = 1./20.
+    fig_aspect = ax_delta_x/ax_delta_y*0.5 
+    # assumes subplot aspect ratio is 0.5
+    cbar_width = 0.25*ax_delta_x # make cbar one-quarter
+                        # as long as plot is wide
+    cbar_height = cbar_width*cbar_aspect/fig_aspect
+    cbar_bottom = ax_ymin - 2.5*cbar_height
+    cbar_left = ax_xmin + 0.5*ax_delta_x - 0.5*cbar_width
+    
+    cax = fig.add_axes((cbar_left, cbar_bottom, cbar_width, cbar_height))
+    
+    cbar = plt.colorbar(im, cax=cax, orientation='horizontal')
+    # make a "title" (label "m/s" to the right of the colorbar)
+    if not posdef:
+        cbar_units = ' ' + (r'$\times10^{%i}$' %maxabs_exp) + ' ' + texunits[varname]
+        cbar.set_ticks([my_min, 0, my_max])
+        cbar.set_ticklabels(['%1.2f' %my_min, '0', '%1.2f' %my_max])
+    else:
+        locator = ticker.LogLocator(base=10)
+        cbar.set_ticks(locator)
+        cbar_units = ' ' + texunits[varname]
+        
+    varlabel = texlabels[varname]
+
+    title = varlabel + '\t\t' + ('depth = %1.2f' %depth) + '\t\t' +\
+        ('iter = ' + fname)
+    fig.text(cbar_left + cbar_width, cbar_bottom + 0.5*cbar_height,\
+             cbar_units, verticalalignment='center', **csfont)
+    fig.text(ax_center_x, ax_ymax + 0.02*ax_delta_y, title,\
+             verticalalignment='bottom', horizontalalignment='center',\
+             fontsize=14, **csfont)   
+    
+    # Plot outer boundary
+    psivals = np.linspace(0, 2*np.pi, 100)
+    xvals, yvals = 2.*np.cos(psivals), np.sin(psivals)
+    ax.plot(xvals, yvals, 'k')
