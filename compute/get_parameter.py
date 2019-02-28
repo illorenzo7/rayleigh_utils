@@ -11,10 +11,12 @@ def get_parameter(dirname, parameter):
                 line = lines[i]
         line = line[:] # test if line was assigned
     except:
-        print('Note: ' + parameter + ' was not')
-        print('specified in run: ' + dirname + '. ')
-        print('Assigning the arbitrary value 100')
-        return(100)
+#        print('Note: ' + parameter + ' was not')
+#        print('specified in run: ' + dirname + '. ')
+#        print('exiting ...')
+        raise Exception('The parameter ' + parameter + ' was not\n' +\
+                        'specified in run: ' + dirname + '. \n' +\
+                        'exiting ....\n')
     
     # Make line lowercase
     line = line.lower()
