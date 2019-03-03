@@ -34,15 +34,15 @@ dirname_stripped = strip_dirname(dirname)
 
 # Find the time/latitude file(s) the data directory. If there are 
 # multiple, by default choose the one with widest range in the trace.
-time_latitude_file = get_widest_range_file(datadir, 'time-latitude')
+time_radius_file = get_widest_range_file(datadir, 'time-radius')
 
 # more defaults
 user_specified_minmax = False
 user_specified_xminmax = False
 tag = ''
 
-desired_rvals = [0.83] # by default, plot time-radius diagram for fields 
-    # mid-CZ (units of solar radius)
+desired_lats = [0.] # by default, plot time-radius diagram for fields 
+    # at the equator
 navg = 11 # by default average over 11 AZ_Avgs files for each time
 
 # Get command-line arguments
@@ -55,16 +55,16 @@ for i in range(nargs):
         my_min = float(args[i+1])
         my_max = float(args[i+2])
     elif (arg == '-usefile'):
-        time_latitude_file = args[i+1]
-        time_latitude_file = time_latitude_file.split('/')[-1]
-    elif (arg == '-rvals'):
-        string_desired_rvals = args[i+1].split()
-        if string_desired_rvals == ['all']:
-            desired_rvals = 'all'
+        time_radius_file = args[i+1]
+        time_radius_file = time_radius_file.split('/')[-1]
+    elif (arg == '-lats'):
+        string_lats = args[i+1].split()
+        if string_lats == ['all']:
+            desired_lats = 'all'
         else:
-            desired_rvals = []
-            for j in range(len(string_desired_rvals)):
-                desired_rvals.append(float(string_desired_rvals[j]))
+            desired_lats = []
+            for j in range(len(string_lats)):
+                desired_lats.append(float(string_lats[j]))
     elif (arg == '-navg'):
         navg = int(args[i+1])
         if (navg % 2 == 0):
@@ -79,25 +79,23 @@ for i in range(nargs):
         tag = '_' + args[i+1]
 
 # Read in the time-latitude data (dictionary form)
-print ('Reading in time-latitude trace from ' + datadir +\
-       time_latitude_file + ' ...')
-di = np.load(datadir + time_latitude_file, encoding='latin1').item()
+print ('Reading in time-radius trace from ' + datadir +\
+       time_radius_file + ' ...')
+di = np.load(datadir + time_radius_file, encoding='latin1').item()
 vals = di['vals']
 
 times = di['times']
 iters = di['iters']
 rr = di['rr']
-ri = di['ri']; ro = di['ro']; shell_depth = ro - ri
 tt_lat = di['tt_lat']
-rinds = di['rinds'] # radial locations sampled for the trace
-ntheta = di['ntheta']
-rvals_sampled = rr[rinds]/rsun
-
+lats_sampled = np.array(di['lats']) 
+    # specific latitudes sampled for the trace
+theta_inds = np.array(di['theta_inds'])
 qvals = np.array(di['qvals'])
 
 niter = di['niter']
 nr = di['nr']
-nrvals = di['ndepths']
+nlats = di['nlats']
 nq = di['nq']
 
 iter1 = di['iter1']
@@ -116,18 +114,16 @@ br_index = np.argmin(np.abs(qvals - 801))
 bt_index = np.argmin(np.abs(qvals - 802))
 bp_index = np.argmin(np.abs(qvals - 803))
 
-i_desiredrvals = []
-rvals_to_plot = []
-if desired_rvals == 'all':
-    i_desiredrvals = np.arange(len(rinds))
-    rvals_to_plot = rvals_sampled
+if desired_lats == 'all':
+    i_desiredlats = np.arange(len(theta_inds))
+    lats_to_plot = lats_sampled
 else:
-    i_desiredrvals = []
-    rvals_to_plot = []
-    for desired_rval in desired_rvals:
-        i_desiredrval = np.argmin(np.abs(rvals_sampled - desired_rval))
-        i_desiredrvals.append(i_desiredrval)
-        rvals_to_plot.append(rvals_sampled[i_desiredrval])
+    i_desiredlats = []
+    lats_to_plot = []
+    for desired_lat in desired_lats:
+        i_desiredlat = np.argmin(np.abs(lats_sampled - desired_lat))
+        i_desiredlats.append(i_desiredlat)
+        lats_to_plot.append(lats_sampled[i_desiredlat])
 
 # Get raw traces of br, btheta, bphi
 br = vals[:, :, :, br_index]
@@ -136,9 +132,9 @@ bp = vals[:, :, :, bp_index]
 
 # Average these traces in time
 over2 = navg//2
-br_trace_all = np.zeros((niter - navg + 1, ntheta, nrvals))
-bt_trace_all = np.zeros((niter - navg + 1, ntheta, nrvals))
-bp_trace_all = np.zeros((niter - navg + 1, ntheta, nrvals))
+br_trace_all = np.zeros((niter - navg + 1, nlats, nr))
+bt_trace_all = np.zeros((niter - navg + 1, nlats, nr))
+bp_trace_all = np.zeros((niter - navg + 1, nlats, nr))
 for i in range(navg):
     br_trace_all += br[i:niter - navg + 1 + i]
     bt_trace_all += bt[i:niter - navg + 1 + i]
@@ -150,19 +146,19 @@ bp_trace_all /= navg
 times_trace = times[over2:niter - over2]
 
 # Make meshgrid of time/radius
-times2, tt_lat2 = np.meshgrid(times_trace/tnorm, tt_lat, indexing='ij')
+times2, rr2 = np.meshgrid(times_trace/tnorm, rr/rsun, indexing='ij')
 
-# Loop over the desired radii and save plots
-for i in range(len(i_desiredrvals)):
-    i_desiredrval = i_desiredrvals[i]
-    rval_to_plot = rvals_to_plot[i]
-    br_trace = br_trace_all[:, :, i_desiredrval]
-    bt_trace = bt_trace_all[:, :, i_desiredrval]
-    bp_trace = bp_trace_all[:, :, i_desiredrval]
+# Loop over the desired latitudes and save plots
+for i in range(len(lats_to_plot)):
+    i_desiredlat = i_desiredlats[i]
+    lat_to_plot = lats_to_plot[i]
+    br_trace = br_trace_all[:, i_desiredlat, :]
+    bt_trace = bt_trace_all[:, i_desiredlat, :]
+    bp_trace = bp_trace_all[:, i_desiredlat, :]
     
     # Make appropriate file name to save
-    savename = dirname_stripped + '_time-latitude_B_' +\
-        ('rval%0.3f_' %rval_to_plot) + str(iter1).zfill(8) + '_' +\
+    savename = dirname_stripped + '_time-radius_B_' +\
+        ('lat%+2.1f_' %lat_to_plot) + str(iter1).zfill(8) + '_' +\
         str(iter2).zfill(8) + tag + '.png'
 
     if not user_specified_minmax:
@@ -175,17 +171,19 @@ for i in range(len(i_desiredrvals)):
     ax1 = axs[0]; ax2 = axs[1]; ax3 = axs[2]
 
     # first plot: evolution of B_r
-    ax1.pcolormesh(times2, tt_lat2, br_trace,\
+    ax1.pcolormesh(times2, rr2, br_trace[:, :],\
             vmin=my_min, vmax=my_max, cmap='RdYlBu_r')
     Dt = np.max(times2) - np.min(times2)
+    shell_depth = (np.max(rr) - np.min(rr))/rsun
+    min_r = np.min(rr)/rsun
     min_t = np.min(times2)
-    ax1.text(min_t + 1.01*Dt, 0.,  r'$B_r$')
-    im=ax2.pcolormesh(times2, tt_lat2, bt_trace,\
+    ax1.text(min_t + 1.01*Dt, min_r + 0.5*shell_depth,  r'$B_r$')
+    im=ax2.pcolormesh(times2, rr2, bt_trace[:, :],\
             vmin=my_min, vmax=my_max, cmap='RdYlBu_r')
-    ax2.text(min_t + 1.01*Dt, 0.,  r'$B_\theta$')
-    ax3.pcolormesh(times2, tt_lat2, bp_trace,\
+    ax2.text(min_t + 1.01*Dt, min_r + 0.5*shell_depth,  r'$B_\theta$')
+    ax3.pcolormesh(times2, rr2, bp_trace[:, :],\
             vmin=my_min, vmax=my_max, cmap='RdYlBu_r')
-    ax3.text(min_t + 1.01*Dt, 0.,  r'$B_\phi$')
+    ax3.text(min_t + 1.01*Dt, min_r + 0.5*shell_depth,  r'$B_\phi$')
 
     # Put colorbar next to middle (B_theta) plot
     # First find location of B_theta plot
@@ -217,12 +215,12 @@ for i in range(len(i_desiredrvals)):
         ax3.set_xlim((xmin, xmax))
 
     # Label y-axis (radius in units of rsun)
-    ax2.set_ylabel('latitude (deg.)', **csfont)
-    ax2.set_yticks(np.arange(-90, 90, 30))
+    ax2.set_ylabel(r'$\rm{radius}\ (R_\odot)$', **csfont)
+#    ax2.set_yticks(np.arange(-90,90,30))
 
     averaging_time = (times[-1] - times[0])/niter*navg/86400.
     title = dirname_stripped + '     ' +\
-            (r'$r/r_\odot\ =\ %0.3f$' %rval_to_plot) + '     ' +\
+            ('lat = %+2.1f deg' %lat_to_plot) + '     ' +\
             ('t_avg = %.1f days' %averaging_time) +\
             '     ' + ('time_unit = %.1f days' %(tnorm/86400.))
 
@@ -246,5 +244,5 @@ for i in range(len(i_desiredrvals)):
     plt.savefig(plotdir + savename, dpi=300)
 
     # Show the plot if only plotting at one latitude
-    if len(rvals_to_plot) == 1:
+    if len(lats_to_plot) == 1:
         plt.show()

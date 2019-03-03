@@ -5,6 +5,9 @@
 import numpy as np
 import os
 
+# Solar radius
+rsun = 6.95508e10
+
 # Read in all files from the Rayleigh data directory and sort them by name (number)
 def get_file_lists(radatadir):
     file_list = os.listdir(radatadir)
