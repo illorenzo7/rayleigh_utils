@@ -177,15 +177,10 @@ for i in range(len(i_desiredrvals)):
     # first plot: evolution of B_r
     ax1.pcolormesh(times2, tt_lat2, br_trace,\
             vmin=my_min, vmax=my_max, cmap='RdYlBu_r')
-    Dt = np.max(times2) - np.min(times2)
-    min_t = np.min(times2)
-    ax1.text(min_t + 1.01*Dt, 0.,  r'$B_r$')
     im=ax2.pcolormesh(times2, tt_lat2, bt_trace,\
             vmin=my_min, vmax=my_max, cmap='RdYlBu_r')
-    ax2.text(min_t + 1.01*Dt, 0.,  r'$B_\theta$')
     ax3.pcolormesh(times2, tt_lat2, bp_trace,\
             vmin=my_min, vmax=my_max, cmap='RdYlBu_r')
-    ax3.text(min_t + 1.01*Dt, 0.,  r'$B_\phi$')
 
     # Put colorbar next to middle (B_theta) plot
     # First find location of B_theta plot
@@ -220,9 +215,17 @@ for i in range(len(i_desiredrvals)):
     ax2.set_ylabel('latitude (deg.)', **csfont)
     ax2.set_yticks(np.arange(-90, 90, 30))
 
+    # Label the plots by B_r, B_theta, B_phi
+    ax_xmin, ax_xmax = ax1.get_xlim()
+    ax_Dx = ax_xmax - ax_xmin
+    ax1.text(ax_xmin + 1.01*ax_Dx, 0.,  r'$B_r$')
+    ax2.text(ax_xmin + 1.01*ax_Dx, 0.,  r'$B_\theta$')
+    ax3.text(ax_xmin + 1.01*ax_Dx, 0.,  r'$B_\phi$')
+
+    # Put some useful information on the title
     averaging_time = (times[-1] - times[0])/niter*navg/86400.
     title = dirname_stripped + '     ' +\
-            (r'$r/r_\odot\ =\ %0.3f$' %rval_to_plot) + '     ' +\
+            (r'$r/R_\odot\ =\ %0.3f$' %rval_to_plot) + '     ' +\
             ('t_avg = %.1f days' %averaging_time) +\
             '     ' + ('time_unit = %.1f days' %(tnorm/86400.))
 

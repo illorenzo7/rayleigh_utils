@@ -174,16 +174,11 @@ for i in range(len(lats_to_plot)):
     ax1.pcolormesh(times2, rr2, br_trace[:, :],\
             vmin=my_min, vmax=my_max, cmap='RdYlBu_r')
     Dt = np.max(times2) - np.min(times2)
-    shell_depth = (np.max(rr) - np.min(rr))/rsun
-    min_r = np.min(rr)/rsun
     min_t = np.min(times2)
-    ax1.text(min_t + 1.01*Dt, min_r + 0.5*shell_depth,  r'$B_r$')
     im=ax2.pcolormesh(times2, rr2, bt_trace[:, :],\
             vmin=my_min, vmax=my_max, cmap='RdYlBu_r')
-    ax2.text(min_t + 1.01*Dt, min_r + 0.5*shell_depth,  r'$B_\theta$')
     ax3.pcolormesh(times2, rr2, bp_trace[:, :],\
             vmin=my_min, vmax=my_max, cmap='RdYlBu_r')
-    ax3.text(min_t + 1.01*Dt, min_r + 0.5*shell_depth,  r'$B_\phi$')
 
     # Put colorbar next to middle (B_theta) plot
     # First find location of B_theta plot
@@ -216,8 +211,19 @@ for i in range(len(lats_to_plot)):
 
     # Label y-axis (radius in units of rsun)
     ax2.set_ylabel(r'$\rm{radius}\ (R_\odot)$', **csfont)
-#    ax2.set_yticks(np.arange(-90,90,30))
 
+
+    # Label the plots by B_r, B_theta, B_phi
+    min_r = np.min(rr)/rsun
+    shell_depth = (np.max(rr) - np.min(rr))/rsun
+    mid_rval = min_r + 0.5*shell_depth
+    ax_xmin, ax_xmax = ax1.get_xlim()
+    ax_Dx = ax_xmax - ax_xmin
+    ax1.text(ax_xmin + 1.01*ax_Dx, mid_rval,  r'$B_r$')
+    ax2.text(ax_xmin + 1.01*ax_Dx, mid_rval,  r'$B_\theta$')
+    ax3.text(ax_xmin + 1.01*ax_Dx, mid_rval,  r'$B_\phi$')
+
+    # Put some useful information on the title
     averaging_time = (times[-1] - times[0])/niter*navg/86400.
     title = dirname_stripped + '     ' +\
             ('lat = %+2.1f deg' %lat_to_plot) + '     ' +\
