@@ -12,7 +12,7 @@ from binormalized_cbar import MidpointNormalize
 from cartopy import crs
 from matplotlib import colors
 from varprops import texlabels, texunits, var_indices, var_indices_old
-from common import get_file_lists
+from common import get_file_lists, rsun
 from get_sslice import get_sslice
 from rayleigh_diagnostics import Shell_Slices
 from get_parameter import get_parameter
@@ -103,16 +103,16 @@ def axis_range(ax): # gets subplot coordinates on a figure in "normalized"
     
 #def get_ortho_parallels(lat, pc, ortho):
     
-def plot_ortho(fig, ax, a, dirname, varname, idepth=0, minmax=None,\
-               clon=0, clat=20):
+def plot_ortho(fig, ax, a, dirname, varname, ir=0, minmax=None,\
+               clon=0, clat=20, plot_title=True):
     
     fname = str(a.iters[0]).zfill(8)
     vals = get_sslice(a, varname, dirname=dirname)
-    field = vals[:, :, idepth]
+    field = vals[:, :, ir]
     
     # Get geometric parameters
     ri, ro = rbounds(dirname)
-    rloc = a.radius[idepth]
+    rloc = a.radius[ir]
     
     # Get latitude and longitude grid from the shape of field
     nphi, ntheta = np.shape(field)
@@ -280,11 +280,12 @@ def plot_ortho(fig, ax, a, dirname, varname, idepth=0, minmax=None,\
         
     varlabel = texlabels[varname]
 
-    title = varlabel + '\t\t' + ('depth = %1.2f' %depth) + '\t\t' +\
-        ('iter = ' + fname)
+    title = varlabel + '     ' + (r'$r/R_\odot\ =\ %0.3f$' %(rloc/rsun)) +\
+            '     ' + ('iter = ' + fname)
     fig.text(cbar_left + cbar_width, cbar_bottom + 0.5*cbar_height,\
              cbar_units, verticalalignment='center', **csfont)
-    fig.text(ax_center_x, ax_ymax + 0.02*ax_delta_y, title,\
+    if plot_title:
+        fig.text(ax_center_x, ax_ymax + 0.02*ax_delta_y, title,\
              verticalalignment='bottom', horizontalalignment='center',\
              fontsize=14, **csfont)   
     
@@ -293,16 +294,16 @@ def plot_ortho(fig, ax, a, dirname, varname, idepth=0, minmax=None,\
     xvals, yvals = np.cos(psivals), np.sin(psivals)
     ax.plot(xvals, yvals, 'k')
 
-def plot_moll(fig, ax, a, dirname, varname, idepth=0, minmax=None,\
-               clon=0):
+def plot_moll(fig, ax, a, dirname, varname, ir=0, minmax=None,\
+               clon=0, plot_title=True):
     
     fname = str(a.iters[0]).zfill(8)
     vals = get_sslice(a, varname, dirname=dirname)
-    field = vals[:, :, idepth]
+    field = vals[:, :, ir]
     
     # Get geometric parameters
     ri, ro = rbounds(dirname)
-    rloc = a.radius[idepth]
+    rloc = a.radius[ir]
     d = 1. - ri/ro
     depth = (1. - rloc/ro)/d    
     
@@ -454,11 +455,12 @@ def plot_moll(fig, ax, a, dirname, varname, idepth=0, minmax=None,\
         
     varlabel = texlabels[varname]
 
-    title = varlabel + '\t\t' + ('depth = %1.2f' %depth) + '\t\t' +\
-        ('iter = ' + fname)
+    title = varlabel + '     ' + (r'$r/R_\odot\ =\ %0.3f$' %(rloc/rsun)) +\
+            '     ' + ('iter = ' + fname)
     fig.text(cbar_left + cbar_width, cbar_bottom + 0.5*cbar_height,\
              cbar_units, verticalalignment='center', **csfont)
-    fig.text(ax_center_x, ax_ymax + 0.02*ax_delta_y, title,\
+    if plot_title:
+        fig.text(ax_center_x, ax_ymax + 0.02*ax_delta_y, title,\
              verticalalignment='bottom', horizontalalignment='center',\
              fontsize=14, **csfont)   
     
