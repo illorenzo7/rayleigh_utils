@@ -20,7 +20,8 @@ file_list, int_file_list, nfiles = get_file_lists(radatadir)
 
 minmax = None
 iiter = nfiles - 1 # by default plot the last iteration
-idepth = 0 # by default plot just below the surface
+ir = 0 # by default plot just below the surface
+rval = None # can also find ir by finding the closest point
 clon = 0
 
 args = sys.argv[2:]
@@ -29,8 +30,10 @@ for i in range(nargs):
     arg = args[i]
     if (arg == '-minmax'):
         minmax = float(args[i+1]), float(args[i+2])
-    elif (arg == '-d'):
-        idepth = int(args[i+1])
+    elif (arg == '-ir'):
+        ir = int(args[i+1])
+    elif arg == '-rval':
+        rval = float(args[i+1])
     elif (arg == '-iter'):
         desired_iter = int(args[i+1])
         iiter = np.argmin(np.abs(int_file_list - desired_iter))
@@ -44,6 +47,10 @@ fname = file_list[iiter]
 
 # Read in desired shell slice
 a = Shell_Slices(radatadir + fname, '')
+
+# Find desired radius (by default ir=0--near outer surface)
+if not rval is None:
+    ir = np.argmin(np.abs(a.radius/rsun - rval))
 
 # Create the plot using subplot axes
 # Offset axes slightly (at the end) to deal with annoying white space cutoff
@@ -82,19 +89,22 @@ else:
     varlist = ['vr_prime', 'vt_prime', 'vp_prime', 's_prime',\
             'p_prime', 's_prime_sph']
 
+actual_rval = a.radius[ir]/rsun
 count = 0
 for varname in varlist: 
-    savename = 'moll_iter' + fname + ('_depth%02i_' %idepth) +\
+    savename = 'moll_iter' + fname + ('_rval%0.3_' %actual_rval) +\
             str(count).zfill(2) + '-' + varname  + '.png'
     count += 1
-    print('Plotting moll: ' + varname + (', depth %02i, ' %idepth) +\
+    print('Plotting moll: ' + varname + (', rval %0.3f, ' %actual_rval) +\
           'iter ' + fname + ' ...')
     fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
-    ax = fig.add_axes([margin_x, margin_bottom, subplot_width, subplot_height])
+    ax = fig.add_axes([margin_x, margin_bottom, subplot_width,\
+            subplot_height])
     
-    plot_moll(fig, ax, a, dirname, varname, idepth=idepth, minmax=minmax,\
+    plot_moll(fig, ax, a, dirname, varname, ir=ir, minmax=minmax,\
                 clon=clon) 
     fig.text(margin_x + 0.5*subplot_width, 1. - 0.5*margin_top,\
-            strip_dirname(dirname), ha='center', va='bottom', **csfont, fontsize=14)
+            strip_dirname(dirname), ha='center', va='bottom',\
+            **csfont, fontsize=14)
     plt.savefig(plotdir + savename, dpi=300)
     plt.close()

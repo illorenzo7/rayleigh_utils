@@ -20,10 +20,8 @@ file_list, int_file_list, nfiles = get_file_lists(radatadir)
 
 minmax = None
 iiter = nfiles - 1 # by default plot the last iteration
-ir = 0 # by default plot just below the surface
 varname = 'vr' # by default plot the radial velocity
 clon = 0
-clat = 20
 
 args = sys.argv[2:]
 nargs = len(args)
@@ -31,15 +29,26 @@ for i in range(nargs):
     arg = args[i]
     if (arg == '-minmax'):
         minmax = float(args[i+1]), float(args[i+2])
-    elif (arg == '-d'):
-        ir = int(args[i+1])
     elif (arg == '-var'):
         varname = args[i+1]
     elif (arg == '-iter'):
         desired_iter = int(args[i+1])
         iiter = np.argmin(np.abs(int_file_list - desired_iter))
-    elif (arg == '-clat'):
-        clat = float(args[i+1])
+    elif arg == '-sec':
+        time = float(args[i+1])
+        di_trans = translate_times(time, dirname, translate_from='sec')
+        desired_iter = di_trans['val_iter']
+        iiter = np.argmin(np.abs(int_file_list - desired_iter))
+    elif arg == '-day':
+        time = float(args[i+1])
+        di_trans = translate_times(time, dirname, translate_from='day')
+        desired_iter = di_trans['val_iter']
+        iiter = np.argmin(np.abs(int_file_list - desired_iter))
+    elif arg == '-prot':
+        time = float(args[i+1])
+        di_trans = translate_times(time, dirname, translate_from='prot')
+        desired_iter = di_trans['val_iter']
+        iiter = np.argmin(np.abs(int_file_list - desired_iter))
     elif (arg == '-clon'):
         clon = float(args[i+1])
 
