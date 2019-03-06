@@ -162,28 +162,49 @@ for i in range(len(lats_to_plot)):
         str(iter2).zfill(8) + tag + '.png'
 
     if not user_specified_minmax:
-        max_std = max(np.std(br_trace), np.std(bt_trace), np.std(bp_trace))
-        my_min, my_max = -3.*max_std, 3.*max_std
-        
+        std_br = np.std(br_trace)
+        std_bt = np.std(bt_trace)
+        std_bp = np.std(bp_trace)
+        my_min_br, my_max_br = -3.*std_br, 3.*std_br
+        my_min_bt, my_max_bt = -3.*std_bt, 3.*std_bt
+        my_min_bp, my_max_bp = -3.*std_bp, 3.*std_bp
+    else:
+        my_min_br, my_max_br = my_min, my_max
+        my_min_bt, my_max_bt = my_min, my_max
+        my_min_bp, my_max_bp = my_min, my_max
+            
     # Create figure with  3 panels in a row (time-latitude plots of
     #       br, btheta, and bphi)
     fig, axs = plt.subplots(3, 1, figsize=(12, 8), sharex=True, sharey=True)
     ax1 = axs[0]; ax2 = axs[1]; ax3 = axs[2]
 
     # first plot: evolution of B_r
-    ax1.pcolormesh(times2, rr2, br_trace[:, :],\
-            vmin=my_min, vmax=my_max, cmap='RdYlBu_r')
-    Dt = np.max(times2) - np.min(times2)
-    min_t = np.min(times2)
-    im=ax2.pcolormesh(times2, rr2, bt_trace[:, :],\
-            vmin=my_min, vmax=my_max, cmap='RdYlBu_r')
-    ax3.pcolormesh(times2, rr2, bp_trace[:, :],\
-            vmin=my_min, vmax=my_max, cmap='RdYlBu_r')
+    im1 = ax1.pcolormesh(times2, rr2, br_trace[:, :],\
+            vmin=my_min_br, vmax=my_max_br, cmap='RdYlBu_r')
+    im2 = ax2.pcolormesh(times2, rr2, bt_trace[:, :],\
+            vmin=my_min_bt, vmax=my_max_bt, cmap='RdYlBu_r')
+    im3 = ax3.pcolormesh(times2, rr2, bp_trace[:, :],\
+            vmin=my_min_bp, vmax=my_max_bp, cmap='RdYlBu_r')
 
-    # Put colorbar next to middle (B_theta) plot
-    # First find location of B_theta plot
-
+    # Put colorbar next to all plots (possibly normalized separately)
+    # First make room and then find location of subplots
     plt.subplots_adjust(left=0.1, right=0.85, wspace=0.03, top=0.9)
+
+    # First, B_r:
+    ax_xmin, ax_xmax, ax_ymin, ax_ymax = axis_range(ax1)
+    ax_delta_x = ax_xmax - ax_xmin
+    ax_delta_y = ax_ymax - ax_ymin
+    ax_center_x = ax_xmin + 0.5*ax_delta_x
+
+    cbar_left = ax_xmax + 0.3*(1 - ax_xmax)
+    cbar_bottom = ax_ymin
+    cbar_width = 0.07*(1 - ax_xmax)
+    cbar_height = ax_delta_y
+    cax = fig.add_axes((cbar_left, cbar_bottom, cbar_width, cbar_height))
+    cax.set_title('Gauss', **csfont)
+    plt.colorbar(im1, cax=cax)
+
+    # Next, B_theta:
     ax_xmin, ax_xmax, ax_ymin, ax_ymax = axis_range(ax2)
     ax_delta_x = ax_xmax - ax_xmin
     ax_delta_y = ax_ymax - ax_ymin
@@ -195,7 +216,21 @@ for i in range(len(lats_to_plot)):
     cbar_height = ax_delta_y
     cax = fig.add_axes((cbar_left, cbar_bottom, cbar_width, cbar_height))
     cax.set_title('Gauss', **csfont)
-    plt.colorbar(im, cax=cax)
+    plt.colorbar(im2, cax=cax)
+
+    # Next, B_phi:
+    ax_xmin, ax_xmax, ax_ymin, ax_ymax = axis_range(ax3)
+    ax_delta_x = ax_xmax - ax_xmin
+    ax_delta_y = ax_ymax - ax_ymin
+    ax_center_x = ax_xmin + 0.5*ax_delta_x
+
+    cbar_left = ax_xmax + 0.3*(1 - ax_xmax)
+    cbar_bottom = ax_ymin
+    cbar_width = 0.07*(1 - ax_xmax)
+    cbar_height = ax_delta_y
+    cax = fig.add_axes((cbar_left, cbar_bottom, cbar_width, cbar_height))
+    cax.set_title('Gauss', **csfont)
+    plt.colorbar(im3, cax=cax)
 
     # Label x (time) axis
     if rotation:
