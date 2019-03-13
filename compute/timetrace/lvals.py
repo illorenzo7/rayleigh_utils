@@ -16,6 +16,7 @@
 
 # Import relevant modules
 import numpy as np
+import pickle
 import sys, os
 sys.path.append(os.environ['rasource'] + '/post_processing')
 sys.path.append(os.environ['co'])
@@ -53,7 +54,7 @@ else:
 # Set the timetrace savename by the directory, what we are saving, 
 # and first and last iteration files for the trace
 savename = dirname_stripped + '_trace_lvals_' +\
-        file_list[index_first] + '_' + file_list[index_last] + '.npy'
+        file_list[index_first] + '_' + file_list[index_last] + '.pkl'
 savefile = datadir + savename    
 
 # Read in first Shell_Spectra file for (spectral) grid info
@@ -102,7 +103,10 @@ print ('Traced over %i Shell_Spectra slice(s) ...' %niter)
 
 # Save the trace
 print ('Saving file at ' + savefile + ' ...')
-np.save(savefile, {'vals': vals, 'times': times, 'iters': iters, \
+f = open(savefile, 'wb')
+pickle.dump({'vals': vals, 'times': times, 'iters': iters, \
 'iter1': iter1, 'iter2': iter2, 'niter': niter, 'lut': spec0.lut, \
 'qv': spec0.qv, 'nq': spec0.nq, 'rvals': spec0.radius, 'rinds': spec0.inds,\
-'nr': spec0.nr, 'lvals': lvals, 'nell': spec0.nell, 'lmax': lmax})
+'nr': spec0.nr, 'lvals': lvals, 'nell': spec0.nell, 'lmax': lmax},\
+    f, protocol=4)
+f.close()

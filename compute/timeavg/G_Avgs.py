@@ -13,6 +13,7 @@
 
 # Import relevant modules
 import numpy as np
+import pickle
 import sys, os
 sys.path.append(os.environ['rasource'] + '/post_processing')
 sys.path.append(os.environ['co'])
@@ -48,7 +49,7 @@ else:
 # Set the timeavg savename by the directory, what we are saving, and first and last
 # iteration files for the average
 savename = dirname_stripped + '_G_Avgs_' + file_list[index_first] + '_' +\
-    file_list[index_last] + '.npy'
+    file_list[index_last] + '.pkl'
 savefile = datadir + savename    
 
 # Initialize empty "vals" array for the time average
@@ -80,4 +81,6 @@ print ('Averaged over %i G_Avgs slice(s) ...' %count)
 
 # Save the avarage
 print ('Saving file at ' + savefile + ' ...')
-np.save(savefile, {'vals': vals, 'lut': g0.lut, 'count': count, 'iter1': iter1, 'iter2': iter2, 'qv': g0.qv, 'nq': g0.nq})
+f = open(savefile, 'wb')
+pickle.dump({'vals': vals, 'lut': g0.lut, 'count': count, 'iter1': iter1, 'iter2': iter2, 'qv': g0.qv, 'nq': g0.nq}, f, protocol=4)
+f.close()

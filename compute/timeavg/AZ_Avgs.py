@@ -13,6 +13,7 @@
 
 # Import relevant modules
 import numpy as np
+import pickle
 import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['co'])
@@ -48,7 +49,7 @@ else:
 # Set the timeavg savename by the directory, what we are saving, and first and last
 # iteration files for the average
 savename = dirname_stripped + '_AZ_Avgs_' + file_list[index_first] + '_' +\
-    file_list[index_last] + '.npy'
+    file_list[index_last] + '.pkl'
 savefile = datadir + savename    
 
 # Initialize empty "vals" array for the time average
@@ -97,5 +98,7 @@ print ('Averaged over %i AZ_Avgs slice(s) ...' %count)
 
 # Save the avarage
 print ('Saving file at ' + savefile + ' ...')
-np.save(savefile, {'vals': vals, 'lut': az0.lut, 'count': count, 'iter1': iter1, 'iter2': iter2,\
-       'qv': az0.qv, 'nq': az0.nq,  'rr': rr, 'rr_depth': rr_depth, 'rr_height': rr_height, 'nr': nr, 'ri': ri, 'ro': ro, 'd': d, 'tt': tt, 'tt_lat': tt_lat, 'sint': sint, 'cost': cost,'nt': nt, 'rr_2d': rr_2d, 'tt_2d': tt_2d, 'sint_2d': sint_2d, 'cost_2d': cost_2d, 'xx': xx, 'zz': zz})
+f = open(savefile, 'wb')
+pickle.dump({'vals': vals, 'lut': az0.lut, 'count': count, 'iter1': iter1, 'iter2': iter2,\
+       'qv': az0.qv, 'nq': az0.nq,  'rr': rr, 'rr_depth': rr_depth, 'rr_height': rr_height, 'nr': nr, 'ri': ri, 'ro': ro, 'd': d, 'tt': tt, 'tt_lat': tt_lat, 'sint': sint, 'cost': cost,'nt': nt, 'rr_2d': rr_2d, 'tt_2d': tt_2d, 'sint_2d': sint_2d, 'cost_2d': cost_2d, 'xx': xx, 'zz': zz}, f, protocol=4)
+f.close()

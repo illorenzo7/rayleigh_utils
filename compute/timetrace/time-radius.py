@@ -24,6 +24,7 @@
 
 # Import relevant modules
 import numpy as np
+import pickle
 import sys, os
 sys.path.append(os.environ['rasource'] + '/post_processing')
 sys.path.append(os.environ['co'])
@@ -98,9 +99,9 @@ if user_specified_lats or user_specified_vals:
 default; please enter a unique tag for the output data file:\n")
     more = '_' + more
     print('Your data will be saved in the file %s'\
-            %(basename + more + '.npy'))
+            %(basename + more + '.pkl'))
 
-savename = basename + more + '.npy'
+savename = basename + more + '.pkl'
 savefile = datadir + savename    
 
 # Read in first AZ_Avgs file for grid info
@@ -172,11 +173,13 @@ print ('Traced over %i AZ_Avgs slice(s) ...' %niter)
 
 # Save the avarage
 print ('Saving file at ' + savefile + ' ...')
-np.save(savefile,\
+f = open(savefile, 'wb')
+pickle.dump(\
 {'vals': vals, 'times': times, 'iters': iters, 'lats': lats,\
 'qvals': qvals, 'theta_inds': theta_inds, 'qinds': qinds, 'niter': niter,\
 'nlats': nlats, 'nq': nq, 'iter1': iter1, 'iter2': iter2, 'rr': rr,\
 'rr_depth': rr_depth, 'rr_height': rr_height, 'nr': nr, 'ri': ri,\
 'ro': ro, 'd': d, 'tt': tt, 'tt_lat': tt_lat, 'sint': sint, 'cost': cost,\
 'ntheta': ntheta, 'rr_2d': rr_2d, 'tt_2d': tt_2d, 'sint_2d': sint_2d,\
-'cost_2d': cost_2d, 'xx': xx, 'zz': zz})
+'cost_2d': cost_2d, 'xx': xx, 'zz': zz}, f, protocol=4)
+f.close()

@@ -17,6 +17,7 @@
 
 # Import relevant modules
 import numpy as np
+import pickle
 import sys, os
 sys.path.append(os.environ['rapp'])
 from rayleigh_diagnostics import Shell_Spectra
@@ -60,7 +61,7 @@ except:
 # Set the timeavg savename by the directory, what we are saving, and first and last
 # iteration files for the average
 savename = dirname_stripped + '_Shell_Spectra_' + file_list[index_first] + '_' +\
-    file_list[index_last] + '.npy'
+    file_list[index_last] + '.pkl'
 savefile = datadir + savename    
 
 # Initialize empty "vals" array for the time average
@@ -109,4 +110,6 @@ rvals_height = (rvals - ri)/d
 
 # Save the avarage
 print ('Saving file at ' + savefile + ' ...')
-np.save(savefile, {'fullpower': fullpower, 'lpower': lpower, 'lut': spec0.lut, 'count': count, 'iter1': iter1, 'iter2': iter2, 'qv': spec0.qv, 'nq': spec0.nq, 'rinds': spec0.inds, 'rvals': rvals, 'rvals_depth': rvals_depth, 'rvals_height': rvals_height, 'nr': spec0.nr, 'ri': ri, 'ro': ro, 'd': d, 'lvals': lvals, 'lvals_2d': lvals_2d, 'nell': spec0.nell, 'lmax': lmax, 'mvals': mvals, 'mvals_2d': mvals_2d, 'nm': spec0.nm, 'mmax': mmax})
+f = open(savefile, 'wb')
+pickle.dump({'fullpower': fullpower, 'lpower': lpower, 'lut': spec0.lut, 'count': count, 'iter1': iter1, 'iter2': iter2, 'qv': spec0.qv, 'nq': spec0.nq, 'rinds': spec0.inds, 'rvals': rvals, 'rvals_depth': rvals_depth, 'rvals_height': rvals_height, 'nr': spec0.nr, 'ri': ri, 'ro': ro, 'd': d, 'lvals': lvals, 'lvals_2d': lvals_2d, 'nell': spec0.nell, 'lmax': lmax, 'mvals': mvals, 'mvals_2d': mvals_2d, 'nm': spec0.nm, 'mmax': mmax}, f, protocol=4)
+f.close()

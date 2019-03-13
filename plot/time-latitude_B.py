@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 plt.rcParams['mathtext.fontset'] = 'dejavuserif'
 csfont = {'fontname':'DejaVu Serif'}
 import numpy as np
+import pickle
 import sys, os
 sys.path.append(os.environ['co'])
 from common import get_file_lists, get_widest_range_file, strip_dirname,\
@@ -81,7 +82,13 @@ for i in range(nargs):
 # Read in the time-latitude data (dictionary form)
 print ('Reading in time-latitude trace from ' + datadir +\
        time_latitude_file + ' ...')
-di = np.load(datadir + time_latitude_file, encoding='latin1').item()
+try:
+    di = np.load(datadir + time_latitude_file, encoding='latin1').item()
+except:
+    f = open(time_latitude_file, 'rb')
+    di = pickle.load(f)
+    f.close()
+
 vals = di['vals']
 
 times = di['times']
