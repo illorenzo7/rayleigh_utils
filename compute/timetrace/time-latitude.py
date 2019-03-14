@@ -85,23 +85,21 @@ for i in range(nargs):
             depths.append(float(depth_str))
             user_specified_depths = True
 
-# Set the timetrace savename by the directory, what we are saving, 
-# and first and last iteration files for the trace
-basename = dirname_stripped + '_time-latitude_' +\
-        file_list[index_first] + '_' + file_list[index_last]
 
 # If the user chose different depths/vals, they must put a unique tag
 # on the data
-more = ''
+tag = ''
 if user_specified_depths or user_specified_vals:
-    more = input("You chose latitudes/quantities different from the\n\
+    tag = input("You chose latitudes/quantities different from the\n\
 default; please enter a unique tag for the output data file:\n")
-    more = '_' + more
-    print('Your data will be saved in the file %s'\
-            %(basename + more + '.pkl'))
+    tag = tag + '_'
 
-savename = basename + more + '.pkl'
+# Set the timetrace savename by the directory, what we are saving, 
+# and first and last iteration files for the trace (and optional tag)
+savename = dirname_stripped + '_time-latitude_' + tag +\
+        file_list[index_first] + '_' + file_list[index_last] + '.pkl'
 savefile = datadir + savename    
+print('Your data will be saved in the file %s' %savename)
 
 # Read in first AZ_Avgs file for grid info
 az0 = AZ_Avgs(radatadir + file_list[index_first], '')
