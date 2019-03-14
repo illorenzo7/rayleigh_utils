@@ -1,4 +1,5 @@
 import numpy as np
+import pickle
 import matplotlib.pyplot as plt
 import sys
 import os
@@ -51,7 +52,7 @@ rho_r_sint = rho_2d*r_2d*sint_2d
 
 # Read in Reynolds stresses to compute amom_flux
 rs_file = get_widest_range_file(datadir, 'rs')
-print ('Reading in Reynolds stress from ' + datadir + rs_file + ' ...')
+print ('Getting Reynolds stress from ' + datadir + rs_file + ' ...')
 (vr2_p, vt2_p, vp2_p, vrvp_p, vrvt_p, vtvp_p,\
      vr2_m, vt2_m, vp2_m, vrvp_m, vrvt_m, vtvp_m, fplus, fminus) =\
      np.load(datadir + rs_file)

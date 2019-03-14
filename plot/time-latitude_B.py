@@ -80,7 +80,7 @@ for i in range(nargs):
         tag = '_' + args[i+1]
 
 # Read in the time-latitude data (dictionary form)
-print ('Reading in time-latitude trace from ' + datadir +\
+print ('Getting time-latitude trace from ' + datadir +\
        time_latitude_file + ' ...')
 try:
     di = np.load(datadir + time_latitude_file, encoding='latin1').item()

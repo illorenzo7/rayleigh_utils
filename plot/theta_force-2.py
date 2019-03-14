@@ -11,6 +11,7 @@
 # [dirname]_theta_force_[first iter]_[last iter].png
 
 import numpy as np
+import pickle
 import matplotlib as mpl
 mpl.use('TkAgg')
 import matplotlib.pyplot as plt
@@ -61,7 +62,12 @@ except:
 # Get AZ_Avgs file
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
 print ('Getting theta_forces from ' + datadir + AZ_Avgs_file + ' ...')
-di = np.load(datadir + AZ_Avgs_file, encoding='latin1').item()
+try:
+    di = np.load(datadir + AZ_Avgs_file, encoding='latin1').item()
+except:
+    f = open(AZ_Avgs_file, 'rb')
+    di = pickle.load(f)
+    f.close()
 
 iter1, iter2 = di['iter1'], di['iter2']
 vals = di['vals']

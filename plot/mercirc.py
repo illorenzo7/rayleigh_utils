@@ -9,6 +9,7 @@
 # [dirname]_diffrot_[first iter]_[last iter].npy
 
 import numpy as np
+import pickle
 import matplotlib as mpl
 mpl.use('TkAgg')
 import matplotlib.pyplot as plt
@@ -59,8 +60,13 @@ for i in range(nargs):
 
 # Read in AZ_Avgs data
 print ('Getting data from ' + datadir + AZ_Avgs_file + ' ...')
-di = np.load(datadir + AZ_Avgs_file, encoding='latin1').item()
-#vals, qv, counts, iters1, iters2 = np.load(datadir + AZ_Avgs_file)
+try:
+    di = np.load(datadir + AZ_Avgs_file, encoding='latin1').item()
+except:
+    f = open(AZ_Avgs_file, 'rb')
+    di = pickle.load(f)
+    f.close()
+
 vals = di['vals']
 lut = di['lut']
 iter1, iter2 = di['iter1'], di['iter2']

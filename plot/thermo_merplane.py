@@ -11,6 +11,7 @@
 # [dirname]_eflux_radial_merplane_[first iter]_[last iter].png
 
 import numpy as np
+import pickle
 import matplotlib as mpl
 mpl.use('TkAgg')
 import matplotlib.pyplot as plt
@@ -57,8 +58,18 @@ Shell_Avgs_file = get_widest_range_file(datadir, 'Shell_Avgs')
 
 print ('Getting zonally averaged thermo. vars from ' + datadir + AZ_Avgs_file + ' ...')
 print ('and the spherically averaged thermo. vars from ' + datadir + Shell_Avgs_file + ' ...')
-di = np.load(datadir + AZ_Avgs_file, encoding='latin1').item()
-di_sph = np.load(datadir + Shell_Avgs_file, encoding='latin1').item()
+try:
+    di = np.load(datadir + AZ_Avgs_file, encoding='latin1').item()
+except:
+    f = open(AZ_Avgs_file, 'rb')
+    di = pickle.load(f)
+    f.close()
+try:
+    di_sph = np.load(datadir + Shell_Avgs_file, encoding='latin1').item()
+except:
+    f = open(Shell_Avgs_file, 'rb')
+    di_sph = pickle.load(f)
+    f.close()
 
 iter1, iter2 = di['iter1'], di['iter2']
 vals = di['vals']

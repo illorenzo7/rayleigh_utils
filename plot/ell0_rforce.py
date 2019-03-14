@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 plt.rcParams['mathtext.fontset'] = 'dejavuserif'
 csfont = {'fontname':'DejaVu Serif'}
 import numpy as np
+import pickle
 import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['co'])
@@ -59,7 +60,13 @@ lw = 1. # regular-width lines
 
 # Read in the flux data
 print ('Getting ell=0 radial forces from ' + datadir + Shell_Avgs_file + ' ...')
-di = np.load(datadir + Shell_Avgs_file, encoding='latin1').item()
+try:
+    di = np.load(datadir + Shell_Avgs_file, encoding='latin1').item()
+except:
+    f = open(Shell_Avgs_file, 'rb')
+    di = pickle.load(f)
+    f.close()
+
 vals = di['vals']
 lut = di['lut']
 iter1, iter2 = di['iter1'], di['iter2']

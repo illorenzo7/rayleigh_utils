@@ -7,6 +7,7 @@ from matplotlib import colors
 plt.rcParams['mathtext.fontset'] = 'dejavuserif'
 csfont = {'fontname':'DejaVu Serif'}
 import numpy as np
+import pickle
 import sys, os
 sys.path.append(os.environ['co'])
 from common import get_file_lists, get_widest_range_file, strip_dirname,\
@@ -90,7 +91,12 @@ for i in range(nargs):
 # Read in the time-lvals data (dictionary form)
 print ('Reading in lvals trace from ' + datadir +\
        trace_lvals_file + ' ...')
-di = np.load(datadir + trace_lvals_file, encoding='latin1').item()
+try:
+    di = np.load(datadir + trace_lvals_file, encoding='latin1').item()
+except:
+    f = open(trace_lvals_file, 'rb')
+    di = pickle.load(f)
+    f.close()
 
 vals = di['vals']
 times = di['times']
