@@ -94,7 +94,7 @@ print ('Reading in lvals trace from ' + datadir +\
 try:
     di = np.load(datadir + trace_lvals_file, encoding='latin1').item()
 except:
-    f = open(trace_lvals_file, 'rb')
+    f = open(datadir + trace_lvals_file, 'rb')
     di = pickle.load(f)
     f.close()
 
@@ -188,7 +188,7 @@ for i in range(len(i_desiredrvals)):
     bp_trace = bp_trace_all[:, :, i_desiredrval, itype]
     
     # Make appropriate file name to save
-    savename = dirname_stripped + '_time-latitude_B_' + \
+    savename = dirname_stripped + '_time-lval_B_' + \
             str(itype).zfill(2) + '-' + power_type + '_' + \
         ('rval%0.3f_' %rval_to_plot) + str(iter1).zfill(8) + '_' +\
         str(iter2).zfill(8) + tag + '.png'
