@@ -13,7 +13,7 @@ sys.path.append(os.environ['co'])
 from common import get_file_lists, get_widest_range_file, strip_dirname,\
         rsun
 from get_parameter import get_parameter
-from plotcommon import axis_range
+from plotcommon import axis_range, logbounds, xy_grid
 
 # Get the run directory on which to perform the analysis
 dirname = sys.argv[1]
@@ -174,10 +174,14 @@ times_trace = times[over2:niter - over2]
 
 # Make meshgrid of time/radius
 times2, lvals2 = np.meshgrid(times_trace/tnorm, lvals, indexing='ij')
-times2_even, lvals2_even = np.meshgrid(times_trace/tnorm, lvals_even,\
-        indexing='ij')
-times2_odd, lvals2_odd = np.meshgrid(times_trace/tnorm, lvals_odd,\
-        indexing='ij')
+times2_even_unshifted, lvals2_even_unshifted =\
+        np.meshgrid(times_trace/tnorm, lvals_even, indexing='ij')
+times2_odd_unshifted, lvals2_odd_unshifted =\
+        np.meshgrid(times_trace/tnorm, lvals_odd, indexing='ij')
+times2_even, lvals2_even =\
+        xy_grid(times2_even_unshifted, lvals2_even_unshifted)
+times2_odd, lvals2_odd =\
+        xy_grid(times2_odd_unshifted, lvals2_odd_unshifted)
 
 # Loop over the desired radii and save plots
 for i in range(len(i_desiredrvals)):
@@ -196,21 +200,18 @@ for i in range(len(i_desiredrvals)):
     if not user_specified_minmax:
         my_mins = []
         my_maxes = []
-        for field in [br_trace, bt_trace, bp_trace]:
-            logfield= np.log(field[niter//2:, 3:]) 
-            # only determine these from l > 2 and
-            # last half in case beginning / spherically symmetric values
-            # are super small
-            medlog = np.median(logfield)
-            shiftlog = logfield - medlog
-            minexp = medlog - 7*np.std(shiftlog[np.where(shiftlog < 0)].flatten())
-            maxexp = medlog + 7*np.std(shiftlog[np.where(shiftlog > 0)].flatten())
-            my_mins.append(np.exp(minexp))
-            my_maxes.append(np.exp(maxexp))
+        cut = niter//2
+        for field in [br_trace[cut:, 10:], bt_trace[cut:, :],\
+                bp_trace[cut:, :]]:
+            my_min, my_max = logbounds(field)
+            my_mins.append(my_min)
+            my_maxes.append(my_max)
     else:
-        my_mins = [my_min_br, my_min_bt, my_min_bp]
-        my_maxes = [my_max_br, my_max_bt, my_max_bp]
-     
+        my_mins = [my_min_br_even, my_min_br_odd, my_min_bt_even,\
+                my_min_bt_odd, my_min_bp_even, my_min_bp_even]
+        my_maxes = [my_max_br_even, my_max_br_odd, my_max_bt_even,\
+                my_max_bt_odd, my_max_bp_even, my_max_bp_even]
+    
     # Create figure with  3 panels in a row (time-lval plots of
     #       br, btheta, and bphi)
     fig, axs = plt.subplots(3, 1, figsize=(12, 8), sharex=True, sharey=True)
@@ -224,13 +225,13 @@ for i in range(len(i_desiredrvals)):
             norm=colors.LogNorm(vmin=my_mins[0], vmax=my_maxes[0]))
     ax1.pcolormesh(times2_odd, -lvals2_odd, br_trace[:, il_odd],\
             cmap='Greys',\
-            norm=colors.LogNorm(vmin=my_mins[1], vmax=my_maxes[1]))
+            norm=colors.LogNorm(vmin=my_mins[0], vmax=my_maxes[0]))
     im2 = ax2.pcolormesh(times2_even, lvals2_even, bt_trace[:, il_even],\
             cmap='Greys',\
             norm=colors.LogNorm(vmin=my_mins[1], vmax=my_maxes[1]))
-    ax2.pcolormesh(times2_odd, -lvals2_odd, br_trace[:, il_odd],\
+    ax2.pcolormesh(times2_odd, -lvals2_odd, bt_trace[:, il_odd],\
             cmap='Greys',\
-            norm=colors.LogNorm(vmin=my_mins[0], vmax=my_maxes[0]))
+            norm=colors.LogNorm(vmin=my_mins[1], vmax=my_maxes[1]))
     im3 = ax3.pcolormesh(times2_even, lvals2_even, bp_trace[:, il_even],\
             cmap='Greys',\
             norm=colors.LogNorm(vmin=my_mins[2], vmax=my_maxes[2]))

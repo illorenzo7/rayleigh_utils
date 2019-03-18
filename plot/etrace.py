@@ -3,6 +3,7 @@
 import matplotlib as mpl
 mpl.use('TkAgg')
 import matplotlib.pyplot as plt
+import pickle
 import numpy as np
 import sys, os
 from subprocess import call
@@ -54,7 +55,13 @@ else:
 
 # Read in the KE data (dictionary form)
 print ('Reading in KE components data from ' + datadir + trace_G_Avgs_file + ' ...')
-di = np.load(datadir + trace_G_Avgs_file, encoding='latin1').item()
+try:
+    di = np.load(datadir + trace_G_Avgs_file, encoding='latin1').item()
+except:
+    f = open(datadir + trace_G_Avgs_file, 'rb')
+    di = pickle.load(f)
+    f.close()
+
 vals = di['vals']
 lut = di['lut']
 times = di['times']

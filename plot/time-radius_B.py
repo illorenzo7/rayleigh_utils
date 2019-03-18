@@ -85,7 +85,7 @@ print ('Getting time-radius trace from ' + datadir +\
 try:
     di = np.load(datadir + time_radius_file, encoding='latin1').item()
 except:
-    f = open(time_radius_file, 'rb')
+    f = open(datadir + time_radius_file, 'rb')
     di = pickle.load(f)
     f.close()
 
@@ -150,10 +150,18 @@ br_trace_all /= navg
 bt_trace_all /= navg
 bp_trace_all /= navg
 
-times_trace = times[over2:niter - over2]
-
+times_trace = times[over2:niter - over2]/tnorm
 # Make meshgrid of time/radius
-times2, rr2 = np.meshgrid(times_trace/tnorm, rr/rsun, indexing='ij')
+# Take into account if user specified xmin, xmax
+if user_specified_xminmax:
+    it1 = np.argmin(np.abs(times_trace - xmin))
+    it2 = np.argmin(np.abs(times_trace - xmax))
+    times_trace = times_trace[it1:it2+1]
+    br_trace_all = br_trace_all[it1:it2+1]
+    bt_trace_all = bt_trace_all[it1:it2+1]
+    bp_trace_all = bp_trace_all[it1:it2+1]
+
+times2, rr2 = np.meshgrid(times_trace, rr/rsun, indexing='ij')
 
 # Loop over the desired latitudes and save plots
 for i in range(len(lats_to_plot)):
@@ -247,9 +255,6 @@ for i in range(len(lats_to_plot)):
 
     xlabel = 'time (' + timeunit + ')'
     ax3.set_xlabel(xlabel, **csfont)
-
-    if user_specified_xminmax:
-        ax3.set_xlim((xmin, xmax))
 
     # Label y-axis (radius in units of rsun)
     ax2.set_ylabel(r'$\rm{radius}\ (R_\odot)$', **csfont)
