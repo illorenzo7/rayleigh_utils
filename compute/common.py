@@ -3,7 +3,7 @@
 # Common routines for routines for post-processing Rayleigh data 
 
 import numpy as np
-import os
+import os, pickle
 
 # Solar radius
 rsun = 6.95508e10
@@ -108,11 +108,11 @@ def get_widest_range_file(datadir, data_name):
     for i in range(len(datafiles)):
         datafile = datafiles[i]
         if data_name in datafile:
-            specific_files.append(datafile)
-#            istart = datafile.find(data_name)
-#            possible_iter = datafile[istart + len_name + 1:istart + len_name + 9]
-#            if is_an_int(possible_iter):
-#                specific_files.append(datafile)
+#            specific_files.append(datafile)
+            istart = datafile.find(data_name)
+            possible_iter = datafile[istart + len_name + 1:istart + len_name + 9]
+            if is_an_int(possible_iter):
+                specific_files.append(datafile)
 
     ranges = []
     iters1 = []
@@ -153,3 +153,12 @@ def interpx(x1, y1, x2, y2, y):
     slope = (y2 - y1)/(x2 - x1)
     x = x1 + (y - y1)/slope
     return (x)
+
+def get_dict(fname):
+    if fname[-3:] == 'npy':
+        di = np.load(fname, encoding='latin1').item()
+    elif fname[-3:] == 'pkl':
+        f = open(fname, 'rb')
+        di = pickle.load(f)
+        f.close()
+    return di

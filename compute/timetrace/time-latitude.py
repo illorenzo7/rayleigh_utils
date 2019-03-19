@@ -69,7 +69,7 @@ if magnetism:
 depths = [0.05, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 0.95]
 user_specified_vals = False
 user_specified_depths = False
-
+tag_already_provided = False
 for i in range(nargs):
     arg = args[i]
     if arg == '-vars':
@@ -84,15 +84,19 @@ for i in range(nargs):
         for depth_str in depths_str:
             depths.append(float(depth_str))
             user_specified_depths = True
+    elif arg == '-tag':
+        tag_already_provided = True
+        tag = args[i+1] + '_'
 
 
 # If the user chose different depths/vals, they must put a unique tag
 # on the data
-tag = ''
-if user_specified_depths or user_specified_vals:
-    tag = input("You chose latitudes/quantities different from the\n\
-default; please enter a unique tag for the output data file:\n")
-    tag = tag + '_'
+if not tag_already_provided:
+    tag = ''
+    if user_specified_depths or user_specified_vals:
+        tag = input("You chose latitudes/quantities different from the\n\
+    default; please enter a unique tag for the output data file:\n")
+        tag = tag + '_'
 
 # Set the timetrace savename by the directory, what we are saving, 
 # and first and last iteration files for the trace (and optional tag)

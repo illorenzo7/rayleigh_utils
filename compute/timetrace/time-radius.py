@@ -70,6 +70,7 @@ lats = [-85., -75., -60., -45., -30., -15., 0., 15., 30., 45., 60., 75.,\
         85.]
 user_specified_vals = False
 user_specified_lats = False
+tag_already_provided = False
 
 for i in range(nargs):
     arg = args[i]
@@ -85,14 +86,18 @@ for i in range(nargs):
         for lat_str in lats_str:
             lats.append(float(lat_str))
             user_specified_lats = True
+    elif arg == '-tag':
+        tag_already_provided = True
+        tag = args[i+1] + '_'
 
 # If the user chose different depths/vals, they must put a unique tag
 # on the data
-tag = ''
-if user_specified_lats or user_specified_vals:
-    tag = input("You chose latitudes/quantities different from the\n\
-default; please enter a unique tag for the output data file:\n")
-    tag = tag + '_'
+if not tag_already_provided:
+    tag = ''
+    if user_specified_lats or user_specified_vals:
+        tag = input("You chose latitudes/quantities different from the\n\
+    default; please enter a unique tag for the output data file:\n")
+        tag = tag + '_'
 
 # Set the timetrace savename by the directory, what we are saving, 
 # and first and last iteration files for the trace (and optional tag)

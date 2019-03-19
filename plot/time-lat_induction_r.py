@@ -1,6 +1,7 @@
 # Author: Loren Matilsky
 # Date created: 03/02/2019
 import matplotlib as mpl
+from matplotlib import ticker
 mpl.use('TkAgg')
 import matplotlib.pyplot as plt
 plt.rcParams['mathtext.fontset'] = 'dejavuserif'
@@ -10,18 +11,9 @@ import pickle
 import sys, os
 sys.path.append(os.environ['co'])
 from common import get_file_lists, get_widest_range_file, strip_dirname,\
-        rsun
+        rsun, get_dict
+from plotcommon import axis_range, fmt
 from get_parameter import get_parameter
-
-def axis_range(ax): # gets subplot coordinates on a figure in "normalized"
-        # coordinates
-    pos = plt.get(ax, 'position')
-    bottom_left = pos.p0
-    top_right = pos.p1
-    xmin, xmax = bottom_left[0], top_right[0]
-    ymin, ymax = bottom_left[1], top_right[1]
-    
-    return xmin, xmax, ymin, ymax
 
 # Get the run directory on which to perform the analysis
 dirname = sys.argv[1]
@@ -29,13 +21,19 @@ dirname = sys.argv[1]
 # Data and plot directories
 datadir = dirname + '/data/'
 plotdir = dirname + '/plots/'
+nosave = False
 if (not os.path.isdir(plotdir)):
     os.makedirs(plotdir)
 dirname_stripped = strip_dirname(dirname)
 
 # Find the time/latitude file(s) the data directory. If there are 
 # multiple, by default choose the one with widest range in the trace.
-time_latitude_file = get_widest_range_file(datadir, 'time-latitude')
+# We need both time-latitude regular (for the B field)
+# and time-latitude induction (for the induction terms)
+time_latitude_induction_file = get_widest_range_file(datadir,\
+        'time-latitude_induction')
+time_latitude_file = get_widest_range_file(datadir,\
+        'time-latitude')
 
 # more defaults
 user_specified_minmax = False
@@ -47,22 +45,25 @@ desired_rvals = [0.83] # by default, plot time-radius diagram for fields
 navg = 11 # by default average over 11 AZ_Avgs files for each time
 
 # Get command-line arguments
-nosave = False
 args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
     if (arg == '-minmax'):
         user_specified_minmax = True
-        my_min_vr = float(args[i+1])
-        my_max_vr = float(args[i+2])
-        my_min_vt = float(args[i+3])
-        my_max_vt = float(args[i+4])
-        my_min_vp = float(args[i+5])
-        my_max_vp = float(args[i+6])
-    elif (arg == '-usefile'):
+        my_min_br = float(args[i+1])
+        my_max_br = float(args[i+2])
+        my_min_induction = float(args[i+3])
+        my_max_induction = float(args[i+4])
+    elif (arg == '-nosave'):
+        nosave = True
+
+    elif (arg == '-usefiles'):
         time_latitude_file = args[i+1]
         time_latitude_file = time_latitude_file.split('/')[-1]
+        time_latitude_induction_file = args[i+2]
+        time_latitude_induction_file =\
+                time_latitude_induction_file.split('/')[-1]
     elif (arg == '-rvals'):
         string_desired_rvals = args[i+1].split()
         if string_desired_rvals == ['all']:
@@ -83,20 +84,20 @@ for i in range(nargs):
         xmax = float(args[i+2])
     elif (arg == '-tag'):
         tag = '_' + args[i+1]
-    elif (arg == '-nosave'):
-        nosave = True
 
 # Read in the time-latitude data (dictionary form)
+# In this part, we really must assume that the user saved
+# the separate time-latitude (induction) files wisely, so they all
+# have the same values for "times" and "lats", depths, etc.
 print ('Getting time-latitude trace from ' + datadir +\
        time_latitude_file + ' ...')
-try:
-    di = np.load(datadir + time_latitude_file, encoding='latin1').item()
-except:
-    f = open(datadir + time_latitude_file, 'rb')
-    di = pickle.load(f)
-    f.close()
+di = get_dict(datadir + time_latitude_file)
+print ('Getting time-latitude induction trace from ' + datadir +\
+       time_latitude_induction_file + ' ...')
+di_ind = get_dict(datadir + time_latitude_induction_file)
 
 vals = di['vals']
+vals_ind = di_ind['vals']
 
 times = di['times']
 iters = di['iters']
@@ -108,11 +109,11 @@ ntheta = di['ntheta']
 rvals_sampled = rr[rinds]/rsun
 
 qvals = np.array(di['qvals'])
+qvals_ind = np.array(di_ind['qvals'])
 
 niter = di['niter']
 nr = di['nr']
 nrvals = di['ndepths']
-nq = di['nq']
 
 iter1 = di['iter1']
 iter2 = di['iter2']
@@ -126,9 +127,11 @@ if rotation:
 else:
     tnorm = 86400. # normalize by "days"
 
-vr_index = np.argmin(np.abs(qvals - 1))
-vt_index = np.argmin(np.abs(qvals - 2))
-vp_index = np.argmin(np.abs(qvals - 3))
+br_index = np.argmin(np.abs(qvals - 801))
+trans_tot_index = np.argmin(np.abs(qvals_ind - 1604))
+trans_mm_index = np.argmin(np.abs(qvals_ind - 1619))
+
+diff_index = np.argmin(np.abs(qvals_ind - 1605))
 
 i_desiredrvals = []
 rvals_to_plot = []
@@ -143,23 +146,28 @@ else:
         i_desiredrvals.append(i_desiredrval)
         rvals_to_plot.append(rvals_sampled[i_desiredrval])
 
-# Get raw traces of vr, vtheta, vphi (in m/s)
-vr = vals[:, :, :, vr_index]/100.
-vt = vals[:, :, :, vt_index]/100.
-vp = vals[:, :, :, vp_index]/100.
+# Get raw traces of br, btheta, bphi
+br = vals[:, :, :, br_index]
+trans_tot = vals_ind[:, :, :, trans_tot_index]
+trans_mm = vals_ind[:, :, :, trans_mm_index]
+diff = vals_ind[:, :, :, diff_index]
 
 # Average these traces in time
 over2 = navg//2
-vr_trace_all = np.zeros((niter - navg + 1, ntheta, nrvals))
-vt_trace_all = np.zeros((niter - navg + 1, ntheta, nrvals))
-vp_trace_all = np.zeros((niter - navg + 1, ntheta, nrvals))
+br_all = np.zeros((niter - navg + 1, ntheta, nrvals))
+trans_tot_all = np.zeros((niter - navg + 1, ntheta, nrvals))
+trans_mm_all = np.zeros((niter - navg + 1, ntheta, nrvals))
+diff_all = np.zeros((niter - navg + 1, ntheta, nrvals))
+
 for i in range(navg):
-    vr_trace_all += vr[i:niter - navg + 1 + i]
-    vt_trace_all += vt[i:niter - navg + 1 + i]
-    vp_trace_all += vp[i:niter - navg + 1 + i]
-vr_trace_all /= navg
-vt_trace_all /= navg
-vp_trace_all /= navg
+    br_all += br[i:niter - navg + 1 + i]
+    trans_tot_all += trans_tot[i:niter - navg + 1 + i]
+    trans_mm_all += trans_mm[i:niter - navg + 1 + i]
+    diff_all += diff[i:niter - navg + 1 + i]
+br_all /= navg
+trans_tot_all /= navg
+trans_mm_all /= navg
+diff_all /= navg
 
 times_trace = times[over2:niter - over2]/tnorm
 
@@ -169,54 +177,63 @@ if user_specified_xminmax:
     it1 = np.argmin(np.abs(times_trace - xmin))
     it2 = np.argmin(np.abs(times_trace - xmax))
     times_trace = times_trace[it1:it2+1]
-    vr_trace_all = vr_trace_all[it1:it2+1]
-    vt_trace_all = vt_trace_all[it1:it2+1]
-    vp_trace_all = vp_trace_all[it1:it2+1]
+    br_all = br_all[it1:it2+1]
+    trans_tot_all = trans_tot_all[it1:it2+1]
+    trans_mm_all = trans_mm_all[it1:it2+1]
+    diff_all = diff_all[it1:it2+1]
 times2, tt_lat2 = np.meshgrid(times_trace, tt_lat, indexing='ij')
 
 # Loop over the desired radii and save plots
 for i in range(len(i_desiredrvals)):
     i_desiredrval = i_desiredrvals[i]
     rval_to_plot = rvals_to_plot[i]
-    vr_trace = vr_trace_all[:, :, i_desiredrval]
-    vt_trace = vt_trace_all[:, :, i_desiredrval]
-    vp_trace = vp_trace_all[:, :, i_desiredrval]
-    
+    br_trace = br_all[:, :, i_desiredrval]
+    trans_tot_trace = trans_tot_all[:, :, i_desiredrval]
+    trans_mm_trace = trans_mm_all[:, :, i_desiredrval]
+    trans_pp_trace = trans_tot_trace - trans_mm_trace
+    diff_trace = diff_all[:, :, i_desiredrval]
+    tot_trace = trans_tot_trace + diff_trace
+  
     # Make appropriate file name to save
-    savename = dirname_stripped + '_time-latitude_v_' +\
+    savename = dirname_stripped + '_time-lat_induction_r_' +\
         ('rval%0.3f_' %rval_to_plot) + str(iter1).zfill(8) + '_' +\
         str(iter2).zfill(8) + tag + '.png'
 
     if not user_specified_minmax:
-        # Use the values between +/- 45 degrees to determine saturation
-        # values
-        itheta1 = np.argmin(np.abs(tt_lat + 45)) 
-        itheta2 = np.argmin(np.abs(tt_lat - 45)) 
-        std_vr = np.std(vr_trace[:, itheta1:itheta2])
-        std_vt = np.std(vt_trace[:, itheta1:itheta2])
-        std_vp = np.std(vp_trace[:, itheta1:itheta2])
-        my_min_vr, my_max_vr = -3.*std_vr, 3.*std_vr
-        my_min_vt, my_max_vt = -3.*std_vt, 3.*std_vt
-        my_min_vp, my_max_vp = -3.*std_vp, 3.*std_vp
+        std_br = np.std(br_trace)
+        my_min_br, my_max_br = -3.*std_br, 3.*std_br
+
+        std_diff = np.std(diff_trace)
+        std_trans_tot = np.std(trans_tot_trace)
+        std_trans_mm = np.std(trans_mm_trace)
+        std_trans_pp = np.std(trans_pp_trace)
+        std_tot = np.std(tot_trace)
+        std_max = max(std_diff, std_trans_tot, std_trans_mm, std_trans_pp,\
+                std_tot)
+        my_min_induction, my_max_induction = -3.*std_max, 3.*std_max
      
     # Create figure with  3 panels in a row (time-latitude plots of
-    #       vr, vtheta, and vphi)
-    fig, axs = plt.subplots(3, 1, figsize=(12, 8), sharex=True, sharey=True)
-    ax1 = axs[0]; ax2 = axs[1]; ax3 = axs[2]
+    #       br, btheta, and bphi)
+    fig, axs = plt.subplots(5, 1, figsize=(12, 8), sharex=True, sharey=True)
+    ax1 = axs[0]; ax2 = axs[1]; ax3 = axs[2]; ax4 = axs[3]; ax5 = axs[4]
 
     # first plot: evolution of B_r
-    im1 = ax1.pcolormesh(times2, tt_lat2, vr_trace,\
-            vmin=my_min_vr, vmax=my_max_vr, cmap='RdYlBu_r')
-    im2 = ax2.pcolormesh(times2, tt_lat2, vt_trace,\
-            vmin=my_min_vt, vmax=my_max_vt, cmap='RdYlBu_r')
-    im3 = ax3.pcolormesh(times2, tt_lat2, vp_trace,\
-            vmin=my_min_vp, vmax=my_max_vp, cmap='RdYlBu_r')
+    im1 = ax1.pcolormesh(times2, tt_lat2, trans_mm_trace,\
+            vmin=my_min_induction, vmax=my_max_induction, cmap='RdYlBu_r')
+    im2 = ax2.pcolormesh(times2, tt_lat2, trans_pp_trace,\
+            vmin=my_min_induction, vmax=my_max_induction, cmap='RdYlBu_r')
+    im3 = ax3.pcolormesh(times2, tt_lat2, diff_trace,\
+            vmin=my_min_induction, vmax=my_max_induction, cmap='RdYlBu_r')
+    im4 = ax4.pcolormesh(times2, tt_lat2, tot_trace,\
+            vmin=my_min_induction, vmax=my_max_induction, cmap='RdYlBu_r')
+    im5 = ax5.pcolormesh(times2, tt_lat2, br_trace,\
+            vmin=my_min_br, vmax=my_max_br, cmap='RdYlBu_r')
 
     # Put colorbar next to all plots (possibly normalized separately)
     # First make room and then find location of subplots
     plt.subplots_adjust(left=0.1, right=0.85, wspace=0.03, top=0.9)
 
-    # First, B_r:
+    # First, trans_mm:
     ax_xmin, ax_xmax, ax_ymin, ax_ymax = axis_range(ax1)
     ax_delta_x = ax_xmax - ax_xmin
     ax_delta_y = ax_ymax - ax_ymin
@@ -227,11 +244,11 @@ for i in range(len(i_desiredrvals)):
     cbar_width = 0.07*(1 - ax_xmax)
     cbar_height = ax_delta_y
     cax = fig.add_axes((cbar_left, cbar_bottom, cbar_width, cbar_height))
-    cax.set_title(r'$\rm{m}\ \rm{s}^{-1}$', **csfont)
-    plt.colorbar(im1, cax=cax)
+    cax.set_title(r'$\rm{G}\ \rm{s}^{-1}$', **csfont)
+    plt.colorbar(im1, cax=cax, format=ticker.FuncFormatter(fmt))
 
-    # Next, B_theta:
-    ax_xmin, ax_xmax, ax_ymin, ax_ymax = axis_range(ax2)
+    # Next, db dt:
+    ax_xmin, ax_xmax, ax_ymin, ax_ymax = axis_range(ax4)
     ax_delta_x = ax_xmax - ax_xmin
     ax_delta_y = ax_ymax - ax_ymin
     ax_center_x = ax_xmin + 0.5*ax_delta_x
@@ -241,11 +258,11 @@ for i in range(len(i_desiredrvals)):
     cbar_width = 0.07*(1 - ax_xmax)
     cbar_height = ax_delta_y
     cax = fig.add_axes((cbar_left, cbar_bottom, cbar_width, cbar_height))
-    cax.set_title(r'$\rm{m}\ \rm{s}^{-1}$', **csfont)
-    plt.colorbar(im2, cax=cax)
+    cax.set_title(r'$\rm{G}\ \rm{s}^{-1}$', **csfont)
+    plt.colorbar(im4, cax=cax, format=ticker.FuncFormatter(fmt))
 
-    # Next, B_phi:
-    ax_xmin, ax_xmax, ax_ymin, ax_ymax = axis_range(ax3)
+    # Next, B_r:
+    ax_xmin, ax_xmax, ax_ymin, ax_ymax = axis_range(ax5)
     ax_delta_x = ax_xmax - ax_xmin
     ax_delta_y = ax_ymax - ax_ymin
     ax_center_x = ax_xmin + 0.5*ax_delta_x
@@ -255,8 +272,8 @@ for i in range(len(i_desiredrvals)):
     cbar_width = 0.07*(1 - ax_xmax)
     cbar_height = ax_delta_y
     cax = fig.add_axes((cbar_left, cbar_bottom, cbar_width, cbar_height))
-    cax.set_title(r'$\rm{m}\ \rm{s}^{-1}$', **csfont)
-    plt.colorbar(im3, cax=cax)
+    cax.set_title(r'$\rm{G}$', **csfont)
+    plt.colorbar(im5, cax=cax)
 
     # Label x (time) axis
     if rotation:
@@ -265,21 +282,29 @@ for i in range(len(i_desiredrvals)):
         timeunit = 'days'
 
     xlabel = 'time (' + timeunit + ')'
-    ax3.set_xlabel(xlabel, **csfont)
+    ax5.set_xlabel(xlabel, **csfont)
 
-    if user_specified_xminmax:
-        ax3.set_xlim((xmin, xmax))
+    # Label y-axis
+    ax3.set_ylabel('latitude (deg.)', **csfont)
+    ax3.set_yticks(np.arange(-90, 90, 30))
 
-    # Label y-axis (radius in units of rsun)
-    ax2.set_ylabel('latitude (deg.)', **csfont)
-    ax2.set_yticks(np.arange(-90, 90, 30))
-
-    # Label the plots by B_r, B_theta, B_phi
+    # Label the plots by induction terms, , , ... B_r
     ax_xmin, ax_xmax = ax1.get_xlim()
     ax_Dx = ax_xmax - ax_xmin
-    ax1.text(ax_xmin + 1.01*ax_Dx, 0.,  r'$v_r$')
-    ax2.text(ax_xmin + 1.01*ax_Dx, 0.,  r'$v_\theta$')
-    ax3.text(ax_xmin + 1.01*ax_Dx, 0.,  r'$v_\phi$')
+    label1 = r'$[\nabla\times(\overline{\mathbf{v}}\times\overline{\mathbf{B}})]_r$'
+    ax1.text(ax_xmin + 1.01*ax_Dx, 0., label1, va='center',\
+            rotation=270)
+    label1 = r'$[\nabla\times(\overline{\mathbf{v}^\prime\times\mathbf{B}^\prime})]_r$'
+    ax2.text(ax_xmin + 1.01*ax_Dx, 0.,  label1, va='center',\
+            rotation=270)
+    label1 = r'$[-\nabla\times(\eta(r)\nabla\times\overline{\mathbf{B}})]_r$'
+    ax3.text(ax_xmin + 1.01*ax_Dx, 0., label1, va='center',\
+            rotation=270)
+    label1 = r'$\partial B_r/\partial t$'
+    ax4.text(ax_xmin + 1.01*ax_Dx, 0.,  label1, va='center',\
+            rotation=270)
+    ax5.text(ax_xmin + 1.01*ax_Dx, 0.,  r'$B_r$', va='center',\
+            rotation=270)
 
     # Put some useful information on the title
     averaging_time = (times[-1] - times[0])/niter*navg/86400.
@@ -302,10 +327,19 @@ for i in range(len(i_desiredrvals)):
     plt.minorticks_on()
     plt.tick_params(top=True, right=True, direction='in', which='both')
 
+    plt.sca(ax4)
+    plt.minorticks_on()
+    plt.tick_params(top=True, right=True, direction='in', which='both')
+
+    plt.sca(ax5)
+    plt.minorticks_on()
+    plt.tick_params(top=True, right=True, direction='in', which='both')
+
     # Save the plot
+    print ('Saving the time-latitude plot at ' + plotdir +\
+            savename + ' ...')
+
     if not nosave:
-        print ('Saving the time-latitude plot at ' + plotdir +\
-                savename + ' ...')
         plt.savefig(plotdir + savename, dpi=300)
 
     # Show the plot if only plotting at one latitude

@@ -103,11 +103,6 @@ times = di['times']
 iters = di['iters']
 
 lvals = di['lvals']
-lvals_int = lvals.astype(int)
-il_even = np.where(lvals_int % 2 == 0)[0]
-il_odd = np.where(lvals_int % 2 == 1)[0]
-lvals_even = lvals[il_even]
-lvals_odd = lvals[il_odd]
 nell = di['nell']
 lmax = di['lmax']
 
@@ -170,18 +165,34 @@ br_trace_all /= navg
 bt_trace_all /= navg
 bp_trace_all /= navg
 
-times_trace = times[over2:niter - over2]
+times_trace = times[over2:niter - over2]/tnorm
 
 # Make meshgrid of time/radius
-times2, lvals2 = np.meshgrid(times_trace/tnorm, lvals, indexing='ij')
-times2_even_unshifted, lvals2_even_unshifted =\
-        np.meshgrid(times_trace/tnorm, lvals_even, indexing='ij')
-times2_odd_unshifted, lvals2_odd_unshifted =\
-        np.meshgrid(times_trace/tnorm, lvals_odd, indexing='ij')
+# Take into account if user specified xmin, xmax
+if user_specified_xminmax:
+    it1 = np.argmin(np.abs(times_trace - xmin))
+    it2 = np.argmin(np.abs(times_trace - xmax))
+    times_trace = times_trace[it1:it2+1]
+    br_trace_all = br_trace_all[it1:it2+1]
+    bt_trace_all = bt_trace_all[it1:it2+1]
+    bp_trace_all = bp_trace_all[it1:it2+1]
+#times2, lvals2 = np.meshgrid(times_trace, lvals, indexing='ij')
+
+# Break up quantities into l-even/l-odd
+lvals_int = lvals.astype(int)
+il_even = np.where(lvals_int % 2 == 0)[0]
+il_odd = np.where(lvals_int % 2 == 1)[0]
+lvals_even = lvals[il_even]
+lvals_odd = lvals[il_odd]
+
 times2_even, lvals2_even =\
-        xy_grid(times2_even_unshifted, lvals2_even_unshifted)
+        np.meshgrid(times_trace, lvals_even, indexing='ij')
 times2_odd, lvals2_odd =\
-        xy_grid(times2_odd_unshifted, lvals2_odd_unshifted)
+        np.meshgrid(times_trace, lvals_odd, indexing='ij')
+times2_even, lvals2_even =\
+        xy_grid(times2_even, lvals2_even)
+times2_odd, lvals2_odd =\
+        xy_grid(times2_odd, lvals2_odd)
 
 # Loop over the desired radii and save plots
 for i in range(len(i_desiredrvals)):
@@ -207,10 +218,8 @@ for i in range(len(i_desiredrvals)):
             my_mins.append(my_min)
             my_maxes.append(my_max)
     else:
-        my_mins = [my_min_br_even, my_min_br_odd, my_min_bt_even,\
-                my_min_bt_odd, my_min_bp_even, my_min_bp_even]
-        my_maxes = [my_max_br_even, my_max_br_odd, my_max_bt_even,\
-                my_max_bt_odd, my_max_bp_even, my_max_bp_even]
+        my_mins = [my_min_br, my_min_bt, my_min_bp]
+        my_maxes = [my_max_br, my_max_bt, my_max_bp]
     
     # Create figure with  3 panels in a row (time-lval plots of
     #       br, btheta, and bphi)
@@ -218,8 +227,6 @@ for i in range(len(i_desiredrvals)):
     ax1 = axs[0]; ax2 = axs[1]; ax3 = axs[2]
 
     # first plot: evolution of B_r spectrum
-#    im1 = ax1.pcolormesh(times2, lvals2, br_trace, cmap='Greys',\
-#            norm=colors.LogNorm(vmin=my_mins[0], vmax=my_maxes[0]))
     im1 = ax1.pcolormesh(times2_even, lvals2_even, br_trace[:, il_even],\
             cmap='Greys',\
             norm=colors.LogNorm(vmin=my_mins[0], vmax=my_maxes[0]))

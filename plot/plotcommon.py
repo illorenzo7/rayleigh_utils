@@ -2,6 +2,7 @@
 # Created: 02/08/2019
 import numpy as np
 import matplotlib.pyplot as plt
+#from matplotlib import ticker
 
 def axis_range(ax): # gets subplot coordinates on a figure in "normalized"
         # coordinates
@@ -45,11 +46,16 @@ def xy_grid(X, Y):
 
 def logbounds(arr):
     logarr = np.log(arr)
-    medlog = np.median(logarr)
+    medlog = np.log10(logarr)
     arrshifted = logarr - medlog
-    nsig = 3*np.log(10)
+    nsig = 3.
     minexp = medlog -\
             nsig*np.std(arrshifted[np.where(arrshifted < 0)].flatten())
     maxexp = medlog +\
             nsig*np.std(arrshifted[np.where(arrshifted > 0)].flatten())
-    return np.exp(minexp), np.exp(maxexp)
+    return 10.**minexp, 10.**maxexp
+
+def fmt(x, pos):
+    a, b = '{:.1e}'.format(x).split('e')
+    b = int(b)
+    return r'${} \times 10^{{{}}}$'.format(a, b)

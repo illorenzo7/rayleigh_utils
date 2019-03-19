@@ -29,6 +29,7 @@ xiter = False
 notfrom0 = False
 magnetism = False
 ylog = False
+user_specified_minmax = False
 
 # Get command-line arguments
 args = sys.argv[2:]
@@ -46,6 +47,10 @@ for i in range(nargs):
         magnetism = True
     elif (arg == '-log'):
         ylog = True
+    elif (arg == '-minmax'):
+        user_specified_minmax = True
+        my_min = float(args[i+1])
+        my_max = float(args[i+2])
 
 # Tag the plot by whether or not the x axis is in "time" or "iteration"
 if (xiter):
@@ -170,6 +175,8 @@ if not ylog:
 else:
     ax1.set_yscale('log')
     ax1.set_ylim((mmin/3.0, mmax*3.0))
+if user_specified_minmax:
+    ax1.set_ylim((my_min, my_max))
     
 # Set x limits  
 ax1.set_xlim((x_min, np.max(xaxis)))
