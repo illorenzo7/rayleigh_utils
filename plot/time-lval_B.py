@@ -11,9 +11,9 @@ import pickle
 import sys, os
 sys.path.append(os.environ['co'])
 from common import get_file_lists, get_widest_range_file, strip_dirname,\
-        rsun
+        rsun, get_dict
 from get_parameter import get_parameter
-from plotcommon import axis_range, logbounds, xy_grid
+from plotcommon import axis_range, logbounds, xy_grid, integerticks
 
 # Get the run directory on which to perform the analysis
 dirname = sys.argv[1]
@@ -32,7 +32,9 @@ trace_lvals_file = get_widest_range_file(datadir, 'trace_lvals')
 # more defaults
 user_specified_minmax = False
 user_specified_xminmax = False
-user_specified_yminmax = False
+user_specified_lminmax = False
+separate = False # don't separate even and odd values
+nosave = False
 tag = ''
 
 desired_rvals = [0.83] # by default, plot time-radius diagram for fields 
@@ -51,10 +53,20 @@ for i in range(nargs):
         user_specified_minmax = True
         my_min_br = float(args[i+1])
         my_max_br = float(args[i+2])
-        my_min_bt = float(args[i+3])
-        my_max_bt = float(args[i+4])
-        my_min_bp = float(args[i+5])
-        my_max_bp = float(args[i+6])
+        try:
+            my_min_bt = float(args[i+3])
+            my_max_bt = float(args[i+4])
+            my_min_bp = float(args[i+5])
+            my_max_bp = float(args[i+6])
+        except: # do the same values for each component
+            my_min_bt = my_min_br
+            my_max_bt = my_max_br
+            my_min_bp = my_min_br
+            my_max_bp = my_max_br
+    elif (arg == '-nosave'):
+        nosave = True
+    elif (arg == '-separate'):
+        separate = True
     elif (arg == '-usefile'):
         trace_lvals_file = args[i+1]
         trace_lvals_file = trace_lvals_file.split('/')[-1]
@@ -76,27 +88,23 @@ for i in range(nargs):
         user_specified_xminmax = True
         xmin = float(args[i+1])
         xmax = float(args[i+2])
-    elif (arg == '-yminmax'):
-        user_specified_yminmax = True
-        ymin = float(args[i+1])
-        ymax = float(args[i+2])
+    elif (arg == '-lminmax'):
+        user_specified_lminmax = True
+        my_lmin = float(args[i+1])
+        my_lmax = float(args[i+2])
     elif (arg == '-tag'):
         tag = '_' + args[i+1]
     elif (arg == '-ptype'):
         power_type = args[i+1]
-        if not (power_type == 'mean' or power_type == 'conv'):
+        if not (power_type == 'mean' or power_type == 'conv'\
+                or power_type == 'tot'):
             power_type = input('Please enter "tot," "mean," or "conv" for power_type:\n')
         itype = power_types_dict[power_type]
 
 # Read in the time-lvals data (dictionary form)
 print ('Reading in lvals trace from ' + datadir +\
        trace_lvals_file + ' ...')
-try:
-    di = np.load(datadir + trace_lvals_file, encoding='latin1').item()
-except:
-    f = open(datadir + trace_lvals_file, 'rb')
-    di = pickle.load(f)
-    f.close()
+di = get_dict(datadir + trace_lvals_file)
 
 vals = di['vals']
 times = di['times']
@@ -105,6 +113,7 @@ iters = di['iters']
 lvals = di['lvals']
 nell = di['nell']
 lmax = di['lmax']
+
 
 rvals = di['rvals']
 rinds = di['rinds'] # radial locations sampled for the trace
@@ -172,34 +181,56 @@ times_trace = times[over2:niter - over2]/tnorm
 if user_specified_xminmax:
     it1 = np.argmin(np.abs(times_trace - xmin))
     it2 = np.argmin(np.abs(times_trace - xmax))
+    print(xmin, xmax)
+    print(it1,it2)
     times_trace = times_trace[it1:it2+1]
     br_trace_all = br_trace_all[it1:it2+1]
     bt_trace_all = bt_trace_all[it1:it2+1]
     bp_trace_all = bp_trace_all[it1:it2+1]
+
+# If user specified lminmax, change the default lvals array
+il_min = 0 
+il_max = nell - 1
+if user_specified_lminmax:
+    il_min = np.argmin(np.abs(lvals - my_lmin))
+    il_max = np.argmin(np.abs(lvals - my_lmax))
+    # it is easier when said and done if lvals ends on an odd value
+    # (So there are equal numbers even and odd l)
+    if lvals[il_max] % 2 != 1:
+        il_max -= 1
+    lvals = lvals[il_min:il_max+1]
+    br_trace_all = br_trace_all[:, il_min:il_max+1]
+    bt_trace_all = bt_trace_all[:, il_min:il_max+1]
+    bp_trace_all = bp_trace_all[:, il_min:il_max+1]
+il_min_br = max(1, il_min)
 #times2, lvals2 = np.meshgrid(times_trace, lvals, indexing='ij')
 
-# Break up quantities into l-even/l-odd
-lvals_int = lvals.astype(int)
-il_even = np.where(lvals_int % 2 == 0)[0]
-il_odd = np.where(lvals_int % 2 == 1)[0]
-lvals_even = lvals[il_even]
-lvals_odd = lvals[il_odd]
+if separate:
+    # Break up quantities into l-even/l-odd
+    lvals_int = lvals.astype(int)
+    il_even = np.where(lvals_int % 2 == 0)[0]
+    il_odd = np.where(lvals_int % 2 == 1)[0]
+    lvals_even = lvals[il_even]
+    lvals_odd = lvals[il_odd]
 
-times2_even, lvals2_even =\
-        np.meshgrid(times_trace, lvals_even, indexing='ij')
-times2_odd, lvals2_odd =\
-        np.meshgrid(times_trace, lvals_odd, indexing='ij')
-times2_even, lvals2_even =\
-        xy_grid(times2_even, lvals2_even)
-times2_odd, lvals2_odd =\
-        xy_grid(times2_odd, lvals2_odd)
+# it is easier when said and done if lvals ends on an odd value
+# (So there are equal numbers even and odd l)
+#print(lvals)
+#if int(lvals[-1]) % 2 != 1:
+#    lvals = lvals[:-1]
+#print(lvals)
+
+times2, lvals2 = np.meshgrid(times_trace, lvals, indexing='ij')
+times2, lvals2 = xy_grid(times2, lvals2)
+
+print(lvals2)
 
 # Loop over the desired radii and save plots
 for i in range(len(i_desiredrvals)):
     i_desiredrval = i_desiredrvals[i]
     rval_to_plot = rvals_to_plot[i]
-    br_trace = br_trace_all[:, :, i_desiredrval, itype]
-    bt_trace = bt_trace_all[:, :, i_desiredrval, itype]
+    br_trace = br_trace_all[:, :, i_desiredrval, itype] 
+    bt_trace = bt_trace_all[:, :, i_desiredrval, itype] 
     bp_trace = bp_trace_all[:, :, i_desiredrval, itype]
     
     # Make appropriate file name to save
@@ -211,10 +242,13 @@ for i in range(len(i_desiredrvals)):
     if not user_specified_minmax:
         my_mins = []
         my_maxes = []
-        cut = niter//2
-        for field in [br_trace[cut:, 10:], bt_trace[cut:, :],\
-                bp_trace[cut:, :]]:
-            my_min, my_max = logbounds(field)
+        cut = len(times_trace)//2
+
+        for field in [br_trace[cut:, il_min_br:il_max+1],\
+                bt_trace[cut:, il_min:il_max+1],\
+                bp_trace[cut:, il_min:il_max+1]]:
+            my_min, my_max = logbounds(field+1e-22) #+1e-22 to guard against
+                # exactly 0 values
             my_mins.append(my_min)
             my_maxes.append(my_max)
     else:
@@ -227,12 +261,73 @@ for i in range(len(i_desiredrvals)):
     ax1 = axs[0]; ax2 = axs[1]; ax3 = axs[2]
 
     # first plot: evolution of B_r spectrum
-    im1 = ax1.pcolormesh(times2_even, lvals2_even, br_trace[:, il_even],\
-            cmap='Greys',\
-            norm=colors.LogNorm(vmin=my_mins[0], vmax=my_maxes[0]))
-    ax1.pcolormesh(times2_odd, -lvals2_odd, br_trace[:, il_odd],\
-            cmap='Greys',\
-            norm=colors.LogNorm(vmin=my_mins[0], vmax=my_maxes[0]))
+
+    if separate:
+        ''' 
+        br_trace_even = np.zeros_like(br_trace)
+        br_trace_even[:, il_even] = br_trace[:, il_even]
+        br_trace_even[:, il_odd] = br_trace[:, il_even]
+        print(il_even)
+        print(il_odd)
+        '''
+        br_trace_odd = np.zeros_like(br_trace[:, :]) # ignore l=0
+        br_trace_odd[:, il_odd] = br_trace[:, il_odd]
+        br_trace_odd[:, il_even] = br_trace[:, il_odd]
+
+        times2_even, lvals2_even = np.meshgrid(times_trace, lvals_even,\
+                indexing='ij')
+        times_even, lvals2_even = xy_grid(times2_even, lvals2_even)
+        br_trace_even = br_trace[:, il_even]
+
+        bt_trace_even = np.zeros_like(bt_trace)
+        bt_trace_even[:, il_even] = bt_trace[:, il_even]
+        bt_trace_odd = np.zeros_like(bt_trace)
+        bt_trace_odd[:, il_odd] = bt_trace[:, il_odd]
+
+        bp_trace_even = np.zeros_like(bp_trace)
+        bp_trace_even[:, il_even] = bp_trace[:, il_even]
+        bp_trace_odd = np.zeros_like(bp_trace)
+        bp_trace_odd[:, il_odd] = bp_trace[:, il_odd]
+
+        ax1.pcolormesh(times2, -lvals2, br_trace_odd,\
+                cmap='Greys',\
+                norm=colors.LogNorm(vmin=my_mins[0], vmax=my_maxes[0]))
+        print(np.shape(times2_even))
+        print(np.shape(lvals2_even))
+        print(np.shape(br_trace_even))
+        im1 = ax1.pcolormesh(times2_even, lvals2_even, br_trace_even,\
+                cmap='Greys',\
+                norm=colors.LogNorm(vmin=my_mins[0], vmax=my_maxes[0]))
+        ax2.pcolormesh(times2, -lvals2, bt_trace_odd,\
+                cmap='Greys',\
+                norm=colors.LogNorm(vmin=my_mins[1], vmax=my_maxes[1]))
+        im2 = ax2.pcolormesh(times2, lvals2, bt_trace_even,\
+                cmap='Greys',\
+                norm=colors.LogNorm(vmin=my_mins[1], vmax=my_maxes[1]))
+        ax3.pcolormesh(times2, -lvals2, bp_trace_odd,\
+                cmap='Greys',\
+                norm=colors.LogNorm(vmin=my_mins[2], vmax=my_maxes[2]))
+        im3 = ax3.pcolormesh(times2, lvals2, bp_trace_even,\
+                cmap='Greys',\
+                norm=colors.LogNorm(vmin=my_mins[2], vmax=my_maxes[2]))
+
+        # Make tick values something sensible
+        tickvals, ticklabels = integerticks(np.max(lvals))
+        ax1.set_yticks(tickvals)
+        ax1.set_yticklabels(ticklabels)
+    else:
+        print('###########################################')
+        print('about to plot br_trace')
+        print(my_mins)
+        print(my_maxes)
+        print('###########################################')
+        im1 = ax1.pcolormesh(times2, lvals2, br_trace, cmap='Greys',\
+                norm=colors.LogNorm(vmin=my_mins[0], vmax=my_maxes[0]))
+        im2 = ax2.pcolormesh(times2, lvals2, bt_trace, cmap='Greys',\
+                norm=colors.LogNorm(vmin=my_mins[1], vmax=my_maxes[1]))
+        im3 = ax3.pcolormesh(times2, lvals2, bp_trace, cmap='Greys',\
+                norm=colors.LogNorm(vmin=my_mins[2], vmax=my_maxes[2]))
+    '''
     im2 = ax2.pcolormesh(times2_even, lvals2_even, bt_trace[:, il_even],\
             cmap='Greys',\
             norm=colors.LogNorm(vmin=my_mins[1], vmax=my_maxes[1]))
@@ -245,10 +340,7 @@ for i in range(len(i_desiredrvals)):
     ax3.pcolormesh(times2_odd, -lvals2_odd, bp_trace[:, il_odd],\
             cmap='Greys',\
             norm=colors.LogNorm(vmin=my_mins[2], vmax=my_maxes[2]))
-#    im2 = ax2.pcolormesh(times2, lvals2, bt_trace, cmap='Greys',\
-#            norm=colors.LogNorm(vmin=my_mins[1], vmax=my_maxes[1]))
-#    im3 = ax3.pcolormesh(times2, lvals2, bp_trace, cmap='Greys',\
-#            norm=colors.LogNorm(vmin=my_mins[2], vmax=my_maxes[2]))
+    '''
 
     # Put colorbar next to all plots (possibly normalized separately)
     # First make room and then find location of subplots
@@ -261,10 +353,13 @@ for i in range(len(i_desiredrvals)):
     ax_center_x = ax_xmin + 0.5*ax_delta_x
 
     # Make the y label
-    fig.text(0.5*ax_xmin, ax_ymin + 0.25*ax_delta_y, 'l even',\
-            rotation=90, va='center', ha='right')
-    fig.text(0.5*ax_xmin, ax_ymin + 0.75*ax_delta_y, 'l odd',\
-            rotation=90, va='center', ha='right')
+    if separate:
+        fig.text(0.5*ax_xmin, ax_ymin + 0.25*ax_delta_y, 'l even',\
+                rotation=90, va='center', ha='right')
+        fig.text(0.5*ax_xmin, ax_ymin + 0.75*ax_delta_y, 'l odd',\
+                rotation=90, va='center', ha='right')
+    else:
+        ax1.set_ylabel('l-degree')
 
     cbar_left = ax_xmax + 0.3*(1 - ax_xmax)
     cbar_bottom = ax_ymin
@@ -281,10 +376,13 @@ for i in range(len(i_desiredrvals)):
     ax_center_x = ax_xmin + 0.5*ax_delta_x
 
     # Make the y label
-    fig.text(0.5*ax_xmin, ax_ymin + 0.25*ax_delta_y, 'l even',\
-            rotation=90, va='center', ha='right')
-    fig.text(0.5*ax_xmin, ax_ymin + 0.75*ax_delta_y, 'l odd',\
-            rotation=90, va='center', ha='right')
+    if separate:
+        fig.text(0.5*ax_xmin, ax_ymin + 0.25*ax_delta_y, 'l even',\
+                rotation=90, va='center', ha='right')
+        fig.text(0.5*ax_xmin, ax_ymin + 0.75*ax_delta_y, 'l odd',\
+                rotation=90, va='center', ha='right')
+    else:
+        ax2.set_ylabel('l-degree')
 
     cbar_left = ax_xmax + 0.3*(1 - ax_xmax)
     cbar_bottom = ax_ymin
@@ -301,10 +399,13 @@ for i in range(len(i_desiredrvals)):
     ax_center_x = ax_xmin + 0.5*ax_delta_x
 
     # Make the y label
-    fig.text(0.5*ax_xmin, ax_ymin + 0.25*ax_delta_y, 'l even',\
-            rotation=90, va='center', ha='right')
-    fig.text(0.5*ax_xmin, ax_ymin + 0.75*ax_delta_y, 'l odd',\
-            rotation=90, va='center', ha='right')
+    if separate:
+        fig.text(0.5*ax_xmin, ax_ymin + 0.25*ax_delta_y, 'l even',\
+                rotation=90, va='center', ha='right')
+        fig.text(0.5*ax_xmin, ax_ymin + 0.75*ax_delta_y, 'l odd',\
+                rotation=90, va='center', ha='right')
+    else:
+        ax3.set_ylabel('l-degree')
 
     cbar_left = ax_xmax + 0.3*(1 - ax_xmax)
     cbar_bottom = ax_ymin
@@ -323,10 +424,10 @@ for i in range(len(i_desiredrvals)):
     xlabel = 'time (' + timeunit + ')'
     ax3.set_xlabel(xlabel, **csfont)
 
-    if user_specified_xminmax:
-        ax3.set_xlim((xmin, xmax))
-    if user_specified_yminmax:
-        ax3.set_ylim((ymin, ymax))
+#    if user_specified_xminmax:
+#        ax3.set_xlim((xmin, xmax))
+#    if user_specified_lminmax:
+#        ax3.set_ylim((ymin, ymax))
 
     # Label y-axis (radius in units of rsun)
 #    ax2.set_ylabel('total power: l-value', **csfont)
@@ -360,10 +461,11 @@ for i in range(len(i_desiredrvals)):
     plt.minorticks_on()
     plt.tick_params(top=True, right=True, direction='in', which='both')
 
-    # Save the plot
-    print ('Saving the time-lval plot at ' + plotdir +\
+    if not nosave:
+        # Save the plot
+        print ('Saving the time-lval plot at ' + plotdir +\
             savename + ' ...')
-    plt.savefig(plotdir + savename, dpi=300)
+        plt.savefig(plotdir + savename, dpi=300)
 
     # Show the plot if only plotting at one latitude
     if len(rvals_to_plot) == 1:

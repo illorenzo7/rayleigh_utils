@@ -38,24 +38,45 @@ def xy_grid(X, Y):
     Y_new[1:m, n] = Y_new[1:m, n-1] + (Y_new[1:m, n-1] - Y_new[1:m, n-2])
 
     X_new[0, :] = X_new[1, :] - (X_new[2, :] - X_new[1, :])
-    X_new[m, :] = X_new[n-1, :] + (X_new[n-1, :] - X_new[n-2, :])
+    X_new[m, :] = X_new[m-1, :] + (X_new[m-1, :] - X_new[m-2, :])
     Y_new[0, :] = Y_new[1, :] - (Y_new[2, :] - Y_new[1, :])
-    Y_new[m, :] = Y_new[n-1, :] + (Y_new[n-1, :] - Y_new[n-2, :])
+    Y_new[m, :] = Y_new[m-1, :] + (Y_new[m-1, :] - Y_new[m-2, :])
 
     return (X_new, Y_new)
 
 def logbounds(arr):
-    logarr = np.log(arr)
-    medlog = np.log10(logarr)
+    logarr = np.log10(arr)
+    medlog = np.median(logarr)
     arrshifted = logarr - medlog
     nsig = 3.
-    minexp = medlog -\
-            nsig*np.std(arrshifted[np.where(arrshifted < 0)].flatten())
-    maxexp = medlog +\
-            nsig*np.std(arrshifted[np.where(arrshifted > 0)].flatten())
+    minexp = medlog - nsig*np.std(arrshifted)
+    maxexp = medlog + nsig*np.std(arrshifted)
+#    minexp = medlog -\
+#            nsig*np.std(arrshifted[np.where(arrshifted < 0)].flatten())
+#    maxexp = medlog +\
+#            nsig*np.std(arrshifted[np.where(arrshifted > 0)].flatten())
     return 10.**minexp, 10.**maxexp
 
 def fmt(x, pos):
     a, b = '{:.1e}'.format(x).split('e')
     b = int(b)
     return r'${} \times 10^{{{}}}$'.format(a, b)
+
+def integerticks(lmax):
+    ''' This is for plotting l time-traces
+    Gives O(5) ticklabels between -lmax and lmax, picked sensibly
+    '''
+    delta_l = lmax/3
+    # round this to nearest even number
+    delta_l = 2*round(delta_l/2)
+    positive_ticks = np.arange(0, lmax, delta_l)
+    negative_ticks = np.arange(-1, -lmax - 1, -delta_l)
+    if delta_l > 3:
+        negative_ticks = negative_ticks[1:]
+    tickvals = np.hstack((positive_ticks, negative_ticks))
+    st = []
+    for tickval in tickvals:
+        tickval = int(tickval)
+        st.append(str(np.abs(tickval)))
+    ticklabels = np.array(st)
+    return tickvals, ticklabels
