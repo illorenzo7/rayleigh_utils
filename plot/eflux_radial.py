@@ -73,8 +73,9 @@ qindex_cflux = lut[1470]
 qindex_kflux = lut[1923]
 qindex_vflux = lut[1935]
 if magnetism:
-    qindex_mflux = lut[2001]
-    mflux = vals[:, qindex_mflux]
+    qindex_mflux = lut[2001] # this is actually (-4*pi) TIMES 
+                        # the correct Poynting flux
+    mflux = -vals[:, qindex_mflux]/(4*np.pi)
 
 hflux = vals[:, qindex_hflux]
 eflux = vals[:, qindex_eflux]
