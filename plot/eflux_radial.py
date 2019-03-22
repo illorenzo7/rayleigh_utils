@@ -14,7 +14,8 @@ import numpy as np
 import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['co'])
-from common import get_widest_range_file, strip_dirname, get_iters_from_file
+from common import get_widest_range_file, strip_dirname,\
+        get_iters_from_file, get_dict
 
 # Get the run directory on which to perform the analysis
 dirname = sys.argv[1]
@@ -57,7 +58,7 @@ lw = 1. # regular lines
 
 # Read in the flux data
 print ('Getting radial fluxes from ' + datadir + Shell_Avgs_file + ' ...')
-di = np.load(datadir + Shell_Avgs_file, encoding='latin1').item()
+di = get_dict(datadir + Shell_Avgs_file)
 vals = di['vals']
 lut = di['lut']
 iter1, iter2 = di['iter1'], di['iter2']
