@@ -13,7 +13,11 @@ mpl.use('TkAgg')
 import matplotlib.pyplot as plt
 import numpy as np
 import sys, os
-from common import get_widest_range_file, strip_dirname, get_iters_from_file
+sys.path.append(os.environ['rapp'])
+sys.path.append(os.environ['co'])
+from common import get_widest_range_file, strip_dirname, get_dict
+from get_parameter import get_parameter
+from rayleigh_diagnostics import GridInfo
 
 # Get the run directory on which to perform the analysis
 dirname = sys.argv[1]
@@ -39,53 +43,72 @@ for i in range(nargs):
         AZ_Avgs_file = args[i+1]
         AZ_Avgs_file = AZ_Avgs_file.split('/')[-1]
         
+print ('Getting data from ', datadir + AZ_Avgs_file, ' ...')
+di = get_dict(datadir + AZ_Avgs_file)
+iter1, iter2 = di['iter1'], di['iter2']
+
 # Make the plot name, labelling the first/last iterations we average over
-iter1, iter2 = get_iters_from_file(AZ_Avgs_file)
 savename = dirname_stripped + '_eflux_latitudinal_' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
+print ("Will save plot at ", savename)
 
 # Get grid info
-rr,tt,cost,sint,rr_depth,ri,ro,d = np.load(datadir + 'grid_info.npy')
-nr, nt = len(rr), len(tt)
+gi = GridInfo(dirname + '/grid_info')
+nr, nt = gi.nr, gi.ntheta
+rr, tt, cost, sint = gi.radius, gi.theta, gi.costheta, gi.sintheta
+ri, ro = np.min(rr), np.max(rr)
+shell_depth = ro - ri
+rweights = gi.rweights
 
 #Create the plot
 lw = 1.5 # Bit thicker lines
 
 # Read in the flux data
-print ('Getting AZ_Avgs data from %s ...' %AZ_Avgs_file)
-vals, lut = np.load(datadir + AZ_Avgs_file)
+#print ('Getting AZ_Avgs data from %s ...' %AZ_Avgs_file)
+vals = di['vals']
+lut = di['lut']
 qindex_eflux = lut[1456]
 qindex_cflux = lut[1471]
 qindex_kflux = lut[1924]
-qindex_vflux = lut[1936]
+qindex_vflux = lut[1936] # needs minus sign?
 
 # Get the fluxes in the whole meridional plane
 eflux = vals[:, :, qindex_eflux]
 cflux = vals[:, :, qindex_cflux]
 kflux = vals[:, :, qindex_kflux]
-vflux = vals[:, :, qindex_vflux]
+vflux = -vals[:, :, qindex_vflux]
 tflux = eflux + cflux + kflux + vflux # compute the total flux
+
+magnetism = get_parameter(dirname, 'magnetism')
+if magnetism:
+    qindex_mflux = lut[2002] # needs multiplication by -1/(4pi)?
+    mflux = -1/(4*np.pi)*vals[:, :, qindex_mflux]
+    tflux += mflux
 
 # Compute the integrated fluxes
 # At each point in the meridional plane we associate a "ring" of width dr and circumference 2 pi r sin(theta)
-dr = np.zeros_like(rr)
-dr[1:nr-1] = 0.5*(rr[:nr-2] - rr[2:])
-dr[0] = dr[1]; dr[-1] = dr[-2]
-areas = 2*np.pi*sint.reshape((nt, 1))*rr.reshape((1, nr))*dr.reshape((1, nr))
+dr = rweights/np.sum(rweights)*shell_depth
+areas = 2*np.pi*sint.reshape((nt, 1))*rr.reshape((1, nr))*\
+        dr.reshape((1, nr))
 
 eflux_int = np.sum(eflux*areas, axis=1)
 cflux_int = np.sum(cflux*areas, axis=1)
 kflux_int = np.sum(kflux*areas, axis=1)
 vflux_int = np.sum(vflux*areas, axis=1)
+if magnetism:
+    mflux_int = np.sum(mflux*areas, axis=1)
 tflux_int = np.sum(tflux*areas, axis=1)
 
 # Create the plot; start with plotting all the energy fluxes
 solar_lum = 3.846e33 # Normalize by the solar luminosity
 lats = 180*(np.pi/2 - tt)/np.pi
-plt.plot(lats, eflux_int/solar_lum, 'm', label = r'$\rm{F}_{enth}$',\
+plt.plot(lats, eflux_int/solar_lum, 'm', label=r'$\rm{F}_{enth}$',\
         linewidth=lw)
-plt.plot(lats, cflux_int/solar_lum, label = r'$\rm{F}_{cond}$', linewidth=lw)
-plt.plot(lats, kflux_int/solar_lum, label = r'$\rm{F}_{KE}$', linewidth=lw)
-plt.plot(lats, vflux_int/solar_lum, label = r'$\rm{F}_{visc}$', linewidth=lw)
+plt.plot(lats, cflux_int/solar_lum, label=r'$\rm{F}_{cond}$', linewidth=lw)
+plt.plot(lats, kflux_int/solar_lum, label=r'$\rm{F}_{KE}$', linewidth=lw)
+plt.plot(lats, vflux_int/solar_lum, label=r'$\rm{F}_{visc}$', linewidth=lw)
+if magnetism:
+    plt.plot(lats, mflux_int/solar_lum, label=r'$\rm{F}_{Poynting}$',\
+            linewidth=lw)
 plt.plot(lats, tflux_int/solar_lum, label=r'$\rm{F}_{total}$',\
         linewidth=lw, color='black')
 
