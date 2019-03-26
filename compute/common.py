@@ -5,9 +5,16 @@
 import numpy as np
 import os, pickle
 
-# Solar radius
-rsun = 6.95508e10
-
+# Solar radius, luminosity, and mass (as we have been assuming in Rayleigh)
+rsun = 6.957e10  # value taken from IAU recommendation: arxiv, 1510.07674
+                 # should probably figure out how Nick chose 5.000 and 6.586209
+                 # as the base of the CZ and location of 3rd density scale height
+                 # (Comparing polytrope to model S?)
+lsun = 3.846e33  # Used in Rayleigh: disagrees with IAU recommended value of 
+                 # 3.828e33
+msun = 1.98891e33 # FROM WIKIPEDIA: 1.98847 \pm 0.00007
+                  # From IAU recommendation: 1.9885, with G = 6.67408 \pm 0.00031 (10^-8 c.g.s.)
+                # NOTE: ALL THESE QUANTITIES CHANGE IN TIME
 # Read in all files from the Rayleigh data directory and sort them by name (number)
 def get_file_lists(radatadir):
     file_list = os.listdir(radatadir)
