@@ -23,6 +23,24 @@ def rms(array):
     else:
         return np.sqrt(np.mean(array**2))
 
+def get_satvals(field, posdef=False):
+    if not posdef:
+        rms_plus = rms(field[np.where(field > 0)])
+        rms_minus = rms(field[np.where(field < 0)])
+        my_min, my_max = -3*rms_minus, 3*rms_plus
+        return my_min, my_max
+        
+    # Saturation levels for a positive-definite quantity (like vsq)
+    else:
+        logfield= np.log(field)
+        medlog = np.median(logfield)
+        shiftlog = logfield - medlog
+        minexp = medlog - 7*np.std(shiftlog[np.where(shiftlog < 0)].flatten())
+        maxexp = medlog + 7*np.std(shiftlog[np.where(shiftlog > 0)].flatten())
+        my_min, my_max = np.exp(minexp), np.exp(maxexp)
+        return my_min, my_max
+
+
 def saturate_array(arr, my_min, my_max):
     arr[np.where(arr < my_min)] = my_min
     arr[np.where(arr > my_max)] = my_max
@@ -138,11 +156,8 @@ def plot_ortho(fig, ax, a, dirname, varname, ir=0, minmax=None,\
     # Divide out the exponent to use scientific notation (but keep 
     # track of it!)
     if minmax is None:
-        if not posdef:
-            rms_plus = rms(field[np.where(field > 0)])
-            rms_minus = rms(field[np.where(field < 0)])
-            my_min, my_max = -3*rms_minus, 3*rms_plus
-            
+        my_min, my_max = get_satvals(field, posdef=posdef)
+        if not posdef: # normalize values to plot in scientific notation
             minexp = int(np.floor(np.log10(np.abs(my_min))))
             maxexp = int(np.floor(np.log10(np.abs(my_max))))
             maxabs_exp = max((minexp, maxexp))
@@ -150,15 +165,7 @@ def plot_ortho(fig, ax, a, dirname, varname, ir=0, minmax=None,\
             field /= 10**maxabs_exp
             my_min /= 10**maxabs_exp
             my_max /= 10**maxabs_exp    
-            
-        # Saturation levels for a positive-definite quantity (like vsq)
-        else:
-            logfield= np.log(field)
-            medlog = np.median(logfield)
-            shiftlog = logfield - medlog
-            minexp = medlog - 7*np.std(shiftlog[np.where(shiftlog < 0)].flatten())
-            maxexp = medlog + 7*np.std(shiftlog[np.where(shiftlog > 0)].flatten())
-            my_min, my_max = np.exp(minexp), np.exp(maxexp)
+
     else: # minmax IS none
             my_min, my_max = minmax
             minexp = int(np.floor(np.log10(np.abs(my_min))))
@@ -331,11 +338,8 @@ def plot_moll(fig, ax, a, dirname, varname, ir=0, minmax=None,\
     # Divide out the exponent to use scientific notation (but keep 
     # track of it!)
     if minmax is None:
-        if not posdef:
-            rms_plus = rms(field[np.where(field > 0)])
-            rms_minus = rms(field[np.where(field < 0)])
-            my_min, my_max = -3*rms_minus, 3*rms_plus
-            
+        my_min, my_max = get_satvals(field, posdef=posdef)
+        if not posdef: # normalize values to plot in scientific notation
             minexp = int(np.floor(np.log10(np.abs(my_min))))
             maxexp = int(np.floor(np.log10(np.abs(my_max))))
             maxabs_exp = max((minexp, maxexp))
@@ -343,15 +347,7 @@ def plot_moll(fig, ax, a, dirname, varname, ir=0, minmax=None,\
             field /= 10**maxabs_exp
             my_min /= 10**maxabs_exp
             my_max /= 10**maxabs_exp    
-            
-        # Saturation levels for a positive-definite quantity (like vsq)
-        else:
-            logfield= np.log(field)
-            medlog = np.median(logfield)
-            shiftlog = logfield - medlog
-            minexp = medlog - 7*np.std(shiftlog[np.where(shiftlog < 0)].flatten())
-            maxexp = medlog + 7*np.std(shiftlog[np.where(shiftlog > 0)].flatten())
-            my_min, my_max = np.exp(minexp), np.exp(maxexp)
+
     else: # minmax IS none
             my_min, my_max = minmax
             minexp = int(np.floor(np.log10(np.abs(my_min))))
@@ -468,3 +464,5 @@ def plot_moll(fig, ax, a, dirname, varname, ir=0, minmax=None,\
     psivals = np.linspace(0, 2*np.pi, 100)
     xvals, yvals = 2.*np.cos(psivals), np.sin(psivals)
     ax.plot(xvals, yvals, 'k')
+
+

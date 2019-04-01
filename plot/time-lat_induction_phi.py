@@ -303,7 +303,7 @@ for i in range(len(i_desiredrvals)):
     label1 = r'$\partial B_\phi/\partial t$'
     ax4.text(ax_xmin + 1.01*ax_Dx, 0.,  label1, va='center',\
             rotation=270)
-    ax5.text(ax_xmin + 1.01*ax_Dx, 0.,  r'$B_phi$', va='center',\
+    ax5.text(ax_xmin + 1.01*ax_Dx, 0.,  r'$\overline{B_\phi}$', va='center',\
             rotation=270)
 
     # Put some useful information on the title

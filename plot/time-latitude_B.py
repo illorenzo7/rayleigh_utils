@@ -41,6 +41,7 @@ time_latitude_file = get_widest_range_file(datadir, 'time-latitude')
 user_specified_minmax = False
 user_specified_xminmax = False
 tag = ''
+save = True
 
 desired_rvals = [0.83] # by default, plot time-radius diagram for fields 
     # mid-CZ (units of solar radius)
@@ -78,6 +79,8 @@ for i in range(nargs):
         xmax = float(args[i+2])
     elif (arg == '-tag'):
         tag = '_' + args[i+1]
+    elif arg == '-nosave':
+        save = False
 
 # Read in the time-latitude data (dictionary form)
 print ('Getting time-latitude trace from ' + datadir +\
@@ -297,9 +300,10 @@ for i in range(len(i_desiredrvals)):
     plt.tick_params(top=True, right=True, direction='in', which='both')
 
     # Save the plot
-    print ('Saving the time-latitude plot at ' + plotdir +\
-            savename + ' ...')
-    plt.savefig(plotdir + savename, dpi=300)
+    if save:
+        print ('Saving the time-latitude plot at ' + plotdir +\
+                savename + ' ...')
+        plt.savefig(plotdir + savename, dpi=300)
 
     # Show the plot if only plotting at one latitude
     if len(rvals_to_plot) == 1:
