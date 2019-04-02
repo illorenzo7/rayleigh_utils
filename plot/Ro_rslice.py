@@ -16,8 +16,9 @@ plt.rcParams['mathtext.fontset'] = 'dejavuserif'
 csfont = {'fontname':'DejaVu Serif'}
 import sys, os
 sys.path.append(os.environ['rapp'])
-from rayleigh_diagnostics import TransportCoeffs
-from common import strip_dirname, get_widest_range_file, get_iters_from_file
+from common import strip_dirname, get_widest_range_file,\
+    get_iters_from_file, rsun
+from get_parameter import get_parameter
 
 # Get directory name and stripped_dirname for plotting purposes
 dirname = sys.argv[1]
@@ -52,6 +53,9 @@ for i in range(nargs):
         user_specified_rnorm = True
         user_supplied_rnorm = float(args[i+1])
 
+# Get angular velocity
+Om0 = get_parameter(dirname, 'angular_velocity')
+
 # Get the spherical theta values associated with [lats]       
 lats = np.array(lats)
 colats = 90 - lats
@@ -74,12 +78,8 @@ vsq_r, vsq_t, vsq_p = vals[:, :, lut[422]], vals[:, :, lut[423]],\
 vsq = vsq_r + vsq_t + vsq_p
 d = di['d']
 
-# Get magnetic diffusivity from 'transport' file
-t = TransportCoeffs(dirname + '/transport')
-eta = t.eta
-
-# Compute magnetic Reynolds number
-Rm = np.sqrt(vsq)*d/eta
+# Compute velocity-based Rossby number
+Ro = np.sqrt(vsq)/d/Om0
 
 # Create the plot
 fig = plt.figure()
@@ -91,9 +91,8 @@ mins = []  # ditto for the min-value
                                                
 # User can specify what to normalize the radius by
 # By default, normalize by the solar radius
-Rsun = 6.955e10
 if not user_specified_rnorm:
-    rr_n = rr/Rsun
+    rr_n = rr/rsun
 else:
     rr_n = rr/user_supplied_rnorm                                           
 
@@ -102,10 +101,10 @@ for theta_val in theta_vals:
     diffs = np.abs(tt - theta_val)
     index = np.argmin(diffs)
     latitude = 90 - theta_val*180/np.pi
-    ax.plot(rr_n, Rm[index,:],\
+    ax.plot(rr_n, Ro[index,:],\
             label = r'$\rm{%2.1f}$' %latitude + r'$^\circ$')
-    maxes.append(np.max(Rm[index,:]))
-    mins.append(np.min(Rm[index,:]))
+    maxes.append(np.max(Ro[index,:]))
+    mins.append(np.min(Ro[index,:]))
 
 # Global extrema
 mmax = np.max(maxes)
@@ -119,7 +118,7 @@ if not user_specified_rnorm:
 else:
     plt.xlabel(r'r/(%.1e cm)' %user_supplied_rnorm, fontsize=12, **csfont)
     
-plt.ylabel(r'${\rm{Rm}} = (r_o-r_i)v^\prime \eta^{-1}$',fontsize=12, **csfont)
+plt.ylabel(r'${\rm{Ro}_{\rm{vel}}} = v^\prime (r_o-r_i)^{-1}v\Omega_0^{-1}$',fontsize=12, **csfont)
 
 # Set the axis limits
 xmin, xmax = np.min(rr_n), np.max(rr_n)
@@ -141,7 +140,7 @@ plt.minorticks_on()
 plt.tick_params(top=True, right=True, direction='in', which='both')
 plt.tight_layout()
 
-savefile = plotdir + dirname_stripped + '_Rm_rslice_' +\
+savefile = plotdir + dirname_stripped + '_Ro_vel_rslice_' +\
     str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
 print('Saving plot at ' + savefile + ' ...')
 plt.savefig(savefile, dpi=300)
