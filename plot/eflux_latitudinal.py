@@ -86,7 +86,7 @@ if magnetism:
 
 # Compute the integrated fluxes
 # At each point in the meridional plane we associate a "ring" of width dr and circumference 2 pi r sin(theta)
-dr = rweights/np.sum(rweights)*shell_depth
+dr = rweights/rr**2/np.sum(rweights/rr**2)*shell_depth
 areas = 2*np.pi*sint.reshape((nt, 1))*rr.reshape((1, nr))*\
         dr.reshape((1, nr))
 
