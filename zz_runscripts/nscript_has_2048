@@ -1,0 +1,20 @@
+#PBS -S /bin/bash
+#PBS -N normalQ_has_2048cores
+#PBS -l select=86:ncpus=24:model=has
+#PBS -q normal
+#PBS -l walltime=8:00:00
+#PBS -j oe
+#PBS -W group_list=g26133
+#PBS -m e
+
+module purge
+module load mpi-sgi
+module load comp-intel
+
+export MPI_BUFS_PER_PROC=256
+export OMP_NUM_THREADS=1
+
+unset MPI_IB_RECV_MSGS
+
+cd $PBS_O_WORKDIR
+mpiexec -np 2048 ./rayleigh.opt -nprow 64 -npcol 32 >> logfile2

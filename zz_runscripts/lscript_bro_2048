@@ -1,0 +1,23 @@
+#PBS -S /bin/bash
+#PBS -N longQ_bro_2048cores
+#PBS -l select=74:ncpus=28:model=bro
+#PBS -q long
+#PBS -l walltime=36:00:00
+#PBS -j oe
+#PBS -W group_list=s2051
+#PBS -m e
+#PBS -l site=needed=/home1+/nobackupp2
+
+module purge
+module load mpi-sgi/mpt
+module load comp-intel
+
+export MPI_LAUNCH_TIMEOUT=40
+export PATH=$PATH:/u/scicon/tools/bin
+
+export MPI_BUFS_PER_PROC=256
+export OMP_NUM_THREADS=1
+
+cd $PBS_O_WORKDIR
+
+/u/scicon/tools/bin/several_tries mpiexec -np 2048 ./rayleigh.opt -nprow 64 -npcol 32 >> logfile2
