@@ -1,10 +1,12 @@
 # Author: Loren Matilsky
-# Created: 03/28/2019
+# Created: 04/06/2019
 # This script plots mean magnetic field components in the meridional plane 
 # for the Rayleigh run directory indicated by [dirname]. 
 # Uses an instantaneous AZ_Avgs file unless told otherwise
 # Saves plot in
-# [dirname]_B_azav_[first iter]_[last iter].npy
+# [dirname]_B_azav_[iter].npy
+# or [dirname]_B_azav_[first iter]_[last iter].npy if a time average was 
+# specified
 
 import numpy as np
 import pickle
@@ -18,7 +20,9 @@ import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['co'])
 from azavg_util import plot_azav
-from common import get_widest_range_file, strip_dirname
+from common import get_widest_range_file, strip_dirname, get_file_lists,\
+        get_desired_range
+from rayleigh_diagnostics import AZ_Avgs
 
 # Get directory name and stripped_dirname for plotting purposes
 dirname = sys.argv[1]
@@ -31,131 +35,166 @@ plotdir = dirname + '/plots/'
 if (not os.path.isdir(plotdir)):
     os.makedirs(plotdir)
 
+radatadir = dirname + '/AZ_Avgs/'
+
+# Get all the file names in datadir and their integer counterparts
+file_list, int_file_list, nfiles = get_file_lists(radatadir)
+
 # Set defaults
 save = True
+plotcontours = True
 my_boundstype = 'manual'
 user_specified_minmax = False 
 my_nlevs = 20
-AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
 
 # Read in CLAs (if any) to change default variable ranges and other options
 args = sys.argv[2:]
 nargs = len(args)
+
+if '-range' in args or '-n' in args or '-centerrange' in args or\
+        '-all' in args or '-iter' in args:
+    index_first, index_last = get_desired_range(int_file_list, args)
+else:
+    index_first, index_last = nfiles - 1, nfiles - 1  
+    # By default, don't average over any files;
+    # just plot the last file
+
+# Change other defaults
 for i in range(nargs):
     arg = args[i]
     if arg == '-minmax':
-        minmax = float(args[i+1]), float(args[i+2])
-    elif arg == '-ir':
-        ir = int(args[i+1])
-    elif arg == '-iter':
-        desired_iter = int(args[i+1])
-        iiter = np.argmin(np.abs(int_file_list - desired_iter))
-    elif arg == '-sec':
-        time = float(args[i+1])
-        di_trans = translate_times(time, dirname, translate_from='sec')
-        desired_iter = di_trans['val_iter']
-        iiter = np.argmin(np.abs(int_file_list - desired_iter))
-    elif arg == '-day':
-        time = float(args[i+1])
-        di_trans = translate_times(time, dirname, translate_from='day')
-        desired_iter = di_trans['val_iter']
-        iiter = np.argmin(np.abs(int_file_list - desired_iter))
-    elif arg == '-prot':
-        time = float(args[i+1])
-        di_trans = translate_times(time, dirname, translate_from='prot')
-        desired_iter = di_trans['val_iter']
-        iiter = np.argmin(np.abs(int_file_list - desired_iter))
+        user_specified_minmax = True
+        min_br, max_br  = float(args[i+1]), float(args[i+2])
+        min_bt, max_bt  = float(args[i+3]), float(args[i+4])
+        min_bp, max_bp  = float(args[i+5]), float(args[i+6])
     elif arg == '-nosave':
         save = False
-
-args = sys.argv[2:]
-nargs = len(args)
-for i in range(nargs):
-    arg = args[i]
-    if (arg == '-minmax'):
-        my_min, my_max = float(args[i+1]), float(args[i+2])
-        user_specified_minmax = True
-    elif (arg == '-nlevs'):
+    elif arg == '-nlevs':
         my_nlevs = int(args[i+1])
+    elif arg == '-nocontour':
+        plotcontours = False
 
-iter_val = int_file_list[iiter]
-fname = file_list[iiter]
+# Initialize empty "vals" array for the time average
+az0 = AZ_Avgs(radatadir + file_list[index_first], '')
+rr = az0.radius
+ri, ro = np.min(rr), np.max(rr)
+d = ro - ri
+rr_depth = (ro - rr)/d
+rr_height = (rr - ri)/d
+sint = az0.sintheta
+cost = az0.costheta
+tt = np.arccos(cost)
+tt_lat = (np.pi/2 - tt)*180/np.pi
+nr = az0.nr
+nt = az0.ntheta
 
-# Read in desired shell slice
-a = AZ_Avgs(radatadir + fname, '')
-       
-# Read in AZ_Avgs data
-print ('Getting data from ' + datadir + AZ_Avgs_file + ' ...')
+# compute some derivative quantities for the grid
+tt_2d, rr_2d = np.meshgrid(tt, rr, indexing='ij')
+sint_2d = np.sin(tt_2d); cost_2d = np.cos(tt_2d)
+xx = rr_2d*sint_2d
+zz = rr_2d*cost_2d
 
-iter1, iter2 = di['iter1'], di['iter2']
-vals = di['vals']
-lut = di['lut']
+count = 0
+iter1, iter2 = int_file_list[index_first], int_file_list[index_last]
 
-vr_av, vt_av, vp_av = vals[:, :, lut[1]], vals[:, :, lut[2]],\
-        vals[:, :, lut[3]]
+vals = np.zeros_like(az0.vals[:, :, :, 0])
 
-# Get necessary grid info
-rr = di['rr']
-cost = di['cost']
-sint = di['sint']
-tt_lat = di['tt_lat']
-xx = di['xx']
+# Average over the relevant data range, summing everything and then dividing
+#   by the number of "slices" added at the end
+print ('Considering AZ_Avgs files %s through %s for the average ...'\
+       %(file_list[index_first], file_list[index_last]))
+for i in range(index_first, index_last + 1):
+    print ('Adding AZ_Avgs/%s to the average ...' %file_list[i])
+    if i == index_first:
+        az = az0
+    else:   
+        az = AZ_Avgs(radatadir + file_list[i], '')
 
-# Get differential rotation in the rotating frame. 
-Om = vp_av/xx
-diffrot = Om*1.0e9/2/np.pi # rad/s --> nHz
+    local_ntimes = az.niter
+    for j in range(local_ntimes):
+        vals += az.vals[:, :, :, j]
+        count += 1
 
-# Maximum differential rotation over whole meridional plane
-it15, it75 = np.argmin(np.abs(tt_lat - 15)), np.argmin(np.abs(tt_lat - 75))
-     # ignore problematic poles 
-global_min, global_max = np.min(diffrot[it15:it75, :]),\
-     np.max(diffrot[it15:it75, :])
-Delta_Om = global_max - global_min
-maxabs = np.max((np.abs(global_min), np.abs(global_max)))
+vals /= count
+print ('Averaged over %i AZ_Avgs slice(s) ...' %count)
+
+br = vals[:, :, az0.lut[801]]
+bt = vals[:, :, az0.lut[802]]
+bp = vals[:, :, az0.lut[803]]
 
 if (not user_specified_minmax):
-    my_min, my_max = -maxabs, maxabs
+    nstd = 5
+    min_br, max_br = -nstd*np.std(br), nstd*np.std(br)
+    min_bt, max_bt = -nstd*np.std(bt), nstd*np.std(bt)
+    min_bp, max_bp = -nstd*np.std(bp), nstd*np.std(bp)
 
-# Create plot
-subplot_width_inches = 2.5
-subplot_height_inches = 5.
-margin_inches = 1/8
-margin_top_inches = 3/2 # larger top margin to make room for titles
+# Set up the actual figure from scratch
+fig_width_inches = 7 # TOTAL figure width, in inches
+    # (i.e., 8x11.5 paper with 1/2-inch margins)
+margin_inches = 1/8 # margin width in inches (for both x and y) and 
+    # horizontally in between figures
+margin_top_inches = 1 # wider top margin to accommodate subplot titles AND metadata
+margin_subplot_top_inches = 1 # margin to accommodate just subplot titles
+ncol = 3 # put three plots per row
+nrow = 1
 
-fig_width_inches = subplot_width_inches + 2*margin_inches
-fig_height_inches = subplot_height_inches + margin_top_inches + margin_inches
-
+subplot_width_inches = (fig_width_inches - (ncol + 1)*margin_inches)/ncol
+    # Make the subplot width so that ncol subplots fit together side-by-side
+    # with margins in between them and at the left and right.
+subplot_height_inches = 2*subplot_width_inches # Each subplot should have an
+    # aspect ratio of y/x = 2/1 to accommodate meridional planes. 
+fig_height_inches = nrow*subplot_height_inches + margin_top_inches +\
+    (nrow - 1)*margin_subplot_top_inches + margin_inches 
+    # Room for titles on each row and a regular margin on the bottom
 fig_aspect = fig_height_inches/fig_width_inches
+
+# "Margin" in "figure units"; figure units extend from 0 to 1 in BOTH 
+# directions, so unitless dimensions of margin will be different in x and y
+# to force an equal physical margin
 margin_x = margin_inches/fig_width_inches
 margin_y = margin_inches/fig_height_inches
 margin_top = margin_top_inches/fig_height_inches
+margin_subplot_top = margin_subplot_top_inches/fig_height_inches
+
+# Subplot dimensions in figure units
 subplot_width = subplot_width_inches/fig_width_inches
 subplot_height = subplot_height_inches/fig_height_inches
 
+field_components = [br, bt, bp]
+titles = [r'$B_r$', r'$B_\theta$', r'$B_\phi$']
+units = r'$\rm{G}$'
+my_mins = [min_br, min_bt, min_bp]
+my_maxes = [max_br, max_bt, max_bp]
+
+# Generate the actual figure of the correct dimensions
 fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
-ax = fig.add_axes((margin_x, margin_y, subplot_width, subplot_height))
 
-plot_azav (fig, ax, diffrot, rr, cost, sint, units = 'nHz', nlevs=my_nlevs,
-        norm=MidpointNormalize(0),\
-        boundstype=my_boundstype, caller_minmax = (my_min, my_max))
+for iplot in range(3):
+    ax_left = margin_x + (iplot%ncol)*(subplot_width + margin_x)
+    ax_bottom = 1 - margin_top - subplot_height - \
+            (iplot//ncol)*(subplot_height + margin_subplot_top)
+    ax = fig.add_axes((ax_left, ax_bottom, subplot_width, subplot_height))
+    plot_azav (fig, ax, field_components[iplot], rr, cost, sint,\
+           units = units, boundstype = my_boundstype,\
+           caller_minmax = (my_mins[iplot], my_maxes[iplot]),\
+           norm=MidpointNormalize(0), plotcontours=plotcontours)
+    ax.set_title(titles[iplot], verticalalignment='bottom', **csfont)
 
-# Make title + label diff. rot. contrast and no. contours
+# Put some metadata in upper left
 fsize = 12
-fig.text(margin_x, 1 - 0.05*margin_top, dirname_stripped,\
+fig.text(margin_x, 1 - 0.1*margin_top, dirname_stripped,\
          ha='left', va='top', fontsize=fsize, **csfont)
-fig.text(margin_x, 1 - 0.2*margin_top, r'$\Omega - \Omega_0$',\
+fig.text(margin_x, 1 - 0.3*margin_top, 'Magnetic field (zonally averaged)',\
          ha='left', va='top', fontsize=fsize, **csfont)
-fig.text(margin_x, 1 - 0.35*margin_top,\
-         str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8),\
+iter_string = 'iter ' + str(iter1).zfill(8) 
+if count > 1:         
+    iter_string += ' to ' + str(iter2).zfill(8),
+fig.text(margin_x, 1 - 0.5*margin_top, iter_string,\
          ha='left', va='top', fontsize=fsize, **csfont)
-fig.text(margin_x, 1 - 0.5*margin_top,\
-         r'$\Delta\Omega_{\rm{tot}} = %.1f\ nHz$' %Delta_Om,\
-         ha='left', va='top', fontsize=fsize, **csfont)
-fig.text(margin_x, 1 - 0.65*margin_top,\
-         'nlevs = %i' %my_nlevs,
-         ha='left', va='top', fontsize=fsize, **csfont)
-savefile = plotdir + dirname_stripped + '_diffrot_' + str(iter1).zfill(8) +\
-    '_' + str(iter2).zfill(8) + '.png'
-print ('Saving plot at %s ...' %savefile)
-plt.savefig(savefile, dpi=300)
+
+savename = dirname_stripped + '_B_azav_' + str(iter1).zfill(8) + '_' +\
+        str(iter2).zfill(8) + '.png'
+if save:
+    plt.savefig(plotdir + savename, dpi=100)
+    print ("Saving azimuthal average of B field in " + plotdir + savename + ' ...')
 plt.show()

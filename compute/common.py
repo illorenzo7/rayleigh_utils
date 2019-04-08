@@ -75,6 +75,8 @@ def get_desired_range(int_file_list, args):
                 desired_central_iter = int_file_list[0]
             elif desired_central_iter == 'last':
                 desired_central_iter = int_file_list[-1]
+            else:
+                desired_central_iter = int(desired_central_iter)
             central_index = np.argmin(np.abs(desired_central_iter -\
                     int_file_list))
             ndatafiles = int(args[i+2])
@@ -87,6 +89,16 @@ def get_desired_range(int_file_list, args):
         elif arg == '-all':
             index_first = 0
             index_last = nfiles - 1
+        elif arg == '-iter': # just get 1 iter
+            desired_iter = args[i+1]
+            if desired_iter == 'first':
+                desired_iter = int_file_list[0]
+            elif desired_iter == 'last':
+                desired_iter = int_file_list[-1]
+            else:
+                desired_iter = int(desired_iter)
+            index_first = np.argmin(np.abs(desired_iter - int_file_list))
+            index_last = index_first
     # Check to see if either of the indices fall "out of bounds"
     # (I think this could only happen possibly with centerrange?)
     # and if they do replace them with the first or last index
