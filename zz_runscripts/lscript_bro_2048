@@ -2,9 +2,9 @@
 #PBS -N longQ_bro_2048cores
 #PBS -l select=74:ncpus=28:model=bro
 #PBS -q long
-#PBS -l walltime=36:00:00
+#PBS -l walltime=120:00:00
 #PBS -j oe
-#PBS -W group_list=s2051
+#PBS -W group_list=g26133
 #PBS -m e
 #PBS -l site=needed=/home1+/nobackupp2
 
