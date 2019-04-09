@@ -6,15 +6,18 @@
 #PBS -j oe
 #PBS -W group_list=s2051
 #PBS -m e
+#PBS -l site=needed=/home1+/nobackupp2
 
 module purge
-module load mpi-sgi
+module load mpi-sgi/mpt
 module load comp-intel
+
+export MPI_LAUNCH_TIMEOUT=40
+export PATH=$PATH:/u/scicon/tools/bin
 
 export MPI_BUFS_PER_PROC=256
 export OMP_NUM_THREADS=1
 
-unset MPI_IB_RECV_MSGS
-
 cd $PBS_O_WORKDIR
-mpiexec -np 8192 ./rayleigh.opt -nprow 128 -npcol 64 >> logfile2
+
+/u/scicon/tools/bin/several_tries mpiexec -np 8192 ./rayleigh.opt -nprow 128 -npcol 64 >> logfile2
