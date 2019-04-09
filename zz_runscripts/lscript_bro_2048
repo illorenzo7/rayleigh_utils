@@ -4,7 +4,7 @@
 #PBS -q long
 #PBS -l walltime=120:00:00
 #PBS -j oe
-#PBS -W group_list=g26133
+#PBS -W group_list=s2051
 #PBS -m e
 #PBS -l site=needed=/home1+/nobackupp2
 
