@@ -124,7 +124,7 @@ def plot_azav(fig, axis, field, radius, costheta, sintheta,
     lilbit = 0.01
     axis.set_xlim((-lilbit, 1 + lilbit))
     axis.set_ylim((-1 - lilbit, 1 + lilbit))
-    plt.axis('off') 
+    axis.axis('off') 
 
     if (plotcontours):
         if levels is None:

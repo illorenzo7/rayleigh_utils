@@ -198,7 +198,7 @@ def plot_ortho(fig, ax, a, dirname, varname, ir=0, minmax=None,\
 
     ax.set_xlim((-1.01, 1.01)) # deal with annoying whitespace cutoff issue
     ax.set_ylim((-1.01, 1.01))
-    plt.axis('off') # get rid of x/y axis coordinates
+    ax.axis('off') # get rid of x/y axis coordinates
             
     # Make the orthographic projection
     if not posdef:
@@ -372,7 +372,7 @@ def plot_moll(fig, ax, a, dirname, varname, ir=0, minmax=None,\
 
     ax.set_xlim((-2.02, 2.02)) # deal with annoying whitespace cutoff issue
     ax.set_ylim((-1.01, 1.01))
-    plt.axis('off') # get rid of x/y axis coordinates
+    ax.axis('off') # get rid of x/y axis coordinates
             
     # Make the Mollweide projection
     if not posdef:
