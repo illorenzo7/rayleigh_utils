@@ -17,6 +17,7 @@ csfont = {'fontname':'DejaVu Serif'}
 
 import sys, os
 sys.path.append(os.environ['rapp'])
+from rayleigh_diagnostics import ReferenceState, GridInfo
 from common import strip_dirname, get_widest_range_file,\
     get_iters_from_file, rsun
 from get_parameter import get_parameter
@@ -36,6 +37,7 @@ if (not os.path.isdir(plotdir)):
 user_specified_rnorm = False
 user_specified_minmax = False
 lats = [0, 15, 30, 45, 60, 75]
+enstrophy_file = get_widest_range_file(datadir, 'enstrophy_from_mer')
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
 
 # Read command-line arguments (CLAs)
@@ -49,8 +51,8 @@ for i in range(nargs):
         for j in range(len(lats_str)):
             lats.append(float(lats_str[j]))
     elif arg == '-usefile':
-        AZ_Avgs_file = args[i+1]
-        AZ_Avgs_file = AZ_Avgs_file.split('/')[-1]
+        enstrophy_file = args[i+1]
+        enstrophy_file = enstrophy_file.split('/')[-1]
     elif arg == '-rnorm':
         user_specified_rnorm = True
         user_supplied_rnorm = float(args[i+1])
@@ -66,34 +68,58 @@ lats = np.array(lats)
 colats = 90 - lats
 theta_vals = colats*np.pi/180
 
-# Read in vavg data
-print ('Reading AZ_Avgs data from ' + datadir + AZ_Avgs_file + ' ...')
-di = np.load(datadir + AZ_Avgs_file, encoding='latin1').item()
+# Read in enstrophy data
+print ('Reading enstrophy data from ' + datadir + AZ_Avgs_file + ' ...')
+di = np.load(datadir + enstrophy_file, encoding='latin1').item()
 vals = di['vals']
 lut = di['lut']
 iter1, iter2 = di['iter1'], di['iter2']
 rr = di['rr']
 tt = di['tt']
 cost, sint = di['cost'], di['sint']
+nt = di['nt']
 xx = di['xx']
-ri = di['ri']
 
-vsq_r, vsq_t, vsq_p = vals[:, :, lut[422]], vals[:, :, lut[423]],\
-    vals[:, :, lut[424]], 
+# Get TOTAL enstrophy in meridional plane
+ens_r = np.mean(vals[:, :, :, 0], axis=0)
+ens_theta = np.mean(vals[:, :, :, 1], axis=0)
+ens_phi = np.mean(vals[:, :, :, 2], axis=0)
+ens = ens_r + ens_theta + ens_phi
+
+# Get AVERAGE enstrophy in meridional plane
+di_az = np.load(datadir + AZ_Avgs_file, encoding='latin1').item()
+vals_az = di_az['vals']
+lut_az = di_az['lut']
+ens_r_mean = vals_az[:, :, lut_az[301]]**2
+ens_theta_mean = vals_az[:, :, lut_az[302]]**2
+ens_phi_mean = vals_az[:, :, lut_az[303]]**2
+ens_mean = ens_r_mean + ens_theta_mean + ens_phi_mean
+
+# Compute vorticity-based Rossby number
+Ro_vort = np.sqrt(ens - ens_mean)/Om0
+
+# Get vavg data
+vsq_r, vsq_t, vsq_p = vals_az[:, :, lut_az[422]],\
+        vals_az[:, :, lut_az[423]], vals_az[:, :, lut_az[424]], 
 vsq = vsq_r + vsq_t + vsq_p
-d = di['d']
 
 # Compute velocity-based Rossby number
-Ro = np.sqrt(vsq)/d/Om0
+ref = ReferenceState(dirname + '/reference')
+Hrho = -1./ref.dlnrho
+Ro_vel = np.sqrt(vsq)/Hrho/Om0
+
+# Make a shell average from the AZ_Avgs
+gi = GridInfo(dirname + '/grid_info')
+tw = gi.tweights
+tw2 = tw.reshape((nt, 1))
+
+Ro_vort_sh = np.sum(Ro_vort*tw2, axis=0)
+Ro_vel_sh = np.sum(Ro_vel*tw2, axis=0)
 
 # Create the plot
 fig = plt.figure()
 ax = fig.add_subplot(111)
 
-# Get extrema values for diff. rot.
-maxes = [] # Get the max-value of Omega for plotting purposes
-mins = []  # ditto for the min-value
-                                               
 # User can specify what to normalize the radius by
 # By default, normalize by the solar radius
 if not user_specified_rnorm:
@@ -101,20 +127,15 @@ if not user_specified_rnorm:
 else:
     rr_n = rr/user_supplied_rnorm                                           
 
-# Plot rotation vs radius at the desired latitudes
-for theta_val in theta_vals:
-    diffs = np.abs(tt - theta_val)
-    index = np.argmin(diffs)
-    latitude = 90 - theta_val*180/np.pi
-    ax.plot(rr_n, Ro[index,:],\
-            label = r'$\rm{%2.1f}$' %latitude + r'$^\circ$')
-    maxes.append(np.max(Ro[index,:]))
-    mins.append(np.min(Ro[index,:]))
+ax.plot(rr_n, Ro_vort_sh,\
+        label=r'${\rm{Ro}}_{\rm{vort}} \equiv \omega^\prime \Omega_0^{-1}$')
+ax.plot(rr_n, Ro_vel_sh,\
+        label=r'${\rm{Ro}}_{\rm{vel}} \equiv v^\prime H_\rho^{-1} \Omega_0^{-1}$')
 
 if not user_specified_minmax:
     # Global extrema
-    mmax = np.max(maxes)
-    mmin = np.min(mins)
+    mmax = max(np.max(Ro_vort_sh), np.max(Ro_vel_sh))
+    mmin = min(np.min(Ro_vort_sh), np.min(Ro_vel_sh))
     difference = mmax - mmin
     ybuffer = difference*0.2 
     # "Guard" the yrange of the plot with whitespace
@@ -128,7 +149,7 @@ if not user_specified_rnorm:
 else:
     plt.xlabel(r'r/(%.1e cm)' %user_supplied_rnorm, fontsize=12, **csfont)
     
-plt.ylabel(r'${\rm{Ro}}_{\rm{vel}} \equiv v^\prime (r_o-r_i)^{-1}\Omega_0^{-1}$',fontsize=12, **csfont)
+plt.ylabel(r'${\rm{Ro}}$',fontsize=12, **csfont)
 
 # Set the axis limits
 xmin, xmax = np.min(rr_n), np.max(rr_n)
@@ -140,16 +161,16 @@ xvals = np.linspace(xmin, xmax, 100)
 yvals = np.linspace(ymin, ymax, 100)
 
 # Create a title    
-plt.title(dirname_stripped + '\n' +'"Velocity" Rossby number, ' +\
-          str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8), **csfont)
-plt.legend(title='latitude')
+plt.title(dirname_stripped + '\n' +'"Vorticity/velocity" Rossby numbers, '\
+        + str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8), **csfont)
+plt.legend()
 
 # Get ticks everywhere
 plt.minorticks_on()
 plt.tick_params(top=True, right=True, direction='in', which='both')
 plt.tight_layout()
 
-savefile = plotdir + dirname_stripped + '_Ro_vel_rslice_' +\
+savefile = plotdir + dirname_stripped + '_Ro_vortvel_' +\
     str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
 print('Saving plot at ' + savefile + ' ...')
 plt.savefig(savefile, dpi=300)

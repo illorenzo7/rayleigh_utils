@@ -17,6 +17,7 @@ csfont = {'fontname':'DejaVu Serif'}
 
 import sys, os
 sys.path.append(os.environ['rapp'])
+from rayleigh_diagnostics import ReferenceState
 from common import strip_dirname, get_widest_range_file,\
     get_iters_from_file, rsun
 from get_parameter import get_parameter
@@ -81,10 +82,11 @@ ri = di['ri']
 vsq_r, vsq_t, vsq_p = vals[:, :, lut[422]], vals[:, :, lut[423]],\
     vals[:, :, lut[424]], 
 vsq = vsq_r + vsq_t + vsq_p
-d = di['d']
 
 # Compute velocity-based Rossby number
-Ro = np.sqrt(vsq)/d/Om0
+ref = ReferenceState(dirname + '/reference')
+Hrho = -1./ref.dlnrho
+Ro = np.sqrt(vsq)/Hrho/Om0
 
 # Create the plot
 fig = plt.figure()
@@ -128,7 +130,7 @@ if not user_specified_rnorm:
 else:
     plt.xlabel(r'r/(%.1e cm)' %user_supplied_rnorm, fontsize=12, **csfont)
     
-plt.ylabel(r'${\rm{Ro}}_{\rm{vel}} \equiv v^\prime (r_o-r_i)^{-1}\Omega_0^{-1}$',fontsize=12, **csfont)
+plt.ylabel(r'${\rm{Ro}}_{\rm{vel2}} \equiv v^\prime H_\rho^{-1}\Omega_0^{-1}$',fontsize=12, **csfont)
 
 # Set the axis limits
 xmin, xmax = np.min(rr_n), np.max(rr_n)
@@ -140,7 +142,7 @@ xvals = np.linspace(xmin, xmax, 100)
 yvals = np.linspace(ymin, ymax, 100)
 
 # Create a title    
-plt.title(dirname_stripped + '\n' +'"Velocity" Rossby number, ' +\
+plt.title(dirname_stripped + '\n' +'"Velocity" Rossby number (v. 2), ' +\
           str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8), **csfont)
 plt.legend(title='latitude')
 
@@ -149,7 +151,7 @@ plt.minorticks_on()
 plt.tick_params(top=True, right=True, direction='in', which='both')
 plt.tight_layout()
 
-savefile = plotdir + dirname_stripped + '_Ro_vel_rslice_' +\
+savefile = plotdir + dirname_stripped + '_Ro_vel2_rslice_' +\
     str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
 print('Saving plot at ' + savefile + ' ...')
 plt.savefig(savefile, dpi=300)
