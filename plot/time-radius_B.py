@@ -216,7 +216,7 @@ for i in range(len(lats_to_plot)):
     cbar_width = 0.07*(1 - ax_xmax)
     cbar_height = ax_delta_y
     cax = fig.add_axes((cbar_left, cbar_bottom, cbar_width, cbar_height))
-    cax.set_title('Gauss', **csfont)
+    cax.set_title('G', **csfont)
     plt.colorbar(im1, cax=cax)
 
     # Next, B_theta:
@@ -230,7 +230,7 @@ for i in range(len(lats_to_plot)):
     cbar_width = 0.07*(1 - ax_xmax)
     cbar_height = ax_delta_y
     cax = fig.add_axes((cbar_left, cbar_bottom, cbar_width, cbar_height))
-    cax.set_title('Gauss', **csfont)
+    cax.set_title('G', **csfont)
     plt.colorbar(im2, cax=cax)
 
     # Next, B_phi:
@@ -244,7 +244,7 @@ for i in range(len(lats_to_plot)):
     cbar_width = 0.07*(1 - ax_xmax)
     cbar_height = ax_delta_y
     cax = fig.add_axes((cbar_left, cbar_bottom, cbar_width, cbar_height))
-    cax.set_title('Gauss', **csfont)
+    cax.set_title('G', **csfont)
     plt.colorbar(im3, cax=cax)
 
     # Label x (time) axis
@@ -271,11 +271,14 @@ for i in range(len(lats_to_plot)):
     ax3.text(ax_xmin + 1.01*ax_Dx, mid_rval,  r'$B_\phi$')
 
     # Put some useful information on the title
-    averaging_time = (times[-1] - times[0])/niter*navg/86400.
     title = dirname_stripped + '     ' +\
-            ('lat = %+2.1f deg' %lat_to_plot) + '     ' +\
-            ('t_avg = %.1f days' %averaging_time) +\
+            (r'$\rm{latitude}\ =\ %0.1f^\circ$' %lat_to_plot) +\
             '     ' + ('time_unit = %.1f days' %(tnorm/86400.))
+    if navg > 1:
+        averaging_time = (times[-1] - times[0])/niter*navg/86400.
+        title += '     ' + ('t_avg = %.1f days' %averaging_time)
+    else:
+        title += '     t_avg = none'
 
     ax1.set_title(title, **csfont)
     # Get ticks everywhere
@@ -292,10 +295,11 @@ for i in range(len(lats_to_plot)):
     plt.tick_params(top=True, right=True, direction='in', which='both')
 
     # Save the plot
-    print ('Saving the time-latitude plot at ' + plotdir +\
+    print ('Saving the time-radius plot at ' + plotdir +\
             savename + ' ...')
-    plt.savefig(plotdir + savename, dpi=300)
+    plt.savefig(plotdir + savename, dpi=200)
 
     # Show the plot if only plotting at one latitude
     if len(lats_to_plot) == 1:
         plt.show()
+    plt.close()
