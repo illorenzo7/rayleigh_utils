@@ -30,8 +30,8 @@ def get_lims(arr, boundstype='minmax', caller_minmax=(-10.,10.)):
 def plot_azav(fig, axis, field, radius, costheta, sintheta,
         mycmap=plt.cm.RdYlBu_r, units = r'$\rm{m}\ \rm{s}^{-1}$', 
         boundstype = 'minmax', nlevs = 10, caller_minmax=None, 
-        plotcontours=True, plotfield=True,
-        norm=None, levels=None):
+        plotcontours=True, plotfield=True, plotlatlines=False,
+        norm=None, levels=None, fsize=8):
     '''Takes a figure with a subplot (axis) of aspect ratio 1x2 and adds
     a plot in the meridional plane to the axis, with colorbar in the "cavity"
     of the meridional plane'''
@@ -96,7 +96,7 @@ def plot_azav(fig, axis, field, radius, costheta, sintheta,
                        cbaxis_width, cbaxis_height])
         cbar = plt.colorbar(cax=cbaxes)
 
-        fsize = 8 # fontsize for colorbar ticks and labels
+        #fsize = 8 # fontsize for colorbar ticks and labels
         cbaxes.tick_params(labelsize=fsize)
 #        cbar.set_label(units, rotation=270, labelpad=25, fontsize=18)
         cbar.ax.tick_params(labelsize=fsize)   #font size for the ticks
@@ -109,16 +109,28 @@ def plot_azav(fig, axis, field, radius, costheta, sintheta,
         cbar.set_ticklabels(ticklabels)
 
         # Put the units and exponent to left of colorbar
-        cbar_label = (r'$10^{%i}\ $' %exp) + units
+        cbar_label = (r'$\times10^{%i}\ $' %exp) + units
         fig.text(cbaxis_left - 0.3*cbaxis_width, cbaxis_center_y, cbar_label,\
             ha='right', va='center', rotation=90, fontsize=fsize)
 
     # Plot the boundary of the meridional plane
     plt.sca(axis)
-    plt.plot(r[0]*sintheta,r[0]*costheta,'k', linewidth=lw)
-    plt.plot(r[n_r-1]*sintheta,r[n_r-1]*costheta,'k', linewidth=lw)
-    plt.plot([0,0], [r[n_r-1],r[0]], 'k', linewidth=lw)
-    plt.plot([0,0], [-r[n_r-1],-r[0]], 'k', linewidth=lw)
+    plt.plot(r[0]*sintheta, r[0]*costheta, 'k', linewidth=lw)
+    plt.plot(r[n_r-1]*sintheta, r[n_r-1]*costheta, 'k', linewidth=lw)
+    plt.plot([0,0], [r[n_r-1], r[0]], 'k', linewidth=lw)
+    plt.plot([0,0], [-r[n_r-1], -r[0]], 'k', linewidth=lw)
+
+    # Plot latitude lines, if desired
+    if plotlatlines:
+        lats_to_plot = np.arange(-75, 90, 15)
+        for lat in lats_to_plot:
+            theta_val = (90 - lat)*np.pi/180
+            x_in, z_in = r[-1]*np.sin(theta_val), r[-1]*np.cos(theta_val)
+            x_out, z_out = r[0]*np.sin(theta_val), r[0]*np.cos(theta_val)
+            plt.sca(axis)
+            plt.plot([x_in, x_out], [z_in, z_out], 'k',\
+                    linewidth=contour_lw)
+
 
     # Set axis ranges to be just outside the boundary lines
     lilbit = 0.01

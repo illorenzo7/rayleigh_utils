@@ -279,7 +279,7 @@ def plot_ortho(fig, ax, a, dirname, varname, ir=0, minmax=None,\
     if not posdef:
         cbar_units = ' ' + (r'$\times10^{%i}$' %maxabs_exp) + ' ' + texunits[varname]
         cbar.set_ticks([my_min, 0, my_max])
-        cbar.set_ticklabels(['%1.2f' %my_min, '0', '%1.2f' %my_max])
+        cbar.set_ticklabels(['%1.1f' %my_min, '0', '%1.1f' %my_max])
     else:
         locator = ticker.LogLocator(base=10)
         cbar.set_ticks(locator)
@@ -443,7 +443,7 @@ def plot_moll(fig, ax, a, dirname, varname, ir=0, minmax=None,\
     if not posdef:
         cbar_units = ' ' + (r'$\times10^{%i}$' %maxabs_exp) + ' ' + texunits[varname]
         cbar.set_ticks([my_min, 0, my_max])
-        cbar.set_ticklabels(['%1.2f' %my_min, '0', '%1.2f' %my_max])
+        cbar.set_ticklabels(['%1.1f' %my_min, '0', '%1.1f' %my_max])
     else:
         locator = ticker.LogLocator(base=10)
         cbar.set_ticks(locator)
@@ -464,5 +464,3 @@ def plot_moll(fig, ax, a, dirname, varname, ir=0, minmax=None,\
     psivals = np.linspace(0, 2*np.pi, 100)
     xvals, yvals = 2.*np.cos(psivals), np.sin(psivals)
     ax.plot(xvals, yvals, 'k')
-
-
