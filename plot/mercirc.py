@@ -20,7 +20,7 @@ import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['co'])
 from azavg_util import plot_azav, streamfunction
-from common import get_widest_range_file, strip_dirname
+from common import get_widest_range_file, strip_dirname, get_dict
 from rayleigh_diagnostics import ReferenceState
 
 # Get directory name and stripped_dirname for plotting purposes
@@ -60,12 +60,7 @@ for i in range(nargs):
 
 # Read in AZ_Avgs data
 print ('Getting data from ' + datadir + AZ_Avgs_file + ' ...')
-try:
-    di = np.load(datadir + AZ_Avgs_file, encoding='latin1').item()
-except:
-    f = open(AZ_Avgs_file, 'rb')
-    di = pickle.load(f)
-    f.close()
+di = get_dict(datadir + AZ_Avgs_file)
 
 vals = di['vals']
 lut = di['lut']
