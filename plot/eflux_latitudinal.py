@@ -11,6 +11,8 @@
 import matplotlib as mpl
 mpl.use('TkAgg')
 import matplotlib.pyplot as plt
+plt.rcParams['mathtext.fontset'] = 'dejavuserif'
+csfont = {'fontname':'DejaVu Serif'}
 import numpy as np
 import sys, os
 sys.path.append(os.environ['rapp'])
@@ -120,8 +122,27 @@ if magnetism:
     mflux_int = np.sum(mflux*areas, axis=1)
 tflux_int = np.sum(tflux*areas, axis=1)
 
+solar_lum = 3.846e33 # We'll normalize by the solar luminosity
+
+# compute the "equilibrium flux" (latitudinal flux needed to balance out
+# any differences between the inner and outer radial fluxes
+cfluxr = vals[:, :, lut[1470]]
+cflux_out = cfluxr[:, 0]
+lum = get_parameter(dirname, 'luminosity') 
+rsq_Flux_in = lum/4/np.pi
+integrand = -2*np.pi*(ro**2*cflux_out - rsq_Flux_in*np.ones(nt))
+    
+eqflux_int = np.zeros(nt)
+
+# Get the latitudinal integration weights
+gi = GridInfo(dirname + '/grid_info')
+tw = gi.tweights
+for it in range(nt):
+    # Remember the variables are index "backwards" w.r.t. it (theta
+    # runs from pi to 0)
+    eqflux_int[it] = 2*np.sum(tw[it:]*integrand[it:])
+
 # Create the plot; start with plotting all the energy fluxes
-solar_lum = 3.846e33 # Normalize by the solar luminosity
 lats = 180*(np.pi/2 - tt)/np.pi
 plt.plot(lats, eflux_int/solar_lum, 'm', label=r'$\rm{F}_{enth}$',\
         linewidth=lw)
@@ -137,6 +158,8 @@ if magnetism:
             linewidth=lw)
 plt.plot(lats, tflux_int/solar_lum, label=r'$\rm{F}_{total}$',\
         linewidth=lw, color='black')
+plt.plot(lats, eqflux_int/solar_lum, 'k--', label=r'$\rm{F}_{eq}$',\
+        linewidth=lw)
 
 # Get the y-axis in scientific notation
 #plt.ticklabel_format(useMathText=True, axis='y', scilimits=(0,0))
@@ -162,6 +185,10 @@ plt.ylim(ymin, ymax)
 plt.xlabel(r'$\rm{Latitude} \ (^\circ)$', fontsize=12)
 plt.ylabel('(Integrated Energy Flux)' + r'$/L_\odot$',\
         fontsize=12)
+
+# Make title
+plt.title(dirname_stripped + '\n' + 'latitudinal energy flux, ' +\
+          str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8), **csfont)
 
 # Create a see-through legend
 leg=plt.legend(loc='lower left',shadow=True, ncol=3,fontsize=10)

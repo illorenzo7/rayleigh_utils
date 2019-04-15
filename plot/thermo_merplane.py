@@ -23,7 +23,7 @@ sys.path.append(os.environ['co'])
 sys.path.append(os.environ['pl'])
 from azavg_util import plot_azav
 from rayleigh_diagnostics import ReferenceState
-from common import get_widest_range_file, strip_dirname
+from common import get_widest_range_file, strip_dirname, get_dict
 from get_parameter import get_parameter
 from binormalized_cbar import MidpointNormalize
 
@@ -58,18 +58,9 @@ Shell_Avgs_file = get_widest_range_file(datadir, 'Shell_Avgs')
 
 print ('Getting zonally averaged thermo. vars from ' + datadir + AZ_Avgs_file + ' ...')
 print ('and the spherically averaged thermo. vars from ' + datadir + Shell_Avgs_file + ' ...')
-try:
-    di = np.load(datadir + AZ_Avgs_file, encoding='latin1').item()
-except:
-    f = open(AZ_Avgs_file, 'rb')
-    di = pickle.load(f)
-    f.close()
-try:
-    di_sph = np.load(datadir + Shell_Avgs_file, encoding='latin1').item()
-except:
-    f = open(Shell_Avgs_file, 'rb')
-    di_sph = pickle.load(f)
-    f.close()
+
+di = get_dict(datadir + AZ_Avgs_file)
+di_sph = np.load(datadir + Shell_Avgs_file)
 
 iter1, iter2 = di['iter1'], di['iter2']
 vals = di['vals']
