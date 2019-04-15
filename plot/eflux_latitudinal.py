@@ -17,7 +17,7 @@ sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['co'])
 from common import get_widest_range_file, strip_dirname, get_dict
 from get_parameter import get_parameter
-from rayleigh_diagnostics import GridInfo
+from rayleigh_diagnostics import GridInfo, ReferenceState
 
 # Get the run directory on which to perform the analysis
 dirname = sys.argv[1]
@@ -67,6 +67,7 @@ lw = 1.5 # Bit thicker lines
 vals = di['vals']
 lut = di['lut']
 qindex_eflux = lut[1456]
+qindex_eflux_pp = lut[1459]
 qindex_cflux = lut[1471]
 qindex_kflux = lut[1924]
 qindex_vflux = lut[1936] # needs minus sign?
@@ -77,6 +78,24 @@ cflux = vals[:, :, qindex_cflux]
 kflux = vals[:, :, qindex_kflux]
 vflux = -vals[:, :, qindex_vflux]
 tflux = eflux + cflux + kflux + vflux # compute the total flux
+
+try:
+    eflux_pp = vals[:, :, qindex_eflux_pp]
+except:
+    # the fluctuating enthalpy flux wasn't computed directly
+    # so compute it by subtracting out the flux due to meridional 
+    # circulation
+    ref = ReferenceState(dirname + '/reference')
+    rho_bar = ref.density
+    T_bar = ref.temperature
+    S_azav = vals[:, :, lut[501]]
+    P_azav = vals[:, :, lut[502]]
+    vt_azav = vals[:, :, lut[2]]
+    eflux_mm = (rho_bar*T_bar*S_azav + P_azav)*vt_azav
+    eflux_pp = eflux - eflux_mm
+
+# Compute eflux_mm if the "try" succeeded
+eflux_mm = eflux - eflux_pp
 
 magnetism = get_parameter(dirname, 'magnetism')
 if magnetism:
@@ -91,6 +110,9 @@ areas = 2*np.pi*sint.reshape((nt, 1))*rr.reshape((1, nr))*\
         dr.reshape((1, nr))
 
 eflux_int = np.sum(eflux*areas, axis=1)
+eflux_pp_int = np.sum(eflux_pp*areas, axis=1)
+eflux_mm_int = np.sum(eflux_mm*areas, axis=1)
+
 cflux_int = np.sum(cflux*areas, axis=1)
 kflux_int = np.sum(kflux*areas, axis=1)
 vflux_int = np.sum(vflux*areas, axis=1)
@@ -102,6 +124,10 @@ tflux_int = np.sum(tflux*areas, axis=1)
 solar_lum = 3.846e33 # Normalize by the solar luminosity
 lats = 180*(np.pi/2 - tt)/np.pi
 plt.plot(lats, eflux_int/solar_lum, 'm', label=r'$\rm{F}_{enth}$',\
+        linewidth=lw)
+plt.plot(lats, eflux_pp_int/solar_lum, 'm--', label=r'$\rm{F}_{enth,\ pp}$',\
+        linewidth=lw)
+plt.plot(lats, eflux_mm_int/solar_lum, 'm:', label=r'$\rm{F}_{enth,\ mm}$',\
         linewidth=lw)
 plt.plot(lats, cflux_int/solar_lum, label=r'$\rm{F}_{cond}$', linewidth=lw)
 plt.plot(lats, kflux_int/solar_lum, label=r'$\rm{F}_{KE}$', linewidth=lw)

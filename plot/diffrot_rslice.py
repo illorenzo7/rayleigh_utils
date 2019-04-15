@@ -17,7 +17,8 @@ plt.rcParams['mathtext.fontset'] = 'dejavuserif'
 csfont = {'fontname':'DejaVu Serif'}
 import sys, os
 from get_parameter import get_parameter
-from common import strip_dirname, get_widest_range_file, get_iters_from_file
+from common import strip_dirname, get_widest_range_file,\
+        get_iters_from_file, get_dict
 
 # Get directory name and stripped_dirname for plotting purposes
 dirname = sys.argv[1]
@@ -59,12 +60,7 @@ theta_vals = colats*np.pi/180
 
 # Read in vavg data
 print ('Reading AZ_Avgs data from ' + datadir + AZ_Avgs_file + ' ...')
-try:
-    di = np.load(datadir + AZ_Avgs_file, encoding='latin1').item()
-except:
-    f = open(AZ_Avgs_file, 'rb')
-    di = pickle.load(f)
-    f.close()
+di = get_dict(datadir + AZ_Avgs_file)
 
 vals = di['vals']
 lut = di['lut']

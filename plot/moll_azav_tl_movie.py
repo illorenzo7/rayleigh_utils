@@ -37,6 +37,7 @@ Omega0 = get_parameter(dirname, 'angular_velocity')
 Prot = 2*np.pi/Omega0
 
 minmax = None
+restart = False
 varname = 'bp' # by default plot the zonal field
 ir = 0 # by default plot just below the surface
 rval = None # can also find ir by finding the closest point
@@ -69,6 +70,9 @@ for i in range(nargs):
         clon = float(args[i+1])
     elif arg == '-start':
         count = int(args[i+1])
+    elif arg == '-restart':
+        restart = True # attempt to complete a partially filled
+                        # plot directory
 
 posdef = False
 if 'sq' in varname:
@@ -193,10 +197,26 @@ print ("Plotting slice/AZ_Avg " + fnames[0] + " through " + fnames[-1])
 print ("Or img%04i.png through img%04i.png"\
         %((count, count + len(fnames) - 1)))
 
+# If trying to restart, see where the last run got to:
+if restart:
+    already_plotted = os.listdir(plotdir)
+    n_plotted = len(already_plotted)
+    # Make a new list of the remaining plots to make;
+    # Make the last plot again, since it may be f**ked up
+    count = n_plotted - 1
+    fnames = fnames[n_plotted - 1:]
+    print ("------------------------")
+    print ("Restart desired:")
+    print ("Remaking img%04i.png" %count)
+    print ("Will plot %s through %s" %(fnames[0], fnames[-1]))
+    print ("as img%04i.png through img%04i.png"\
+            %(count, count + len(fnames) - 1))
+    print ("------------------------")
+
 firstplot = True
 for fname in fnames:
     # Read in desired shell slice
-    if firstplot:
+    if firstplot and not restart:
         a = a0
         az = az0
         firstplot = False

@@ -26,7 +26,7 @@ sys.path.append(os.environ['co'])
 sys.path.append(os.environ['pl'])
 from azavg_util import plot_azav
 from rayleigh_diagnostics import ReferenceState
-from common import get_widest_range_file, strip_dirname
+from common import get_widest_range_file, strip_dirname, get_dict
 from get_parameter import get_parameter
 from binormalized_cbar import MidpointNormalize
 
@@ -68,12 +68,7 @@ except:
 # Get AZ_Avgs file
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
 print ('Getting radial energy fluxes from ' + datadir + AZ_Avgs_file + ' ...')
-try:
-    di = np.load(datadir + AZ_Avgs_file, encoding='latin1').item()
-except:
-    f = open(AZ_Avgs_file, 'rb')
-    di = pickle.load(f)
-    f.close()
+di = get_dict(datadir + AZ_Avgs_file)
 
 iter1, iter2 = di['iter1'], di['iter2']
 vals = di['vals']
