@@ -30,6 +30,7 @@ notfrom0 = False
 magnetism = False
 ylog = False
 user_specified_minmax = False
+user_specified_xminmax = False
 
 # Get command-line arguments
 args = sys.argv[2:]
@@ -51,6 +52,10 @@ for i in range(nargs):
         user_specified_minmax = True
         my_min = float(args[i+1])
         my_max = float(args[i+2])
+    elif (arg == '-xminmax'):
+        user_specified_xminmax = True
+        my_xmin = float(args[i+1])
+        my_xmax = float(args[i+2])
 
 # Tag the plot by whether or not the x axis is in "time" or "iteration"
 if (xiter):
@@ -179,7 +184,11 @@ if user_specified_minmax:
     ax1.set_ylim((my_min, my_max))
     
 # Set x limits  
-ax1.set_xlim((x_min, np.max(xaxis)))
+if user_specified_xminmax:
+    ax1.set_xlim((my_xmin, my_xmax))
+else:
+    ax1.set_xlim((x_min, np.max(xaxis)))
+
 
 # legend
 ax1.legend(ncol=2, fontsize=8)
