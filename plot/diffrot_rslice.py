@@ -33,6 +33,7 @@ if (not os.path.isdir(plotdir)):
 
 # Set defaults
 user_specified_rnorm = False
+user_specified_minmax = False
 lats = [0, 15, 30, 45, 60, 75]
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
 
@@ -52,6 +53,10 @@ for i in range(nargs):
     elif (arg == '-rnorm'):
         user_specified_rnorm = True
         user_supplied_rnorm = float(args[i+1])
+    elif arg == '-minmax':
+        user_specified_minmax = True
+        my_min = float(args[i+1])
+        my_max = float(args[i+2])
 
 # Get the spherical theta values associated with [lats]       
 lats = np.array(lats)
@@ -126,7 +131,11 @@ plt.ylabel(r'$\Omega/2\pi \ \rm{(nHz)}$',fontsize=12, **csfont)
 xmin, xmax = np.min(rr_n), np.max(rr_n)
 ymin, ymax = mmin - buffer, mmax + buffer
 plt.xlim((xmin, xmax))
-plt.ylim((ymin, ymax))
+if not user_specified_minmax:
+    plt.ylim((ymin, ymax))
+else:
+    plt.ylim((my_min, my_max))
+
 delta_x = xmax - xmin
 delta_y = ymax - ymin
 xvals = np.linspace(xmin, xmax, 100)

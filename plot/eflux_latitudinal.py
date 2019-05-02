@@ -37,14 +37,19 @@ if (not os.path.isdir(plotdir)):
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
 
 # Get command-line arguments to adjust the interval of averaging files
+user_specified_minmax = False
 args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
-    if (arg == '-usefile'):
+    if arg == '-usefile':
         AZ_Avgs_file = args[i+1]
         AZ_Avgs_file = AZ_Avgs_file.split('/')[-1]
-        
+    elif arg == '-minmax':
+        user_specified_minmax = True
+        my_min = float(args[i+1])
+        my_max = float(args[i+2])
+       
 print ('Getting data from ', datadir + AZ_Avgs_file, ' ...')
 di = get_dict(datadir + AZ_Avgs_file)
 iter1, iter2 = di['iter1'], di['iter2']
@@ -177,9 +182,12 @@ plt.xlim(xmin, xmax)
 maxabs = max((np.max(np.abs(eflux_int)), np.max(np.abs(cflux_int)),\
         np.max(np.abs(kflux_int)), np.max(np.abs(vflux_int)), np.max(np.abs(tflux_int))))
 
-ymin, ymax = -1.2*maxabs/solar_lum, 1.2*maxabs/solar_lum
-delta_y = ymax - ymin
-plt.ylim(ymin, ymax)
+if not user_specified_minmax:
+    ymin, ymax = -1.2*maxabs/solar_lum, 1.2*maxabs/solar_lum
+    delta_y = ymax - ymin
+    plt.ylim(ymin, ymax)
+else:
+    plt.ylim(my_min, my_max)
 
 # Label the axes
 plt.xlabel(r'$\rm{Latitude} \ (^\circ)$', fontsize=12)
