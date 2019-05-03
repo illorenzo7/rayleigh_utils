@@ -1,136 +1,50 @@
-#!/Users/loren/anaconda3/bin/python
-from get_parameter import *
-import numpy as np
+# Created: 05/03/2019
+# Author: Loren Matilsky
+
+import matplotlib as mpl
+mpl.use('TkAgg')
 import matplotlib.pyplot as plt
-import os, sys
-from diagnostic_reading import ReferenceState
+plt.rcParams['mathtext.fontset'] = 'dejavuserif'
+csfont = {'fontname':'DejaVu Serif'}
+#import numpy as np
+import sys, os
+sys.path.append(os.environ['rapp'])
+sys.path.append(os.environ['co'])
+sys.path.append(os.environ['co'] + '/ideal_hydro_reference_state')
 
-# Makes use of the ReferenceState class, which has the following attributes:
-
-# self.n_r         : number of radial points
-# self.radius      : radial coordinates
-# self.density     : density
-# self.dlnrho      : logarithmic derivative of density
-# self.d2lnrho     : d_by_dr of dlnrho
-# self.pressure    : pressure
-# self.temperature : temperature
-# self.dlnt        : logarithmic derivative of temperature
-# self.dsdr        : entropy gradient (radial)
-# self.entropy     : entropy
-# self.gravity     : gravity
-
+from common import strip_dirname
+from plot_ref import plotref
+from rayleigh_diagnostics import ReferenceState
 # Get the run directory on which to perform the analysis
 dirname = sys.argv[1]
+dirname_stripped = strip_dirname(dirname)
 
-# Directory with data
+# Directory with data and plots, make the plotting directory if it doesn't
+# already exist    
 datadir = dirname + '/data/'
 plotdir = dirname + '/plots/'
+if (not os.path.isdir(plotdir)):
+    os.makedirs(plotdir)
 
-
-
-# Read in reference state and corresponding variables
 ref = ReferenceState(dirname + '/reference', '')
+r = ref.radius
+T = ref.temperature
+rho = ref.density
+p = ref.pressure
+dlnT = ref.dlnt
+dlnrho = ref.dlnrho
+dlnp = dlnT + dlnrho
+s = ref.entropy
+dsdr = ref.dsdr
+d2lnrho = ref.d2lnrho
 
-rr = ref.radius
-rsun = 6.96e10
-rr_n = rr/rsun # rr "normalized" by the solar radius
-p_ref = ref.pressure
-s_ref = ref.entropy
-t_ref = ref.temperature
-rho_ref = ref.density
-Hrho_ref = -1/(ref.dlnrho)/1.e8 # conver cm --> Mm
-g_ref = ref.gravity/100. # convert to m/s^2
+fig, axs = plotref(r, T, rho, p, dlnT, dlnrho, dlnp, s, dsdr,\
+    d2lnrho, color='k')
 
-ro = np.max(rr)
-ri = np.min(rr)
-d = ro - ri
-ir_c = np.argmin(np.abs(rr - (ri + d/2))) #index of the center of the layer
-
-T_c = t_ref[ir_c]
-P_c = p_ref[ir_c]
-rho_c = rho_ref[ir_c]
-S_c = s_ref[ir_c]
-
-plt.plot(rr_n, rho_ref/rho_c, label = (r'$\rho/\rho_c, \rho_c = %.1e$' %rho_c) + ' g/cm' + r'$^3$')
-plt.plot(rr_n, t_ref/T_c, label = (r'$T/T_c, T_c = %.1e$' %T_c) + ' K')
-plt.plot(rr_n, p_ref/P_c, label = (r'$P/P_c, P_c = %.1e$' %P_c) + ' dyn/cm' + r'$^2$')
-plt.plot(rr_n, s_ref/S_c, label = (r'$S/S_c, S_c = %.1e$' %S_c) + ' erg/K/g')
-
-plt.xlabel(r'$r/R_\odot$', fontsize=14)
-plt.xlim(ri/rsun, ro/rsun)
-plt.minorticks_on()
-plt.tick_params(top='on', right='on', direction='in', which='both')
 plt.legend()
-plt.tight_layout()
-plt.savefig(plotdir + 'reference_td.png', dpi=300)
-plt.close()
-
-# Now plot each relevant quantity individually, in its own units (including
-# scale height and gravity) 
-
-plt.plot(rr_n, rho_ref)
-plt.xlabel(r'$r/R_\odot$', fontsize=14)
-plt.ylabel(r'$\hat{\rho}$' + ' (g/cm'  + r'$^3$' + ')', fontsize=14)
-plt.xlim(ri/rsun, ro/rsun)
-plt.ylim(0, 1.1*np.max(rho_ref))
-plt.minorticks_on()
-plt.tick_params(top='on', right='on', direction='in', which='both')
-plt.tight_layout()
-plt.savefig(plotdir + 'reference_rho.png', dpi=300)
-plt.close()
-
-plt.plot(rr_n, p_ref)
-plt.xlabel(r'$r/R_\odot$', fontsize=14)
-plt.ylabel(r'$\hat{P}$' + ' (dyn/cm'  + r'$^2$' + ')', fontsize=14)
-plt.xlim(ri/rsun, ro/rsun)
-plt.ylim(0, 1.1*np.max(p_ref))
-plt.minorticks_on()
-plt.tick_params(top='on', right='on', direction='in', which='both')
-plt.tight_layout()
-plt.savefig(plotdir + 'reference_p.png', dpi=300)
-plt.close()
-
-plt.plot(rr_n, t_ref)
-plt.xlabel(r'$r/R_\odot$', fontsize=14)
-plt.ylabel(r'$\hat{T}$' + ' (K)', fontsize=14)
-plt.xlim(ri/rsun, ro/rsun)
-plt.ylim(0, 1.1*np.max(t_ref))
-plt.minorticks_on()
-plt.tick_params(top='on', right='on', direction='in', which='both')
-plt.ticklabel_format(scilimits=(0,0))
-plt.tight_layout()
-plt.savefig(plotdir + 'reference_t.png', dpi=300)
-plt.close()
-
-plt.plot(rr_n, s_ref)
-plt.xlabel(r'$r/R_\odot$', fontsize=14)
-plt.ylabel(r'$\hat{S}$' + ' (erg/K/g)', fontsize=14)
-plt.xlim(ri/rsun, ro/rsun)
-plt.ylim(0, 1.1*np.max(s_ref))
-plt.minorticks_on()
-plt.tick_params(top='on', right='on', direction='in', which='both')
-plt.tight_layout()
-plt.savefig(plotdir + 'reference_s.png', dpi=300)
-plt.close()
-
-plt.plot(rr_n, g_ref)
-plt.xlabel(r'$r/R_\odot$', fontsize=14)
-plt.ylabel(r'$g(r)$' + ' (m/s' + r'$^2$' + ')', fontsize=14)
-plt.xlim(ri/rsun, ro/rsun)
-plt.ylim(0, 1.1*np.max(g_ref))
-plt.minorticks_on()
-plt.tick_params(top='on', right='on', direction='in', which='both')
-plt.tight_layout()
-plt.savefig(plotdir + 'reference_g.png', dpi=300)
-plt.close()
-
-plt.plot(rr_n, Hrho_ref)
-plt.xlabel(r'$r/R_\odot$', fontsize=14)
-plt.ylabel(r'$H_\rho(r)$' + ' (Mm)', fontsize=14)
-plt.xlim(ri/rsun, ro/rsun)
-plt.ylim(0, 1.1*np.max(Hrho_ref))
-plt.minorticks_on()
-plt.tick_params(top='on', right='on', direction='in', which='both')
-plt.tight_layout()
-plt.savefig(plotdir + 'reference_Hrho.png', dpi=300)
+plt.tight_layout() 
+    
+axs[0,0].set_title('          ' + dirname_stripped, **csfont)
+    
+plt.savefig(plotdir + dirname_stripped + '_reference_state.pdf')
 plt.close()
