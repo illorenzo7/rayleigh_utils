@@ -34,7 +34,7 @@ import basic_constants as bc
 #    return packed_array
         
 # Set default constants
-ri = 3.4139791e10
+ri = 4.176e10  # Set RZ width about 0.5x CZ width
 rm = bc.ri
 ro = bc.ro
 cp = bc.cp
@@ -54,27 +54,27 @@ nargs = len(args)
 for i in range(nargs):
     arg = args[i]
     if arg == '-ri':
-        ri = float(sys.argv[i+1])
+        ri = float(args[i+1])
     elif arg == '-rm':
-        rm = float(sys.argv[i+1])
+        rm = float(args[i+1])
     elif arg == '-ro':
-        ro = float(sys.argv[i+1])
+        ro = float(args[i+1])
     elif arg == '-nr':
-        nr = int(sys.argv[i+1])
+        nr = int(args[i+1])
     elif arg == '-rhom':
-        rhom = float(sys.argv[i+1])        
+        rhom = float(args[i+1])        
     elif arg == '-tm':
-        tm = float(sys.argv[i+1])   
+        tm = float(args[i+1])   
     elif arg == '-k':
-        k = float(sys.argv[i+1])  
+        k = float(args[i+1])  
     elif arg == '-delta':
-        delta = float(sys.argv[i+1])*rm 
+        delta = float(args[i+1])*ro
     elif arg == '-gam':
-        gam = float(sys.argv[i+1]) 
+        gam = float(args[i+1]) 
     elif arg == '-cp':
-        cp = float(sys.argv[i+1]) 
+        cp = float(args[i+1]) 
     elif arg == '-M':
-        M = float(sys.argv[i+1])  
+        M = float(args[i+1])  
         
 # First, compute reference state on super-fine grid to interpolate onto later    
 nr = 5000

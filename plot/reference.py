@@ -41,10 +41,9 @@ d2lnrho = ref.d2lnrho
 fig, axs = plotref(r, T, rho, p, dlnT, dlnrho, dlnp, s, dsdr,\
     d2lnrho, color='k')
 
-plt.legend()
 plt.tight_layout() 
     
 axs[0,0].set_title('          ' + dirname_stripped, **csfont)
     
 plt.savefig(plotdir + dirname_stripped + '_reference_state.pdf')
-plt.close()
+plt.show()
