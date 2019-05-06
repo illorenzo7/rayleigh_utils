@@ -44,7 +44,7 @@ pm = bc.p_i
 rhom = bc.rho_i
 gam = bc.gamma
 k = 1.0
-delta = 0.005*rm
+delta = 0.005*ro
 
 # Get directory to save binary files for reference state and heating
 dirname = sys.argv[1]
