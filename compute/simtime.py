@@ -1,3 +1,4 @@
+# NEEDS UPDATED DOCS AND TESTING
 # Routine to figure out how much simulation time a given directory contains
 # Created: 12/23/2018 (but really before)
 #

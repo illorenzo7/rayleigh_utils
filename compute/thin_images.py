@@ -1,3 +1,4 @@
+# Author: Loren Matilsky
 # Created: 04/05/2019
 # Takes sequential images from one directory (dir1) and copies every nth 
 # one to another directory (dir2). 

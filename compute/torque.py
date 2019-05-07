@@ -1,3 +1,5 @@
+# LEGACY TORQUE COMPUTATION (only good for n3 cases, n4, n5, etc.)
+# NEEDS UPDATED DOCS AND TESTING
 from derivs import drad, dth
 import numpy as np
 import sys, os

@@ -1,10 +1,11 @@
-####################################################################################################
-#
+# NEEDS UPDATED DOCS AND TESTING
+#   Author: Loren Matilsky
+#   Created: 11/26/2017
+#  
 #   Plots the various terms in the gyroscopic pumping equation, performing
 #   finite-differences BEFORE taking the time average. I hope this will 
 #   yield a smoother balance!
 #
-#   Loren Matilsky, 11/26/2017
 #
 #   This plotting routine makes use of the azimuthal averages class, which 
 #   has the following attributes:
@@ -198,4 +199,3 @@ for ii in range(100): # for debugging purposes
 
 savefile = datadir + 'gp_terms.npy'
 np.save(savefile, (gp_stretch,gp_bc,gp_visc, gp_rs,gp_mc,gp_adv))
-

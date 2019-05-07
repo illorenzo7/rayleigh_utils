@@ -1,7 +1,6 @@
 """
 Author: Loren Matilsky
 Created: 03/23/2017
-Last Modified: 11/18/2018
 
 This script prints the Rayleigh index or variable name associated with a
 given quantity.

@@ -1,3 +1,7 @@
+# Author: Loren Matilsky
+# Created: well before 05/06/2019
+# NEEDS UPDATED DOCS AND TESTING
+
 import numpy as np
 import sys, os
 from diagnostic_reading import ShellAverage

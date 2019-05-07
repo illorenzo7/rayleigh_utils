@@ -1,3 +1,9 @@
+# Author: Loren Matilsky
+# Created: well before 05/06/2019
+# Takes the folder dirname (1st CLA) and renames .png files in sequential
+# order, using the prefix 'img' and integers filled with 4 zeros, e.g., 
+# img0000.png, img0001.png, etc.
+
 import sys, os
 
 dirname = sys.argv[1]

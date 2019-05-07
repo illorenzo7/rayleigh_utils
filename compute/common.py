@@ -16,6 +16,13 @@ msun = 1.98891e33 # FROM WIKIPEDIA: 1.98847 \pm 0.00007
                   # From IAU recommendation: 1.9885, with G = 6.67408 \pm 0.00031 (10^-8 c.g.s.)
                 # NOTE: ALL THESE QUANTITIES CHANGE IN TIME
 # Read in all files from the Rayleigh data directory and sort them by name (number)
+
+rho_i = 0.18053428
+ri = 5.0e10
+ro = 6.5860209e10 # Radii consistent with the bottom 3 density scale 
+        # heights in the Sun rho_i above corresponds to the density
+        # at the base of the convection zone
+
 def get_file_lists(radatadir):
     file_list = os.listdir(radatadir)
     file_list.sort()

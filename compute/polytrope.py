@@ -1,8 +1,13 @@
+# Author: Loren Matilsky
+# Created: well before 05/06/2019
+
+# Computes the polytropic thermodynamic stratification for an 
+# adiabatic atmosphere in a portion [ri, ro] of the solar CZ
+# after the formulation of Jones et al. (2011).
+
 import numpy as np
 import sys
 
-# Compute the polytropic thermodynamic stratification for an 
-# adiabatic atmosphere in a portion [ri, ro] of the solar CZ
 def compute_polytrope(ri, ro, Nrho, nr, poly_n, rho_i):
     d = ro - ri
     beta = ri/ro

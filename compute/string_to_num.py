@@ -1,3 +1,7 @@
+# Author: Loren Matilsky
+# Created: well before 05/06/2019
+# a string of text (either array, list, int, float etc.) into a the
+# appropriate Python data type/value
 import numpy as np
 
 def how_to_treat_numberstring(string):

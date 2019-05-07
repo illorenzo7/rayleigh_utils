@@ -1,9 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from plot_ref_and_dref import plotref
+import sys, os
+sys.path.append(os.environ['pl'])
+from plotref import plotref
 from arbitrary_atmosphere import arbitrary_atmosphere
 
-texdir = '/Users/loren/Thesis_Notes/Hydrostatic_ideal_gas_short/'
+#texdir = '/Users/loren/Thesis_Notes/Hydrostatic_ideal_gas_short/'
 
 plt.rcParams['mathtext.fontset'] = 'dejavuserif'
 csfont = {'fontname':'DejaVu Serif'}
@@ -57,5 +59,6 @@ plt.tight_layout()
     
 axs[0,0].set_title('            Constant sgrad in RZ, k=1.0', **csfont)
     
-plt.savefig(texdir + 'const_sgrad_RZ-CZ_delta.pdf')
-plt.close()
+#plt.savefig(texdir + 'const_sgrad_RZ-CZ_delta.pdf')
+plt.show()
+#plt.close()

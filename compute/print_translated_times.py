@@ -1,3 +1,9 @@
+# Author: Loren Matilsky
+# Date created: well before 05/06/2019
+# Prints various timescales associated with a given Rayleigh simulation
+# directory, including how long it was run, the thermal diffusion time, 
+# rotation period, etc.
+
 import sys
 from translate_times import translate_times
 
