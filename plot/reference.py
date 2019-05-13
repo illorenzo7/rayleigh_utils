@@ -13,7 +13,7 @@ sys.path.append(os.environ['co'])
 sys.path.append(os.environ['co'] + '/ideal_hydro_reference_state')
 
 from common import strip_dirname
-from plot_ref import plotref
+from plotref import plotref
 from rayleigh_diagnostics import ReferenceState
 # Get the run directory on which to perform the analysis
 dirname = sys.argv[1]
