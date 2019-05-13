@@ -34,7 +34,7 @@ Tm = bc.T_i
 pm = bc.p_i
 rhom = bc.rho_i
 gam = bc.gamma
-k = 1.0
+k = 2.0
 delta = 0.005*ro
 
 # Get directory to save binary files for reference state and heating
@@ -73,8 +73,8 @@ rr = np.linspace(ri, ro, nr)
 
 
 d2sdr2 = np.zeros_like(rr)
-dsdr = k*cp/rm*(1.0 - np.tanh((rr - rm)/delta))
-s = k*cp*((rr/rm - 1.0) - (delta/rm)*np.log(np.cosh((rr - rm)/delta)))
+dsdr = k*cp/rm*0.5*(1.0 - np.tanh((rr - rm)/delta))
+s = k*cp*0.5*((rr/rm - 1.0) - (delta/rm)*np.log(np.cosh((rr - rm)/delta)))
 g = bc.G*bc.M/rr**2
 dgdr = -2.0*g/rr
 
