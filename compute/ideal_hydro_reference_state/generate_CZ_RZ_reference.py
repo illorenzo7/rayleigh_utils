@@ -29,13 +29,14 @@ ri = 4.176e10  # Set RZ width about 0.5x CZ width
 rm = bc.ri
 ro = bc.ro
 cp = bc.cp
+rsun = bc.rsun
 
 Tm = bc.T_i
 pm = bc.p_i
 rhom = bc.rho_i
 gam = bc.gamma
 k = 2.0
-delta = 0.005*ro
+delta = 0.005*rsun
 
 # Get directory to save binary files for reference state and heating
 dirname = sys.argv[1]
@@ -71,13 +72,36 @@ for i in range(nargs):
 nr = 5000
 rr = np.linspace(ri, ro, nr)
 
-d2sdr2 = np.zeros_like(rr)
-tanh_shift = 6.
-dsdr = k*cp/rm*0.5*(1.0 - np.tanh((rr - rm)/delta + tanh_shift))
-# Shifting the tanh by ~6. makes S zero to within 1 part in 10^5 at r=rm
-# Important for setting the radius where enthalpy flux goes negative
-s = k*cp*0.5*((rr/rm - 1.0) -\
-        (delta/rm)*np.log(np.cosh((rr - rm)/delta + tanh_shift)/np.cosh(tanh_shift)))
+# Define a quartic smoothing function:
+f = np.zeros(nr)
+dfdr = np.zeros(nr)
+d2fdr2 = np.zeros(nr)
+
+for i in range(nr):
+    rloc = rr[i]
+    if rloc <= rm - delta:
+        f[i] = 1.0
+        dfdr[i] = 0.0
+        d2fdr2[i] = 0.0
+    elif rloc > rm - delta and rloc < rm:
+        f[i] = 1.0 - (1.0 - ((rloc - rm)/delta)**2.0)**3.0
+        dfdr[i] = 6.0/delta*(1.0 - ((rloc - rm)/delta)**2.0)**2.0*\
+                ((rloc - rm)/delta)
+        d2fdr2[i] = 6.0/delta**2.0*(1.0 - ((rloc - rm)/delta)**2.0)*\
+                (1.0 - 5.0*((rloc - rm)/delta)**2.0)
+    else:
+        f[i] = 0.0
+        dfdr[i] = 0.0
+        d2fdr2[i] = 0.0
+
+line = k*cp*(rr/rm - 1.0)
+dlinedr = k*cp/rm*np.ones(nr)
+d2linedr2 = np.zeros(nr)
+
+s = line*f
+dsdr = dlinedr*f + line*dfdr
+d2sdr2 = d2linedr2*f + 2.0*dlinedr*dfdr + line*d2fdr2
+
 g = bc.G*bc.M/rr**2
 dgdr = -2.0*g/rr
 
