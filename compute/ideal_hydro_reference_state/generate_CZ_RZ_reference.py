@@ -19,6 +19,7 @@
 # central mass (-M) default M_sun
 
 import numpy as np
+import matplotlib.pyplot as plt
 import sys
 from arbitrary_atmosphere import arbitrary_atmosphere
 
@@ -72,35 +73,34 @@ for i in range(nargs):
 nr = 5000
 rr = np.linspace(ri, ro, nr)
 
-# Define a quartic smoothing function:
-f = np.zeros(nr)
-dfdr = np.zeros(nr)
-d2fdr2 = np.zeros(nr)
+# Define an entropy profile that is +1 for r < rm, 0 for r > rm, and 
+# continuously differentiable (a quartic) in between
+
+s = np.zeros(nr)
+dsdr = np.zeros(nr)
+d2sdr2 = np.zeros(nr)
 
 for i in range(nr):
     rloc = rr[i]
     if rloc <= rm - delta:
-        f[i] = 1.0
-        dfdr[i] = 0.0
-        d2fdr2[i] = 0.0
+        s[i] = (8.0/15.0)*(k*cp)*(delta/rm) + k*cp*(rloc/rm - 1.0)
+        dsdr[i] = k*cp/rm
+        d2sdr2[i] = 0.0
     elif rloc > rm - delta and rloc < rm:
-        f[i] = 1.0 - (1.0 - ((rloc - rm)/delta)**2.0)**3.0
-        dfdr[i] = 6.0/delta*(1.0 - ((rloc - rm)/delta)**2.0)**2.0*\
-                ((rloc - rm)/delta)
-        d2fdr2[i] = 6.0/delta**2.0*(1.0 - ((rloc - rm)/delta)**2.0)*\
-                (1.0 - 5.0*((rloc - rm)/delta)**2.0)
+        x = (rloc - rm)/delta
+        s[i] = (k*cp)*(delta/rm)*((2.0/3.0)*x**3.0 - (1.0/5.0)*x**5.0)
+        dsdr[i] = (k*cp/rm)*(1.0 - (1.0 - x**2.0)**2.0)
+        d2sdr2[i] = (4.0/delta)*(k*cp/rm)*(1.0 - x**2.0)*x
     else:
-        f[i] = 0.0
-        dfdr[i] = 0.0
-        d2fdr2[i] = 0.0
+        s[i] = 0.0
+        dsdr[i] = 0.0
+        d2sdr2[i] = 0.0
 
-line = k*cp*(rr/rm - 1.0)
-dlinedr = k*cp/rm*np.ones(nr)
-d2linedr2 = np.zeros(nr)
-
-s = line*f
-dsdr = dlinedr*f + line*dfdr
-d2sdr2 = d2linedr2*f + 2.0*dlinedr*dfdr + line*d2fdr2
+fig, axs = plt.subplots(3)
+axs[0].plot(rr, s, 'r')
+axs[1].plot(rr, dsdr, 'b')
+axs[2].plot(rr, d2sdr2, 'g')
+plt.show()
 
 g = bc.G*bc.M/rr**2
 dgdr = -2.0*g/rr
