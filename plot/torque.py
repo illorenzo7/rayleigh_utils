@@ -21,7 +21,7 @@ sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['co'])
 sys.path.append(os.environ['pl'])
 from azavg_util import plot_azav
-from common import get_widest_range_file, strip_dirname
+from common import get_widest_range_file, strip_dirname, get_dict
 from get_parameter import get_parameter
 from binormalized_cbar import MidpointNormalize
 
@@ -38,6 +38,7 @@ if (not os.path.isdir(plotdir)):
 # Read command-line arguments (CLAs)
 my_boundstype = 'manual'
 user_specified_minmax = False
+AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
 
 args = sys.argv[2:]
 nargs = len(args)
@@ -47,12 +48,10 @@ for i in range(nargs):
         my_boundstype = 'manual'
         my_min, my_max = float(args[i+1]), float(args[i+2])
         user_specified_minmax = True
-    if (arg == '-show'):
-        showplot = True
+    elif (arg == '-usefile'):
+        AZ_Avgs_file = args[i+1]
+        AZ_Avgs_file = AZ_Avgs_file.split('/')[-1]
 
-# Get grid info
-rr,tt,cost,sint,rr_depth,ri,ro,d = np.load(datadir + 'grid_info.npy')
-nr, nt = len(rr), len(tt)
 
 # See if magnetism is "on"
 try:
@@ -61,19 +60,20 @@ except:
     magnetism = False # if magnetism wasn't specified, it must be "off"
 
 # Get the torques:
-AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
 print ('Getting torques from ' + datadir + AZ_Avgs_file + ' ...')
-try:
-    di = np.load(datadir + AZ_Avgs_file, encoding='latin1').item()
-except:
-    f = open(AZ_Avgs_file, 'rb')
-    di = pickle.load(f)
-    f.close()
+di = get_dict(datadir + AZ_Avgs_file)
 
 iter1, iter2 = di['iter1'], di['iter2']
 vals = di['vals']
 lut = di['lut']
- 
+
+# Get necessary grid info
+rr = di['rr']
+cost = di['cost']
+sint = di['sint']
+tt_lat = di['tt_lat']
+xx = di['xx']
+
 ind_pp = lut[1801]
 ind_mm = lut[1802]
 ind_cor = lut[1803]
