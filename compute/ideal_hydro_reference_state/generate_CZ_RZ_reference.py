@@ -73,8 +73,12 @@ rr = np.linspace(ri, ro, nr)
 
 
 d2sdr2 = np.zeros_like(rr)
-dsdr = k*cp/rm*0.5*(1.0 - np.tanh((rr - rm)/delta))
-s = k*cp*0.5*((rr/rm - 1.0) - (delta/rm)*np.log(np.cosh((rr - rm)/delta)))
+tanh_shift = 6.
+dsdr = k*cp/rm*0.5*(1.0 - np.tanh((rr - rm)/delta + tanh_shift))
+# Shifting the tanh by ~6. makes S zero to within 1 part in 10^5 at r=rm
+# Important for setting the radius where enthalpy flux goes negative
+s = k*cp*0.5*((rr/rm - 1.0) -\
+        (delta/rm)*np.log(np.cosh((rr - rm)/delta + tanh_shift)/np.cosh(tanh_shift)))
 g = bc.G*bc.M/rr**2
 dgdr = -2.0*g/rr
 
