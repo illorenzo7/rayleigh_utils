@@ -66,10 +66,8 @@ azavg_values =
 	1801,1802, 1803, 1804, 1805,1806,
     ! AMOM FLUX (r and theta: RS, MC_vphi, MC_om, Maxwell_fluc, Maxwell_mean)
 	1807,1808, 1809,1810, 1811,1812, 1813,1814, 1815,1816, 1817,1818,
-    ! CUSTOM OUTPUTS: Reynolds stresses and v_grad_v (no curvature)
-    2206,2207,2208, 2209,2210,2211, 2212,2213, 2214,2215,
-    ! CUSTOM OUTPUTS: ell0 radial forces: visc, cor, adv(tot,fluc,mean), JxB(tot,fluc,mean)
-!    2216, 2217, 2218,2219,2220, 2221,2222,2223,
+    ! AMOM DENSITY
+    1819,1820,1821, 1822,1823,1824, 1825,1826,1827,
     ! MOMENTUM: 
 	1201,1202,1203, 1211,1212, 1214,1215, ! ADV: (r,theta,phi: pp,mm) (Something wrong with radial
                                            ! bit (adv_pp = adv_mm) so keep the total adv_r for now)
@@ -119,10 +117,8 @@ shellavg_values =
 	1801,1802, 1803, 1804, 1805,1806,
     ! AMOM FLUX (r and theta: RS, MC_vphi, MC_om, Maxwell_fluc, Maxwell_mean)
 	1807,1808, 1809,1810, 1811,1812, 1813,1814, 1815,1816, 1817,1818,
-    ! CUSTOM OUTPUTS: Reynolds stresses and v_grad_v (no curvature)
-    2206,2207,2208, 2209,2210,2211, 2212,2213, 2214,2215,
-    ! CUSTOM OUTPUTS: ell0 radial forces: visc, cor, adv(tot,fluc,mean), JxB(tot,fluc,mean)
-!    2216, 2217, 2218,2219,2220, 2221,2222,2223,
+    ! AMOM DENSITY
+    1819,1820,1821, 1822,1823,1824, 1825,1826,1827,
     ! MOMENTUM: 
 	1201,1202,1203, 1211,1212, 1214,1215, ! ADV: (r,theta,phi: pp,mm) (Something wrong with radial
                                            ! bit (adv_pp = adv_mm) so keep the total adv_r for now)
@@ -179,10 +175,8 @@ globalavg_values =
 	1801,1802, 1803, 1804, 1805,1806,
     ! AMOM FLUX (r and theta: RS, MC_vphi, MC_om, Maxwell_fluc, Maxwell_mean)
 	1807,1808, 1809,1810, 1811,1812, 1813,1814, 1815,1816, 1817,1818,
-    ! CUSTOM OUTPUTS: Reynolds stresses and v_grad_v (no curvature)
-    2206,2207,2208, 2209,2210,2211, 2212,2213, 2214,2215,
-    ! CUSTOM OUTPUTS: ell0 radial forces: visc, cor, adv(tot,fluc,mean), JxB(tot,fluc,mean)
-!    2216, 2217, 2218,2219,2220, 2221,2222,2223,
+    ! AMOM DENSITY
+    1819,1820,1821, 1822,1823,1824, 1825,1826,1827,
     ! MOMENTUM: 
 	1201,1202,1203, 1211,1212, 1214,1215, ! ADV: (r,theta,phi: pp,mm) (Something wrong with radial
                                            ! bit (adv_pp = adv_mm) so keep the total adv_r for now)
