@@ -1,1 +1,1 @@
-/home1/lmatilsk/rayleigh_utils/compute/string_to_num.py
+../compute/string_to_num.py
