@@ -23,7 +23,7 @@ sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['co'])
 sys.path.append(os.environ['pl'])
 from azavg_util import plot_azav
-from common import get_widest_range_file, strip_dirname
+from common import get_widest_range_file, strip_dirname, get_dict
 from get_parameter import get_parameter
 from binormalized_cbar import MidpointNormalize
 
@@ -52,10 +52,6 @@ for i in range(nargs):
     if (arg == '-show'):
         showplot = True
 
-# Get grid info
-rr,tt,cost,sint,rr_depth,ri,ro,d = np.load(datadir + 'grid_info.npy')
-nr, nt = len(rr), len(tt)
-
 # See if magnetism is "on"
 try:
     magnetism = get_parameter(dirname, 'magnetism')
@@ -66,17 +62,19 @@ except:
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
 print ('Getting zonal energy fluxes from ' + datadir +\
        AZ_Avgs_file + ' ...')
-try:
-    di = np.load(datadir + AZ_Avgs_file, encoding='latin1').item()
-except:
-    f = open(AZ_Avgs_file, 'rb')
-    di = pickle.load(f)
-    f.close()
+di = get_dict(datadir + AZ_Avgs_file)
 
 iter1, iter2 = di['iter1'], di['iter2']
 vals = di['vals']
 lut = di['lut']
- 
+
+# Get necessary grid info
+rr = di['rr']
+cost = di['cost']
+sint = di['sint']
+tt = di['tt']
+tt_lat = di['tt_lat']
+
 ind_enth = lut[1457] 
 ind_cond = lut[1472]
 ind_visc = lut[1937] # might get minus sign from error?

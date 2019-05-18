@@ -1,6 +1,6 @@
 # Author: Loren Matilsky
-# Created: 04/01/2018
-# This script generates magnetic Reynolds # plotted along radial lines for
+# Created: 05/17/2019
+# This script generates Rossby # plotted along radial lines for
 # the Rayleigh run directory indicated by [dirname]. To use  time-averaged 
 # AZ_Avgs file different than the one associated with the longest averaging 
 # range, use -usefile [complete name of desired vavg file]

@@ -7,7 +7,7 @@ import numpy as np
 import sys, os
 sys.path.append(os.environ['co'])
 sys.path.append(os.environ['rapp'])
-from common import get_file_lists, strip_dirname
+from common import get_file_lists, strip_dirname, rsun
 from sslice_util import plot_moll
 from rayleigh_diagnostics import Shell_Slices
 from get_parameter import get_parameter
@@ -92,8 +92,8 @@ else:
 actual_rval = a.radius[ir]/rsun
 count = 0
 for varname in varlist: 
-    savename = 'moll_iter' + fname + ('_rval%0.3_' %actual_rval) +\
-            str(count).zfill(2) + '-' + varname  + '.png'
+    savename = 'moll_iter' + fname + ('_rval%0.3f_' %actual_rval) +\
+            str(count).zfill(2) + '_' + varname  + '.png'
     count += 1
     print('Plotting moll: ' + varname + (', rval %0.3f, ' %actual_rval) +\
           'iter ' + fname + ' ...')

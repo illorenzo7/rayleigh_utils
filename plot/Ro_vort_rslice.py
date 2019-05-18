@@ -18,7 +18,7 @@ csfont = {'fontname':'DejaVu Serif'}
 import sys, os
 sys.path.append(os.environ['rapp'])
 from common import strip_dirname, get_widest_range_file,\
-    get_iters_from_file, rsun
+    get_iters_from_file, rsun, get_dict
 from get_parameter import get_parameter
 
 # Get directory name and stripped_dirname for plotting purposes
@@ -68,30 +68,51 @@ colats = 90 - lats
 theta_vals = colats*np.pi/180
 
 # Read in enstrophy data
-print ('Reading enstrophy data from ' + datadir + AZ_Avgs_file + ' ...')
-di = np.load(datadir + enstrophy_file, encoding='latin1').item()
-vals = di['vals']
-lut = di['lut']
-iter1, iter2 = di['iter1'], di['iter2']
-rr = di['rr']
-tt = di['tt']
-cost, sint = di['cost'], di['sint']
-xx = di['xx']
+# First, try to get all the data from the AZ_Avgs file
 
-# Get TOTAL enstrophy in meridional plane
-ens_r = np.mean(vals[:, :, :, 0], axis=0)
-ens_theta = np.mean(vals[:, :, :, 1], axis=0)
-ens_phi = np.mean(vals[:, :, :, 2], axis=0)
-ens = ens_r + ens_theta + ens_phi
-
-# Get AVERAGE enstrophy in meridional plane
-di_az = np.load(datadir + AZ_Avgs_file, encoding='latin1').item()
+# Get enstrophy from the AVERAGE vorticities (I almost always output these)
+# and basic grid info
+print("Getting enstrophy from the averaged vorticities and grid info from " +\
+        AZ_Avgs_file + ' ...')
+di_az = get_dict(datadir + AZ_Avgs_file)
 vals_az = di_az['vals']
 lut_az = di_az['lut']
+nq_az = di_az['nq']
+
+rr = di_az['rr']
+tt = di_az['tt']
+cost, sint = di_az['cost'], di_az['sint']
+xx = di_az['xx']
+
 ens_r_mean = vals_az[:, :, lut_az[301]]**2
 ens_theta_mean = vals_az[:, :, lut_az[302]]**2
 ens_phi_mean = vals_az[:, :, lut_az[303]]**2
 ens_mean = ens_r_mean + ens_theta_mean + ens_phi_mean
+
+# Try now to also get total enstrophy from AZ_Avgs data:
+print("Trying to also get total enstrophy from " +\
+        AZ_Avgs_file + ' ...')
+if lut_az[314] < nq_az and lut_az[315] < nq_az and lut_az[316] < nq_az:
+    ens_r = vals_az[:, :, lut_az[314]]
+    ens_theta = vals_az[:, :, lut_az[315]]
+    ens_phi = vals_az[:, :, lut_az[316]]
+
+else:
+    print("Could not get total enstrophy from AZ_Avgs file. Trying to get it from 'enstrophy_from_mer' data ...")
+    if enstrophy_file == '':
+        print("No 'enstrophy_from_mer' data found. Please run\n     python $co/timeavg/enstrophy_from_mer.py [OPTIONS]'\nand try plotting again.")
+        sys.exit()
+    else:
+        di = get_dict(datadir + enstrophy_file)
+        vals = di['vals']
+        lut = di['lut']
+        iter1, iter2 = di['iter1'], di['iter2']
+        ens_r = np.mean(vals[:, :, :, 0], axis=0)
+        ens_theta = np.mean(vals[:, :, :, 1], axis=0)
+        ens_phi = np.mean(vals[:, :, :, 2], axis=0)
+
+# Compute total enstrophy from component enstrophies
+ens = ens_r + ens_theta + ens_phi
 
 # Compute vorticity-based Rossby number
 Ro = np.sqrt(ens - ens_mean)/Om0

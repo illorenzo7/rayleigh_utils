@@ -111,7 +111,10 @@ for i in range(index_first, index_last + 1):
         az = AZ_Avgs(radatadir + file_list[i], '')
 
     local_ntimes = az.niter
-    for j in range(local_ntimes):
+    times_to_loop = np.arange(local_ntimes)
+    if index_last == index_first:
+        times_to_loop = np.array([-1])
+    for j in times_to_loop:
         vals += az.vals[:, :, :, j]
         count += 1
 
@@ -188,7 +191,7 @@ fig.text(margin_x, 1 - 0.3*margin_top, 'Magnetic field (zonally averaged)',\
          ha='left', va='top', fontsize=fsize, **csfont)
 iter_string = 'iter ' + str(iter1).zfill(8) 
 if count > 1:         
-    iter_string += ' to ' + str(iter2).zfill(8),
+    iter_string += ' to ' + str(iter2).zfill(8)
 fig.text(margin_x, 1 - 0.5*margin_top, iter_string,\
          ha='left', va='top', fontsize=fsize, **csfont)
 

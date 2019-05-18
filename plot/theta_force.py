@@ -50,10 +50,6 @@ for i in range(nargs):
     if (arg == '-show'):
         showplot = True
 
-# Get grid info
-rr,tt,cost,sint,rr_depth,ri,ro,d = np.load(datadir + 'grid_info.npy')
-nr, nt = len(rr), len(tt)
-
 # See if magnetism is "on"
 try:
     magnetism = get_parameter(dirname, 'magnetism')
@@ -68,7 +64,12 @@ di = get_dict(datadir + AZ_Avgs_file)
 iter1, iter2 = di['iter1'], di['iter2']
 vals = di['vals']
 lut = di['lut']
- 
+
+# Get grid info
+rr, tt, cost, sint, ri,ro,d = di['rr'], di['tt'], di['cost'],\
+        di['sint'], di['ri'], di['ro'], di['d']
+nr, nt = len(rr), len(tt)
+
 ind_adv = lut[1202] # gets minus sign
 ind_cor = lut[1220]
 ind_prs = lut[1238]
