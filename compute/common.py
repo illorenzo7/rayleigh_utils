@@ -145,15 +145,16 @@ def is_an_int(string):
     return(bool(bool_val))
         
 def get_widest_range_file(datadir, data_name):
-    # Find the desired file(s) in the data directory. If there are multiple, by
-    # default choose the one with widest range in the trace/average/distribution
+    # Find the desired file(s) in the data directory. If there are 
+    # multiple, by default choose the one with widest range in the
+    # trace/average/distribution
+    # If there is no matching file, return the empty string
     datafiles = os.listdir(datadir)
     len_name = len(data_name)
     specific_files = []
     for i in range(len(datafiles)):
         datafile = datafiles[i]
         if data_name in datafile:
-#            specific_files.append(datafile)
             istart = datafile.find(data_name)
             possible_iter = datafile[istart + len_name + 1:istart + len_name + 9]
             if is_an_int(possible_iter):
@@ -162,23 +163,26 @@ def get_widest_range_file(datadir, data_name):
     ranges = []
     iters1 = []
     iters2 = []
-    for specific_file in specific_files:
-        specific_file_stripped = specific_file[:-4] # get rid of '.npy'...
-        li2 = specific_file_stripped.split('_')
-        iter1, iter2 = int(li2[-2]), int(li2[-1])
-        ranges.append(iter2 - iter1)
-        iters1.append(iter1)
-        iters2.append(iter2)
-    
-    ranges = np.array(ranges)
-    iters1 = np.array(iters1)
-    iters2 = np.array(iters2)
-    
-    inds_max_range = np.where(ranges == np.max(ranges))
-    iters2_maxrange = iters2[inds_max_range]
-    # By default, use the file closest to the end of the simulation
-    ind = inds_max_range[0][np.argmax(iters2_maxrange)]
-    return specific_files[ind]
+    if len(specific_files) > 0:
+        for specific_file in specific_files:
+            specific_file_stripped = specific_file[:-4] # get rid of '.npy'...
+            li2 = specific_file_stripped.split('_')
+            iter1, iter2 = int(li2[-2]), int(li2[-1])
+            ranges.append(iter2 - iter1)
+            iters1.append(iter1)
+            iters2.append(iter2)
+        
+        ranges = np.array(ranges)
+        iters1 = np.array(iters1)
+        iters2 = np.array(iters2)
+        
+        inds_max_range = np.where(ranges == np.max(ranges))
+        iters2_maxrange = iters2[inds_max_range]
+        # By default, use the file closest to the end of the simulation
+        ind = inds_max_range[0][np.argmax(iters2_maxrange)]
+        return specific_files[ind]
+    else:
+        return ''
 
 def frac_nonzero(arr):
     num_nonzero = len(np.where(arr != 0)[0])
