@@ -22,7 +22,7 @@ import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['co'])
 sys.path.append(os.environ['pl'])
-from azavg_util import plot_azav
+from azav_util import plot_azav
 from common import get_widest_range_file, strip_dirname, get_dict
 from get_parameter import get_parameter
 from binormalized_cbar import MidpointNormalize
@@ -67,6 +67,7 @@ di = get_dict(datadir + AZ_Avgs_file)
 iter1, iter2 = di['iter1'], di['iter2']
 vals = di['vals']
 lut = di['lut']
+nq = di['nq']
 
 # Get necessary grid info
 rr = di['rr']
@@ -76,19 +77,43 @@ tt = di['tt']
 tt_lat = di['tt_lat']
 
 ind_enth = lut[1457] 
-ind_cond = lut[1472]
+# The azimuthal conductive flux had better average to zero ...
 ind_visc = lut[1937] # might get minus sign from error?
 ind_ke = lut[1925]
 
 efp_enth = vals[:, :, ind_enth]
-efp_cond = vals[:, :, ind_cond]
-efp_visc = vals[:, :, ind_visc]
+efp_visc = -vals[:, :, ind_visc]
 efp_ke = vals[:, :, ind_ke]
 
-efp_tot = efp_enth + efp_cond + efp_visc + efp_ke
+# Check to see if enthalpy flux from the fluctuating flows 
+# was already output
+if lut[1460] < nq:
+    efp_enth_fluc = vals[:, :, lut[1460]]
+    efp_enth_mean = efp_enth - efp_enth_fluc
+else: # do the Reynolds decomposition "by hand"
+    # Compute the enthalpy flux from mean flows (MER. CIRC.)
+    ref = ReferenceState(dirname + '/reference', '')
+    rho = (ref.density).reshape((1, nr))
+    ref_prs = (ref.pressure).reshape((1, nr))
+    ref_temp = (ref.temperature).reshape((1, nr))
+    prs_spec_heat = get_parameter(dirname, 'pressure_specific_heat')
 
-max_sig = max(np.std(efp_enth), np.std(efp_cond), np.std(efp_visc),\
-              np.std(efp_ke))
+    gamma = 5./3.
+    vp_av = vals[:, :, lut[3]]
+    entropy_av = vals[:, :, lut[501]]
+    prs_av = vals[:, :, lut[502]]
+
+    # Calculate mean temp. from EOS
+    temp_av = ref_temp*((1.-1./gamma)*(prs_av/ref_prs) +\
+            entropy_av/prs_spec_heat)
+
+    # And, finally, the enthalpy flux from mean/fluc flows
+    efp_enth_mean = rho*prs_spec_heat*vp_av*temp_av
+    efp_enth_fluc = efp_enth - efp_enth_mean
+
+efp_tot = efp_enth + efp_visc + efp_ke
+
+max_sig = max(np.std(efp_enth), np.std(efp_visc), np.std(efp_ke))
 
 if magnetism:
     ind_Poynt = lut[2003]
@@ -106,7 +131,7 @@ margin_inches = 1/8 # margin width in inches (for both x and y) and
     # horizontally in between figures
 margin_top_inches = 2 # wider top margin to accommodate subplot titles AND metadata
 margin_subplot_top_inches = 1 # margin to accommodate just subplot titles
-nplots = 5 + magnetism
+nplots = 6 + magnetism
 ncol = 3 # put three plots per row
 nrow = np.int(np.ceil(nplots/3))
 
@@ -132,18 +157,20 @@ margin_subplot_top = margin_subplot_top_inches/fig_height_inches
 subplot_width = subplot_width_inches/fig_width_inches
 subplot_height = subplot_height_inches/fig_height_inches
 
-efp_terms = [efp_enth, efp_cond, efp_visc, efp_ke, efp_tot]
+efp_terms = [efp_enth_mean, efp_enth_fluc, efp_enth,\
+        efp_visc, efp_ke, efp_tot]
 
-titles = [r'$(\mathbf{\mathcal{F}}_{\rm{enth}})_\phi$',\
-          r'$(\mathbf{\mathcal{F}}_{\rm{cond}})_\phi$',\
-          r'$(\mathbf{\mathcal{F}}_{\rm{v}})_\phi$',\
+titles = [r'$(\mathbf{\mathcal{F}}_{\rm{enth,mm}})_\phi$',\
+          r'$(\mathbf{\mathcal{F}}_{\rm{enth,pp}})_\phi$',\
+          r'$(\mathbf{\mathcal{F}}_{\rm{enth}})_\phi$',\
+          r'$(\mathbf{\mathcal{F}}_{\rm{visc}})_\phi$',\
           r'$(\mathbf{\mathcal{F}}_{\rm{KE}})_\phi$',
           r'$(\mathbf{\mathcal{F}}_{\rm{tot}})_\phi$']
 units = r'$\rm{g}\ \rm{s}^{-3}$'
 
 if magnetism:
-    efr_terms.insert(4, efr_Poynt)
-    titles.insert(4, r'$(\mathbf{\mathcal{F}}_{\rm{Poynt}})_\phi$')
+    efr_terms.insert(5, efr_Poynt)
+    titles.insert(5, r'$(\mathbf{\mathcal{F}}_{\rm{Poynt}})_\phi$')
 
 # Generate the actual figure of the correct dimensions
 fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
@@ -153,9 +180,8 @@ for iplot in range(nplots):
     ax_bottom = 1 - margin_top - subplot_height - \
             (iplot//ncol)*(subplot_height + margin_subplot_top)
     ax = fig.add_axes((ax_left, ax_bottom, subplot_width, subplot_height))
-    plot_azav (fig, ax, efp_terms[iplot], rr, cost, sint,\
-           units = units,\
-           boundstype = my_boundstype, caller_minmax = (my_min, my_max),\
+    plot_azav (efp_terms[iplot], rr, cost, sint, fig=fig, ax=ax,
+           units = units, minmax = (my_min, my_max),\
            norm=MidpointNormalize(0))
 
     ax.set_title(titles[iplot], va='bottom', **csfont)

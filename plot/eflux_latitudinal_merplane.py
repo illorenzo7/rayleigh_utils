@@ -69,6 +69,7 @@ sint = di['sint']
 iter1, iter2 = di['iter1'], di['iter2']
 vals = di['vals']
 lut = di['lut']
+nq = di['nq']
  
 ind_enth = lut[1456] 
 ind_cond = lut[1471]
@@ -77,8 +78,34 @@ ind_ke = lut[1924]
 
 eft_enth = vals[:, :, ind_enth]
 eft_cond = vals[:, :, ind_cond]
-eft_visc = vals[:, :, ind_visc]
+eft_visc = -vals[:, :, ind_visc]
 eft_ke = vals[:, :, ind_ke]
+
+# Check to see if enthalpy flux from the fluctuating flows 
+# was already output
+if lut[1459] < nq:
+    eft_enth_fluc = vals[:, :, lut[1459]]
+    eft_enth_mean = eft_enth - eft_enth_fluc
+else: # do the Reynolds decomposition "by hand"
+    # Compute the enthalpy flux from mean flows (MER. CIRC.)
+    ref = ReferenceState(dirname + '/reference', '')
+    rho = (ref.density).reshape((1, nr))
+    ref_prs = (ref.pressure).reshape((1, nr))
+    ref_temp = (ref.temperature).reshape((1, nr))
+    prs_spec_heat = get_parameter(dirname, 'pressure_specific_heat')
+
+    gamma = 5./3.
+    vt_av = vals[:, :, lut[2]]
+    entropy_av = vals[:, :, lut[501]]
+    prs_av = vals[:, :, lut[502]]
+
+    # Calculate mean temp. from EOS
+    temp_av = ref_temp*((1.-1./gamma)*(prs_av/ref_prs) +\
+            entropy_av/prs_spec_heat)
+
+    # And, finally, the enthalpy flux from mean/fluc flows
+    eft_enth_mean = rho*prs_spec_heat*vt_av*temp_av
+    eft_enth_fluc = eft_enth - eft_enth_mean
 
 eft_tot = eft_enth + eft_cond + eft_visc + eft_ke
 
@@ -101,7 +128,7 @@ margin_inches = 1/8 # margin width in inches (for both x and y) and
     # horizontally in between figures
 margin_top_inches = 2 # wider top margin to accommodate subplot titles AND metadata
 margin_subplot_top_inches = 1 # margin to accommodate just subplot titles
-nplots = 5 + magnetism
+nplots = 7 + magnetism
 ncol = 3 # put three plots per row
 nrow = np.int(np.ceil(nplots/3))
 
@@ -127,18 +154,21 @@ margin_subplot_top = margin_subplot_top_inches/fig_height_inches
 subplot_width = subplot_width_inches/fig_width_inches
 subplot_height = subplot_height_inches/fig_height_inches
 
-eft_terms = [eft_enth, eft_cond, eft_visc, eft_ke, eft_tot]
+eft_terms = [eft_enth_mean, eft_enth_fluc, eft_enth,\
+        eft_cond, eft_visc, eft_ke, eft_tot]
 
-titles = [r'$(\mathbf{\mathcal{F}}_{\rm{enth}})_\theta$',\
+titles = [r'$(\mathbf{\mathcal{F}}_{\rm{enth,mm}})_\theta$',\
+          r'$(\mathbf{\mathcal{F}}_{\rm{enth,pp}})_\theta$',\
+          r'$(\mathbf{\mathcal{F}}_{\rm{enth}})_\theta$',\
           r'$(\mathbf{\mathcal{F}}_{\rm{cond}})_\theta$',\
-          r'$(\mathbf{\mathcal{F}}_{\rm{v}})_\theta$',\
+          r'$(\mathbf{\mathcal{F}}_{\rm{visc}})_\theta$',\
           r'$(\mathbf{\mathcal{F}}_{\rm{KE}})_\theta$',
           r'$(\mathbf{\mathcal{F}}_{\rm{tot}})_\theta$']
 units = r'$\rm{g}\ \rm{s}^{-3}$'
 
 if magnetism:
-    eft_terms.insert(4, eft_Poynt)
-    titles.insert(4, r'$(\mathbf{\mathcal{F}}_{\rm{Poynt}})_\theta$')
+    eft_terms.insert(6, eft_Poynt)
+    titles.insert(6, r'$(\mathbf{\mathcal{F}}_{\rm{Poynt}})_\theta$')
 
 # Generate the actual figure of the correct dimensions
 fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))

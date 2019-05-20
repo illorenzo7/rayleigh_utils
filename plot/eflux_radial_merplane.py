@@ -96,7 +96,6 @@ if lut[1458] < nq:
     efr_enth_fluc = vals[:, :, lut[1458]]
     efr_enth_mean = efr_enth - efr_enth_fluc
 else: # do the Reynolds decomposition "by hand"
-
     # Compute the enthalpy flux from mean flows (MER. CIRC.)
     ref = ReferenceState(dirname + '/reference', '')
     rho = (ref.density).reshape((1, nr))
