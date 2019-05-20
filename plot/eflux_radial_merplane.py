@@ -1,8 +1,11 @@
 # Author: Loren Matilsky
-# Created: 01/28/2019
+# Created: 01/29/2019
 # This script plots the radial energy fluxes in the meridional plane 
-# (convective (enthalpy), conductive, radiative heating, kinetic energy,
+# (convective (enthalpy) -- BOTH mean and fluc, conductive,
+# radiative heating, kinetic energy,
 # viscous, and Poynting flux (if present) 
+# Computes the mean enthalpy flux "manually" from <v_r> and <T>
+# In the future, just add quantity codes 1458,1459,1460!
 # ...for the Rayleigh run directory indicated by [dirname]. 
 # To use an AZ_Avgs file
 # different than the one assosciated with the longest averaging range, use
@@ -21,7 +24,8 @@ import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['co'])
 sys.path.append(os.environ['pl'])
-from azavg_util import plot_azav
+from azav_util import plot_azav
+from rayleigh_diagnostics import ReferenceState
 from common import get_widest_range_file, strip_dirname, get_dict
 from get_parameter import get_parameter
 from binormalized_cbar import MidpointNormalize
@@ -48,9 +52,6 @@ for i in range(nargs):
         my_boundstype = 'manual'
         my_min, my_max = float(args[i+1]), float(args[i+2])
         user_specified_minmax = True
-    if (arg == '-show'):
-        showplot = True
-
 
 # See if magnetism is "on"
 try:
@@ -66,6 +67,7 @@ di = get_dict(datadir + AZ_Avgs_file)
 iter1, iter2 = di['iter1'], di['iter2']
 vals = di['vals']
 lut = di['lut']
+nq = di['nq']
 
 # Get necessary grid info
 rr = di['rr']
@@ -73,6 +75,7 @@ cost = di['cost']
 sint = di['sint']
 tt = di['tt']
 tt_lat = di['tt_lat']
+nr, nt = len(rr), len(tt)
 
 # Get flux indices
 ind_enth = lut[1455] 
@@ -84,8 +87,35 @@ ind_ke = lut[1923]
 efr_enth = vals[:, :, ind_enth]
 efr_cond = vals[:, :, ind_cond]
 efr_heat = vals[:, :, ind_heat]
-efr_visc = vals[:, :, ind_visc]
+efr_visc = -vals[:, :, ind_visc]
 efr_ke = vals[:, :, ind_ke]
+
+# Check to see if enthalpy flux from the fluctuating flows 
+# was already output
+if lut[1458] < nq:
+    efr_enth_fluc = vals[:, :, lut[1458]]
+    efr_enth_mean = efr_enth - efr_enth_fluc
+else: # do the Reynolds decomposition "by hand"
+
+    # Compute the enthalpy flux from mean flows (MER. CIRC.)
+    ref = ReferenceState(dirname + '/reference', '')
+    rho = (ref.density).reshape((1, nr))
+    ref_prs = (ref.pressure).reshape((1, nr))
+    ref_temp = (ref.temperature).reshape((1, nr))
+    prs_spec_heat = get_parameter(dirname, 'pressure_specific_heat')
+
+    gamma = 5./3.
+    vr_av = vals[:, :, lut[1]]
+    entropy_av = vals[:, :, lut[501]]
+    prs_av = vals[:, :, lut[502]]
+
+    # Calculate mean temp. from EOS
+    temp_av = ref_temp*((1.-1./gamma)*(prs_av/ref_prs) +\
+            entropy_av/prs_spec_heat)
+
+    # And, finally, the enthalpy flux from mean/fluc flows
+    efr_enth_mean = rho*prs_spec_heat*vr_av*temp_av
+    efr_enth_fluc = efr_enth - efr_enth_mean
 
 efr_tot = efr_enth + efr_cond + efr_heat + efr_visc + efr_ke
 
@@ -102,13 +132,13 @@ if not user_specified_minmax:
     my_min, my_max = -3*max_sig, 3*max_sig
 
 # Set up the actual figure from scratch
-fig_width_inches = 7 # TOTAL figure width, in inches
+fig_width_inches = 7. # TOTAL figure width, in inches
     # (i.e., 8x11.5 paper with 1/2-inch margins)
-margin_inches = 1/8 # margin width in inches (for both x and y) and 
+margin_inches = 1./8. # margin width in inches (for both x and y) and 
     # horizontally in between figures
-margin_top_inches = 2 # wider top margin to accommodate subplot titles AND metadata
-margin_subplot_top_inches = 1 # margin to accommodate just subplot titles
-nplots = 5 + magnetism
+margin_top_inches = 2. # wider top margin to accommodate subplot titles AND metadata
+margin_subplot_top_inches = 1. # margin to accommodate just subplot titles
+nplots = 8 + magnetism
 ncol = 3 # put three plots per row
 nrow = np.int(np.ceil(nplots/3))
 
@@ -134,19 +164,24 @@ margin_subplot_top = margin_subplot_top_inches/fig_height_inches
 subplot_width = subplot_width_inches/fig_width_inches
 subplot_height = subplot_height_inches/fig_height_inches
 
-efr_terms = [efr_enth, efr_cond, efr_heat, efr_visc, efr_ke, efr_tot]
+efr_terms = [efr_enth_mean, efr_enth_fluc, efr_enth, efr_cond,\
+        efr_heat, efr_visc, efr_ke, efr_tot]
 
-titles = [r'$(\mathbf{\mathcal{F}}_{\rm{enth}})_r$',\
+titles = [r'$(\mathbf{\mathcal{F}}_{\rm{enth,mm}})_r$',\
+          r'$(\mathbf{\mathcal{F}}{\rm{enth,pp}})_r$',\
+          r'$(\mathbf{\mathcal{F}}_{\rm{enth}})_r$',\
           r'$(\mathbf{\mathcal{F}}_{\rm{cond}})_r$',\
           r'$(\mathbf{\mathcal{F}}_{\rm{heat}})_r$',\
-          r'$(\mathbf{\mathcal{F}}_{\rm{v}})_r$',\
+          r'$(\mathbf{\mathcal{F}}_{\rm{visc}})_r$',\
           r'$(\mathbf{\mathcal{F}}_{\rm{KE}})_r$',
           r'$(\mathbf{\mathcal{F}}_{\rm{tot}})_r$']
 units = r'$\rm{g}\ \rm{s}^{-3}$'
 
 if magnetism:
-    efr_terms.insert(5, efr_Poynt)
-    titles.insert(5, r'$(\mathbf{\mathcal{F}}_{\rm{Poynt}})_r$')
+    # Insert the magnetism plot to just before the last
+    # plot (total flux)
+    efr_terms.insert(7, efr_Poynt)
+    titles.insert(7, r'$(\mathbf{\mathcal{F}}_{\rm{Poynt}})_r$')
 
 # Generate the actual figure of the correct dimensions
 fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
@@ -156,10 +191,8 @@ for iplot in range(nplots):
     ax_bottom = 1 - margin_top - subplot_height - \
             (iplot//ncol)*(subplot_height + margin_subplot_top)
     ax = fig.add_axes((ax_left, ax_bottom, subplot_width, subplot_height))
-    plot_azav (fig, ax, efr_terms[iplot], rr, cost, sint,\
-           units = units,\
-           boundstype = my_boundstype, caller_minmax = (my_min, my_max),\
-           norm=MidpointNormalize(0))
+    plot_azav (efr_terms[iplot], rr, cost, sint, fig=fig, ax=ax,\
+           units=units, minmax=(my_min, my_max), norm=MidpointNormalize(0))
 
     ax.set_title(titles[iplot], verticalalignment='bottom', **csfont)
 
@@ -167,7 +200,7 @@ for iplot in range(nplots):
 fsize = 12
 fig.text(margin_x, 1 - 0.1*margin_top, dirname_stripped,\
          ha='left', va='top', fontsize=fsize, **csfont)
-fig.text(margin_x, 1 - 0.3*margin_top, 'Radial energy flux (zonally averaged)',\
+fig.text(margin_x, 1 - 0.3*margin_top, 'Radial energy flux',\
          ha='left', va='top', fontsize=fsize, **csfont)
 fig.text(margin_x, 1 - 0.5*margin_top,\
          str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8),\
