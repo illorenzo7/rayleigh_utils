@@ -18,7 +18,7 @@ from binormalized_cbar import MidpointNormalize
 import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['co'])
-from azavg_util import plot_azav
+from azav_util import plot_azav
 from common import get_widest_range_file, strip_dirname, get_dict
 
 # Get directory name and stripped_dirname for plotting purposes
@@ -104,9 +104,8 @@ subplot_height = subplot_height_inches/fig_height_inches
 fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
 ax = fig.add_axes((margin_x, margin_y, subplot_width, subplot_height))
 
-plot_azav (fig, ax, diffrot, rr, cost, sint, units = 'nHz', nlevs=my_nlevs,
-        norm=MidpointNormalize(0),\
-        boundstype=my_boundstype, caller_minmax = (my_min, my_max))
+plot_azav (diffrot, rr, cost, sint, fig=fig, ax=ax, units='nHz',\
+        nlevs=my_nlevs, minmax = (my_min, my_max))
 
 # Make title + label diff. rot. contrast and no. contours
 fsize = 12

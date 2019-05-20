@@ -1,6 +1,6 @@
-###########################################################################
-# This file contains utilities useful for plotting the data from azimuthal
-# averages. (Files in the directory AZ_Avgs). 
+################################################################
+# This file contains utilities useful for plotting the data from 
+# azimuthal averages. (Files in the directory AZ_Avgs). 
 # Written by Nick Featherstone
 # First modified by Loren Matilsky, 03/09/2018
 
@@ -17,108 +17,133 @@ def fmt(x, pos):
     b = int(b)
     return r'${} \times 10^{{{}}}$'.format(a, b)
 
-def get_lims(arr, boundstype='minmax', caller_minmax=(-10.,10.)): 
-                    # (Note the (-10, 10) are just placeholders so the
-                    # calling function doesn't need to pass a required
-                    # min/max tuple that is never used
+def default_axes_2by1():
+    # Create plot
+    subplot_width_inches = 2.5
+    subplot_height_inches = 5.
+    margin_inches = 1./8.
 
-    min_val, max_val = np.min(arr), np.max(arr)
-    if (boundstype == 'manual'):
-        min_val, max_val = caller_minmax
-    return min_val, max_val
+    fig_width_inches = subplot_width_inches + 2.*margin_inches
+    fig_height_inches = subplot_height_inches + 2.*margin_inches
+    fig_aspect = fig_height_inches/fig_width_inches
 
-def plot_azav(fig, axis, field, radius, costheta, sintheta,
-        mycmap=plt.cm.RdYlBu_r, units = r'$\rm{m}\ \rm{s}^{-1}$', 
-        boundstype = 'minmax', nlevs = 10, caller_minmax=None, 
-        plotcontours=True, plotfield=True, plotlatlines=False,
-        norm=None, levels=None, fsize=8):
-    '''Takes a figure with a subplot (axis) of aspect ratio 1x2 and adds
-    a plot in the meridional plane to the axis, with colorbar in the "cavity"
-    of the meridional plane'''
+    margin_x = margin_inches/fig_width_inches
+    margin_y = margin_inches/fig_height_inches
+    subplot_width = subplot_width_inches/fig_width_inches
+    subplot_height = subplot_height_inches/fig_height_inches
 
-    if (boundstype == 'minmax'):
-        mini, maxi = get_lims(field)
-    elif (boundstype == 'manual'):
-        mini, maxi = caller_minmax
+    fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
+    ax = fig.add_axes((margin_x, margin_y, subplot_width, subplot_height))
+    return fig, ax
+
+def plot_azav(field, radius, costheta, sintheta, fig=None, ax=None,\
+	cmap='RdYlBu_r', units='', minmax=None, posdef=False,\
+	plotcontours=True, plotfield=True, nlevs=10, levels=None,\
+	plotlatlines=False, norm=None, fsize=8, showplot=False):
+
+    ''' Takes (or creates) set of axes with physical aspect ratio 1x2
+    and adds a plot of [field] in the meridional plane to the axes,\
+    with colorbar in the "cavity" of the meridional plane fuck around'''
+	
+    # Compute the indices beyond +/- 75 degrees 
+    # latitude, which usually shouldn't be included in any sort 
+    # bounds estimates.
+    lats = (np.pi/2. - np.arccos(costheta))*180./np.pi
+    lat_cutoff = 75.
+    it_cutm = np.argmin(np.abs(lats + lat_cutoff))
+    it_cutp = np.argmin(np.abs(lats - lat_cutoff))
+
+    # Get default bounds if not specified
+    if minmax is None:
+        sig = np.std(field[it_cutm:it_cutp+1, :])
+        mini, maxi = -3*sig, 3*sig
+    else:
+        mini, maxi = minmax
 
     # Get the exponent to use for scientific notation
-    extent = np.max((np.abs(mini), np.abs(maxi)))
-    exp = int(np.floor(np.log10(extent)))
+    maxabs = max(np.abs(mini), np.abs(maxi))
+    exp = int(np.floor(np.log10(maxabs)))
     divisor = 10**exp
     
     # Normalize field by divisor
     field /= divisor
     mini /= divisor
     maxi /= divisor
+
+    # Create a default set of figure axes if they weren't already
+    # specified by user
+    if fig is None or ax is None:
+        fig, ax = default_axes_2by1()
+        showplot = True # probably in this case the user just
+        # ran plot_azav from the command line wanting to view
+        # view the plot
    
     # Get the position of the axes on the figure
-    pos = axis.get_position().get_points()
-    axis_left, axis_bottom = pos[0]
-    axis_right, axis_top = pos[1]
-    axis_width = axis_right - axis_left
-    axis_height = axis_top - axis_bottom
-    axis_aspect = axis_height/axis_width
+    pos = ax.get_position().get_points()
+    ax_left, ax_bottom = pos[0]
+    ax_right, ax_top = pos[1]
+    ax_width = ax_right - ax_left
+    ax_height = ax_top - ax_bottom
+    ax_aspect = ax_height/ax_width
    
-    # Set the colorbar axis to be in the "cavity" of the meridional plane
+    # Set the colorbar ax to be in the "cavity" of the meridional plane
     # The colorbar height is set by making sure it "fits" in the cavity
     chi = np.min(radius)/np.max(radius)
-    cavity_height = axis_height*chi
-    cbaxis_center_x = axis_left + 0.3*axis_width
-    cbaxis_center_y = axis_bottom + axis_height/2
-    cbaxis_aspect = 10
-    cbaxis_height = 0.5*cavity_height
-    cbaxis_width = cbaxis_height/cbaxis_aspect / axis_aspect
+    cavity_height = ax_height*chi
+    cbax_center_x = ax_left + 0.3*ax_width
+    cbax_center_y = ax_bottom + ax_height/2.
+    cbax_aspect = 10.
+    cbax_height = 0.5*cavity_height
+    cbax_width = cbax_height/cbax_aspect / ax_aspect
     
-    cbaxis_left = cbaxis_center_x - cbaxis_width/2
-    cbaxis_bottom = cbaxis_center_y - cbaxis_height/2
+    cbax_left = cbax_center_x - cbax_width/2.
+    cbax_bottom = cbax_center_y - cbax_height/2.
     
-    #Modified version of Antoine Strukarek's routine
-    r = radius/np.max(radius)
-    n_r = len(r)
-    n_t = len(costheta)
-    rtmp = r.reshape(1, n_r)
-    cthtmp = costheta.reshape(n_t, 1)
-    sthtmp = sintheta.reshape(n_t, 1)
-    xr = np.dot(cthtmp, rtmp)
-    yr = np.dot(sthtmp, rtmp)
-    
+    # Calculate the grid on which to plot
+    rr = radius/np.max(radius)
+    nr = len(rr)
+    nt = len(costheta)
+    rr2 = rr.reshape((1, nr))
+    cost2 = costheta.reshape((nt, 1))
+    sint2 = sintheta.reshape((nt, 1))
+    xx = rr*sint2
+    zz = rr2*cost2
+
     # Specify linewidths to be used in the meridional plane, one for the 
     # boundary (lw) and one for the contours (contour_lw)
     lw = 1
     contour_lw = .2
     
     if (plotfield):
-        plt.sca(axis)
-        plt.pcolormesh(yr,xr,field, vmin=mini, vmax=maxi,\
-                cmap=mycmap, norm=norm)
-     
-        cbaxes = fig.add_axes([cbaxis_left, cbaxis_bottom,\
-                       cbaxis_width, cbaxis_height])
+        plt.sca(ax)
+        plt.pcolormesh(xx, zz, field, vmin=mini, vmax=maxi, cmap=cmap,\
+                norm=norm)
+        cbaxes = fig.add_axes([cbax_left, cbax_bottom,\
+                       cbax_width, cbax_height])
         cbar = plt.colorbar(cax=cbaxes)
 
         #fsize = 8 # fontsize for colorbar ticks and labels
         cbaxes.tick_params(labelsize=fsize)
-#        cbar.set_label(units, rotation=270, labelpad=25, fontsize=18)
         cbar.ax.tick_params(labelsize=fsize)   #font size for the ticks
         ticks = np.array([mini, 0, maxi])
         ticklabels = []
         for i in range(len(ticks)):
-            ticklabels.append(str(round(ticks[i],1)))
+            ticklabels.append(str(round(ticks[i], 1)))
         ticks = np.array(ticks)
         cbar.set_ticks(ticks)
         cbar.set_ticklabels(ticklabels)
 
         # Put the units and exponent to left of colorbar
         cbar_label = (r'$\times10^{%i}\ $' %exp) + units
-        fig.text(cbaxis_left - 0.3*cbaxis_width, cbaxis_center_y, cbar_label,\
+        fig.text(cbax_left - 0.3*cbax_width, cbax_center_y, cbar_label,\
             ha='right', va='center', rotation=90, fontsize=fsize)
 
     # Plot the boundary of the meridional plane
-    plt.sca(axis)
-    plt.plot(r[0]*sintheta, r[0]*costheta, 'k', linewidth=lw)
-    plt.plot(r[n_r-1]*sintheta, r[n_r-1]*costheta, 'k', linewidth=lw)
-    plt.plot([0,0], [r[n_r-1], r[0]], 'k', linewidth=lw)
-    plt.plot([0,0], [-r[n_r-1], -r[0]], 'k', linewidth=lw)
+    plt.sca(ax)
+    plt.plot(rr[0]*sintheta, rr[0]*costheta, 'k', linewidth=lw)
+    plt.plot(rr[-1]*sintheta, rr[-1]*costheta, 'k', linewidth=lw)
+    plt.plot([0.,0.], [rr[-1], rr[0]], 'k', linewidth=lw)
+    plt.plot([0.,0.], [-rr[-1], -rr[0]], 'k', linewidth=lw)
 
     # Plot latitude lines, if desired
     if plotlatlines:
@@ -127,27 +152,31 @@ def plot_azav(fig, axis, field, radius, costheta, sintheta,
             theta_val = (90 - lat)*np.pi/180
             x_in, z_in = r[-1]*np.sin(theta_val), r[-1]*np.cos(theta_val)
             x_out, z_out = r[0]*np.sin(theta_val), r[0]*np.cos(theta_val)
-            plt.sca(axis)
+            plt.sca(ax)
             plt.plot([x_in, x_out], [z_in, z_out], 'k',\
                     linewidth=contour_lw)
 
 
-    # Set axis ranges to be just outside the boundary lines
+    # Set ax ranges to be just outside the boundary lines
     lilbit = 0.01
-    axis.set_xlim((-lilbit, 1 + lilbit))
-    axis.set_ylim((-1 - lilbit, 1 + lilbit))
-    axis.axis('off') 
+    ax.set_xlim((-lilbit, 1 + lilbit))
+    ax.set_ylim((-1 - lilbit, 1 + lilbit))
+    ax.axis('off') 
 
     if (plotcontours):
         if levels is None:
-            levs=mini+np.linspace(1,nlevs,nlevs)/float(nlevs)*(maxi-mini)
+            levs = np.linspace(mini, maxi, nlevs)
         else: # the caller specified specific contour levels to plot!
             levs=np.array(levels)
-        plt.contour(yr,xr,field,colors='k',levels=levs, linewidths=contour_lw)
+        plt.contour(xx, zz, field, colors='k', levels=levs,\
+                linewidths=contour_lw)
+
+    if showplot:
+        plt.show()
 
 def streamfunction(vr,vt,r,cost,order=0):
     """------------------------------------------------------------
-    This routine takes as input a divergenceless axisymmetric 
+    This routine takes as input a divergenceless axymmetric 
     vector field in spherical coordinates and computes from 
     it a streamfunction (a.k.a. a flux flunction).  The grid
     is decribed by r and costheta and can be non-uniform.
