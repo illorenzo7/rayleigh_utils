@@ -12,38 +12,11 @@ from binormalized_cbar import MidpointNormalize
 from cartopy import crs
 from matplotlib import colors
 from varprops import texlabels, texunits, var_indices, var_indices_old
-from common import get_file_lists, rsun
+from common import get_file_lists, get_satvals,\
+        saturate_array, rsun
 from get_sslice import get_sslice
 from rayleigh_diagnostics import Shell_Slices
 from get_parameter import get_parameter
-
-def rms(array):
-    if np.size(array) == 0:
-        return 0
-    else:
-        return np.sqrt(np.mean(array**2))
-
-def get_satvals(field, posdef=False):
-    if not posdef:
-        rms_plus = rms(field[np.where(field > 0)])
-        rms_minus = rms(field[np.where(field < 0)])
-        my_min, my_max = -3*rms_minus, 3*rms_plus
-        return my_min, my_max
-        
-    # Saturation levels for a positive-definite quantity (like vsq)
-    else:
-        logfield= np.log(field)
-        medlog = np.median(logfield)
-        shiftlog = logfield - medlog
-        minexp = medlog - 7*np.std(shiftlog[np.where(shiftlog < 0)].flatten())
-        maxexp = medlog + 7*np.std(shiftlog[np.where(shiftlog > 0)].flatten())
-        my_min, my_max = np.exp(minexp), np.exp(maxexp)
-        return my_min, my_max
-
-
-def saturate_array(arr, my_min, my_max):
-    arr[np.where(arr < my_min)] = my_min
-    arr[np.where(arr > my_max)] = my_max
 
 def deal_with_nans(x, y):
     """handles NaN in x and y by making quadrilateral corners on the "other
@@ -339,24 +312,17 @@ def plot_moll(fig, ax, a, dirname, varname, ir=0, minmax=None,\
     # track of it!)
     if minmax is None:
         my_min, my_max = get_satvals(field, posdef=posdef)
-        if not posdef: # normalize values to plot in scientific notation
-            minexp = int(np.floor(np.log10(np.abs(my_min))))
-            maxexp = int(np.floor(np.log10(np.abs(my_max))))
-            maxabs_exp = max((minexp, maxexp))
-    
-            field /= 10**maxabs_exp
-            my_min /= 10**maxabs_exp
-            my_max /= 10**maxabs_exp    
+    else: # minmax WAS specified by user
+        my_min, my_max = minmax
 
-    else: # minmax IS none
-            my_min, my_max = minmax
-            minexp = int(np.floor(np.log10(np.abs(my_min))))
-            maxexp = int(np.floor(np.log10(np.abs(my_max))))
-            maxabs_exp = max((minexp, maxexp))
-    
-            field /= 10**maxabs_exp
-            my_min /= 10**maxabs_exp
-            my_max /= 10**maxabs_exp              
+    if not posdef: # normalize values to plot in scientific notation
+        minexp = int(np.floor(np.log10(np.abs(my_min))))
+        maxexp = int(np.floor(np.log10(np.abs(my_max))))
+        maxabs_exp = max((minexp, maxexp))
+
+        field /= 10**maxabs_exp
+        my_min /= 10**maxabs_exp
+        my_max /= 10**maxabs_exp    
             
     # Get the Mollweide projection coordinates of llon/llat by converting
     # between PlateCarree (lat/lon) and Mollweide

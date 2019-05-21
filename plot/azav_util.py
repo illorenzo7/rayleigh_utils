@@ -1,6 +1,6 @@
-################################################################
-# This file contains utilities useful for plotting the data from 
-# azimuthal averages. (Files in the directory AZ_Avgs). 
+##########################################################################################
+# This file contains utilities useful for plotting the data from azimuthal averages,
+# files in the directory AZ_Avgs.
 # Written by Nick Featherstone
 # First modified by Loren Matilsky, 03/09/2018
 
@@ -8,9 +8,11 @@ import numpy as np
 import matplotlib as mpl
 mpl.use('TkAgg')
 import matplotlib.pyplot as plt
+from matplotlib import colors
 plt.rcParams['mathtext.fontset'] = 'dejavuserif'
 csfont = {'fontname':'DejaVu Serif'}
 plt.rcParams['contour.negative_linestyle'] = 'solid'
+from common import get_satvals
 
 def fmt(x, pos):
     a, b = '{:.1e}'.format(x).split('e')
@@ -55,20 +57,25 @@ def plot_azav(field, radius, costheta, sintheta, fig=None, ax=None,\
 
     # Get default bounds if not specified
     if minmax is None:
-        sig = np.std(field[it_cutm:it_cutp+1, :])
-        mini, maxi = -3*sig, 3*sig
+        field_cut = field[it_cutm:it_cutp+1, :]
+        if posdef:
+            mini, maxi = get_satvals(field_cut, posdef=True)
+        else:
+            sig = np.std(field_cut, :])
+            mini, maxi = -3*sig, 3*sig
     else:
         mini, maxi = minmax
 
-    # Get the exponent to use for scientific notation
-    maxabs = max(np.abs(mini), np.abs(maxi))
-    exp = int(np.floor(np.log10(maxabs)))
-    divisor = 10**exp
-    
-    # Normalize field by divisor
-    field /= divisor
-    mini /= divisor
-    maxi /= divisor
+    if not posdef:
+        # Get the exponent to use for scientific notation
+        maxabs = max(np.abs(mini), np.abs(maxi))
+        exp = int(np.floor(np.log10(maxabs)))
+        divisor = 10**exp
+        
+        # Normalize field by divisor
+        field /= divisor
+        mini /= divisor
+        maxi /= divisor
 
     # Create a default set of figure axes if they weren't already
     # specified by user
@@ -116,8 +123,17 @@ def plot_azav(field, radius, costheta, sintheta, fig=None, ax=None,\
     
     if (plotfield):
         plt.sca(ax)
-        plt.pcolormesh(xx, zz, field, vmin=mini, vmax=maxi, cmap=cmap,\
-                norm=norm)
+# norm=colors.LogNorm(vmin=my_min, vmax=my_max),\
+        if posdef:
+            im = ax.contourf(xx, zz, field, cmap='Greys',\
+            norm=colors.LogNorm(vmin=mini, vmax=maxi),\
+            levels=np.logspace(minexp, maxexp, 50, base=np.exp(1.)))
+        else:
+            im = ax.contourf(xx, zz, field, cmap='RdYlBu_r',\
+            levels=np.linspace(my_min, my_max, 50),\
+            norm=MidpointNormalize(0))
+#        plt.pcolormesh(xx, zz, field, vmin=mini, vmax=maxi, cmap=cmap,\
+#                norm=norm)
         cbaxes = fig.add_axes([cbax_left, cbax_bottom,\
                        cbax_width, cbax_height])
         cbar = plt.colorbar(cax=cbaxes)

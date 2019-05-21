@@ -214,3 +214,29 @@ def get_dict(fname):
         di = pickle.load(f)
         f.close()
     return di
+
+def rms(array):
+    if np.size(array) == 0:
+        return 0
+    else:
+        return np.sqrt(np.mean(array**2))
+
+def get_satvals(field, posdef=False):
+    if not posdef:
+        rms_plus = rms(field[np.where(field > 0)])
+        rms_minus = rms(field[np.where(field < 0)])
+        my_min, my_max = -3*rms_minus, 3*rms_plus
+        return my_min, my_max
+    # Saturation levels for a positive-definite quantity (like vsq)
+    else:
+        logfield= np.log(field)
+        medlog = np.median(logfield)
+        shiftlog = logfield - medlog
+        minexp = medlog - 7*np.std(shiftlog[np.where(shiftlog < 0)].flatten())
+        maxexp = medlog + 7*np.std(shiftlog[np.where(shiftlog > 0)].flatten())
+        my_min, my_max = np.exp(minexp), np.exp(maxexp)
+        return my_min, my_max
+
+def saturate_array(arr, my_min, my_max):
+    arr[np.where(arr < my_min)] = my_min
+    arr[np.where(arr > my_max)] = my_max

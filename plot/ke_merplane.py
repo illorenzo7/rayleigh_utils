@@ -24,7 +24,6 @@ sys.path.append(os.environ['pl'])
 from azavg_util import plot_azav
 from common import get_widest_range_file, strip_dirname, get_dict
 from get_parameter import get_parameter
-from binormalized_cbar import MidpointNormalize
 
 # Get directory name and stripped_dirname for plotting purposes
 dirname = sys.argv[1]
@@ -37,7 +36,6 @@ plotdir = dirname + '/plots/'
 if (not os.path.isdir(plotdir)):
     os.makedirs(plotdir)
 # Read command-line arguments (CLAs)
-my_boundstype = 'manual'
 user_specified_minmax = False
 
 args = sys.argv[2:]
@@ -45,7 +43,6 @@ nargs = len(args)
 for i in range(nargs):
     arg = args[i]
     if (arg == '-minmax'):
-        my_boundstype = 'manual'
         my_min, my_max = float(args[i+1]), float(args[i+2])
         user_specified_minmax = True
     if (arg == '-show'):
@@ -60,8 +57,6 @@ di = get_dict(datadir + AZ_Avgs_file)
 rr = di['rr']
 cost = di['cost']
 sint = di['sint']
-tt = di['tt']
-tt_lat = di['tt_lat']
 
 iter1, iter2 = di['iter1'], di['iter2']
 vals = di['vals']
@@ -152,9 +147,8 @@ for iplot in range(nplots):
     ax_bottom = 1 - margin_top - subplot_height - \
             (iplot//ncol)*(subplot_height + margin_subplot_top)
     ax = fig.add_axes((ax_left, ax_bottom, subplot_width, subplot_height))
-    plot_azav (fig, ax, ke_terms[iplot], rr, cost, sint, 
-           units = units,
-           caller_minmax = (my_min, my_max), mycmap='Greens')
+    plot_azav (ke_terms[iplot], rr, cost, sint, fig=fig, ax=ax,
+           units=units, minmax=(my_min, my_max), mycmap='Greens')
 
     ax.set_title(titles[iplot], va='bottom', **csfont)
 
