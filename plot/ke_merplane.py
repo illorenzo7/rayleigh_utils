@@ -21,7 +21,7 @@ import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['co'])
 sys.path.append(os.environ['pl'])
-from azavg_util import plot_azav
+from azav_util import plot_azav
 from common import get_widest_range_file, strip_dirname, get_dict
 from get_parameter import get_parameter
 
@@ -35,16 +35,16 @@ datadir = dirname + '/data/'
 plotdir = dirname + '/plots/'
 if (not os.path.isdir(plotdir)):
     os.makedirs(plotdir)
+
 # Read command-line arguments (CLAs)
-user_specified_minmax = False
+minmax = None
 
 args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
     if (arg == '-minmax'):
-        my_min, my_max = float(args[i+1]), float(args[i+2])
-        user_specified_minmax = True
+        minmax = float(args[i+1]), float(args[i+2])
     if (arg == '-show'):
         showplot = True
 
@@ -86,14 +86,6 @@ mer_ke = rke_mean + tke_mean
 ke_mean = mer_ke + pke_mean 
 ke_fluc = rke_fluc + tke_fluc + pke_fluc
 ke = ke_mean + ke_fluc
-
-#max_sig = max(np.std(r_force_adv), np.std(r_force_cor),\
-#              np.std(r_force_prs), np.std(r_force_buoy),\
-#              np.std(r_force_visc))
-
-if not user_specified_minmax: 
-#    my_min, my_max = -3*max_sig, 3*max_sig
-    my_min, my_max = 0., np.max(ke)
 
 # Set up the actual figure from scratch
 fig_width_inches = 7 # TOTAL figure width, in inches
@@ -148,7 +140,7 @@ for iplot in range(nplots):
             (iplot//ncol)*(subplot_height + margin_subplot_top)
     ax = fig.add_axes((ax_left, ax_bottom, subplot_width, subplot_height))
     plot_azav (ke_terms[iplot], rr, cost, sint, fig=fig, ax=ax,
-           units=units, minmax=(my_min, my_max), mycmap='Greens')
+           units=units, posdef=True, logscale=True, minmax=minmax)
 
     ax.set_title(titles[iplot], va='bottom', **csfont)
 

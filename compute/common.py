@@ -155,17 +155,14 @@ def get_widest_range_file(datadir, data_name):
     for i in range(len(datafiles)):
         datafile = datafiles[i]
         if data_name in datafile:
-            print("data_name is in datafile")
             istart = datafile.find(data_name)
             possible_iter = datafile[istart + len_name + 1:istart + len_name + 9]
-            print("possible iter is", possible_iter)
             if is_an_int(possible_iter):
                 specific_files.append(datafile)
 
     ranges = []
     iters1 = []
     iters2 = []
-    print(specific_files)
     if len(specific_files) > 0:
         for specific_file in specific_files:
             specific_file_stripped = specific_file[:-4] # get rid of '.npy'...
@@ -221,22 +218,30 @@ def rms(array):
     else:
         return np.sqrt(np.mean(array**2))
 
-def get_satvals(field, posdef=False):
-    if not posdef:
+def get_satvals(field, logscale=False):
+    if not logscale:
         rms_plus = rms(field[np.where(field > 0)])
         rms_minus = rms(field[np.where(field < 0)])
-        my_min, my_max = -3*rms_minus, 3*rms_plus
-        return my_min, my_max
+        mini, maxi = -3*rms_minus, 3*rms_plus
+        return mini, maxi
     # Saturation levels for a positive-definite quantity (like vsq)
     else:
-        logfield= np.log(field)
+        logfield = np.log(field)
         medlog = np.median(logfield)
         shiftlog = logfield - medlog
-        minexp = medlog - 7*np.std(shiftlog[np.where(shiftlog < 0)].flatten())
-        maxexp = medlog + 7*np.std(shiftlog[np.where(shiftlog > 0)].flatten())
-        my_min, my_max = np.exp(minexp), np.exp(maxexp)
-        return my_min, my_max
+        std_plus = np.std(shiftlog[np.where(shiftlog > 0.)].flatten())
+        std_minus = np.std(shiftlog[np.where(shiftlog <= 0.)].flatten())
+        av_std = (std_plus + std_minus)/2.
+
+        minexp = medlog - 5.*av_std
+        maxexp = medlog + 5.*av_std
+        mini, maxi = np.exp(minexp), np.exp(maxexp)
+        return mini, maxi
 
 def saturate_array(arr, my_min, my_max):
     arr[np.where(arr < my_min)] = my_min
     arr[np.where(arr > my_max)] = my_max
+
+def get_exp(num):
+    return int(np.floor(np.log10(np.abs(num))))
+

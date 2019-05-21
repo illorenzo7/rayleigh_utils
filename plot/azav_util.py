@@ -12,7 +12,8 @@ from matplotlib import colors
 plt.rcParams['mathtext.fontset'] = 'dejavuserif'
 csfont = {'fontname':'DejaVu Serif'}
 plt.rcParams['contour.negative_linestyle'] = 'solid'
-from common import get_satvals
+from common import rms, get_satvals, get_exp
+from binormalized_cbar import MidpointNormalize
 
 def fmt(x, pos):
     a, b = '{:.1e}'.format(x).split('e')
@@ -41,7 +42,7 @@ def default_axes_2by1():
 def plot_azav(field, radius, costheta, sintheta, fig=None, ax=None,\
 	cmap='RdYlBu_r', units='', minmax=None, posdef=False,\
 	plotcontours=True, plotfield=True, nlevs=10, levels=None,\
-	plotlatlines=False, norm=None, fsize=8, showplot=False):
+	plotlatlines=False, norm=None, fsize=8, showplot=False, logscale=False):
 
     ''' Takes (or creates) set of axes with physical aspect ratio 1x2
     and adds a plot of [field] in the meridional plane to the axes,\
@@ -54,20 +55,31 @@ def plot_azav(field, radius, costheta, sintheta, fig=None, ax=None,\
     lat_cutoff = 75.
     it_cutm = np.argmin(np.abs(lats + lat_cutoff))
     it_cutp = np.argmin(np.abs(lats - lat_cutoff))
+    # Also stay away from within 5 percent of top and bottom!
+    shell_depth = np.max(radius) - np.min(radius)
+    rr_depth = (np.max(radius) - radius)/shell_depth
+    ir_cuttop = np.argmin(np.abs(rr_depth - 0.05))
+    ir_cutbot = np.argmin(np.abs(rr_depth - 0.95))
 
     # Get default bounds if not specified
     if minmax is None:
-        field_cut = field[it_cutm:it_cutp+1, :]
+        field_cut = field[it_cutm:it_cutp+1, ir_cuttop:ir_cutbot + 1]
         if posdef:
-            mini, maxi = get_satvals(field_cut, posdef=True)
+            if logscale:
+                mini, maxi = get_satvals(field_cut, logscale=True)
+            else:
+                sig = rms(field_cut)
+                mini, maxi = 0., 3.*sig
         else:
-            sig = np.std(field_cut, :])
-            mini, maxi = -3*sig, 3*sig
+            sig = np.std(field_cut)
+            mini, maxi = -3.*sig, 3.*sig
     else:
         mini, maxi = minmax
+    # Need these if logscale is True; made need them for other stuff later
+    minexp, maxexp = get_exp(mini), get_exp(maxi)
 
-    if not posdef:
-        # Get the exponent to use for scientific notation
+    # Get the exponent to use for scientific notation
+    if not logscale:
         maxabs = max(np.abs(mini), np.abs(maxi))
         exp = int(np.floor(np.log10(maxabs)))
         divisor = 10**exp
@@ -123,17 +135,20 @@ def plot_azav(field, radius, costheta, sintheta, fig=None, ax=None,\
     
     if (plotfield):
         plt.sca(ax)
-# norm=colors.LogNorm(vmin=my_min, vmax=my_max),\
+        levs = np.linspace(mini, maxi, 100)
         if posdef:
-            im = ax.contourf(xx, zz, field, cmap='Greys',\
-            norm=colors.LogNorm(vmin=mini, vmax=maxi),\
-            levels=np.logspace(minexp, maxexp, 50, base=np.exp(1.)))
+            norm = None
         else:
-            im = ax.contourf(xx, zz, field, cmap='RdYlBu_r',\
-            levels=np.linspace(my_min, my_max, 50),\
-            norm=MidpointNormalize(0))
-#        plt.pcolormesh(xx, zz, field, vmin=mini, vmax=maxi, cmap=cmap,\
-#                norm=norm)
+            norm = MidpointNormalize(0)
+#        im = ax.contourf(xx, zz, field, cmap='RdYlBu_r',\
+#        levels=levs)
+#        plt.sca(ax)
+        if logscale:
+            plt.pcolormesh(xx, zz, field, cmap='Greys',\
+                    norm=colors.LogNorm(vmin=mini, vmax=maxi))
+        else:
+            plt.pcolormesh(xx, zz, field, vmin=mini, vmax=maxi,\
+                    cmap='RdYlBu_r', norm=norm)
         cbaxes = fig.add_axes([cbax_left, cbax_bottom,\
                        cbax_width, cbax_height])
         cbar = plt.colorbar(cax=cbaxes)
@@ -141,18 +156,38 @@ def plot_azav(field, radius, costheta, sintheta, fig=None, ax=None,\
         #fsize = 8 # fontsize for colorbar ticks and labels
         cbaxes.tick_params(labelsize=fsize)
         cbar.ax.tick_params(labelsize=fsize)   #font size for the ticks
-        ticks = np.array([mini, 0, maxi])
-        ticklabels = []
-        for i in range(len(ticks)):
-            ticklabels.append(str(round(ticks[i], 1)))
-        ticks = np.array(ticks)
-        cbar.set_ticks(ticks)
-        cbar.set_ticklabels(ticklabels)
-
+        if not logscale:
+            if posdef:
+                midi = (mini + maxi)/2.
+                ticks = np.array([mini, midi, maxi])
+            else:
+                ticks = np.array([mini, 0, maxi])
+            ticklabels = []
+            for i in range(len(ticks)):
+                ticklabels.append(str(round(ticks[i], 1)))
+            ticks = np.array(ticks)
+            cbar.set_ticks(ticks)
+            cbar.set_ticklabels(ticklabels)
+            cbar_label = (r'$\times10^{%i}\ $' %exp) + units
+        else:
+            cbar_label = units
         # Put the units and exponent to left of colorbar
-        cbar_label = (r'$\times10^{%i}\ $' %exp) + units
         fig.text(cbax_left - 0.3*cbax_width, cbax_center_y, cbar_label,\
             ha='right', va='center', rotation=90, fontsize=fsize)
+
+    if (plotcontours):
+        if levels is None:
+            if logscale:
+                levs = np.logspace(minexp, maxexp, nlevs)
+                contour_color = 'r'
+            else:
+                levs = np.linspace(mini, maxi, nlevs)
+                contour_color = 'k'
+        else: # the caller specified specific contour levels to plot!
+            levs = np.array(levels)
+        plt.sca(ax)
+        plt.contour(xx, zz, field, colors=contour_color, levels=levs,\
+                linewidths=contour_lw)
 
     # Plot the boundary of the meridional plane
     plt.sca(ax)
@@ -178,14 +213,6 @@ def plot_azav(field, radius, costheta, sintheta, fig=None, ax=None,\
     ax.set_xlim((-lilbit, 1 + lilbit))
     ax.set_ylim((-1 - lilbit, 1 + lilbit))
     ax.axis('off') 
-
-    if (plotcontours):
-        if levels is None:
-            levs = np.linspace(mini, maxi, nlevs)
-        else: # the caller specified specific contour levels to plot!
-            levs=np.array(levels)
-        plt.contour(xx, zz, field, colors='k', levels=levs,\
-                linewidths=contour_lw)
 
     if showplot:
         plt.show()

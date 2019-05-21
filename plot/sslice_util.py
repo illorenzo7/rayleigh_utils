@@ -12,8 +12,7 @@ from binormalized_cbar import MidpointNormalize
 from cartopy import crs
 from matplotlib import colors
 from varprops import texlabels, texunits, var_indices, var_indices_old
-from common import get_file_lists, get_satvals,\
-        saturate_array, rsun
+from common import get_file_lists, get_satvals, saturate_array, rsun, get_exp
 from get_sslice import get_sslice
 from rayleigh_diagnostics import Shell_Slices
 from get_parameter import get_parameter
@@ -131,8 +130,8 @@ def plot_ortho(fig, ax, a, dirname, varname, ir=0, minmax=None,\
     if minmax is None:
         my_min, my_max = get_satvals(field, posdef=posdef)
         if not posdef: # normalize values to plot in scientific notation
-            minexp = int(np.floor(np.log10(np.abs(my_min))))
-            maxexp = int(np.floor(np.log10(np.abs(my_max))))
+            minexp = get_exp(my_min)
+            maxexp = get_exp(my_max)
             maxabs_exp = max((minexp, maxexp))
     
             field /= 10**maxabs_exp
