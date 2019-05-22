@@ -243,5 +243,8 @@ def saturate_array(arr, my_min, my_max):
     arr[np.where(arr > my_max)] = my_max
 
 def get_exp(num):
-    return int(np.floor(np.log10(np.abs(num))))
+    if num != 0.:
+        return int(np.floor(np.log10(np.abs(num))))
+    else:
+        return 1
 

@@ -40,13 +40,24 @@ def default_axes_2by1():
     return fig, ax
 
 def plot_azav(field, radius, costheta, sintheta, fig=None, ax=None,\
-	cmap='RdYlBu_r', units='', minmax=None, posdef=False,\
+	cmap='RdYlBu_r', units='', minmax=None, posdef=False, logscale=False,\
 	plotcontours=True, plotfield=True, nlevs=10, levels=None,\
-	plotlatlines=False, norm=None, fsize=8, showplot=False, logscale=False):
+	plotlatlines=False, norm=None, fsize=8, showplot=False):
 
     ''' Takes (or creates) set of axes with physical aspect ratio 1x2
     and adds a plot of [field] in the meridional plane to the axes,\
-    with colorbar in the "cavity" of the meridional plane fuck around'''
+    with colorbar in the "cavity" of the meridional plane.'''
+
+    # First things first, make sure Python does not modify any of the arrays
+    # it was passed (shouldn't fucking have to do this)
+    field = np.copy(field)
+    radius = np.copy(radius)
+    costheta = np.copy(costheta)
+    sintheta = np.copy(sintheta)
+
+    # If using logscale, you better have positive values!
+    if logscale:
+        posdef = True
 	
     # Compute the indices beyond +/- 75 degrees 
     # latitude, which usually shouldn't be included in any sort 
@@ -131,7 +142,7 @@ def plot_azav(field, radius, costheta, sintheta, fig=None, ax=None,\
     # Specify linewidths to be used in the meridional plane, one for the 
     # boundary (lw) and one for the contours (contour_lw)
     lw = 1
-    contour_lw = .2
+    contour_lw = 0.2
     
     if (plotfield):
         plt.sca(ax)
@@ -147,8 +158,12 @@ def plot_azav(field, radius, costheta, sintheta, fig=None, ax=None,\
             plt.pcolormesh(xx, zz, field, cmap='Greys',\
                     norm=colors.LogNorm(vmin=mini, vmax=maxi))
         else:
+            if posdef:
+                cmap = 'plasma'
+            else:
+                cmap = 'RdYlBu_r'
             plt.pcolormesh(xx, zz, field, vmin=mini, vmax=maxi,\
-                    cmap='RdYlBu_r', norm=norm)
+                    cmap=cmap, norm=norm)
         cbaxes = fig.add_axes([cbax_left, cbax_bottom,\
                        cbax_width, cbax_height])
         cbar = plt.colorbar(cax=cbaxes)
@@ -183,6 +198,8 @@ def plot_azav(field, radius, costheta, sintheta, fig=None, ax=None,\
             else:
                 levs = np.linspace(mini, maxi, nlevs)
                 contour_color = 'k'
+                if posdef:
+                    contour_color = 'w'
         else: # the caller specified specific contour levels to plot!
             levs = np.array(levels)
         plt.sca(ax)
