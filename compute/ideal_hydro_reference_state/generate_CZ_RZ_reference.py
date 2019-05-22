@@ -19,9 +19,10 @@
 # central mass (-M) default M_sun
 
 import numpy as np
-import matplotlib.pyplot as plt
-import sys
+import sys, os
 from arbitrary_atmosphere import arbitrary_atmosphere
+sys.path.append(os.environ['co'])
+from write_reference import write_reference
 
 import basic_constants as bc
 
@@ -38,6 +39,7 @@ rhom = bc.rho_i
 gam = bc.gamma
 k = 2.0
 delta = 0.005*rsun
+nr = 5000 # make the grid super-fine by default
 
 # Get directory to save binary files for reference state and heating
 dirname = sys.argv[1]
@@ -68,9 +70,12 @@ for i in range(nargs):
         cp = float(args[i+1]) 
     elif arg == '-M':
         M = float(args[i+1])  
+    elif arg == '-nr':
+        nr = int(args[i+1])
+
         
-# First, compute reference state on super-fine grid to interpolate onto later    
-nr = 5000
+# First, compute reference state on evenly spaced grid, possibly letting
+# Rayleigh interpolate later    
 rr = np.linspace(ri, ro, nr)
 
 # Define an entropy profile that is +1 for r < rm, 0 for r > rm, and 
@@ -96,12 +101,6 @@ for i in range(nr):
         dsdr[i] = 0.0
         d2sdr2[i] = 0.0
 
-fig, axs = plt.subplots(3)
-axs[0].plot(rr, s, 'r')
-axs[1].plot(rr, dsdr, 'b')
-axs[2].plot(rr, d2sdr2, 'g')
-plt.show()
-
 g = bc.G*bc.M/rr**2
 dgdr = -2.0*g/rr
 
@@ -110,21 +109,24 @@ T, rho, p, dlnT, dlnrho, dlnp, d2lnrho =\
                          dgdr, rm, Tm, pm, cp, gam)
 
 thefile = dirname + '/custom_reference_binary'
-f = open(thefile, "wb")
+
+write_reference(thefile, rr, rho, dlnrho, d2lnrho, p, T, dlnT, dsdr, s, g)
+
+##f = open(thefile, "wb")
 
 #may need to specify the data type for a successful read on Rayleigh's end
-sigpi = np.array(314, dtype=np.int32)
-nr = np.array(nr, dtype=np.int32)
-f.write(sigpi.tobytes())
-f.write(nr.tobytes())
-f.write(rr[::-1].tobytes())
-f.write(rho[::-1].tobytes())
-f.write(dlnrho[::-1].tobytes())
-f.write(d2lnrho[::-1].tobytes())
-f.write(p[::-1].tobytes())
-f.write(T[::-1].tobytes())
-f.write(dlnT[::-1].tobytes())
-f.write(dsdr[::-1].tobytes())
-f.write(s[::-1].tobytes())
-f.write(g[::-1].tobytes())
-f.close()
+#sigpi = np.array(314, dtype=np.int32)
+#nr = np.array(nr, dtype=np.int32)
+#f.write(sigpi.tobytes())
+#f.write(nr.tobytes())
+#f.write(rr[::-1].tobytes())
+#f.write(rho[::-1].tobytes())
+#f.write(dlnrho[::-1].tobytes())
+#f.write(d2lnrho[::-1].tobytes())
+#f.write(p[::-1].tobytes())
+#f.write(T[::-1].tobytes())
+#f.write(dlnT[::-1].tobytes())
+#f.write(dsdr[::-1].tobytes())
+#f.write(s[::-1].tobytes())
+#f.write(g[::-1].tobytes())
+#f.close()
