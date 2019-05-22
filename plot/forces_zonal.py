@@ -8,7 +8,7 @@
 # different than the one assocsiated with the longest averaging range, use
 # -usefile [complete name of desired AZ_Avgs file]
 # Saves plot in
-# [dirname]_phi_force_[first iter]_[last iter].png
+# [dirname]_forces_zonal_[first iter]_[last iter].png
 
 import numpy as np
 import pickle
@@ -21,7 +21,7 @@ import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['co'])
 sys.path.append(os.environ['pl'])
-from azavg_util import plot_azav
+from azav_util import plot_azav
 from common import get_widest_range_file, strip_dirname, get_dict
 from get_parameter import get_parameter
 from binormalized_cbar import MidpointNormalize
@@ -37,19 +37,27 @@ plotdir = dirname + '/plots/'
 if (not os.path.isdir(plotdir)):
     os.makedirs(plotdir)
 # Read command-line arguments (CLAs)
-my_boundstype = 'manual'
-user_specified_minmax = False
+showplot = True
+saveplot = True
+plotcontours = True
+minmax = None
+AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
 
 args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
-    if (arg == '-minmax'):
-        my_boundstype = 'manual'
-        my_min, my_max = float(args[i+1]), float(args[i+2])
-        user_specified_minmax = True
-    if (arg == '-show'):
-        showplot = True
+    if arg == '-minmax':
+        minmax = float(args[i+1]), float(args[i+2])
+    elif arg == '-noshow':
+        showplot = False
+    elif arg == '-nosave':
+        saveplot = False
+    elif arg == '-nocontour':
+        plotcontours = False
+    elif (arg == '-usefile'):
+        AZ_Avgs_file = args[i+1]
+        AZ_Avgs_file = AZ_Avgs_file.split('/')[-1]
 
 # See if magnetism is "on"
 try:
@@ -58,7 +66,6 @@ except:
     magnetism = False # if magnetism wasn't specified, it must be "off"
 
 # Get AZ_Avgs file
-AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
 print ('Getting phi_forces from ' + datadir + AZ_Avgs_file + ' ...')
 di = get_dict(datadir + AZ_Avgs_file)
 
@@ -93,8 +100,8 @@ if magnetism:
     max_sig = max(max_sig, np.std(phi_force_mag))
     phi_force_tot += phi_force_mag
     
-if not user_specified_minmax: 
-    my_min, my_max = -3*max_sig, 3*max_sig
+if minmax is None: 
+    minmax = -3*max_sig, 3*max_sig
 
 # Set up the actual figure from scratch
 fig_width_inches = 7 # TOTAL figure width, in inches
@@ -103,7 +110,7 @@ margin_inches = 1/8 # margin width in inches (for both x and y) and
     # horizontally in between figures
 margin_top_inches = 2 # wider top margin to accommodate subplot titles AND metadata
 margin_subplot_top_inches = 1 # margin to accommodate just subplot titles
-nplots = 4
+nplots = 5
 ncol = 3 # put three plots per row
 nrow = np.int(np.ceil(nplots/3))
 
@@ -150,10 +157,8 @@ for iplot in range(nplots):
     ax_bottom = 1 - margin_top - subplot_height - \
             (iplot//ncol)*(subplot_height + margin_subplot_top)
     ax = fig.add_axes((ax_left, ax_bottom, subplot_width, subplot_height))
-    plot_azav (fig, ax, phi_forces[iplot], rr, cost, sint,\
-           units = units,\
-           boundstype = my_boundstype, caller_minmax = (my_min, my_max),\
-           norm=MidpointNormalize(0))
+    plot_azav (phi_forces[iplot], rr, cost, sint, fig=fig, ax=ax, units=units,\
+           minmax=minmax, norm=MidpointNormalize(0.), plotcontours=plotcontours)
 
     ax.set_title(titles[iplot], verticalalignment='bottom', **csfont)
 
@@ -161,15 +166,19 @@ for iplot in range(nplots):
 fsize = 12
 fig.text(margin_x, 1 - 0.1*margin_top, dirname_stripped,\
          ha='left', va='top', fontsize=fsize, **csfont)
-fig.text(margin_x, 1 - 0.3*margin_top, 'Zonal force balance (zonally averaged)',\
-         ha='left', va='top', fontsize=fsize, **csfont)
+fig.text(margin_x, 1 - 0.3*margin_top,\
+        'Zonal force balance (zonally averaged)', ha='left', va='top',\
+        fontsize=fsize, **csfont)
 fig.text(margin_x, 1 - 0.5*margin_top,\
-         str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8),\
-         ha='left', va='top', fontsize=fsize, **csfont)
+         str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8), ha='left',\
+         va='top', fontsize=fsize, **csfont)
 
-savefile = plotdir + dirname_stripped + '_phi_forces_' +\
+savefile = plotdir + dirname_stripped + '_forces_zonal_' +\
     str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
 
-print ('Saving phi_forces at ' + savefile + ' ...')
-plt.savefig(savefile, dpi=300)
-plt.show()
+if saveplot:
+    print ('Saving zonal forces at ' + savefile + ' ...')
+    plt.savefig(savefile, dpi=300)
+if showplot:
+    plt.show()
+plt.close()

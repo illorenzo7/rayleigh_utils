@@ -19,7 +19,7 @@ from binormalized_cbar import MidpointNormalize
 import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['co'])
-from azavg_util import plot_azav, streamfunction
+from azav_util import plot_azav, streamfunction
 from common import get_widest_range_file, strip_dirname, get_dict
 from rayleigh_diagnostics import ReferenceState
 
@@ -111,19 +111,17 @@ fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
 ax = fig.add_axes((margin_x, margin_y, subplot_width, subplot_height))
 
 # Plot mass flux
-plot_azav (fig, ax, rhovm, rr, cost, sint,\
-    units = r'$\rm{g}\ \rm{cm}^{-2}\ \rm{s}^{-1}$',
-    plotcontours=False, norm=MidpointNormalize(0),\
-    boundstype=my_boundstype, caller_minmax = (my_min, my_max))
+plot_azav (rhovm, rr, cost, sint, fig=fig, ax=ax,\
+    units = r'$\rm{g}\ \rm{cm}^{-2}\ \rm{s}^{-1}$', plotcontours=False,\
+    norm=MidpointNormalize(0), minmax = (my_min, my_max))
 
 # Plot streamfunction contours
 lilbit = 0.01
 maxabs = np.max(np.abs(psi))
-plot_azav (fig, ax, psi, rr, cost, sint, plotfield=False,\
-    norm=MidpointNormalize(0),\
-    levels=(-maxabs/2, -maxabs/4,  -lilbit*maxabs, 0,\
-            lilbit*maxabs, maxabs/4, maxabs/2),\
-    boundstype=my_boundstype, caller_minmax = (my_min, my_max))
+plot_azav (psi, rr, cost, sint, fig=fig, ax=ax, plotfield=False,\
+    norm=MidpointNormalize(0.), levels=(-maxabs/2., -maxabs/4.,\
+    -lilbit*maxabs, 0., lilbit*maxabs, maxabs/4., maxabs/2.),\
+    minmax=(my_min, my_max))
 
 # Make title
 fsize = 12

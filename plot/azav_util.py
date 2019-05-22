@@ -194,14 +194,19 @@ def plot_azav(field, radius, costheta, sintheta, fig=None, ax=None,\
         if levels is None:
             if logscale:
                 levs = np.logspace(minexp, maxexp, nlevs)
-                contour_color = 'r'
             else:
                 levs = np.linspace(mini, maxi, nlevs)
-                contour_color = 'k'
-                if posdef:
-                    contour_color = 'w'
         else: # the caller specified specific contour levels to plot!
             levs = np.array(levels)
+
+        # Determine how to color the contours
+        if logscale:
+            contour_color = 'r'
+        elif posdef:
+            contour_color = 'w'
+        else:
+            contour_color = 'k'
+
         plt.sca(ax)
         plt.contour(xx, zz, field, colors=contour_color, levels=levs,\
                 linewidths=contour_lw)
