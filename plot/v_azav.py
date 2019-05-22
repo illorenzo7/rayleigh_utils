@@ -19,7 +19,7 @@ from binormalized_cbar import MidpointNormalize
 import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['co'])
-from azavg_util import plot_azav
+from azav_util import plot_azav
 from common import get_widest_range_file, strip_dirname, get_file_lists,\
         get_desired_range, get_dict
 from rayleigh_diagnostics import AZ_Avgs
@@ -37,39 +37,31 @@ if (not os.path.isdir(plotdir)):
 
 radatadir = dirname + '/AZ_Avgs/'
 
-# Get all the file names in datadir and their integer counterparts
-file_list, int_file_list, nfiles = get_file_lists(radatadir)
-
-# Set defaults
-save = True
+# Read command-line arguments (CLAs)
+showplot = True
+saveplot = True
 plotcontours = True
-my_boundstype = 'manual'
-user_specified_minmax = False 
-my_nlevs = 20
+minmax = None
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
 
-# Read in CLAs (if any) to change default variable ranges and other options
 args = sys.argv[2:]
 nargs = len(args)
-
-# Change other defaults
 for i in range(nargs):
     arg = args[i]
     if arg == '-minmax':
-        user_specified_minmax = True
         min_vr, max_vr  = float(args[i+1]), float(args[i+2])
         min_vt, max_vt  = float(args[i+3]), float(args[i+4])
         min_vp, max_vp  = float(args[i+5]), float(args[i+6])
+    elif arg == '-noshow':
+        showplot = False
     elif arg == '-nosave':
-        save = False
-    elif arg == '-nlevs':
-        my_nlevs = int(args[i+1])
+        saveplot = False
     elif arg == '-nocontour':
         plotcontours = False
     elif (arg == '-usefile'):
         AZ_Avgs_file = args[i+1]
         AZ_Avgs_file = AZ_Avgs_file.split('/')[-1]
-        
+       
 # Read in AZ_Avgs data
 print ('Getting data from ' + datadir + AZ_Avgs_file + ' ...')
 di = get_dict(datadir + AZ_Avgs_file)
@@ -86,19 +78,19 @@ sint = di['sint']
 vr, vt, vp = vals[:, :, lut[1]]/100, vals[:, :, lut[2]]/100,\
         vals[:, :, lut[3]]
 
-if (not user_specified_minmax):
-    nstd = 5
+if minmax is None:
+    nstd = 5.
     min_vr, max_vr = -nstd*np.std(vr), nstd*np.std(vr)
     min_vt, max_vt = -nstd*np.std(vt), nstd*np.std(vt)
     min_vp, max_vp = -nstd*np.std(vp), nstd*np.std(vp)
 
 # Set up the actual figure from scratch
-fig_width_inches = 7 # TOTAL figure width, in inches
+fig_width_inches = 7. # TOTAL figure width, in inches
     # (i.e., 8x11.5 paper with 1/2-inch margins)
-margin_inches = 1/8 # margin width in inches (for both x and y) and 
+margin_inches = 1./8. # margin width in inches (for both x and y) and 
     # horizontally in between figures
-margin_top_inches = 1 # wider top margin to accommodate subplot titles AND metadata
-margin_subplot_top_inches = 1 # margin to accommodate just subplot titles
+margin_top_inches = 1. # wider top margin to accommodate subplot titles AND metadata
+margin_subplot_top_inches = 1. # margin to accommodate just subplot titles
 ncol = 3 # put three plots per row
 nrow = 1
 
@@ -138,10 +130,9 @@ for iplot in range(3):
     ax_bottom = 1 - margin_top - subplot_height - \
             (iplot//ncol)*(subplot_height + margin_subplot_top)
     ax = fig.add_axes((ax_left, ax_bottom, subplot_width, subplot_height))
-    plot_azav (fig, ax, field_components[iplot], rr, cost, sint,\
-           units = units, boundstype = my_boundstype, nlevs=my_nlevs,\
-           caller_minmax = (my_mins[iplot], my_maxes[iplot]),\
-           norm=MidpointNormalize(0), plotcontours=plotcontours)
+    plot_azav (field_components[iplot], rr, cost, sint, fig=fig, ax=ax,\
+        units=units, minmax=(my_mins[iplot], my_maxes[iplot]),\
+           norm=MidpointNormalize(0.), plotcontours=plotcontours)
     ax.set_title(titles[iplot], verticalalignment='bottom', **csfont)
 
 # Put some metadata in upper left
@@ -158,7 +149,10 @@ fig.text(margin_x, 1 - 0.5*margin_top, iter_string,\
 
 savename = dirname_stripped + '_v_azav_' + str(iter1).zfill(8) + '_' +\
         str(iter2).zfill(8) + '.png'
-if save:
-    plt.savefig(plotdir + savename, dpi=100)
-    print ("Saving azimuthal average of B field in " + plotdir + savename + ' ...')
-plt.show()
+if saveplot:
+    print ("Saving azimuthal average of B field in " + plotdir +\
+            savename + ' ...')
+    plt.savefig(plotdir + savename, dpi=300)
+if showplot:
+    plt.show()
+plt.close()

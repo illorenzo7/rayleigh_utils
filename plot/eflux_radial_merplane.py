@@ -40,18 +40,30 @@ datadir = dirname + '/data/'
 plotdir = dirname + '/plots/'
 if (not os.path.isdir(plotdir)):
     os.makedirs(plotdir)
+
 # Read command-line arguments (CLAs)
-my_boundstype = 'manual'
-user_specified_minmax = False
+showplot = True
+saveplot = True
+plotcontours = True
+minmax = None
+AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
 
 args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
     if (arg == '-minmax'):
-        my_boundstype = 'manual'
-        my_min, my_max = float(args[i+1]), float(args[i+2])
+        minmax = float(args[i+1]), float(args[i+2])
         user_specified_minmax = True
+    elif arg == '-noshow':
+        showplot = False
+    elif arg == '-nosave':
+        saveplot = False
+    elif arg == '-nocontour':
+        plotcontours = False
+    elif (arg == '-usefile'):
+        AZ_Avgs_file = args[i+1]
+        AZ_Avgs_file = AZ_Avgs_file.split('/')[-1]
 
 # See if magnetism is "on"
 try:
@@ -60,7 +72,6 @@ except:
     magnetism = False # if magnetism wasn't specified, it must be "off"
 
 # Get AZ_Avgs file
-AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
 print ('Getting radial energy fluxes from ' + datadir + AZ_Avgs_file + ' ...')
 di = get_dict(datadir + AZ_Avgs_file)
 
@@ -127,8 +138,8 @@ if magnetism:
     max_sig = max(max_sig, np.std(efr_Poynt))
     efr_tot += efr_Poynt
     
-if not user_specified_minmax: 
-    my_min, my_max = -3*max_sig, 3*max_sig
+if minmax is None: 
+    minmax = -3.*max_sig, 3.*max_sig
 
 # Set up the actual figure from scratch
 fig_width_inches = 7. # TOTAL figure width, in inches
@@ -167,7 +178,7 @@ efr_terms = [efr_enth_mean, efr_enth_fluc, efr_enth, efr_cond,\
         efr_heat, efr_visc, efr_ke, efr_tot]
 
 titles = [r'$(\mathbf{\mathcal{F}}_{\rm{enth,mm}})_r$',\
-          r'$(\mathbf{\mathcal{F}}{\rm{enth,pp}})_r$',\
+          r'$(\mathbf{\mathcal{F}}_{\rm{enth,pp}})_r$',\
           r'$(\mathbf{\mathcal{F}}_{\rm{enth}})_r$',\
           r'$(\mathbf{\mathcal{F}}_{\rm{cond}})_r$',\
           r'$(\mathbf{\mathcal{F}}_{\rm{heat}})_r$',\
@@ -191,7 +202,8 @@ for iplot in range(nplots):
             (iplot//ncol)*(subplot_height + margin_subplot_top)
     ax = fig.add_axes((ax_left, ax_bottom, subplot_width, subplot_height))
     plot_azav (efr_terms[iplot], rr, cost, sint, fig=fig, ax=ax,\
-           units=units, minmax=(my_min, my_max), norm=MidpointNormalize(0))
+           units=units, minmax=minmax, norm=MidpointNormalize(0),\
+           plotcontours=plotcontours)
 
     ax.set_title(titles[iplot], verticalalignment='bottom', **csfont)
 
@@ -208,7 +220,10 @@ fig.text(margin_x, 1 - 0.5*margin_top,\
 savefile = plotdir + dirname_stripped + '_eflux_radial_merplane_' +\
     str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
 
-print ('Saving radial energy fluxes (in the meridional plane) at ' +\
+if saveplot:
+    print ('Saving radial energy fluxes (in the meridional plane) at ' +\
        savefile + ' ...')
-plt.savefig(savefile, dpi=300)
-plt.show()
+    plt.savefig(savefile, dpi=300)
+if showplot:
+    plt.show()
+plt.close()

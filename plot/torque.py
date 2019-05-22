@@ -20,7 +20,7 @@ import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['co'])
 sys.path.append(os.environ['pl'])
-from azavg_util import plot_azav
+from azav_util import plot_azav
 from common import get_widest_range_file, strip_dirname, get_dict
 from get_parameter import get_parameter
 from binormalized_cbar import MidpointNormalize
@@ -36,8 +36,10 @@ plotdir = dirname + '/plots/'
 if (not os.path.isdir(plotdir)):
     os.makedirs(plotdir)
 # Read command-line arguments (CLAs)
-my_boundstype = 'manual'
-user_specified_minmax = False
+showplot = True
+saveplot = True
+plotcontours = True
+minmax = None
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
 
 args = sys.argv[2:]
@@ -46,8 +48,13 @@ for i in range(nargs):
     arg = args[i]
     if (arg == '-minmax'):
         my_boundstype = 'manual'
-        my_min, my_max = float(args[i+1]), float(args[i+2])
-        user_specified_minmax = True
+        minmax = float(args[i+1]), float(args[i+2])
+    elif arg == '-noshow':
+        showplot = False
+    elif arg == '-nosave':
+        saveplot = False
+    elif arg == '-nocontour':
+        plotcontours = False
     elif (arg == '-usefile'):
         AZ_Avgs_file = args[i+1]
         AZ_Avgs_file = AZ_Avgs_file.split('/')[-1]
@@ -97,17 +104,14 @@ if magnetism:
     
     max_sig = max(max_sig, np.std(torque_Maxwell_mean),\
                   np.std(torque_Maxwell_rs))
-    
-if not user_specified_minmax: 
-    my_min, my_max = -3*max_sig, 3*max_sig
 
 # Set up the actual figure from scratch
-fig_width_inches = 7 # TOTAL figure width, in inches
+fig_width_inches = 7. # TOTAL figure width, in inches
     # (i.e., 8x11.5 paper with 1/2-inch margins)
-margin_inches = 1/8 # margin width in inches (for both x and y) and 
+margin_inches = 1./8. # margin width in inches (for both x and y) and 
     # horizontally in between figures
-margin_top_inches = 2 # wider top margin to accommodate subplot titles AND metadata
-margin_subplot_top_inches = 1 # margin to accommodate just subplot titles
+margin_top_inches = 2. # wider top margin to accommodate subplot titles AND metadata
+margin_subplot_top_inches = 1. # margin to accommodate just subplot titles
 nplots = 4 + 2*magnetism
 ncol = 3 # put three plots per row
 nrow = np.int(np.ceil(nplots/3))
@@ -154,10 +158,8 @@ for iplot in range(nplots):
     ax_bottom = 1 - margin_top - subplot_height - \
             (iplot//ncol)*(subplot_height + margin_subplot_top)
     ax = fig.add_axes((ax_left, ax_bottom, subplot_width, subplot_height))
-    plot_azav (fig, ax, torques[iplot], rr, cost, sint,\
-           units = units,\
-           boundstype = my_boundstype, caller_minmax = (my_min, my_max),\
-           norm=MidpointNormalize(0))
+    plot_azav (torques[iplot], rr, cost, sint, fig=fig, ax=ax, units=units,\
+           minmax=minmax, norm=MidpointNormalize(0), plotcontours=plotcontours)
 
     ax.set_title(titles[iplot], verticalalignment='bottom', **csfont)
 
@@ -174,6 +176,9 @@ fig.text(margin_x, 1 - 0.5*margin_top,\
 savefile = plotdir + dirname_stripped + '_torque_' + str(iter1).zfill(8) +\
     '_' + str(iter2).zfill(8) + '.png'
 
-print ('Saving torques at ' + savefile + ' ...')
-plt.savefig(savefile, dpi=300)
-plt.show()
+if saveplot:
+    print ('Saving torques at ' + savefile + ' ...')
+    plt.savefig(savefile, dpi=300)
+if showplot:
+    plt.show()
+plt.close()

@@ -21,7 +21,7 @@ import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['co'])
 sys.path.append(os.environ['pl'])
-from azavg_util import plot_azav
+from azav_util import plot_azav
 from rayleigh_diagnostics import ReferenceState
 from common import get_widest_range_file, strip_dirname, get_dict
 from get_parameter import get_parameter
@@ -38,22 +38,31 @@ plotdir = dirname + '/plots/'
 if (not os.path.isdir(plotdir)):
     os.makedirs(plotdir)
 # Read command-line arguments (CLAs)
-my_boundstype = 'manual'
-user_specified_minmax = False
+showplot = True
+saveplot = True
+plotcontours = True
+minmax = None
+AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
 
 args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
-    if (arg == '-minmax'):
+    if arg == '-minmax':
         my_boundstype = 'manual'
         my_min, my_max = float(args[i+1]), float(args[i+2])
         user_specified_minmax = True
-    if (arg == '-show'):
-        showplot = True
+    elif arg == '-noshow':
+        showplot = False
+    elif arg == '-nosave':
+        saveplot = False
+    elif arg == '-nocontour':
+        plotcontours = False
+    elif (arg == '-usefile'):
+        AZ_Avgs_file = args[i+1]
+        AZ_Avgs_file = AZ_Avgs_file.split('/')[-1]
 
 # Get AZ_Avgs file
-AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
 Shell_Avgs_file = get_widest_range_file(datadir, 'Shell_Avgs') 
 
 print ('Getting zonally averaged thermo. vars from ' + datadir + AZ_Avgs_file + ' ...')
@@ -156,8 +165,9 @@ for iplot in range(nplots):
     ax_bottom = 1 - margin_top - subplot_height - \
             (iplot//ncol)*(subplot_height + margin_subplot_top)
     ax = fig.add_axes((ax_left, ax_bottom, subplot_width, subplot_height))
-    plot_azav (fig, ax, thermo_terms[iplot], rr, cost, sint,
-           units = units[iplot], norm=MidpointNormalize(0))
+    plot_azav (thermo_terms[iplot], rr, cost, sint, fig=fig, ax=ax,\
+           units=units[iplot], norm=MidpointNormalize(0.),\
+           plotcontours=plotcontours)
     ax.set_title(titles[iplot], va='bottom', **csfont)
 
 # Put some metadata in upper left
@@ -173,7 +183,10 @@ fig.text(margin_x, 1 - 0.5*margin_top,\
 savefile = plotdir + dirname_stripped + '_thermo_merplane_' +\
     str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
 
-print ('Saving thermo. vars (in the meridional plane) at ' +\
-       savefile + ' ...')
-plt.savefig(savefile, dpi=300)
-plt.show()
+if saveplot:
+    print ('Saving thermo. vars (in the meridional plane) at ' +\
+            savefile + ' ...')
+    plt.savefig(savefile, dpi=300)
+if showplot:
+    plt.show()
+plt.close()
