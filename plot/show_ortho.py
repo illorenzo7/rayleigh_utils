@@ -9,8 +9,9 @@ sys.path.append(os.environ['co'])
 sys.path.append(os.environ['rapp'])
 from common import get_file_lists, strip_dirname, rsun
 from translate_times import translate_times
-from sslice_util import plot_ortho
-from rayleigh_diagnostics import Shell_Slices
+from sslice_util import plot_ortho, get_sslice, axis_range
+from rayleigh_diagnostics import Shell_Slices, ReferenceState
+from varprops import texlabels
 
 # Get command line arguments
 dirname = sys.argv[1]
@@ -67,10 +68,17 @@ fname = file_list[iiter]
 
 # Read in desired shell slice
 a = Shell_Slices(radatadir + fname, '')
+vals = get_sslice(a, varname, dirname=dirname)
+
+# We also need the radius, which we can get from the reference state
+ref = ReferenceState(dirname + '/reference', '')
+radius = ref.radius
 
 # Find desired radius (by default ir=0--near outer surface)
 if not rval is None:
     ir = np.argmin(np.abs(a.radius/rsun - rval))
+field = vals[:, :, ir]
+rval = radius[ir]
 
 # Create the plot using subplot axes
 # Offset axes slightly (at the end) to deal with annoying white space cutoff
@@ -96,13 +104,28 @@ margin_top = margin_top_inches/fig_height_inches
 subplot_width = subplot_width_inches/fig_width_inches
 subplot_height = subplot_height_inches/fig_height_inches
 
-
 # Main axis plot: orthographic projection
 fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
 ax = fig.add_axes([margin_x, margin_bottom, subplot_width, subplot_height])
 
-plot_ortho(fig, ax, a, dirname, varname, ir=ir, minmax=minmax,\
-            clon=clon, clat=clat) 
+plot_ortho(field, radius, a.costheta, fig=fig, ax=ax, ir=ir,\
+        minmax=minmax, clon=clon, clat=clat) 
+
+# Make title
+ax_xmin, ax_xmax, ax_ymin, ax_ymax = axis_range(ax)
+ax_delta_x = ax_xmax - ax_xmin
+ax_delta_y = ax_ymax - ax_ymin
+ax_center_x = ax_xmin + 0.5*ax_delta_x
+
+varlabel = texlabels[varname]
+title = varlabel + '     ' + (r'$r/R_\odot\ =\ %0.3f$' %(rval/rsun)) +\
+            '     ' + ('iter = ' + fname)
+fig.text(ax_center_x, ax_ymax + 0.02*ax_delta_y, title,\
+     verticalalignment='bottom', horizontalalignment='center',\
+     fontsize=14, **csfont)   
+
 fig.text(margin_x + 0.5*subplot_width, 1. - 0.5*margin_top,\
-    strip_dirname(dirname), ha='center', va='bottom', **csfont, fontsize=14)
+    strip_dirname(dirname), ha='center', va='bottom', **csfont,\
+    fontsize=14)
+
 plt.show()   
