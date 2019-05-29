@@ -128,7 +128,7 @@ ax1.set_title(dirname_stripped + '\n ' +\
           str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8) +\
           '\n\nangular momentum')
 ax1.plot(xaxis, Lz, 'k', linewidth=lw, label=r'$\mathcal{L}_z$')
-ax1.plot(xaxis, Lx*1e2, 'r', linewidth=lw, label=r'$\mathcal{L}_x$')
+ax1.plot(xaxis, Lx, 'r', linewidth=lw, label=r'$\mathcal{L}_x$')
 ax1.plot(xaxis, Ly, 'g', linewidth=lw, label=r'$\mathcal{L}_y$')
 
 if minmax is None:
@@ -158,7 +158,7 @@ ax2.plot(xaxis, Lpy, 'g', linewidth=lw, label=r'$\mathcal{L}_y^\prime$')
 # Title and axis label
 ax2.set_title('convection amom')
 # Put the y-label on the middle plot
-ax2.set_ylabel(r'$\rm{energy\ density\ (erg}\ cm^{-3})$')
+ax2.set_ylabel(r'$\rm{angular\ momentum\ density\ (g\ cm^{-1}\ s^{-1})}$')
 
 # Third plot: angular momentum of mean energies
 ax3.plot(xaxis, Lz, 'k', linewidth=lw, label=r'$\langle\mathcal{L}\rangle_z$')
