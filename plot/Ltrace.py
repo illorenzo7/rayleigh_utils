@@ -30,6 +30,7 @@ notfrom0 = False
 magnetism = False
 minmax = None
 xminmax = None
+plotall = False
 
 # Get command-line arguments
 args = sys.argv[2:]
@@ -45,8 +46,11 @@ for i in range(nargs):
         notfrom0 = True
     elif arg == '-minmax':
         minmax = float(args[i+1]), float(args[i+2])
-    elif (arg == '-xminmax'):
+    elif arg == '-xminmax':
         xminmax = float(args[i+1]), float(args[i+2])
+    elif arg == '-plotall':
+        plotall = True
+
 
 # Tag the plot by whether or not the x axis is in "time" or "iteration"
 if (xiter):
@@ -87,19 +91,24 @@ else:
 savename = dirname_stripped + '_Ltrace_' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + tag + '.png'
 
 Lz = vals[lut[1819]]
-Lx = vals[lut[1820]]
-Ly = vals[lut[1821]]
+if plotall:
+    Lx = vals[lut[1820]]
+    Ly = vals[lut[1821]]
 
 Lpz = vals[lut[1822]]
-Lpx = vals[lut[1823]]
-Lpy = vals[lut[1824]]
+if plotall:
+    Lpx = vals[lut[1823]]
+    Lpy = vals[lut[1824]]
 
 Lmz = vals[lut[1825]]
-Lmx = vals[lut[1826]]
-Lmy = vals[lut[1827]]
+if plotall:
+    Lmx = vals[lut[1826]]
+    Lmy = vals[lut[1827]]
 
 # Get global min/max vals
-varlist = [Lz, Lx, Ly, Lpz, Lpx, Lpy, Lmz, Lmx, Lmy]
+varlist = [Lz, Lpz, Lmz]
+if plotall:
+    varlist.extend([Lx, Ly, Lpx, Lpy, Lmx, Lmy])
 mmax = -np.inf
 mmin = np.inf
 for var in varlist:
@@ -116,8 +125,8 @@ if (notfrom0):
 else:
     x_min = 0
 
-# create figure with  3 panels in a row (total, mean and fluctuating energy)
-fig, axs = plt.subplots(3, 1, figsize=(5, 10), sharex=True, sharey=True)
+# create figure with  3 panels in a row (total, mean and fluctuating amom)
+fig, axs = plt.subplots(3, 1, figsize=(5, 10), sharex=True)
 ax1 = axs[0]; ax2 = axs[1]; ax3 = axs[2]
 
 # Make thin lines to see structure of variation
@@ -128,13 +137,17 @@ ax1.set_title(dirname_stripped + '\n ' +\
           str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8) +\
           '\n\nangular momentum')
 ax1.plot(xaxis, Lz, 'k', linewidth=lw, label=r'$\mathcal{L}_z$')
-ax1.plot(xaxis, Lx, 'r', linewidth=lw, label=r'$\mathcal{L}_x$')
-ax1.plot(xaxis, Ly, 'g', linewidth=lw, label=r'$\mathcal{L}_y$')
+if plotall:
+    ax1.plot(xaxis, Lx, 'r', linewidth=lw, label=r'$\mathcal{L}_x$')
+    ax1.plot(xaxis, Ly, 'g', linewidth=lw, label=r'$\mathcal{L}_y$')
 
+# If we're looking for machine-precision variations, just determine
+# min and max ranges for y-axes automatically in Python...
 if minmax is None:
-    diff = mmax - mmin
-    buff = 0.05*diff
-    ax1.set_ylim(mmin - buff, mmax + buff)
+    pass
+#    diff = mmax - mmin
+#    buff = 0.05*diff
+#    ax1.set_ylim(mmin - buff, mmax + buff)
 else:
     ax1.set_ylim(minmax)
     
@@ -149,11 +162,14 @@ ax1.legend(ncol=2, fontsize=8)
 
 # Make axes use scientific notation
 ax1.ticklabel_format(scilimits = (-3,4), useMathText=True)
+ax2.ticklabel_format(scilimits = (-3,4), useMathText=True)
+ax3.ticklabel_format(scilimits = (-3,4), useMathText=True)
 
 # Make the second plot (angular momentum of fluctuating motions)
 ax2.plot(xaxis, Lpz, 'k', linewidth=lw, label=r'$\mathcal{L}_z^\prime$')
-ax2.plot(xaxis, Lpx, 'r', linewidth=lw, label=r'$\mathcal{L}_x^\prime$')
-ax2.plot(xaxis, Lpy, 'g', linewidth=lw, label=r'$\mathcal{L}_y^\prime$')
+if plotall:
+    ax2.plot(xaxis, Lpx, 'r', linewidth=lw, label=r'$\mathcal{L}_x^\prime$')
+    ax2.plot(xaxis, Lpy, 'g', linewidth=lw, label=r'$\mathcal{L}_y^\prime$')
 
 # Title and axis label
 ax2.set_title('convection amom')
@@ -162,8 +178,9 @@ ax2.set_ylabel(r'$\rm{angular\ momentum\ density\ (g\ cm^{-1}\ s^{-1})}$')
 
 # Third plot: angular momentum of mean energies
 ax3.plot(xaxis, Lz, 'k', linewidth=lw, label=r'$\langle\mathcal{L}\rangle_z$')
-ax3.plot(xaxis, Lx, 'r', linewidth=lw, label=r'$\langle\mathcal{L}\rangle_x$')
-ax3.plot(xaxis, Ly, 'g', linewidth=lw, label=r'$\langle\mathcal{L}\rangle_y$')
+if plotall:
+    ax3.plot(xaxis, Lx, 'r', linewidth=lw, label=r'$\langle\mathcal{L}\rangle_x$')
+    ax3.plot(xaxis, Ly, 'g', linewidth=lw, label=r'$\langle\mathcal{L}\rangle_y$')
 
 # title and x-axis label
 ax3.set_title('mean-motion amom')
