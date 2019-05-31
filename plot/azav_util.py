@@ -22,8 +22,8 @@ def fmt(x, pos):
 
 def default_axes_2by1():
     # Create plot
-    subplot_width_inches = 2.5
-    subplot_height_inches = 5.
+    subplot_width_inches = 3.75
+    subplot_height_inches = 7.5
     margin_inches = 1./8.
 
     fig_width_inches = subplot_width_inches + 2.*margin_inches

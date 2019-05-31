@@ -84,10 +84,6 @@ def deal_with_nans(x, y):
         if max_iy < ny - 1:
             x_dealt[ix, max_iy + 1:] = x_dealt[ix, max_iy]
             y_dealt[ix, max_iy + 1:] = y_dealt[ix, max_iy]            
-
-    coord_radius = np.max(np.sqrt(x_dealt**2 + y_dealt**2))
-    x_dealt /= coord_radius
-    y_dealt /= coord_radius
        
     return x_dealt, y_dealt
 
@@ -101,7 +97,7 @@ def rbounds(dirname):
         dom_bounds = get_parameter(dirname, 'domain_bounds')
         rmin, rmax = dom_bounds[0], dom_bounds[-1]
     return rmin, rmax
-    
+
 def axis_range(ax): # gets subplot coordinates on a figure in "normalized"
         # coordinates
     pos = plt.get(ax, 'position')
@@ -114,8 +110,8 @@ def axis_range(ax): # gets subplot coordinates on a figure in "normalized"
     
 def default_axes_1by1():
     # Create plot
-    subplot_width_inches = 2.5
-    subplot_height_inches = 2.5
+    subplot_width_inches = 7.5
+    subplot_height_inches = 7.5
     margin_inches = 1./8.
 
     fig_width_inches = subplot_width_inches + 2.*margin_inches
@@ -146,7 +142,9 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
     lats = 90. - theta*180./np.pi
     ntheta = len(theta)
     nphi = 2*ntheta
-    dlon = 360.0/nphi
+    dlon = 360.0/(nphi - 1.) # this eliminates a whitespace slice
+    # between the first and last elements of the shifted data array
+    # Technically this is a distortion, but only 1 part in nphi!
     lons = dlon*np.arange(nphi)  # In rayleigh, lons[0] = 0.
     # Make 2d (meshed) grid of longitude/latitude
     llon, llat = np.meshgrid(lons, lats, indexing='ij')
@@ -202,16 +200,25 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
 
     # Must deal with "nan" coordinates since part of sphere is invisible
     x_unshrunk, y_unshrunk = deal_with_nans(x_withnan, y_withnan)
+    coord_radius = np.sqrt(np.max(x_unshrunk**2. + y_unshrunk**2.))
+    x_unshrunk /= coord_radius
+    y_unshrunk /= coord_radius
+    # Given cartopy's convention, coord_radius will generally be
+    # ~6.37 x 10^6 (Earth radius in m), however can vary somewhat. It is
+    # important to normalize the latitude and longitude lines by this 
+    # amount (and the shrink factor) in order to display them properly!
 
-    # May possibly need to shrink coordinates to give depth perception
+    # Shrink the normalized coordinates to give depth perception
     shrink_factor = rloc/ro
     x = x_unshrunk*shrink_factor #+ shrink_distance
     y = y_unshrunk*shrink_factor #+ shrink_distance
 
     # Create a default fig/ax pair, if calling routine didn't specify
     # them
+    figwasNone = False
     if fig is None and ax is None:
         fig, ax = default_axes_1by1()
+        figwasNone = True
 
     ax.set_xlim((-1.01, 1.01)) # deal with annoying whitespace cutoff issue
     ax.set_ylim((-1.01, 1.01))
@@ -222,6 +229,7 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
         saturate_array(field, mini, maxi)
     #        im = ax.pcolormesh(x, y, field, cmap=plt.cm.RdYlBu_r,\
     #                     norm=MidpointNormalize(0), vmin=mini, vmax=maxi)
+
         im = ax.contourf(x, y, field, cmap=plt.cm.RdYlBu_r,\
                 levels=np.linspace(mini, maxi, 50),\
                 norm=MidpointNormalize(0))
@@ -237,12 +245,14 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
     parallels = np.arange(-60, 90, 30.)
     
     # Make sure the plotted meridians take into account the shift
-    #
+    # in the phi-coordinate of the data: data that was at phi = 0. --> 
+    # data at phi = -difflon,
+    # i.e, our phi = 0. line should appear at -difflon
     meridians = np.arange(-difflon, -difflon + 360., 30.)
 
     npoints = 100
     for meridian in meridians:
-        if meridian == - difflon: 
+        if meridian == -difflon: 
             lw = 1.3 # make central longitude thicker
         else:
             lw = default_lw
@@ -257,8 +267,15 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
         linex, liney =\
             deal_with_nans(linex_withnans.reshape((npoints, 1)),\
             liney_withnans.reshape((npoints, 1)))
-        linex = linex[:, 0]*shrink_factor
-        liney = liney[:, 0]*shrink_factor
+        # normalize by coord_radius ~ Earth radius:
+        linex = linex[:, 0]/coord_radius
+        liney = liney[:, 0]/coord_radius
+
+        # Apply the shrink factor to give depth perception
+        linex *= shrink_factor
+        liney *= shrink_factor
+
+        # Plot a thin black line
         ax.plot(linex, liney, 'k', linewidth=lw)
 
     for parallel in parallels:
@@ -276,8 +293,15 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
         linex, liney =\
             deal_with_nans(linex_withnans.reshape((npoints, 1)),\
             liney_withnans.reshape((npoints, 1)))
-        linex = linex[:, 0]*shrink_factor
-        liney = liney[:, 0]*shrink_factor
+        # normalize by coord_radius ~ Earth radius:
+        linex = linex[:, 0]/coord_radius
+        liney = liney[:, 0]/coord_radius
+
+        # Apply the shrink factor to give depth perception
+        linex *= shrink_factor
+        liney *= shrink_factor
+
+        # Plot a thin black line
         ax.plot(linex, liney, 'k', linewidth=lw)   
 
     # Set up color bar
@@ -318,6 +342,10 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
     psivals = np.linspace(0, 2*np.pi, 500)
     xvals, yvals = np.cos(psivals), np.sin(psivals)
     ax.plot(xvals, yvals, 'k')
+
+    if figwasNone: # user probably called plot_ortho from the python 
+        # command line, wanting to view the projection immediately
+        plt.show()
 
 def plot_moll(fig, ax, a, dirname, varname, ir=0, minmax=None,\
                clon=0, plot_title=True):

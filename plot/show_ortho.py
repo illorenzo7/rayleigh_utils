@@ -108,7 +108,7 @@ subplot_height = subplot_height_inches/fig_height_inches
 fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
 ax = fig.add_axes([margin_x, margin_bottom, subplot_width, subplot_height])
 
-plot_ortho(field, radius, a.costheta, fig=fig, ax=ax, ir=ir,\
+plot_ortho(field, radius, a.costheta, fig=fig, ax=ax, ir=a.inds[ir],\
         minmax=minmax, clon=clon, clat=clat) 
 
 # Make title
