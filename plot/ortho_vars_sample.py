@@ -24,8 +24,8 @@ iiter = nfiles - 1 # by default plot the last iteration
 ir = 0 # by default plot just below the surface
 rval = None # can also find ir by finding the closest point
             # to a local radius divided by rsun
-clon = 0
-clat = 20
+clon = 0.
+clat = 20.
 
 args = sys.argv[2:]
 nargs = len(args)
@@ -35,11 +35,11 @@ for i in range(nargs):
         clat = float(args[i+1])
     elif arg == '-clon':
         clon = float(args[i+1])
-    elif (arg == '-ir'):
+    elif arg == '-ir':
         ir = int(args[i+1])
     elif arg == '-rval':
         rval = float(args[i+1])
-    elif (arg == '-iter'):
+    elif arg == '-iter':
         desired_iter = int(args[i+1])
         iiter = np.argmin(np.abs(int_file_list - desired_iter))
     elif arg == '-sec':
@@ -79,7 +79,7 @@ fig_width_inches = 6.
 # General parameters for main axis/color bar
 margin_bottom_inches = 1.
 margin_top_inches = 1.
-margin_inches = 1/8
+margin_inches = 1./8.
 
 subplot_width_inches = fig_width_inches - 2*margin_inches
 subplot_height_inches = subplot_width_inches
@@ -96,22 +96,21 @@ margin_top = margin_top_inches/fig_height_inches
 subplot_width = subplot_width_inches/fig_width_inches
 subplot_height = subplot_height_inches/fig_height_inches
 
-# Loop over rvals and make plots
+# Make plot (sub-)directory if it doesn't already exist
 plotdir = dirname + '/plots/ortho/vars_sample/'
 if not os.path.isdir(plotdir):
     os.makedirs(plotdir)
 
+# Loop over vars and make plots
 varlist = ['vr_prime', 'vt_prime', 'vp_prime', 's_prime',\
         'p_prime', 's_prime_sph']
 magnetism = get_parameter(dirname, 'magnetism')
 if magnetism:
     varlist.extend(['br', 'bt', 'bp'])
 
-count = 0
 for varname in varlist: 
     savename = 'ortho_iter' + fname + ('_rval%0.3f_' %(rval/rsun)) +\
-            str(count).zfill(2) + '-' + varname  + '.png'
-    count += 1
+            varname  + '.png'
     print('Plotting ortho: ' + varname + (', r/rsun = %0.3f (ir = %02i), '\
             %(rval/rsun, ir)) + 'iter ' + fname + ' ...')
     vals = get_sslice(a, varname, dirname=dirname)
