@@ -28,16 +28,16 @@ args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
-    if (arg == '-minmax'):
+    if arg == '-minmax':
         minmax = float(args[i+1]), float(args[i+2])
     elif (arg == '-d'):
         idepth = int(args[i+1])
-    elif (arg == '-iter'):
+    elif arg == '-iter':
         desired_iter = int(args[i+1])
         iiter = np.argmin(np.abs(int_file_list - desired_iter))
-    elif (arg == '-clat'):
+    elif arg == '-clat':
         clat = float(args[i+1])
-    elif (arg == '-clon'):
+    elif arg == '-clon':
         clon = float(args[i+1])
 
 iter_val = int_file_list[iiter]
