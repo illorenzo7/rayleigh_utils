@@ -78,7 +78,7 @@ radius = ref.radius
 if not rval is None:
     ir = np.argmin(np.abs(a.radius/rsun - rval))
 field = vals[:, :, ir]
-rval = radius[ir]
+rval = radius[ir] # in any case, this is the actual rvalue we get
 
 # Create the plot using subplot axes
 # Offset axes slightly (at the end) to deal with annoying white space cutoff
@@ -109,7 +109,7 @@ fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
 ax = fig.add_axes([margin_x, margin_bottom, subplot_width, subplot_height])
 
 plot_ortho(field, radius, a.costheta, fig=fig, ax=ax, ir=a.inds[ir],\
-        minmax=minmax, clon=clon, clat=clat) 
+        minmax=minmax, clon=clon, clat=clat, varname=varname) 
 
 # Make title
 ax_xmin, ax_xmax, ax_ymin, ax_ymax = axis_range(ax)
@@ -128,4 +128,4 @@ fig.text(margin_x + 0.5*subplot_width, 1. - 0.5*margin_top,\
     strip_dirname(dirname), ha='center', va='bottom', **csfont,\
     fontsize=14)
 
-plt.show()   
+plt.show()

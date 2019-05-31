@@ -11,11 +11,9 @@ sys.path.append(os.environ['rapp'])
 from binormalized_cbar import MidpointNormalize
 from cartopy import crs
 from matplotlib import colors
-from varprops import texlabels, texunits, var_indices, var_indices_old
-from common import get_file_lists, get_satvals, saturate_array, rsun,\
-        get_exp, rms
+from varprops import texunits
+from common import get_satvals, saturate_array, rsun, get_exp, rms
 from get_sslice import get_sslice
-from rayleigh_diagnostics import Shell_Slices
 from get_parameter import get_parameter
 
 def deal_with_nans(x, y):
@@ -116,7 +114,6 @@ def default_axes_1by1():
 
     fig_width_inches = subplot_width_inches + 2.*margin_inches
     fig_height_inches = subplot_height_inches + 2.*margin_inches
-    fig_aspect = fig_height_inches/fig_width_inches
 
     margin_x = margin_inches/fig_width_inches
     margin_y = margin_inches/fig_height_inches
@@ -134,7 +131,7 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
     field = np.copy(field_orig)
     
     # Get geometric parameters
-    ri, ro = np.min(radius), np.max(radius)
+    ro = np.max(radius)
     rloc = radius[ir]
     
     # Get latitude and longitude grid from the costheta array
@@ -307,9 +304,7 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
     # Set up color bar
     ax_xmin, ax_xmax, ax_ymin, ax_ymax = axis_range(ax)
     ax_delta_x = ax_xmax - ax_xmin
-    ax_delta_y = ax_ymax - ax_ymin
-    ax_center_x = ax_xmin + 0.5*ax_delta_x
-    #    ax_center_y = ax_ymin + 0.5*ax_delta_y   
+    ax_delta_y = ax_ymax - ax_ymin  
 
     cbar_aspect = 1./20.
     fig_aspect = ax_delta_x/ax_delta_y # assumes subplot aspect ratio is 1
@@ -332,8 +327,6 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
         locator = ticker.LogLocator(base=10)
         cbar.set_ticks(locator)
         cbar_units = ' ' + texunits[varname]
-        
-    varlabel = texlabels[varname]
 
     fig.text(cbar_left + cbar_width, cbar_bottom + 0.5*cbar_height,\
              cbar_units, verticalalignment='center', **csfont)
@@ -357,8 +350,6 @@ def plot_moll(fig, ax, a, dirname, varname, ir=0, minmax=None,\
     # Get geometric parameters
     ri, ro = rbounds(dirname)
     rloc = a.radius[ir]
-    d = 1. - ri/ro
-    depth = (1. - rloc/ro)/d    
     
     # Get latitude and longitude grid from the shape of field
     nphi, ntheta = np.shape(field)
