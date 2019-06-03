@@ -125,7 +125,7 @@ def default_axes_1by1():
     return fig, ax
 
 def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
-        minmax=None, clon=0, clat=20, plot_title=True, posdef=False,\
+        minmax=None, clon=0, clat=20, posdef=False,\
         logscale=False, varname='vr'):
     # Shouldn't have to do this but Python is stupid with arrays ...
     field = np.copy(field_orig)
@@ -340,16 +340,22 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
         # command line, wanting to view the projection immediately
         plt.show()
 
-def plot_moll(fig, ax, a, dirname, varname, ir=0, minmax=None,\
-               clon=0, plot_title=True):
+def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None, clon=0,\
+              posdef=False, logscale=False, varname='vr'): 
+    # Shouldn't have to do this but Python is stupid with arrays ...
+    field = np.copy(field_orig)    
     
-    fname = str(a.iters[0]).zfill(8)
-    vals = get_sslice(a, varname, dirname=dirname)
-    field = vals[:, :, ir]
-    
-    # Get geometric parameters
-    ri, ro = rbounds(dirname)
-    rloc = a.radius[ir]
+    # Get latitude and longitude grid from the costheta array
+    theta = np.arccos(costheta)
+    lats = 90. - theta*180./np.pi
+    ntheta = len(theta)
+    nphi = 2*ntheta
+    dlon = 360.0/(nphi - 1.) # this eliminates a whitespace slice
+    # between the first and last elements of the shifted data array
+    # Technically this is a distortion, but only 1 part in nphi!
+    lons = dlon*np.arange(nphi)  # In rayleigh, lons[0] = 0.
+    # Make 2d (meshed) grid of longitude/latitude
+    llon, llat = np.meshgrid(lons, lats, indexing='ij')    
     
     # Get latitude and longitude grid from the shape of field
     nphi, ntheta = np.shape(field)
@@ -366,27 +372,32 @@ def plot_moll(fig, ax, a, dirname, varname, ir=0, minmax=None,\
     pc = crs.PlateCarree()
     moll = crs.Mollweide()
     
-    # Determinate if "field" is positive-definite (inherently)
-    posdef = False
-    if 'sq' in varname:
-        posdef = True
-    
-    # Get saturation values to be used if minmax is not specified
-    # Divide out the exponent to use scientific notation (but keep 
-    # track of it!)
+    # Get default bounds if not specified
     if minmax is None:
-        mini, maxi = get_satvals(field, posdef=posdef)
-    else: # minmax WAS specified by user
+        if posdef:
+            if logscale:
+                mini, maxi = get_satvals(field, logscale=True)
+            else:
+                sig = rms(field)
+                mini, maxi = 0., 3.*sig
+        else:
+            sig = np.std(field)
+            mini, maxi = -3.*sig, 3.*sig
+    else:
         mini, maxi = minmax
+    # Need these if logscale is True; made need them for other stuff later
+    minexp, maxexp = get_exp(mini), get_exp(maxi)
 
-    if not posdef: # normalize values to plot in scientific notation
-        minexp = int(np.floor(np.log10(np.abs(mini))))
-        maxexp = int(np.floor(np.log10(np.abs(maxi))))
-        maxabs_exp = max((minexp, maxexp))
-
-        field /= 10**maxabs_exp
-        mini /= 10**maxabs_exp
-        maxi /= 10**maxabs_exp    
+    # Get the exponent to use for scientific notation
+    if not logscale:
+        maxabs = max(np.abs(mini), np.abs(maxi))
+        maxabs_exp = int(np.floor(np.log10(maxabs)))
+        divisor = 10**maxabs_exp
+        
+        # Normalize field by divisor
+        field /= divisor
+        mini /= divisor
+        maxi /= divisor           
             
     # Get the Mollweide projection coordinates of llon/llat by converting
     # between PlateCarree (lat/lon) and Mollweide
@@ -478,17 +489,8 @@ def plot_moll(fig, ax, a, dirname, varname, ir=0, minmax=None,\
         locator = ticker.LogLocator(base=10)
         cbar.set_ticks(locator)
         cbar_units = ' ' + texunits[varname]
-        
-    varlabel = texlabels[varname]
-
-    title = varlabel + '     ' + (r'$r/R_\odot\ =\ %0.3f$' %(rloc/rsun)) +\
-            '     ' + ('iter = ' + fname)
     fig.text(cbar_left + cbar_width, cbar_bottom + 0.5*cbar_height,\
-             cbar_units, verticalalignment='center', **csfont)
-    if plot_title:
-        fig.text(ax_center_x, ax_ymax + 0.02*ax_delta_y, title,\
-             verticalalignment='bottom', horizontalalignment='center',\
-             fontsize=14, **csfont)   
+             cbar_units, verticalalignment='center', **csfont) 
     
     # Plot outer boundary
     psivals = np.linspace(0, 2*np.pi, 100)
