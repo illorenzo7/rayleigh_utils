@@ -96,6 +96,7 @@ if lut_az[314] < nq_az and lut_az[315] < nq_az and lut_az[316] < nq_az:
     ens_r = vals_az[:, :, lut_az[314]]
     ens_theta = vals_az[:, :, lut_az[315]]
     ens_phi = vals_az[:, :, lut_az[316]]
+    iter1, iter2 = di_az['iter1'], di_az['iter2']
 
 else:
     print("Could not get total enstrophy from AZ_Avgs file. Trying to get it from 'enstrophy_from_mer' data ...")

@@ -19,7 +19,7 @@ from binormalized_cbar import MidpointNormalize
 import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['co'])
-from azavg_util import plot_azav
+from azav_util import plot_azav
 from common import get_widest_range_file, strip_dirname, get_file_lists,\
         get_desired_range
 from rayleigh_diagnostics import AZ_Avgs
@@ -39,11 +39,9 @@ Omega0 = get_parameter(dirname, 'angular_velocity')
 Prot = 2*np.pi/Omega0
 
 # Set defaults
-save = True
-plotcontours = True
-my_boundstype = 'manual'
-user_specified_minmax = False 
 count = 0
+mins = None
+maxes = None
 
 # Read in CLAs (if any) to change default variable ranges and other options
 args = sys.argv[2:]
@@ -63,12 +61,8 @@ iter1, iter2 = int_file_list[index_first], int_file_list[index_last]
 for i in range(nargs):
     arg = args[i]
     if arg == '-minmax':
-        user_specified_minmax = True
-        min_br, max_br  = float(args[i+1]), float(args[i+2])
-        min_bt, max_bt  = float(args[i+3]), float(args[i+4])
-        min_bp, max_bp  = float(args[i+5]), float(args[i+6])
-    elif arg == '-nosave':
-        save = False
+        mins = float(args[i+1]), float(args[i+3]), float(args[i+5])
+        maxes = float(args[i+2]), float(args[i+4]), float(args[i+6])
     elif arg == '-start':
         count = int(args[i+1])
 
@@ -93,14 +87,13 @@ xx = rr_2d*sint_2d
 zz = rr_2d*cost_2d
 
 # Get saturation values for B field (if user didn't specify them)
-if (not user_specified_minmax):
+if mins is None and maxes is None:
     br0 = az0.vals[:, :, az0.lut[801], 0]
     bt0 = az0.vals[:, :, az0.lut[802], 0]
     bp0 = az0.vals[:, :, az0.lut[803], 0]
-    nstd = 5
-    min_br, max_br = -nstd*np.std(br0), nstd*np.std(br0)
-    min_bt, max_bt = -nstd*np.std(bt0), nstd*np.std(bt0)
-    min_bp, max_bp = -nstd*np.std(bp0), nstd*np.std(bp0)
+    nstd = 5.
+    mins = -nstd*np.std(br0), -nstd*np.std(bt0), -nstd*np.std(bp0)
+    maxes = nstd*np.std(br0), nstd*np.std(bt0), nstd*np.std(bp0)
 
 # Create the save directory if it doesn't already exist
 plotdir = dirname + '/plots/Bazav_movie/' + '/'
@@ -160,8 +153,6 @@ for i in range(index_first, index_last + 1):
         field_components = [br, bt, bp]
         titles = [r'$B_r$', r'$B_\theta$', r'$B_\phi$']
         units = r'$\rm{G}$'
-        my_mins = [min_br, min_bt, min_bp]
-        my_maxes = [max_br, max_bt, max_bp]
 
         # Generate a figure of the correct dimensions
         fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
@@ -170,12 +161,13 @@ for i in range(index_first, index_last + 1):
             ax_left = margin_x + (iplot%ncol)*(subplot_width + margin_x)
             ax_bottom = 1 - margin_top - subplot_height - \
                     (iplot//ncol)*(subplot_height + margin_subplot_top)
-            ax = fig.add_axes((ax_left, ax_bottom, subplot_width, subplot_height))
-            plot_azav (fig, ax, field_components[iplot], rr, cost, sint,\
-                   units = units, boundstype = my_boundstype,\
-                   caller_minmax = (my_mins[iplot], my_maxes[iplot]),\
+            ax = fig.add_axes((ax_left, ax_bottom, subplot_width,\
+                    subplot_height))
+            plot_azav (field_components[iplot], rr, cost, sint, fig=fig,\
+                   ax=ax, units=units, minmax=(mins[iplot], maxes[iplot]),\
                    norm=MidpointNormalize(0), plotcontours=False)
-            ax.set_title(titles[iplot], verticalalignment='bottom', **csfont)
+            ax.set_title(titles[iplot], verticalalignment='bottom',\
+                    **csfont)
 
         # Make the title indicating the simulation time
         fsize = 12

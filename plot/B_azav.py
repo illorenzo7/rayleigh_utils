@@ -19,7 +19,7 @@ from binormalized_cbar import MidpointNormalize
 import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['co'])
-from azavg_util import plot_azav
+from azav_util import plot_azav
 from common import get_widest_range_file, strip_dirname, get_file_lists,\
         get_desired_range
 from rayleigh_diagnostics import AZ_Avgs
@@ -41,11 +41,10 @@ radatadir = dirname + '/AZ_Avgs/'
 file_list, int_file_list, nfiles = get_file_lists(radatadir)
 
 # Set defaults
+mins = None
+maxes = None
 save = True
 plotcontours = True
-my_boundstype = 'manual'
-user_specified_minmax = False 
-my_nlevs = 20
 
 # Read in CLAs (if any) to change default variable ranges and other options
 args = sys.argv[2:]
@@ -63,14 +62,10 @@ else:
 for i in range(nargs):
     arg = args[i]
     if arg == '-minmax':
-        user_specified_minmax = True
-        min_br, max_br  = float(args[i+1]), float(args[i+2])
-        min_bt, max_bt  = float(args[i+3]), float(args[i+4])
-        min_bp, max_bp  = float(args[i+5]), float(args[i+6])
+        mins = float(args[i+1]), float(args[i+3]), float(args[i+5])
+        maxes = float(args[i+2]), float(args[i+4]), float(args[i+6])
     elif arg == '-nosave':
-        save = False
-    elif arg == '-nlevs':
-        my_nlevs = int(args[i+1])
+        saveplot = False
     elif arg == '-nocontour':
         plotcontours = False
 
@@ -125,19 +120,18 @@ br = vals[:, :, az0.lut[801]]
 bt = vals[:, :, az0.lut[802]]
 bp = vals[:, :, az0.lut[803]]
 
-if (not user_specified_minmax):
-    nstd = 5
-    min_br, max_br = -nstd*np.std(br), nstd*np.std(br)
-    min_bt, max_bt = -nstd*np.std(bt), nstd*np.std(bt)
-    min_bp, max_bp = -nstd*np.std(bp), nstd*np.std(bp)
+if mins is None and maxes is None:
+    nstd = 5.
+    mins = -nstd*np.std(br), -nstd*np.std(bt), -nstd*np.std(bp)
+    maxes = nstd*np.std(br), nstd*np.std(bt), nstd*np.std(bp)
 
 # Set up the actual figure from scratch
-fig_width_inches = 7 # TOTAL figure width, in inches
+fig_width_inches = 7. # TOTAL figure width, in inches
     # (i.e., 8x11.5 paper with 1/2-inch margins)
-margin_inches = 1/8 # margin width in inches (for both x and y) and 
+margin_inches = 1./8. # margin width in inches (for both x and y) and 
     # horizontally in between figures
-margin_top_inches = 1 # wider top margin to accommodate subplot titles AND metadata
-margin_subplot_top_inches = 1 # margin to accommodate just subplot titles
+margin_top_inches = 1. # wider top margin to accommodate subplot titles AND metadata
+margin_subplot_top_inches = 1. # margin to accommodate just subplot titles
 ncol = 3 # put three plots per row
 nrow = 1
 
@@ -166,8 +160,6 @@ subplot_height = subplot_height_inches/fig_height_inches
 field_components = [br, bt, bp]
 titles = [r'$B_r$', r'$B_\theta$', r'$B_\phi$']
 units = r'$\rm{G}$'
-my_mins = [min_br, min_bt, min_bp]
-my_maxes = [max_br, max_bt, max_bp]
 
 # Generate the actual figure of the correct dimensions
 fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
@@ -177,9 +169,8 @@ for iplot in range(3):
     ax_bottom = 1 - margin_top - subplot_height - \
             (iplot//ncol)*(subplot_height + margin_subplot_top)
     ax = fig.add_axes((ax_left, ax_bottom, subplot_width, subplot_height))
-    plot_azav (fig, ax, field_components[iplot], rr, cost, sint,\
-           units = units, boundstype = my_boundstype,\
-           caller_minmax = (my_mins[iplot], my_maxes[iplot]),\
+    plot_azav (field_components[iplot], rr, cost, sint, fig=fig, ax=ax,\
+           units=units, minmax = (mins[iplot], maxes[iplot]),\
            norm=MidpointNormalize(0), plotcontours=plotcontours)
     ax.set_title(titles[iplot], verticalalignment='bottom', **csfont)
 
