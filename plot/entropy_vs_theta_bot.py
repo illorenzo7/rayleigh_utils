@@ -18,7 +18,6 @@ from binormalized_cbar import MidpointNormalize
 import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['co'])
-from azavg_util import plot_azav
 from common import get_widest_range_file, strip_dirname, get_dict
 
 # Get directory name and stripped_dirname for plotting purposes

@@ -19,7 +19,7 @@ from binormalized_cbar import MidpointNormalize
 import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['co'])
-from azavg_util import plot_azav
+from azav_util import plot_azav
 from common import get_widest_range_file, strip_dirname, get_file_lists,\
         get_desired_range, get_dict
 from rayleigh_diagnostics import ReferenceState, TransportCoeffs
@@ -51,15 +51,16 @@ my_nlevs = 20
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
 
 # Read in CLAs (if any) to change default variable ranges and other options
+minmax = None
+
 args = sys.argv[2:]
 nargs = len(args)
 
 # Change other defaults
 for i in range(nargs):
     arg = args[i]
-    if arg == '-minmax':
-        user_specified_minmax = True
-        my_min, my_max = float(args[i+1]), float(args[i+2])
+    if (arg == '-minmax'):
+        minmax = float(args[i+1]), float(args[i+2])
     elif arg == '-nosave':
         save = False
     elif arg == '-nlevs':
@@ -148,9 +149,6 @@ titles = [r'$T_1\equiv2\Omega_0\partial\langle v_\phi\rangle/\partial z$',\
         r'$T_1+T_2$']
 units = r'$\rm{s}^{-2}$'
 
-if not user_specified_minmax:
-    my_min, my_max = -3*np.std(T1), 3*np.std(T1)
-
 # Generate the actual figure of the correct dimensions
 fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
 
@@ -159,9 +157,8 @@ for iplot in range(3):
     ax_bottom = 1 - margin_top - subplot_height - \
             (iplot//ncol)*(subplot_height + margin_subplot_top)
     ax = fig.add_axes((ax_left, ax_bottom, subplot_width, subplot_height))
-    plot_azav (fig, ax, field_components[iplot], rr, cost, sint,\
-           units = units, boundstype = my_boundstype, nlevs=my_nlevs,\
-           caller_minmax = (my_min, my_max),\
+    plot_azav (field_components[iplot], rr, cost, sint, fig=fig, ax=ax,\
+           units=units, nlevs=my_nlevs, minmax=minmax,\
            norm=MidpointNormalize(0), plotcontours=plotcontours)
     ax.set_title(titles[iplot], verticalalignment='bottom', **csfont)
 
