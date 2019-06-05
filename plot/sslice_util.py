@@ -124,6 +124,24 @@ def default_axes_1by1():
     ax = fig.add_axes((margin_x, margin_y, subplot_width, subplot_height))
     return fig, ax
 
+def default_axes_2by1():
+    # Create plot
+    subplot_width_inches = 10.
+    subplot_height_inches = 5.
+    margin_inches = 1./8.
+
+    fig_width_inches = subplot_width_inches + 2.*margin_inches
+    fig_height_inches = subplot_height_inches + 2.*margin_inches
+
+    margin_x = margin_inches/fig_width_inches
+    margin_y = margin_inches/fig_height_inches
+    subplot_width = subplot_width_inches/fig_width_inches
+    subplot_height = subplot_height_inches/fig_height_inches
+
+    fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
+    ax = fig.add_axes((margin_x, margin_y, subplot_width, subplot_height))
+    return fig, ax
+
 def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
         minmax=None, clon=0, clat=20, posdef=False,\
         logscale=False, varname='vr'):
@@ -239,7 +257,7 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
        
     # Draw parallels and meridians, evenly spaced by 30 degrees
     default_lw = 0.5 # default linewidth bit thinner
-    parallels = np.arange(-60, 90, 30.)
+    parallels = np.arange(-60., 90., 30.)
     
     # Make sure the plotted meridians take into account the shift
     # in the phi-coordinate of the data: data that was at phi = 0. --> 
@@ -340,8 +358,8 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
         # command line, wanting to view the projection immediately
         plt.show()
 
-def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None, clon=0,\
-              posdef=False, logscale=False, varname='vr'): 
+def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
+        clon=0., posdef=False, logscale=False, varname='vr'): 
     # Shouldn't have to do this but Python is stupid with arrays ...
     field = np.copy(field_orig)    
     
@@ -350,28 +368,23 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None, clon=0,\
     lats = 90. - theta*180./np.pi
     ntheta = len(theta)
     nphi = 2*ntheta
-    dlon = 360.0/(nphi - 1.) # this eliminates a whitespace slice
-    # between the first and last elements of the shifted data array
-    # Technically this is a distortion, but only 1 part in nphi!
+    dlon = 360.0/nphi     
     lons = dlon*np.arange(nphi)  # In rayleigh, lons[0] = 0.
     # Make 2d (meshed) grid of longitude/latitude
     llon, llat = np.meshgrid(lons, lats, indexing='ij')    
-    
-    # Get latitude and longitude grid from the shape of field
-    nphi, ntheta = np.shape(field)
-    dlon = 360.0/nphi
-    dlat = 180.0/ntheta
-    lons = dlon*np.arange(nphi) - 180.0
-    lats = dlat*np.arange(ntheta) - 90.0
-    # Make 2d (meshed) grid of longitude/latitude
-    llon, llat = np.meshgrid(lons, lats, indexing='ij')
     
     # Essence of cartopy is transformations:
     # This one will be from PlateCarree (simple longitude/latitude equally 
     # spaced) to Mollweide
     pc = crs.PlateCarree()
-    moll = crs.Mollweide()
-    
+    moll = crs.Mollweide(central_longitude=180.)
+
+    # "Roll" the original field so that so that the desired clon falls
+	# on 180 degrees, which is the ~center of the lons array
+    difflon = clon - 180.
+    iphi_shift = -int(difflon/360.*nphi)
+    field = np.roll(field, iphi_shift, axis=0)
+
     # Get default bounds if not specified
     if minmax is None:
         if posdef:
@@ -410,13 +423,13 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None, clon=0,\
     radius = max(np.max(np.abs(x))/2., np.max(np.abs(y)))
     x /= radius # now falls in [-2, 2]
     y /= radius # now falls in [-1, 1]
-
+    
     ax.set_xlim((-2.02, 2.02)) # deal with annoying whitespace cutoff issue
     ax.set_ylim((-1.01, 1.01))
     ax.axis('off') # get rid of x/y axis coordinates
             
     # Make the Mollweide projection
-    if not posdef:
+    if not logscale:
         saturate_array(field, mini, maxi)
         im = ax.contourf(x, y, field, cmap=plt.cm.RdYlBu_r,\
                 levels=np.linspace(mini, maxi, 50),\
@@ -428,12 +441,17 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None, clon=0,\
        
     # Draw parallels and meridians, evenly spaced by 30 degrees
     default_lw = 0.5 # default linewidth bit thinner
-    parallels = np.arange(-60, 90, 30.)
-    meridians = np.arange(0., 360., 30.)
+    parallels = np.arange(-60., 90., 30.)
+    
+    # Make sure the plotted meridians take into account the shift
+    # in the phi-coordinate of the data: data that was at phi = 0. --> 
+    # data at phi = -difflon,
+    # i.e, our phi = 0. line should appear at -difflon
+    meridians = np.arange(-difflon, -difflon + 360., 30.)
     
     npoints = 100
     for meridian in meridians:
-        if meridian == 0.: 
+        if meridian == -difflon: 
             lw = 1.3 # make central longitude thicker
         else:
             lw = default_lw
@@ -452,7 +470,9 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None, clon=0,\
             lw = 1.3 # make equator thicker
         else:
             lw = default_lw        
-        lonvals = np.linspace(-180, 180, npoints)
+        lonvals = np.linspace(0., 359.99, npoints)
+        # lon = 0 = 360 is treated as a negative-x point for clon=180
+        # so just below 360 is the positive-most x point
         latvals = np.zeros(npoints) + parallel
         linepoints = moll.transform_points(pc, lonvals, latvals)
         linex, liney = linepoints[:, 0], linepoints[:, 1]
@@ -482,7 +502,8 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None, clon=0,\
     cbar = plt.colorbar(im, cax=cax, orientation='horizontal')
     # make a "title" (label "m/s" to the right of the colorbar)
     if not posdef:
-        cbar_units = ' ' + (r'$\times10^{%i}$' %maxabs_exp) + ' ' + texunits[varname]
+        cbar_units = ' ' + (r'$\times10^{%i}$' %maxabs_exp) +\
+                ' ' + texunits[varname]
         cbar.set_ticks([mini, 0, maxi])
         cbar.set_ticklabels(['%1.1f' %mini, '0', '%1.1f' %maxi])
     else:

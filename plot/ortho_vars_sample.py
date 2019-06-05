@@ -71,7 +71,7 @@ radius = ref.radius
 # Find desired radius (by default ir=0--near outer surface)
 if not rval is None:
     ir = np.argmin(np.abs(a.radius/rsun - rval))
-rval = radius[ir] # in any case, this is the actual rvalue we get
+rval = a.radius[ir] # in any case, this is the actual rvalue we get
 
 # Create the plot template
 fig_width_inches = 6.
@@ -118,7 +118,8 @@ for varname in varlist:
     
     # Make axes and plot the orthographic projection
     fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
-    ax = fig.add_axes([margin_x, margin_bottom, subplot_width, subplot_height])
+    ax = fig.add_axes([margin_x, margin_bottom, subplot_width,\
+            subplot_height])
     
     plot_ortho(field, radius, a.costheta, fig=fig, ax=ax, ir=a.inds[ir],\
         clon=clon, clat=clat, varname=varname)     

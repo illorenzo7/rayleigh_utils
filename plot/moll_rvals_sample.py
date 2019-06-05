@@ -8,9 +8,10 @@ import sys, os
 sys.path.append(os.environ['co'])
 sys.path.append(os.environ['rapp'])
 from common import get_file_lists, strip_dirname, rsun
-from translate_times import translate_times
-from sslice_util import plot_moll
+from sslice_util import plot_moll, get_sslice, axis_range
 from rayleigh_diagnostics import Shell_Slices
+from translate_times import translate_times
+from varprops import texlabels
 
 # Get command line arguments
 dirname = sys.argv[1]
@@ -21,7 +22,7 @@ file_list, int_file_list, nfiles = get_file_lists(radatadir)
 minmax = None
 iiter = nfiles - 1 # by default plot the last iteration
 varname = 'vr' # by default plot the radial velocity
-clon = 0
+clon = 0.
 
 args = sys.argv[2:]
 nargs = len(args)
@@ -82,23 +83,44 @@ margin_top = margin_top_inches/fig_height_inches
 subplot_width = subplot_width_inches/fig_width_inches
 subplot_height = subplot_height_inches/fig_height_inches
 
-# Loop over depths and make plots
-plotdir = dirname + '/plots/moll/depth_sample/'
+# Make plot (sub-)directory if it doesn't already exist
+plotdir = dirname + '/plots/moll/rvals_sample/'
 if not os.path.isdir(plotdir):
     os.makedirs(plotdir)
     
+# Loop over rvals and make plots
 for ir in range(a.nr):
-    rval = a.radius[ir]/rsun
+    rval = a.radius[ir]
+    vals = get_sslice(a, varname, dirname=dirname)
+    field = vals[:, :, ir]
+
     savename = 'moll_' + varname + '_iter' + fname +\
-            ('_rval%0.3f' %rval) + '.png'
-    print('Plotting moll: ' + varname + (', rval = %0.3f, ' %rval) +\
-          'iter ' + fname + ' ...')
+        ('_rval%0.3f_' %(rval/rsun)) + '.png'
+    print('Plotting moll: ' + varname + (', r/rsun = %0.3f (ir = %02i), '\
+            %(rval/rsun, ir)) + 'iter ' + fname + ' ...')
+
     fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
-    ax = fig.add_axes([margin_x, margin_bottom, subplot_width, subplot_height])
+    ax = fig.add_axes([margin_x, margin_bottom, subplot_width,\
+            subplot_height])
     
-    plot_moll(fig, ax, a, dirname, varname, ir=ir, minmax=minmax,\
-                clon=clon) 
+    plot_moll(field, a.costheta, fig=fig, ax=ax, varname=varname,\
+            minmax=minmax, clon=clon) 
+
+    # Make title
+    ax_xmin, ax_xmax, ax_ymin, ax_ymax = axis_range(ax)
+    ax_delta_x = ax_xmax - ax_xmin
+    ax_delta_y = ax_ymax - ax_ymin
+    ax_center_x = ax_xmin + 0.5*ax_delta_x    
+    
+    varlabel = texlabels[varname]
+    title = varlabel + '     ' + (r'$r/R_\odot\ =\ %0.3f$' %(rval/rsun)) +\
+            '     ' + ('iter = ' + fname)    
+    fig.text(ax_center_x, ax_ymax + 0.02*ax_delta_y, title,\
+         verticalalignment='bottom', horizontalalignment='center',\
+         fontsize=14, **csfont)   
+    
     fig.text(margin_x + 0.5*subplot_width, 1. - 0.5*margin_top,\
-            strip_dirname(dirname), ha='center', va='bottom', **csfont, fontsize=14)
+        strip_dirname(dirname), ha='center', va='bottom', **csfont,\
+        fontsize=14)
     plt.savefig(plotdir + savename, dpi=300)
     plt.close()
