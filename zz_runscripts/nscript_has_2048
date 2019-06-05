@@ -1,5 +1,5 @@
 #PBS -S /bin/bash
-#PBS -N normalQ_has_2048cores
+#PBS -N normalQ_has_2048cores_has
 #PBS -l select=86:ncpus=24:model=has
 #PBS -q normal
 #PBS -l walltime=8:00:00

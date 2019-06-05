@@ -1,5 +1,5 @@
 #PBS -S /bin/bash
-#PBS -N normalQ_bro_2048cores
+#PBS -N normalQ_bro_2048cores_bro
 #PBS -l select=37:ncpus=28:model=bro
 #PBS -q normal
 #PBS -l walltime=8:00:00
