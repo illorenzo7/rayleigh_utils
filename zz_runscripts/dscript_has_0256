@@ -1,6 +1,6 @@
 #PBS -S /bin/bash
-#PBS -N devel_example_2048cores
-#PBS -l select=86:ncpus=24:model=has
+#PBS -N devel_example_256cores_has
+#PBS -l select=11:ncpus=24:model=has
 #PBS -q devel
 #PBS -l walltime=2:00:00
 #PBS -j oe
@@ -16,4 +16,4 @@ export OMP_NUM_THREADS=1
 
 cd $PBS_O_WORKDIR
 
-mpiexec -np 2048 ./rayleigh.opt -nprow 64 -npcol 32 >> logfile1
+mpiexec -np 256 ./rayleigh.opt -nprow 16 -npcol 16 >> logfile1

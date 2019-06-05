@@ -1,5 +1,5 @@
 #PBS -S /bin/bash
-#PBS -N longQ_has_4096cores
+#PBS -N longQ_has_4096cores_has
 #PBS -l select=171:ncpus=24:model=has
 #PBS -q long
 #PBS -l walltime=120:00:00

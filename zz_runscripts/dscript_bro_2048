@@ -1,0 +1,19 @@
+#PBS -S /bin/bash
+#PBS -N devel_example_2048cores_bro
+#PBS -l select=74:ncpus=28:model=bro
+#PBS -q devel
+#PBS -l walltime=2:00:00
+#PBS -j oe
+#PBS -W group_list=s2051
+#PBS -m e
+
+module purge
+module load mpi-sgi/mpt
+module load comp-intel
+
+export MPI_BUFS_PER_PROC=256
+export OMP_NUM_THREADS=1
+
+cd $PBS_O_WORKDIR
+
+mpiexec -np 2048 ./rayleigh.opt -nprow 64 -npcol 32 >> logfile1

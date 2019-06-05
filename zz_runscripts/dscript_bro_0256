@@ -1,6 +1,6 @@
 #PBS -S /bin/bash
-#PBS -N devel_example_256cores
-#PBS -l select=11:ncpus=24:model=has
+#PBS -N devel_example_256cores_bro
+#PBS -l select=10:ncpus=28:model=bro
 #PBS -q devel
 #PBS -l walltime=2:00:00
 #PBS -j oe
