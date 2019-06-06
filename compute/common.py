@@ -218,25 +218,28 @@ def rms(array):
     else:
         return np.sqrt(np.mean(array**2))
 
-def get_satvals(field, logscale=False):
-    if not logscale:
-        rms_plus = rms(field[np.where(field > 0)])
-        rms_minus = rms(field[np.where(field < 0)])
-        mini, maxi = -3*rms_minus, 3*rms_plus
-        return mini, maxi
-    # Saturation levels for a positive-definite quantity (like vsq)
-    else:
-        logfield = np.log(field)
-        medlog = np.median(logfield)
-        shiftlog = logfield - medlog
-        std_plus = np.std(shiftlog[np.where(shiftlog > 0.)].flatten())
-        std_minus = np.std(shiftlog[np.where(shiftlog <= 0.)].flatten())
-        av_std = (std_plus + std_minus)/2.
+def get_satvals(field, posdef, logscale):
+    # Get good place to saturate array [field], assuming either
+    # posdef (True or False) and/or logscale (True or False)
+    if posdef:
+        if logscale:
+            logfield = np.log(field)
+            medlog = np.median(logfield)
+            shiftlog = logfield - medlog
+            std_plus = np.std(shiftlog[np.where(shiftlog > 0.)].flatten())
+            std_minus = np.std(shiftlog[np.where(shiftlog <= 0.)].flatten())
+            av_std = (std_plus + std_minus)/2.
 
-        minexp = medlog - 5.*av_std
-        maxexp = medlog + 5.*av_std
-        mini, maxi = np.exp(minexp), np.exp(maxexp)
-        return mini, maxi
+            minexp = medlog - 5.*av_std
+            maxexp = medlog + 5.*av_std
+            minmax = np.exp(minexp), np.exp(maxexp)
+        else:
+            sig = rms(field)
+            minmax = 0., 3.*sig
+    else:
+        sig = np.std(field)
+        minmax = -3.*sig, 3.*sig
+    return minmax
 
 def saturate_array(arr, my_min, my_max):
     arr[np.where(arr < my_min)] = my_min
@@ -247,4 +250,3 @@ def get_exp(num):
         return int(np.floor(np.log10(np.abs(num))))
     else:
         return 1
-

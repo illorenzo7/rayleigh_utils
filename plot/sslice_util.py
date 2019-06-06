@@ -143,8 +143,8 @@ def default_axes_2by1():
     return fig, ax
 
 def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
-        minmax=None, clon=0, clat=20, posdef=False,\
-        logscale=False, varname='vr'):
+        minmax=None, clon=0, clat=20, posdef=False, logscale=False,\
+        varname='vr'):
     # Shouldn't have to do this but Python is stupid with arrays ...
     field = np.copy(field_orig)
     
@@ -178,30 +178,21 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
 
     # Get default bounds if not specified
     if minmax is None:
-        if posdef:
-            if logscale:
-                mini, maxi = get_satvals(field, logscale=True)
-            else:
-                sig = rms(field)
-                mini, maxi = 0., 3.*sig
-        else:
-            sig = np.std(field)
-            mini, maxi = -3.*sig, 3.*sig
-    else:
-        mini, maxi = minmax
-    # Need these if logscale is True; made need them for other stuff later
-    minexp, maxexp = get_exp(mini), get_exp(maxi)
+        minmax = get_satvals(field, posdef, logscale)
+
+    # Need these if logscale is True; may need them for other stuff later
+    minexp, maxexp = get_exp(minmax[0]), get_exp(minmax[1])
 
     # Get the exponent to use for scientific notation
     if not logscale:
-        maxabs = max(np.abs(mini), np.abs(maxi))
+        maxabs = max(np.abs(minmax[0]), np.abs(minmax[1]))
         maxabs_exp = int(np.floor(np.log10(maxabs)))
         divisor = 10**maxabs_exp
         
         # Normalize field by divisor
         field /= divisor
-        mini /= divisor
-        maxi /= divisor           
+        minmax = minmax[0]/divisor, minmax[1]/divisor
+        # Can't reassign tuples element-wise for some reason
             
     # Get the orthographic projection coordinates of llon/llat by 
     # converting between PlateCarree (lat/lon) and orthographic
@@ -241,18 +232,18 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
             
     # Plot the orthographic projection
     if not posdef:
-        saturate_array(field, mini, maxi)
+        saturate_array(field, minmax[0], minmax[1])
     #        im = ax.pcolormesh(x, y, field, cmap=plt.cm.RdYlBu_r,\
-    #                     norm=MidpointNormalize(0), vmin=mini, vmax=maxi)
+    #                     norm=MidpointNormalize(0), vmin=minmax[0], vmax=minmax[1])
 
         im = ax.contourf(x, y, field, cmap=plt.cm.RdYlBu_r,\
-                levels=np.linspace(mini, maxi, 50),\
+                levels=np.linspace(minmax[0], minmax[1], 50),\
                 norm=MidpointNormalize(0))
     else: 
     #        im = ax.pcolormesh(x, y, field, cmap='Greys',\
-    #            norm=colors.LogNorm(vmin=mini, vmax=maxi))
+    #            norm=colors.LogNorm(vmin=minmax[0], vmax=minmax[1]))
          im = ax.contourf(x, y, field, cmap='Greys',\
-            norm=colors.LogNorm(vmin=mini, vmax=maxi),\
+            norm=colors.LogNorm(vmin=minmax[0], vmax=minmax[1]),\
             levels=np.logspace(minexp, maxexp, 50, base=np.exp(1.)))
        
     # Draw parallels and meridians, evenly spaced by 30 degrees
@@ -295,7 +286,7 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
 
     for parallel in parallels:
         if parallel == 0.: 
-            lw = 1.3 # make equator thicker
+            lw = 1.3*lw_scaling # make equator thicker
         else:
             lw = default_lw        
         lonvals = np.linspace(0., 360., npoints)
@@ -339,8 +330,8 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
     if not posdef:
         cbar_units = ' ' + (r'$\times10^{%i}$' %maxabs_exp) +\
                 ' ' + texunits[varname]
-        cbar.set_ticks([mini, 0, maxi])
-        cbar.set_ticklabels(['%1.1f' %mini, '0', '%1.1f' %maxi])
+        cbar.set_ticks([minmax[0], 0, minmax[1]])
+        cbar.set_ticklabels(['%1.1f' %minmax[0], '0', '%1.1f' %minmax[1]])
     else:
         locator = ticker.LogLocator(base=10)
         cbar.set_ticks(locator)
@@ -352,14 +343,15 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
     # Plot outer boundary
     psivals = np.linspace(0, 2*np.pi, 500)
     xvals, yvals = np.cos(psivals), np.sin(psivals)
-    ax.plot(xvals, yvals, 'k')
+    ax.plot(xvals, yvals, 'k', linewidth=1.3*lw_scaling)
 
     if figwasNone: # user probably called plot_ortho from the python 
         # command line, wanting to view the projection immediately
         plt.show()
 
 def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
-        clon=0., posdef=False, logscale=False, varname='vr'): 
+        clon=0., posdef=False, logscale=False, varname='vr',\
+        lw_scaling=1.): 
     # Shouldn't have to do this but Python is stupid with arrays ...
     field = np.copy(field_orig)    
     
@@ -387,30 +379,20 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
 
     # Get default bounds if not specified
     if minmax is None:
-        if posdef:
-            if logscale:
-                mini, maxi = get_satvals(field, logscale=True)
-            else:
-                sig = rms(field)
-                mini, maxi = 0., 3.*sig
-        else:
-            sig = np.std(field)
-            mini, maxi = -3.*sig, 3.*sig
-    else:
-        mini, maxi = minmax
+        minmax = get_satvals(field, posdef, logscale)
+
     # Need these if logscale is True; made need them for other stuff later
-    minexp, maxexp = get_exp(mini), get_exp(maxi)
+    minexp, maxexp = get_exp(minmax[0]), get_exp(minmax[1])
 
     # Get the exponent to use for scientific notation
     if not logscale:
-        maxabs = max(np.abs(mini), np.abs(maxi))
+        maxabs = max(np.abs(minmax[0]), np.abs(minmax[1]))
         maxabs_exp = int(np.floor(np.log10(maxabs)))
         divisor = 10**maxabs_exp
         
         # Normalize field by divisor
         field /= divisor
-        mini /= divisor
-        maxi /= divisor           
+        minmax = minmax[0]/divisor, minmax[1]/divisor
             
     # Get the Mollweide projection coordinates of llon/llat by converting
     # between PlateCarree (lat/lon) and Mollweide
@@ -430,17 +412,17 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
             
     # Make the Mollweide projection
     if not logscale:
-        saturate_array(field, mini, maxi)
+        saturate_array(field, minmax[0], minmax[1])
         im = ax.contourf(x, y, field, cmap=plt.cm.RdYlBu_r,\
-                levels=np.linspace(mini, maxi, 50),\
+                levels=np.linspace(minmax[0], minmax[1], 50),\
                 norm=MidpointNormalize(0))
     else: 
          im = ax.contourf(x, y, field, cmap='Greys',\
-            norm=colors.LogNorm(vmin=mini, vmax=maxi),\
+            norm=colors.LogNorm(vmin=minmax[0], vmax=minmax[1]),\
             levels=np.logspace(minexp, maxexp, 50, base=np.exp(1.)))
        
     # Draw parallels and meridians, evenly spaced by 30 degrees
-    default_lw = 0.5 # default linewidth bit thinner
+    default_lw = 0.5*lw_scaling # default linewidth bit thinner
     parallels = np.arange(-60., 90., 30.)
     
     # Make sure the plotted meridians take into account the shift
@@ -452,7 +434,7 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
     npoints = 100
     for meridian in meridians:
         if meridian == -difflon: 
-            lw = 1.3 # make central longitude thicker
+            lw = 1.3*lw_scaling # make central longitude thicker
         else:
             lw = default_lw
             
@@ -467,7 +449,7 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
     
     for parallel in parallels:
         if parallel == 0.: 
-            lw = 1.3 # make equator thicker
+            lw = 1.3*lw_scaling # make equator thicker
         else:
             lw = default_lw        
         lonvals = np.linspace(0., 359.99, npoints)
@@ -504,8 +486,8 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
     if not posdef:
         cbar_units = ' ' + (r'$\times10^{%i}$' %maxabs_exp) +\
                 ' ' + texunits[varname]
-        cbar.set_ticks([mini, 0, maxi])
-        cbar.set_ticklabels(['%1.1f' %mini, '0', '%1.1f' %maxi])
+        cbar.set_ticks([minmax[0], 0, minmax[1]])
+        cbar.set_ticklabels(['%1.1f' %minmax[0], '0', '%1.1f' %minmax[1]])
     else:
         locator = ticker.LogLocator(base=10)
         cbar.set_ticks(locator)
@@ -516,4 +498,4 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
     # Plot outer boundary
     psivals = np.linspace(0, 2*np.pi, 100)
     xvals, yvals = 2.*np.cos(psivals), np.sin(psivals)
-    ax.plot(xvals, yvals, 'k')
+    ax.plot(xvals, yvals, 'k', linewidth=1.3*lw_scaling)
