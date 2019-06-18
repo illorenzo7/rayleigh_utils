@@ -16,27 +16,24 @@ import matplotlib.pyplot as plt
 plt.rcParams['mathtext.fontset'] = 'dejavuserif'
 csfont = {'fontname':'DejaVu Serif'}
 import sys, os
+sys.path.append(os.environ['rapp'])
 from get_parameter import get_parameter
-from common import strip_dirname, get_widest_range_file,\
-        get_iters_from_file, get_dict, rsun
+from common import get_file_lists, rsun
+from rayleigh_diagnostics import Meridional_Slices
 
 # Get directory name and stripped_dirname for plotting purposes
 dirname = sys.argv[1]
-dirname_stripped = strip_dirname(dirname)
 
-# Directory with data and plots, make the plotting directory if it doesn't
-# already exist    
-datadir = dirname + '/data/'
-plotdir = dirname + '/plots/'
-if (not os.path.isdir(plotdir)):
-    os.makedirs(plotdir)
+radatadir = dirname + '/Meridional_Slices/'
+file_list, int_file_list, nfiles = get_file_lists(radatadir)
 
 # Set defaults
 rnorm = None
 lats = [0., 15., 30., 45., 60., 75.]
 qvals = [1, 2, 3]
-AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
 logscale = False
+iiter = nfiles - 1 # by default, plot the last data file in the list
+iphi = 0 # first longitude in slice array, by default
 rvals_to_plot = None # user can specify r-values to mark by vertical lines
 
 # Read command-line arguments (CLAs)
@@ -61,29 +58,53 @@ for i in range(nargs):
             qvals.append(int(qvals_str[j]))
     elif arg == '-log':
         logscale = True
+    elif (arg == '-iter'):
+        desired_iter = int(args[i+1])
+        iiter = np.argmin(np.abs(int_file_list - desired_iter))
+    elif arg == '-sec':
+        time = float(args[i+1])
+        di_trans = translate_times(time, dirname, translate_from='sec')
+        desired_iter = di_trans['val_iter']
+        iiter = np.argmin(np.abs(int_file_list - desired_iter))
+    elif arg == '-day':
+        time = float(args[i+1])
+        di_trans = translate_times(time, dirname, translate_from='day')
+        desired_iter = di_trans['val_iter']
+        iiter = np.argmin(np.abs(int_file_list - desired_iter))
+    elif arg == '-prot':
+        time = float(args[i+1])
+        di_trans = translate_times(time, dirname, translate_from='prot')
+        desired_iter = di_trans['val_iter']
+        iiter = np.argmin(np.abs(int_file_list - desired_iter))
+    elif arg == '-iphi':
+        iphi = int(args[i+1])
     elif arg == '-rvals':
         rvals_to_plot = []
         rvals_str = args[i+1].split()
         for j in range(len(rvals_str)):
             rvals_to_plot.append(float(rvals_str[j]))
 
+iter_val = int_file_list[iiter]
+fname = file_list[iiter]
+
+
 # Get the spherical theta values associated with [lats]       
 lats = np.array(lats)
 colats = 90. - lats
 theta_vals = colats*np.pi/180.
 
-# Read in AZ_Avg data
-print ('Reading AZ_Avgs data from ' + datadir + AZ_Avgs_file + ' ...')
-di = get_dict(datadir + AZ_Avgs_file)
+# Read in Meridional_Slices data
+print ('Reading ' + radatadir + fname + ' ...')
+mer = Meridional_Slices(radatadir + fname, '')
 
-vals = di['vals']
-lut = di['lut']
-iter1, iter2 = di['iter1'], di['iter2']
-rr = di['rr']
-tt = di['tt']
-cost, sint = di['cost'], di['sint']
-xx = di['xx']
-ri = di['ri']
+phival = mer.phi[iphi]*180./np.pi
+vals = mer.vals[iphi, :, :, :, 0] 
+lut = mer.lut
+# only consider the first item of the record
+# (good idea to keep nrec = 1 for Meridional_Slices in general)
+
+rr = mer.radius
+tt = np.arccos(mer.costheta)
 
 nq = len(qvals)
 ncol = 3
@@ -92,7 +113,6 @@ nrow = int(np.ceil(nq/ncol))
 subplot_side = 4. # 4 inch subplot
 fig, axs = plt.subplots(nrow, ncol, figsize=(ncol*subplot_side,\
         nrow*subplot_side), sharex=True)
-
 if nrow == 1:
     axs = axs.reshape((1, ncol))
 
