@@ -144,7 +144,7 @@ def default_axes_2by1():
 
 def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
         minmax=None, clon=0, clat=20, posdef=False, logscale=False,\
-        varname='vr'):
+        varname='vr', lw_scaling=1.):
     # Shouldn't have to do this but Python is stupid with arrays ...
     field = np.copy(field_orig)
     
@@ -247,7 +247,7 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
             levels=np.logspace(minexp, maxexp, 50, base=np.exp(1.)))
        
     # Draw parallels and meridians, evenly spaced by 30 degrees
-    default_lw = 0.5 # default linewidth bit thinner
+    default_lw = 0.5*lw_scaling # default linewidth bit thinner
     parallels = np.arange(-60., 90., 30.)
     
     # Make sure the plotted meridians take into account the shift
@@ -259,7 +259,7 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
     npoints = 100
     for meridian in meridians:
         if meridian == -difflon: 
-            lw = 1.3 # make central longitude thicker
+            lw = 1.3*lw_scaling # make central longitude thicker
         else:
             lw = default_lw
             
