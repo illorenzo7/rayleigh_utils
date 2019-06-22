@@ -36,7 +36,9 @@ if not os.path.isdir(plotdir):
 rnorm = None
 minmax = None
 logscale = False
+rvals = None # user can specify radii to mark by vertical lines
 just_vr = False
+rvals = None
 tag = ''
 lats = [0., 15., 30., 45., 60., 75.]
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
@@ -64,6 +66,11 @@ for i in range(nargs):
         just_vr = True
     elif arg == '-tag':
         tag = '_' + args[i+1]
+    elif arg == '-rvals':
+        rvals_str = args[i+1].split()
+        rvals = []
+        for j in range(len(rvals_str)):
+            rvals.append(float(rvals_str[j]))
 
 # Get the spherical theta values associated with [lats]       
 lats = np.array(lats)
@@ -155,10 +162,18 @@ if not logscale or not minmax is None:
 if logscale:
     plt.yscale('log')
 
-delta_x = xmax - xmin
-delta_y = ymax - ymin
+ymin, ymax = ax.get_ylim()
 xvals = np.linspace(xmin, xmax, 100)
 yvals = np.linspace(ymin, ymax, 100)
+
+# Mark radii if desired
+for rval in rvals:
+    if rnorm is None:
+        rval_n = rval/rsun
+    else:
+        rval_n = rval/rnorm
+    plt.plot(rval_n + np.zeros(100), yvals, 'k--')
+
 
 # Create a title    
 plt.title(dirname_stripped + '\n' +'Convective Reynolds number, ' +\
