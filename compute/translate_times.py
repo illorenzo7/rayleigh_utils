@@ -1,14 +1,14 @@
 # Date created: 02/04/2019
 import numpy as np
 import sys, os
-from common import get_file_lists, get_widest_range_file, strip_dirname
+from common import get_file_lists, get_widest_range_file, strip_dirname, get_dict
 from get_parameter import get_parameter
 
 def translate_times(time, dirname, translate_from='prot'):
     datadir = dirname + '/data/'
 
     trace_G_Avgs_file = get_widest_range_file(datadir, 'trace_G_Avgs')
-    di = np.load(datadir + trace_G_Avgs_file, encoding='latin1').item()
+    di = get_dict(datadir + trace_G_Avgs_file)
 
     times = di['times']
     iters = di['iters']
