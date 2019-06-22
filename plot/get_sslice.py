@@ -1134,4 +1134,34 @@ def get_sslice(a, varname, dirname=None, old=False):
             poly_gamma = 5./3.
         t_prime_slice = ref_temp*(p_prime_slice/ref_p*(1. - 1./poly_gamma) + s_prime_slice/cp)          
         sslice = vr_prime_slice*t_prime_slice          
+    elif (varname == 'vtt'):       
+        ind_vt, ind_s, ind_p = a.lut[qind_vt], a.lut[qind_s], a.lut[qind_p]
+        vt_slice = vals[:, :, :, ind_vt]
+        s_slice = vals[:, :, :, ind_s] 
+        p_slice = vals[:, :, :, ind_p]         
+        try: 
+            azav_file = get_widest_range_file(dirname + '/data/', 'AZ_Avgs')
+            di = np.load(dirname + '/data/' + azav_file).item()
+            av_vals, lut = di['vals'], di['lut']
+            vt_av = av_vals[:, a.inds, lut[qind_vt]]
+            s_av = av_vals[:, a.inds, lut[qind_s]]
+            p_av = av_vals[:, a.inds, lut[qind_p]]            
+            vt_prime_slice = vt_slice - vt_av
+            s_prime_slice = s_slice - s_av
+            p_prime_slice = p_slice - p_av            
+        except:
+            vt_prime_slice = vt_slice - np.mean(vt_slice, axis=0)
+            s_prime_slice = s_slice - np.mean(s_slice, axis=0)  
+            p_prime_slice = p_slice - np.mean(p_slice, axis=0)               
+        ref = ReferenceState('/reference', dirname)
+        cp = get_parameter(dirname, 'pressure_specific_heat')
+        ref_p = (ref.pressure)[a.inds]
+        ref_temp = (ref.temperature)[a.inds]
+        try:
+            poly_n = get_paramater(dirname, 'poly_n') # must check "poly_n" later
+            poly_gamma = 1. + 1./poly_n  
+        except:
+            poly_gamma = 5./3.
+        t_prime_slice = ref_temp*(p_prime_slice/ref_p*(1. - 1./poly_gamma) + s_prime_slice/cp)          
+        sslice = vt_prime_slice*t_prime_slice          
     return sslice

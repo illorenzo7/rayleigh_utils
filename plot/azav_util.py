@@ -92,8 +92,8 @@ def plot_azav(field, radius, costheta, sintheta, fig=None, ax=None,\
     # Get the exponent to use for scientific notation
     if not logscale:
         maxabs = max(np.abs(mini), np.abs(maxi))
-        exp = int(np.floor(np.log10(maxabs)))
-        divisor = 10**exp
+        exp = float(np.floor(np.log10(maxabs)))
+        divisor = 10.**exp
         
         # Normalize field by divisor
         field /= divisor

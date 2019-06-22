@@ -80,6 +80,7 @@ texlabels = {\
              
     'vrs'       :       r'$v_r^\prime S^\prime$',
     'vrt'       :       r'$v_r^\prime T^\prime$',
+    'vtt'       :       r'$v_\theta^\prime T^\prime$',
              
     'vrvp'      :       r'$\overline{\rho}v_r^\prime v_\phi^\prime$',
     'vrvt'      :       r'$\overline{\rho}v_r^\prime v_\theta^\prime$',
@@ -170,7 +171,8 @@ texunits = {\
     
     'vrs'       :       r'$(cm\ s^{-1})(\rm{erg}\ \rm{K}^{-1}\ \rm{g}^{-1})$', 
     'vrt'       :       r'$(cm\ s^{-1})(K)$', 
-            
+    'vtt'       :       r'$(cm\ s^{-1})(K)$', 
+           
     'vrvp'      :       r'$\rm{dyn}\ \rm{cm}^{-2}$', 
     'vrvt'      :       r'$\rm{dyn}\ \rm{cm}^{-2}$', 
     'vtvp'      :       r'$\rm{dyn}\ \rm{cm}^{-2}$', 
