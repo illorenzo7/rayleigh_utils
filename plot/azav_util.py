@@ -42,7 +42,7 @@ def default_axes_2by1():
 def plot_azav(field, radius, costheta, sintheta, fig=None, ax=None,\
 	cmap='RdYlBu_r', units='', minmax=None, posdef=False, logscale=False,\
 	plotcontours=True, plotfield=True, nlevs=10, levels=None,\
-	plotlatlines=False, norm=None, fsize=8, showplot=False):
+	plotlatlines=False, rvals=None, fsize=8, showplot=False):
 
     ''' Takes (or creates) set of axes with physical aspect ratio 1x2
     and adds a plot of [field] in the meridional plane to the axes,\
@@ -59,46 +59,37 @@ def plot_azav(field, radius, costheta, sintheta, fig=None, ax=None,\
     if logscale:
         posdef = True
 	
-    # Compute the indices beyond +/- 75 degrees 
-    # latitude, which usually shouldn't be included in any sort 
-    # bounds estimates.
-    lats = (np.pi/2. - np.arccos(costheta))*180./np.pi
-    lat_cutoff = 75.
-    it_cutm = np.argmin(np.abs(lats + lat_cutoff))
-    it_cutp = np.argmin(np.abs(lats - lat_cutoff))
-    # Also stay away from within 5 percent of top and bottom!
-    shell_depth = np.max(radius) - np.min(radius)
-    rr_depth = (np.max(radius) - radius)/shell_depth
-    ir_cuttop = np.argmin(np.abs(rr_depth - 0.05))
-    ir_cutbot = np.argmin(np.abs(rr_depth - 0.95))
-
     # Get default bounds if not specified
     if minmax is None:
+        # Compute the indices beyond +/- 75 degrees 
+        # latitude, which usually shouldn't be included in any sort 
+        # bounds estimates.
+        lats = (np.pi/2. - np.arccos(costheta))*180./np.pi
+        lat_cutoff = 75.
+        it_cutm = np.argmin(np.abs(lats + lat_cutoff))
+        it_cutp = np.argmin(np.abs(lats - lat_cutoff))
+
+        # Also stay away from within 5 percent of top and bottom!
+        shell_depth = np.max(radius) - np.min(radius)
+        rr_depth = (np.max(radius) - radius)/shell_depth
+        ir_cuttop = np.argmin(np.abs(rr_depth - 0.05))
+        ir_cutbot = np.argmin(np.abs(rr_depth - 0.95))
         field_cut = field[it_cutm:it_cutp+1, ir_cuttop:ir_cutbot + 1]
-        if posdef:
-            if logscale:
-                mini, maxi = get_satvals(field_cut, logscale=True)
-            else:
-                sig = rms(field_cut)
-                mini, maxi = 0., 3.*sig
-        else:
-            sig = np.std(field_cut)
-            mini, maxi = -3.*sig, 3.*sig
-    else:
-        mini, maxi = minmax
+
+        minmax = get_satvals(field_cut, posdef, logscale)
+
     # Need these if logscale is True; made need them for other stuff later
-    minexp, maxexp = get_exp(mini), get_exp(maxi)
+    minexp, maxexp = get_exp(minmax[0]), get_exp(minmax[1])
 
     # Get the exponent to use for scientific notation
     if not logscale:
-        maxabs = max(np.abs(mini), np.abs(maxi))
+        maxabs = max(np.abs(minmax[0]), np.abs(minmax[1]))
         exp = float(np.floor(np.log10(maxabs)))
         divisor = 10.**exp
         
         # Normalize field by divisor
         field /= divisor
-        mini /= divisor
-        maxi /= divisor
+        minmax = minmax[0]/divisor, minmax[1]/divisor
 
     # Create a default set of figure axes if they weren't already
     # specified by user
@@ -136,47 +127,47 @@ def plot_azav(field, radius, costheta, sintheta, fig=None, ax=None,\
     rr2 = rr.reshape((1, nr))
     cost2 = costheta.reshape((nt, 1))
     sint2 = sintheta.reshape((nt, 1))
-    xx = rr*sint2
+    xx = rr2*sint2
     zz = rr2*cost2
 
     # Specify linewidths to be used in the meridional plane, one for the 
     # boundary (lw) and one for the contours (contour_lw)
-    lw = 1
+    lw = 1.
     contour_lw = 0.2
     
     if (plotfield):
         plt.sca(ax)
-        levs = np.linspace(mini, maxi, 100)
-        if posdef:
-            norm = None
-        else:
-            norm = MidpointNormalize(0)
+        levs = np.linspace(minmax[0], minmax[1], 100)
+#        if posdef:
+#            norm = None
+#        else:
+#            norm = MidpointNormalize(0.)
 #        im = ax.contourf(xx, zz, field, cmap='RdYlBu_r',\
 #        levels=levs)
 #        plt.sca(ax)
         if logscale:
             plt.pcolormesh(xx, zz, field, cmap='Greys',\
-                    norm=colors.LogNorm(vmin=mini, vmax=maxi))
+                    norm=colors.LogNorm(vmin=minmax[0], vmax=minmax[1]))
         else:
             if posdef:
                 cmap = 'plasma'
             else:
                 cmap = 'RdYlBu_r'
-            plt.pcolormesh(xx, zz, field, vmin=mini, vmax=maxi,\
-                    cmap=cmap, norm=norm)
+            plt.pcolormesh(xx, zz, field, vmin=minmax[0], vmax=minmax[1],\
+                    cmap=cmap)
         cbaxes = fig.add_axes([cbax_left, cbax_bottom,\
                        cbax_width, cbax_height])
         cbar = plt.colorbar(cax=cbaxes)
 
-        #fsize = 8 # fontsize for colorbar ticks and labels
         cbaxes.tick_params(labelsize=fsize)
         cbar.ax.tick_params(labelsize=fsize)   #font size for the ticks
+
         if not logscale:
             if posdef:
-                midi = (mini + maxi)/2.
-                ticks = np.array([mini, midi, maxi])
+                mid = (minmax[0] + minmax[1])/2.
+                ticks = np.array([minmax[0], mid, minmax[1]])
             else:
-                ticks = np.array([mini, 0, maxi])
+                ticks = np.array([minmax[0], 0., minmax[1]])
             ticklabels = []
             for i in range(len(ticks)):
                 ticklabels.append(str(round(ticks[i], 1)))
@@ -195,7 +186,7 @@ def plot_azav(field, radius, costheta, sintheta, fig=None, ax=None,\
             if logscale:
                 levs = np.logspace(minexp, maxexp, nlevs)
             else:
-                levs = np.linspace(mini, maxi, nlevs)
+                levs = np.linspace(minmax[0], minmax[1], nlevs)
         else: # the caller specified specific contour levels to plot!
             levs = np.array(levels)
 
@@ -220,7 +211,7 @@ def plot_azav(field, radius, costheta, sintheta, fig=None, ax=None,\
 
     # Plot latitude lines, if desired
     if plotlatlines:
-        lats_to_plot = np.arange(-75, 90, 15)
+        lats_to_plot = np.arange(-75., 90., 15.)
         for lat in lats_to_plot:
             theta_val = (90 - lat)*np.pi/180
             x_in, z_in = r[-1]*np.sin(theta_val), r[-1]*np.cos(theta_val)
@@ -229,6 +220,12 @@ def plot_azav(field, radius, costheta, sintheta, fig=None, ax=None,\
             plt.plot([x_in, x_out], [z_in, z_out], 'k',\
                     linewidth=contour_lw)
 
+    # Plot various radii, if desired
+    # rvals must be given normalized to outer radius
+    if not rvals is None:
+        for rval in rvals: 
+            plt.sca(ax)
+            plt.plot(rval*sintheta, rval*costheta, 'k--', linewidth=lw)
 
     # Set ax ranges to be just outside the boundary lines
     lilbit = 0.01
@@ -238,6 +235,177 @@ def plot_azav(field, radius, costheta, sintheta, fig=None, ax=None,\
 
     if showplot:
         plt.show()
+
+def plot_azav_half(field, radius, costheta, sintheta, sym='even',\
+        fig=None, ax=None, cmap='RdYlBu_r', units='', minmax=None,\
+        posdef=False, logscale=False, plotcontours=True, plotfield=True,\
+        nlevs=10, levels=None, plotlatlines=False, rvals=None, norm=None,\
+        fsize=8, showplot=False):
+	
+    '''Takes a figure with a subplot (axis) of aspect ratio 1x1 (or
+    generates default axes if they are not provided) and adds
+    a plot of the upper meridional plane to the axis, averaging the full
+    plane with either even or odd symmetry
+    '''
+
+    # First, "fold" the field in half, using even symmetry for now
+    # Please don't try this with odd N_theta!
+    nt = len(costheta)
+    it_half = int(nt/2)
+    
+    # Field is ordered from theta=pi (south pole) to theta=0 (north pole)
+    # Average the Northern and Southern hemispheres together (must flip 
+    # the Southern hemisphere)
+    if sym=='even':
+        field = 0.5*(field[it_half:, :] +\
+                np.flip(field[:it_half, :], axis=0))
+    elif sym=='odd':
+        field = 0.5*(field[it_half:, :] +\
+                np.flip(field[:it_half, :], axis=0))
+    costheta = costheta[it_half:]
+    lats = (np.pi/2. - np.arccos(costheta))*180./np.pi
+    sintheta = sintheta[it_half:]
+
+    # Get default bounds if not specified
+    if minmax is None:
+        # Compute the indices beyond +/- 75 degrees 
+        # latitude, which usually shouldn't be included in any sort 
+        # bounds estimates.
+        lat_cutoff = 75.
+        it_cut = np.argmin(np.abs(lats - lat_cutoff))
+
+        # Also stay away from within 5 percent of top and bottom!
+        shell_depth = np.max(radius) - np.min(radius)
+        rr_depth = (np.max(radius) - radius)/shell_depth
+        ir_cuttop = np.argmin(np.abs(rr_depth - 0.05))
+        ir_cutbot = np.argmin(np.abs(rr_depth - 0.95))
+        field_cut = field[:it_cut, ir_cuttop:ir_cutbot + 1]
+
+        if posdef:
+            if logscale:
+                minmax = get_satvals(field_cut, logscale=True)
+            else:
+                sig = rms(field_cut)
+                minmax = 0., 3.*sig
+        else:
+            sig = np.std(field_cut)
+            minmax = -3.*sig, 3.*sig
+    
+    if minmax is None:
+        # By default, do the max/min values of the field not including
+        # lats > 75
+        it_75 = np.argmin(np.abs(costheta - np.cos(np.pi/12.)))
+        # Also stay away from within 5 percent of top and bottom!
+        shell_depth = np.max(radius) - np.min(radius)
+        rr_depth = (np.max(radius) - radius)/shell_depth
+        ir_cuttop = np.argmin(np.abs(rr_depth - 0.05))
+        ir_cutbot = np.argmin(np.abs(rr_depth - 0.95))
+
+        field_cut = field[:it_75 + 1, ir_cuttop:ir_cutbot+1]
+        std = np.std(field_cut)
+        minmax = -3.*std, 3.*std
+
+    # Get the exponent to use for scientific notation
+    extent = np.max((np.abs(minmax[0]), np.abs(minmax[1])))
+    exp = int(np.floor(np.log10(extent)))
+    divisor = 10**exp
+    
+    # Normalize field by divisor
+    field /= divisor
+    mini /= divisor
+    maxi /= divisor
+   
+    # Get the position of the axes on the figure
+    pos = axis.get_position().get_points()
+    axis_left, axis_bottom = pos[0]
+    axis_right, axis_top = pos[1]
+    axis_width = axis_right - axis_left
+    axis_height = axis_top - axis_bottom
+    axis_aspect = axis_height/axis_width
+   
+    # Set the colorbar axis to be in the "cavity" of the meridional plane
+    # The colorbar height is set by making sure it "fits" in the cavity
+    chi = np.min(radius)/np.max(radius) # aspect ratio of the shell
+    cavity_height = axis_height*chi
+    cbaxis_aspect = 10
+    cbaxis_height = 0.7*cavity_height
+    cbaxis_width = cbaxis_height/cbaxis_aspect / axis_aspect
+    
+    cbaxis_left = axis_left + 0.1*axis_width
+    cbaxis_bottom = axis_bottom + 0.1*axis_height
+    
+    #Modified version of Antoine Strukarek's routine
+    r = radius/np.max(radius)
+    n_r = len(r)
+    n_t = it_half
+    rtmp = r.reshape(1, n_r)
+    cthtmp = costheta.reshape(n_t, 1)
+    sthtmp = sintheta.reshape(n_t, 1)
+    xr = np.dot(cthtmp, rtmp)
+    yr = np.dot(sthtmp, rtmp)
+    
+    # Specify linewidths to be used in the meridional plane, one for the 
+    # boundary (lw) and one for the contours (contour_lw)
+    lw = 1
+    contour_lw = .2
+    
+    if (plotfield):
+        plt.sca(axis)
+        plt.pcolormesh(yr, xr, field, vmin=mini, vmax=maxi,\
+                cmap=mycmap, norm=norm)
+     
+        cbaxes = fig.add_axes([cbaxis_left, cbaxis_bottom,\
+                       cbaxis_width, cbaxis_height])
+        cbar = plt.colorbar(cax=cbaxes)
+
+        #fsize = 8 # fontsize for colorbar ticks and labels
+        cbaxes.tick_params(labelsize=fsize)
+#        cbar.set_label(units, rotation=270, labelpad=25, fontsize=18)
+        cbar.ax.tick_params(labelsize=fsize)   #font size for the ticks
+        ticks = np.array([mini, 0, maxi])
+        ticklabels = []
+        for i in range(len(ticks)):
+            ticklabels.append(str(round(ticks[i],1)))
+        ticks = np.array(ticks)
+        cbar.set_ticks(ticks)
+        cbar.set_ticklabels(ticklabels)
+
+        # Put the units and exponent to left of colorbar
+        cbar_label = (r'$\times10^{%i}\ $' %exp) + units
+        fig.text(cbaxis_left - 0.3*cbaxis_width, cbaxis_bottom + cbaxis_height/2, cbar_label,\
+            ha='right', va='center', rotation=90, fontsize=fsize)
+
+    # Plot the boundary of the meridional plane
+    plt.sca(axis)
+    plt.plot(r[0]*sintheta, r[0]*costheta, 'k', linewidth=lw) # outer boundary
+    plt.plot(r[n_r-1]*sintheta, r[n_r-1]*costheta, 'k', linewidth=lw) # inner boundary
+    plt.plot([0,0], [r[n_r-1], r[0]], 'k', linewidth=lw) # polar "edge"
+    plt.plot([r[n_r-1], r[0]], [0,0], 'k', linewidth=lw) # equatorial "edge"
+
+    # Plot latitude lines, if desired
+    if plotlatlines:
+        lats_to_plot = np.arange(-75, 90, 15)
+        for lat in lats_to_plot:
+            theta_val = (90 - lat)*np.pi/180
+            x_in, z_in = r[-1]*np.sin(theta_val), r[-1]*np.cos(theta_val)
+            x_out, z_out = r[0]*np.sin(theta_val), r[0]*np.cos(theta_val)
+            plt.sca(axis)
+            plt.plot([x_in, x_out], [z_in, z_out], 'k',\
+                    linewidth=contour_lw)
+
+
+    # Set axis ranges to be just outside the boundary lines
+    lilbit = 0.01
+    axis.set_xlim((-lilbit, 1 + lilbit))
+    axis.set_ylim((-lilbit, 1 + lilbit))
+    axis.axis('off') 
+
+    if (plotcontours):
+        if levels is None:
+            levs=mini+np.linspace(1,nlevs,nlevs)/float(nlevs)*(maxi-mini)
+        else: # the caller specified specific contour levels to plot!
+            levs=np.array(levels)
+        plt.contour(yr,xr,field,colors='k',levels=levs, linewidths=contour_lw)
 
 def streamfunction(vr,vt,r,cost,order=0):
     """------------------------------------------------------------
