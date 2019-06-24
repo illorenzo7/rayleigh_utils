@@ -167,12 +167,13 @@ xvals = np.linspace(xmin, xmax, 100)
 yvals = np.linspace(ymin, ymax, 100)
 
 # Mark radii if desired
-for rval in rvals:
-    if rnorm is None:
-        rval_n = rval/rsun
-    else:
-        rval_n = rval/rnorm
-    plt.plot(rval_n + np.zeros(100), yvals, 'k--')
+if not rvals is None:
+    for rval in rvals:
+        if rnorm is None:
+            rval_n = rval/rsun
+        else:
+            rval_n = rval/rnorm
+        plt.plot(rval_n + np.zeros(100), yvals, 'k--')
 
 
 # Create a title    
