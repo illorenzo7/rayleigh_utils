@@ -250,3 +250,10 @@ def get_exp(num):
         return int(np.floor(np.log10(np.abs(num))))
     else:
         return 1
+
+def my_bool(x):
+    x = x.lower()
+    if x == 't' or x == 'true' or x == '1':
+        return True
+    elif x == 'f' or x == 'false' or x == '0':
+        return False

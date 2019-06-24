@@ -1,8 +1,10 @@
 # Author: Loren Matilsky
-# Created: 06/22/2019
+# Created: 06/23/2019
 # This script plots any user-specified quantitities (or by default, the
-# three velocity components) from the AZ_Avgs, in the meridional plane 
-# ...for the Rayleigh run directory indicated by [dirname]. To use an 
+# three velocity components) from the AZ_Avgs, in the upper (Northern)
+# part of the meridional plane, using either even or odd symmetry
+# about the equator
+# Plots data from Rayleigh run directory indicated by [dirname]. To use an 
 # AZ_Avgs file  different than the one associated with the longest 
 # averaging time interval, use
 # -usefile [complete name of desired AZ_Avgs file]
@@ -19,7 +21,7 @@ import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['co'])
 sys.path.append(os.environ['pl'])
-from azav_util import plot_azav
+from azav_util import plot_azav_half
 from common import get_widest_range_file, get_dict, strip_dirname, my_bool
 
 # Get directory name and stripped_dirname for plotting purposes
@@ -45,6 +47,7 @@ logscale = None # 1 for each quantity
 qv = [1, 2, 3] # by default plot the velocity components
 ncol = 3 # in the figure, put three plots per row
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
+sym = 'even' # by default assume even symmetry for each plot
 
 args = sys.argv[2:]
 nargs = len(args)
@@ -96,6 +99,14 @@ for i in range(nargs):
     elif arg == '-usefile':
         AZ_Avgs_file = args[i+1]
         AZ_Avgs_file = AZ_Avgs_file.split('/')[-1]
+    elif arg == '-sym':
+        sym_str = args[i+1].split()
+        if sym_str == ['odd']:
+            sym = 'odd'
+        elif sym_str == ['even']:
+            sym = 'even'
+        else:
+            sym = sym_str
 
 # Get the AZ_Avg data
 print ('Getting AZ_Avgs data from ' + datadir + AZ_Avgs_file + ' ...')
@@ -123,8 +134,9 @@ nrow = np.int(np.ceil(nplots/ncol))
 subplot_width_inches = (fig_width_inches - (ncol + 1)*margin_inches)/ncol
     # Make the subplot width so that ncol subplots fit together side-by-side
     # with margins in between them and at the left and right.
-subplot_height_inches = 2*subplot_width_inches # Each subplot should have an
-    # aspect ratio of y/x = 2/1 to accommodate meridional planes. 
+subplot_height_inches = subplot_width_inches # Each subplot should have an
+    # aspect ratio of y/x = 1/1 for the upper half of the meridional
+    # plane
 fig_height_inches = nrow*subplot_height_inches + margin_top_inches +\
     (nrow - 1)*margin_subplot_top_inches + margin_inches 
     # Room for titles on each row and a regular margin on the bottom
@@ -171,9 +183,17 @@ for iplot in range(nplots):
     else:
         this_logscale = logscale[iplot]
 
-    plot_azav (field, rr, cost, sint, fig=fig, ax=ax, minmax=this_minmax,\
-            plotcontours=plotcontours, plotlatlines=plotlatlines,\
-            rvals=rvals, posdef=this_posdef, logscale=this_logscale)
+    if sym == 'even':
+        this_sym = 'even'
+    elif sym == 'odd':
+        this_sym = 'odd'
+    else:
+        this_sym = sym[iplot]
+
+    plot_azav_half(field, rr, cost, sint, fig=fig, ax=ax,\
+            minmax=this_minmax, plotcontours=plotcontours,\
+            plotlatlines=plotlatlines, rvals=rvals, posdef=this_posdef,\
+            logscale=this_logscale, sym=this_sym)
     ax.set_title('iq = %i' %iq, verticalalignment='bottom', **csfont)
 
 # Put some metadata in upper left
