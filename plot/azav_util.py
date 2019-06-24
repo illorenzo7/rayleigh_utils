@@ -39,6 +39,25 @@ def default_axes_2by1():
     ax = fig.add_axes((margin_x, margin_y, subplot_width, subplot_height))
     return fig, ax
 
+def default_axes_1by1():
+    # Create plot
+    subplot_width_inches = 3.75
+    subplot_height_inches = 3.75
+    margin_inches = 1./8.
+
+    fig_width_inches = subplot_width_inches + 2.*margin_inches
+    fig_height_inches = subplot_height_inches + 2.*margin_inches
+    fig_aspect = fig_height_inches/fig_width_inches
+
+    margin_x = margin_inches/fig_width_inches
+    margin_y = margin_inches/fig_height_inches
+    subplot_width = subplot_width_inches/fig_width_inches
+    subplot_height = subplot_height_inches/fig_height_inches
+
+    fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
+    ax = fig.add_axes((margin_x, margin_y, subplot_width, subplot_height))
+    return fig, ax
+
 def plot_azav(field, rr, cost, sint, fig=None, ax=None, cmap='RdYlBu_r',\
     units='', minmax=None, posdef=False, logscale=False,\
     plotcontours=True, plotfield=True, nlevs=10, levels=None,\
@@ -304,6 +323,14 @@ def plot_azav_half(field, rr, cost, sint, sym='even',\
         # Normalize field by divisor
         field /= divisor
         minmax = minmax[0]/divisor, minmax[1]/divisor
+    
+    # Create a default set of figure axes if they weren't already
+    # specified by user
+    if fig is None or ax is None:
+        fig, ax = default_axes_1by1()
+        showplot = True # probably in this case the user just
+        # ran plot_azav from the command line wanting to view
+        # view the plot
 
     # Get the position of the axes on the figure
     pos = ax.get_position().get_points()
@@ -429,6 +456,8 @@ def plot_azav_half(field, rr, cost, sint, sym='even',\
         plt.sca(ax)
         plt.contour(xx, zz, field, colors=contour_color, levels=levels,\
                 linewidths=contour_lw)
+    if showplot:
+        plt.show()
 
 def streamfunction(vr,vt,r,cost,order=0):
     """------------------------------------------------------------
