@@ -12,7 +12,7 @@ from matplotlib import colors
 plt.rcParams['mathtext.fontset'] = 'dejavuserif'
 csfont = {'fontname':'DejaVu Serif'}
 plt.rcParams['contour.negative_linestyle'] = 'solid'
-from common import rms, get_satvals, get_exp, rsun
+from common import rms, get_satvals, get_exp, rsun, trim_field
 from binormalized_cbar import MidpointNormalize
 
 def fmt(x, pos):
@@ -88,19 +88,9 @@ def plot_azav(field, rr, cost, sint, fig=None, ax=None, cmap='RdYlBu_r',\
 	
     # Get default bounds if not specified
     if minmax is None:
-        # Compute the indices beyond +/- 75 degrees 
-        # latitude, which usually shouldn't be included in any sort 
-        # bounds estimates.
-        lats = (np.pi/2. - np.arccos(cost))*180./np.pi
-        lat_cutoff = 75.
-        it_cutm = np.argmin(np.abs(lats + lat_cutoff))
-        it_cutp = np.argmin(np.abs(lats - lat_cutoff))
-
-        # Also stay away from within 5 percent of top and bottom!
-        ir_cuttop = np.argmin(np.abs(rr_depth - 0.05))
-        ir_cutbot = np.argmin(np.abs(rr_depth - 0.95))
-        field_cut = field[it_cutm:it_cutp+1, ir_cuttop:ir_cutbot + 1]
-        minmax = get_satvals(field_cut, posdef, logscale)
+        # Cut away the data near the domain boundaries
+        trimmed_field = trim_field(field, rr, cost)
+        minmax = get_satvals(trimmed_field, posdef, logscale)
 
     # Need these if logscale is True; made need them for other stuff later
     minexp, maxexp = get_exp(minmax[0]), get_exp(minmax[1])

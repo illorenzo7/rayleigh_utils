@@ -257,3 +257,23 @@ def my_bool(x):
         return True
     elif x == 'f' or x == 'false' or x == '0':
         return False
+
+def trim_field(field, rr, cost):
+    # "Trim" a field--i.e., return the field with the values within
+    # 5% of the boundary by radius, and within 15 degrees of the poles, 
+    # all removed.
+
+    # Get rid of the data close to poles
+    lats = (np.pi/2. - np.arccos(cost))*180./np.pi
+    lat_cutoff = 75.
+    it_cutm = np.argmin(np.abs(lats + lat_cutoff))
+    it_cutp = np.argmin(np.abs(lats - lat_cutoff))
+
+    # Also stay away from within 5 percent of top and bottom!
+    ri, ro = np.min(rr), np.max(rr)
+    shell_depth = ro - ri
+    rr_depth = (ro - rr)/shell_depth
+    ir_cuttop = np.argmin(np.abs(rr_depth - 0.05))
+    ir_cutbot = np.argmin(np.abs(rr_depth - 0.95))
+    field_cut = field[it_cutm:it_cutp+1, ir_cuttop:ir_cutbot + 1]
+    return field_cut

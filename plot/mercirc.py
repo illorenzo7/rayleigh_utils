@@ -15,12 +15,12 @@ mpl.use('TkAgg')
 import matplotlib.pyplot as plt
 plt.rcParams['mathtext.fontset'] = 'dejavuserif'
 csfont = {'fontname':'DejaVu Serif'}
-from binormalized_cbar import MidpointNormalize
 import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['co'])
 from azav_util import plot_azav, streamfunction
-from common import get_widest_range_file, strip_dirname, get_dict
+from common import get_widest_range_file, strip_dirname, get_dict,\
+        trim_field
 from rayleigh_diagnostics import ReferenceState
 
 # Get directory name and stripped_dirname for plotting purposes
@@ -39,9 +39,7 @@ if (not os.path.isdir(plotdir)):
     os.makedirs(plotdir)
 
 # Set defaults
-my_boundstype = 'manual'
-user_specified_minmax = False 
-my_nlevs = 20
+minmax = None
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
 
 # Read in CLAs (if any) to change default variable ranges and other options
@@ -50,8 +48,7 @@ nargs = len(args)
 for i in range(nargs):
     arg = args[i]
     if (arg == '-minmax'):
-        my_min, my_max = float(args[i+1]), float(args[i+2])
-        user_specified_minmax = True
+        minmax = float(args[i+1]), float(args[i+2])
     elif (arg == '-nlevs'):
         my_nlevs = int(args[i+1])
     elif (arg == '-usefile'):
@@ -77,19 +74,16 @@ vr_av, vt_av, vp_av = vals[:, :, lut[1]], vals[:, :, lut[2]],\
 rhovm = rho*np.sqrt(vr_av**2 + vt_av**2)
 
 # Compute the streamfunction
-psi = streamfunction(vr_av, vt_av, rr, cost)
+psi = streamfunction(rho*vr_av, rho*vt_av, rr, cost)
 
 # Make CCW negative and CW positive
 rhovm *= np.sign(psi)
 
-# Maximum/minimum mass flux over the meridional plane (excluding polar regions)
-it15, it75 = np.argmin(np.abs(tt - 11*np.pi/12)),\
-    np.argmin(np.abs(tt - np.pi/12)) # ignore problematic poles 
-global_min, global_max = np.min(rhovm[it15:it75, :]), np.max(rhovm[it15:it75, :])
-maxabs = np.max((np.abs(global_min), np.abs(global_max)))
-
-if (not user_specified_minmax):
-    my_min, my_max = -maxabs, maxabs
+if minmax is None:
+    trimmed_rhovm = trim_field(rhovm, rr, cost)
+    std = np.std(trimmed_rhovm)
+    nstd = 3.
+    minmax = -nstd*std, nstd*std
 
 # Create plot
 subplot_width_inches = 2.5
@@ -113,15 +107,15 @@ ax = fig.add_axes((margin_x, margin_y, subplot_width, subplot_height))
 # Plot mass flux
 plot_azav (rhovm, rr, cost, sint, fig=fig, ax=ax,\
     units = r'$\rm{g}\ \rm{cm}^{-2}\ \rm{s}^{-1}$', plotcontours=False,\
-    norm=MidpointNormalize(0), minmax = (my_min, my_max))
+    minmax=minmax)
 
 # Plot streamfunction contours
 lilbit = 0.01
 maxabs = np.max(np.abs(psi))
+levels = (-maxabs/2., -maxabs/4., -lilbit*maxabs, 0., lilbit*maxabs,\
+        maxabs/4., maxabs/2.)
 plot_azav (psi, rr, cost, sint, fig=fig, ax=ax, plotfield=False,\
-    norm=MidpointNormalize(0.), levels=(-maxabs/2., -maxabs/4.,\
-    -lilbit*maxabs, 0., lilbit*maxabs, maxabs/4., maxabs/2.),\
-    minmax=(my_min, my_max))
+    levels=levels)
 
 # Make title
 fsize = 12
