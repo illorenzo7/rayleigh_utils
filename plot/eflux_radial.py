@@ -33,10 +33,10 @@ if (not os.path.isdir(plotdir)):
 Shell_Avgs_file = get_widest_range_file(datadir, 'Shell_Avgs')
 
 # Get command-line arguments to adjust the interval of averaging files
-user_specified_minmax = False
-user_specified_rnorm = False
-old = False # specify if we want the old flux expressions for the enthalpy flux (stored in 
-    # custom diagnostics) and not use the potential flux
+minmax = None
+rnorm = None
+rvals = None
+
 args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
@@ -45,13 +45,14 @@ for i in range(nargs):
         Shell_Avgs_file = args[i+1]
         Shell_Avgs_file = Shell_Avgs_file.split('/')[-1]
     elif (arg == '-minmax'):
-        user_specified_minmax = True
-        my_min, my_max = float(args[i+1]), float(args[i+2])
+        minmax = float(args[i+1]), float(args[i+2])
     elif (arg == '-rnorm'):
-        user_specified_rnorm = True
-        user_supplied_rnorm = float(args[i+1])
-    elif (arg == '-old'):
-        old = True
+        rnorm = float(args[i+1])
+    elif arg == '-rvals':
+        rvals_str = args[i+1].split()
+        rvals = []
+        for rval_str in rvals_str:
+            rvals.append(float(rval_str))
 
 #Create the plot
 lw = 1. # regular lines
@@ -76,11 +77,7 @@ qindex_hflux = lut[1433]
 qindex_cflux = lut[1470]
 qindex_kflux = lut[1923]
 qindex_vflux = lut[1935]
-
-if old:
-    qindex_eflux = lut[2206]
-else:
-    qindex_eflux = lut[1455]
+qindex_eflux = lut[1455]
 
 hflux = vals[:, qindex_hflux]
 eflux = vals[:, qindex_eflux]
@@ -88,16 +85,6 @@ cflux = vals[:, qindex_cflux]
 kflux = vals[:, qindex_kflux]
 vflux = -vals[:, qindex_vflux]
 tflux = hflux + eflux + cflux + kflux + vflux # compute the total flux
-
-potflux = False
-if not old:
-    try:
-        qindex_pflux = lut[1479]
-        pflux = vals[:, qindex_pflux]
-        tflux += pflux
-        potflux = True
-    except:
-        pass
 
 if magnetism:
     qindex_mflux = lut[2001] # this is actually (-4*pi) TIMES 
@@ -116,17 +103,15 @@ tflux_int = tflux*fpr
 
 if magnetism:
     mflux_int = mflux*fpr
-if potflux:
-    pflux_int = pflux*fpr
 
 # Create the plot; start with plotting all the energy fluxes
 
 # User can specify what to normalize the radius by
 # By default, normalize by the solar radius
-if not user_specified_rnorm:
+if rnorm is None:
     rr_n = rr/rsun
 else:
-    rr_n = rr/user_supplied_rnorm                                           
+    rr_n = rr/rnorm                                           
 
 plt.plot(rr_n, hflux_int/lsun, label=r'$\rm{F}_{heat}$', linewidth=lw)
 plt.plot(rr_n, eflux_int/lsun, 'm', label = r'$\rm{F}_{enth}$',\
@@ -139,9 +124,6 @@ plt.plot(rr_n, tflux_int/lsun, label= r'$\rm{F}_{total}$',\
 if magnetism:
     plt.plot(rr_n, mflux_int/lsun, label=r'$\rm{F}_{Poynting}$',\
         linewidth=lw)
-if potflux:
-    plt.plot(rr_n, pflux_int/lsun, label=r'$\rm{F}_{g}$', linewidth=lw,\
-            linestyle='--')
 
 # Get the y-axis in scientific notation
 plt.ticklabel_format(useMathText=True, axis='y', scilimits=(0,0))
@@ -157,17 +139,28 @@ plt.xlim(xmin, xmax)
 
 # Set the y-limits (the following values seem to "work well" for my models
 # so far...perhaps adjust this in the future. 
-ymin, ymax = -0.7, 1.3
-if user_specified_minmax:
-    ymin, ymax = my_min, my_max
-delta_y = ymax - ymin
-plt.ylim(ymin, ymax)
+
+if minmax is None:
+    minmax = -0.7, 1.3
+plt.ylim(minmax[0], minmax[1])
 
 # Label the axes
-if not user_specified_rnorm:
+if rnorm is None:
     plt.xlabel(r'$r/R_\odot$',fontsize=12, **csfont)
 else:
-    plt.xlabel(r'r/(%.1e cm)' %user_supplied_rnorm, fontsize=12, **csfont)
+    plt.xlabel(r'r/(%.1e cm)' %rnorm, fontsize=12, **csfont)
+
+# Mark radii if desired
+if not rvals is None:
+    yvals = np.linspace(minmax[0], minmax[1], 100)
+    for rval in rvals:
+        if rnorm is None:
+            rval_n = rval/rsun
+        else:
+            rval_n = rval/rnorm
+#        plt.ylim(ymin, ymax)
+        plt.plot(rval_n + np.zeros(100), yvals, 'k--')
+
 plt.ylabel(r'$4\pi r^2\ \rm{\times \ (energy \ flux)}\ /\ L_\odot$',\
         fontsize=12, **csfont)
 
