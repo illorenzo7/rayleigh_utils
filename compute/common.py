@@ -7,18 +7,24 @@ import os, pickle
 
 # Solar radius, luminosity, and mass (as we have been assuming in Rayleigh)
 rsun = 6.957e10  # value taken from IAU recommendation: arxiv, 1510.07674
-                 # should probably figure out how Nick chose 5.000 and 6.586209
-                 # as the base of the CZ and location of 3rd density scale height
-                 # (Comparing polytrope to model S?)
-lsun = 3.846e33  # Used in Rayleigh: disagrees with IAU recommended value of 
-                 # 3.828e33
+                 # should probably figure out how Nick chose 
+                 # 5.000 and 6.586209 as the base of the CZ and location 
+                 # of 3rd density scale height (Comparing polytrope to 
+                 # model S?)
+G = 6.67e-8      # Rounded to two decimals in Rayleigh...
+lsun = 3.846e33  # Used in Rayleigh: disagrees with IAU recommended value 
+                 # of 3.828e33
 msun = 1.98891e33 # FROM WIKIPEDIA: 1.98847 \pm 0.00007
-                  # From IAU recommendation: 1.9885, with G = 6.67408 \pm 0.00031 (10^-8 c.g.s.)
-                # NOTE: ALL THESE QUANTITIES CHANGE IN TIME
+                  # From IAU recommendation: 1.9885, with 
+                  # G = 6.67408 \pm 0.00031 (10^-8 c.g.s.)
+                # NOTE: ALL THESE QUANTITIES CHANGE IN TIME (except G, if
+                # the cosmologists are right...)
 # Read in all files from the Rayleigh data directory and sort them by name (number)
 
-rho_i = 0.18053428
-ri = 5.0e10
+# I am now calling r_m the base of the convection zone, 
+# while r_i (the inner shell radius) can vary
+rhom = 0.18053428
+rm = 5.0e10
 ro = 6.5860209e10 # Radii consistent with the bottom 3 density scale 
         # heights in the Sun rho_i above corresponds to the density
         # at the base of the convection zone
@@ -39,6 +45,8 @@ def get_file_lists(radatadir):
 def get_desired_range(int_file_list, args):
     nargs = len(args)
     nfiles = len(int_file_list)
+    # By default, the range will always be the last 100 files:
+    index_first, index_last = nfiles - 100, nfiles - 1
     for i in range(nargs):
         arg = args[i]
         if arg == '-range':   
@@ -70,12 +78,63 @@ def get_desired_range(int_file_list, args):
                     int_file_list))
             index_last = np.argmin(np.abs(desired_last_iter -\
                     int_file_list))
+        elif arg == '-centerrange':
+            desired_central_iter = args[i+1]
+            if desired_central_iter == 'first':
+                desired_central_iter = int_file_list[0]
+            elif desired_central_iter == 'last':
+                desired_central_iter = int_file_list[-1]
+            else:
+                desired_central_iter = int(desired_central_iter)
+            central_index = np.argmin(np.abs(desired_central_iter -\
+                    int_file_list))
+            ndatafiles = int(args[i+2])
+            if ndatafiles % 2 == 0: #ndatafiles is even
+                index_first = central_index - ndatafiles//2 + 1
+                index_last = central_index + ndatafiles//2
+            else:  #ndatafiles is odd
+                index_first = central_index - ndatafiles//2
+                index_last = central_index + ndatafiles//2
+        elif arg == '-leftrange':
+            desired_left_iter = args[i+1]
+            if desired_left_iter == 'first':
+                desired_left_iter = int_file_list[0]
+            elif desired_left_iter == 'last':
+                # Only viable option here is if ndatafiles is 1
+                desired_left_iter = int_file_list[-1]
+            else:
+                desired_left_iter = int(desired_left_iter)
+            left_index = np.argmin(np.abs(desired_left_iter -\
+                    int_file_list))
+            ndatafiles = int(args[i+2])
+            index_first = left_index
+            index_last = left_index + ndatafiles - 1
+        elif arg == '-rightrange':
+            desired_right_iter = args[i+1]
+            if desired_right_iter == 'first':
+                desired_right_iter = int_file_list[0]
+            elif desired_right_iter == 'last':
+                # Only viable option here is if ndatafiles is 1
+                desired_right_iter = int_file_list[-1]
+            else:
+                desired_right_iter = int(desired_right_iter)
+            right_index = np.argmin(np.abs(desired_right_iter -\
+                    int_file_list))
+            ndatafiles = int(args[i+2])
+            index_first = right_index - ndatafiles + 1
+            index_last = right_index
         elif arg == '-n': 
             # allow the user to specify a desired number of iterations
             # to average over, ending with the last data file
             index_last = nfiles - 1
             number_to_average = int(args[i+1])
             index_first = nfiles - number_to_average
+        elif arg == '-f': 
+            # allow the user to specify a desired number of iterations
+            # to average over, starting with the first data file
+            index_first = 0
+            number_to_average = int(args[i+1])
+            index_last = number_to_average - 1
         elif arg == '-centerrange':
             desired_central_iter = args[i+1]
             if desired_central_iter == 'first':
@@ -107,7 +166,6 @@ def get_desired_range(int_file_list, args):
             index_first = np.argmin(np.abs(desired_iter - int_file_list))
             index_last = index_first
     # Check to see if either of the indices fall "out of bounds"
-    # (I think this could only happen possibly with centerrange?)
     # and if they do replace them with the first or last index
     if index_first < 0: 
         index_first = 0
