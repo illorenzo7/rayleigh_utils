@@ -263,7 +263,7 @@ def interpx(x1, y1, x2, y2, y):
 
 def get_dict(fname):
     if fname[-3:] == 'npy':
-        di = np.load(fname, encoding='latin1').item()
+        di = np.load(fname, encoding='latin1', allow_pickle=True).item()
     elif fname[-3:] == 'pkl':
         f = open(fname, 'rb')
         di = pickle.load(f)

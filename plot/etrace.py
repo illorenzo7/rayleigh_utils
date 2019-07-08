@@ -7,7 +7,7 @@ import pickle
 import numpy as np
 import sys, os
 from subprocess import call
-from common import get_file_lists, get_widest_range_file, strip_dirname
+from common import get_file_lists, get_widest_range_file, strip_dirname, get_dict
 from get_parameter import get_parameter
 
 # Get the run directory on which to perform the analysis
@@ -64,13 +64,7 @@ else:
     tag = '_xtime'
 
 # Read in the KE data (dictionary form)
-print ('Reading in KE components data from ' + datadir + trace_G_Avgs_file + ' ...')
-try:
-    di = np.load(datadir + trace_G_Avgs_file, encoding='latin1').item()
-except:
-    f = open(datadir + trace_G_Avgs_file, 'rb')
-    di = pickle.load(f)
-    f.close()
+di = get_dict(datadir + trace_G_Avgs_file)
 
 vals = di['vals']
 lut = di['lut']
