@@ -171,7 +171,7 @@ for iplot in range(3):
     ax = fig.add_axes((ax_left, ax_bottom, subplot_width, subplot_height))
     plot_azav (field_components[iplot], rr, cost, sint, fig=fig, ax=ax,\
            units=units, minmax = (mins[iplot], maxes[iplot]),\
-           norm=MidpointNormalize(0), plotcontours=plotcontours)
+           plotcontours=plotcontours)
     ax.set_title(titles[iplot], verticalalignment='bottom', **csfont)
 
 # Put some metadata in upper left
