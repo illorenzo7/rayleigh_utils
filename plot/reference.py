@@ -19,6 +19,16 @@ from rayleigh_diagnostics import ReferenceState
 dirname = sys.argv[1]
 dirname_stripped = strip_dirname(dirname)
 
+# Get other arguments
+xminmax = None
+
+args = sys.argv[2:]
+nargs = len(args)
+for i in range(nargs):
+    arg = args[i]
+    if arg == '-xminmax':
+        xminmax = float(args[i+1]), float(args[i+2])
+
 # Directory with data and plots, make the plotting directory if it doesn't
 # already exist    
 datadir = dirname + '/data/'
@@ -39,7 +49,7 @@ dsdr = ref.dsdr
 d2lnrho = ref.d2lnrho
 
 fig, axs = plotref(r, T, rho, p, dlnT, dlnrho, dlnp, s, dsdr,\
-    d2lnrho, color='k')
+    d2lnrho, color='k', xminmax=xminmax)
 
 plt.tight_layout() 
     

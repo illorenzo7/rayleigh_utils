@@ -13,7 +13,22 @@ csfont = {'fontname':'DejaVu Serif'}
 import basic_constants as bc
 
 def plotref(r, T, rho, p, dlnT, dlnrho, dlnp, s, dsdr, d2lnrho,\
-            label=None, color=None, fig=None, axs=None, ylog=True): 
+            label=None, color=None, fig=None, axs=None, ylog=True,\
+            xminmax=None): 
+    if not xminmax is None:
+        ir_min = np.argmin(np.abs(r - xminmax[0]))
+        ir_max = np.argmin(np.abs(r - xminmax[1]))
+        r = np.copy(r[ir_max:ir_min + 1])
+        T = np.copy(T[ir_max:ir_min + 1])
+        rho = np.copy(rho[ir_max:ir_min + 1])
+        p = np.copy(p[ir_max:ir_min + 1])
+        dlnT = np.copy(dlnT[ir_max:ir_min + 1])
+        dlnrho = np.copy(dlnrho[ir_max:ir_min + 1])
+        dlnp = np.copy(dlnp[ir_max:ir_min + 1])
+        s = np.copy(s[ir_max:ir_min + 1])
+        dsdr = np.copy(dsdr[ir_max:ir_min + 1])
+        d2lnrho = np.copy(d2lnrho[ir_max:ir_min + 1])
+
     figwasNone = False
     if fig is None:     
         figwasNone = True
