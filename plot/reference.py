@@ -6,7 +6,7 @@ mpl.use('TkAgg')
 import matplotlib.pyplot as plt
 plt.rcParams['mathtext.fontset'] = 'dejavuserif'
 csfont = {'fontname':'DejaVu Serif'}
-#import numpy as np
+
 import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['co'])
