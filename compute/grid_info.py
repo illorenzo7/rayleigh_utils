@@ -10,46 +10,54 @@ import numpy as np
 import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['co'])
-#dirname = sys.argv[1]
+from compute_grid_info import compute_grid_info
+from get_parameter import get_parameter
+dirname = sys.argv[1]
 
-def compute_grid_info(domain_bounds, ncheby, nt, use_extrema=False):
-    if not isinstance(ncheby, tuple): # this is probably because
-        # ncheby was specified as nr, not (nr,)
-        ncheby = (ncheby,)
-    ndomains = len(ncheby)
-    nr = np.sum(ncheby)
+fname = 'grid_info'
+args = sys.argv[2:]
+nargs = len(args)
+for i in range(nargs):
+    arg = args[i]
+    if arg == '-fname':
+        fname = args[i+1]
 
-    r = np.zeros(nr)
-    rw = np.zeros(nr)
-    tt = np.zeros(nt)
-    tw = np.zeros(nt)
+# Get relevant info from main_input file
+nt = get_parameter(dirname, 'n_theta')
+use_extrema = get_parameter(dirname, 'use_extrema')
 
-    # Compute the radial collocation points/weights
-    ir_min, ir_max = 0, ncheby[0] - 1
-    for idomain in range(ndomains):
-        rmin, rmax = domain_bounds[idomain], domain_bounds[idomain+1]
-        nr_loc = ncheby[idomain]
-        x = np.zeros(nr_loc)
-        r_loc = np.zeros(nr_loc)
-        for ix in range(nr_loc):
-            if use_extrema:
-                x[ix] = np.cos(ix*np.pi/(nr_loc - 1))
-            else:
-                x[ix] = np.cos((ix + 0.5)*np.pi/(nr_loc))
-        # Transform x --> r via an affine transformation
-        xmin, xmax = np.min(x), np.max(x)
-        r_loc = rmin + (x - xmin)*(rmax - rmin)/(xmax - xmin)
-        int_scale = 3.*np.pi/(rmax**3. - rmin**3.)*nr_loc*\
-                (rmax - rmin)/(xmax - xmin)
-        rw_loc = int_scale * r_loc**2. * np.sqrt(1. - x**2.)
-        rw_loc[0] *= 0.5 # These multiplications are only justified for
-        rw_loc[-1] *= 0.5 # Guass-Lobatto (use_extrema = True)
+try:
+    rmin, rmax = get_parameter(dirname, 'rmin'),\
+            get_parameter(dirname, 'rmax')
+    nr = get_parameter(dirname, 'n_r')
+    domain_bounds = (rmin, rmax)
+    ncheby = (nr,)
+except:
+    domain_bounds = tuple(get_parameter(dirname, 'domain_bounds'))
+    ncheby = tuple(get_parameter(dirname, 'ncheby'))
 
-        r[ir_min:ir_max + 1] = r_loc
-        rw[ir_min:ir_max + 1] = rw_loc
+nr, nt, nphi, r, rw, tt, cost, sint, tw, phi, dphi =\
+        compute_grid_info(domain_bounds, ncheby, nt,\
+        use_extrema=use_extrema)
 
-        if idomain < ndomains - 1:
-            ir_min += ncheby[idomain]
-            ir_max += ncheby[idomain + 1]
+# Write the data
+f = open(dirname + '/' + fname, 'wb')
+sigpi = np.array(314, dtype=np.int32)
+nr = np.array(nr, dtype=np.int32)
+nt = np.array(nt, dtype=np.int32)
+nphi = np.array(nphi, dtype=np.int32)
+dphi = np.array(dphi, dtype=np.float64)
 
-    return (r, rw)
+f.write(sigpi.tobytes())
+f.write(nr.tobytes())
+f.write(nt.tobytes())
+f.write(nphi.tobytes())
+f.write(r.tobytes())
+f.write(rw.tobytes())
+f.write(tt.tobytes())
+f.write(cost.tobytes())
+f.write(sint.tobytes())
+f.write(tw.tobytes())
+f.write(phi.tobytes())
+f.write(dphi.tobytes())
+f.close()

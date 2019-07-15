@@ -14,7 +14,7 @@ def get_parameter(dirname, parameter):
 #        print('Note: ' + parameter + ' was not')
 #        print('specified in run: ' + dirname + '. ')
 #        print('exiting ...')
-        if parameter == 'magnetism':
+        if parameter == 'magnetism' or parameter == 'use_extrema':
             return False # if magnetism wasn't specified, it is "False"
         else:
             raise Exception('The parameter ' + parameter + ' was not\n' +\
