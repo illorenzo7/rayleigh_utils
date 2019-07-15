@@ -9,7 +9,7 @@
 import numpy as np
 import sys
 from polytrope import compute_polytrope
-from common import lsun, rho_i, ri, ro
+from common import lsun, rhom, rm, ro
 from read_reference import read_reference
 
 # Set default to compute necessary dsdr to carry out a solar luminosity,
@@ -21,7 +21,7 @@ ktop = 3.0e12
 poly_n = 1.5
 nrho = 3.0
 polytropic_reference = True
-custom_reference = False
+file_reference = False
 
 # Now change the defaults via command-line arguments
 args = sys.argv[1:]
@@ -36,12 +36,12 @@ for i in range(nargs):
         poly_n = float(args[i+1])
     elif arg == '-nrho':
         nrho = float(args[i+1])
-    elif arg == '-custom':
+    elif arg == '-ref':
         polytropic_reference = False
-        custom_reference = True
-        custom_dir = args[i+1]
-    elif arg == '-rhoi':
-        rho_i = float(args[i+1])
+        file_reference = True
+        ref_file = args[i+1]
+    elif arg == '-rhom':
+        rhom = float(args[i+1])
     elif arg == '-ri':
         ri = float(args[i+1])
     elif arg == '-ro':
@@ -51,22 +51,20 @@ nr = 128 # this is arbitrary -- the top thermodynamic values will be
          # independent of the number of interior grid points
 
 if polytropic_reference:
-    di = compute_polytrope(ri, ro, nrho, nr, poly_n, rho_i)
+    di = compute_polytrope(rm, ro, nrho, nr, poly_n, rhom)
     rho = di['density']
     T = di['temperature']
-elif custom_reference:
-    ref_file = custom_dir + '/custom_reference_binary'
+elif file_reference:
     nr, rr, rho, dlnrho, d2lnrho, p, T, dlnT, dsdr, s, g =\
             read_reference(ref_file)
-    ri = np.min(rr)
     ro = np.max(rr)
 
 flux_top = lum/(4*np.pi*ro**2)
 desired_dsdr = -flux_top/rho[0]/T[0]/ktop
 
-print('For lum=%1.3e, ri=%1.7e, ro=%1.7e, ktop=%1.3e' %(lum, ri, ro, ktop))
+print('For lum=%1.3e, ro=%1.7e, ktop=%1.3e' %(lum, ro, ktop))
 if polytropic_reference:
     print('and polytropic reference: nrho=%1.1f, poly_n=%1.1f, rho_i=%1.7e' %(nrho, poly_n, rho_i))
-elif custom_reference:
+elif file_reference:
     print('and custom reference ' + ref_file)
 print ('Set outer_dsdr (dtdr_top) to %1.8e' %desired_dsdr)
