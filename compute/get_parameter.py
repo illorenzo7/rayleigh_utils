@@ -14,9 +14,12 @@ def get_parameter(dirname, parameter):
 #        print('Note: ' + parameter + ' was not')
 #        print('specified in run: ' + dirname + '. ')
 #        print('exiting ...')
-        raise Exception('The parameter ' + parameter + ' was not\n' +\
-                        'specified in run: ' + dirname + '. \n' +\
-                        'exiting ....\n')
+        if parameter == 'magnetism':
+            return False # if magnetism wasn't specified, it is "False"
+        else:
+            raise Exception('The parameter ' + parameter + ' was not\n' +\
+                            'specified in run: ' + dirname + '. \n' +\
+                            'exiting ....\n')
     
     # Make line lowercase
     line = line.lower()
