@@ -351,7 +351,7 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
 
 def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
         clon=0., posdef=False, logscale=False, varname='vr',\
-        lw_scaling=1.): 
+        lw_scaling=1., plot_cbar=True): 
     # Shouldn't have to do this but Python is stupid with arrays ...
     field = np.copy(field_orig)    
     
@@ -469,31 +469,32 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
     ax_delta_y = ax_ymax - ax_ymin
     ax_center_x = ax_xmin + 0.5*ax_delta_x
 #    ax_center_y = ax_ymin + 0.5*ax_delta_y   
-    
-    cbar_aspect = 1./20.
-    fig_aspect = ax_delta_x/ax_delta_y*0.5 
-    # assumes subplot aspect ratio is 0.5
-    cbar_width = 0.25*ax_delta_x # make cbar one-quarter
-                        # as long as plot is wide
-    cbar_height = cbar_width*cbar_aspect/fig_aspect
-    cbar_bottom = ax_ymin - 2.5*cbar_height
-    cbar_left = ax_xmin + 0.5*ax_delta_x - 0.5*cbar_width
-    
-    cax = fig.add_axes((cbar_left, cbar_bottom, cbar_width, cbar_height))
-    
-    cbar = plt.colorbar(im, cax=cax, orientation='horizontal')
-    # make a "title" (label "m/s" to the right of the colorbar)
-    if not posdef:
-        cbar_units = ' ' + (r'$\times10^{%i}$' %maxabs_exp) +\
-                ' ' + texunits[varname]
-        cbar.set_ticks([minmax[0], 0, minmax[1]])
-        cbar.set_ticklabels(['%1.1f' %minmax[0], '0', '%1.1f' %minmax[1]])
-    else:
-        locator = ticker.LogLocator(base=10)
-        cbar.set_ticks(locator)
-        cbar_units = ' ' + texunits[varname]
-    fig.text(cbar_left + cbar_width, cbar_bottom + 0.5*cbar_height,\
-             cbar_units, verticalalignment='center', **csfont) 
+   
+    if plot_cbar:
+        cbar_aspect = 1./20.
+        fig_aspect = ax_delta_x/ax_delta_y*0.5 
+        # assumes subplot aspect ratio is 0.5
+        cbar_width = 0.25*ax_delta_x # make cbar one-quarter
+                            # as long as plot is wide
+        cbar_height = cbar_width*cbar_aspect/fig_aspect
+        cbar_bottom = ax_ymin - 2.5*cbar_height
+        cbar_left = ax_xmin + 0.5*ax_delta_x - 0.5*cbar_width
+        
+        cax = fig.add_axes((cbar_left, cbar_bottom, cbar_width, cbar_height))
+        
+        cbar = plt.colorbar(im, cax=cax, orientation='horizontal')
+        # make a "title" (label "m/s" to the right of the colorbar)
+        if not posdef:
+            cbar_units = ' ' + (r'$\times10^{%i}$' %maxabs_exp) +\
+                    ' ' + texunits[varname]
+            cbar.set_ticks([minmax[0], 0, minmax[1]])
+            cbar.set_ticklabels(['%1.1f' %minmax[0], '0', '%1.1f' %minmax[1]])
+        else:
+            locator = ticker.LogLocator(base=10)
+            cbar.set_ticks(locator)
+            cbar_units = ' ' + texunits[varname]
+        fig.text(cbar_left + cbar_width, cbar_bottom + 0.5*cbar_height,\
+                 cbar_units, verticalalignment='center', **csfont) 
     
     # Plot outer boundary
     psivals = np.linspace(0, 2*np.pi, 100)

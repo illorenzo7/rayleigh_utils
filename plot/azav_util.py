@@ -62,7 +62,7 @@ def plot_azav(field, rr, cost, sint, fig=None, ax=None, cmap='RdYlBu_r',\
     units='', minmax=None, posdef=False, logscale=False,\
     plotcontours=True, plotfield=True, nlevs=10, levels=None,\
 	plotlatlines=False, rvals=None, rvals_norm=None, fsize=8,\
-    showplot=False):
+    showplot=False, plot_cbar=True):
 
     ''' Takes (or creates) set of axes with physical aspect ratio 1x2
     and adds a plot of [field] in the meridional plane to the axes,
@@ -120,19 +120,20 @@ def plot_azav(field, rr, cost, sint, fig=None, ax=None, cmap='RdYlBu_r',\
     ax_width = ax_right - ax_left
     ax_height = ax_top - ax_bottom
     ax_aspect = ax_height/ax_width
-   
-    # Set the colorbar ax to be in the "cavity" of the meridional plane
-    # The colorbar height is set by making sure it "fits" in the cavity
-    chi = np.min(rr)/np.max(rr)
-    cavity_height = ax_height*chi
-    cbax_center_x = ax_left + 0.3*ax_width
-    cbax_center_y = ax_bottom + ax_height/2.
-    cbax_aspect = 10.
-    cbax_height = 0.5*cavity_height
-    cbax_width = cbax_height/cbax_aspect/ax_aspect
-    
-    cbax_left = cbax_center_x - cbax_width/2.
-    cbax_bottom = cbax_center_y - cbax_height/2.
+  
+    if plot_cbar:
+        # Set the colorbar ax to be in the "cavity" of the meridional plane
+        # The colorbar height is set by making sure it "fits" in the cavity
+        chi = np.min(rr)/np.max(rr)
+        cavity_height = ax_height*chi
+        cbax_center_x = ax_left + 0.3*ax_width
+        cbax_center_y = ax_bottom + ax_height/2.
+        cbax_aspect = 10.
+        cbax_height = 0.5*cavity_height
+        cbax_width = cbax_height/cbax_aspect/ax_aspect
+        
+        cbax_left = cbax_center_x - cbax_width/2.
+        cbax_bottom = cbax_center_y - cbax_height/2.
     
     # Calculate the grid on which to plot
     rr2d = rr.reshape((1, nr))
@@ -162,31 +163,32 @@ def plot_azav(field, rr, cost, sint, fig=None, ax=None, cmap='RdYlBu_r',\
                 cmap = 'RdYlBu_r'
             plt.pcolormesh(xx, zz, field, vmin=minmax[0], vmax=minmax[1],\
                     cmap=cmap)
-        cbaxes = fig.add_axes([cbax_left, cbax_bottom,\
-                       cbax_width, cbax_height])
-        cbar = plt.colorbar(cax=cbaxes)
+        if plot_cbar:
+            cbaxes = fig.add_axes([cbax_left, cbax_bottom,\
+                           cbax_width, cbax_height])
+            cbar = plt.colorbar(cax=cbaxes)
 
-        cbaxes.tick_params(labelsize=fsize)
-        cbar.ax.tick_params(labelsize=fsize)   #font size for the ticks
+            cbaxes.tick_params(labelsize=fsize)
+            cbar.ax.tick_params(labelsize=fsize)   #font size for the ticks
 
-        if not logscale:
-            if posdef:
-                mid = (minmax[0] + minmax[1])/2.
-                ticks = np.array([minmax[0], mid, minmax[1]])
+            if not logscale:
+                if posdef:
+                    mid = (minmax[0] + minmax[1])/2.
+                    ticks = np.array([minmax[0], mid, minmax[1]])
+                else:
+                    ticks = np.array([minmax[0], 0., minmax[1]])
+                ticklabels = []
+                for i in range(len(ticks)):
+                    ticklabels.append(str(round(ticks[i], 1)))
+                ticks = np.array(ticks)
+                cbar.set_ticks(ticks)
+                cbar.set_ticklabels(ticklabels)
+                cbar_label = (r'$\times10^{%i}\ $' %exp) + units
             else:
-                ticks = np.array([minmax[0], 0., minmax[1]])
-            ticklabels = []
-            for i in range(len(ticks)):
-                ticklabels.append(str(round(ticks[i], 1)))
-            ticks = np.array(ticks)
-            cbar.set_ticks(ticks)
-            cbar.set_ticklabels(ticklabels)
-            cbar_label = (r'$\times10^{%i}\ $' %exp) + units
-        else:
-            cbar_label = units
-        # Put the units and exponent to left of colorbar
-        fig.text(cbax_left - 0.3*cbax_width, cbax_center_y, cbar_label,\
-            ha='right', va='center', rotation=90, fontsize=fsize)
+                cbar_label = units
+            # Put the units and exponent to left of colorbar
+            fig.text(cbax_left - 0.3*cbax_width, cbax_center_y, cbar_label,\
+                ha='right', va='center', rotation=90, fontsize=fsize)
 
     # Plot contours in the meridional plane, if desired
     if plotcontours:

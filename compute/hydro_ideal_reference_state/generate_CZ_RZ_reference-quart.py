@@ -19,6 +19,7 @@
 # central mass (-M) default M_sun
 
 import numpy as np
+import matplotlib.pyplot as plt
 import sys, os
 from arbitrary_atmosphere import arbitrary_atmosphere
 sys.path.append(os.environ['co'])
@@ -28,17 +29,16 @@ import basic_constants as bc
 
 # Set default constants
 ri = 4.176e10  # Set RZ width about 0.5x CZ width
-rm = bc.ri
+rm = bc.rm
 ro = bc.ro
 cp = bc.cp
-rsun = bc.rsun
 
-Tm = bc.T_i
-pm = bc.p_i
-rhom = bc.rho_i
+Tm = bc.Tm
+pm = bc.pm
+rhom = bc.rhom
 gam = bc.gamma
 k = 2.0
-delta = 0.005*rsun
+delta = 0.005*ro
 nr = 5000 # make the grid super-fine by default
 
 # Get directory to save binary files for reference state and heating
@@ -76,6 +76,7 @@ for i in range(nargs):
         
 # First, compute reference state on evenly spaced grid, possibly letting
 # Rayleigh interpolate later    
+print(ri, ro, nr)
 rr = np.linspace(ri, ro, nr)
 
 # Define an entropy profile that is +1 for r < rm, 0 for r > rm, and 
@@ -101,8 +102,11 @@ for i in range(nr):
         dsdr[i] = 0.0
         d2sdr2[i] = 0.0
 
+print(dsdr)
+print(s)
 g = bc.G*bc.M/rr**2
 dgdr = -2.0*g/rr
+print(dgdr)
 
 T, rho, p, dlnT, dlnrho, dlnp, d2lnrho =\
     arbitrary_atmosphere(rr, s, dsdr, d2sdr2, g,\
@@ -112,6 +116,8 @@ thefile = dirname + '/custom_reference_binary'
 
 write_reference(thefile, rr, rho, dlnrho, d2lnrho, p, T, dlnT, dsdr, s, g)
 
+plt.plot(rr, d2lnrho)
+plt.show()
 ##f = open(thefile, "wb")
 
 #may need to specify the data type for a successful read on Rayleigh's end
