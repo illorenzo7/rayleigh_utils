@@ -15,7 +15,7 @@ import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['co'])
 from common import get_widest_range_file, strip_dirname,\
-        get_iters_from_file, get_dict, rsun, lsun
+        get_iters_from_file, get_dict, rsun
 from get_parameter import get_parameter
 # Get the run directory on which to perform the analysis
 dirname = sys.argv[1]
@@ -113,16 +113,18 @@ if rnorm is None:
 else:
     rr_n = rr/rnorm                                           
 
-plt.plot(rr_n, hflux_int/lsun, label=r'$\rm{F}_{heat}$', linewidth=lw)
-plt.plot(rr_n, eflux_int/lsun, 'm', label = r'$\rm{F}_{enth}$',\
+lstar = get_parameter(dirname, 'luminosity')
+
+plt.plot(rr_n, hflux_int/lstar, label=r'$\rm{F}_{heat}$', linewidth=lw)
+plt.plot(rr_n, eflux_int/lstar, 'm', label = r'$\rm{F}_{enth}$',\
         linewidth=lw)
-plt.plot(rr_n, cflux_int/lsun, label = r'$\rm{F}_{cond}$', linewidth=lw)
-plt.plot(rr_n, kflux_int/lsun, label = r'$\rm{F}_{KE}$', linewidth=lw)
-plt.plot(rr_n, vflux_int/lsun, label = r'$\rm{F}_{visc}$', linewidth=lw)
-plt.plot(rr_n, tflux_int/lsun, label= r'$\rm{F}_{total}$',\
+plt.plot(rr_n, cflux_int/lstar, label = r'$\rm{F}_{cond}$', linewidth=lw)
+plt.plot(rr_n, kflux_int/lstar, label = r'$\rm{F}_{KE}$', linewidth=lw)
+plt.plot(rr_n, vflux_int/lstar, label = r'$\rm{F}_{visc}$', linewidth=lw)
+plt.plot(rr_n, tflux_int/lstar, label= r'$\rm{F}_{total}$',\
         linewidth=lw, color='black')
 if magnetism:
-    plt.plot(rr_n, mflux_int/lsun, label=r'$\rm{F}_{Poynting}$',\
+    plt.plot(rr_n, mflux_int/lstar, label=r'$\rm{F}_{Poynting}$',\
         linewidth=lw)
 
 # Get the y-axis in scientific notation
@@ -161,7 +163,7 @@ if not rvals is None:
 #        plt.ylim(ymin, ymax)
         plt.plot(rval_n + np.zeros(100), yvals, 'k--')
 
-plt.ylabel(r'$4\pi r^2\ \rm{\times \ (energy \ flux)}\ /\ L_\odot$',\
+plt.ylabel(r'$4\pi r^2\ \rm{\times \ (energy \ flux)}\ /\ L_*$',\
         fontsize=12, **csfont)
 
 # Make title
