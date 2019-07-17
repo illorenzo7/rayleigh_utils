@@ -69,7 +69,7 @@ for i in range(nargs):
         
 # First, compute reference state on super-fine grid to interpolate onto later    
 nr = 5000
-rr = np.linspace(ri, ro, nr)
+rr = np.linspace(ro, ri, nr)
 
 d2sdr2 = np.zeros_like(rr)
 tanh_shift = 6.

@@ -77,7 +77,7 @@ for i in range(nargs):
 # First, compute reference state on evenly spaced grid, possibly letting
 # Rayleigh interpolate later    
 print(ri, ro, nr)
-rr = np.linspace(ri, ro, nr)
+rr = np.linspace(ro, ri, nr)
 
 # Define an entropy profile that is +1 for r < rm, 0 for r > rm, and 
 # continuously differentiable (a quartic) in between
