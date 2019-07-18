@@ -64,7 +64,7 @@ desired_dsdr = -flux_top/rho[0]/T[0]/ktop
 
 print('For lum=%1.3e, ro=%1.7e, ktop=%1.3e' %(lum, ro, ktop))
 if polytropic_reference:
-    print('and polytropic reference: nrho=%1.1f, poly_n=%1.1f, rho_i=%1.7e' %(nrho, poly_n, rho_i))
+    print('and polytropic reference: nrho=%1.1f, poly_n=%1.1f, rhom=%1.7e' %(nrho, poly_n, rhom))
 elif file_reference:
     print('and custom reference ' + ref_file)
 print ('Set outer_dsdr (dtdr_top) to %1.8e' %desired_dsdr)
