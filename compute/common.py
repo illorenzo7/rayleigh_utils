@@ -188,6 +188,11 @@ def strip_dirname(dirname):
         os.chdir(orig_dir)
     return dirname_stripped
 
+def strip_filename(filename):
+    filename_stripped = filename[:-4] # strip off the .npy
+    filename_split = filename_stripped.split('_')
+    return filename_split[0]
+
 def get_iters_from_file(filename):
     filename_stripped = filename[:-4] # strip off the .npy
     filename_split = filename_stripped.split('_')
