@@ -202,7 +202,7 @@ for iplot in range(nplots):
             (iplot//ncol)*(subplot_height + margin_subplot_top)
     ax = fig.add_axes((ax_left, ax_bottom, subplot_width, subplot_height))
     plot_azav (efr_terms[iplot], rr, cost, sint, fig=fig, ax=ax,\
-           units=units, minmax=minmax, norm=MidpointNormalize(0),\
+           units=units, minmax=minmax,
            plotcontours=plotcontours)
 
     ax.set_title(titles[iplot], verticalalignment='bottom', **csfont)
