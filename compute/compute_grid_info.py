@@ -9,6 +9,44 @@
 import numpy as np
 from math import factorial
 
+def compute_theta_grid(nt):
+    tt = np.zeros(nt)
+    tw = np.zeros(nt)
+    # Now compute Legendre collocation points and weights (theta weights)
+    coefs = np.zeros(nt + 1)
+    coefs[-1] = 1
+    cost = np.polynomial.legendre.legroots(coefs)
+
+    coefs_np1 = np.zeros(nt + 2)
+    coefs_np1[-1] = 1
+    p_np1 = np.polynomial.legendre.legval(cost,coefs_np1)
+
+    tw = (1. - cost**2.)/(nt + 1.)**2./p_np1**2.
+    tt = np.arccos(cost)
+    return tt, tw
+
+def compute_r_grid(nr, rmin, rmax, use_extrema=False):
+    r = np.zeros(nr)
+    rw = np.zeros(nr)
+
+    # Compute the radial collocation points/weights
+    x = np.zeros(nr)
+    for ix in range(nr):
+        if use_extrema:
+            x[ix] = np.cos(ix*np.pi/(nr - 1))
+        else:
+            x[ix] = np.cos((ix + 0.5)*np.pi/(nr))
+
+    # Transform x --> r via an affine transformation
+    xmin, xmax = np.min(x), np.max(x)
+    r = rmin + (x - xmin)*(rmax - rmin)/(xmax - xmin)
+    int_scale = 3.*np.pi/((rmax**3. - rmin**3.)*nr)*\
+            (rmax - rmin)/(xmax - xmin)
+    rw = int_scale * r**2. * np.sqrt(1. - x**2.)
+    rw[0] *= 0.5 # These multiplications are only justified for
+    rw[-1] *= 0.5 # Guass-Lobatto (use_extrema = True)
+    return r, rw
+
 def compute_grid_info(domain_bounds, ncheby, nt, use_extrema=False):
     if not isinstance(ncheby, tuple): # this is probably because
         # ncheby was specified as nr, not (nr,)

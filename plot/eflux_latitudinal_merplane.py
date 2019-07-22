@@ -24,7 +24,7 @@ sys.path.append(os.environ['pl'])
 from azav_util import plot_azav
 from common import get_widest_range_file, strip_dirname, get_dict
 from get_parameter import get_parameter
-from binormalized_cbar import MidpointNormalize
+from rayleigh_diagnostics import ReferenceState
 
 # Get directory name and stripped_dirname for plotting purposes
 dirname = sys.argv[1]
@@ -75,7 +75,7 @@ di = get_dict(datadir + AZ_Avgs_file)
 rr = di['rr']
 cost = di['cost']
 sint = di['sint']
-#nr, nt = len(rr), len(cost)
+nr, nt = len(rr), len(cost)
 
 iter1, iter2 = di['iter1'], di['iter2']
 vals = di['vals']
@@ -190,7 +190,7 @@ for iplot in range(nplots):
             (iplot//ncol)*(subplot_height + margin_subplot_top)
     ax = fig.add_axes((ax_left, ax_bottom, subplot_width, subplot_height))
     plot_azav (eft_terms[iplot], rr, cost, sint, fig=fig, ax=ax,\
-            units=units, minmax=(my_min, my_max), norm=MidpointNormalize(0.),\
+            units=units, minmax=(my_min, my_max),\
             plotcontours=plotcontours)
 
     ax.set_title(titles[iplot], va='bottom', **csfont)
