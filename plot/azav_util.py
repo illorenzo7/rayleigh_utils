@@ -251,6 +251,125 @@ def plot_azav(field, rr, cost, sint, fig=None, ax=None, cmap='RdYlBu_r',\
     if showplot:
         plt.show()
 
+def plot_quiver(vr, vt, rr, cost, sint, fig=None, ax=None, minmax=None,\
+        plotlatlines=False, rvals=None, rvals_norm=None, fsize=8,\
+        showplot=False, scale=None, plot_poles=False, nsample_t=20,\
+        nsample_r=10, scale_by_mag=True):
+
+    ''' Takes (or creates) set of axes with physical aspect ratio 1x2
+    and adds a vector (quiver) plot of [vx, vy] in the meridional plane to 
+    the axes.'''
+
+    # First things first, make sure Python does not modify any of the 
+    # arrays it was passed (shouldn't fucking have to do this)
+    vmag = np.sqrt(np.std(vr**2 + vt**2))
+    vr = np.copy(vr)/vmag
+    vt = np.copy(vt)/vmag
+    rr = np.copy(rr)
+    cost = np.copy(cost)
+    sint = np.copy(sint)
+
+    # Derivative grid info
+    ri, ro = np.min(rr), np.max(rr)
+    shell_depth = ro - ri
+    rr_depth = (np.max(rr) - rr)/shell_depth
+    nr = len(rr)
+    nt = len(cost)
+
+    # Create a default set of figure axes if they weren't already
+    # specified by user
+    if fig is None or ax is None:
+        fig, ax = default_axes_2by1()
+        showplot = True # probably in this case the user just
+        # ran plot_azav from the command line wanting to view
+        # view the plot
+   
+    # Get the position of the axes on the figure
+    pos = ax.get_position().get_points()
+    ax_left, ax_bottom = pos[0]
+    ax_right, ax_top = pos[1]
+    ax_width = ax_right - ax_left
+    ax_height = ax_top - ax_bottom
+    ax_aspect = ax_height/ax_width
+    
+    # Calculate the grid on which to plot
+    rr2d = rr.reshape((1, nr))
+    tt = np.arccos(cost)
+    cost2d = cost.reshape((nt, 1))
+    sint2d = sint.reshape((nt, 1))
+    xx = rr2d*sint2d/ro
+    zz = rr2d*cost2d/ro
+
+    # Compute the vector field in cylindrical coordinates
+    vx = sint2d*vr + cost2d*vt
+    vz = cost2d*vr - sint2d*vt
+
+    if not plot_poles:
+        it_75_south = np.argmin(np.abs(tt - 11*np.pi/12))
+        it_75_north = np.argmin(np.abs(tt - np.pi/12))
+        xx = xx[it_75_south:it_75_north]
+        zz = zz[it_75_south:it_75_north]
+        vx = vx[it_75_south:it_75_north]
+        vz = vz[it_75_south:it_75_north]
+    if not scale_by_mag:
+        v_mag = np.sqrt(vx**2 + vz**2)
+        vx /= (20*v_mag)
+        vz /= (20*v_mag)
+
+    # Specify linewidths to be used in the meridional plane to plot the 
+    # boundaries
+    lw = 1.
+    contour_lw = 0.2
+   
+    # Make quiver plot
+    plt.sca(ax)
+    # Scale down the arrays
+    nskip_t, nskip_r = nt//nsample_t, nr//nsample_r
+    xx = xx[::nskip_t, ::nskip_r]
+    zz = zz[::nskip_t, ::nskip_r]
+    vx = vx[::nskip_t, ::nskip_r]
+    vz = vz[::nskip_t, ::nskip_r]
+
+    plt.quiver(xx, zz, vx, vz, scale=scale)
+   
+    # Plot the boundary of the meridional plane
+    plt.plot(rr[0]/ro*sint, rr[0]/ro*cost, 'k', linewidth=lw)
+    plt.plot(rr[-1]/ro*sint, rr[-1]/ro*cost, 'k', linewidth=lw)
+    plt.plot([0.,0.], [rr[-1]/ro, rr[0]/ro], 'k', linewidth=lw)
+    plt.plot([0.,0.], [-rr[-1]/ro, -rr[0]/ro], 'k', linewidth=lw)
+
+    # Plot latitude lines, if desired
+    if plotlatlines: 
+        lats = (np.pi/2. - np.arccos(cost))*180./np.pi
+        lats_to_plot = np.arange(-75., 90., 15.) 
+        for lat in lats_to_plot:
+            it = np.argmin(np.abs(lats - lat))
+            xx_in, zz_in = rr[-1]/ro*sint[it], rr[-1]/ro*cost[it]
+            xx_out, zz_out = rr[0]/ro*sint[it], rr[0]/ro*cost[it]
+            plt.sca(ax)
+            plt.plot([xx_in, xx_out], [zz_in, zz_out], 'k',\
+                    linewidth=contour_lw)
+
+    # Plot various radii, if desired
+    # rvals must be given normalized to outer rr
+    if not rvals is None:
+        if rvals_norm is None:
+            rvals_norm = rsun
+        for rval in rvals: 
+            plt.sca(ax)
+            rval_dim = rval*rvals_norm/ro
+            # "dimensional" rval (in dimensions of ro!)
+            plt.plot(rval_dim*sint, rval_dim*cost, 'k--', linewidth=.7)
+
+    # Set ax ranges to be just outside the boundary lines
+    lilbit = 0.01
+    ax.set_xlim((-lilbit, 1 + lilbit))
+    ax.set_ylim((-1 - lilbit, 1 + lilbit))
+    ax.axis('off') 
+
+    if showplot:
+        plt.show()
+
 def plot_azav_half(field, rr, cost, sint, sym='even',\
         fig=None, ax=None, cmap='RdYlBu_r', units='', minmax=None,\
         posdef=False, logscale=False, plotcontours=True, plotfield=True,\
