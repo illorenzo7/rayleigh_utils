@@ -43,22 +43,31 @@ saveplot = True
 plotcontours = True
 minmax = None
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
+plotlatlines = False
+nlevs = 10
 
 args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
-    if (arg == '-minmax'):
-        minmax = float(args[i+1]), float(args[i+2])
+    if arg == '-minmax':
+        if args[i+1] == 'same':
+            minmax = 'same'
+        else:
+            minmax = float(args[i+1]), float(args[i+2])
     elif arg == '-noshow':
         showplot = False
     elif arg == '-nosave':
         saveplot = False
     elif arg == '-nocontour':
         plotcontours = False
-    elif (arg == '-usefile'):
+    elif arg == '-usefile':
         AZ_Avgs_file = args[i+1]
         AZ_Avgs_file = AZ_Avgs_file.split('/')[-1]
+    elif arg == '-latlines':
+        plotlatlines = True
+    elif arg == '-nlevs':
+        nlevs = int(args[i+1])
 
 # See if magnetism is "on"
 try:
@@ -104,7 +113,6 @@ else: # do the Reynolds decomposition "by hand"
     ref_prs = (ref.pressure).reshape((1, nr))
     ref_temp = (ref.temperature).reshape((1, nr))
     prs_spec_heat = get_parameter(dirname, 'pressure_specific_heat')
-
     gamma = 5./3.
     vt_av = vals[:, :, lut[2]]
     entropy_av = vals[:, :, lut[501]]
@@ -128,9 +136,10 @@ if magnetism:
     eft_Poynt = vals[:, :, ind_Poynt]       
     max_sig = max(max_sig, np.std(efr_Poynt))
     eft_tot += eft_Poynt
+max_sig = max(max_sig, np.std(eft_tot))
     
-if minmax is None:
-    my_min, my_max = -3.*max_sig, 3.*max_sig
+if minmax == 'same':
+    minmax = -3.*max_sig, 3.*max_sig
 
 # Set up the actual figure from scratch
 fig_width_inches = 7. # TOTAL figure width, in inches
@@ -190,17 +199,17 @@ for iplot in range(nplots):
             (iplot//ncol)*(subplot_height + margin_subplot_top)
     ax = fig.add_axes((ax_left, ax_bottom, subplot_width, subplot_height))
     plot_azav (eft_terms[iplot], rr, cost, sint, fig=fig, ax=ax,\
-            units=units, minmax=(my_min, my_max),\
-            plotcontours=plotcontours)
-
+            units=units, minmax=minmax, plotlatlines=plotlatlines,\
+            plotcontours=plotcontours, nlevs=nlevs)
     ax.set_title(titles[iplot], va='bottom', **csfont)
 
 # Put some metadata in upper left
 fsize = 12
 fig.text(margin_x, 1 - 0.1*margin_top, dirname_stripped,\
          ha='left', va='top', fontsize=fsize, **csfont)
-fig.text(margin_x, 1 - 0.3*margin_top, 'Latitudinal energy flux (zonally averaged)',\
-         ha='left', va='top', fontsize=fsize, **csfont)
+fig.text(margin_x, 1 - 0.3*margin_top,\
+        'Latitudinal energy flux (zonally averaged)', ha='left', va='top',\
+        fontsize=fsize, **csfont)
 fig.text(margin_x, 1 - 0.5*margin_top,\
          str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8),\
          ha='left', va='top', fontsize=fsize, **csfont)

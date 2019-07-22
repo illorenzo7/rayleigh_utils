@@ -17,6 +17,9 @@ sys.path.append(os.environ['co'])
 from common import get_widest_range_file, strip_dirname,\
         get_iters_from_file, get_dict, rsun
 from get_parameter import get_parameter
+from rayleigh_diagnostics import ReferenceState
+from compute_grid_info import compute_theta_grid
+
 # Get the run directory on which to perform the analysis
 dirname = sys.argv[1]
 dirname_stripped = strip_dirname(dirname)
@@ -36,18 +39,21 @@ Shell_Avgs_file = get_widest_range_file(datadir, 'Shell_Avgs')
 minmax = None
 rnorm = None
 rvals = None
+plot_enth_fluc = False
 
 args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
-    if (arg == '-usefile'):
+    if arg == '-usefile':
         Shell_Avgs_file = args[i+1]
         Shell_Avgs_file = Shell_Avgs_file.split('/')[-1]
-    elif (arg == '-minmax'):
+    elif arg == '-minmax':
         minmax = float(args[i+1]), float(args[i+2])
-    elif (arg == '-rnorm'):
+    elif arg == '-rnorm':
         rnorm = float(args[i+1])
+    elif arg == '-fluc':
+        plot_enth_fluc = True
     elif arg == '-rvals':
         rvals_str = args[i+1].split()
         rvals = []
@@ -63,8 +69,10 @@ print ('Getting radial fluxes from ' + datadir + Shell_Avgs_file + ' ...')
 di = get_dict(datadir + Shell_Avgs_file)
 vals = di['vals']
 lut = di['lut']
+nq = di['nq']
 iter1, iter2 = di['iter1'], di['iter2']
 rr = di['rr']
+nr = di['nr']
 
 # Determine the simulation is magnetic
 magnetism = get_parameter(dirname, 'magnetism')
@@ -79,12 +87,48 @@ qindex_kflux = lut[1923]
 qindex_vflux = lut[1935]
 qindex_eflux = lut[1455]
 
-hflux = vals[:, qindex_hflux]
-eflux = vals[:, qindex_eflux]
-cflux = vals[:, qindex_cflux]
-kflux = vals[:, qindex_kflux]
-vflux = -vals[:, qindex_vflux]
+hflux = vals[:, lut[1433]]
+eflux = vals[:, lut[1455]]
+cflux = vals[:, lut[1470]]
+kflux = vals[:, lut[1923]]
+vflux = -vals[:, lut[1935]]
 tflux = hflux + eflux + cflux + kflux + vflux # compute the total flux
+
+if plot_enth_fluc:
+    if lut[1458] < nq:
+        eflux_fluc = vals[ :, lut[1458]]
+        eflux_mean = eflux_enth - eflux_fluc
+    else: # do the Reynolds decomposition "by hand"
+        # Compute the enthalpy flux from mean flows (MER. CIRC.)
+        ref = ReferenceState(dirname + '/reference', '')
+        nt = get_parameter(dirname, 'n_theta')
+        tt, tw = compute_theta_grid(nt)
+        tw_2d = tw.reshape((nt, 1))
+
+        AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
+        rho = (ref.density).reshape((1, nr))
+        ref_prs = (ref.pressure).reshape((1, nr))
+        ref_temp = (ref.temperature).reshape((1, nr))
+        prs_spec_heat = get_parameter(dirname, 'pressure_specific_heat')
+        gamma = 5./3.
+
+        di_az = get_dict(datadir + AZ_Avgs_file)
+        vals_az = di_az['vals']
+        lut_az = di_az['lut']
+
+        vr_av = vals_az[:, :, lut_az[1]]
+        entropy_av = vals_az[:, :, lut_az[501]]
+        prs_av = vals_az[:, :, lut_az[502]]
+
+        # Calculate mean temp. from EOS
+        temp_av = ref_temp*((1.-1./gamma)*(prs_av/ref_prs) +\
+                entropy_av/prs_spec_heat)
+
+        # And, finally, the enthalpy flux from mean/fluc flows
+        eflux_mean_az = rho*prs_spec_heat*vr_av*temp_av
+        
+        eflux_mean = np.sum(eflux_mean_az*tw_2d, axis=0)
+        eflux_fluc = eflux - eflux_mean
 
 if magnetism:
     qindex_mflux = lut[2001] # this is actually (-4*pi) TIMES 
@@ -96,6 +140,9 @@ if magnetism:
 fpr = 4*np.pi*rr**2
 hflux_int = hflux*fpr
 eflux_int = eflux*fpr
+if plot_enth_fluc:
+    eflux_mean_int = eflux_mean*fpr
+    eflux_fluc_int = eflux_fluc*fpr
 cflux_int = cflux*fpr
 kflux_int = kflux*fpr
 vflux_int = vflux*fpr
@@ -126,6 +173,11 @@ plt.plot(rr_n, tflux_int/lstar, label= r'$\rm{F}_{total}$',\
 if magnetism:
     plt.plot(rr_n, mflux_int/lstar, label=r'$\rm{F}_{Poynting}$',\
         linewidth=lw)
+if plot_enth_fluc:
+    plt.plot(rr_n, eflux_fluc_int/lstar, 'm--',\
+            label=r'$\rm{F}_{enth,\ pp}$', linewidth=lw)
+    plt.plot(rr_n, eflux_mean_int/lstar, 'm:',\
+            label=r'$\rm{F}_{enth,\ mm}$', linewidth=lw)
 
 # Get the y-axis in scientific notation
 plt.ticklabel_format(useMathText=True, axis='y', scilimits=(0,0))

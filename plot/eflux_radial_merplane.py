@@ -28,7 +28,7 @@ from azav_util import plot_azav
 from rayleigh_diagnostics import ReferenceState
 from common import get_widest_range_file, strip_dirname, get_dict
 from get_parameter import get_parameter
-from binormalized_cbar import MidpointNormalize
+from compute_grid_info import compute_theta_grid
 
 # Get directory name and stripped_dirname for plotting purposes
 dirname = sys.argv[1]
@@ -47,14 +47,18 @@ saveplot = True
 plotcontours = True
 minmax = None
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
+plotlatlines = False
+nlevs = 10
 
 args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
-    if (arg == '-minmax'):
-        minmax = float(args[i+1]), float(args[i+2])
-        user_specified_minmax = True
+    if arg == '-minmax':
+        if args[i+1] == 'same':
+            minmax = 'same'
+        else:
+            minmax = float(args[i+1]), float(args[i+2])
     elif arg == '-noshow':
         showplot = False
     elif arg == '-nosave':
@@ -64,21 +68,35 @@ for i in range(nargs):
     elif (arg == '-usefile'):
         AZ_Avgs_file = args[i+1]
         AZ_Avgs_file = AZ_Avgs_file.split('/')[-1]
+    elif arg == '-latlines':
+        plotlatlines = True
+    elif arg == '-nlevs':
+        nlevs = int(args[i+1])
 
 # See if magnetism is "on"
-try:
-    magnetism = get_parameter(dirname, 'magnetism')
-except:
-    magnetism = False # if magnetism wasn't specified, it must be "off"
+magnetism = get_parameter(dirname, 'magnetism')
 
 # Get AZ_Avgs file
-print ('Getting radial energy fluxes from ' + datadir + AZ_Avgs_file + ' ...')
+print ('Getting radial energy fluxes (zonally averaged) from ' +\
+        datadir + AZ_Avgs_file + ' ...')
 di = get_dict(datadir + AZ_Avgs_file)
 
-iter1, iter2 = di['iter1'], di['iter2']
+# Get Shell_Avgs file
+Shell_Avgs_file = get_widest_range_file(datadir, 'Shell_Avgs')
+print ('Getting spherical averages from ' +\
+        datadir + Shell_Avgs_file + ' ...')
+di_sph = get_dict(datadir + Shell_Avgs_file)
+
+# Zonal average data
 vals = di['vals']
 lut = di['lut']
 nq = di['nq']
+iter1, iter2 = di['iter1'], di['iter2']
+
+# Spherical average data
+vals_sph = di_sph['vals']
+lut_sph = di_sph['lut']
+nq_sph = di_sph['nq']
 
 # Get necessary grid info
 rr = di['rr']
@@ -88,24 +106,26 @@ tt = di['tt']
 tt_lat = di['tt_lat']
 nr, nt = len(rr), len(tt)
 
-# Get flux indices
-ind_enth = lut[1455] 
-ind_cond = lut[1470]
-ind_heat = lut[1433]
-ind_visc = lut[1935] # might get minus sign from error?
-ind_ke = lut[1923]
+# Get zonally averaged fluxes
+efr_enth = vals[:, :, lut[1455]]
+efr_cond = vals[:, :, lut[1470]]
+efr_visc = -vals[:, :, lut[1935]]
+efr_ke = vals[:, :, lut[1923]]
 
-efr_enth = vals[:, :, ind_enth]
-efr_cond = vals[:, :, ind_cond]
-efr_heat = vals[:, :, ind_heat]
-efr_visc = -vals[:, :, ind_visc]
-efr_ke = vals[:, :, ind_ke]
+# get spherically averaged fluxes
+efr_enth_sph = vals_sph[:, lut[1455]]
+efr_cond_sph = vals_sph[:, lut[1470]]
+efr_visc_sph = -vals_sph[:, lut[1935]]
+efr_ke_sph = vals_sph[:, lut[1923]]
+
 
 # Check to see if enthalpy flux from the fluctuating flows 
 # was already output
-if lut[1458] < nq:
+if lut[1458] < nq and lut_sph[1458] < nq_sph:
     efr_enth_fluc = vals[:, :, lut[1458]]
     efr_enth_mean = efr_enth - efr_enth_fluc
+    efr_enth_fluc_sph = vals_sph[:, lut[1458]]
+    efr_enth_mean_sph = efr_enth_sph - efr_enth_fluc_sph
 else: # do the Reynolds decomposition "by hand"
     # Compute the enthalpy flux from mean flows (MER. CIRC.)
     ref = ReferenceState(dirname + '/reference', '')
@@ -127,18 +147,34 @@ else: # do the Reynolds decomposition "by hand"
     efr_enth_mean = rho*prs_spec_heat*vr_av*temp_av
     efr_enth_fluc = efr_enth - efr_enth_mean
 
-efr_tot = efr_enth + efr_cond + efr_heat + efr_visc + efr_ke
+    # Finally finally, the spherically averaged parts
+    tt, tw = compute_theta_grid(nt)
+    tw_2d = tw.reshape((nt, 1))
+    efr_enth_mean_sph = np.sum(efr_enth_mean*tw_2d, axis=0)
+    efr_enth_fluc_sph = np.sum(efr_enth_fluc*tw_2d, axis=0)
 
-max_sig = max(np.std(efr_enth), np.std(efr_cond), np.std(efr_heat),\
-        np.std(efr_visc), np.std(efr_ke))
+# Subtract off the spherically averaged parts
+efr_enth = efr_enth - efr_enth_sph
+efr_enth_fluc = efr_enth_fluc - efr_enth_fluc_sph
+efr_enth_mean = efr_enth_mean - efr_enth_mean_sph
+efr_cond = efr_cond - efr_cond_sph
+efr_ke = efr_ke - efr_ke_sph
+efr_visc = efr_visc - efr_visc_sph
+
+efr_tot = efr_enth + efr_cond + efr_visc + efr_ke
+
+max_sig = max(np.std(efr_enth), np.std(efr_cond), np.std(efr_visc),\
+        np.std(efr_ke))
 
 if magnetism:
-    ind_Poynt = lut[2001]
-    efr_Poynt = vals[:, :, ind_Poynt]       
+    efr_Poynt = vals[:, :, lut[2001]]       
+    efr_Poynt_sph = vals_sph[:, lut[2001]]
+    efr_Poynt = efr_Poynt - efr_Poynt_sph
     max_sig = max(max_sig, np.std(efr_Poynt))
     efr_tot += efr_Poynt
-    
-if minmax is None: 
+max_sig = max(max_sig, np.std(efr_tot)) 
+
+if minmax is 'same': 
     minmax = -3.*max_sig, 3.*max_sig
 
 # Set up the actual figure from scratch
@@ -148,7 +184,7 @@ margin_inches = 1./8. # margin width in inches (for both x and y) and
     # horizontally in between figures
 margin_top_inches = 2. # wider top margin to accommodate subplot titles AND metadata
 margin_subplot_top_inches = 1. # margin to accommodate just subplot titles
-nplots = 8 + magnetism
+nplots = 7 + magnetism
 ncol = 3 # put three plots per row
 nrow = np.int(np.ceil(nplots/3))
 
@@ -174,14 +210,13 @@ margin_subplot_top = margin_subplot_top_inches/fig_height_inches
 subplot_width = subplot_width_inches/fig_width_inches
 subplot_height = subplot_height_inches/fig_height_inches
 
-efr_terms = [efr_enth_mean, efr_enth_fluc, efr_enth, efr_cond,\
-        efr_heat, efr_visc, efr_ke, efr_tot]
+efr_terms = [efr_enth_mean, efr_enth_fluc, efr_enth, efr_cond, efr_visc,\
+        efr_ke, efr_tot]
 
 titles = [r'$(\mathbf{\mathcal{F}}_{\rm{enth,mm}})_r$',\
           r'$(\mathbf{\mathcal{F}}_{\rm{enth,pp}})_r$',\
           r'$(\mathbf{\mathcal{F}}_{\rm{enth}})_r$',\
           r'$(\mathbf{\mathcal{F}}_{\rm{cond}})_r$',\
-          r'$(\mathbf{\mathcal{F}}_{\rm{heat}})_r$',\
           r'$(\mathbf{\mathcal{F}}_{\rm{visc}})_r$',\
           r'$(\mathbf{\mathcal{F}}_{\rm{KE}})_r$',
           r'$(\mathbf{\mathcal{F}}_{\rm{tot}})_r$']
@@ -201,18 +236,17 @@ for iplot in range(nplots):
     ax_bottom = 1 - margin_top - subplot_height - \
             (iplot//ncol)*(subplot_height + margin_subplot_top)
     ax = fig.add_axes((ax_left, ax_bottom, subplot_width, subplot_height))
-    plot_azav (efr_terms[iplot], rr, cost, sint, fig=fig, ax=ax,\
-           units=units, minmax=minmax,
-           plotcontours=plotcontours)
-
+    plot_azav (efr_terms[iplot] - np.mean(efr_terms[iplot], axis=0), rr, cost, sint, fig=fig, ax=ax,\
+            units=units, minmax=minmax, plotlatlines=plotlatlines,\
+            plotcontours=plotcontours, nlevs=nlevs)
     ax.set_title(titles[iplot], verticalalignment='bottom', **csfont)
 
 # Put some metadata in upper left
 fsize = 12
 fig.text(margin_x, 1 - 0.1*margin_top, dirname_stripped,\
          ha='left', va='top', fontsize=fsize, **csfont)
-fig.text(margin_x, 1 - 0.3*margin_top, 'Radial energy flux',\
-         ha='left', va='top', fontsize=fsize, **csfont)
+fig.text(margin_x, 1 - 0.3*margin_top, 'Radial energy flux, ' +\
+        r'$l\neq0$', ha='left', va='top', fontsize=fsize, **csfont)
 fig.text(margin_x, 1 - 0.5*margin_top,\
          str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8),\
          ha='left', va='top', fontsize=fsize, **csfont)
