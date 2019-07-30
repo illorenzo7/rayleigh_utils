@@ -45,7 +45,14 @@ for i in range(nargs):
     elif arg == '-notfrom0':
         notfrom0 = True
     elif arg == '-minmax':
-        minmax = float(args[i+1]), float(args[i+2])
+        try: # first see if user wants to set all three ranges set
+            # If "plotall", then use the first range for the total amom,
+            # second for the convective, third for the mean
+            minmax = float(args[i+1]), float(args[i+2]),\
+                    float(args[i+3]), float(args[i+4]),\
+                    float(args[i+5]), float(args[i+6])
+        except: # if not, they want the same pair used for each subplot
+            minmax = float(args[i+1]), float(args[i+2])
     elif arg == '-xminmax':
         xminmax = float(args[i+1]), float(args[i+2])
     elif arg == '-plotall':
@@ -53,7 +60,7 @@ for i in range(nargs):
 
 
 # Tag the plot by whether or not the x axis is in "time" or "iteration"
-if (xiter):
+if xiter:
     tag = '_xiter'
 else:
     tag = '_xtime'
@@ -68,7 +75,7 @@ iters = di['iters']
 iter1 = di['iter1']
 iter2 = di['iter2']
 
-# Get global rotation rate, if present
+# Get global rotation rate, if present for time norm
 rotation = get_parameter(dirname, 'rotation')
 if rotation:
     angular_velocity = get_parameter(dirname, 'angular_velocity')
@@ -87,23 +94,39 @@ else:
     tdt = d**2/ktop
     tnorm = tdt
 
+# Get the first and last indices in the time direction, depending on 
+# xminmax
+ntimes = len(times)
+if xminmax is None:
+    it1, it2 = 0, ntimes - 1 # Plot over whole range by default
+else:
+    if xiter:
+        it1 = np.argmin(np.abs(iters - xminmax[0]))
+        it2 = np.argmin(np.abs(iters - xminmax[1]))
+    else:
+        it1 = np.argmin(np.abs(times/tnorm - xminmax[0]))
+        it2 = np.argmin(np.abs(times/tnorm - xminmax[1]))
+
 # Make appropriate file name to save
 savename = dirname_stripped + '_Ltrace_' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + tag + '.png'
 
-Lz = vals[lut[1819]]
+# Get data in apropriate time range
+times = times[it1:it2+1]
+iters = iters[it1:it2+1]
+Lz = vals[lut[1819], it1:it2+1]
 if plotall:
-    Lx = vals[lut[1820]]
-    Ly = vals[lut[1821]]
+    Lx = vals[lut[1820], it1:it2+1]
+    Ly = vals[lut[1821], it1:it2+1]
 
-Lpz = vals[lut[1822]]
+Lpz = vals[lut[1822], it1:it2+1]
 if plotall:
-    Lpx = vals[lut[1823]]
-    Lpy = vals[lut[1824]]
+    Lpx = vals[lut[1823], it1:it2+1]
+    Lpy = vals[lut[1824], it1:it2+1]
 
-Lmz = vals[lut[1825]]
+Lmz = vals[lut[1825], it1:it2+1]
 if plotall:
-    Lmx = vals[lut[1826]]
-    Lmy = vals[lut[1827]]
+    Lmx = vals[lut[1826], it1:it2+1]
+    Lmy = vals[lut[1827], it1:it2+1]
 
 # Get global min/max vals
 varlist = [Lz, Lpz, Lmz]
@@ -115,15 +138,15 @@ for var in varlist:
     mmax = max(mmax, np.max(var))
     mmin = min(mmin, np.min(var))
 
-if (not xiter):
+if not xiter:
     xaxis = times/tnorm
 else:
     xaxis = iters
 
-if (notfrom0):
+if notfrom0:
     x_min = np.min(xaxis)
 else:
-    x_min = 0
+    x_min = 0.
 
 # create figure with  3 panels in a row (total, mean and fluctuating amom)
 fig, axs = plt.subplots(3, 1, figsize=(5, 10), sharex=True)
@@ -149,8 +172,15 @@ if minmax is None:
 #    buff = 0.05*diff
 #    ax1.set_ylim(mmin - buff, mmax + buff)
 else:
-    ax1.set_ylim(minmax)
-    
+    if len(minmax) == 2:
+        ax1.set_ylim(minmax)
+        ax2.set_ylim(minmax)
+        ax3.set_ylim(minmax)
+    elif len(minmax) == 6:
+        ax1.set_ylim(minmax[0], minmax[1])
+        ax1.set_ylim(minmax[2], minmax[3])
+        ax1.set_ylim(minmax[4], minmax[5])
+ 
 # Set x limits  
 if xminmax is None:
     ax1.set_xlim((np.min(xaxis), np.max(xaxis)))
