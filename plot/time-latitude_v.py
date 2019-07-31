@@ -10,18 +10,9 @@ import pickle
 import sys, os
 sys.path.append(os.environ['co'])
 from common import get_file_lists, get_widest_range_file, strip_dirname,\
-        rsun
+        rsun, get_dict
+from plotcommon import axis_range
 from get_parameter import get_parameter
-
-def axis_range(ax): # gets subplot coordinates on a figure in "normalized"
-        # coordinates
-    pos = plt.get(ax, 'position')
-    bottom_left = pos.p0
-    top_right = pos.p1
-    xmin, xmax = bottom_left[0], top_right[0]
-    ymin, ymax = bottom_left[1], top_right[1]
-    
-    return xmin, xmax, ymin, ymax
 
 # Get the run directory on which to perform the analysis
 dirname = sys.argv[1]
@@ -38,32 +29,31 @@ dirname_stripped = strip_dirname(dirname)
 time_latitude_file = get_widest_range_file(datadir, 'time-latitude')
 
 # more defaults
-user_specified_minmax = False
-user_specified_xminmax = False
-tag = ''
+minmax = None
+xminmax = None
+saveplot = True
+showplot = True # will only show if plotting one figure
 
 desired_rvals = [0.83] # by default, plot time-radius diagram for fields 
     # mid-CZ (units of solar radius)
-navg = 11 # by default average over 11 AZ_Avgs files for each time
+navg = 1 # by default average over 1 AZ_Avgs instance (no average)
+# for navg > 1, a "sliding average" will be used.
 
 # Get command-line arguments
-nosave = False
 args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
-    if (arg == '-minmax'):
-        user_specified_minmax = True
-        my_min_vr = float(args[i+1])
-        my_max_vr = float(args[i+2])
-        my_min_vt = float(args[i+3])
-        my_max_vt = float(args[i+4])
-        my_min_vp = float(args[i+5])
-        my_max_vp = float(args[i+6])
-    elif (arg == '-usefile'):
+    if arg == '-minmax':
+        try: # See if user wants to set ranges for B_r, B_theta, and B_phi
+            minmax = float(args[i+1]), float(args[i+2]), float(args[i+3]),\
+                    float(args[i+4]), float(args[i+5]), float(args[i+6])
+        except:
+            minmax = float(args[i+1]), float(args[i+2])
+    elif arg == '-usefile':
         time_latitude_file = args[i+1]
         time_latitude_file = time_latitude_file.split('/')[-1]
-    elif (arg == '-rvals'):
+    elif arg == '-rvals':
         string_desired_rvals = args[i+1].split()
         if string_desired_rvals == ['all']:
             desired_rvals = 'all'
@@ -71,30 +61,23 @@ for i in range(nargs):
             desired_rvals = []
             for j in range(len(string_desired_rvals)):
                 desired_rvals.append(float(string_desired_rvals[j]))
-    elif (arg == '-navg'):
+    elif arg == '-navg':
         navg = int(args[i+1])
-        if (navg % 2 == 0):
+        if navg % 2 == 0:
             print ("Please don't enter even values for navg!")
             print ("Replacing navg = %i with navg = %i" %(navg, navg + 1))
             navg += 1
-    elif (arg == '-xminmax'):
-        user_specified_xminmax = True
-        xmin = float(args[i+1])
-        xmax = float(args[i+2])
-    elif (arg == '-tag'):
-        tag = '_' + args[i+1]
-    elif (arg == '-nosave'):
-        nosave = True
+    elif arg == '-xminmax':
+        xminmax = float(args[i+1]), float(args[i+2])
+    elif arg == '-nosave':
+        saveplot = False
+    elif arg == '-noshow':
+        showplot = False
 
 # Read in the time-latitude data (dictionary form)
 print ('Getting time-latitude trace from ' + datadir +\
        time_latitude_file + ' ...')
-try:
-    di = np.load(datadir + time_latitude_file, encoding='latin1').item()
-except:
-    f = open(datadir + time_latitude_file, 'rb')
-    di = pickle.load(f)
-    f.close()
+di = get_dict(datadir + time_latitude_file)
 
 vals = di['vals']
 
@@ -117,14 +100,9 @@ nq = di['nq']
 iter1 = di['iter1']
 iter2 = di['iter2']
 
-# Get global rotation rate, if present
-rotation = get_parameter(dirname, 'rotation')
-if rotation:
-    angular_velocity = get_parameter(dirname, 'angular_velocity')
-    Prot = 2*np.pi/angular_velocity
-    tnorm = Prot # normalize the time axis by rotation period if applicable
-else:
-    tnorm = 86400. # normalize by "days"
+# Get global rotation rate; this script fails for non-rotating models
+angular_velocity = get_parameter(dirname, 'angular_velocity')
+Prot = 2*np.pi/angular_velocity
 
 vr_index = np.argmin(np.abs(qvals - 1))
 vt_index = np.argmin(np.abs(qvals - 2))
@@ -143,61 +121,74 @@ else:
         i_desiredrvals.append(i_desiredrval)
         rvals_to_plot.append(rvals_sampled[i_desiredrval])
 
-# Get raw traces of vr, vtheta, vphi (in m/s)
-vr = vals[:, :, :, vr_index]/100.
+# Get raw traces of vr, vtheta, vphi
+vr = vals[:, :, :, vr_index]/100. # convert cm/s --> m/s
 vt = vals[:, :, :, vt_index]/100.
 vp = vals[:, :, :, vp_index]/100.
 
-# Average these traces in time
+# Average these traces in time (if navg = 1, [...]_trace_av = [...]
 over2 = navg//2
-vr_trace_all = np.zeros((niter - navg + 1, ntheta, nrvals))
-vt_trace_all = np.zeros((niter - navg + 1, ntheta, nrvals))
-vp_trace_all = np.zeros((niter - navg + 1, ntheta, nrvals))
+vr_trace_av = np.zeros((niter - navg + 1, ntheta, nrvals))
+vt_trace_av = np.zeros((niter - navg + 1, ntheta, nrvals))
+vp_trace_av = np.zeros((niter - navg + 1, ntheta, nrvals))
 for i in range(navg):
-    vr_trace_all += vr[i:niter - navg + 1 + i]
-    vt_trace_all += vt[i:niter - navg + 1 + i]
-    vp_trace_all += vp[i:niter - navg + 1 + i]
-vr_trace_all /= navg
-vt_trace_all /= navg
-vp_trace_all /= navg
+    vr_trace_av += vr[i:niter - navg + 1 + i]
+    vt_trace_av += vt[i:niter - navg + 1 + i]
+    vp_trace_av += vp[i:niter - navg + 1 + i]
+vr_trace_av /= navg
+vt_trace_av /= navg
+vp_trace_av /= navg
 
-times_trace = times[over2:niter - over2]/tnorm
+times_trace = times[over2:niter - over2]/Prot # time_trace is in units of
+    # Prot
 
 # Make meshgrid of time/radius
 # Take into account if user specified xmin, xmax
-if user_specified_xminmax:
-    it1 = np.argmin(np.abs(times_trace - xmin))
-    it2 = np.argmin(np.abs(times_trace - xmax))
+if not xminmax is None:
+    it1 = np.argmin(np.abs(times_trace - xminmax[0]))
+    it2 = np.argmin(np.abs(times_trace - xminmax[1]))
     times_trace = times_trace[it1:it2+1]
-    vr_trace_all = vr_trace_all[it1:it2+1]
-    vt_trace_all = vt_trace_all[it1:it2+1]
-    vp_trace_all = vp_trace_all[it1:it2+1]
+    vr_trace_av = vr_trace_av[it1:it2+1]
+    vt_trace_av = vt_trace_av[it1:it2+1]
+    vp_trace_av = vp_trace_av[it1:it2+1]
+t1, t2 = times_trace[0], times_trace[-1] # These begin times and end times
+        # will be used for labeling the plots
 times2, tt_lat2 = np.meshgrid(times_trace, tt_lat, indexing='ij')
 
 # Loop over the desired radii and save plots
 for i in range(len(i_desiredrvals)):
     i_desiredrval = i_desiredrvals[i]
     rval_to_plot = rvals_to_plot[i]
-    vr_trace = vr_trace_all[:, :, i_desiredrval]
-    vt_trace = vt_trace_all[:, :, i_desiredrval]
-    vp_trace = vp_trace_all[:, :, i_desiredrval]
+    vr_trace = vr_trace_av[:, :, i_desiredrval]
+    vt_trace = vt_trace_av[:, :, i_desiredrval]
+    vp_trace = vp_trace_av[:, :, i_desiredrval]
     
     # Make appropriate file name to save
     savename = dirname_stripped + '_time-latitude_v_' +\
-        ('rval%0.3f_' %rval_to_plot) + str(iter1).zfill(8) + '_' +\
-        str(iter2).zfill(8) + tag + '.png'
+        ('rval%0.3f_' %rval_to_plot) + ('%05.0f_%05.0f.png' %(t1, t2))
 
-    if not user_specified_minmax:
-        # Use the values between +/- 45 degrees to determine saturation
-        # values
-        itheta1 = np.argmin(np.abs(tt_lat + 45)) 
-        itheta2 = np.argmin(np.abs(tt_lat - 45)) 
-        std_vr = np.std(vr_trace[:, itheta1:itheta2])
-        std_vt = np.std(vt_trace[:, itheta1:itheta2])
-        std_vp = np.std(vp_trace[:, itheta1:itheta2])
-        my_min_vr, my_max_vr = -3.*std_vr, 3.*std_vr
-        my_min_vt, my_max_vt = -3.*std_vt, 3.*std_vt
-        my_min_vp, my_max_vp = -3.*std_vp, 3.*std_vp
+    if minmax is None:
+        # Exclude high latitude regions for vr and and vtheta
+        max_lat = 60.
+        ith1, ith2 = np.argmin(np.abs(tt_lat + max_lat)),\
+                np.argmin(np.abs(tt_lat - max_lat)), 
+        print(np.shape(vr_trace))
+        print(ith1, ith2)
+        std_vr = np.std(vr_trace[:, ith1:ith2+1])
+        std_vt = np.std(vt_trace[:, ith1:ith2+1])
+        std_vp = np.std(vp_trace[:, ith1:ith2+1])
+        minmax_vr = -3.*std_vr, 3.*std_vr
+        minmax_vt = -3.*std_vt, 3.*std_vt
+        minmax_vp = -3.*std_vp, 3.*std_vp
+    else:
+        if len(minmax) == 2:
+            minmax_vr = minmax
+            minmax_vt = minmax
+            minmax_vp = minmax
+        elif len(minmax) == 6:
+            minmax_vr = minmax[0], minmax[1]
+            minmax_vt = minmax[2], minmax[3]
+            minmax_vp = minmax[4], minmax[5]
      
     # Create figure with  3 panels in a row (time-latitude plots of
     #       vr, vtheta, and vphi)
@@ -206,11 +197,11 @@ for i in range(len(i_desiredrvals)):
 
     # first plot: evolution of B_r
     im1 = ax1.pcolormesh(times2, tt_lat2, vr_trace,\
-            vmin=my_min_vr, vmax=my_max_vr, cmap='RdYlBu_r')
+            vmin=minmax_vr[0], vmax=minmax_vr[1], cmap='RdYlBu_r')
     im2 = ax2.pcolormesh(times2, tt_lat2, vt_trace,\
-            vmin=my_min_vt, vmax=my_max_vt, cmap='RdYlBu_r')
+            vmin=minmax_vt[0], vmax=minmax_vt[1], cmap='RdYlBu_r')
     im3 = ax3.pcolormesh(times2, tt_lat2, vp_trace,\
-            vmin=my_min_vp, vmax=my_max_vp, cmap='RdYlBu_r')
+            vmin=minmax_vp[0], vmax=minmax_vp[1], cmap='RdYlBu_r')
 
     # Put colorbar next to all plots (possibly normalized separately)
     # First make room and then find location of subplots
@@ -227,7 +218,7 @@ for i in range(len(i_desiredrvals)):
     cbar_width = 0.07*(1 - ax_xmax)
     cbar_height = ax_delta_y
     cax = fig.add_axes((cbar_left, cbar_bottom, cbar_width, cbar_height))
-    cax.set_title(r'$\rm{m}\ \rm{s}^{-1}$', **csfont)
+    cax.set_title('m/s', **csfont)
     plt.colorbar(im1, cax=cax)
 
     # Next, B_theta:
@@ -241,10 +232,10 @@ for i in range(len(i_desiredrvals)):
     cbar_width = 0.07*(1 - ax_xmax)
     cbar_height = ax_delta_y
     cax = fig.add_axes((cbar_left, cbar_bottom, cbar_width, cbar_height))
-    cax.set_title(r'$\rm{m}\ \rm{s}^{-1}$', **csfont)
+    cax.set_title('m/s', **csfont)
     plt.colorbar(im2, cax=cax)
 
-    # Next, B_phi:
+    # Finally, B_phi:
     ax_xmin, ax_xmax, ax_ymin, ax_ymax = axis_range(ax3)
     ax_delta_x = ax_xmax - ax_xmin
     ax_delta_y = ax_ymax - ax_ymin
@@ -255,20 +246,15 @@ for i in range(len(i_desiredrvals)):
     cbar_width = 0.07*(1 - ax_xmax)
     cbar_height = ax_delta_y
     cax = fig.add_axes((cbar_left, cbar_bottom, cbar_width, cbar_height))
-    cax.set_title(r'$\rm{m}\ \rm{s}^{-1}$', **csfont)
+    cax.set_title('m/s', **csfont)
     plt.colorbar(im3, cax=cax)
 
     # Label x (time) axis
-    if rotation:
-        timeunit = r'$P_{\rm{rot}}$'
-    else:
-        timeunit = 'days'
-
+    timeunit = r'$P_{\rm{rot}}$'
     xlabel = 'time (' + timeunit + ')'
     ax3.set_xlabel(xlabel, **csfont)
 
-    if user_specified_xminmax:
-        ax3.set_xlim((xmin, xmax))
+    ax3.set_xlim((t1, t2))
 
     # Label y-axis (radius in units of rsun)
     ax2.set_ylabel('latitude (deg.)', **csfont)
@@ -282,11 +268,14 @@ for i in range(len(i_desiredrvals)):
     ax3.text(ax_xmin + 1.01*ax_Dx, 0.,  r'$v_\phi$')
 
     # Put some useful information on the title
-    averaging_time = (times[-1] - times[0])/niter*navg/86400.
+    averaging_time = (times[-1] - times[0])/niter*navg/Prot
     title = dirname_stripped + '     ' +\
-            (r'$r/R_\odot\ =\ %0.3f$' %rval_to_plot) + '     ' +\
-            ('t_avg = %.1f days' %averaging_time) +\
-            '     ' + ('time_unit = %.1f days' %(tnorm/86400.))
+            (r'$r/R_\odot\ =\ %0.3f$' %rval_to_plot) +\
+            '     ' + ('P_rot = %.1f days' %(Prot/86400.))
+    if navg > 1:
+        title += '     ' + ('t_avg = %.1f Prot' %averaging_time)
+    else:
+        title += '     t_avg = none'
 
     ax1.set_title(title, **csfont)
     # Get ticks everywhere
@@ -303,11 +292,12 @@ for i in range(len(i_desiredrvals)):
     plt.tick_params(top=True, right=True, direction='in', which='both')
 
     # Save the plot
-    if not nosave:
+    if saveplot:
         print ('Saving the time-latitude plot at ' + plotdir +\
                 savename + ' ...')
-        plt.savefig(plotdir + savename, dpi=300)
+        plt.savefig(plotdir + savename, dpi=200)
 
     # Show the plot if only plotting at one latitude
-    if len(rvals_to_plot) == 1:
+    if len(rvals_to_plot) == 1 and showplot:
         plt.show()
+    plt.close()
