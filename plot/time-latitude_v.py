@@ -172,8 +172,6 @@ for i in range(len(i_desiredrvals)):
         max_lat = 60.
         ith1, ith2 = np.argmin(np.abs(tt_lat + max_lat)),\
                 np.argmin(np.abs(tt_lat - max_lat)), 
-        print(np.shape(vr_trace))
-        print(ith1, ith2)
         std_vr = np.std(vr_trace[:, ith1:ith2+1])
         std_vt = np.std(vt_trace[:, ith1:ith2+1])
         std_vp = np.std(vp_trace[:, ith1:ith2+1])
