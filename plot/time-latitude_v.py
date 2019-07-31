@@ -165,7 +165,8 @@ for i in range(len(i_desiredrvals)):
     
     # Make appropriate file name to save
     savename = dirname_stripped + '_time-latitude_v_' +\
-        ('rval%0.3f_' %rval_to_plot) + ('%05.0f_%05.0f.png' %(t1, t2))
+            ('Prot%05.0f-to-%05.0f_' %(t1, t2)) +\
+        ('rval%0.3f' %rval_to_plot) + '.png'
 
     if minmax is None:
         # Exclude high latitude regions for vr and and vtheta
