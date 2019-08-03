@@ -7,7 +7,8 @@ import pickle
 import numpy as np
 import sys, os
 from subprocess import call
-from common import get_file_lists, get_widest_range_file, strip_dirname, get_dict
+from common import get_file_lists, get_widest_range_file, strip_dirname,\
+        get_dict
 from get_parameter import get_parameter
 
 # Get the run directory on which to perform the analysis
@@ -37,22 +38,22 @@ args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
-    if (arg == '-xiter'): # plot w.r.t. iterations
+    if arg == '-xiter': # plot w.r.t. iterations
         xiter = True
-    elif (arg == '-usefile'):
+    elif arg == '-usefile':
         trace_G_Avgs_file = args[i+1]
         trace_G_Avgs_file = trace_G_Avgs_file.split('/')[-1]
-    elif (arg == '-notfrom0'):
+    elif arg == '-notfrom0':
         notfrom0 = True
-    elif (arg == '-mag'):
+    elif arg == '-mag':
         magnetism = True
-    elif (arg == '-log'):
+    elif arg == '-log':
         ylog = True
-    elif (arg == '-minmax'):
+    elif arg == '-minmax':
         user_specified_minmax = True
         my_min = float(args[i+1])
         my_max = float(args[i+2])
-    elif (arg == '-xminmax'):
+    elif arg == '-xminmax':
         user_specified_xminmax = True
         my_xmin = float(args[i+1])
         my_xmax = float(args[i+2])
@@ -64,6 +65,7 @@ else:
     tag = '_xtime'
 
 # Read in the KE data (dictionary form)
+print ('Getting energy trace from ' + datadir + trace_G_Avgs_file + ' ...')
 di = get_dict(datadir + trace_G_Avgs_file)
 
 vals = di['vals']
