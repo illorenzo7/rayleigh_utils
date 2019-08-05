@@ -23,6 +23,7 @@ import matplotlib.pyplot as plt
 import sys, os
 from arbitrary_atmosphere import arbitrary_atmosphere
 sys.path.append(os.environ['co'])
+sys.path.append(os.environ['rapp'])
 from write_reference import write_reference
 import reference_tools as rt
 
@@ -77,8 +78,7 @@ for i in range(nargs):
         
 # First, compute reference state on evenly spaced grid, possibly letting
 # Rayleigh interpolate later    
-print(ri, ro, nr)
-rr = np.linspace(ro, ri, nr)
+rr = np.linspace(ri, ro, nr)
 
 # Define an entropy profile that is +1 for r < rm, 0 for r > rm, and 
 # continuously differentiable (a quartic) in between
@@ -110,23 +110,33 @@ T, rho, p, dlnT, dlnrho, dlnp, d2lnrho =\
     arbitrary_atmosphere(rr, s, dsdr, d2sdr2, g,\
                          dgdr, rm, Tm, pm, cp, gam)
 
-thefile = dirname + '/custom_reference_binary'
+eq = rt.equation_coefficients(rr) # Class to set equation coefficients
+    # and write them into binary form
+thefile = dirname + '/new_cref_binary'
 
-cref = rt.equation_coefficients(rr)
 buoy = rho*g/cp
 
-cref.set_function(rho, 1)
-cref.set_function(buoy, 2)
+eq.set_function(rho, 1)
+eq.set_function(buoy, 2)
 # nu(r) would go --> 3
-cref.set_function(T, 4)
+eq.set_function(T, 4)
 # kappa(r) would --> 5
 # heating(r) would --> 6
 # eta(r) would --> 7
-cref.set_function(dlnrho, 8)
-cref.set_function(d2lnrho, 9)
-cref.set_function(dlnT, 10)
-cref.set_function(dsdr, 14)
-cref.set_function(s, 15)
-cref.set_function(p, 16)
+eq.set_function(dlnrho, 8)
+eq.set_function(d2lnrho, 9)
+eq.set_function(dlnT, 10)
+eq.set_function(dsdr, 14)
 
-cref.write(thefile)
+eq.set_constant(1.0, 1)
+eq.set_constant(1.0, 2)
+eq.set_constant(1.0, 3)
+eq.set_constant(0.0, 4) # multiplies Lorentz force
+eq.set_constant(1.0, 5)
+eq.set_constant(1.0, 6)
+eq.set_constant(0.0, 7) # multiplies eta in ind. eq.
+eq.set_constant(1.0, 8)
+eq.set_constant(1.0, 9)
+eq.set_constant(1.0, 10)
+
+eq.write(thefile)
