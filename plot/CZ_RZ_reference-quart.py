@@ -1,11 +1,10 @@
 # Author: Loren Matilsky
 # Created: 05/01/2019
-# Purpose: generate a binary file (for Rayleigh to read) that contains
-# a reference state, consisting of a stable region (stiffness k) underlying 
-# a neutrally stable CZ
+# Plot a reference state, consisting of a stable region (stiffness k)
+# underlying a neutrally stable CZ
 
 # Parameters: output_dir (first argument), 
-# Inner, outer, and transition radii (default ri = 3.4139791e10, 
+# Inner, outer, and transition radii (default ri = 4.176e10,
 # rm = 5e10, ro = 6.5860209e10...for CZ corresponding to 3 density
 # scale heights )
 # nr1 (number of Chebyshevs to use for CZ, -nr1) default 96
@@ -21,12 +20,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import sys, os
-from arbitrary_atmosphere import arbitrary_atmosphere
 sys.path.append(os.environ['co'])
+sys.path.append(os.environ['idref'])
 sys.path.append(os.environ['rapp'])
 from write_reference import write_reference
 import reference_tools as rt
-
+from arbitrary_atmosphere import arbitrary_atmosphere
 import basic_constants as bc
 
 # Set default constants
@@ -42,6 +41,7 @@ gam = bc.gamma
 k = 2.0
 delta = 0.015*ro
 nr = 5000 # make the grid super-fine by default
+ylog = False
 
 # For now I will also have to initialize transport coefficients here :-(
 diff_delta = 0.01
@@ -61,6 +61,8 @@ heating_r = 5.0e10
 
 # Get directory to save binary files for reference state and heating
 dirname = sys.argv[1]
+
+savename = "ref.png"
 
 args = sys.argv[2:]
 nargs = len(args)
@@ -110,8 +112,11 @@ for i in range(nargs):
         kappa_power = float(args[i+1])
     elif arg == '-kappa_min':
         kappa_min = float(args[i+1])
-
-        
+    elif arg == '-name':
+        savename = args[i+1]
+    elif arg == '-log':
+        ylog = True
+       
 # First, compute reference state on evenly spaced grid, possibly letting
 # Rayleigh interpolate later    
 rr = np.linspace(ri, ro, nr)
@@ -182,34 +187,118 @@ integral = 4*np.pi*np.trapz(heating*rr**2, x=rr)
 lsun = 3.846e33
 heating = heating/integral*lsun # this is now f_6; c_10 should = 1
 
-# Make a "zero" array for functions we don't want to set
-zero = np.zeros(nr)
+# Now make a plot
+fig, axs = plt.subplots(3, 3, figsize= (12,10), sharex=True)
+lw = 0.7
 
-eq.set_function(rho, 1)
-eq.set_function(buoy, 2)
-eq.set_function(nu, 3)
-eq.set_function(T, 4)
-eq.set_function(kappa, 5)
-eq.set_function(heating, 6)
-eq.set_function(zero, 7) # eta(r) = 0 
-eq.set_function(dlnrho, 8)
-eq.set_function(d2lnrho, 9)
-eq.set_function(dlnT, 10)
-# Derivatives of transport coefficients go here...are they needed?
-eq.set_function(dlnu, 11)
-eq.set_function(dlnkappa, 12)
-eq.set_function(zero, 13)
-eq.set_function(dsdr, 14)
+label=''
+color='k'
+axs[0,0].plot(rr/bc.rsun, dsdr, label=label, color=color, linewidth=lw)
+#    axs[1,2].yaxis.set_major_formatter(yfmt)
+axs[0,0].ticklabel_format(scilimits = (0,0), useMathText=True, axis='y')
+axs[0,0].set_xlabel(r'$r/R_\odot$')
+axs[0,0].set_ylabel(r'$ds/dr\ $' +\
+   r'$\rm{[erg\ g^{-1}\ K^{-1}\ cm^{-1}]}$')  
 
-eq.set_constant(1.0, 1)
-eq.set_constant(1.0, 2)
-eq.set_constant(1.0, 3)
-eq.set_constant(0.0, 4) # multiplies Lorentz force
-eq.set_constant(1.0, 5)
-eq.set_constant(1.0, 6)
-eq.set_constant(0.0, 7) # multiplies eta in ind. eq.
-eq.set_constant(1.0, 8)
-eq.set_constant(1.0, 9)
-eq.set_constant(1.0, 10)
+axs[0,1].plot(rr/bc.rsun, g, label=label, color=color, linewidth=lw)
+#    axs[1,2].yaxis.set_major_formatter(yfmt)
+axs[0,1].ticklabel_format(scilimits = (0,0), useMathText=True, axis='y')
+axs[0,1].set_xlabel(r'$r/R_\odot$')
+axs[0,1].set_ylabel(r'$g(r)\ $' +\
+   r'$\rm{[cm\ s^{-2}]}$')  
+if ylog:
+    axs[0,1].set_yscale('log')
 
-eq.write(thefile)
+axs[0,2].plot(rr/bc.rsun, heating, label=label, color=color, linewidth=lw)
+#    axs[1,2].yaxis.set_major_formatter(yfmt)
+axs[0,2].ticklabel_format(scilimits = (0,0), useMathText=True, axis='y')
+axs[0,2].set_xlabel(r'$r/R_\odot$')
+axs[0,2].set_ylabel(r'$Q(r)\ $' +\
+   r'$\rm{[erg\ cm^{-3}\ s^{-1}]}$')  
+
+
+axs[1,0].plot(rr/bc.rsun, rho, label=label, color=color, linewidth=lw)
+#    axs[1,0].yaxis.set_major_formatter(yfmt)
+axs[1,0].ticklabel_format(scilimits = (0,0), useMathText=True, axis='y')
+axs[1,0].set_ylabel(r'$\rho(r)\ $' +  r'$\rm{[g\ cm^{-3}]}$')
+if ylog:
+    axs[1,0].set_yscale('log')
+
+axs[1,1].plot(rr/bc.rsun, dlnrho, label=label, color=color, linewidth=lw)
+#    axs[2,1].yaxis.set_major_formatter(yfmt)
+axs[1,1].ticklabel_format(scilimits = (0,0), useMathText=True, axis='y')
+axs[1,1].set_ylabel(r'$d\ln{\rho}/dr\ $' +  r'$\rm{[cm^{-1}]}$')
+    
+    
+axs[1,2].plot(rr/bc.rsun, d2lnrho, label=label, color=color, linewidth=lw)
+#    axs[2,2].yaxis.set_major_formatter(yfmt)
+axs[1,2].ticklabel_format(scilimits = (0,0), useMathText=True, axis='y')
+axs[1,2].set_xlabel(r'$r/R_\odot$')
+axs[1,2].set_ylabel(r'$d^2\ln{\rho}/dr^2\ $' +\
+   r'$\rm{[cm^{-2}]}$')  
+
+axs[2,0].plot(rr/bc.rsun, T, label=label, color=color, linewidth=lw)
+#    axs[0,0].yaxis.set_major_formatter(yfmt)
+axs[2,0].ticklabel_format(scilimits = (0,0), useMathText=True, axis='y')
+axs[2,0].set_ylabel(r'$T(r)$' +  ' [K]')
+if ylog:
+    axs[2,0].set_yscale('log')
+axs[2,0].set_xlim(np.min(rr)/bc.rsun, np.max(rr)/bc.rsun)
+
+axs[2,1].plot(rr/bc.rsun, dlnT, label=label, color=color, linewidth=lw)
+#    axs[1,1].yaxis.set_major_formatter(yfmt)
+axs[2,1].ticklabel_format(scilimits = (0,0), useMathText=True, axis='y')
+axs[2,1].set_ylabel(r'$d\ln{T}/dr\ $' +  r'$\rm{[cm^{-1}]}$')
+
+axs[2,2].plot(rr/bc.rsun, dlnu, label=label, color=color, linewidth=lw)
+#    axs[1,1].yaxis.set_major_formatter(yfmt)
+axs[2,2].ticklabel_format(scilimits = (0,0), useMathText=True, axis='y')
+axs[2,2].set_ylabel(r'$d\ln{\nu}/dr\ $' +  r'$\rm{[cm^{-1}]}$')
+   
+# Get ticks everywhere
+plt.sca(axs[0,0])
+plt.minorticks_on()
+plt.tick_params(top=True, right=True, direction='in', which='both')
+
+plt.sca(axs[1,0]) 
+plt.minorticks_on()
+plt.tick_params(top=True, right=True, direction='in', which='both')
+
+plt.sca(axs[2,0])
+plt.minorticks_on()
+plt.tick_params(top=True, right=True, direction='in', which='both')
+
+plt.sca(axs[0,1])
+plt.minorticks_on()
+plt.tick_params(top=True, right=True, direction='in', which='both')    
+
+plt.sca(axs[1,1])
+plt.minorticks_on()
+plt.tick_params(top=True, right=True, direction='in', which='both')  
+
+plt.sca(axs[2,1])
+plt.minorticks_on()
+plt.tick_params(top=True, right=True, direction='in', which='both')
+
+plt.sca(axs[0,2])
+plt.minorticks_on()
+plt.tick_params(top=True, right=True, direction='in', which='both') 
+
+plt.sca(axs[1,2])
+plt.minorticks_on()
+plt.tick_params(top=True, right=True, direction='in', which='both')
+
+plt.sca(axs[2,2])
+plt.minorticks_on()
+plt.tick_params(top=True, right=True, direction='in', which='both')
+
+axs[0,0].set_title( (r'$\delta = %1.1e$' %delta) + '\t' +\
+        (r'$\delta_{\rm{heating}} = %1.1e$' %heating_delta) + '\t' +\
+        (r'$\delta_{\rm{diff}} = %1.1e$' %diff_delta), ha='left',\
+        fontsize=14, pad=20)
+
+#plt.tight_layout()
+plt.subplots_adjust(wspace=0.5, left=0.1, right=0.9)
+plt.savefig(dirname + '/' + savename, dpi=300)
+plt.show()
+plt.close()
