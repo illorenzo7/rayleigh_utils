@@ -27,41 +27,59 @@ dirname = sys.argv[-1]
 datadir = dirname + '/data/'
 dirname_stripped = strip_dirname(dirname)
 nfiles = len(files)
-di0 = get_dict(files[0])
-vals = di0['vals']
-times = di0['times']
-iters = di0['iters']
-niter = di0['niter']
-iter1 = di0['iter1']
-iter2 = di0['iter2']
 
-di_all = dict(di0)
+# Read in all the dictionaries to be conjoined
+di_list = []
+for i in range(nfiles):
+    di = get_dict(files[i])
+    di_list.append(di)
 
+# Calculate cutoffs for each of the nfiles - 1 "anterior" arrays
+niter = 0
+cutoffs = np.zeros(nfiles - 1, dtype='int')
 for i in range(nfiles - 1):
-    di1 = get_dict(files[i])
-    di2 = get_dict(files[i + 1])
-
-    di1_iters = di1['iters']
-    di2_iter1 = di2['iters'][0]
+    di1_iters = di_list[i]['iters']
+    di2_iter1 = di_list[i+1]['iters'][0]
     niters1 = len(np.where(di1_iters < di2_iter1)[0])
+    niter += niters1
+    cutoffs[i] = niters1
+niter += di_list[-1]['niter']
+# niter is the total number of times
 
-    vals = np.vstack((vals[:niters1], di2['vals']))
-    times = np.hstack((times[:niters1], di2['times']))
-    iters = np.hstack((iters[:niters1], di2['iters']))
-    niter += (di2['niter'] - (len(di1_iters) - niters1))
-    if i == nfiles - 2:
-        iter2 = di2['iter2']
+# Initialize the new arrays for vals, times, iters
+dummy, nt, nrvals, nq = np.shape(di_list[0]['vals'])
+vals = np.zeros((niter, nt, nrvals, nq))
+times = np.zeros(niter)
+iters = np.zeros(niter)
+
+length = 0 # Current (just past?) length of the time axis of nonzero values
+    # in the various arrays
+for i in range(nfiles):
+    if i != nfiles - 1:
+        vals[length:length + cutoffs[i]] = di_list[i]['vals'][:cutoffs[i]]
+        times[length:length + cutoffs[i]] = di_list[i]['times'][:cutoffs[i]]
+        iters[length:length + cutoffs[i]] = di_list[i]['iters'][:cutoffs[i]]
+        length += cutoffs[i]
+    else:
+        vals[length:] = di_list[i]['vals']
+        times[length:] = di_list[i]['times']
+        iters[length:] = di_list[i]['iters']
+
+# Initialize joined dictionary, then change it
+di_all = dict(di_list[0])
 
 di_all['vals'] = vals
 di_all['times'] = times
 di_all['iters'] = iters
 di_all['niter'] = niter
+
+iter1, iter2 = di_list[0]['iter1'], di_list[nfiles - 1]['iter2']
 di_all['iter1'] = iter1
 di_all['iter2'] = iter2
-
 
 savename = dirname_stripped + '_time-latitude_' + str(iter1).zfill(8) +\
         '_' + str(iter2).zfill(8) + '.pkl'
 savefile = datadir + savename
 f = open(savefile, 'wb')
 pickle.dump(di_all, f, protocol=4)
+f.close()
