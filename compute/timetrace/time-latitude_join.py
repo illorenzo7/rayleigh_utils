@@ -22,11 +22,28 @@ from get_parameter import get_parameter
 # Find the relevant place to store the data, and create the directory if it
 # doesn't already exist
 
-files = sys.argv[1:-1]
-dirname = sys.argv[-1]
+# Make opportunity for command-line args...
+args = sys.argv[1:]
+n_total_args = len(args)
+n_for_cla = 0
+for arg in args:
+    if arg == '-tag':
+        n_for_cla += 2
+print(n_total_args)
+
+nfiles = n_total_args - 1 - n_for_cla
+print(nfiles)
+
+files = sys.argv[1:nfiles + 1]
+dirname = sys.argv[nfiles + 1]
 datadir = dirname + '/data/'
 dirname_stripped = strip_dirname(dirname)
-nfiles = len(files)
+
+tag = ''
+for i in range(n_total_args):
+    arg = args[i]
+    if arg == '-tag':
+        tag = args[i+1]
 
 # Read in all the dictionaries to be conjoined
 di_list = []
@@ -77,7 +94,7 @@ iter1, iter2 = di_list[0]['iter1'], di_list[nfiles - 1]['iter2']
 di_all['iter1'] = iter1
 di_all['iter2'] = iter2
 
-savename = dirname_stripped + '_time-latitude_' + str(iter1).zfill(8) +\
+savename = dirname_stripped + '_time-latitude_' + tag + '_' + str(iter1).zfill(8) +\
         '_' + str(iter2).zfill(8) + '.pkl'
 savefile = datadir + savename
 f = open(savefile, 'wb')
