@@ -62,7 +62,7 @@ def plot_azav(field, rr, cost, sint, fig=None, ax=None, cmap='RdYlBu_r',\
     units='', minmax=None, posdef=False, logscale=False,\
     plotcontours=True, plotfield=True, nlevs=10, levels=None,\
 	plotlatlines=False, rvals=None, rvals_norm=None, fsize=8,\
-    showplot=False, plot_cbar=True):
+    showplot=False, plot_cbar=True, lw=1.):
 
     ''' Takes (or creates) set of axes with physical aspect ratio 1x2
     and adds a plot of [field] in the meridional plane to the axes,
@@ -144,7 +144,6 @@ def plot_azav(field, rr, cost, sint, fig=None, ax=None, cmap='RdYlBu_r',\
 
     # Specify linewidths to be used in the meridional plane, one for the 
     # boundary (lw) and one for the contours (contour_lw)
-    lw = 1.
     contour_lw = 0.2
     
     if (plotfield):
