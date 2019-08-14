@@ -24,6 +24,7 @@ msun = 1.98891e33 # FROM WIKIPEDIA: 1.98847 \pm 0.00007
 # I am now calling r_m the base of the convection zone, 
 # while r_i (the inner shell radius) can vary
 rhom = 0.18053428
+Tm = 2111256.4
 rm = 5.0e10
 ro = 6.5860209e10 # Radii consistent with the bottom 3 density scale 
         # heights in the Sun rho_i above corresponds to the density
