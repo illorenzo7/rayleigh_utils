@@ -4,16 +4,12 @@
 ############################################################################
 # This routine computes the trace in time/longitude of quantities in the 
 # Shell_Slices data for a particular simulation. 
-# 
-# By default, the quantities traced are the nq (=5, or 8) fluid variables 
-# (vr, vt, vp, s, p, [bp, bt, and bp] (if magnetism present).
-# This may be changed via the '-qvals' CLA, e.g., -qvals '1 2 3 1425 1427'.
 #
 # By default, the 8 variables are computed at each time, in a latitude strip defined by
 # (clat, dlat) = ([central latitude for average], [range of latitudes to average over])
-# at ndepths = 9 depths equally spaced throughout the shell (like the shell
-# slice levels).
-# This may be changed via the '-depths' CLA, e.g., -depths '0 0.4 0.75 0.95'
+# at the depths the shell slices were sampled at.
+# The strip range can be changed using the options -clat and -dlat, e.g., 
+# -clat 60 -dlat 30
 #
 # By default, the routine traces over all Shell_Slices, though user can specify an 
 # alternate range, by, e.g.,
@@ -22,7 +18,7 @@
 # -centerrange iter0 nfiles (trace about central file iter0 over nfiles)
 #
 # The final datacube output ('vals') will have shape
-# (nphi, niter, ndepths, nq)
+# (nphi, niter, nr, nq), where nr and nq are the attributes of the shell slices
 
 # Import relevant modules
 import numpy as np
@@ -31,7 +27,8 @@ import sys, os
 sys.path.append(os.environ['rasource'] + '/post_processing')
 sys.path.append(os.environ['co'])
 from rayleigh_diagnostics import AZ_Avgs, Shell_Slices
-from common import get_file_lists, get_desired_range, strip_dirname
+from common import get_file_lists, get_desired_range, strip_dirname,\
+    get_widest_range_file, get_dict
 from get_parameter import get_parameter
 
 # Get the name of the run directory
@@ -65,39 +62,20 @@ if newrange:
     index_first, index_last = get_desired_range(int_file_list, args)
 
 # Set other defaults
-qvals = [1, 2, 3, 301, 302]
-magnetism = get_parameter(dirname, 'magnetism')
-if magnetism:
-    qvals.append(801)
-    qvals.append(802)
-    qvals.append(803)
-    
-depths = [0.05, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 0.95]
-user_specified_vals = False
-user_specified_depths = False
 tag = ''
 clat = 10.
 dlat = 20. # by default average over the first 20 degrees of the Northern hemisphere
+remove_diffrot = True
 for i in range(nargs):
     arg = args[i]
-    if arg == '-vars':
-        qvals = []
-        qvals_str = args[i+1].split() 
-        for qval_str in qvals_str:
-            qvals.append(int(qval_str))
-        user_specified_vals = True
-    elif arg == '-depths':
-        depths = []
-        depths_str = args[i+1].split()
-        for depth_str in depths_str:
-            depths.append(float(depth_str))
-            user_specified_depths = True
-    elif arg == '-tag':
-        tag = args[i+1]
+    if arg == '-tag':
+        tag = args[i+1] + '_'
     elif arg == '-clat':
         clat = float(args[i+1])
     elif arg == '-dlat':
         dlat = float(args[i+1])
+    elif arg == '-keepdr':
+        remove_diffrot = False
         
 # Set the timetrace savename by the directory, what we are saving, 
 # and first and last iteration files for the trace (and optional tag)
@@ -106,17 +84,17 @@ if clat > 0.:
 else:
     hemisphere = 'S'
     
-savename = dirname_stripped + ('_time-longitude_clat%s%02.0f_dlat%02.0f' %(hemisphere, clat, dlat)) +\
-        tag + file_list[index_first] + '_' + file_list[index_last] + '.pkl'
+savename = dirname_stripped + ('_time-longitude_clat%s%02.0f_dlat%02.0f' %(hemisphere, np.abs(clat), dlat)) +\
+        '_' + tag + file_list[index_first] + '_' + file_list[index_last] + '.pkl'
 savefile = datadir + savename    
-print('Your data will be saved in the file %s' %savename)
+print('Your data will be saved in the file %s.' %savename)
 
 # Read in first Shell_Slices file 
 a0 = Shell_Slices(radatadir + file_list[index_first], '')
 
 # Also read in time-latitude file (needed for differential rotation)
 tl_file = get_widest_range_file(datadir, 'time-latitude')
-print("Getting time-latitude trace data from %s ..." %tl_file)
+print("Getting time-latitude trace data from %s..." %tl_file)
 di_tl = get_dict(datadir + tl_file)
 vals_tl = di_tl['vals']
 qvals_tl = di_tl['qvals']
@@ -124,9 +102,8 @@ times_tl = di_tl['times']
 
 # Read in grid info from time-latitude trace data
 rr, ri, ro = di_tl['rr'], di_tl['ri'], di_tl['ro']
-sint, tt_lat = di_tl['sint'], di_tl['tt_lat']
+sint, cost, tt_lat = di_tl['sint'], di_tl['cost'], di_tl['tt_lat']
 nt, nr = len(sint), len(rr)
-sint_2d = sint.reshape((1, nt))
 nphi = 2*nt
 lons = np.arange(0., 360., 360/nphi)
 
@@ -134,64 +111,103 @@ lons = np.arange(0., 360., 360/nphi)
 ith1 = np.argmin(np.abs(tt_lat - (clat - dlat/2.)))
 ith2 = np.argmin(np.abs(tt_lat - (clat + dlat/2.)))
 lats_strip = tt_lat[ith1:ith2+1]
-# Get quantity indices associated with qvals
-qinds = a0.lut[qvals]
 
 
+# Compute the timetrace of the D.R. at our particular latitude 
+# and at the range of depths in for the shell slices
+iq_vphi = np.argmin(np.abs(np.array(qvals_tl) - 3))
+vphi_tl = vals_tl[:, :, :, iq_vphi]
+rr_tl = rr[di_tl['rinds']]
+nr_tl = len(rr_tl)
+rr_tl_3d = rr_tl.reshape((1, 1, nr_tl))
+sint_3d = sint.reshape((1, nt, 1))
+Omega_tl = vphi_tl/(rr_tl_3d*sint_3d)
+Omega_vs_time = np.mean(Omega_tl[:, ith1:ith2+1, :], axis=1)
 
-
-
-# get r-indices associated with depths
-rinds = []
-for depth in depths:
-    rinds.append(np.argmin(np.abs(rr_depth - depth)))
-
-print ('Considering AZ_Avgs files %s through %s for the trace ...'\
-       %(file_list[index_first], file_list[index_last]))
+print ('Considering Shell_Slices files %s through %s for the trace ...' %(file_list[index_first], file_list[index_last]))
 
 iter1, iter2 = int_file_list[index_first], int_file_list[index_last]
 
 vals = []
+                     
 times = []
 iters = []
 
+phi0 = np.zeros(nr_tl, dtype='float') # keep track of advection by the DR--remember 
+                        # different advections for each depth
+count = 0 # don't know a priori how many times there will be to sample, 
+            # so "count" as we go
 for i in range(index_first, index_last + 1):
-    print ('Adding AZ_Avgs/%s to the trace ...' %file_list[i])
+    print ('Adding Shell_Slices/%s to the trace ...' %file_list[i])
     if i == index_first:
-        az = az0
+        a = a0
     else:   
-        az = AZ_Avgs(radatadir + file_list[i], '')
+        a = Shell_Slices(radatadir + file_list[i], '')
+                     
 
-    local_ntimes = az.niter
-    for j in range(local_ntimes):
-        vals_reduced = az.vals[:, :, qinds, j]
-        vals_loc = vals_reduced[:, rinds, :]
-        vals.append(vals_loc.tolist())
-        times.append(az.time[j])
-        iters.append(az.iters[j])
+    ntimes_loc = a.niter
+    for j in range(ntimes_loc):
+        # Please please PLEASE sample the same depths for both Shell_Slices and time-latitude traces!
+        vals_strip = a.vals[:, ith1:ith2+1, :, :, j]
+        vals_av = np.mean(vals_strip, axis=1)
+        
+        # Can update the times/iters lists now; [vals_av] may need to be "rolled"
+        # (to deal with advection by the D.R.) before being added to [vals]
+        times.append(a.time[j])
+        iters.append(a.iters[j])
+        
+        # Closest time in times_tl to the current time
+        it_tl = np.argmin(np.abs(times_tl - a.time[j]))
+        
+        # Loop over radius and subtract off the differential rotation by "rolling" the phi axis
+        # Please please PLEASE sample the same depths for both Shell_Slices and time-latitude traces!
+        for ir in range(nr_tl):                                        
+            # Get the average rotation rate and figure out how far to advect phi0
+            Omega_now = Omega_vs_time[it_tl, ir]
+            if count > 0:
+                phi0[ir] += Omega_now*(times[count] - times[count - 1])
 
+                # roll the averaged strip along phi (backward by the deflection of phi0)
+                nroll = int(phi0[ir]/(2*np.pi)*nphi)
+                vals_av[:, ir, :] = np.roll(vals_av[:, ir, :], -nroll, axis=0)
+        
+        vals.append(vals_av.tolist())                      
+        count += 1
+        
 # Convert lists into arrays
 vals = np.array(vals)
 times = np.array(times)
 iters = np.array(iters)
 
-# Get final shape of "vals" array
+# Miscellaneous metadata 
 niter = len(iters)
-ntheta = az.ntheta
-ndepths = len(depths)
-nq = len(qvals)
+nq = a.nq
+depths = di_tl['depths']
+ndepths = di_tl['ndepths']
+rinds = di_tl['rinds']
+rr_depth = di_tl['rr_depth']
+rr_height = di_tl['rr_height']
+d = ro - ri
+tt = di_tl['tt']
+rr_2d = di_tl['rr_2d']
+tt_2d = di_tl['tt_2d']
+sint_2d = di_tl['sint_2d']
+cost_2d = di_tl['cost_2d']
+xx = di_tl['xx']
+zz = di_tl['zz']
 
-print ('Traced over %i AZ_Avgs slice(s) ...' %niter)
+# The computer congratulates itself on a job well done!
+print ('Traced over %i Shell_Slices ...' %niter)
 
 # Save the avarage
 print ('Saving file at ' + savefile + ' ...')
 f = open(savefile, 'wb')
-pickle.dump({'vals': vals, 'times': times, 'iters': iters,\
-'depths': depths,'qvals': qvals, 'rinds': rinds, 'qinds': qinds,\
-'niter': niter,\
-'ndepths': ndepths, 'nq': nq, 'iter1': iter1, 'iter2': iter2, 'rr': rr,\
-'rr_depth': rr_depth, 'rr_height': rr_height, 'nr': nr, 'ri': ri,\
-'ro': ro, 'd': d, 'tt': tt, 'tt_lat': tt_lat, 'sint': sint, 'cost': cost,\
-'ntheta': ntheta, 'rr_2d': rr_2d, 'tt_2d': tt_2d, 'sint_2d': sint_2d,\
-'cost_2d': cost_2d, 'xx': xx, 'zz': zz}, f, protocol=4)
+pickle.dump({'vals': vals, 'times': times, 'iters': iters, 'qvals': a0.qv,\
+    'rinds': rinds, 'lut': a0.lut, 'niter': niter, 'ndepths': ndepths, 'nq': nq,\
+    'iter1': iter1, 'iter2': iter2, 'rr': rr, 'rr_depth': rr_depth,\
+    'rr_height': rr_height, 'nr': nr, 'ri': ri, 'ro': ro, 'd': d, 'tt': tt,\
+    'tt_lat': tt_lat, 'sint': sint, 'cost': cost,'nt': nt,\
+    'rr_2d': rr_2d, 'tt_2d': tt_2d, 'sint_2d': sint_2d, 'cost_2d': cost_2d,\
+    'xx': xx, 'zz': zz, 'lats_strip': lats_strip, 'clat': clat, 'dlat': dlat,\
+    'lons':lons, 'nphi': nphi}, f, protocol=4)
 f.close()
