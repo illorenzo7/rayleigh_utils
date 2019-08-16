@@ -95,7 +95,7 @@ for ir in range(a.nr):
     field = vals[:, :, ir]
 
     savename = 'moll_' + varname + '_iter' + fname +\
-        ('_rval%0.3f_' %(rval/rsun)) + '.png'
+        ('_rval%0.3f' %(rval/rsun)) + '.png'
     print('Plotting moll: ' + varname + (', r/rsun = %0.3f (ir = %02i), '\
             %(rval/rsun, ir)) + 'iter ' + fname + ' ...')
 
