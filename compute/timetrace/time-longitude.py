@@ -61,7 +61,7 @@ for arg in args:
 # Set other defaults
 tag = ''
 clat = 10.
-dlat = 20. # by default average over the first 20 degrees of the Northern hemisphere
+dlat = 0. # by default do not average over latitud
 remove_diffrot = True
 for i in range(nargs):
     arg = args[i]
