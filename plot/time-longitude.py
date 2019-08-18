@@ -105,6 +105,20 @@ iter2 = di['iter2']
 angular_velocity = get_parameter(dirname, 'angular_velocity')
 Prot = 2*np.pi/angular_velocity
 
+# Get radial indices of values we want to plot
+i_desiredrvals = []
+rvals_to_plot = []
+if desired_rvals == 'all':
+    i_desiredrvals = np.arange(len(rinds))
+    rvals_to_plot = rvals_sampled
+else:
+    i_desiredrvals = []
+    rvals_to_plot = []
+    for desired_rval in desired_rvals:
+        i_desiredrval = np.argmin(np.abs(rvals_sampled - desired_rval))
+        i_desiredrvals.append(i_desiredrval)
+        rvals_to_plot.append(rvals_sampled[i_desiredrval])
+
 # Get raw trace of "qval"
 if tminmax is None:
     it1, it2 = 0, niter - 1
@@ -118,18 +132,18 @@ t1, t2 = times[0], times[-1] # These begin times and end times
         # will be used for labeling the plots
 
 # Make meshgrid of time/radius
-times_2d, lons_2d = np.meshgrid(times, lons, indexing='ij')
+lons_2d, times_2d = np.meshgrid(lons, times, indexing='ij')
 
 # Loop over the desired radii and save plots
 for i in range(len(i_desiredrvals)):
     i_desiredrval = i_desiredrvals[i]
     rval_to_plot = rvals_to_plot[i]
     
-    quant_loc = qaunt[:, :, i_desiredrval]
+    quant_loc = quant[:, :, i_desiredrval]
     
     # Make appropriate file name to save
     savename = dirname_stripped + '_time-longitude_%i_' +\
-            ('Prot%05.0f-to-%05.0f_clat%02.0f_dlat02.0f_' %(t1, t2, clat, dlat)) +\
+            ('Prot%05.0f-to-%05.0f_clat%02.0f_dlat%02.0f_' %(t1, t2, clat, dlat)) +\
         ('rval%0.3f' %rval_to_plot) + '.png'
 
     if minmax is None:
@@ -138,41 +152,43 @@ for i in range(len(i_desiredrvals)):
      
     # Create figure as a vertical strip, taking into account the desired
     # rpi
-    fig_width_inches = 3.5
+    fig_width_inches = 5.
     fig_height_inches = (times[-1] - times[0])/rpi
     print('figsize = ', fig_width_inches, fig_height_inches)
     fig, ax = plt.subplots(figsize=(fig_width_inches, fig_height_inches)) 
 
-    im1 = ax1.pcolormesh(lons_2d, times_2d, quant_loc.T,\
+    im = ax.pcolormesh(lons_2d, times_2d, quant_loc.T,\
             vmin=minmax[0], vmax=minmax[1], cmap='RdYlBu_r')
     plt.gca().invert_yaxis()
 
     # Put colorbar next to plot 
     # First make room and then find location of subplot
-    plt.subplots_adjust(left=0.1, right=0.85, wspace=0.03, top=0.9)
+    plt.subplots_adjust(left=0.2, right=0.8, wspace=0.03, top=0.9)
 
     ax_xmin, ax_xmax, ax_ymin, ax_ymax = axis_range(ax)
     ax_delta_x = ax_xmax - ax_xmin
     ax_delta_y = ax_ymax - ax_ymin
     ax_center_x = ax_xmin + 0.5*ax_delta_x
 
-    cbar_left = ax_xmax + 0.3*(1 - ax_xmax)
-    cbar_bottom = ax_ymin
-    cbar_width = 0.07*(1 - ax_xmax)
-    cbar_height = ax_delta_y
+    cbar_width = 0.15*(1 - ax_xmax)
+    cbar_height = 0.4*ax_delta_y
+
+    cbar_left = ax_xmax + 0.1*(1 - ax_xmax)
+    cbar_bottom = ax_ymin + 0.5*ax_delta_y - 0.5*cbar_height
     cax = fig.add_axes((cbar_left, cbar_bottom, cbar_width, cbar_height))
     cax.set_title('cgs', **csfont)
-    plt.colorbar(im1, cax=cax)
+    plt.colorbar(im, cax=cax)
 
-    # Label x (time) axis
-    timeunit = r'$P_{\rm{rot}}$'
-    xlabel = 'time (' + timeunit + ')'
-    ax.set_xlabel(xlabel, **csfont)
+    # Set x label
+    ax.set_xlabel(r'$\rm{longitude}\ (^\circ)$')
+
+    # Label y (time) axis
+    timeunit = r'$$'
+    ylabel = r'$\rm{time}\ (P_{\rm{rot}})}$'
+#    ylabel = r'$\rm{time}\ (\longleftarrow)}$'
+    ax.set_ylabel(ylabel, **csfont)
 
     ax.set_xlim((lons[0], lons[-1]))
-
-    # Label y-axis     
-    ax2.set_ylabel(r'$\rm{time}\ (P_{\rm{rot}})$')
 
     # Label the plots by B_r, B_theta, B_phi
     ax_xmin, ax_xmax = ax.get_xlim()
@@ -180,14 +196,18 @@ for i in range(len(i_desiredrvals)):
     ax.text(ax_xmin + 1.01*ax_Dx, 0.,  'qval = %i' %qval, **csfont)
 
     # Put some useful information on the title
-    title = dirname_stripped + '     ' +\
-            (r'$r/R_\odot\ =\ %0.3f\t \lambda_c=%02.0f\ \Delta\lambda=%02.0f$' %(rval_to_plot, clat, dlat)) 
-    ax1.set_title(title, **csfont)
+    title = dirname_stripped + (', iq = %i' %qval) + '\n' +\
+            (r'$r/R_\odot\ =\ %0.3f$' %rval_to_plot) + '\n' +\
+            (r'$\lambda_c=%02.0f^\circ\ \ \ \ \ \Delta\lambda=%02.0f^\circ$' %(clat, dlat)) 
+    ax.set_title(title, **csfont)
 
     # Get ticks everywhere
     plt.sca(ax)
     plt.minorticks_on()
     plt.tick_params(top=True, right=True, direction='in', which='both')
+
+    # Put grid of white lines on plot
+    ax.grid(color='k', linestyle='-', linewidth=0.5, alpha=0.5)
 
     # Save the plot
     if saveplot:
