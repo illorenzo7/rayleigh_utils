@@ -142,8 +142,13 @@ for i in range(len(i_desiredrvals)):
     quant_loc = quant[:, :, i_desiredrval]
     
     # Make appropriate file name to save
-    savename = dirname_stripped + '_time-longitude_%i_' +\
-            ('Prot%05.0f-to-%05.0f_clat%02.0f_dlat%02.0f_' %(t1, t2, clat, dlat)) +\
+    if clat > 0.:
+        hemisphere = 'N'
+    else:
+        hemisphere = 'S'
+
+    savename = dirname_stripped + ('_time-longitude_%i_' %qval) +\
+            ('Prot%05.0f-to-%05.0f_clat%s%02.0f_dlat%02.0f_' %(t1, t2, hemisphere, np.abs(clat), dlat)) +\
         ('rval%0.3f' %rval_to_plot) + '.png'
 
     if minmax is None:
@@ -180,13 +185,13 @@ for i in range(len(i_desiredrvals)):
     plt.colorbar(im, cax=cax)
 
     # Set x label
-    ax.set_xlabel(r'$\rm{longitude}\ (^\circ)$')
+    ax.set_xlabel(r'$\rm{longitude}\ (^\circ)$', fontsize=12)
 
     # Label y (time) axis
     timeunit = r'$$'
     ylabel = r'$\rm{time}\ (P_{\rm{rot}})}$'
 #    ylabel = r'$\rm{time}\ (\longleftarrow)}$'
-    ax.set_ylabel(ylabel, **csfont)
+    ax.set_ylabel(ylabel, **csfont, fontsize=12)
 
     ax.set_xlim((lons[0], lons[-1]))
 
@@ -207,7 +212,8 @@ for i in range(len(i_desiredrvals)):
     plt.tick_params(top=True, right=True, direction='in', which='both')
 
     # Put grid of white lines on plot
-    ax.grid(color='k', linestyle='-', linewidth=0.5, alpha=0.5)
+    ax.grid(color='k', linestyle='-', linewidth=1., alpha=0.3)
+    ax.grid(which='minor', color='k', linestyle='-', linewidth=0.5, alpha=0.3)
 
     # Save the plot
     if saveplot:
