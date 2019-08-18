@@ -219,7 +219,10 @@ def get_widest_range_file(datadir, data_name):
     for i in range(len(datafiles)):
         datafile = datafiles[i]
         if data_name in datafile:
-            specific_files.append(datafile)
+            istart = datafile.find(data_name)
+            possible_iter = datafile[istart + len_name + 1:istart + len_name + 9]
+            if is_an_int(possible_iter):
+                specific_files.append(datafile)
 
     ranges = []
     iters1 = []
