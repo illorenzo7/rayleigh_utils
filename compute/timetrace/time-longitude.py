@@ -81,7 +81,7 @@ if clat > 0.:
 else:
     hemisphere = 'S'
     
-savename = dirname_stripped + ('_time-longitude_clat%s%02.0f_dlat%02.0f' %(hemisphere, np.abs(clat), dlat)) +\
+savename = dirname_stripped + ('_time-longitude_clat%s%02.0f_dlat%03.0f' %(hemisphere, np.abs(clat), dlat)) +\
         '_' + tag + file_list[index_first] + '_' + file_list[index_last] + '.pkl'
 savefile = datadir + savename    
 print('Your data will be saved in the file %s.' %savename)
