@@ -54,12 +54,9 @@ nargs = len(args)
 
 # By default, have the iter indices range over full file range
 index_first, index_last = 0, nfiles - 1
-newrange = False
 for arg in args:
     if arg in ['-range', '-centerrange', '-leftrange', '-rightrange', '-n', '-f', '-all', '-iter']:
-        newrange = True
-if newrange:
-    index_first, index_last = get_desired_range(int_file_list, args)
+        index_first, index_last = get_desired_range(int_file_list, args)
 
 # Set other defaults
 tag = ''
@@ -99,6 +96,7 @@ di_tl = get_dict(datadir + tl_file)
 vals_tl = di_tl['vals']
 qvals_tl = di_tl['qvals']
 times_tl = di_tl['times']
+iters_tl = di_tl['iters']
 
 # Read in grid info from time-latitude trace data
 rr, ri, ro = di_tl['rr'], di_tl['ri'], di_tl['ro']
@@ -112,9 +110,17 @@ ith1 = np.argmin(np.abs(tt_lat - (clat - dlat/2.)))
 ith2 = np.argmin(np.abs(tt_lat - (clat + dlat/2.)))
 lats_strip = tt_lat[ith1:ith2+1]
 
+# Get global rotation rate, for fun
+angular_velocity = get_parameter(dirname, 'angular_velocity')
+Prot = 2*np.pi/angular_velocity
 
 # Compute the timetrace of the D.R. at our particular latitude 
 # and at the range of depths in for the shell slices
+
+# Find where in the range [index_first, index_last] the times of
+# of the time-latitude file lie
+ittl_first = np.argmin(np.abs(iters_tl - int_file_list[index_first]))
+ittl_last = np.argmin(np.abs(iters_tl - int_file_list[index_last]))
 iq_vphi = np.argmin(np.abs(np.array(qvals_tl) - 3))
 vphi_tl = vals_tl[:, :, :, iq_vphi]
 rr_tl = rr[di_tl['rinds']]
@@ -122,11 +128,13 @@ nr_tl = len(rr_tl)
 rr_tl_3d = rr_tl.reshape((1, 1, nr_tl))
 sint_3d = sint.reshape((1, nt, 1))
 Omega_tl = vphi_tl/(rr_tl_3d*sint_3d)
-Omega_vs_time = np.mean(Omega_tl[:, ith1:ith2+1, :], axis=1)
+                      
+Omega_vs_r = np.mean(Omega_tl[ittl_first:ittl_last + 1, ith1:ith2+1, :], axis=(0,1))
 
 print ('Considering Shell_Slices files %s through %s for the trace ...' %(file_list[index_first], file_list[index_last]))
 
 iter1, iter2 = int_file_list[index_first], int_file_list[index_last]
+                      
 
 vals = []
                      
@@ -137,6 +145,8 @@ phi0 = np.zeros(nr_tl, dtype='float') # keep track of advection by the DR--remem
                         # different advections for each depth
 count = 0 # don't know a priori how many times there will be to sample, 
             # so "count" as we go
+    
+    
 for i in range(index_first, index_last + 1):
     print ('Adding Shell_Slices/%s to the trace ...' %file_list[i])
     if i == index_first:
@@ -144,7 +154,6 @@ for i in range(index_first, index_last + 1):
     else:   
         a = Shell_Slices(radatadir + file_list[i], '')
                      
-
     ntimes_loc = a.niter
     for j in range(ntimes_loc):
         # Please please PLEASE sample the same depths for both Shell_Slices and time-latitude traces!
@@ -161,19 +170,25 @@ for i in range(index_first, index_last + 1):
         
         # Loop over radius and subtract off the differential rotation by "rolling" the phi axis
         # Please please PLEASE sample the same depths for both Shell_Slices and time-latitude traces!
+        delta_t = 0. # make these visible outside the loop
+        nroll = 0
+        
         for ir in range(nr_tl):                                        
             # Get the average rotation rate and figure out how far to advect phi0
-            Omega_now = Omega_vs_time[it_tl, ir]
+            Omega_loc = Omega_vs_r[ir]
             if count > 0:
-                phi0[ir] += Omega_now*(times[count] - times[count - 1])
+                delta_t = times[count] - times[count - 1]
+                phi0[ir] += Omega_loc*(delta_t)
 
                 # roll the averaged strip along phi (backward by the deflection of phi0)
                 nroll = int(phi0[ir]/(2*np.pi)*nphi)
                 vals_av[:, ir, :] = np.roll(vals_av[:, ir, :], -nroll, axis=0)
         
+        # Print information on deflection of current slice
+        print("ir: %i\t Delta t: %.3f\t phi0: %.2f\t nroll: %i" %(ir, delta_t/Prot, phi0[ir], nroll))
+                                                               
         vals.append(vals_av.tolist())                      
-        count += 1
-        
+        count += 1        
 # Convert lists into arrays
 vals = np.array(vals)
 times = np.array(times)
