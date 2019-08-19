@@ -30,7 +30,9 @@ time_longitude_file = get_widest_range_file(datadir, 'time-longitude')
 print('the file', time_longitude_file)
 
 # more defaults
-minmax = None
+minmax = None # this may be true at first
+minmax_wasnone = True # This always will be true unless user specifies
+            # values through -minmax
 xminmax = None
 saveplot = True
 showplot = True # will only show if plotting one figure
@@ -53,6 +55,7 @@ for i in range(nargs):
     arg = args[i]
     if arg == '-minmax':
         minmax = float(args[i+1]), float(args[i+2])
+        minmax_wasnone = False
     elif arg == '-usefile':
         time_longitude_file = args[i+1]
         time_longitude_file = time_latitude_file.split('/')[-1]
@@ -151,9 +154,10 @@ for i in range(len(i_desiredrvals)):
             ('Prot%05.0f-to-%05.0f_clat%s%02.0f_dlat%02.0f_' %(t1, t2, hemisphere, np.abs(clat), dlat)) +\
         ('rval%0.3f' %rval_to_plot) + '.png'
 
-    if minmax is None:
+    if minmax is None or minmax_wasnone:
         std_quant = np.std(quant_loc)
         minmax = -3.*std_quant, 3.*std_quant
+        minmax_wasnone = True
      
     # Create figure as a vertical strip, taking into account the desired
     # rpi
@@ -219,7 +223,7 @@ for i in range(len(i_desiredrvals)):
     if saveplot:
         print ('Saving the time-latitude plot at ' + plotdir +\
                 savename + ' ...')
-#        plt.savefig(plotdir + savename, dpi=200)
+        plt.savefig(plotdir + savename, dpi=300)
 
     # Show the plot if only plotting at one latitude
     if len(rvals_to_plot) == 1 and showplot:
