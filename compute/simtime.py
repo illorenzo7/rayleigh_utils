@@ -8,7 +8,7 @@ import numpy as np
 import os, sys
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['co'])
-from rayleigh_diagnostics import G_Avgs
+from rayleigh_diagnostics import G_Avgs, AZ_Avgs
 from common import get_file_lists, get_desired_range, strip_dirname,\
         get_widest_range_file
 from get_parameter import get_parameter
@@ -26,20 +26,36 @@ try: # first try to get data from pre-computed time trace:
     t1, t2 = times[0], times[-1]
     iter1, iter2 = iters[0], iters[-1]
 except:
-    gavg_dir = dirname + '/G_Avgs/'
-    file_list, int_file_list, nfiles = get_file_lists(gavg_dir)
+    try:
+        gavg_dir = dirname + '/G_Avgs/'
+        file_list, int_file_list, nfiles = get_file_lists(gavg_dir)
 
-    f1 = file_list[0]
-    f2 = file_list[-1]
+        f1 = file_list[0]
+        f2 = file_list[-1]
 
-    a1 = G_Avgs(gavg_dir + f1, '')
-    a2 = G_Avgs(gavg_dir + f2, '')
+        a1 = G_Avgs(gavg_dir + f1, '')
+        a2 = G_Avgs(gavg_dir + f2, '')
 
-    t1 = a1.time[0]
-    t2 = a2.time[-1]
+        t1 = a1.time[0]
+        t2 = a2.time[-1]
 
-    iter1 = a1.iters[0]
-    iter2 = a2.iters[-1]
+        iter1 = a1.iters[0]
+        iter2 = a2.iters[-1]
+    except: # and if that fails, try the AZ_Avgs
+        azavg_dir = dirname + '/AZ_Avgs/'
+        file_list, int_file_list, nfiles = get_file_lists(azavg_dir)
+
+        f1 = file_list[0]
+        f2 = file_list[-1]
+
+        a1 = AZ_Avgs(azavg_dir + f1, '')
+        a2 = AZ_Avgs(azavg_dir + f2, '')
+
+        t1 = a1.time[0]
+        t2 = a2.time[-1]
+
+        iter1 = a1.iters[0]
+        iter2 = a2.iters[-1]
 
 simtime = t2 - t1
 

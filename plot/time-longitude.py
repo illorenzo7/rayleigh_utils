@@ -51,6 +51,7 @@ rpi = 100.
 # Get command-line arguments
 args = sys.argv[2:]
 nargs = len(args)
+tag = ''
 for i in range(nargs):
     arg = args[i]
     if arg == '-minmax':
@@ -58,7 +59,7 @@ for i in range(nargs):
         minmax_wasnone = False
     elif arg == '-usefile':
         time_longitude_file = args[i+1]
-        time_longitude_file = time_latitude_file.split('/')[-1]
+        time_longitude_file = time_longitude_file.split('/')[-1]
     elif arg == '-rvals':
         string_desired_rvals = args[i+1].split()
         if string_desired_rvals == ['all']:
@@ -77,6 +78,8 @@ for i in range(nargs):
         rpi = float(args[i+1])
     elif arg == '-qval':
         qval = int(args[i+1])
+    elif arg == '-tag':
+        tag = args[i+1] + '_'
 
 # Read in the time-longitude data (dictionary form)
 print ('Getting time-longitude trace from ' + datadir +\
@@ -150,7 +153,7 @@ for i in range(len(i_desiredrvals)):
     else:
         hemisphere = 'S'
 
-    savename = dirname_stripped + ('_time-longitude_%i_' %qval) +\
+    savename = dirname_stripped + '_time-longitude_' + tag + ('%i_' %qval) +\
             ('Prot%05.0f-to-%05.0f_clat%s%02.0f_dlat%02.0f_' %(t1, t2, hemisphere, np.abs(clat), dlat)) +\
         ('rval%0.3f' %rval_to_plot) + '.png'
 

@@ -81,8 +81,9 @@ if clat > 0.:
 else:
     hemisphere = 'S'
     
-savename = dirname_stripped + ('_time-longitude_clat%s%02.0f_dlat%03.0f' %(hemisphere, np.abs(clat), dlat)) +\
-        '_' + tag + file_list[index_first] + '_' + file_list[index_last] + '.pkl'
+savename = dirname_stripped + '_time-longitude_' + tag +\
+        ('clat%s%02.0f_dlat%03.0f' %(hemisphere, np.abs(clat), dlat)) +\
+        '_' + file_list[index_first] + '_' + file_list[index_last] + '.pkl'
 savefile = datadir + savename    
 print('Your data will be saved in the file %s.' %savename)
 
@@ -178,7 +179,8 @@ for i in range(index_first, index_last + 1):
             Omega_loc = Omega_vs_r[ir]
             if count > 0:
                 delta_t = times[count] - times[count - 1]
-                phi0[ir] += Omega_loc*(delta_t)
+                if remove_diffrot:
+                    phi0[ir] += Omega_loc*(delta_t)
 
                 # roll the averaged strip along phi (backward by the deflection of phi0)
                 nroll = int(phi0[ir]/(2*np.pi)*nphi)
