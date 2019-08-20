@@ -691,7 +691,7 @@ def get_sslice(a, varname, dirname=None, old=False):
     # Cylindrical fluctuating velocity products velocity products  
     # Multiplied by rho to get units of pressure
     elif (varname == 'vlsq'):
-        ref = ReferenceState(dirname + '/reference', '')
+        ref = ReferenceState('/reference', dirname)
         prefactor = ref.density[a.inds]          
         sint = (a.sintheta).reshape((1, a.ntheta, 1))
         cost = (a.costheta).reshape((1, a.ntheta, 1))        
@@ -711,7 +711,7 @@ def get_sslice(a, varname, dirname=None, old=False):
             vl_prime_slice = vl_slice - np.mean(vl_slice, axis=0) 
         sslice = prefactor*vl_prime_slice**2
     elif (varname == 'vzsq'):
-        ref = ReferenceState(dirname + '/reference', '')
+        ref = ReferenceState('/reference', dirname)
         prefactor = ref.density[a.inds]          
         sint = (a.sintheta).reshape((1, a.ntheta, 1))
         cost = (a.costheta).reshape((1, a.ntheta, 1))        
@@ -731,7 +731,7 @@ def get_sslice(a, varname, dirname=None, old=False):
             vz_prime_slice = vz_slice - np.mean(vz_slice, axis=0) 
         sslice = prefactor*vz_prime_slice**2 
     elif (varname == 'vpolsq'):
-        ref = ReferenceState(dirname + '/reference', '')
+        ref = ReferenceState('/reference', dirname)
         prefactor = ref.density[a.inds]                 
         ind_vr, ind_vt = a.lut[qind_vr], a.lut[qind_vt]        
         vr_slice = vals[:, :, :, ind_vr]
@@ -749,7 +749,7 @@ def get_sslice(a, varname, dirname=None, old=False):
             vt_prime_slice = vt_slice - np.mean(vt_slice, axis=0)             
         sslice = prefactor*(vr_prime_slice**2 + vt_prime_slice**2)        
     elif (varname == 'vlvp'):
-        ref = ReferenceState(dirname + '/reference', '')
+        ref = ReferenceState('/reference', dirname)
         prefactor = ref.density[a.inds]        
         sint = (a.sintheta).reshape((1, a.ntheta, 1))
         cost = (a.costheta).reshape((1, a.ntheta, 1))
@@ -774,7 +774,7 @@ def get_sslice(a, varname, dirname=None, old=False):
         vl_prime_slice = vr_prime_slice*sint + vt_prime_slice*cost    
         sslice = prefactor*vl_prime_slice*vp_prime_slice
     elif (varname == 'vlvz'):
-        ref = ReferenceState(dirname + '/reference', '')
+        ref = ReferenceState('/reference', dirname)
         prefactor = ref.density[a.inds]        
         sint = (a.sintheta).reshape((1, a.ntheta, 1))
         cost = (a.costheta).reshape((1, a.ntheta, 1))
@@ -800,7 +800,7 @@ def get_sslice(a, varname, dirname=None, old=False):
         vz_prime_slice = vr_prime_slice*cost - vt_prime_slice*sint  
         sslice = prefactor*vl_prime_slice*vz_prime_slice
     elif (varname == 'vpvz'):
-        ref = ReferenceState(dirname + '/reference', '')
+        ref = ReferenceState('/reference', dirname)
         prefactor = ref.density[a.inds]        
         sint = (a.sintheta).reshape((1, a.ntheta, 1))
         cost = (a.costheta).reshape((1, a.ntheta, 1))
@@ -1123,7 +1123,7 @@ def get_sslice(a, varname, dirname=None, old=False):
             vr_prime_slice = vr_slice - np.mean(vr_slice, axis=0)
             s_prime_slice = s_slice - np.mean(s_slice, axis=0)  
             p_prime_slice = p_slice - np.mean(p_slice, axis=0)               
-        ref = ReferenceState(dirname + '/reference', '')
+        ref = ReferenceState('/reference', dirname)
         cp = get_parameter(dirname, 'pressure_specific_heat')
         ref_p = (ref.pressure)[a.inds]
         ref_temp = (ref.temperature)[a.inds]
