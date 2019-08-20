@@ -8,7 +8,7 @@ import numpy as np
 import os, sys
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['co'])
-from rayleigh_diagnostics import G_Avgs, AZ_Avgs
+from rayleigh_diagnostics import G_Avgs, AZ_Avgs, TransportCoeffs
 from common import get_file_lists, get_desired_range, strip_dirname,\
         get_widest_range_file
 from get_parameter import get_parameter
@@ -59,6 +59,14 @@ except:
 
 simtime = t2 - t1
 
+# Get the thermal diffusion time
+t = TransportCoeffs(dirname + '/transport')
+nu_top = t.nu[0]
+shell_depth = np.max(t.radius) - np.min(t.radius)
+tdt = shell_depth**2/nu_top
+
+simtime_tdt = simtime/tdt
+
 rotation = True
 try:
     Om0 = get_parameter(dirname, 'angular_velocity')
@@ -76,7 +84,7 @@ except:
 
 print ('iter1: %s, iter2: %s' %(f1, f2))
 print ('t1: %.1f, t2: %.1f (%s)' %(t1, t2, unit))
-print ('t2 - t1: %.1f (%s)' %(simtime, unit))
+print ('t2 - t1: %.1f (%s) = %.2f TDTs' %(simtime, unit, simtime_tdt))
 
 if rotation:
     print('P_rot: %.1f days' %(P_rot/86400))
