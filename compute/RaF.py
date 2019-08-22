@@ -12,7 +12,8 @@ import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['co'])
 from get_parameter import get_parameter
-from rayleigh_diagnostics import Shell_Avgs, ReferenceState, GridInfo
+from rayleigh_diagnostics import Shell_Avgs, ReferenceState, GridInfo,\
+        TransportCoeffs
 
 # Get directory name
 dirname = sys.argv[1]
@@ -20,10 +21,11 @@ dirname = sys.argv[1]
 # Read in reference state, grid info for radial weights,
 # and transport coefficients at the top of the domain
 ref = ReferenceState(dirname + '/reference')
+t = TransportCoeffs(dirname + '/transport')
 gi = GridInfo(dirname + '/grid_info')
 rw = gi.rweights
-nu = get_parameter(dirname, 'nu_top')
-kappa = get_parameter(dirname, 'kappa_top')
+nu_vsr = t.nu
+kappa_vsr = t.kappa
 cp = get_parameter(dirname, 'pressure_specific_heat')
 
 
@@ -49,6 +51,8 @@ F = np.sum(rw*F_vsr)
 g = np.sum(rw*g_vsr)
 rho = np.sum(rw*rho_vsr)
 T = np.sum(rw*T_vsr)
+nu = np.sum(rw*nu_vsr)
+kappa = np.sum(rw*kappa_vsr)
 
 # Compute the flux Rayleigh number!
 Ra = g*F*H**4/(cp*rho*T*nu*kappa**2)
