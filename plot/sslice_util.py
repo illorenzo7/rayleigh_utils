@@ -351,9 +351,13 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
 
 def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
         clon=0., posdef=False, logscale=False, varname='vr',\
-        lw_scaling=1., plot_cbar=True): 
+        lw_scaling=1., plot_cbar=True, cbar_fs=10): 
     # Shouldn't have to do this but Python is stupid with arrays ...
     field = np.copy(field_orig)    
+
+    # Set tick label sizes (for colorbar)
+    mpl.rcParams['xtick.labelsize'] = cbar_fs
+    mpl.rcParams['ytick.labelsize'] = cbar_fs
     
     # Get latitude and longitude grid from the costheta array
     theta = np.arccos(costheta)
@@ -494,7 +498,8 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
             cbar.set_ticks(locator)
             cbar_units = ' ' + texunits[varname]
         fig.text(cbar_left + cbar_width, cbar_bottom + 0.5*cbar_height,\
-                 cbar_units, verticalalignment='center', **csfont) 
+                 cbar_units, verticalalignment='center', **csfont,\
+                 fontsize=cbar_fs) 
     
     # Plot outer boundary
     psivals = np.linspace(0, 2*np.pi, 100)
