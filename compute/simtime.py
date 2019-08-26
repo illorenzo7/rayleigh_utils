@@ -82,9 +82,13 @@ except:
     unit = 'days'
     rotation = False
 
+print ('t2 - t1: %.1f %s' %(simtime, unit))
+print ('t2 - t1: %.2f TDTs' %simtime_tdt)
+print ('----------------------')
 print ('iter1: %s, iter2: %s' %(f1, f2))
 print ('t1: %.1f, t2: %.1f (%s)' %(t1, t2, unit))
-print ('t2 - t1: %.1f (%s) = %.2f TDTs' %(simtime, unit, simtime_tdt))
+print ('----------------------')
 
 if rotation:
     print('P_rot: %.1f days' %(P_rot/86400))
+print('TDT: %.1f days' %(tdt/86400))
