@@ -3,6 +3,10 @@
 #
 # Purpose: create a string of figures with 3 subplot each: for Mollweide 
 # slices, AZ_Avgs, and a time-latitude diagram for a specified interval
+
+# Note that the desired quantity must be available in both Shell_Slices and
+# AZ_Avgs; this will generally be one of [1, 2, 3, 501, 502, 801, 802, 803]
+# FOR LATER: Change to be compatiable with derivative thermo variables rho, T
 import matplotlib as mpl
 mpl.use('TkAgg')
 import matplotlib.pyplot as plt
@@ -12,7 +16,7 @@ import numpy as np
 import sys, os
 sys.path.append(os.environ['co'])
 sys.path.append(os.environ['rapp'])
-from common import get_file_lists, rsun, get_desired_range,\
+from common import get_file_lists, rsun, get_desired_range, range_options,\
         get_dict, get_widest_range_file
 from sslice_util import plot_moll, get_satvals, get_sslice
 from azav_util import plot_azav
@@ -20,39 +24,58 @@ from rayleigh_diagnostics import Shell_Slices, AZ_Avgs
 from get_parameter import get_parameter
 from varprops import texlabels, var_indices, texunits
 
-# Get command line arguments
+# Get command line arguments, mainly the directory on which to perform the
+# plotting
+
+# Analysis directory
 dirname = sys.argv[1]
+
+# Rayleigh data dirs
 slicedatadir = dirname + '/Shell_Slices/'
 azdatadir = dirname + '/AZ_Avgs/'
-
 file_list, int_file_list, nfiles = get_file_lists(slicedatadir)
-# Different data times may differ in output number by at most 1
+# Depending on when/how the simulation ended, data may differ in output number 
+# by at most 1
 # Thus ...
 file_list = file_list[:-1]; 
 int_file_list = int_file_list[:-1]
 nfiles -= 1
 
+# Rotation rate and period
 Omega0 = get_parameter(dirname, 'angular_velocity')
 Prot = 2*np.pi/Omega0
 
+# Other defaults
 minmax = None
 restart = False
 varname = 'bp' # by default plot the zonal field
 ir = 0 # by default plot just below the surface
-rval = None # can also find ir by finding the closest point
-clon = 0
+rval = None # can also find ir by finding the closest desired radial value
+            # (normalized by Rsun)
+clon = 0.
 count = 0 # start the plot count at 0000 by default
+tlabel_string_width = None
 
+# Get desired data range to plot
 args = sys.argv[2:]
 nargs = len(args)
-try:
-    index_first, index_last = get_desired_range(int_file_list, args)
-except:
+default_range = True
+for i in range(nargs):
+    arg = args[i]
+    if arg in range_options:
+        default_range = False
+
+if default_range:
     index_first, index_last = 0, nfiles - 1  
     # By default plot all the shell slices
+else:
+    index_first, index_last = get_desired_range(int_file_list, args)
 
+# Get the file names (zero-filled iteration strings) associated with desired
+# plotting range
 fnames = file_list[index_first:index_last+1] 
 
+# Change other defaults
 for i in range(nargs):
     arg = args[i]
     if arg == '-minmax':
@@ -72,11 +95,14 @@ for i in range(nargs):
     elif arg == '-restart':
         restart = True # attempt to complete a partially filled
                         # plot directory
+    elif arg == '-tlabel':
+        tlabel_string_width = int(args[i+1])
 
+# "posdef", varlabel, and var_index will depend on the 
+# variable being plotted
 posdef = False
 if 'sq' in varname:
     posdef = True
-
 varlabel = texlabels[varname]
 var_index = var_indices[varname]
 
@@ -98,8 +124,8 @@ plotdir = dirname + '/plots/moll_azav_tl_movies/' + varname + '/' +\
 if not os.path.isdir(plotdir):
     os.makedirs(plotdir)
 
-# Get grid information from first AZ_Avgs file
-az0 = AZ_Avgs(azdatadir + file_list[index_first], '')
+# Get grid information from last AZ_Avgs file
+az0 = AZ_Avgs(azdatadir + file_list[index_last], '')
 rr = az0.radius
 ri, ro = np.min(rr), np.max(rr)
 d = ro - ri
@@ -112,11 +138,17 @@ tt_lat = (np.pi/2 - tt)*180/np.pi
 nr = az0.nr
 nt = az0.ntheta
 
+# Get max time, in rotations
+max_time = az0.time[-1]/Prot
+max_time_exp = int(np.floor(np.log10(max_time)))
+# Set the tlabel width unless the user wants to do so manually
+if tlabel_string_width is None:
+    tlabel_string_width = max_time_exp + 3 # Make room for full whole number
+        # width, a decimal point, and one tenths place after decimal
+
 # compute some derivative quantities for the grid
 tt_2d, rr_2d = np.meshgrid(tt, rr, indexing='ij')
 sint_2d = np.sin(tt_2d); cost_2d = np.cos(tt_2d)
-xx = rr_2d*sint_2d
-zz = rr_2d*cost_2d
 
 # Get saturation values for Shell_Slice and AZ_Avgs of variable in question
 if minmax is None: # Set saturation values by the field from
@@ -156,6 +188,14 @@ if minmax is None:
     min_tl, max_tl = -3.*np.std(tl_vals), 3.*np.std(tl_vals)
 else:
     min_tl, max_tl = minmax[4], minmax[5]
+
+# This was in the for-loop before, which messed up the exponent (first plot
+# would have, e.g., 10^3, all following would have 10^0))
+maxabs_tl = max(abs(min_tl), abs(max_tl))
+tl_exp = int(np.floor(np.log10(maxabs_tl)))
+tl_vals /= 10**tl_exp
+min_tl /= 10**tl_exp
+max_tl /= 10**tl_exp
 
 # General parameters for main axis/color bar
 moll_height_inches = 4.
@@ -216,20 +256,14 @@ if restart:
 firstplot = True
 for fname in fnames:
     # Read in desired shell slice
-    if firstplot and not restart:
-        a = a0
-        az = az0
-        firstplot = False
-    else:
-        a = Shell_Slices(slicedatadir + fname, '')
-        az = AZ_Avgs(azdatadir + fname, '')
+    a = Shell_Slices(slicedatadir + fname, '')
+    az = AZ_Avgs(azdatadir + fname, '')
 
+    # Loop over times and make plots
     for j in range(a.niter):
         time = a.time[j]/Prot
             
         # Create the plot using subplot axes
-
-        # Loop over times and make plots
         savename = 'img' + str(count).zfill(4) + '.png'
         print('Plotting moll_azav_tl: ' + varname +\
                 (', rval = %0.3f, ' %rval) + 'iter ' + fname + ' ...')
@@ -256,12 +290,13 @@ for fname in fnames:
         field = vals[:, :, ir]
         plot_moll(field, a.costheta, fig=fig, ax=ax_moll, varname=varname,\
                 minmax=(min_slice, max_slice), clon=clon) 
+        time_string = '%.1f' %time
+        time_string = time_string.zfill(tlabel_string_width)
         title = varlabel + '     ' +\
                 (r'$r/R_\odot\ =\ %0.3f$' %rval) +\
-                '     ' + (r'$t = %02.1f\ P_{\rm{rot}}$' %(time/Prot))
+                '     ' + (r'$t = %s\ P_{\rm{rot}}$' %time_string)
         fig.text(margin_x + 0.5*moll_width, 1. - 0.5*margin_top,\
                 title, ha='center', va='center', **csfont, fontsize=14)
-#        ax_moll.axis('off')
 
         # Make the AZ_Avgs plot:
         var_az = az.vals[:, :, az.lut[var_index], 0]
@@ -288,17 +323,13 @@ for fname in fnames:
         times_2d_2, lats_2d_2 = np.meshgrid(times_2, tt_lat, indexing='ij')
         tl_vals_1 = tl_vals[:it_current]
         tl_vals_2 = tl_vals[it_current:]
-        maxabs_tl = max(abs(min_tl), abs(max_tl))
-        tl_exp = int(np.floor(np.log10(maxabs_tl)))
-        tl_vals /= 10**tl_exp
-        min_tl /= 10**tl_exp
-        max_tl /= 10**tl_exp
+
         # set color bar by completed time in interval
         im_tl = ax_tl.pcolormesh(times_2d_1, lats_2d_1, tl_vals_1,\
                 cmap='RdYlBu_r', vmin=min_tl, vmax=max_tl)
         # ... and grey out uncovered time
         ax_tl.pcolormesh(times_2d_2, lats_2d_2, tl_vals_2,\
-                cmap='RdYlBu_r', vmin=min_tl, vmax=max_tl, alpha=0.02)
+                cmap='RdYlBu_r', vmin=min_tl, vmax=max_tl, alpha=0.03)
 
         # Set up the time-latitude colorbar
         cax_tl.set_title(r'$\times10^{%i}\ \rm{G}$' %tl_exp, **csfont,\

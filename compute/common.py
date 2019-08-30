@@ -43,6 +43,8 @@ def get_file_lists(radatadir):
     
     return file_list, int_file_list, nfiles
 
+range_options = ['-range', '-centerrange', '-leftrange', '-rightrange', '-n',\
+               '-f', '-all', '-iter']
 def get_desired_range(int_file_list, args):
     nargs = len(args)
     nfiles = len(int_file_list)
@@ -136,23 +138,6 @@ def get_desired_range(int_file_list, args):
             index_first = 0
             number_to_average = int(args[i+1])
             index_last = number_to_average - 1
-        elif arg == '-centerrange':
-            desired_central_iter = args[i+1]
-            if desired_central_iter == 'first':
-                desired_central_iter = int_file_list[0]
-            elif desired_central_iter == 'last':
-                desired_central_iter = int_file_list[-1]
-            else:
-                desired_central_iter = int(desired_central_iter)
-            central_index = np.argmin(np.abs(desired_central_iter -\
-                    int_file_list))
-            ndatafiles = int(args[i+2])
-            if ndatafiles % 2 == 0: #ndatafiles is even
-                index_first = central_index - ndatafiles//2 + 1
-                index_last = central_index + ndatafiles//2
-            else:  #ndatafiles is odd
-                index_first = central_index - ndatafiles//2
-                index_last = central_index + ndatafiles//2
         elif arg == '-all':
             index_first = 0
             index_last = nfiles - 1
