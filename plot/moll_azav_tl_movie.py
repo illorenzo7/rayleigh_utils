@@ -1,22 +1,21 @@
 # Created: 03/29/2019
 # Author: Loren Matilsky
 #
-# Purpose: create a string Mollweide slices for every shell slice in a
-# directory, to blend together in an ffmpeg movie
+# Purpose: create a string of figures with 3 subplot each: for Mollweide 
+# slices, AZ_Avgs, and a time-latitude diagram for a specified interval
 import matplotlib as mpl
 mpl.use('TkAgg')
 import matplotlib.pyplot as plt
 plt.rcParams['mathtext.fontset'] = 'dejavuserif'
 csfont = {'fontname':'DejaVu Serif'}
-from binormalized_cbar import MidpointNormalize
 import numpy as np
 import sys, os
 sys.path.append(os.environ['co'])
 sys.path.append(os.environ['rapp'])
-from common import get_file_lists, strip_dirname, rsun, get_desired_range,\
+from common import get_file_lists, rsun, get_desired_range,\
         get_dict, get_widest_range_file
 from sslice_util import plot_moll, get_satvals, get_sslice
-from azavg_util import plot_azav
+from azav_util import plot_azav
 from rayleigh_diagnostics import Shell_Slices, AZ_Avgs
 from get_parameter import get_parameter
 from varprops import texlabels, var_indices, texunits
@@ -149,9 +148,10 @@ ir_tl = np.argmin(np.abs(rvals_sampled - rval))
 qvals = np.array(di['qvals'])
 iq_tl = np.argmin(np.abs(qvals - var_index))
 
-# Arrays for plotting (every time!)
-times2, lats2 = np.meshgrid(times, tt_lat, indexing='ij')
+# Same values used in each time-latitude plot
 tl_vals = vals[:, :, ir_tl, iq_tl]
+
+# Determine min/max values for time-latitude plot (used for each image)
 if minmax is None:
     min_tl, max_tl = -3.*np.std(tl_vals), 3.*np.std(tl_vals)
 else:
@@ -166,7 +166,6 @@ tl_height_inches = 1.5
 margin_inches = 1/8
 margin_top_inches = 1/2
 margin_bottom_inches = 1/2
-margin_left_tl_inches = 3/4
 hspace_inches = 3/4
 
 # Global figure dimensions
@@ -182,7 +181,6 @@ margin_y = margin_inches/fig_height_inches
 hspace = hspace_inches/fig_height_inches
 margin_top = margin_top_inches/fig_height_inches
 margin_bottom = margin_bottom_inches/fig_height_inches
-margin_left_tl = margin_left_tl_inches/fig_width_inches
 
 moll_width = moll_width_inches/fig_width_inches
 moll_height = moll_height_inches/fig_height_inches
@@ -191,7 +189,9 @@ azav_height = azav_height_inches/fig_height_inches
 
 tl_height = 1. - margin_top - moll_height - hspace - margin_bottom
 tl_width = 0.5*moll_width
-#tl_width = 1. - margin_left_tl - margin_x
+#tl_center = margin_x + moll_width + 0.5*margin_x
+tl_center = margin_x + 0.5*(1 - 2*margin_x)
+tl_left = tl_center - 0.5*tl_width
 
 print ("Plotting slice/AZ_Avg " + fnames[0] + " through " + fnames[-1])
 print ("Or img%04i.png through img%04i.png"\
@@ -225,7 +225,7 @@ for fname in fnames:
         az = AZ_Avgs(azdatadir + fname, '')
 
     for j in range(a.niter):
-        time = a.time[j]
+        time = a.time[j]/Prot
             
         # Create the plot using subplot axes
 
@@ -241,11 +241,10 @@ for fname in fnames:
         ax_azav = fig.add_axes([margin_x + moll_width + margin_x,\
                 margin_bottom + tl_height + hspace,\
                 azav_width, azav_height])
-        ax_tl = fig.add_axes([margin_left_tl, margin_bottom,\
-                tl_width, tl_height])
+        ax_tl = fig.add_axes([tl_left, margin_bottom, tl_width, tl_height])
 
         # Colorbar to accompany the time-latitude plot
-        tl_cbar_left = margin_left_tl + tl_width + 2*margin_x 
+        tl_cbar_left = tl_left + tl_width + 2*margin_x 
         tl_cbar_bottom = margin_bottom
         tl_cbar_height = 0.9*tl_height
         tl_cbar_width = 1/20*tl_cbar_height
@@ -253,8 +252,10 @@ for fname in fnames:
                 tl_cbar_width, tl_cbar_height])
        
         # Make the Mollweide plot
-        plot_moll(fig, ax_moll, a, dirname, varname, ir=ir,\
-                minmax=(min_slice, max_slice), clon=clon, plot_title=False) 
+        vals = get_sslice(a, varname, dirname=dirname)
+        field = vals[:, :, ir]
+        plot_moll(field, a.costheta, fig=fig, ax=ax_moll, varname=varname,\
+                minmax=(min_slice, max_slice), clon=clon) 
         title = varlabel + '     ' +\
                 (r'$r/R_\odot\ =\ %0.3f$' %rval) +\
                 '     ' + (r'$t = %02.1f\ P_{\rm{rot}}$' %(time/Prot))
@@ -264,13 +265,11 @@ for fname in fnames:
 
         # Make the AZ_Avgs plot:
         var_az = az.vals[:, :, az.lut[var_index], 0]
-        plot_azav (fig, ax_azav, var_az, rr, cost, sint,\
-               units = texunits[varname], boundstype = 'manual',\
-               caller_minmax = (min_az, max_az),\
-               norm=MidpointNormalize(0), plotcontours=False,\
-               plotlatlines=True, fsize=10)
+        plot_azav (var_az, rr, cost, sint, fig=fig, ax=ax_azav,\
+               units = texunits[varname], minmax = (min_az, max_az),\
+               plotcontours=False, plotlatlines=True, fsize=10)
 
-        # Mark the line of the rvalue we're plotting
+        # Mark the line of the r-value we're plotting
         r_over_ro = rval/(ro/rsun)
         linex = r_over_ro*sint
         linez = r_over_ro*cost
@@ -278,14 +277,28 @@ for fname in fnames:
 
 
         # Make the time-latitude plot underneath everything
-        # Factor out the exponent
+
+        # Arrays for plotting time-latitude diagram (use two, 
+        # with the one after the current time greyed out)
+        #times2, lats2 = np.meshgrid(times, tt_lat, indexing='ij')
+        it_current = np.argmin(np.abs(times - time))
+        times_1 = times[:it_current + 1]
+        times_2 = times[it_current:]
+        times_2d_1, lats_2d_1 = np.meshgrid(times_1, tt_lat, indexing='ij')
+        times_2d_2, lats_2d_2 = np.meshgrid(times_2, tt_lat, indexing='ij')
+        tl_vals_1 = tl_vals[:it_current]
+        tl_vals_2 = tl_vals[it_current:]
         maxabs_tl = max(abs(min_tl), abs(max_tl))
         tl_exp = int(np.floor(np.log10(maxabs_tl)))
         tl_vals /= 10**tl_exp
         min_tl /= 10**tl_exp
         max_tl /= 10**tl_exp
-        im_tl = ax_tl.pcolormesh(times2, lats2, tl_vals,\
+        # set color bar by completed time in interval
+        im_tl = ax_tl.pcolormesh(times_2d_1, lats_2d_1, tl_vals_1,\
                 cmap='RdYlBu_r', vmin=min_tl, vmax=max_tl)
+        # ... and grey out uncovered time
+        ax_tl.pcolormesh(times_2d_2, lats_2d_2, tl_vals_2,\
+                cmap='RdYlBu_r', vmin=min_tl, vmax=max_tl, alpha=0.02)
 
         # Set up the time-latitude colorbar
         cax_tl.set_title(r'$\times10^{%i}\ \rm{G}$' %tl_exp, **csfont,\
@@ -295,9 +308,9 @@ for fname in fnames:
         cbar.set_ticklabels(['%1.1f' %min_tl, '0', '%1.1f' %max_tl])
 
         # Put a vertical line at current time
-        linex = np.zeros(100) + time/Prot
+        linex = np.zeros(100) + time
         liney = np.linspace(-90, 90, 100)
-        ax_tl.plot(linex, liney, 'k--', linewidth=0.8)
+#        ax_tl.plot(linex, liney, 'k--', linewidth=0.8)
 
         # Label the x-axis (time)
         xlabel = 'time (' + r'$P_{\rm{rot}}$' + ')'
