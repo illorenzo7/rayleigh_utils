@@ -6,7 +6,7 @@ plt.rcParams['mathtext.fontset'] = 'dejavuserif'
 csfont = {'fontname':'DejaVu Serif'}
 import numpy as np
 import sys, os
-sys.path.append(os.environ['co'])
+sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
 from binormalized_cbar import MidpointNormalize
 from cartopy import crs

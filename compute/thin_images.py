@@ -2,6 +2,7 @@
 # Created: 04/05/2019
 # Takes sequential images from one directory (dir1) and copies every nth 
 # one to another directory (dir2). 
+# Usage: python $co/thin_images.py [dir1] [dir2] [n]
 import sys, os
 from shutil import copy
 

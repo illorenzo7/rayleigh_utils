@@ -90,12 +90,12 @@ for iiter in range(index_first, index_last + 1):
     # Find desired radius (by default ir=0--near outer surface)
     if not rval is None:
         ir = np.argmin(np.abs(a.radius/rsun - rval))
-    rval = radius[ir] # in any case, this is the actual rvalue we get
+    rval = a.radius[ir]/rsun # in any case, this is the actual rvalue we get
     
     savename = 'moll_iter' + fname + ('_rval%0.3f_' %(rval/rsun)) +\
             varname  + '.png'
     print('Plotting moll: ' + varname + (', r/rsun = %0.3f (ir = %02i), '\
-            %(rval/rsun, ir)) + 'iter ' + fname + ' ...')
+            %(rval, ir)) + 'iter ' + fname + ' ...')
     vals = get_sslice(a, varname, dirname=dirname)
     field = vals[:, :, ir]
     
@@ -113,7 +113,7 @@ for iiter in range(index_first, index_last + 1):
     ax_center_x = ax_xmin + 0.5*ax_delta_x    
     
     varlabel = texlabels[varname]
-    title = varlabel + '     ' + (r'$r/R_\odot\ =\ %0.3f$' %(rval/rsun)) +\
+    title = varlabel + '     ' + (r'$r/R_\odot\ =\ %0.3f$' %rval) +\
             '     ' + ('iter = ' + fname)    
     fig.text(ax_center_x, ax_ymax + 0.02*ax_delta_y, title,\
          verticalalignment='bottom', horizontalalignment='center',\
