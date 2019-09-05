@@ -1,6 +1,6 @@
 import matplotlib as mpl
 mpl.use('TkAgg')
-from matplotlib import ticker
+from matplotlib import ticker, colors
 import matplotlib.pyplot as plt
 plt.rcParams['mathtext.fontset'] = 'dejavuserif'
 csfont = {'fontname':'DejaVu Serif'}
@@ -111,17 +111,21 @@ def default_axes_1by1():
     subplot_width_inches = 7.5
     subplot_height_inches = 7.5
     margin_inches = 1./8.
+    margin_bottom_inches = 3./4.
 
     fig_width_inches = subplot_width_inches + 2.*margin_inches
-    fig_height_inches = subplot_height_inches + 2.*margin_inches
+    fig_height_inches = subplot_height_inches + margin_inches +\
+            margin_bottom_inches
 
     margin_x = margin_inches/fig_width_inches
     margin_y = margin_inches/fig_height_inches
+    margin_bottom = margin_bottom_inches/fig_height_inches
     subplot_width = subplot_width_inches/fig_width_inches
     subplot_height = subplot_height_inches/fig_height_inches
 
     fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
-    ax = fig.add_axes((margin_x, margin_y, subplot_width, subplot_height))
+    ax = fig.add_axes((margin_x, margin_bottom, subplot_width,\
+            subplot_height))
     return fig, ax
 
 def default_axes_2by1():
@@ -129,17 +133,21 @@ def default_axes_2by1():
     subplot_width_inches = 10.
     subplot_height_inches = 5.
     margin_inches = 1./8.
+    margin_bottom_inches = 3./4. # leave room for colorbar
 
     fig_width_inches = subplot_width_inches + 2.*margin_inches
-    fig_height_inches = subplot_height_inches + 2.*margin_inches
+    fig_height_inches = subplot_height_inches + margin_inches +\
+            margin_bottom_inches
 
     margin_x = margin_inches/fig_width_inches
     margin_y = margin_inches/fig_height_inches
+    margin_bottom = margin_bottom_inches/fig_height_inches
     subplot_width = subplot_width_inches/fig_width_inches
     subplot_height = subplot_height_inches/fig_height_inches
 
     fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
-    ax = fig.add_axes((margin_x, margin_y, subplot_width, subplot_height))
+    ax = fig.add_axes((margin_x, margin_bottom, subplot_width,\
+            subplot_height))
     return fig, ax
 
 def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
@@ -351,7 +359,7 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
 
 def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
         clon=0., posdef=False, logscale=False, varname='vr',\
-        lw_scaling=1., plot_cbar=True, cbar_fs=10): 
+        lw_scaling=1., plot_cbar=True, cbar_fs=10, symlog=False): 
     # Shouldn't have to do this but Python is stupid with arrays ...
     field = np.copy(field_orig)    
 
@@ -409,7 +417,14 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
     radius = max(np.max(np.abs(x))/2., np.max(np.abs(y)))
     x /= radius # now falls in [-2, 2]
     y /= radius # now falls in [-1, 1]
-    
+
+    # Create a default fig/ax pair, if calling routine didn't specify
+    # them
+    figwasNone = False
+    if fig is None and ax is None:
+        fig, ax = default_axes_2by1()
+        figwasNone = True
+
     ax.set_xlim((-2.02, 2.02)) # deal with annoying whitespace cutoff issue
     ax.set_ylim((-1.01, 1.01))
     ax.axis('off') # get rid of x/y axis coordinates
@@ -505,3 +520,6 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
     psivals = np.linspace(0, 2*np.pi, 100)
     xvals, yvals = 2.*np.cos(psivals), np.sin(psivals)
     ax.plot(xvals, yvals, 'k', linewidth=1.3*lw_scaling)
+    if figwasNone: # user probably called plot_moll from the python 
+        # command line, wanting to view the projection immediately
+        plt.show()
