@@ -12,7 +12,8 @@ from binormalized_cbar import MidpointNormalize
 from cartopy import crs
 from matplotlib import colors
 from varprops import texunits
-from common import get_satvals, saturate_array, rsun, get_exp, rms
+from common import get_satvals, saturate_array, rsun, get_exp, rms,\
+        sci_format
 from get_sslice import get_sslice
 from get_parameter import get_parameter
 
@@ -433,6 +434,7 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
             
     # Make the Mollweide projection
     if symlog:
+        saturate_array(field, minmax[0], minmax[1])
         sig = np.std(field)
         if linthresh is None:
             linthresh = 0.3*sig
@@ -440,19 +442,32 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
         dynamic_range_decades = np.log10(dynamic_range)
         if linscale is None:
             linscale = dynamic_range_decades
-        im = ax.pcolormesh(x, y, field, cmap='RdYlBu_r',\
-                norm=colors.SymLogNorm(linthresh=linthresh,\
-                linscale=linscale, vmin=minmax[0], vmax=minmax[1]))
+#        im = ax.pcolormesh(x, y, field, cmap='RdYlBu_r',\
+#                norm=colors.SymLogNorm(linthresh=linthresh,\
+#                linscale=linscale, vmin=minmax[0], vmax=minmax[1]))
+        log_thresh = np.log10(linthresh)
+        log_max = np.log10(minmax[1])
+        nlevs_per_interval = 100
+        levels_neg = -np.logspace(log_max, log_thresh, nlevs_per_interval,\
+                endpoint=False)
+        levels_mid = np.linspace(-linthresh, linthresh, nlevs_per_interval,\
+                endpoint=False)
+        levels_pos = np.logspace(log_thresh, log_max, nlevs_per_interval)
+        levels = np.hstack((levels_neg, levels_mid, levels_pos))
+        im = ax.contourf(x, y, field, cmap='RdYlBu_r',\
+            norm=colors.SymLogNorm(linthresh=linthresh,\
+            linscale=linscale, vmin=minmax[0], vmax=minmax[1]),\
+            levels=levels)
     else:
         if not logscale:
             saturate_array(field, minmax[0], minmax[1])
             im = ax.contourf(x, y, field, cmap=plt.cm.RdYlBu_r,\
-                    levels=np.linspace(minmax[0], minmax[1], 50),\
+                    levels=np.linspace(minmax[0], minmax[1], 150),\
                     norm=MidpointNormalize(0))
         else: 
             im = ax.contourf(x, y, field, cmap='Greys',\
                 norm=colors.LogNorm(vmin=minmax[0], vmax=minmax[1]),\
-                levels=np.logspace(minexp, maxexp, 50, base=np.exp(1.)))
+                levels=np.logspace(minexp, maxexp, 150, base=np.exp(1.)))
       
     # Draw parallels and meridians, evenly spaced by 30 degrees
     default_lw = 0.5*lw_scaling # default linewidth bit thinner
@@ -504,10 +519,10 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
 #    ax_center_y = ax_ymin + 0.5*ax_delta_y   
    
     if plot_cbar:
-        cbar_aspect = 1./20.
+        cbar_aspect = 1./40.
         fig_aspect = ax_delta_x/ax_delta_y*0.5 
         # assumes subplot aspect ratio is 0.5
-        cbar_width = 0.25*ax_delta_x # make cbar one-quarter
+        cbar_width = 0.5*ax_delta_x # make cbar one-quarter
                             # as long as plot is wide
         cbar_height = cbar_width*cbar_aspect/fig_aspect
         cbar_bottom = ax_ymin - 2.5*cbar_height
@@ -517,18 +532,26 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
         
         cbar = plt.colorbar(im, cax=cax, orientation='horizontal')
         # make a "title" (label "m/s" to the right of the colorbar)
+        print('symlog = ', symlog)
         if not symlog:
             if not posdef:
                 cbar_units = ' ' + (r'$\times10^{%i}$' %maxabs_exp) +\
                         ' ' + texunits[varname]
                 cbar.set_ticks([minmax[0], 0, minmax[1]])
-                cbar.set_ticklabels(['%1.1f' %minmax[0], '0', '%1.1f' %minmax[1]])
+                cbar.set_ticklabels(['%1.1f' %minmax[0], '0', '%1.1f'\
+                        %minmax[1]])
             else:
                 locator = ticker.LogLocator(base=10)
                 cbar.set_ticks(locator)
                 cbar_units = ' ' + texunits[varname]
         else:
             cbar_units = ' ' + texunits[varname]
+            cbar.set_ticks([-minmax[1], -linthresh, 0, linthresh,\
+                    minmax[1]])
+            cbar.set_ticklabels([sci_format(-minmax[1]),\
+                    sci_format(-linthresh), '0', sci_format(linthresh),\
+                    sci_format(minmax[1])])
+#            cax.minorticks_on()
 
         fig.text(cbar_left + cbar_width, cbar_bottom + 0.5*cbar_height,\
                  cbar_units, verticalalignment='center', **csfont,\

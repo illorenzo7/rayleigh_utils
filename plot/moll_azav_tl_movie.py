@@ -18,7 +18,7 @@ import sys, os
 sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
 from common import get_file_lists, rsun, get_desired_range, range_options,\
-        get_dict, get_widest_range_file
+        get_dict, get_widest_range_file, sci_format, saturate_array
 from sslice_util import plot_moll, get_satvals, get_sslice
 from azav_util import plot_azav
 from rayleigh_diagnostics import Shell_Slices, AZ_Avgs
@@ -360,7 +360,7 @@ for fname in fnames:
         # with the one after the current time greyed out)
         #times2, lats2 = np.meshgrid(times, tt_lat, indexing='ij')
         it_current = np.argmin(np.abs(times - time))
-        times_1 = times[:it_current + 1]
+        times_1 = times[:it_current]
         times_2 = times[it_current:]
         times_2d_1, lats_2d_1 = np.meshgrid(times_1, tt_lat, indexing='ij')
         times_2d_2, lats_2d_2 = np.meshgrid(times_2, tt_lat, indexing='ij')
@@ -372,12 +372,28 @@ for fname in fnames:
         if symlog:
             norm = colors.SymLogNorm(linthresh=linthresh_tl,\
                     linscale=linscale_tl, vmin=min_tl, vmax=max_tl)
-        im_tl = ax_tl.pcolormesh(times_2d_1, lats_2d_1, tl_vals_1,\
-                cmap='RdYlBu_r', vmin=min_tl, vmax=max_tl, norm=norm)
+        saturate_array(tl_vals_1, min_tl, max_tl)
+        saturate_array(tl_vals_2, min_tl, max_tl)
         # ... and grey out uncovered time
-        ax_tl.pcolormesh(times_2d_2, lats_2d_2, tl_vals_2,\
+        if not symlog:
+            levels = np.linspace(min_tl, max_tl, 150)
+        else:
+            print("WEEEEEEEE")
+            log_thresh = np.log10(linthresh_tl)
+            log_max = np.log10(max_tl)
+            nlevs_per_interval = 100
+            levels_neg = -np.logspace(log_max, log_thresh, nlevs_per_interval,\
+                    endpoint=False)
+            levels_mid = np.linspace(-linthresh_tl, linthresh_tl, nlevs_per_interval,\
+                    endpoint=False)
+            levels_pos = np.logspace(log_thresh, log_max, nlevs_per_interval)
+            levels = np.hstack((levels_neg, levels_mid, levels_pos))
+        im_tl = ax_tl.contourf(times_2d_1, lats_2d_1, tl_vals_1,\
+                cmap='RdYlBu_r', vmin=min_tl, vmax=max_tl, norm=norm,\
+                levels=levels)
+        ax_tl.contourf(times_2d_2, lats_2d_2, tl_vals_2,\
                 cmap='RdYlBu_r', vmin=min_tl, vmax=max_tl, alpha=0.03,\
-                norm=norm)
+                norm=norm, levels=levels)
 
         # Set up the time-latitude colorbar
         if not symlog:
@@ -390,6 +406,12 @@ for fname in fnames:
         if not symlog:
             cbar.set_ticks([min_tl, 0, max_tl])
             cbar.set_ticklabels(['%1.1f' %min_tl, '0', '%1.1f' %max_tl])
+        else:
+            cbar.set_ticks([-max_tl, -linthresh_tl, 0, linthresh_tl,\
+                    max_tl])
+            cbar.set_ticklabels([sci_format(-max_tl),\
+                    sci_format(-linthresh_tl), '0',\
+                    sci_format(linthresh_tl), sci_format(max_tl)])
 
         # Put a vertical line at current time
         linex = np.zeros(100) + time
@@ -410,10 +432,11 @@ for fname in fnames:
         ax_tl.set_ylabel('latitude (deg.)', **csfont)
         ax_tl.set_yticks(np.arange(-90, 90, 30))
         ax_tl.set_ylim(-90, 90)
-
-        plt.savefig(plotdir + savename, dpi=200)
+        print("Saving ", plotdir + savename)
+        plt.savefig(plotdir + savename, dpi=600)
         count += 1
         plt.close()
+#        plt.show()
 #        print('minmax_moll: ', min_slice, max_slice)
 #        print('minmax_az: ', min_az, max_az)
 #        print('minmax_tl: ', min_tl, max_tl)

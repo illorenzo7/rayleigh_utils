@@ -313,6 +313,12 @@ def get_exp(num):
     else:
         return 1
 
+def sci_format(num):
+    exponent = get_exp(num)
+    mantissa = num/10.**exponent
+    return (r'$%1.1f\times10^{%i}$' %(mantissa, exponent))
+
+
 def my_bool(x):
     x = x.lower()
     if x == 't' or x == 'true' or x == '1':

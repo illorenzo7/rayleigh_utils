@@ -12,7 +12,8 @@ from matplotlib import colors
 plt.rcParams['mathtext.fontset'] = 'dejavuserif'
 csfont = {'fontname':'DejaVu Serif'}
 plt.rcParams['contour.negative_linestyle'] = 'solid'
-from common import rms, get_satvals, get_exp, rsun, trim_field
+from common import rms, get_satvals, get_exp, rsun, trim_field,\
+        saturate_array, sci_format
 from binormalized_cbar import MidpointNormalize
 
 def fmt(x, pos):
@@ -133,7 +134,7 @@ def plot_azav(field, rr, cost, sint, fig=None, ax=None, cmap='RdYlBu_r',\
         cbax_height = 0.5*cavity_height
         cbax_width = cbax_height/cbax_aspect/ax_aspect
         
-        cbax_left = cbax_center_x - cbax_width/2.
+        cbax_left = ax_left + 0.1*ax_width
         cbax_bottom = cbax_center_y - cbax_height/2.
     
     # Calculate the grid on which to plot
@@ -154,6 +155,7 @@ def plot_azav(field, rr, cost, sint, fig=None, ax=None, cmap='RdYlBu_r',\
 #        levels=levs)
 #        plt.sca(ax)
         if symlog:
+            saturate_array(field, minmax[0], minmax[1])
             sig = np.std(field)
             if linthresh is None:
                 linthresh = 0.3*sig
@@ -161,20 +163,35 @@ def plot_azav(field, rr, cost, sint, fig=None, ax=None, cmap='RdYlBu_r',\
             dynamic_range_decades = np.log10(dynamic_range)
             if linscale is None:
                 linscale = dynamic_range_decades
-            plt.pcolormesh(xx, zz, field, cmap='RdYlBu_r',\
+            log_thresh = np.log10(linthresh)
+            log_max = np.log10(minmax[1])
+            nlevs_per_interval = 100
+            levels_neg = -np.logspace(log_max, log_thresh,\
+                    nlevs_per_interval,\
+                    endpoint=False)
+            levels_mid = np.linspace(-linthresh, linthresh,\
+                    nlevs_per_interval, endpoint=False)
+            levels_pos = np.logspace(log_thresh, log_max,\
+                    nlevs_per_interval)
+            levels = np.hstack((levels_neg, levels_mid, levels_pos))
+
+            plt.contourf(xx, zz, field, cmap='RdYlBu_r',\
                     norm=colors.SymLogNorm(linthresh=linthresh,\
-                    linscale=linscale, vmin=minmax[0], vmax=minmax[1]))
+                    linscale=linscale, vmin=minmax[0], vmax=minmax[1]),\
+                    levels=levels)
         else:
             if logscale:
                 plt.pcolormesh(xx, zz, field, cmap='Greys',\
                         norm=colors.LogNorm(vmin=minmax[0], vmax=minmax[1]))
             else:
+                saturate_array(field, minmax[0], minmax[1])
                 if posdef:
                     cmap = 'plasma'
                 else:
                     cmap = 'RdYlBu_r'
-                plt.pcolormesh(xx, zz, field, vmin=minmax[0],\
-                        vmax=minmax[1], cmap=cmap)
+                levels = np.linspace(minmax[0], minmax[1], 150)
+                plt.contourf(xx, zz, field, vmin=minmax[0],\
+                        vmax=minmax[1], cmap=cmap, levels=levels)
 
         if plot_cbar:
             cbaxes = fig.add_axes([cbax_left, cbax_bottom,\
@@ -199,6 +216,13 @@ def plot_azav(field, rr, cost, sint, fig=None, ax=None, cmap='RdYlBu_r',\
                 cbar_label = (r'$\times10^{%i}\ $' %exp) + units
             else:
                 cbar_label = units
+                if symlog:
+                    cbar.set_ticks([-minmax[1], -linthresh, 0, linthresh,\
+                            minmax[1]])
+                    cbar.set_ticklabels([sci_format(-minmax[1]),\
+                            sci_format(-linthresh), '0',\
+                            sci_format(linthresh), sci_format(minmax[1])])
+
             # Put the units and exponent to left of colorbar
             fig.text(cbax_left - 0.3*cbax_width, cbax_center_y,\
                     cbar_label, ha='right', va='center', rotation=90,\
