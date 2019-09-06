@@ -186,7 +186,7 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
 
     # Get default bounds if not specified
     if minmax is None:
-        minmax = get_satvals(field, posdef, logscale)
+        minmax = get_satvals(field, posdef=posdef, logscale=logscale)
 
     # Need these if logscale is True; may need them for other stuff later
     minexp, maxexp = get_exp(minmax[0]), get_exp(minmax[1])
@@ -358,8 +358,8 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
         plt.show()
 
 def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
-        clon=0., posdef=False, logscale=False, varname='vr',\
-        lw_scaling=1., plot_cbar=True, cbar_fs=10, symlog=False): 
+        clon=0., posdef=False, logscale=False, symlog=False, varname='vr',\
+        lw_scaling=1., plot_cbar=True, cbar_fs=10): 
     # Shouldn't have to do this but Python is stupid with arrays ...
     field = np.copy(field_orig)    
 
@@ -391,13 +391,14 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
 
     # Get default bounds if not specified
     if minmax is None:
-        minmax = get_satvals(field, posdef, logscale)
+        minmax = get_satvals(field, posdef=posdef, logscale=logscale,\
+                symlog=symlog)
 
     # Need these if logscale is True; made need them for other stuff later
     minexp, maxexp = get_exp(minmax[0]), get_exp(minmax[1])
 
     # Get the exponent to use for scientific notation
-    if not logscale:
+    if not (logscale or symlog):
         maxabs = max(np.abs(minmax[0]), np.abs(minmax[1]))
         maxabs_exp = int(np.floor(np.log10(maxabs)))
         divisor = 10**maxabs_exp
@@ -430,16 +431,28 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
     ax.axis('off') # get rid of x/y axis coordinates
             
     # Make the Mollweide projection
-    if not logscale:
-        saturate_array(field, minmax[0], minmax[1])
-        im = ax.contourf(x, y, field, cmap=plt.cm.RdYlBu_r,\
-                levels=np.linspace(minmax[0], minmax[1], 50),\
-                norm=MidpointNormalize(0))
-    else: 
-         im = ax.contourf(x, y, field, cmap='Greys',\
-            norm=colors.LogNorm(vmin=minmax[0], vmax=minmax[1]),\
-            levels=np.logspace(minexp, maxexp, 50, base=np.exp(1.)))
-       
+    if symlog:
+        sig = np.std(field)
+        linthresh = 0.3*sig
+        dynamic_range = minmax[1]/sig
+        dynamic_range_decades = np.log10(dynamic_range)
+        linscale = dynamic_range_decades
+        print(linscale, linthresh)
+        print(minmax)
+        im = ax.pcolormesh(x, y, field, cmap='RdYlBu_r',\
+                norm=colors.SymLogNorm(linthresh=linthresh,\
+                linscale=linscale, vmin=minmax[0], vmax=minmax[1]))
+    else:
+        if not logscale:
+            saturate_array(field, minmax[0], minmax[1])
+            im = ax.contourf(x, y, field, cmap=plt.cm.RdYlBu_r,\
+                    levels=np.linspace(minmax[0], minmax[1], 50),\
+                    norm=MidpointNormalize(0))
+        else: 
+            im = ax.contourf(x, y, field, cmap='Greys',\
+                norm=colors.LogNorm(vmin=minmax[0], vmax=minmax[1]),\
+                levels=np.logspace(minexp, maxexp, 50, base=np.exp(1.)))
+      
     # Draw parallels and meridians, evenly spaced by 30 degrees
     default_lw = 0.5*lw_scaling # default linewidth bit thinner
     parallels = np.arange(-60., 90., 30.)
@@ -503,15 +516,19 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
         
         cbar = plt.colorbar(im, cax=cax, orientation='horizontal')
         # make a "title" (label "m/s" to the right of the colorbar)
-        if not posdef:
-            cbar_units = ' ' + (r'$\times10^{%i}$' %maxabs_exp) +\
-                    ' ' + texunits[varname]
-            cbar.set_ticks([minmax[0], 0, minmax[1]])
-            cbar.set_ticklabels(['%1.1f' %minmax[0], '0', '%1.1f' %minmax[1]])
+        if not symlog:
+            if not posdef:
+                cbar_units = ' ' + (r'$\times10^{%i}$' %maxabs_exp) +\
+                        ' ' + texunits[varname]
+                cbar.set_ticks([minmax[0], 0, minmax[1]])
+                cbar.set_ticklabels(['%1.1f' %minmax[0], '0', '%1.1f' %minmax[1]])
+            else:
+                locator = ticker.LogLocator(base=10)
+                cbar.set_ticks(locator)
+                cbar_units = ' ' + texunits[varname]
         else:
-            locator = ticker.LogLocator(base=10)
-            cbar.set_ticks(locator)
             cbar_units = ' ' + texunits[varname]
+
         fig.text(cbar_left + cbar_width, cbar_bottom + 0.5*cbar_height,\
                  cbar_units, verticalalignment='center', **csfont,\
                  fontsize=cbar_fs) 

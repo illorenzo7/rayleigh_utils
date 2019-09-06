@@ -218,7 +218,8 @@ def get_widest_range_file(datadir, data_name):
     iters2 = []
     if len(specific_files) > 0:
         for specific_file in specific_files:
-            specific_file_stripped = specific_file[:-4] # get rid of '.npy'...
+            specific_file_stripped = specific_file[:-4] 
+                # get rid of '.npy'...
             li2 = specific_file_stripped.split('_')
             iter1, iter2 = int(li2[-2]), int(li2[-1])
             ranges.append(iter2 - iter1)
@@ -271,27 +272,35 @@ def rms(array):
     else:
         return np.sqrt(np.mean(array**2))
 
-def get_satvals(field, posdef, logscale):
+def get_satvals(field, posdef=False, logscale=False, symlog=False):
     # Get good place to saturate array [field], assuming either
     # posdef (True or False) and/or logscale (True or False)
-    if posdef:
-        if logscale:
-            logfield = np.log(field)
-            medlog = np.median(logfield)
-            shiftlog = logfield - medlog
-            std_plus = np.std(shiftlog[np.where(shiftlog > 0.)].flatten())
-            std_minus = np.std(shiftlog[np.where(shiftlog <= 0.)].flatten())
-            av_std = (std_plus + std_minus)/2.
-
-            minexp = medlog - 5.*av_std
-            maxexp = medlog + 5.*av_std
-            minmax = np.exp(minexp), np.exp(maxexp)
-        else:
-            sig = rms(field)
-            minmax = 0., 3.*sig
+    # and/or symlog (True or False)
+    if symlog:
+        maxabs = np.max(np.abs(field))
+        maxabs_exp = np.floor(np.log10(maxabs))
+        minmax = -10**maxabs_exp, 10**maxabs_exp
     else:
-        sig = np.std(field)
-        minmax = -3.*sig, 3.*sig
+        if posdef:
+            if logscale:
+                logfield = np.log(field)
+                medlog = np.median(logfield)
+                shiftlog = logfield - medlog
+                std_plus =\
+                    np.std(shiftlog[np.where(shiftlog > 0.)].flatten())
+                std_minus =\
+                    np.std(shiftlog[np.where(shiftlog <= 0.)].flatten())
+                av_std = (std_plus + std_minus)/2.
+
+                minexp = medlog - 5.*av_std
+                maxexp = medlog + 5.*av_std
+                minmax = np.exp(minexp), np.exp(maxexp)
+            else:
+                sig = rms(field)
+                minmax = 0., 3.*sig
+        else:
+            sig = np.std(field)
+            minmax = -3.*sig, 3.*sig
     return minmax
 
 def saturate_array(arr, my_min, my_max):
