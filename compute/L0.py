@@ -11,7 +11,7 @@
 # etc., etc.
 import numpy as np
 import os, sys
-sys.path.append(os.environ['co'])
+sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
 from get_parameter import get_parameter
 from rayleigh_diagnostics import GridInfo, ReferenceState

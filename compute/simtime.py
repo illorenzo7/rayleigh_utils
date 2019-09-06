@@ -7,7 +7,7 @@
 import numpy as np
 import os, sys
 sys.path.append(os.environ['rapp'])
-sys.path.append(os.environ['co'])
+sys.path.append(os.environ['raco'])
 from rayleigh_diagnostics import G_Avgs, AZ_Avgs, TransportCoeffs
 from common import get_file_lists, get_desired_range, strip_dirname,\
         get_widest_range_file

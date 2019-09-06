@@ -25,7 +25,7 @@ import pickle
 import sys, os
 sys.path.append(os.environ['rapp'])
 from rayleigh_diagnostics import Shell_Spectra, ReferenceState
-sys.path.append(os.environ['co'])
+sys.path.append(os.environ['raco'])
 from common import get_file_lists, get_desired_range, strip_dirname
 
 # Get the name of the run directory

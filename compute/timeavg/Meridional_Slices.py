@@ -15,7 +15,7 @@
 import numpy as np
 import sys, os
 sys.path.append(os.environ['rapp'])
-sys.path.append(os.environ['co'])
+sys.path.append(os.environ['raco'])
 from rayleigh_diagnostics import Meridional_Slices
 from common import get_file_lists, get_desired_range, strip_dirname
 
