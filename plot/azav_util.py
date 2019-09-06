@@ -59,10 +59,10 @@ def default_axes_1by1():
     return fig, ax
 
 def plot_azav(field, rr, cost, sint, fig=None, ax=None, cmap='RdYlBu_r',\
-    units='', minmax=None, posdef=False, logscale=False,\
+    units='', minmax=None, posdef=False, logscale=False, symlog=False,\
     plotcontours=True, plotfield=True, nlevs=10, levels=None,\
 	plotlatlines=False, rvals=None, rvals_norm=None, fsize=8,\
-    showplot=False, plot_cbar=True, lw=1.):
+    showplot=False, plot_cbar=True, lw=1., linthresh=None, linscale=None):
 
     ''' Takes (or creates) set of axes with physical aspect ratio 1x2
     and adds a plot of [field] in the meridional plane to the axes,
@@ -90,13 +90,14 @@ def plot_azav(field, rr, cost, sint, fig=None, ax=None, cmap='RdYlBu_r',\
     if minmax is None:
         # Cut away the data near the domain boundaries
         trimmed_field = trim_field(field, rr, cost)
-        minmax = get_satvals(trimmed_field, posdef, logscale)
+        minmax = get_satvals(trimmed_field, posdef=posdef,\
+                logscale=logscale, symlog=symlog)
 
     # Need these if logscale is True; made need them for other stuff later
     minexp, maxexp = get_exp(minmax[0]), get_exp(minmax[1])
 
     # Get the exponent to use for scientific notation
-    if not logscale:
+    if not (logscale or symlog):
         maxabs = max(np.abs(minmax[0]), np.abs(minmax[1]))
         exp = float(np.floor(np.log10(maxabs)))
         divisor = 10.**exp
@@ -152,16 +153,29 @@ def plot_azav(field, rr, cost, sint, fig=None, ax=None, cmap='RdYlBu_r',\
 #        im = ax.contourf(xx, zz, field, cmap='RdYlBu_r',\
 #        levels=levs)
 #        plt.sca(ax)
-        if logscale:
-            plt.pcolormesh(xx, zz, field, cmap='Greys',\
-                    norm=colors.LogNorm(vmin=minmax[0], vmax=minmax[1]))
+        if symlog:
+            sig = np.std(field)
+            if linthresh is None:
+                linthresh = 0.3*sig
+            dynamic_range = minmax[1]/sig
+            dynamic_range_decades = np.log10(dynamic_range)
+            if linscale is None:
+                linscale = dynamic_range_decades
+            plt.pcolormesh(xx, zz, field, cmap='RdYlBu_r',\
+                    norm=colors.SymLogNorm(linthresh=linthresh,\
+                    linscale=linscale, vmin=minmax[0], vmax=minmax[1]))
         else:
-            if posdef:
-                cmap = 'plasma'
+            if logscale:
+                plt.pcolormesh(xx, zz, field, cmap='Greys',\
+                        norm=colors.LogNorm(vmin=minmax[0], vmax=minmax[1]))
             else:
-                cmap = 'RdYlBu_r'
-            plt.pcolormesh(xx, zz, field, vmin=minmax[0], vmax=minmax[1],\
-                    cmap=cmap)
+                if posdef:
+                    cmap = 'plasma'
+                else:
+                    cmap = 'RdYlBu_r'
+                plt.pcolormesh(xx, zz, field, vmin=minmax[0],\
+                        vmax=minmax[1], cmap=cmap)
+
         if plot_cbar:
             cbaxes = fig.add_axes([cbax_left, cbax_bottom,\
                            cbax_width, cbax_height])
@@ -170,7 +184,7 @@ def plot_azav(field, rr, cost, sint, fig=None, ax=None, cmap='RdYlBu_r',\
             cbaxes.tick_params(labelsize=fsize)
             cbar.ax.tick_params(labelsize=fsize)   #font size for the ticks
 
-            if not logscale:
+            if not (logscale or symlog):
                 if posdef:
                     mid = (minmax[0] + minmax[1])/2.
                     ticks = np.array([minmax[0], mid, minmax[1]])
@@ -186,8 +200,9 @@ def plot_azav(field, rr, cost, sint, fig=None, ax=None, cmap='RdYlBu_r',\
             else:
                 cbar_label = units
             # Put the units and exponent to left of colorbar
-            fig.text(cbax_left - 0.3*cbax_width, cbax_center_y, cbar_label,\
-                ha='right', va='center', rotation=90, fontsize=fsize)
+            fig.text(cbax_left - 0.3*cbax_width, cbax_center_y,\
+                    cbar_label, ha='right', va='center', rotation=90,\
+                    fontsize=fsize)
 
     # Plot contours in the meridional plane, if desired
     if plotcontours:
@@ -418,7 +433,8 @@ def plot_azav_half(field, rr, cost, sint, sym='even',\
         ir_cuttop = np.argmin(np.abs(rr_depth - 0.05))
         ir_cutbot = np.argmin(np.abs(rr_depth - 0.95))
         field_cut = field[:it_cut, ir_cuttop:ir_cutbot + 1]
-        minmax = get_satvals(field_cut, posdef, logscale)
+        minmax = get_satvals(field_cut, posdef=posdef, logscale=logscale,\
+                symlog=symlog)
     
     # Need these if logscale is True; made need them for other stuff later
     minexp, maxexp = get_exp(minmax[0]), get_exp(minmax[1])

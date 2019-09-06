@@ -17,8 +17,8 @@ plt.rcParams['mathtext.fontset'] = 'dejavuserif'
 csfont = {'fontname':'DejaVu Serif'}
 import sys, os
 sys.path.append(os.environ['rapp'])
-sys.path.append(os.environ['co'])
-sys.path.append(os.environ['pl'])
+sys.path.append(os.environ['raco'])
+sys.path.append(os.environ['rapl'])
 from azav_util import plot_azav
 from common import get_widest_range_file, get_dict, strip_dirname, my_bool
 
@@ -42,6 +42,7 @@ rvals = None # radii to mark on the meridional plane
 minmax = None # if specified, must give minmax pair for each quantity 
 posdef = None # 1 for each quantity
 logscale = None # 1 for each quantity
+symlog = None # 1 for each quantity
 qv = [1, 2, 3] # by default plot the velocity components
 ncol = 3 # in the figure, put three plots per row
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
@@ -71,12 +72,20 @@ for i in range(nargs):
                 logscale.append(my_bool(st))
     elif arg == '-posdef':
         posdef_str = args[i+1].split()
-        if posdef_str == 'all':
+        if posdef_str == ['all']:
             posdef = 'all'
         else:
             posdef = []
             for st in posdef_str:
                 posdef.append(my_bool(st))
+    elif arg == '-symlog':
+        symlog_str = args[i+1].split()
+        if symlog_str == ['all']:
+            symlog = 'all'
+        else:
+            symlog = []
+            for st in symlog_str:
+                symlog.append(my_bool(st))
     elif arg == '-noshow':
         showplot = False
     elif arg == '-save':
@@ -171,9 +180,17 @@ for iplot in range(nplots):
     else:
         this_logscale = logscale[iplot]
 
+    if symlog is None:
+        this_symlog = False
+    elif symlog == 'all':
+        this_symlog = True
+    else:
+        this_symlog = symlog[iplot]
+
     plot_azav (field, rr, cost, sint, fig=fig, ax=ax, minmax=this_minmax,\
             plotcontours=plotcontours, plotlatlines=plotlatlines,\
-            rvals=rvals, posdef=this_posdef, logscale=this_logscale)
+            rvals=rvals, posdef=this_posdef, logscale=this_logscale,\
+            symlog=this_symlog)
     ax.set_title('iq = %i' %iq, verticalalignment='bottom', **csfont)
 
 # Put some metadata in upper left

@@ -437,8 +437,6 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
         dynamic_range = minmax[1]/sig
         dynamic_range_decades = np.log10(dynamic_range)
         linscale = dynamic_range_decades
-        print(linscale, linthresh)
-        print(minmax)
         im = ax.pcolormesh(x, y, field, cmap='RdYlBu_r',\
                 norm=colors.SymLogNorm(linthresh=linthresh,\
                 linscale=linscale, vmin=minmax[0], vmax=minmax[1]))
