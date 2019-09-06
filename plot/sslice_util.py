@@ -359,7 +359,8 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
 
 def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
         clon=0., posdef=False, logscale=False, symlog=False, varname='vr',\
-        lw_scaling=1., plot_cbar=True, cbar_fs=10): 
+        lw_scaling=1., plot_cbar=True, cbar_fs=10, linscale=None,\
+        linthresh=None): 
     # Shouldn't have to do this but Python is stupid with arrays ...
     field = np.copy(field_orig)    
 
@@ -433,10 +434,12 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
     # Make the Mollweide projection
     if symlog:
         sig = np.std(field)
-        linthresh = 0.3*sig
+        if linthresh is None:
+            linthresh = 0.3*sig
         dynamic_range = minmax[1]/sig
         dynamic_range_decades = np.log10(dynamic_range)
-        linscale = dynamic_range_decades
+        if linscale is None:
+            linscale = dynamic_range_decades
         im = ax.pcolormesh(x, y, field, cmap='RdYlBu_r',\
                 norm=colors.SymLogNorm(linthresh=linthresh,\
                 linscale=linscale, vmin=minmax[0], vmax=minmax[1]))

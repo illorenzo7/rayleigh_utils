@@ -8,13 +8,14 @@
 # AZ_Avgs; this will generally be one of [1, 2, 3, 501, 502, 801, 802, 803]
 # FOR LATER: Change to be compatiable with derivative thermo variables rho, T
 import matplotlib as mpl
+from matplotlib import colors
 mpl.use('TkAgg')
 import matplotlib.pyplot as plt
 plt.rcParams['mathtext.fontset'] = 'dejavuserif'
 csfont = {'fontname':'DejaVu Serif'}
 import numpy as np
 import sys, os
-sys.path.append(os.environ['co'])
+sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
 from common import get_file_lists, rsun, get_desired_range, range_options,\
         get_dict, get_widest_range_file
@@ -47,6 +48,9 @@ Prot = 2*np.pi/Omega0
 
 # Other defaults
 minmax = None
+linscale = None, None, None
+linthresh = None, None, None
+symlog = False
 restart = False
 varname = 'bp' # by default plot the zonal field
 ir = 0 # by default plot just below the surface
@@ -82,6 +86,12 @@ for i in range(nargs):
         minmax = float(args[i+1]), float(args[i+2]),\
                 float(args[i+3]), float(args[i+4]),\
                 float(args[i+5]), float(args[i+6])
+    elif arg == '-symlog':
+        symlog = True
+    elif arg == '-linscale':
+        linscale = float(args[i+1]), float(args[i+2]), float(args[i+3])    
+    elif arg == '-linthresh':
+        linthresh = float(args[i+1]), float(args[i+2]), float(args[i+3])    
     elif arg == '-var':
         varname = args[i+1]
     elif arg == '-ir':
@@ -150,20 +160,6 @@ if tlabel_string_width is None:
 tt_2d, rr_2d = np.meshgrid(tt, rr, indexing='ij')
 sint_2d = np.sin(tt_2d); cost_2d = np.cos(tt_2d)
 
-# Get saturation values for Shell_Slice and AZ_Avgs of variable in question
-if minmax is None: # Set saturation values by the field from
-    # Sslice max/min from first slice
-    field_slice = get_sslice(a0, varname, dirname=dirname)[:, :, ir]
-    min_slice, max_slice = -3*np.std(field_slice), 3.*np.std(field_slice)
-    if posdef:
-        min_slice, max_slice = get_satvals(field_slice, posdef=True)
-
-    field_az = az0.vals[:, :, az0.lut[var_index], 0]
-    nstd = 5
-    min_az, max_az = -nstd*np.std(field_az), nstd*np.std(field_az)
-else:
-    min_slice, max_slice = minmax[0], minmax[1]
-    min_az, max_az = minmax[2], minmax[3]
 
 # Read in the time-latitude data (dictionary form)
 datadir = dirname + '/data/'
@@ -183,19 +179,66 @@ iq_tl = np.argmin(np.abs(qvals - var_index))
 # Same values used in each time-latitude plot
 tl_vals = vals[:, :, ir_tl, iq_tl]
 
-# Determine min/max values for time-latitude plot (used for each image)
-if minmax is None:
-    min_tl, max_tl = -3.*np.std(tl_vals), 3.*np.std(tl_vals)
+# Get saturation values for Shell_Slice and AZ_Avgs of variable in question
+# possibly also get linscale/linthresh if -symlog was specified
+field_slice = get_sslice(a0, varname, dirname=dirname)[:, :, ir]
+field_az = az0.vals[:, :, az0.lut[var_index], 0]
+if minmax is None: # Set saturation values by the field from
+    # Sslice max/min from first slice
+    min_slice, max_slice = get_satvals(field_slice, posdef=posdef,\
+            symlog=symlog)
+    min_az, max_az = get_satvals(field_az, posdef=posdef, symlog=symlog)
+    min_tl, max_tl = get_satvals(tl_vals, posdef=posdef, symlog=symlog)
 else:
+    min_slice, max_slice = minmax[0], minmax[1]
+    min_az, max_az = minmax[2], minmax[3]
     min_tl, max_tl = minmax[4], minmax[5]
+
+# May need linthresh/linscale for each plot if -symlog was True
+sig = np.std(field_slice)
+if linthresh[0] is None:
+    linthresh_slice = 0.3*sig
+else:
+    linthresh_slice = linthresh[0]
+dynamic_range = max_slice/sig
+dynamic_range_decades = np.log10(dynamic_range)
+if linscale[0] is None:
+    linscale_slice = dynamic_range_decades
+else:
+    linscale_slice = linscale[0]
+
+sig = np.std(field_az)
+if linthresh[1] is None:
+    linthresh_az = 0.3*sig
+else:
+    linthresh_az = linthresh[1]
+dynamic_range = max_az/sig
+dynamic_range_decades = np.log10(dynamic_range)
+if linscale[1] is None:
+    linscale_az = dynamic_range_decades
+else:
+    linscale_az = linscale[1]
+
+sig = np.std(tl_vals)
+if linthresh[2] is None:
+    linthresh_tl = 0.3*sig
+else:
+    linthresh_tl = linthresh[2]
+dynamic_range = max_tl/sig
+dynamic_range_decades = np.log10(dynamic_range)
+if linscale[2] is None:
+    linscale_tl = dynamic_range_decades
+else:
+    linscale_tl = linscale[2]
 
 # This was in the for-loop before, which messed up the exponent (first plot
 # would have, e.g., 10^3, all following would have 10^0))
-maxabs_tl = max(abs(min_tl), abs(max_tl))
-tl_exp = int(np.floor(np.log10(maxabs_tl)))
-tl_vals /= 10**tl_exp
-min_tl /= 10**tl_exp
-max_tl /= 10**tl_exp
+if not symlog:
+    maxabs_tl = max(abs(min_tl), abs(max_tl))
+    tl_exp = int(np.floor(np.log10(maxabs_tl)))
+    tl_vals /= 10**tl_exp
+    min_tl /= 10**tl_exp
+    max_tl /= 10**tl_exp
 
 # General parameters for main axis/color bar
 moll_height_inches = 4.
@@ -253,7 +296,6 @@ if restart:
             %(count, count + len(fnames) - 1))
     print ("------------------------")
 
-firstplot = True
 for fname in fnames:
     # Read in desired shell slice
     a = Shell_Slices(slicedatadir + fname, '')
@@ -289,7 +331,8 @@ for fname in fnames:
         vals = get_sslice(a, varname, dirname=dirname)
         field = vals[:, :, ir]
         plot_moll(field, a.costheta, fig=fig, ax=ax_moll, varname=varname,\
-                minmax=(min_slice, max_slice), clon=clon) 
+                minmax=(min_slice, max_slice), clon=clon, symlog=symlog,\
+                linscale=linscale_slice, linthresh=linthresh_slice) 
         time_string = '%.1f' %time
         time_string = time_string.zfill(tlabel_string_width)
         title = varlabel + '     ' +\
@@ -302,14 +345,14 @@ for fname in fnames:
         var_az = az.vals[:, :, az.lut[var_index], 0]
         plot_azav (var_az, rr, cost, sint, fig=fig, ax=ax_azav,\
                units = texunits[varname], minmax = (min_az, max_az),\
-               plotcontours=False, plotlatlines=True, fsize=10)
+               plotcontours=False, plotlatlines=True, fsize=10,\
+               symlog=symlog, linthresh=linthresh_az, linscale=linscale_az)
 
         # Mark the line of the r-value we're plotting
         r_over_ro = rval/(ro/rsun)
         linex = r_over_ro*sint
         linez = r_over_ro*cost
         ax_azav.plot(linex, linez, 'k--', linewidth=0.5)
-
 
         # Make the time-latitude plot underneath everything
 
@@ -325,18 +368,28 @@ for fname in fnames:
         tl_vals_2 = tl_vals[it_current:]
 
         # set color bar by completed time in interval
+        norm = None
+        if symlog:
+            norm = colors.SymLogNorm(linthresh=linthresh_tl,\
+                    linscale=linscale_tl, vmin=min_tl, vmax=max_tl)
         im_tl = ax_tl.pcolormesh(times_2d_1, lats_2d_1, tl_vals_1,\
-                cmap='RdYlBu_r', vmin=min_tl, vmax=max_tl)
+                cmap='RdYlBu_r', vmin=min_tl, vmax=max_tl, norm=norm)
         # ... and grey out uncovered time
         ax_tl.pcolormesh(times_2d_2, lats_2d_2, tl_vals_2,\
-                cmap='RdYlBu_r', vmin=min_tl, vmax=max_tl, alpha=0.03)
+                cmap='RdYlBu_r', vmin=min_tl, vmax=max_tl, alpha=0.03,\
+                norm=norm)
 
         # Set up the time-latitude colorbar
-        cax_tl.set_title(r'$\times10^{%i}\ \rm{G}$' %tl_exp, **csfont,\
+        if not symlog:
+            title = r'$\times10^{%i}\ \rm{G}$' %tl_exp
+        else:
+            title = r'$\rm{G}$'
+        cax_tl.set_title(title, **csfont,\
                 fontsize=10)
         cbar = plt.colorbar(im_tl, cax=cax_tl)
-        cbar.set_ticks([min_tl, 0, max_tl])
-        cbar.set_ticklabels(['%1.1f' %min_tl, '0', '%1.1f' %max_tl])
+        if not symlog:
+            cbar.set_ticks([min_tl, 0, max_tl])
+            cbar.set_ticklabels(['%1.1f' %min_tl, '0', '%1.1f' %max_tl])
 
         # Put a vertical line at current time
         linex = np.zeros(100) + time
@@ -361,3 +414,8 @@ for fname in fnames:
         plt.savefig(plotdir + savename, dpi=200)
         count += 1
         plt.close()
+#        print('minmax_moll: ', min_slice, max_slice)
+#        print('minmax_az: ', min_az, max_az)
+#        print('minmax_tl: ', min_tl, max_tl)
+#        print('linthresh: ', linthresh_slice, linthresh_az, linthresh_tl)
+#        print('linscale: ', linscale_slice, linscale_az, linscale_tl)
