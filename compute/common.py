@@ -45,6 +45,7 @@ def get_file_lists(radatadir):
 
 range_options = ['-range', '-centerrange', '-leftrange', '-rightrange', '-n',\
                '-f', '-all', '-iter']
+
 def get_desired_range(int_file_list, args):
     nargs = len(args)
     nfiles = len(int_file_list)
@@ -303,6 +304,18 @@ def get_satvals(field, posdef=False, logscale=False, symlog=False):
             minmax = -3.*sig, 3.*sig
     return minmax
 
+def get_symlog_params(field, field_max=None):
+    if field_max is None:
+        maxabs = np.max(np.abs(field))
+        maxabs_exp = np.floor(np.log10(maxabs))
+        field_max = 10.**maxabs_exp
+    sig = np.std(field)
+    linthresh = 0.3*sig
+    dynamic_range = field_max/linthresh
+    dynamic_range_decades = np.log10(dynamic_range)
+    linscale = dynamic_range_decades
+    return linthresh, linscale
+    
 def saturate_array(arr, my_min, my_max):
     arr[np.where(arr < my_min)] = my_min
     arr[np.where(arr > my_max)] = my_max

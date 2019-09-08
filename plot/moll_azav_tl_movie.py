@@ -8,8 +8,8 @@
 # AZ_Avgs; this will generally be one of [1, 2, 3, 501, 502, 801, 802, 803]
 # FOR LATER: Change to be compatiable with derivative thermo variables rho, T
 import matplotlib as mpl
-from matplotlib import colors
 mpl.use('TkAgg')
+from matplotlib import colors
 import matplotlib.pyplot as plt
 plt.rcParams['mathtext.fontset'] = 'dejavuserif'
 csfont = {'fontname':'DejaVu Serif'}
@@ -18,7 +18,8 @@ import sys, os
 sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
 from common import get_file_lists, rsun, get_desired_range, range_options,\
-        get_dict, get_widest_range_file, sci_format, saturate_array
+        get_dict, get_widest_range_file, sci_format, saturate_array,\
+        get_symlog_params, get_exp
 from sslice_util import plot_moll, get_satvals, get_sslice
 from azav_util import plot_azav
 from rayleigh_diagnostics import Shell_Slices, AZ_Avgs
@@ -48,17 +49,18 @@ Prot = 2*np.pi/Omega0
 
 # Other defaults
 minmax = None
-linscale = None, None, None
-linthresh = None, None, None
+linscale = None # may be used for symlog stuff
+linthresh = None
 symlog = False
 restart = False
-varname = 'bp' # by default plot the zonal field
+varname = 'bp' # by default plot the azimuthal field
 ir = 0 # by default plot just below the surface
 rval = None # can also find ir by finding the closest desired radial value
             # (normalized by Rsun)
 clon = 0.
 count = 0 # start the plot count at 0000 by default
 tlabel_string_width = None
+alpha = 0.05 # how greyed out some of the TL is
 
 # Get desired data range to plot
 args = sys.argv[2:]
@@ -107,12 +109,10 @@ for i in range(nargs):
                         # plot directory
     elif arg == '-tlabel':
         tlabel_string_width = int(args[i+1])
+    elif arg == '-alpha':
+        alpha = float(args[i+1])
 
-# "posdef", varlabel, and var_index will depend on the 
-# variable being plotted
-posdef = False
-if 'sq' in varname:
-    posdef = True
+# varlabel and var_index will depend on the variable being plotted
 varlabel = texlabels[varname]
 var_index = var_indices[varname]
 
@@ -128,7 +128,6 @@ rval = a0.radius[ir]/rsun
 time0 = a0.time[0]
 
 # Create the save directory if it doesn't already exist
-rval = a0.radius[ir]/rsun
 plotdir = dirname + '/plots/moll_azav_tl_movies/' + varname + '/' +\
         ('rval%0.3f' %rval) + '/'
 if not os.path.isdir(plotdir):
@@ -148,6 +147,10 @@ tt_lat = (np.pi/2 - tt)*180/np.pi
 nr = az0.nr
 nt = az0.ntheta
 
+# compute some derivative quantities for the grid
+tt_2d, rr_2d = np.meshgrid(tt, rr, indexing='ij')
+sint_2d = np.sin(tt_2d); cost_2d = np.cos(tt_2d)
+
 # Get max time, in rotations
 max_time = az0.time[-1]/Prot
 max_time_exp = int(np.floor(np.log10(max_time)))
@@ -155,11 +158,6 @@ max_time_exp = int(np.floor(np.log10(max_time)))
 if tlabel_string_width is None:
     tlabel_string_width = max_time_exp + 3 # Make room for full whole number
         # width, a decimal point, and one tenths place after decimal
-
-# compute some derivative quantities for the grid
-tt_2d, rr_2d = np.meshgrid(tt, rr, indexing='ij')
-sint_2d = np.sin(tt_2d); cost_2d = np.cos(tt_2d)
-
 
 # Read in the time-latitude data (dictionary form)
 datadir = dirname + '/data/'
@@ -184,63 +182,41 @@ tl_vals = vals[:, :, ir_tl, iq_tl]
 field_slice = get_sslice(a0, varname, dirname=dirname)[:, :, ir]
 field_az = az0.vals[:, :, az0.lut[var_index], 0]
 if minmax is None: # Set saturation values by the field from
-    # Sslice max/min from first slice
-    min_slice, max_slice = get_satvals(field_slice, posdef=posdef,\
-            symlog=symlog)
-    min_az, max_az = get_satvals(field_az, posdef=posdef, symlog=symlog)
-    min_tl, max_tl = get_satvals(tl_vals, posdef=posdef, symlog=symlog)
+    # sslice max/min from first slice
+    min_slice, max_slice = get_satvals(field_slice, symlog=symlog)
+    min_az, max_az = get_satvals(field_az, symlog=symlog)
+    min_tl, max_tl = get_satvals(tl_vals, symlog=symlog)
 else:
     min_slice, max_slice = minmax[0], minmax[1]
     min_az, max_az = minmax[2], minmax[3]
     min_tl, max_tl = minmax[4], minmax[5]
+    
 
 # May need linthresh/linscale for each plot if -symlog was True
-sig = np.std(field_slice)
-if linthresh[0] is None:
-    linthresh_slice = 0.3*sig
-else:
-    linthresh_slice = linthresh[0]
-dynamic_range = max_slice/sig
-dynamic_range_decades = np.log10(dynamic_range)
-if linscale[0] is None:
-    linscale_slice = dynamic_range_decades
-else:
-    linscale_slice = linscale[0]
+    
+# get the default values first
+linthresh_slice, linscale_slice =\
+    get_symlog_params(field_slice, field_max=max_slice)
+linthresh_az, linscale_az =\
+    get_symlog_params(field_az, field_max=max_az)
+linthresh_tl, linscale_tl =\
+    get_symlog_params(tl_vals, field_max=max_tl)
+if not linthresh is None: # ... then possibly overwrite them
+    linthresh_slice, linthresh_az, linthresh_tl = linthresh
+if not linscale is None:
+    linscale_slice, linscale_az, linscale_tl = linscale  
 
-sig = np.std(field_az)
-if linthresh[1] is None:
-    linthresh_az = 0.3*sig
-else:
-    linthresh_az = linthresh[1]
-dynamic_range = max_az/sig
-dynamic_range_decades = np.log10(dynamic_range)
-if linscale[1] is None:
-    linscale_az = dynamic_range_decades
-else:
-    linscale_az = linscale[1]
-
-sig = np.std(tl_vals)
-if linthresh[2] is None:
-    linthresh_tl = 0.3*sig
-else:
-    linthresh_tl = linthresh[2]
-dynamic_range = max_tl/sig
-dynamic_range_decades = np.log10(dynamic_range)
-if linscale[2] is None:
-    linscale_tl = dynamic_range_decades
-else:
-    linscale_tl = linscale[2]
-
+# Factor out the exponent in tl_vals (if symlog is not True)    
 # This was in the for-loop before, which messed up the exponent (first plot
 # would have, e.g., 10^3, all following would have 10^0))
 if not symlog:
     maxabs_tl = max(abs(min_tl), abs(max_tl))
-    tl_exp = int(np.floor(np.log10(maxabs_tl)))
+    tl_exp = get_exp(maxabs_tl)
     tl_vals /= 10**tl_exp
     min_tl /= 10**tl_exp
     max_tl /= 10**tl_exp
 
-# General parameters for main axis/color bar
+# General parameters for figure and axes
 moll_height_inches = 4.
 moll_width_inches = 2*moll_height_inches
 azav_height_inches = moll_height_inches
@@ -276,10 +252,6 @@ tl_width = 0.5*moll_width
 tl_center = margin_x + 0.5*(1 - 2*margin_x)
 tl_left = tl_center - 0.5*tl_width
 
-print ("Plotting slice/AZ_Avg " + fnames[0] + " through " + fnames[-1])
-print ("Or img%04i.png through img%04i.png"\
-        %((count, count + len(fnames) - 1)))
-
 # If trying to restart, see where the last run got to:
 if restart:
     already_plotted = os.listdir(plotdir)
@@ -295,7 +267,12 @@ if restart:
     print ("as img%04i.png through img%04i.png"\
             %(count, count + len(fnames) - 1))
     print ("------------------------")
+else: # or else announce we are plotting everything
+    print ("Plotting slice/AZ_Avg " + fnames[0] + " through " + fnames[-1])
+    print ("Or img%04i.png through img%04i.png"\
+            %((count, count + len(fnames) - 1)))
 
+# Now do the actual plotting
 for fname in fnames:
     # Read in desired shell slice
     a = Shell_Slices(slicedatadir + fname, '')
@@ -309,17 +286,15 @@ for fname in fnames:
         savename = 'img' + str(count).zfill(4) + '.png'
         print('Plotting moll_azav_tl: ' + varname +\
                 (', rval = %0.3f, ' %rval) + 'iter ' + fname + ' ...')
-        print('Saving plot: ' + plotdir + savename + ' ...')
         fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
-        ax_moll = fig.add_axes([margin_x,\
-                margin_bottom + tl_height + hspace,\
+        ax_moll = fig.add_axes([margin_x, margin_bottom + tl_height + hspace,\
                 moll_width, moll_height])
         ax_azav = fig.add_axes([margin_x + moll_width + margin_x,\
-                margin_bottom + tl_height + hspace,\
-                azav_width, azav_height])
+                margin_bottom + tl_height + hspace, azav_width, azav_height])
         ax_tl = fig.add_axes([tl_left, margin_bottom, tl_width, tl_height])
 
-        # Colorbar to accompany the time-latitude plot
+        # Colorbar axes to accompany the time-latitude plot (the other 
+        # colorbars come pre-packaged with plot_moll and plot_azav)
         tl_cbar_left = tl_left + tl_width + 2*margin_x 
         tl_cbar_bottom = margin_bottom
         tl_cbar_height = 0.9*tl_height
@@ -330,7 +305,7 @@ for fname in fnames:
         # Make the Mollweide plot
         vals = get_sslice(a, varname, dirname=dirname)
         field = vals[:, :, ir]
-        plot_moll(field, a.costheta, fig=fig, ax=ax_moll, varname=varname,\
+        plot_moll(field, cost, fig=fig, ax=ax_moll, varname=varname,\
                 minmax=(min_slice, max_slice), clon=clon, symlog=symlog,\
                 linscale=linscale_slice, linthresh=linthresh_slice) 
         time_string = '%.1f' %time
@@ -342,22 +317,16 @@ for fname in fnames:
                 title, ha='center', va='center', **csfont, fontsize=14)
 
         # Make the AZ_Avgs plot:
-        var_az = az.vals[:, :, az.lut[var_index], 0]
-        plot_azav (var_az, rr, cost, sint, fig=fig, ax=ax_azav,\
+        field = az.vals[:, :, az.lut[var_index], 0]
+        plot_azav (field, rr, cost, sint, fig=fig, ax=ax_azav,\
                units = texunits[varname], minmax = (min_az, max_az),\
-               plotcontours=False, plotlatlines=True, fsize=10,\
+               plotcontours=False, plotlatlines=True, fsize=10, rvals=(rval,),\
                symlog=symlog, linthresh=linthresh_az, linscale=linscale_az)
-
-        # Mark the line of the r-value we're plotting
-        r_over_ro = rval/(ro/rsun)
-        linex = r_over_ro*sint
-        linez = r_over_ro*cost
-        ax_azav.plot(linex, linez, 'k--', linewidth=0.5)
 
         # Make the time-latitude plot underneath everything
 
-        # Arrays for plotting time-latitude diagram (use two, 
-        # with the one after the current time greyed out)
+        # Arrays for plotting time-latitude diagram (use two, with the one
+        # after the current time greyed out)
         #times2, lats2 = np.meshgrid(times, tt_lat, indexing='ij')
         it_current = np.argmin(np.abs(times - time))
         times_1 = times[:it_current]
@@ -367,73 +336,76 @@ for fname in fnames:
         tl_vals_1 = tl_vals[:it_current]
         tl_vals_2 = tl_vals[it_current:]
 
-        # set color bar by completed time in interval
-        norm = None
+        # Saturate the array at the extremal values (necessary when using
+        # contourf for the color plot)
+        saturate_array(tl_vals_1, min_tl, max_tl)
+        saturate_array(tl_vals_2, min_tl, max_tl)
+        
+        # Must set the norm if using symlog
         if symlog:
             norm = colors.SymLogNorm(linthresh=linthresh_tl,\
                     linscale=linscale_tl, vmin=min_tl, vmax=max_tl)
-        saturate_array(tl_vals_1, min_tl, max_tl)
-        saturate_array(tl_vals_2, min_tl, max_tl)
-        # ... and grey out uncovered time
-        if not symlog:
-            levels = np.linspace(min_tl, max_tl, 150)
-        else:
-            print("WEEEEEEEE")
+        else: # otherwise, default "norm=None"
+            norm = None
+            
+        if symlog:
+            nlevs_per_interval = 100
             log_thresh = np.log10(linthresh_tl)
             log_max = np.log10(max_tl)
-            nlevs_per_interval = 100
             levels_neg = -np.logspace(log_max, log_thresh, nlevs_per_interval,\
                     endpoint=False)
-            levels_mid = np.linspace(-linthresh_tl, linthresh_tl, nlevs_per_interval,\
-                    endpoint=False)
+            levels_mid = np.linspace(-linthresh_tl, linthresh_tl,\
+                    nlevs_per_interval, endpoint=False)
             levels_pos = np.logspace(log_thresh, log_max, nlevs_per_interval)
             levels = np.hstack((levels_neg, levels_mid, levels_pos))
+        else:
+            levels = np.linspace(min_tl, max_tl, 150)
+            
         im_tl = ax_tl.contourf(times_2d_1, lats_2d_1, tl_vals_1,\
                 cmap='RdYlBu_r', vmin=min_tl, vmax=max_tl, norm=norm,\
-                levels=levels)
+                levels=levels) # set colorbar by un-greyed-out image
         ax_tl.contourf(times_2d_2, lats_2d_2, tl_vals_2,\
-                cmap='RdYlBu_r', vmin=min_tl, vmax=max_tl, alpha=0.03,\
-                norm=norm, levels=levels)
+                cmap='RdYlBu_r', vmin=min_tl, vmax=max_tl, alpha=alpha,\
+                norm=norm, levels=levels) 
+                # ...grey out uncovered time with alpha
 
         # Set up the time-latitude colorbar
-        if not symlog:
-            title = r'$\times10^{%i}\ \rm{G}$' %tl_exp
-        else:
+        cbar = plt.colorbar(im_tl, cax=cax_tl)    
+            
+        # Set custom ticks, dependent on True/False-ness of symlog
+        if symlog:
             title = r'$\rm{G}$'
-        cax_tl.set_title(title, **csfont,\
-                fontsize=10)
-        cbar = plt.colorbar(im_tl, cax=cax_tl)
-        if not symlog:
-            cbar.set_ticks([min_tl, 0, max_tl])
-            cbar.set_ticklabels(['%1.1f' %min_tl, '0', '%1.1f' %max_tl])
-        else:
             cbar.set_ticks([-max_tl, -linthresh_tl, 0, linthresh_tl,\
                     max_tl])
             cbar.set_ticklabels([sci_format(-max_tl),\
                     sci_format(-linthresh_tl), '0',\
-                    sci_format(linthresh_tl), sci_format(max_tl)])
+                    sci_format(linthresh_tl), sci_format(max_tl)])            
+        else:
+            title = r'$\times10^{%i}\ \rm{G}$' %tl_exp
+            cbar.set_ticks([min_tl, 0, max_tl])
+            cbar.set_ticklabels(['%1.1f' %min_tl, '0', '%1.1f' %max_tl])
 
-        # Put a vertical line at current time
-        linex = np.zeros(100) + time
-        liney = np.linspace(-90, 90, 100)
-#        ax_tl.plot(linex, liney, 'k--', linewidth=0.8)
+        cax_tl.set_title(title, **csfont,\
+        fontsize=10)
 
         # Label the x-axis (time)
         xlabel = 'time (' + r'$P_{\rm{rot}}$' + ')'
         ax_tl.set_xlabel(xlabel, **csfont)
 
-        # Get ticks everywhere
+        # Get ticks everywhere for TL plot
         plt.sca(ax_tl)
         plt.minorticks_on()
         plt.tick_params(top=True, bottom=True,\
                 left=True, right=True, direction='in', which='both')
 
-        # Label y-axis (radius in units of rsun)
+        # Label y-axis (latitude in degrees)
         ax_tl.set_ylabel('latitude (deg.)', **csfont)
         ax_tl.set_yticks(np.arange(-90, 90, 30))
         ax_tl.set_ylim(-90, 90)
-        print("Saving ", plotdir + savename)
-        plt.savefig(plotdir + savename, dpi=600)
+        
+        # Save the plot
+        print('Saving plot: ' + plotdir + savename + ' ...')
+        plt.savefig(plotdir + savename, dpi=200)
         count += 1
         plt.close()
 #        plt.show()

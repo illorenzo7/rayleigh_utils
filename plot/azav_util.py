@@ -12,9 +12,8 @@ from matplotlib import colors
 plt.rcParams['mathtext.fontset'] = 'dejavuserif'
 csfont = {'fontname':'DejaVu Serif'}
 plt.rcParams['contour.negative_linestyle'] = 'solid'
-from common import rms, get_satvals, get_exp, rsun, trim_field,\
-        saturate_array, sci_format
-from binormalized_cbar import MidpointNormalize
+from common import get_satvals, get_exp, rsun, trim_field, saturate_array,\
+    sci_format
 
 def fmt(x, pos):
     a, b = '{:.1e}'.format(x).split('e')
@@ -29,7 +28,6 @@ def default_axes_2by1():
 
     fig_width_inches = subplot_width_inches + 2.*margin_inches
     fig_height_inches = subplot_height_inches + 2.*margin_inches
-    fig_aspect = fig_height_inches/fig_width_inches
 
     margin_x = margin_inches/fig_width_inches
     margin_y = margin_inches/fig_height_inches
@@ -48,7 +46,6 @@ def default_axes_1by1():
 
     fig_width_inches = subplot_width_inches + 2.*margin_inches
     fig_height_inches = subplot_height_inches + 2.*margin_inches
-    fig_aspect = fig_height_inches/fig_width_inches
 
     margin_x = margin_inches/fig_width_inches
     margin_y = margin_inches/fig_height_inches
