@@ -19,8 +19,9 @@ sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
 from common import get_file_lists, rsun, get_desired_range, range_options,\
         get_dict, get_widest_range_file, sci_format, saturate_array,\
-        get_symlog_params, get_exp
-from sslice_util import plot_moll, get_satvals, get_sslice
+        get_symlog_params, get_exp, append_logfile
+from sslice_util import plot_moll, get_satvals
+from get_sslice import get_sslice
 from azav_util import plot_azav
 from rayleigh_diagnostics import Shell_Slices, AZ_Avgs
 from get_parameter import get_parameter
@@ -124,6 +125,7 @@ if not rval is None:
     ir = np.argmin(np.abs(a0.radius/rsun - rval))
 # Replace desired rval (or "None") by the actual rval
 rval = a0.radius[ir]/rsun
+
 # Start time
 time0 = a0.time[0]
 
@@ -133,6 +135,12 @@ plotdir = dirname + '/plots/moll_azav_tl_movies/' + varname + '/' +\
 if not os.path.isdir(plotdir):
     os.makedirs(plotdir)
 
+# Name of logfile to catalog progress
+logfile = dirname + '/plots/zz_logfile_mollazavtlmovie_' + varname +\
+    ('_rval%0.3f' %rval) + '.txt'
+append_logfile(logfile, '==================================\n')
+append_logfile(logfile, '========== Begin Log File ==========\n')
+    
 # Get grid information from last AZ_Avgs file
 az0 = AZ_Avgs(azdatadir + file_list[index_last], '')
 rr = az0.radius
@@ -164,6 +172,8 @@ datadir = dirname + '/data/'
 time_latitude_file = get_widest_range_file(datadir, 'time-latitude')
 print ('Getting time-latitude trace from ' + datadir +\
        time_latitude_file + ' ...')
+append_logfile (logfile, 'Getting time-latitude trace from ' + datadir +\
+       time_latitude_file + ' ...\n')
 di = get_dict(datadir + time_latitude_file)
 
 vals = di['vals']
@@ -191,10 +201,11 @@ else:
     min_az, max_az = minmax[2], minmax[3]
     min_tl, max_tl = minmax[4], minmax[5]
     
-
 # May need linthresh/linscale for each plot if -symlog was True
     
 # get the default values first
+linthresh_slice, linscale_slice =\
+    get_symlog_params(field_slice, field_max=max_slice)
 linthresh_az, linscale_az =\
     get_symlog_params(field_az, field_max=max_az)
 linthresh_tl, linscale_tl =\
@@ -207,12 +218,35 @@ if not linscale is None:
 # Factor out the exponent in tl_vals (if symlog is not True)    
 # This was in the for-loop before, which messed up the exponent (first plot
 # would have, e.g., 10^3, all following would have 10^0))
-if not symlog:
+if not symlog: # don't yet need to worry about logscale = True, since I have
+    # only been using moll_azav_tl_movie for the raw (signed) fluid variables
     maxabs_tl = max(abs(min_tl), abs(max_tl))
     tl_exp = get_exp(maxabs_tl)
     tl_vals /= 10**tl_exp
     min_tl /= 10**tl_exp
     max_tl /= 10**tl_exp
+
+# Saturate the array at the extremal values (necessary when using
+# contourf for the color plot)
+saturate_array(tl_vals, min_tl, max_tl)
+
+# Must set the norm if using symlog
+# default norm_tl = None
+norm_tl = None
+if symlog:
+    norm_tl = colors.SymLogNorm(linthresh=linthresh_tl,\
+            linscale=linscale_tl, vmin=min_tl, vmax=max_tl)
+    nlevs_per_interval = 100
+    log_thresh = np.log10(linthresh_tl)
+    log_max = np.log10(max_tl)
+    levels_neg = -np.logspace(log_max, log_thresh, nlevs_per_interval,\
+            endpoint=False)
+    levels_mid = np.linspace(-linthresh_tl, linthresh_tl,\
+            nlevs_per_interval, endpoint=False)
+    levels_pos = np.logspace(log_thresh, log_max, nlevs_per_interval)
+    levels_tl = np.hstack((levels_neg, levels_mid, levels_pos))
+else:
+    levels_tl = np.linspace(min_tl, max_tl, 150)
 
 # General parameters for figure and axes
 moll_height_inches = 4.
@@ -284,6 +318,8 @@ for fname in fnames:
         savename = 'img' + str(count).zfill(4) + '.png'
         print('Plotting moll_azav_tl: ' + varname +\
                 (', rval = %0.3f, ' %rval) + 'iter ' + fname + ' ...')
+        append_logfile(logfile, 'Plotting moll_azav_tl: ' + varname +\
+                (', rval = %0.3f, ' %rval) + 'iter ' + fname + ' ...\n')        
         fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
         ax_moll = fig.add_axes([margin_x, margin_bottom + tl_height + hspace,\
                 moll_width, moll_height])
@@ -327,44 +363,20 @@ for fname in fnames:
         # after the current time greyed out)
         #times2, lats2 = np.meshgrid(times, tt_lat, indexing='ij')
         it_current = np.argmin(np.abs(times - time))
-        times_1 = times[:it_current]
+        times_1 = times[:it_current+2] # Have some overlap to prevent getting
+            # empty arrays at the first and last times
         times_2 = times[it_current:]
         times_2d_1, lats_2d_1 = np.meshgrid(times_1, tt_lat, indexing='ij')
         times_2d_2, lats_2d_2 = np.meshgrid(times_2, tt_lat, indexing='ij')
-        tl_vals_1 = tl_vals[:it_current]
+        tl_vals_1 = tl_vals[:it_current+2]
         tl_vals_2 = tl_vals[it_current:]
-
-        # Saturate the array at the extremal values (necessary when using
-        # contourf for the color plot)
-        saturate_array(tl_vals_1, min_tl, max_tl)
-        saturate_array(tl_vals_2, min_tl, max_tl)
-        
-        # Must set the norm if using symlog
-        if symlog:
-            norm = colors.SymLogNorm(linthresh=linthresh_tl,\
-                    linscale=linscale_tl, vmin=min_tl, vmax=max_tl)
-        else: # otherwise, default "norm=None"
-            norm = None
-            
-        if symlog:
-            nlevs_per_interval = 100
-            log_thresh = np.log10(linthresh_tl)
-            log_max = np.log10(max_tl)
-            levels_neg = -np.logspace(log_max, log_thresh, nlevs_per_interval,\
-                    endpoint=False)
-            levels_mid = np.linspace(-linthresh_tl, linthresh_tl,\
-                    nlevs_per_interval, endpoint=False)
-            levels_pos = np.logspace(log_thresh, log_max, nlevs_per_interval)
-            levels = np.hstack((levels_neg, levels_mid, levels_pos))
-        else:
-            levels = np.linspace(min_tl, max_tl, 150)
             
         im_tl = ax_tl.contourf(times_2d_1, lats_2d_1, tl_vals_1,\
-                cmap='RdYlBu_r', vmin=min_tl, vmax=max_tl, norm=norm,\
-                levels=levels) # set colorbar by un-greyed-out image
+                cmap='RdYlBu_r', vmin=min_tl, vmax=max_tl, norm=norm_tl,\
+                levels=levels_tl) # set colorbar by un-greyed-out image
         ax_tl.contourf(times_2d_2, lats_2d_2, tl_vals_2,\
                 cmap='RdYlBu_r', vmin=min_tl, vmax=max_tl, alpha=alpha,\
-                norm=norm, levels=levels) 
+                norm=norm_tl, levels=levels_tl) 
                 # ...grey out uncovered time with alpha
 
         # Set up the time-latitude colorbar
@@ -403,12 +415,10 @@ for fname in fnames:
         
         # Save the plot
         print('Saving plot: ' + plotdir + savename + ' ...')
+        append_logfile(logfile, 'Saving plot: ' + plotdir + savename +\
+                       ' ...\n')
         plt.savefig(plotdir + savename, dpi=200)
         count += 1
         plt.close()
-#        plt.show()
-#        print('minmax_moll: ', min_slice, max_slice)
-#        print('minmax_az: ', min_az, max_az)
-#        print('minmax_tl: ', min_tl, max_tl)
-#        print('linthresh: ', linthresh_slice, linthresh_az, linthresh_tl)
-#        print('linscale: ', linscale_slice, linscale_az, linscale_tl)
+append_logfile(logfile, '========== End Log File ==========\n')
+append_logfile(logfile, '==================================\n')

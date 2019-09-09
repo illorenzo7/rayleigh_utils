@@ -147,7 +147,7 @@ def default_axes_2by1():
 
 def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
         minmax=None, clon=0, clat=20, posdef=False, logscale=False,\
-        varname='vr', lw_scaling=1., plot_cbar=True, cbar_fs=10, 
+        varname='vr', lw_scaling=1., plot_cbar=True, cbar_fs=10,\
         symlog=False, linscale=None, linthresh=None):
     
     if 'sq' in varname or logscale:
@@ -340,49 +340,50 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
         ax.plot(linex, liney, 'k', linewidth=lw)   
 
     # Set up color bar
-    ax_xmin, ax_xmax, ax_ymin, ax_ymax = axis_range(ax)
-    ax_delta_x = ax_xmax - ax_xmin
-    ax_delta_y = ax_ymax - ax_ymin  
-
-    cbar_aspect = 1./20.
-    fig_aspect = ax_delta_x/ax_delta_y # assumes subplot aspect ratio is 1
-        # otherwise, must multiply by proper subplot aspect ratio (=0.5 for
-        # Mollweide))
-    cbar_width = 0.5*ax_delta_x # make cbar half as long as plot is wide
-    cbar_height = cbar_width*cbar_aspect/fig_aspect
-    cbar_bottom = ax_ymin - 2.5*cbar_height
-    cbar_left = ax_xmin + 0.5*ax_delta_x - 0.5*cbar_width
-
-    cax = fig.add_axes((cbar_left, cbar_bottom, cbar_width, cbar_height))
-    cbar = plt.colorbar(im, cax=cax, orientation='horizontal')    
+    if plot_cbar:
+        ax_xmin, ax_xmax, ax_ymin, ax_ymax = axis_range(ax)
+        ax_delta_x = ax_xmax - ax_xmin
+        ax_delta_y = ax_ymax - ax_ymin  
     
-    if logscale:
-        locator = ticker.LogLocator(subs='all')
-        cbar.set_ticks(locator)
-        cbar_units = ' ' + texunits[varname]
-    elif posdef:
-        cbar_units = ' ' + (r'$\times10^{%i}$' %maxabs_exp) + ' ' +\
-            texunits[varname]
-        cbar.set_ticks([minmax[0], minmax[1]])
-        cbar.set_ticklabels(['%1.1f' %minmax[0], '%1.1f' %minmax[1]])
-    elif symlog:
-        cbar_units = ' ' + texunits[varname]
-        cbar.set_ticks([-minmax[1], -linthresh, 0, linthresh,\
-                minmax[1]])
-        cbar.set_ticklabels([sci_format(-minmax[1]),\
-                sci_format(-linthresh), '0', sci_format(linthresh),\
-                sci_format(minmax[1])])
-#            cax.minorticks_on()
-    else:
-        cbar_units = ' ' + (r'$\times10^{%i}$' %maxabs_exp) +\
-                ' ' + texunits[varname]
-        cbar.set_ticks([minmax[0], 0, minmax[1]])
-        cbar.set_ticklabels(['%1.1f' %minmax[0], '0', '%1.1f'\
-                %minmax[1]])
-    # Title the colorbar based on the field's units
-    fig.text(cbar_left + cbar_width, cbar_bottom + 0.5*cbar_height,\
-             cbar_units, verticalalignment='center', **csfont,\
-             fontsize=cbar_fs)     
+        cbar_aspect = 1./20.
+        fig_aspect = ax_delta_x/ax_delta_y # assumes subplot aspect ratio is 1
+            # otherwise, must multiply by proper subplot aspect ratio (=0.5 for
+            # Mollweide))
+        cbar_width = 0.5*ax_delta_x # make cbar half as long as plot is wide
+        cbar_height = cbar_width*cbar_aspect/fig_aspect
+        cbar_bottom = ax_ymin - 2.5*cbar_height
+        cbar_left = ax_xmin + 0.5*ax_delta_x - 0.5*cbar_width
+    
+        cax = fig.add_axes((cbar_left, cbar_bottom, cbar_width, cbar_height))
+        cbar = plt.colorbar(im, cax=cax, orientation='horizontal')    
+        
+        if logscale:
+            locator = ticker.LogLocator(subs='all')
+            cbar.set_ticks(locator)
+            cbar_units = ' ' + texunits[varname]
+        elif posdef:
+            cbar_units = ' ' + (r'$\times10^{%i}$' %maxabs_exp) + ' ' +\
+                texunits[varname]
+            cbar.set_ticks([minmax[0], minmax[1]])
+            cbar.set_ticklabels(['%1.1f' %minmax[0], '%1.1f' %minmax[1]])
+        elif symlog:
+            cbar_units = ' ' + texunits[varname]
+            cbar.set_ticks([-minmax[1], -linthresh, 0, linthresh,\
+                    minmax[1]])
+            cbar.set_ticklabels([sci_format(-minmax[1]),\
+                    sci_format(-linthresh), '0', sci_format(linthresh),\
+                    sci_format(minmax[1])])
+    #            cax.minorticks_on()
+        else:
+            cbar_units = ' ' + (r'$\times10^{%i}$' %maxabs_exp) +\
+                    ' ' + texunits[varname]
+            cbar.set_ticks([minmax[0], 0, minmax[1]])
+            cbar.set_ticklabels(['%1.1f' %minmax[0], '0', '%1.1f'\
+                    %minmax[1]])
+        # Title the colorbar based on the field's units
+        fig.text(cbar_left + cbar_width, cbar_bottom + 0.5*cbar_height,\
+                 cbar_units, verticalalignment='center', **csfont,\
+                 fontsize=cbar_fs)     
 
     # Plot outer boundary
     psivals = np.linspace(0, 2*np.pi, 500)

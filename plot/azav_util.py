@@ -6,6 +6,7 @@
 
 import numpy as np
 import matplotlib as mpl
+from matplotlib import ticker
 mpl.use('TkAgg')
 import matplotlib.pyplot as plt
 from matplotlib import colors
@@ -123,13 +124,13 @@ def plot_azav(field, rr, cost, sint, fig=None, ax=None, cmap='RdYlBu_r',\
     if (plotfield):
         if logscale:
             log_min, log_max = np.log10(minmax[0]), np.log10(minmax[1])
-            levels = np.logspace(log_min, log_max, 150)
+            levs = np.logspace(log_min, log_max, 150)
             im = ax.contourf(xx, zz, field, cmap='Greys',\
                 norm=colors.LogNorm(vmin=minmax[0], vmax=minmax[1]),\
-                levels=levels)  
+                levels=levs)  
         elif posdef:
-            levels = np.linspace(minmax[0], minmax[1])
-            im = ax.contourf(xx, zz, field, cmap='plasma', levels=levels)
+            levs = np.linspace(minmax[0], minmax[1])
+            im = ax.contourf(xx, zz, field, cmap='plasma', levels=levs)
         elif symlog:
             linthresh_default, linscale_default =\
                 get_symlog_params(field, field_max=minmax[1])
@@ -147,11 +148,11 @@ def plot_azav(field, rr, cost, sint, fig=None, ax=None, cmap='RdYlBu_r',\
                     nlevs_per_interval, endpoint=False)
             levels_pos = np.logspace(log_thresh, log_max,\
                     nlevs_per_interval)
-            levels = np.hstack((levels_neg, levels_mid, levels_pos))
+            levs = np.hstack((levels_neg, levels_mid, levels_pos))
             im = ax.contourf(xx, zz, field, cmap='RdYlBu_r',\
                 norm=colors.SymLogNorm(linthresh=linthresh,\
                 linscale=linscale, vmin=minmax[0], vmax=minmax[1]),\
-                levels=levels)
+                levels=levs)
         else:
             im = ax.contourf(xx, zz, field, cmap='RdYlBu_r',\
                     levels=np.linspace(minmax[0], minmax[1], 150))                
@@ -180,33 +181,33 @@ def plot_azav(field, rr, cost, sint, fig=None, ax=None, cmap='RdYlBu_r',\
             cbaxes = fig.add_axes([cbax_left, cbax_bottom,\
                            cbax_width, cbax_height])
             cbar = plt.colorbar(im, cax=cbaxes)
-
+    
             cbaxes.tick_params(labelsize=fsize)
             cbar.ax.tick_params(labelsize=fsize)   #font size for the ticks
 
-            if not (logscale or symlog):
-                if posdef:
-                    mid = (minmax[0] + minmax[1])/2.
-                    ticks = np.array([minmax[0], mid, minmax[1]])
-                else:
-                    ticks = np.array([minmax[0], 0., minmax[1]])
-                ticklabels = []
-                for i in range(len(ticks)):
-                    ticklabels.append(str(round(ticks[i], 1)))
-                ticks = np.array(ticks)
-                cbar.set_ticks(ticks)
-                cbar.set_ticklabels(ticklabels)
-                cbar_label = (r'$\times10^{%i}\ $' %exp) + units
-            else:
+            if logscale:
+                locator = ticker.LogLocator(subs='all')
+                cbar.set_ticks(locator)
                 cbar_label = units
-                if symlog:
-                    cbar.set_ticks([-minmax[1], -linthresh, 0, linthresh,\
-                            minmax[1]])
-                    cbar.set_ticklabels([sci_format(-minmax[1]),\
-                            sci_format(-linthresh), '0',\
-                            sci_format(linthresh), sci_format(minmax[1])])
-
-            # Put the units and exponent to left of colorbar
+            elif posdef:
+                cbar_label = (r'$\times10^{%i}\ $' %exp) + units
+                cbar.set_ticks([minmax[0], minmax[1]])
+                cbar.set_ticklabels(['%1.1f' %minmax[0], '%1.1f' %minmax[1]])
+            elif symlog:
+                cbar_label = units
+                cbar.set_ticks([-minmax[1], -linthresh, 0, linthresh,\
+                        minmax[1]])
+                cbar.set_ticklabels([sci_format(-minmax[1]),\
+                        sci_format(-linthresh), '0', sci_format(linthresh),\
+                        sci_format(minmax[1])])
+        #            cax.minorticks_on()
+            else:
+                cbar_label = (r'$\times10^{%i}\ $' %exp) + units
+                cbar.set_ticks([minmax[0], 0, minmax[1]])
+                cbar.set_ticklabels(['%1.1f' %minmax[0], '0', '%1.1f'\
+                        %minmax[1]])
+    
+            # Put the units (and possibly the exponent) to left of colorbar
             fig.text(cbax_left - 0.3*cbax_width, cbax_center_y,\
                     cbar_label, ha='right', va='center', rotation=90,\
                     fontsize=fsize)
@@ -216,7 +217,20 @@ def plot_azav(field, rr, cost, sint, fig=None, ax=None, cmap='RdYlBu_r',\
         # Determine the contour levels
         if levels is None:
             if logscale:
-                levels = np.logspace(minexp, maxexp, nlevs)
+                min_log = np.log10(minmax[0])
+                max_log = np.log10(minmax[1])
+                levels = np.logspace(min_log, max_log, nlevs)
+            elif symlog:
+                log_thresh = np.log10(linthresh)
+                log_max = np.log10(minmax[1])
+                nlevs_per_interval = nlevs//3
+                levels_neg = -np.logspace(log_max, log_thresh,\
+                        nlevs_per_interval, endpoint=False)
+                levels_mid = np.linspace(-linthresh, linthresh,\
+                        nlevs_per_interval, endpoint=False)
+                levels_pos = np.logspace(log_thresh, log_max,\
+                        nlevs_per_interval)
+                levels = np.hstack((levels_neg, levels_mid, levels_pos))
             else:
                 levels = np.linspace(minmax[0], minmax[1], nlevs)
         else: # the caller specified specific contour levels to plot!

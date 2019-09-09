@@ -307,7 +307,7 @@ def get_symlog_params(field, field_max=None):
         maxabs_exp = np.floor(np.log10(maxabs))
         field_max = 10.**maxabs_exp
     sig = np.std(field)
-    linthresh = 0.3*sig
+    linthresh = 0.15*sig
     dynamic_range = field_max/linthresh
     dynamic_range_decades = np.log10(dynamic_range)
     linscale = dynamic_range_decades
@@ -355,3 +355,8 @@ def trim_field(field, rr, cost):
     ir_cutbot = np.argmin(np.abs(rr_depth - 0.95))
     field_cut = field[it_cutm:it_cutp+1, ir_cuttop:ir_cutbot + 1]
     return field_cut
+
+def append_logfile(logfile, message):
+    f = open(logfile, 'a')
+    f.write(message)
+    f.close()
