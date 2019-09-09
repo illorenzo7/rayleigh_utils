@@ -54,6 +54,7 @@ linscale = None # may be used for symlog stuff
 linthresh = None
 symlog = False
 restart = False
+log_progress = False # user can demand using a logfile via -logfile
 varname = 'bp' # by default plot the azimuthal field
 ir = 0 # by default plot just below the surface
 rval = None # can also find ir by finding the closest desired radial value
@@ -112,6 +113,8 @@ for i in range(nargs):
         tlabel_string_width = int(args[i+1])
     elif arg == '-alpha':
         alpha = float(args[i+1])
+    elif arg == '-logfile':
+        log_progress = True
 
 # varlabel and var_index will depend on the variable being plotted
 varlabel = texlabels[varname]
@@ -135,11 +138,12 @@ plotdir = dirname + '/plots/moll_azav_tl_movies/' + varname + '/' +\
 if not os.path.isdir(plotdir):
     os.makedirs(plotdir)
 
-# Name of logfile to catalog progress
+# Name of logfile to catalog progress, if desired
 logfile = dirname + '/plots/zz_logfile_mollazavtlmovie_' + varname +\
     ('_rval%0.3f' %rval) + '.txt'
-append_logfile(logfile, '==================================\n')
-append_logfile(logfile, '========== Begin Log File ==========\n')
+if log_progress:
+    append_logfile(logfile, '==================================\n')
+    append_logfile(logfile, '========== Begin Log File ==========\n')
     
 # Get grid information from last AZ_Avgs file
 az0 = AZ_Avgs(azdatadir + file_list[index_last], '')
@@ -172,8 +176,9 @@ datadir = dirname + '/data/'
 time_latitude_file = get_widest_range_file(datadir, 'time-latitude')
 print ('Getting time-latitude trace from ' + datadir +\
        time_latitude_file + ' ...')
-append_logfile (logfile, 'Getting time-latitude trace from ' + datadir +\
-       time_latitude_file + ' ...\n')
+if log_progress:
+    append_logfile (logfile, 'Getting time-latitude trace from ' +\
+            datadir + time_latitude_file + ' ...\n')
 di = get_dict(datadir + time_latitude_file)
 
 vals = di['vals']
@@ -249,7 +254,7 @@ else:
     levels_tl = np.linspace(min_tl, max_tl, 150)
 
 # General parameters for figure and axes
-moll_height_inches = 4.
+moll_height_inches = 3.9
 moll_width_inches = 2*moll_height_inches
 azav_height_inches = moll_height_inches
 azav_width_inches = 0.5*azav_height_inches
@@ -318,13 +323,16 @@ for fname in fnames:
         savename = 'img' + str(count).zfill(4) + '.png'
         print('Plotting moll_azav_tl: ' + varname +\
                 (', rval = %0.3f, ' %rval) + 'iter ' + fname + ' ...')
-        append_logfile(logfile, 'Plotting moll_azav_tl: ' + varname +\
+        if log_progress:
+            append_logfile(logfile, 'Plotting moll_azav_tl: ' + varname +\
                 (', rval = %0.3f, ' %rval) + 'iter ' + fname + ' ...\n')        
         fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
-        ax_moll = fig.add_axes([margin_x, margin_bottom + tl_height + hspace,\
+        ax_moll = fig.add_axes([margin_x,\
+                margin_bottom + tl_height + hspace,\
                 moll_width, moll_height])
         ax_azav = fig.add_axes([margin_x + moll_width + margin_x,\
-                margin_bottom + tl_height + hspace, azav_width, azav_height])
+                margin_bottom + tl_height + hspace,\
+                azav_width, azav_height])
         ax_tl = fig.add_axes([tl_left, margin_bottom, tl_width, tl_height])
 
         # Colorbar axes to accompany the time-latitude plot (the other 
@@ -354,8 +362,9 @@ for fname in fnames:
         field = az.vals[:, :, az.lut[var_index], 0]
         plot_azav (field, rr, cost, sint, fig=fig, ax=ax_azav,\
                units = texunits[varname], minmax = (min_az, max_az),\
-               plotcontours=False, plotlatlines=True, fsize=10, rvals=(rval,),\
-               symlog=symlog, linthresh=linthresh_az, linscale=linscale_az)
+               plotcontours=False, plotlatlines=True, fsize=10,\
+               rvals=(rval,), symlog=symlog, linthresh=linthresh_az,\
+               linscale=linscale_az)
 
         # Make the time-latitude plot underneath everything
 
@@ -363,7 +372,8 @@ for fname in fnames:
         # after the current time greyed out)
         #times2, lats2 = np.meshgrid(times, tt_lat, indexing='ij')
         it_current = np.argmin(np.abs(times - time))
-        times_1 = times[:it_current+2] # Have some overlap to prevent getting
+        times_1 = times[:it_current+2]
+            # Have some overlap to prevent getting
             # empty arrays at the first and last times
         times_2 = times[it_current:]
         times_2d_1, lats_2d_1 = np.meshgrid(times_1, tt_lat, indexing='ij')
@@ -415,10 +425,12 @@ for fname in fnames:
         
         # Save the plot
         print('Saving plot: ' + plotdir + savename + ' ...')
-        append_logfile(logfile, 'Saving plot: ' + plotdir + savename +\
+        if log_progress:
+            append_logfile(logfile, 'Saving plot: ' + plotdir + savename +\
                        ' ...\n')
-        plt.savefig(plotdir + savename, dpi=200)
+        plt.savefig(plotdir + savename, dpi=150)
         count += 1
         plt.close()
-append_logfile(logfile, '========== End Log File ==========\n')
-append_logfile(logfile, '==================================\n')
+if log_progress:
+    append_logfile(logfile, '========== End Log File ==========\n')
+    append_logfile(logfile, '==================================\n')
