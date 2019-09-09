@@ -8,13 +8,9 @@ import numpy as np
 import sys, os
 sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
-from binormalized_cbar import MidpointNormalize
 from cartopy import crs
-from matplotlib import colors
 from varprops import texunits
-from common import get_satvals, saturate_array, rsun, get_exp, rms,\
-        sci_format
-from get_sslice import get_sslice
+from common import get_satvals, saturate_array, sci_format, get_symlog_params
 from get_parameter import get_parameter
 
 def deal_with_nans(x, y):
@@ -119,7 +115,6 @@ def default_axes_1by1():
             margin_bottom_inches
 
     margin_x = margin_inches/fig_width_inches
-    margin_y = margin_inches/fig_height_inches
     margin_bottom = margin_bottom_inches/fig_height_inches
     subplot_width = subplot_width_inches/fig_width_inches
     subplot_height = subplot_height_inches/fig_height_inches
@@ -141,7 +136,6 @@ def default_axes_2by1():
             margin_bottom_inches
 
     margin_x = margin_inches/fig_width_inches
-    margin_y = margin_inches/fig_height_inches
     margin_bottom = margin_bottom_inches/fig_height_inches
     subplot_width = subplot_width_inches/fig_width_inches
     subplot_height = subplot_height_inches/fig_height_inches
@@ -153,7 +147,12 @@ def default_axes_2by1():
 
 def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
         minmax=None, clon=0, clat=20, posdef=False, logscale=False,\
-        varname='vr', lw_scaling=1.):
+        varname='vr', lw_scaling=1., plot_cbar=True, cbar_fs=10, 
+        symlog=False, linscale=None, linthresh=None):
+    
+    if 'sq' in varname or logscale:
+        posdef = True
+        
     # Shouldn't have to do this but Python is stupid with arrays ...
     field = np.copy(field_orig)
     
@@ -187,13 +186,11 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
 
     # Get default bounds if not specified
     if minmax is None:
-        minmax = get_satvals(field, posdef=posdef, logscale=logscale)
-
-    # Need these if logscale is True; may need them for other stuff later
-    minexp, maxexp = get_exp(minmax[0]), get_exp(minmax[1])
+        minmax = get_satvals(field, posdef=posdef, logscale=logscale,\
+                        symlog=symlog)
 
     # Get the exponent to use for scientific notation
-    if not logscale:
+    if not (logscale or symlog):
         maxabs = max(np.abs(minmax[0]), np.abs(minmax[1]))
         maxabs_exp = int(np.floor(np.log10(maxabs)))
         divisor = 10**maxabs_exp
@@ -202,7 +199,10 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
         field /= divisor
         minmax = minmax[0]/divisor, minmax[1]/divisor
         # Can't reassign tuples element-wise for some reason
-            
+
+    # Saturate the array (otherwise creates white space with contourf)
+    saturate_array(field, minmax[0], minmax[1])     
+         
     # Get the orthographic projection coordinates of llon/llat by 
     # converting between PlateCarree (lat/lon) and orthographic
     x_withnan = np.zeros((nphi, ntheta)) 
@@ -231,29 +231,49 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
     # Create a default fig/ax pair, if calling routine didn't specify
     # them
     figwasNone = False
-    if fig is None and ax is None:
+    if fig is None or ax is None:
         fig, ax = default_axes_1by1()
         figwasNone = True
 
     ax.set_xlim((-1.01, 1.01)) # deal with annoying whitespace cutoff issue
     ax.set_ylim((-1.01, 1.01))
     ax.axis('off') # get rid of x/y axis coordinates
-            
+        
     # Plot the orthographic projection
-    if not posdef:
-        saturate_array(field, minmax[0], minmax[1])
-    #        im = ax.pcolormesh(x, y, field, cmap=plt.cm.RdYlBu_r,\
-    #                     norm=MidpointNormalize(0), vmin=minmax[0], vmax=minmax[1])
-
-        im = ax.contourf(x, y, field, cmap=plt.cm.RdYlBu_r,\
-                levels=np.linspace(minmax[0], minmax[1], 50),\
-                norm=MidpointNormalize(0))
-    else: 
-    #        im = ax.pcolormesh(x, y, field, cmap='Greys',\
-    #            norm=colors.LogNorm(vmin=minmax[0], vmax=minmax[1]))
-         im = ax.contourf(x, y, field, cmap='Greys',\
+    if logscale:
+        log_min, log_max = np.log10(minmax[0]), np.log10(minmax[1])
+        levels = np.logspace(log_min, log_max, 150)
+        im = ax.contourf(x, y, field, cmap='Greys',\
             norm=colors.LogNorm(vmin=minmax[0], vmax=minmax[1]),\
-            levels=np.logspace(minexp, maxexp, 50, base=np.exp(1.)))
+            levels=levels)  
+    elif posdef:
+        levels = np.linspace(minmax[0], minmax[1])
+        im = ax.contourf(x, y, field, cmap='plasma', levels=levels)
+    elif symlog:
+        linthresh_default, linscale_default =\
+            get_symlog_params(field, field_max=minmax[1])
+        if linthresh is None:
+            linthresh = linthresh_default
+        if linscale is None:
+            linscale = linscale_default
+        log_thresh = np.log10(linthresh)
+        log_max = np.log10(minmax[1])
+        nlevs_per_interval = 100
+        levels_neg = -np.logspace(log_max, log_thresh,\
+                nlevs_per_interval,\
+                endpoint=False)
+        levels_mid = np.linspace(-linthresh, linthresh,\
+                nlevs_per_interval, endpoint=False)
+        levels_pos = np.logspace(log_thresh, log_max,\
+                nlevs_per_interval)
+        levels = np.hstack((levels_neg, levels_mid, levels_pos))
+        im = ax.contourf(x, y, field, cmap='RdYlBu_r',\
+            norm=colors.SymLogNorm(linthresh=linthresh,\
+            linscale=linscale, vmin=minmax[0], vmax=minmax[1]),\
+            levels=levels)
+    else:
+        im = ax.contourf(x, y, field, cmap='RdYlBu_r',\
+                levels=np.linspace(minmax[0], minmax[1], 150))        
        
     # Draw parallels and meridians, evenly spaced by 30 degrees
     default_lw = 0.5*lw_scaling # default linewidth bit thinner
@@ -334,20 +354,35 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
     cbar_left = ax_xmin + 0.5*ax_delta_x - 0.5*cbar_width
 
     cax = fig.add_axes((cbar_left, cbar_bottom, cbar_width, cbar_height))
-    cbar = plt.colorbar(im, cax=cax, orientation='horizontal')
-    # make a "title" (label "m/s" to the right of the colorbar)
-    if not posdef:
+    cbar = plt.colorbar(im, cax=cax, orientation='horizontal')    
+    
+    if logscale:
+        locator = ticker.LogLocator(subs='all')
+        cbar.set_ticks(locator)
+        cbar_units = ' ' + texunits[varname]
+    elif posdef:
+        cbar_units = ' ' + (r'$\times10^{%i}$' %maxabs_exp) + ' ' +\
+            texunits[varname]
+        cbar.set_ticks([minmax[0], minmax[1]])
+        cbar.set_ticklabels(['%1.1f' %minmax[0], '%1.1f' %minmax[1]])
+    elif symlog:
+        cbar_units = ' ' + texunits[varname]
+        cbar.set_ticks([-minmax[1], -linthresh, 0, linthresh,\
+                minmax[1]])
+        cbar.set_ticklabels([sci_format(-minmax[1]),\
+                sci_format(-linthresh), '0', sci_format(linthresh),\
+                sci_format(minmax[1])])
+#            cax.minorticks_on()
+    else:
         cbar_units = ' ' + (r'$\times10^{%i}$' %maxabs_exp) +\
                 ' ' + texunits[varname]
         cbar.set_ticks([minmax[0], 0, minmax[1]])
-        cbar.set_ticklabels(['%1.1f' %minmax[0], '0', '%1.1f' %minmax[1]])
-    else:
-        locator = ticker.LogLocator(base=10)
-        cbar.set_ticks(locator)
-        cbar_units = ' ' + texunits[varname]
-
+        cbar.set_ticklabels(['%1.1f' %minmax[0], '0', '%1.1f'\
+                %minmax[1]])
+    # Title the colorbar based on the field's units
     fig.text(cbar_left + cbar_width, cbar_bottom + 0.5*cbar_height,\
-             cbar_units, verticalalignment='center', **csfont)
+             cbar_units, verticalalignment='center', **csfont,\
+             fontsize=cbar_fs)     
 
     # Plot outer boundary
     psivals = np.linspace(0, 2*np.pi, 500)
@@ -362,6 +397,10 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
         clon=0., posdef=False, logscale=False, symlog=False, varname='vr',\
         lw_scaling=1., plot_cbar=True, cbar_fs=10, linscale=None,\
         linthresh=None): 
+    
+    if 'sq' in varname or logscale:
+        posdef = True
+        
     # Shouldn't have to do this but Python is stupid with arrays ...
     field = np.copy(field_orig)    
 
@@ -396,9 +435,6 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
         minmax = get_satvals(field, posdef=posdef, logscale=logscale,\
                 symlog=symlog)
 
-    # Need these if logscale is True; made need them for other stuff later
-    minexp, maxexp = get_exp(minmax[0]), get_exp(minmax[1])
-
     # Get the exponent to use for scientific notation
     if not (logscale or symlog):
         maxabs = max(np.abs(minmax[0]), np.abs(minmax[1]))
@@ -408,6 +444,9 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
         # Normalize field by divisor
         field /= divisor
         minmax = minmax[0]/divisor, minmax[1]/divisor
+    
+    # Saturate the array (otherwise contourf will show white areas)
+    saturate_array(field, minmax[0], minmax[1])    
             
     # Get the Mollweide projection coordinates of llon/llat by converting
     # between PlateCarree (lat/lon) and Mollweide
@@ -433,41 +472,40 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
     ax.axis('off') # get rid of x/y axis coordinates
             
     # Make the Mollweide projection
-    if symlog:
-        saturate_array(field, minmax[0], minmax[1])
-        sig = np.std(field)
+    if logscale:
+        log_min, log_max = np.log10(minmax[0]), np.log10(minmax[1])
+        levels = np.logspace(log_min, log_max, 150)
+        im = ax.contourf(x, y, field, cmap='Greys',\
+            norm=colors.LogNorm(vmin=minmax[0], vmax=minmax[1]),\
+            levels=levels)  
+    elif posdef:
+        levels = np.linspace(minmax[0], minmax[1])
+        im = ax.contourf(x, y, field, cmap='plasma', levels=levels)
+    elif symlog:
+        linthresh_default, linscale_default =\
+            get_symlog_params(field, field_max=minmax[1])
         if linthresh is None:
-            linthresh = 0.3*sig
-        dynamic_range = minmax[1]/sig
-        dynamic_range_decades = np.log10(dynamic_range)
+            linthresh = linthresh_default
         if linscale is None:
-            linscale = dynamic_range_decades
-#        im = ax.pcolormesh(x, y, field, cmap='RdYlBu_r',\
-#                norm=colors.SymLogNorm(linthresh=linthresh,\
-#                linscale=linscale, vmin=minmax[0], vmax=minmax[1]))
+            linscale = linscale_default
         log_thresh = np.log10(linthresh)
         log_max = np.log10(minmax[1])
         nlevs_per_interval = 100
-        levels_neg = -np.logspace(log_max, log_thresh, nlevs_per_interval,\
+        levels_neg = -np.logspace(log_max, log_thresh,\
+                nlevs_per_interval,\
                 endpoint=False)
-        levels_mid = np.linspace(-linthresh, linthresh, nlevs_per_interval,\
-                endpoint=False)
-        levels_pos = np.logspace(log_thresh, log_max, nlevs_per_interval)
+        levels_mid = np.linspace(-linthresh, linthresh,\
+                nlevs_per_interval, endpoint=False)
+        levels_pos = np.logspace(log_thresh, log_max,\
+                nlevs_per_interval)
         levels = np.hstack((levels_neg, levels_mid, levels_pos))
         im = ax.contourf(x, y, field, cmap='RdYlBu_r',\
             norm=colors.SymLogNorm(linthresh=linthresh,\
             linscale=linscale, vmin=minmax[0], vmax=minmax[1]),\
             levels=levels)
     else:
-        if not logscale:
-            saturate_array(field, minmax[0], minmax[1])
-            im = ax.contourf(x, y, field, cmap=plt.cm.RdYlBu_r,\
-                    levels=np.linspace(minmax[0], minmax[1], 150),\
-                    norm=MidpointNormalize(0))
-        else: 
-            im = ax.contourf(x, y, field, cmap='Greys',\
-                norm=colors.LogNorm(vmin=minmax[0], vmax=minmax[1]),\
-                levels=np.logspace(minexp, maxexp, 150, base=np.exp(1.)))
+        im = ax.contourf(x, y, field, cmap='RdYlBu_r',\
+                levels=np.linspace(minmax[0], minmax[1], 150))
       
     # Draw parallels and meridians, evenly spaced by 30 degrees
     default_lw = 0.5*lw_scaling # default linewidth bit thinner
@@ -512,39 +550,37 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
         ax.plot(linex, liney, 'k', linewidth=lw)
 
     # Set up color bar
-    ax_xmin, ax_xmax, ax_ymin, ax_ymax = axis_range(ax)
-    ax_delta_x = ax_xmax - ax_xmin
-    ax_delta_y = ax_ymax - ax_ymin
-    ax_center_x = ax_xmin + 0.5*ax_delta_x
-#    ax_center_y = ax_ymin + 0.5*ax_delta_y   
-   
     if plot_cbar:
-        cbar_aspect = 1./40.
-        fig_aspect = ax_delta_x/ax_delta_y*0.5 
-        # assumes subplot aspect ratio is 0.5
-        cbar_width = 0.5*ax_delta_x # make cbar one-quarter
-                            # as long as plot is wide
+        ax_xmin, ax_xmax, ax_ymin, ax_ymax = axis_range(ax)
+        ax_delta_x = ax_xmax - ax_xmin
+        if symlog:
+            cbar_aspect = 1./40.
+            cbar_width = 0.5*ax_delta_x # make cbar one half 
+                            # as long as plot is wide            
+        else:
+            cbar_aspect = 1./20.
+            cbar_width = 0.25*ax_delta_x # make cbar one quarter
+                            # as long as plot is wide            
+        fig_width_inches, fig_height_inches = fig.get_size_inches()
+        fig_aspect = fig_height_inches/fig_width_inches
         cbar_height = cbar_width*cbar_aspect/fig_aspect
         cbar_bottom = ax_ymin - 2.5*cbar_height
         cbar_left = ax_xmin + 0.5*ax_delta_x - 0.5*cbar_width
         
-        cax = fig.add_axes((cbar_left, cbar_bottom, cbar_width, cbar_height))
-        
+        cax = fig.add_axes((cbar_left, cbar_bottom, cbar_width, cbar_height))        
         cbar = plt.colorbar(im, cax=cax, orientation='horizontal')
+        
         # make a "title" (label "m/s" to the right of the colorbar)
-        print('symlog = ', symlog)
-        if not symlog:
-            if not posdef:
-                cbar_units = ' ' + (r'$\times10^{%i}$' %maxabs_exp) +\
-                        ' ' + texunits[varname]
-                cbar.set_ticks([minmax[0], 0, minmax[1]])
-                cbar.set_ticklabels(['%1.1f' %minmax[0], '0', '%1.1f'\
-                        %minmax[1]])
-            else:
-                locator = ticker.LogLocator(base=10)
-                cbar.set_ticks(locator)
-                cbar_units = ' ' + texunits[varname]
-        else:
+        if logscale:
+            locator = ticker.LogLocator(subs='all')
+            cbar.set_ticks(locator)
+            cbar_units = ' ' + texunits[varname]
+        elif posdef:
+            cbar_units = ' ' + (r'$\times10^{%i}$' %maxabs_exp) + ' ' +\
+                texunits[varname]
+            cbar.set_ticks([minmax[0], minmax[1]])
+            cbar.set_ticklabels(['%1.1f' %minmax[0], '%1.1f' %minmax[1]])
+        elif symlog:
             cbar_units = ' ' + texunits[varname]
             cbar.set_ticks([-minmax[1], -linthresh, 0, linthresh,\
                     minmax[1]])
@@ -552,7 +588,13 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
                     sci_format(-linthresh), '0', sci_format(linthresh),\
                     sci_format(minmax[1])])
 #            cax.minorticks_on()
-
+        else:
+            cbar_units = ' ' + (r'$\times10^{%i}$' %maxabs_exp) +\
+                    ' ' + texunits[varname]
+            cbar.set_ticks([minmax[0], 0, minmax[1]])
+            cbar.set_ticklabels(['%1.1f' %minmax[0], '0', '%1.1f'\
+                    %minmax[1]])
+        # Title the colorbar based on the field's units
         fig.text(cbar_left + cbar_width, cbar_bottom + 0.5*cbar_height,\
                  cbar_units, verticalalignment='center', **csfont,\
                  fontsize=cbar_fs) 

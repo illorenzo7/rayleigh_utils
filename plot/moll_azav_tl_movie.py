@@ -195,8 +195,6 @@ else:
 # May need linthresh/linscale for each plot if -symlog was True
     
 # get the default values first
-linthresh_slice, linscale_slice =\
-    get_symlog_params(field_slice, field_max=max_slice)
 linthresh_az, linscale_az =\
     get_symlog_params(field_az, field_max=max_az)
 linthresh_tl, linscale_tl =\

@@ -5,11 +5,13 @@ plt.rcParams['mathtext.fontset'] = 'dejavuserif'
 csfont = {'fontname':'DejaVu Serif'}
 import numpy as np
 import sys, os
-sys.path.append(os.environ['co'])
+sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
 from common import get_file_lists, strip_dirname, rsun
+from plotcommon import axis_range
 from translate_times import translate_times
-from sslice_util import plot_ortho, get_sslice, axis_range
+from sslice_util import plot_ortho
+from get_sslice import get_sslice
 from rayleigh_diagnostics import Shell_Slices, ReferenceState
 from varprops import texlabels
 
@@ -20,6 +22,8 @@ radatadir = dirname + '/Shell_Slices/'
 file_list, int_file_list, nfiles = get_file_lists(radatadir)
 
 minmax = None
+logscale = False
+symlog = False
 iiter = nfiles - 1 # by default plot the last iteration
 ir = 0 # by default plot just below the surface
 rval = None # can also find ir by finding the closest point
@@ -58,10 +62,14 @@ for i in range(nargs):
         di_trans = translate_times(time, dirname, translate_from='prot')
         desired_iter = di_trans['val_iter']
         iiter = np.argmin(np.abs(int_file_list - desired_iter))
-    elif (arg == '-clat'):
+    elif arg == '-clat':
         clat = float(args[i+1])
-    elif (arg == '-clon'):
+    elif arg == '-clon':
         clon = float(args[i+1])
+    elif arg == '-log':
+        logscale = True
+    elif arg == '-symlog':
+        symlog = True
 
 iter_val = int_file_list[iiter]
 fname = file_list[iiter]
@@ -109,7 +117,8 @@ fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
 ax = fig.add_axes([margin_x, margin_bottom, subplot_width, subplot_height])
 
 plot_ortho(field, radius, a.costheta, fig=fig, ax=ax, ir=a.inds[ir],\
-        minmax=minmax, clon=clon, clat=clat, varname=varname) 
+        minmax=minmax, clon=clon, clat=clat, varname=varname,\
+        logscale=logscale, symlog=symlog) 
 
 # Make title
 ax_xmin, ax_xmax, ax_ymin, ax_ymax = axis_range(ax)

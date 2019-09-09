@@ -13,12 +13,8 @@ plt.rcParams['mathtext.fontset'] = 'dejavuserif'
 csfont = {'fontname':'DejaVu Serif'}
 plt.rcParams['contour.negative_linestyle'] = 'solid'
 from common import get_satvals, get_exp, rsun, trim_field, saturate_array,\
-    sci_format
-
-def fmt(x, pos):
-    a, b = '{:.1e}'.format(x).split('e')
-    b = int(b)
-    return r'${} \times 10^{{{}}}$'.format(a, b)
+    sci_format, get_symlog_params
+from plotcommon import axis_range
 
 def default_axes_2by1():
     # Create plot
@@ -74,12 +70,12 @@ def plot_azav(field, rr, cost, sint, fig=None, ax=None, cmap='RdYlBu_r',\
     sint = np.copy(sint)
 
     # Derivative grid info
-    ri, ro = np.min(rr), np.max(rr)
-    shell_depth = ro - ri
-    rr_depth = (np.max(rr) - rr)/shell_depth
+    ri, ro = np.min(rr), np.max(rr) # inner/ outer radii
     nr = len(rr)
     nt = len(cost)
 
+    # Deal with saturation values for the field
+    
     # If using logscale, you better have positive values!
     if logscale:
         posdef = True
@@ -91,10 +87,8 @@ def plot_azav(field, rr, cost, sint, fig=None, ax=None, cmap='RdYlBu_r',\
         minmax = get_satvals(trimmed_field, posdef=posdef,\
                 logscale=logscale, symlog=symlog)
 
-    # Need these if logscale is True; made need them for other stuff later
-    minexp, maxexp = get_exp(minmax[0]), get_exp(minmax[1])
-
-    # Get the exponent to use for scientific notation
+    # Factor out the exponent on the field and put it on the color bar
+    # for the linear-scaled color bars (default and posdef)
     if not (logscale or symlog):
         maxabs = max(np.abs(minmax[0]), np.abs(minmax[1]))
         exp = float(np.floor(np.log10(maxabs)))
@@ -104,6 +98,9 @@ def plot_azav(field, rr, cost, sint, fig=None, ax=None, cmap='RdYlBu_r',\
         field /= divisor
         minmax = minmax[0]/divisor, minmax[1]/divisor
 
+    # Saturate the array (otherwise contourf will show white areas)
+    saturate_array(field, minmax[0], minmax[1])
+
     # Create a default set of figure axes if they weren't already
     # specified by user
     if fig is None or ax is None:
@@ -111,28 +108,6 @@ def plot_azav(field, rr, cost, sint, fig=None, ax=None, cmap='RdYlBu_r',\
         showplot = True # probably in this case the user just
         # ran plot_azav from the command line wanting to view
         # view the plot
-   
-    # Get the position of the axes on the figure
-    pos = ax.get_position().get_points()
-    ax_left, ax_bottom = pos[0]
-    ax_right, ax_top = pos[1]
-    ax_width = ax_right - ax_left
-    ax_height = ax_top - ax_bottom
-    ax_aspect = ax_height/ax_width
-  
-    if plot_cbar:
-        # Set the colorbar ax to be in the "cavity" of the meridional plane
-        # The colorbar height is set by making sure it "fits" in the cavity
-        chi = np.min(rr)/np.max(rr)
-        cavity_height = ax_height*chi
-        cbax_center_x = ax_left + 0.3*ax_width
-        cbax_center_y = ax_bottom + ax_height/2.
-        cbax_aspect = 10.
-        cbax_height = 0.5*cavity_height
-        cbax_width = cbax_height/cbax_aspect/ax_aspect
-        
-        cbax_left = ax_left + 0.1*ax_width
-        cbax_bottom = cbax_center_y - cbax_height/2.
     
     # Calculate the grid on which to plot
     rr2d = rr.reshape((1, nr))
@@ -146,20 +121,22 @@ def plot_azav(field, rr, cost, sint, fig=None, ax=None, cmap='RdYlBu_r',\
     contour_lw = 0.2
     
     if (plotfield):
-        plt.sca(ax)
-        levs = np.linspace(minmax[0], minmax[1], 100)
-#        im = ax.contourf(xx, zz, field, cmap='RdYlBu_r',\
-#        levels=levs)
-#        plt.sca(ax)
-        if symlog:
-            saturate_array(field, minmax[0], minmax[1])
-            sig = np.std(field)
+        if logscale:
+            log_min, log_max = np.log10(minmax[0]), np.log10(minmax[1])
+            levels = np.logspace(log_min, log_max, 150)
+            im = ax.contourf(xx, zz, field, cmap='Greys',\
+                norm=colors.LogNorm(vmin=minmax[0], vmax=minmax[1]),\
+                levels=levels)  
+        elif posdef:
+            levels = np.linspace(minmax[0], minmax[1])
+            im = ax.contourf(xx, zz, field, cmap='plasma', levels=levels)
+        elif symlog:
+            linthresh_default, linscale_default =\
+                get_symlog_params(field, field_max=minmax[1])
             if linthresh is None:
-                linthresh = 0.3*sig
-            dynamic_range = minmax[1]/sig
-            dynamic_range_decades = np.log10(dynamic_range)
+                linthresh = linthresh_default
             if linscale is None:
-                linscale = dynamic_range_decades
+                linscale = linscale_default
             log_thresh = np.log10(linthresh)
             log_max = np.log10(minmax[1])
             nlevs_per_interval = 100
@@ -171,29 +148,38 @@ def plot_azav(field, rr, cost, sint, fig=None, ax=None, cmap='RdYlBu_r',\
             levels_pos = np.logspace(log_thresh, log_max,\
                     nlevs_per_interval)
             levels = np.hstack((levels_neg, levels_mid, levels_pos))
-
-            plt.contourf(xx, zz, field, cmap='RdYlBu_r',\
-                    norm=colors.SymLogNorm(linthresh=linthresh,\
-                    linscale=linscale, vmin=minmax[0], vmax=minmax[1]),\
-                    levels=levels)
+            im = ax.contourf(xx, zz, field, cmap='RdYlBu_r',\
+                norm=colors.SymLogNorm(linthresh=linthresh,\
+                linscale=linscale, vmin=minmax[0], vmax=minmax[1]),\
+                levels=levels)
         else:
-            if logscale:
-                plt.pcolormesh(xx, zz, field, cmap='Greys',\
-                        norm=colors.LogNorm(vmin=minmax[0], vmax=minmax[1]))
-            else:
-                saturate_array(field, minmax[0], minmax[1])
-                if posdef:
-                    cmap = 'plasma'
-                else:
-                    cmap = 'RdYlBu_r'
-                levels = np.linspace(minmax[0], minmax[1], 150)
-                plt.contourf(xx, zz, field, vmin=minmax[0],\
-                        vmax=minmax[1], cmap=cmap, levels=levels)
+            im = ax.contourf(xx, zz, field, cmap='RdYlBu_r',\
+                    levels=np.linspace(minmax[0], minmax[1], 150))                
 
         if plot_cbar:
+            # Get the position of the axes on the figure
+            ax_left, ax_right, ax_bottom, ax_top = axis_range(ax)
+            ax_width = ax_right - ax_left
+            ax_height = ax_top - ax_bottom
+            fig_width_inches, fig_height_inches = fig.get_size_inches()
+            fig_aspect = fig_height_inches/fig_width_inches
+          
+            # Set the colorbar ax to be in the "cavity" of the meridional plane
+            # The colorbar height is set by making sure it "fits" in the cavity
+            beta = ri/ro
+            cavity_height = ax_height*beta
+            cbax_center_y = ax_bottom + ax_height/2.
+            cbax_aspect = 20.
+            cbax_height = 0.5*cavity_height
+            #cbax_width = cbax_height/cbax_aspect/ax_aspect
+            cbax_width = cbax_height*fig_aspect/cbax_aspect
+            
+            cbax_left = ax_left + 0.1*ax_width
+            cbax_bottom = cbax_center_y - cbax_height/2. 
+            
             cbaxes = fig.add_axes([cbax_left, cbax_bottom,\
                            cbax_width, cbax_height])
-            cbar = plt.colorbar(cax=cbaxes)
+            cbar = plt.colorbar(im, cax=cbaxes)
 
             cbaxes.tick_params(labelsize=fsize)
             cbar.ax.tick_params(labelsize=fsize)   #font size for the ticks

@@ -44,24 +44,6 @@ def xy_grid(X, Y):
 
     return (X_new, Y_new)
 
-def logbounds(arr):
-    logarr = np.log10(arr)
-    medlog = np.median(logarr)
-    arrshifted = logarr - medlog
-    nsig = 3.
-    minexp = medlog - nsig*np.std(arrshifted)
-    maxexp = medlog + nsig*np.std(arrshifted)
-#    minexp = medlog -\
-#            nsig*np.std(arrshifted[np.where(arrshifted < 0)].flatten())
-#    maxexp = medlog +\
-#            nsig*np.std(arrshifted[np.where(arrshifted > 0)].flatten())
-    return 10.**minexp, 10.**maxexp
-
-def fmt(x, pos):
-    a, b = '{:.1e}'.format(x).split('e')
-    b = int(b)
-    return r'${} \times 10^{{{}}}$'.format(a, b)
-
 def integerticks(lmax):
     ''' This is for plotting l time-traces
     Gives O(5) ticklabels between -lmax and lmax, picked sensibly

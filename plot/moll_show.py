@@ -22,6 +22,7 @@ file_list, int_file_list, nfiles = get_file_lists(radatadir)
 
 minmax = None
 symlog = False
+logscale = False
 iiter = nfiles - 1 # by default plot the last iteration
 ir = 0 # by default plot just below the surface
 rval = None # can also find ir by finding the closest point
@@ -43,6 +44,8 @@ for i in range(nargs):
         varname = args[i+1]
     elif arg == '-symlog':
         symlog = True
+    elif arg == '-log':
+        logscale = True
     elif arg == '-iter':
         desired_iter = int(args[i+1])
         iiter = np.argmin(np.abs(int_file_list - desired_iter))
@@ -107,7 +110,7 @@ fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
 ax = fig.add_axes([margin_x, margin_bottom, subplot_width, subplot_height])
 
 plot_moll(field, a.costheta, fig=fig, ax=ax, minmax=minmax, clon=clon,\
-        varname=varname, symlog=symlog) 
+        varname=varname, symlog=symlog, logscale=logscale) 
 
 # Make title
 ax_xmin, ax_xmax, ax_ymin, ax_ymax = axis_range(ax)

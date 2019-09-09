@@ -277,31 +277,28 @@ def get_satvals(field, posdef=False, logscale=False, symlog=False):
     # Get good place to saturate array [field], assuming either
     # posdef (True or False) and/or logscale (True or False)
     # and/or symlog (True or False)
-    if symlog:
-        maxabs = np.max(np.abs(field))
-        maxabs_exp = np.floor(np.log10(maxabs))
-        minmax = -10**maxabs_exp, 10**maxabs_exp
-    else:
-        if posdef:
-            if logscale:
-                logfield = np.log(field)
-                medlog = np.median(logfield)
-                shiftlog = logfield - medlog
-                std_plus =\
-                    np.std(shiftlog[np.where(shiftlog > 0.)].flatten())
-                std_minus =\
-                    np.std(shiftlog[np.where(shiftlog <= 0.)].flatten())
-                av_std = (std_plus + std_minus)/2.
+    if logscale:
+        logfield = np.log(field)
+        medlog = np.median(logfield)
+        shiftlog = logfield - medlog
+        std_plus =\
+            np.std(shiftlog[np.where(shiftlog > 0.)].flatten())
+        std_minus =\
+            np.std(shiftlog[np.where(shiftlog <= 0.)].flatten())
+        av_std = (std_plus + std_minus)/2.
 
-                minexp = medlog - 5.*av_std
-                maxexp = medlog + 5.*av_std
-                minmax = np.exp(minexp), np.exp(maxexp)
-            else:
-                sig = rms(field)
-                minmax = 0., 3.*sig
-        else:
-            sig = np.std(field)
-            minmax = -3.*sig, 3.*sig
+        minexp = medlog - 5.*av_std
+        maxexp = medlog + 5.*av_std
+        minmax = np.exp(minexp), np.exp(maxexp)        
+    elif posdef:
+        sig = rms(field)
+        minmax = 0., 3.*sig        
+    elif symlog:
+        maxabs = np.max(np.abs(field))
+        minmax = -maxabs, maxabs       
+    else:
+        sig = np.std(field)
+        minmax = -3.*sig, 3.*sig
     return minmax
 
 def get_symlog_params(field, field_max=None):
