@@ -18,7 +18,7 @@ csfont = {'fontname':'DejaVu Serif'}
 from binormalized_cbar import MidpointNormalize
 import sys, os
 sys.path.append(os.environ['rapp'])
-sys.path.append(os.environ['co'])
+sys.path.append(os.environ['raco'])
 from azav_util import plot_azav, streamfunction
 from common import get_widest_range_file, strip_dirname, get_dict
 from rayleigh_diagnostics import ReferenceState
@@ -125,14 +125,14 @@ fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
 ax = fig.add_axes((margin_x, margin_y, subplot_width, subplot_height))
 
 # Plot mass flux
-plot_azav (flux_mag, rr, cost, sint, fig=fig, ax=ax,\
+plot_azav (flux_mag, rr, cost, fig=fig, ax=ax,\
     units = r'$\rm{erg}\ \rm{cm}^{-2}\ \rm{s}^{-1}$', plotcontours=False,\
-    norm=MidpointNormalize(0), minmax=minmax)
+    minmax=minmax)
 
 # Plot streamfunction contours
 lilbit = 0.01
 maxabs = np.max(np.abs(psi))
-plot_azav (psi, rr, cost, sint, fig=fig, ax=ax, plotfield=False,\
+plot_azav (psi, rr, cost, fig=fig, ax=ax, plotfield=False,\
      nlevs=nlevs)
 #plot_azav (psi, rr, cost, sint, fig=fig, ax=ax, plotfield=False,\
 #     levels=(-maxabs/2., -maxabs/4.,\

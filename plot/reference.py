@@ -9,7 +9,7 @@ csfont = {'fontname':'DejaVu Serif'}
 
 import sys, os
 sys.path.append(os.environ['rapp'])
-sys.path.append(os.environ['co'])
+sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['idref'])
 
 from common import strip_dirname

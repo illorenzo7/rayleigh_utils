@@ -16,7 +16,7 @@ csfont = {'fontname':'DejaVu Serif'}
 import numpy as np
 import sys, os
 sys.path.append(os.environ['rapp'])
-sys.path.append(os.environ['co'])
+sys.path.append(os.environ['raco'])
 from common import get_widest_range_file, strip_dirname, get_dict
 from get_parameter import get_parameter
 from rayleigh_diagnostics import GridInfo, ReferenceState

@@ -20,8 +20,8 @@ plt.rcParams['mathtext.fontset'] = 'dejavuserif'
 csfont = {'fontname':'DejaVu Serif'}
 import sys, os
 sys.path.append(os.environ['rapp'])
-sys.path.append(os.environ['co'])
-sys.path.append(os.environ['pl'])
+sys.path.append(os.environ['raco'])
+sys.path.append(os.environ['rapl'])
 from azav_util import plot_azav
 from common import get_widest_range_file, strip_dirname, get_dict
 from get_parameter import get_parameter
@@ -126,7 +126,7 @@ max_sig = max(np.std(efp_enth), np.std(efp_visc), np.std(efp_ke))
 if magnetism:
     ind_Poynt = lut[2003]
     efp_Poynt = vals[:, :, ind_Poynt]       
-    max_sig = max(max_sig, np.std(efr_Poynt))
+    max_sig = max(max_sig, np.std(efp_Poynt))
     efp_tot += efp_Poynt
     
 if minmax is None:
@@ -177,7 +177,7 @@ titles = [r'$(\mathbf{\mathcal{F}}_{\rm{enth,mm}})_\phi$',\
 units = r'$\rm{g}\ \rm{s}^{-3}$'
 
 if magnetism:
-    efr_terms.insert(5, efr_Poynt)
+    efp_terms.insert(5, efp_Poynt)
     titles.insert(5, r'$(\mathbf{\mathcal{F}}_{\rm{Poynt}})_\phi$')
 
 # Generate the actual figure of the correct dimensions
@@ -188,9 +188,8 @@ for iplot in range(nplots):
     ax_bottom = 1 - margin_top - subplot_height - \
             (iplot//ncol)*(subplot_height + margin_subplot_top)
     ax = fig.add_axes((ax_left, ax_bottom, subplot_width, subplot_height))
-    plot_azav (efp_terms[iplot], rr, cost, sint, fig=fig, ax=ax,
-        units = units, minmax=minmax, norm=MidpointNormalize(0.),\
-        plotcontours=plotcontours)
+    plot_azav (efp_terms[iplot], rr, cost, fig=fig, ax=ax,
+        units = units, minmax=minmax, plotcontours=plotcontours)
 
     ax.set_title(titles[iplot], va='bottom', **csfont)
 

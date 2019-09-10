@@ -17,7 +17,7 @@ plt.rcParams['mathtext.fontset'] = 'dejavuserif'
 csfont = {'fontname':'DejaVu Serif'}
 import sys, os
 sys.path.append(os.environ['rapp'])
-sys.path.append(os.environ['co'])
+sys.path.append(os.environ['raco'])
 from azav_util import plot_azav, streamfunction
 from common import get_widest_range_file, strip_dirname, get_dict,\
         trim_field
@@ -105,7 +105,7 @@ fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
 ax = fig.add_axes((margin_x, margin_y, subplot_width, subplot_height))
 
 # Plot mass flux
-plot_azav (rhovm, rr, cost, sint, fig=fig, ax=ax,\
+plot_azav (rhovm, rr, cost, fig=fig, ax=ax,\
     units = r'$\rm{g}\ \rm{cm}^{-2}\ \rm{s}^{-1}$', plotcontours=False,\
     minmax=minmax)
 
@@ -114,7 +114,7 @@ lilbit = 0.01
 maxabs = np.max(np.abs(psi))
 levels = (-maxabs/2., -maxabs/4., -lilbit*maxabs, 0., lilbit*maxabs,\
         maxabs/4., maxabs/2.)
-plot_azav (psi, rr, cost, sint, fig=fig, ax=ax, plotfield=False,\
+plot_azav (psi, rr, cost, fig=fig, ax=ax, plotfield=False,\
     levels=levels)
 
 # Make title

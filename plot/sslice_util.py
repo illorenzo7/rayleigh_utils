@@ -11,7 +11,7 @@ sys.path.append(os.environ['rapp'])
 from cartopy import crs
 from varprops import texunits
 from common import get_satvals, saturate_array, sci_format, get_symlog_params
-from get_parameter import get_parameter
+from plotcommon import default_axes_1by1, default_axes_2by1, axis_range
 
 def deal_with_nans(x, y):
     """ Nandles the NaN in x and y produced by an orthographic projection
@@ -81,69 +81,6 @@ def deal_with_nans(x, y):
             y_dealt[ix, max_iy + 1:] = y_dealt[ix, max_iy]            
        
     return x_dealt, y_dealt
-
-
-def rbounds(dirname):
-    try:
-        rmin = get_parameter(dirname, 'rmin')
-        rmax = get_parameter(dirname, 'rmax')
-#    if rmin == 100 or rmax == 100: # get_parameter must have failed
-    except:
-        dom_bounds = get_parameter(dirname, 'domain_bounds')
-        rmin, rmax = dom_bounds[0], dom_bounds[-1]
-    return rmin, rmax
-
-def axis_range(ax): # gets subplot coordinates on a figure in "normalized"
-        # coordinates
-    pos = plt.get(ax, 'position')
-    bottom_left = pos.p0
-    top_right = pos.p1
-    xmin, xmax = bottom_left[0], top_right[0]
-    ymin, ymax = bottom_left[1], top_right[1]
-    
-    return xmin, xmax, ymin, ymax
-    
-def default_axes_1by1():
-    # Create plot
-    subplot_width_inches = 7.5
-    subplot_height_inches = 7.5
-    margin_inches = 1./8.
-    margin_bottom_inches = 3./4.
-
-    fig_width_inches = subplot_width_inches + 2.*margin_inches
-    fig_height_inches = subplot_height_inches + margin_inches +\
-            margin_bottom_inches
-
-    margin_x = margin_inches/fig_width_inches
-    margin_bottom = margin_bottom_inches/fig_height_inches
-    subplot_width = subplot_width_inches/fig_width_inches
-    subplot_height = subplot_height_inches/fig_height_inches
-
-    fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
-    ax = fig.add_axes((margin_x, margin_bottom, subplot_width,\
-            subplot_height))
-    return fig, ax
-
-def default_axes_2by1():
-    # Create plot
-    subplot_width_inches = 10.
-    subplot_height_inches = 5.
-    margin_inches = 1./8.
-    margin_bottom_inches = 3./4. # leave room for colorbar
-
-    fig_width_inches = subplot_width_inches + 2.*margin_inches
-    fig_height_inches = subplot_height_inches + margin_inches +\
-            margin_bottom_inches
-
-    margin_x = margin_inches/fig_width_inches
-    margin_bottom = margin_bottom_inches/fig_height_inches
-    subplot_width = subplot_width_inches/fig_width_inches
-    subplot_height = subplot_height_inches/fig_height_inches
-
-    fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
-    ax = fig.add_axes((margin_x, margin_bottom, subplot_width,\
-            subplot_height))
-    return fig, ax
 
 def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
         minmax=None, clon=0, clat=20, posdef=False, logscale=False,\

@@ -5,10 +5,12 @@ plt.rcParams['mathtext.fontset'] = 'dejavuserif'
 csfont = {'fontname':'DejaVu Serif'}
 import numpy as np
 import sys, os
-sys.path.append(os.environ['co'])
+sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
 from common import get_file_lists, strip_dirname, rsun
-from sslice_util import plot_moll, get_sslice, axis_range
+from plotcommon import axis_range
+from sslice_util import plot_moll
+from get_sslice import get_sslice
 from rayleigh_diagnostics import Shell_Slices
 from get_parameter import get_parameter
 from translate_times import translate_times

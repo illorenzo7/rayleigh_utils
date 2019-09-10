@@ -62,3 +62,63 @@ def integerticks(lmax):
         st.append(str(np.abs(tickval)))
     ticklabels = np.array(st)
     return tickvals, ticklabels
+
+def default_axes_1by1(width=6.):
+    # Good for orthographic projections and AZ_Avgs in HALF meridional plane 
+    subplot_width_inches = width
+    subplot_height_inches = width
+    margin_inches = 1./8.
+    margin_bottom_inches = 3./4.
+
+    fig_width_inches = subplot_width_inches + 2.*margin_inches
+    fig_height_inches = subplot_height_inches + margin_inches +\
+            margin_bottom_inches
+
+    margin_x = margin_inches/fig_width_inches
+    margin_bottom = margin_bottom_inches/fig_height_inches
+    subplot_width = subplot_width_inches/fig_width_inches
+    subplot_height = subplot_height_inches/fig_height_inches
+
+    fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
+    ax = fig.add_axes((margin_x, margin_bottom, subplot_width,\
+            subplot_height))
+    return fig, ax
+
+def default_axes_2by1(width=8.):
+    # Good for Mollweide projections
+    subplot_width_inches = width
+    subplot_height_inches = 0.5*width
+    margin_inches = 1./8.
+    margin_bottom_inches = 3./4. # leave room for colorbar
+
+    fig_width_inches = subplot_width_inches + 2.*margin_inches
+    fig_height_inches = subplot_height_inches + margin_inches +\
+            margin_bottom_inches
+
+    margin_x = margin_inches/fig_width_inches
+    margin_bottom = margin_bottom_inches/fig_height_inches
+    subplot_width = subplot_width_inches/fig_width_inches
+    subplot_height = subplot_height_inches/fig_height_inches
+
+    fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
+    ax = fig.add_axes((margin_x, margin_bottom, subplot_width,\
+            subplot_height))
+    return fig, ax
+
+def default_axes_1by2(width=3.75):
+    # Good for AZ_Avgs in full meridional plane
+    subplot_width_inches = width
+    subplot_height_inches = 2*width
+    margin_inches = 1./8.
+
+    fig_width_inches = subplot_width_inches + 2.*margin_inches
+    fig_height_inches = subplot_height_inches + 2.*margin_inches
+
+    margin_x = margin_inches/fig_width_inches
+    margin_y = margin_inches/fig_height_inches
+    subplot_width = subplot_width_inches/fig_width_inches
+    subplot_height = subplot_height_inches/fig_height_inches
+
+    fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
+    ax = fig.add_axes((margin_x, margin_y, subplot_width, subplot_height))
+    return fig, ax

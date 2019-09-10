@@ -20,7 +20,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import sys, os
-sys.path.append(os.environ['co'])
+sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['idref'])
 sys.path.append(os.environ['rapp'])
 from write_reference import write_reference

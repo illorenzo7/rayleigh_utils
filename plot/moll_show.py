@@ -8,8 +8,9 @@ import sys, os
 sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
 from common import get_file_lists, strip_dirname, rsun
+from plotcommon import axis_range
 from translate_times import translate_times
-from sslice_util import plot_moll, axis_range
+from sslice_util import plot_moll
 from rayleigh_diagnostics import Shell_Slices
 from get_sslice import get_sslice
 from varprops import texlabels

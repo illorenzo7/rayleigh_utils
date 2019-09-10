@@ -22,8 +22,8 @@ plt.rcParams['mathtext.fontset'] = 'dejavuserif'
 csfont = {'fontname':'DejaVu Serif'}
 import sys, os
 sys.path.append(os.environ['rapp'])
-sys.path.append(os.environ['co'])
-sys.path.append(os.environ['pl'])
+sys.path.append(os.environ['raco'])
+sys.path.append(os.environ['rapl'])
 from azav_util import plot_azav
 from rayleigh_diagnostics import ReferenceState
 from common import get_widest_range_file, strip_dirname, get_dict
@@ -236,7 +236,7 @@ for iplot in range(nplots):
     ax_bottom = 1 - margin_top - subplot_height - \
             (iplot//ncol)*(subplot_height + margin_subplot_top)
     ax = fig.add_axes((ax_left, ax_bottom, subplot_width, subplot_height))
-    plot_azav (efr_terms[iplot] - np.mean(efr_terms[iplot], axis=0), rr, cost, sint, fig=fig, ax=ax,\
+    plot_azav (efr_terms[iplot] - np.mean(efr_terms[iplot], axis=0), rr, cost, fig=fig, ax=ax,\
             units=units, minmax=minmax, plotlatlines=plotlatlines,\
             plotcontours=plotcontours, nlevs=nlevs)
     ax.set_title(titles[iplot], verticalalignment='bottom', **csfont)

@@ -9,7 +9,6 @@
 # Does not save the plot by default
 
 import numpy as np
-import pickle
 import matplotlib as mpl
 mpl.use('TkAgg')
 import matplotlib.pyplot as plt
@@ -187,7 +186,7 @@ for iplot in range(nplots):
     else:
         this_symlog = symlog[iplot]
 
-    plot_azav (field, rr, cost, sint, fig=fig, ax=ax, minmax=this_minmax,\
+    plot_azav (field, rr, cost, fig=fig, ax=ax, minmax=this_minmax,\
             plotcontours=plotcontours, plotlatlines=plotlatlines,\
             rvals=rvals, posdef=this_posdef, logscale=this_logscale,\
             symlog=this_symlog)

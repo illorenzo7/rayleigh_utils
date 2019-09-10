@@ -190,7 +190,7 @@ for iplot in range(nplots):
     else:
         this_sym = sym[iplot]
 
-    plot_azav_half(field, rr, cost, sint, fig=fig, ax=ax,\
+    plot_azav_half(field, rr, cost, fig=fig, ax=ax,\
             minmax=this_minmax, plotcontours=plotcontours,\
             plotlatlines=plotlatlines, rvals=rvals, posdef=this_posdef,\
             logscale=this_logscale, sym=this_sym)

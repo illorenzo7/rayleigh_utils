@@ -19,8 +19,8 @@ plt.rcParams['mathtext.fontset'] = 'dejavuserif'
 csfont = {'fontname':'DejaVu Serif'}
 import sys, os
 sys.path.append(os.environ['rapp'])
-sys.path.append(os.environ['co'])
-sys.path.append(os.environ['pl'])
+sys.path.append(os.environ['raco'])
+sys.path.append(os.environ['rapl'])
 from azav_util import plot_quiver
 from common import get_widest_range_file, strip_dirname, get_dict
 from get_parameter import get_parameter
@@ -137,7 +137,7 @@ subplot_height = subplot_height_inches/fig_height_inches
 fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
 ax = fig.add_axes((margin_x, margin_y, subplot_width, subplot_height))
 
-plot_quiver (efr_tot, eft_tot, rr, cost, sint, fig=fig, ax=ax,\
+plot_quiver (efr_tot, eft_tot, rr, cost, fig=fig, ax=ax,\
         scale_by_mag=scale_by_mag, nsample_r=nsample_r,\
         nsample_t=nsample_t, plot_poles=plot_poles, scale=scale)
 

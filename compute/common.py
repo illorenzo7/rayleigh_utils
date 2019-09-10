@@ -4,6 +4,7 @@
 
 import numpy as np
 import os, pickle
+from get_parameter import get_parameter
 
 # Solar radius, luminosity, and mass (as we have been assuming in Rayleigh)
 rsun = 6.957e10  # value taken from IAU recommendation: arxiv, 1510.07674
@@ -360,3 +361,21 @@ def append_logfile(logfile, message):
     f = open(logfile, 'a')
     f.write(message)
     f.close()
+    
+def rbounds(dirname):
+    # Get min/max radius even if there are multiple Chebyshev domains
+    try:
+        rmin = get_parameter(dirname, 'rmin')
+        rmax = get_parameter(dirname, 'rmax')
+#    if rmin == 100 or rmax == 100: # get_parameter must have failed
+    except:
+        dom_bounds = get_parameter(dirname, 'domain_bounds')
+        rmin, rmax = dom_bounds[0], dom_bounds[-1]
+    return rmin, rmax
+
+def is_positive(arr):
+    how_many_positive_points = np.sum(arr >= 0.)
+    how_many_overall_points = np.size(arr)
+    # If the array is positive everywhere, the number of positive points
+    # will equal the total number of points
+    return (how_many_positive_points == how_many_overall_points)

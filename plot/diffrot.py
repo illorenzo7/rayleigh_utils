@@ -104,7 +104,7 @@ subplot_height = subplot_height_inches/fig_height_inches
 fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
 ax = fig.add_axes((margin_x, margin_y, subplot_width, subplot_height))
 
-plot_azav (diffrot, rr, cost, sint, fig=fig, ax=ax, units='nHz',\
+plot_azav (diffrot, rr, cost, fig=fig, ax=ax, units='nHz',\
         nlevs=my_nlevs, minmax = (my_min, my_max))
 
 # Make title + label diff. rot. contrast and no. contours

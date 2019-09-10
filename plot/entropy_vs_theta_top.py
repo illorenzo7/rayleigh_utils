@@ -17,7 +17,7 @@ csfont = {'fontname':'DejaVu Serif'}
 from binormalized_cbar import MidpointNormalize
 import sys, os
 sys.path.append(os.environ['rapp'])
-sys.path.append(os.environ['co'])
+sys.path.append(os.environ['raco'])
 from common import get_widest_range_file, strip_dirname, get_dict
 
 # Get directory name and stripped_dirname for plotting purposes
