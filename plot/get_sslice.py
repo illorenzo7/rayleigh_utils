@@ -10,9 +10,10 @@ import numpy as np
 import sys, os
 sys.path.append(os.environ['rapp'])
 from varprops import var_indices, var_indices_old
-from common import get_widest_range_file
+from common import get_widest_range_file, thermo_R
 from get_parameter import get_parameter
 from rayleigh_diagnostics import ReferenceState
+from reference_tools import equation_coefficients
 
 def get_sslice(a, varname, dirname=None, old=False):
     # Given a shell_slice (nphi, ntheta, nr, nq, nt), return the shell slice
@@ -1153,10 +1154,17 @@ def get_sslice(a, varname, dirname=None, old=False):
             vt_prime_slice = vt_slice - np.mean(vt_slice, axis=0)
             s_prime_slice = s_slice - np.mean(s_slice, axis=0)  
             p_prime_slice = p_slice - np.mean(p_slice, axis=0)               
-        ref = ReferenceState(dirname + '/reference', '')
         cp = get_parameter(dirname, 'pressure_specific_heat')
-        ref_p = (ref.pressure)[a.inds]
-        ref_temp = (ref.temperature)[a.inds]
+        try:
+            ref = ReferenceState(dirname + '/reference', '')
+            ref_p = (ref.pressure)[a.inds]
+            ref_temp = (ref.temperature)[a.inds]
+        except:
+            eq = equation_coefficients()
+            eq.read(dirname + '/equation_coefficients')
+            ref_temp = (eq.temperature)[a.inds]
+            ref_dens = (eq.density)[a.inds]
+            ref_p = ref_dens*thermo_R*ref_temp
         try:
             poly_n = get_paramater(dirname, 'poly_n') # must check "poly_n" later
             poly_gamma = 1. + 1./poly_n  

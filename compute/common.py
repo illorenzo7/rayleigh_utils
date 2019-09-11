@@ -22,6 +22,11 @@ msun = 1.98891e33 # FROM WIKIPEDIA: 1.98847 \pm 0.00007
                 # the cosmologists are right...)
 # Read in all files from the Rayleigh data directory and sort them by name (number)
 
+#Thermodyanmic variables
+c_P = 3.5e8
+thermo_gamma = 5./3.
+thermo_R = thermo_gamma*(1. - 1./thermo_gamma)
+
 # I am now calling r_m the base of the convection zone, 
 # while r_i (the inner shell radius) can vary
 rhom = 0.18053428
