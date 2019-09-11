@@ -18,7 +18,7 @@ csfont = {'fontname':'DejaVu Serif'}
 from binormalized_cbar import MidpointNormalize
 import sys, os
 sys.path.append(os.environ['rapp'])
-sys.path.append(os.environ['co'])
+sys.path.append(os.environ['raco'])
 from azav_util import plot_azav
 from common import get_widest_range_file, strip_dirname, get_file_lists,\
         get_desired_range, get_dict
@@ -157,9 +157,9 @@ for iplot in range(3):
     ax_bottom = 1 - margin_top - subplot_height - \
             (iplot//ncol)*(subplot_height + margin_subplot_top)
     ax = fig.add_axes((ax_left, ax_bottom, subplot_width, subplot_height))
-    plot_azav (field_components[iplot], rr, cost, sint, fig=fig, ax=ax,\
+    plot_azav (field_components[iplot], rr, cost, fig=fig, ax=ax,\
            units=units, nlevs=my_nlevs, minmax=minmax,\
-           norm=MidpointNormalize(0), plotcontours=plotcontours)
+           plotcontours=plotcontours)
     ax.set_title(titles[iplot], verticalalignment='bottom', **csfont)
 
 # Put some metadata in upper left

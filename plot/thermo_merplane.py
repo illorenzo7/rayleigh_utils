@@ -19,8 +19,8 @@ plt.rcParams['mathtext.fontset'] = 'dejavuserif'
 csfont = {'fontname':'DejaVu Serif'}
 import sys, os
 sys.path.append(os.environ['rapp'])
-sys.path.append(os.environ['co'])
-sys.path.append(os.environ['pl'])
+sys.path.append(os.environ['raco'])
+sys.path.append(os.environ['rapl'])
 from azav_util import plot_azav
 from rayleigh_diagnostics import ReferenceState
 from common import get_widest_range_file, strip_dirname, get_dict
@@ -69,7 +69,7 @@ print ('Getting zonally averaged thermo. vars from ' + datadir + AZ_Avgs_file + 
 print ('and the spherically averaged thermo. vars from ' + datadir + Shell_Avgs_file + ' ...')
 
 di = get_dict(datadir + AZ_Avgs_file)
-di_sph = np.load(datadir + Shell_Avgs_file)
+di_sph = get_dict(datadir + Shell_Avgs_file)
 
 iter1, iter2 = di['iter1'], di['iter2']
 vals = di['vals']
@@ -165,9 +165,8 @@ for iplot in range(nplots):
     ax_bottom = 1 - margin_top - subplot_height - \
             (iplot//ncol)*(subplot_height + margin_subplot_top)
     ax = fig.add_axes((ax_left, ax_bottom, subplot_width, subplot_height))
-    plot_azav (thermo_terms[iplot], rr, cost, sint, fig=fig, ax=ax,\
-           units=units[iplot], norm=MidpointNormalize(0.),\
-           plotcontours=plotcontours)
+    plot_azav (thermo_terms[iplot], rr, cost, fig=fig, ax=ax,\
+            units=units[iplot], plotcontours=plotcontours)
     ax.set_title(titles[iplot], va='bottom', **csfont)
 
 # Put some metadata in upper left

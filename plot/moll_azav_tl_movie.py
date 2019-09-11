@@ -429,8 +429,8 @@ for fname in fnames:
             append_logfile(logfile, 'Saving plot: ' + plotdir + savename +\
                        ' ...\n')
         plt.savefig(plotdir + savename, dpi=150)
-        count += 1
         plt.close()
+        count += 1
 if log_progress:
     append_logfile(logfile, '========== End Log File ==========\n')
     append_logfile(logfile, '==================================\n')
