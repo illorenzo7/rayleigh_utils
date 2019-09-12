@@ -8,7 +8,7 @@ csfont = {'fontname':'DejaVu Serif'}
 import numpy as np
 import pickle
 import sys, os
-sys.path.append(os.environ['co'])
+sys.path.append(os.environ['raco'])
 from common import get_file_lists, get_widest_range_file, strip_dirname,\
         rsun, get_dict
 from plotcommon import axis_range

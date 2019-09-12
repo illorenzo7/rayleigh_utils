@@ -215,7 +215,7 @@ def get_widest_range_file(datadir, data_name):
             num = 1 # iterations should usually start right after the 
                     # data type name
             if data_name == 'time-longitude': # except for time-latitude
-                num = 17
+                num = 16
             possible_iter = datafile[istart + len_name + num:istart + len_name + num + 8]
             if is_an_int(possible_iter):
                 specific_files.append(datafile)

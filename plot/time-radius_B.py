@@ -8,9 +8,9 @@ csfont = {'fontname':'DejaVu Serif'}
 import numpy as np
 import pickle
 import sys, os
-sys.path.append(os.environ['co'])
+sys.path.append(os.environ['raco'])
 from common import get_file_lists, get_widest_range_file, strip_dirname,\
-        rsun
+        rsun, get_dict
 from get_parameter import get_parameter
 
 def axis_range(ax): # gets subplot coordinates on a figure in "normalized"
@@ -82,12 +82,7 @@ for i in range(nargs):
 # Read in the time-latitude data (dictionary form)
 print ('Getting time-radius trace from ' + datadir +\
        time_radius_file + ' ...')
-try:
-    di = np.load(datadir + time_radius_file, encoding='latin1').item()
-except:
-    f = open(datadir + time_radius_file, 'rb')
-    di = pickle.load(f)
-    f.close()
+di = get_dict(datadir + time_radius_file)
 
 vals = di['vals']
 

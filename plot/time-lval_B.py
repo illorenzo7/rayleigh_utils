@@ -9,11 +9,11 @@ csfont = {'fontname':'DejaVu Serif'}
 import numpy as np
 import pickle
 import sys, os
-sys.path.append(os.environ['co'])
+sys.path.append(os.environ['raco'])
 from common import get_file_lists, get_widest_range_file, strip_dirname,\
-        rsun, get_dict
+        rsun, get_dict, get_satvals
 from get_parameter import get_parameter
-from plotcommon import axis_range, logbounds, xy_grid, integerticks
+from plotcommon import axis_range, xy_grid, integerticks
 
 # Get the run directory on which to perform the analysis
 dirname = sys.argv[1]
@@ -230,8 +230,8 @@ for i in range(len(i_desiredrvals)):
 
         for field in [br_trace[cut:, 1:il_max+1],\
                 bt_trace[cut:, 1:il_max+1], bp_trace[cut:, 1:il_max+1]]:
-            my_min, my_max = logbounds(field+1e-22) #+1e-22 to guard against
-                # exactly 0 values
+            my_min, my_max = get_satvals(field+1e-22, logscale=True) 
+            #+1e-22 to guard against exactly 0 values
             my_mins.append(my_min)
             my_maxes.append(my_max)
     else:

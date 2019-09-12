@@ -9,10 +9,10 @@ csfont = {'fontname':'DejaVu Serif'}
 import numpy as np
 import pickle
 import sys, os
-sys.path.append(os.environ['co'])
+sys.path.append(os.environ['raco'])
 from common import get_file_lists, get_widest_range_file, strip_dirname,\
         rsun, get_dict
-from plotcommon import axis_range, fmt
+from plotcommon import axis_range
 from get_parameter import get_parameter
 
 # Get the run directory on which to perform the analysis
@@ -252,7 +252,7 @@ for i in range(len(i_desiredrvals)):
     cbar_height = ax_delta_y
     cax = fig.add_axes((cbar_left, cbar_bottom, cbar_width, cbar_height))
     cax.set_title(r'$\rm{G}\ \rm{s}^{-1}$', **csfont)
-    plt.colorbar(im1, cax=cax, format=ticker.FuncFormatter(fmt))
+    plt.colorbar(im1, cax=cax)
 
     # Next, trans_tot:
     ax_xmin, ax_xmax, ax_ymin, ax_ymax = axis_range(ax4)
@@ -266,7 +266,7 @@ for i in range(len(i_desiredrvals)):
     cbar_height = ax_delta_y
     cax = fig.add_axes((cbar_left, cbar_bottom, cbar_width, cbar_height))
     cax.set_title(r'$\rm{G}\ \rm{s}^{-1}$', **csfont)
-    plt.colorbar(im4, cax=cax, format=ticker.FuncFormatter(fmt))
+    plt.colorbar(im4, cax=cax)
 
     # Next, B_t:
     ax_xmin, ax_xmax, ax_ymin, ax_ymax = axis_range(ax5)
