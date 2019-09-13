@@ -38,6 +38,8 @@ user_specified_rnorm = False
 user_specified_minmax = False
 lats = [0, 15, 30, 45, 60, 75]
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
+plot_Ro_from_spec = False
+logscale = False
 
 # Read command-line arguments (CLAs)
 args = sys.argv[2:]
@@ -58,6 +60,10 @@ for i in range(nargs):
     elif arg == '-minmax':
         user_specified_minmax = True
         my_min, my_max = float(args[i+1]), float(args[i+2])
+    elif arg == '-spec':
+        plot_Ro_from_spec = True
+    elif arg == '-log':
+        logscale = True
 
 # Get angular velocity
 Om0 = get_parameter(dirname, 'angular_velocity')
@@ -88,6 +94,33 @@ ref = ReferenceState(dirname + '/reference')
 Hrho = -1./ref.dlnrho
 Ro = np.sqrt(vsq)/Hrho/Om0
 
+# If -spec was specified, compute Rossby number spectrally to show 
+# on scatter plot
+if plot_Ro_from_spec:
+    spec_file = get_widest_range_file(datadir, 'Shell_Spectra')
+    print ("User specified '-spec'")
+    print ('Reading Shell_Spectra data from ' + datadir + spec_file + ' ...')
+    di_spec = get_dict(datadir + spec_file)
+    lpower = di_spec['lpower']
+    lvals = di_spec['lvals']
+    rinds = di_spec['rinds']
+    nell = di_spec['nell']
+    nr_spec = di_spec['nr']
+    lut = di_spec['lut']
+    rvals_spec = di_spec['rvals']
+    vrsq_power = lpower[:, :, lut[1], 2] # get the convective power
+    vtsq_power = lpower[:, :, lut[2], 2] 
+    vpsq_power = lpower[:, :, lut[3], 2] 
+    vsq_power = vrsq_power + vtsq_power + vpsq_power
+    l_rms = np.sum(vsq_power*lvals.reshape((nell, 1)), axis=0)/\
+            np.sum(vsq_power, axis=0)
+    twopir = 2*np.pi*rvals_spec
+    H_spec = twopir/l_rms
+    print('l_rms: ', l_rms)
+    print('H_spec: ', H_spec)
+    vsq_vs_r = np.sum(vsq, axis=0)
+    Ro_spec = (np.sqrt(vsq_vs_r))[rinds]/H_spec/Om0
+
 # Create the plot
 fig = plt.figure()
 ax = fig.add_subplot(111)
@@ -113,6 +146,11 @@ for theta_val in theta_vals:
     maxes.append(np.max(Ro[index,:]))
     mins.append(np.min(Ro[index,:]))
 
+if plot_Ro_from_spec:
+    ax.scatter(rr_n[rinds], Ro_spec)
+    maxes.append(np.max(Ro_spec))
+    mins.append(np.min(Ro_spec))
+
 if not user_specified_minmax:
     # Global extrema
     mmax = np.max(maxes)
@@ -121,6 +159,8 @@ if not user_specified_minmax:
     ybuffer = difference*0.2 
     # "Guard" the yrange of the plot with whitespace
     ymin, ymax = mmin - ybuffer, mmax + ybuffer
+    if logscale:
+        ymin, ymax = mmin/3., mmax*3.
 else:
     ymin, ymax = my_min, my_max
 
@@ -131,6 +171,9 @@ else:
     plt.xlabel(r'r/(%.1e cm)' %user_supplied_rnorm, fontsize=12, **csfont)
     
 plt.ylabel(r'${\rm{Ro}}_{\rm{vel2}} \equiv v^\prime H_\rho^{-1}\Omega_0^{-1}$',fontsize=12, **csfont)
+
+if logscale:
+    plt.yscale('log')
 
 # Set the axis limits
 xmin, xmax = np.min(rr_n), np.max(rr_n)
