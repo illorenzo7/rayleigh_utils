@@ -12,8 +12,8 @@
 import numpy as np
 import pickle
 import sys, os
-sys.path.append(os.environ['rasource'] + '/post_processing')
-sys.path.append(os.environ['co'])
+sys.path.append(os.environ['rapp'])
+sys.path.append(os.environ['raco'])
 from rayleigh_diagnostics import AZ_Avgs
 from common import get_file_lists, get_desired_range, strip_dirname,\
         strip_filename, get_dict
@@ -29,7 +29,6 @@ n_for_cla = 0
 for arg in args:
     if arg == '-tag':
         n_for_cla += 2
-print(n_total_args)
 
 nfiles = n_total_args - 1 - n_for_cla
 print(nfiles)
