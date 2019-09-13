@@ -92,7 +92,7 @@ vsq = vsq_r + vsq_t + vsq_p
 # Compute velocity-based Rossby number
 ref = ReferenceState(dirname + '/reference')
 Hrho = -1./ref.dlnrho
-Ro = np.sqrt(vsq)/Hrho/Om0
+Ro = np.sqrt(vsq)/Hrho/Om0/2
 
 # If -spec was specified, compute Rossby number spectrally to show 
 # on scatter plot
@@ -116,10 +116,8 @@ if plot_Ro_from_spec:
             np.sum(vsq_power, axis=0)
     twopir = 2*np.pi*rvals_spec
     H_spec = twopir/l_rms
-    print('l_rms: ', l_rms)
-    print('H_spec: ', H_spec)
-    vsq_vs_r = np.sum(vsq, axis=0)
-    Ro_spec = (np.sqrt(vsq_vs_r))[rinds]/H_spec/Om0
+    vsq_vs_r = np.mean(vsq, axis=0)
+    Ro_spec = (np.sqrt(vsq_vs_r))[rinds]/H_spec/Om0/2
 
 # Create the plot
 fig = plt.figure()
@@ -170,7 +168,7 @@ if not user_specified_rnorm:
 else:
     plt.xlabel(r'r/(%.1e cm)' %user_supplied_rnorm, fontsize=12, **csfont)
     
-plt.ylabel(r'${\rm{Ro}}_{\rm{vel2}} \equiv v^\prime H_\rho^{-1}\Omega_0^{-1}$',fontsize=12, **csfont)
+plt.ylabel(r'${\rm{Ro}}_{\rm{vel2}} \equiv v^\prime (2H_\rho\Omega_0)^{-1}$',fontsize=12, **csfont)
 
 if logscale:
     plt.yscale('log')
