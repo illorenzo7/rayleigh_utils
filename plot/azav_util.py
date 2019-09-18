@@ -60,7 +60,7 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
 
     # Factor out the exponent on the field and put it on the color bar
     # for the linear-scaled color bars (default and posdef)
-    if not (logscale or symlog):
+    if not (logscale or symlog) and plotfield:
         maxabs = max(np.abs(minmax[0]), np.abs(minmax[1]))
         exp = float(np.floor(np.log10(maxabs)))
         divisor = 10.**exp
