@@ -30,4 +30,4 @@ KE_dens = vals[lut[401]]
 ratio = ME_dens/KE_dens
 
 # Print the ratio
-print("Ratio of ME to KE: %1.3e" %ratio)
+print("Ratio of ME to KE: %1.3e/%1.3e = %1.3e" %(ME_dens, KE_dens, ratio))
