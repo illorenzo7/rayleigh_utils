@@ -321,6 +321,9 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
         fig.text(cbar_left + cbar_width, cbar_bottom + 0.5*cbar_height,\
                  cbar_units, verticalalignment='center', **csfont,\
                  fontsize=cbar_fs)     
+        plt.sca(cax)
+        plt.xticks(fontsize=cbar_fs) # change the fontsize 
+                            # on the tick labels too
 
     # Plot outer boundary
     psivals = np.linspace(0, 2*np.pi, 500)
@@ -536,7 +539,10 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
         fig.text(cbar_left + cbar_width, cbar_bottom + 0.5*cbar_height,\
                  cbar_units, verticalalignment='center', **csfont,\
                  fontsize=cbar_fs) 
-    
+        plt.sca(cax)
+        plt.xticks(fontsize=cbar_fs) # change the fontsize 
+                            # on the tick labels too
+
     # Plot outer boundary
     psivals = np.linspace(0, 2*np.pi, 100)
     xvals, yvals = 2.*np.cos(psivals), np.sin(psivals)
