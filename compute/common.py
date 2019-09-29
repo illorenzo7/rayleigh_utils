@@ -36,6 +36,8 @@ ro = 6.5860209e10 # Radii consistent with the bottom 3 density scale
         # heights in the Sun rho_i above corresponds to the density
         # at the base of the convection zone
 
+allthrees_start = 6387.05 # start time for all-threes dynamo cases
+
 def get_file_lists(radatadir):
     file_list = os.listdir(radatadir)
     file_list.sort()
