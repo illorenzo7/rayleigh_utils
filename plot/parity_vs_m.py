@@ -22,7 +22,7 @@ sys.path.append(os.environ['rapp'])
 from varprops import texunits, texlabels, var_indices
 
 from common import strip_dirname, get_widest_range_file, get_iters_from_file,\
-        get_dict, rsun, sci_format, allthrees_start
+        get_dict, rsun, sci_format, allthrees_start, get_satvals
 
 from plotcommon import default_axes_1by1, axis_range
 from get_parameter import get_parameter
@@ -44,6 +44,7 @@ showplot = False
 rnorm = None
 minmax = None
 the_file = get_widest_range_file(datadir, 'parity_vs_m')
+include_tl = False
 
 # Read command-line arguments (CLAs)
 args = sys.argv[2:]
@@ -63,8 +64,8 @@ for i in range(nargs):
         for j in range(len(my_str)):
             ir_vals.append(int(my_str[j]))
     elif arg == '-usefile':
-        Shell_Spectra_file = args[i+1]
-        Shell_Spectra_file = Shell_Spectra_file.split('/')[-1]
+        the_file = args[i+1]
+        the_file = Shell_Spectra_file.split('/')[-1]
     elif arg == '-rnorm':
         rnorm = float(args[i+1])
     elif arg == '-minmax':
@@ -73,6 +74,9 @@ for i in range(nargs):
         showplot = True
     elif arg == '-mval':
         desired_mval = float(args[i+1])
+    elif arg == '-tl':
+        include_tl = True
+
 
 # directory for plots (depends on whether logscale = True, so do this after
 # command-line-arguments are read
@@ -98,6 +102,18 @@ Om0 = get_parameter(dirname, 'angular_velocity')
 Prot = 2*np.pi/Om0
 times = di['times']/Prot - allthrees_start
 
+# Get time-latitude data
+if include_tl:
+    tl_file = get_widest_range_file(datadir, 'time-latitude')
+    di = get_dict(datadir + tl_file)
+    vals_tl = di['vals']
+
+    times_tl = di['times']/Prot - allthrees_start
+    tt_lat = di['tt_lat']
+    times2, tt_lat2 = np.meshgrid(times_tl, tt_lat, indexing='ij')
+    ntheta = di['ntheta']
+    qvals_tl = np.array(di['qvals'])
+
 if ir_vals is None:
     ir_vals = []
     if desired_rvals == ['all']:
@@ -113,11 +129,16 @@ im = np.argmin(np.abs(mvals - desired_mval))
 # What is given is now what is desired
 desired_rvals = rvals[ir_vals]
 
+# Please please PLEASE, always sample power spectra and time-latitude data
+# at the same depths ...
+
 # Get power associated with desired quantity (should really have a contigency
 # where the routine exits if the desired quantity isn't present
 if not (varname == 'vtot' or varname == 'btot'):
     desired_qv = var_indices[varname]
     iq = np.argmin(np.abs(qv - desired_qv))
+    if include_tl:
+        iq_tl = np.argmin(np.abs(qvals_tl - desired_qv))
     varlabel = texlabels[varname]
     units = texunits[varname] 
 else:
@@ -154,11 +175,16 @@ for ir in range(len(ir_vals)):
         parity_odd_allm = np.sum(vals[:, :, ir, iq_vals[0], 1] +\
                 vals[:, :, ir, iq_vals[1], 1] +\
                 vals[:, :, ir, iq_vals[2], 1], axis=1)
+
+        # Time-latitude stuff...don't mess with vtot/btot for now...
+
     else:
         parity_even = vals[:, im, ir, iq, 0]
         parity_odd = vals[:, im, ir, iq, 1]
         parity_even_allm = np.sum(vals[:, :, ir, iq, 0], axis=1)
         parity_odd_allm = np.sum(vals[:, :, ir, iq, 1], axis=1)
+        if include_tl:
+            quant_tl = vals_tl[:, :, ir, iq_tl]
 
     power_allm = parity_even_allm + parity_odd_allm
     # compute the actual parity
@@ -166,6 +192,9 @@ for ir in range(len(ir_vals)):
 
     # Now make the plot, finally
     plt.figure(figsize=(7.25, 3))
+    if include_tl:
+        fig, axs = plt.subplots(2, 1, figsize=(7.25, 4), sharex=True)
+        plt.sca(axs[0])
     lw = 0.3
     fs = 7
     plt.plot(times, parity_even/(parity_even + parity_odd), label='even',\
@@ -195,6 +224,11 @@ for ir in range(len(ir_vals)):
     plt.title(title, fontsize=fs)
     # set tick fontsize
     plt.tick_params(labelsize=fs)
+
+    if include_tl:
+        min_tl, max_tl = get_satvals(quant_tl)
+        axs[1].pcolormesh(times2, tt_lat2, quant_tl, vmin=min_tl,\
+                vmax=max_tl, cmap='RdYlBu_r')
 
     # Final command
     plt.tight_layout()
