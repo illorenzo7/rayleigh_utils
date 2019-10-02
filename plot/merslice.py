@@ -124,7 +124,7 @@ for var_index in index_list:
         lon = mer.phi[iphi]*180/np.pi
 
         savename = 'merslice_' + varname + '_iter' + fname +\
-                ('_lon%03f' %lon) + '.png'
+                ('_lon%03.1f' %lon) + '.png'
         print('Plotting merslice: ' + varname + ', iter ' + fname +\
                 (', lon %03f' %lon) + ' ...')
 
@@ -149,3 +149,4 @@ for var_index in index_list:
         savefile = plotdir + savename
         print ('Saving plot at %s ...' %savefile)
         plt.savefig(savefile, dpi=300)
+        plt.close()
