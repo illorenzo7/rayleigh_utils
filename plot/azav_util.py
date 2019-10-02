@@ -21,7 +21,8 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
     units='', minmax=None, posdef=False, logscale=False, symlog=False,\
     plotcontours=True, plotfield=True, nlevs=10, levels=None,\
 	plotlatlines=False, rvals=None, rvals_norm=None, fsize=8,\
-    showplot=False, plot_cbar=True, lw=1., linthresh=None, linscale=None):
+    showplot=False, plot_cbar=True, lw=1., linthresh=None, linscale=None,\
+    plotboundary=True):
 
     ''' Takes (or creates) set of axes with physical aspect ratio 1x2
     and adds a plot of [field] in the meridional plane to the axes,
@@ -209,12 +210,13 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
         ax.contour(xx, zz, field, colors=contour_color, levels=levels,\
                 linewidths=contour_lw)
 
-    # Plot the boundary of the meridional plane
-    plt.sca(ax)
-    plt.plot(rr[0]/ro*sint, rr[0]/ro*cost, 'k', linewidth=lw)
-    plt.plot(rr[-1]/ro*sint, rr[-1]/ro*cost, 'k', linewidth=lw)
-    plt.plot([0.,0.], [rr[-1]/ro, rr[0]/ro], 'k', linewidth=lw)
-    plt.plot([0.,0.], [-rr[-1]/ro, -rr[0]/ro], 'k', linewidth=lw)
+    # Plot the boundary of the meridional plane, if desired
+    if plotboundary:
+        plt.sca(ax)
+        plt.plot(rr[0]/ro*sint, rr[0]/ro*cost, 'k', linewidth=lw)
+        plt.plot(rr[-1]/ro*sint, rr[-1]/ro*cost, 'k', linewidth=lw)
+        plt.plot([0.,0.], [rr[-1]/ro, rr[0]/ro], 'k', linewidth=lw)
+        plt.plot([0.,0.], [-rr[-1]/ro, -rr[0]/ro], 'k', linewidth=lw)
 
     # Plot latitude lines, if desired
     if plotlatlines: 
@@ -438,7 +440,7 @@ def plot_azav_half(field, rr, cost, sym='even', fig=None, ax=None,\
 def plot_quiver(vr, vt, rr, cost, fig=None, ax=None, minmax=None,\
         plotlatlines=False, rvals=None, rvals_norm=None, fsize=8,\
         showplot=False, scale=None, plot_poles=False, nsample_t=20,\
-        nsample_r=10, scale_by_mag=True):
+        nsample_r=10, scale_by_mag=True, plotboundary=True):
 
     ''' Takes (or creates) set of axes with physical aspect ratio 1x2
     and adds a vector (quiver) plot of [vx, vy] in the meridional plane to 
@@ -512,10 +514,11 @@ def plot_quiver(vr, vt, rr, cost, fig=None, ax=None, minmax=None,\
     plt.quiver(xx, zz, vx, vz, scale=scale)
    
     # Plot the boundary of the meridional plane
-    plt.plot(rr[0]/ro*sint, rr[0]/ro*cost, 'k', linewidth=lw)
-    plt.plot(rr[-1]/ro*sint, rr[-1]/ro*cost, 'k', linewidth=lw)
-    plt.plot([0.,0.], [rr[-1]/ro, rr[0]/ro], 'k', linewidth=lw)
-    plt.plot([0.,0.], [-rr[-1]/ro, -rr[0]/ro], 'k', linewidth=lw)
+    if plotboundary:
+        plt.plot(rr[0]/ro*sint, rr[0]/ro*cost, 'k', linewidth=lw)
+        plt.plot(rr[-1]/ro*sint, rr[-1]/ro*cost, 'k', linewidth=lw)
+        plt.plot([0.,0.], [rr[-1]/ro, rr[0]/ro], 'k', linewidth=lw)
+        plt.plot([0.,0.], [-rr[-1]/ro, -rr[0]/ro], 'k', linewidth=lw)
 
     # Plot latitude lines, if desired
     if plotlatlines: 

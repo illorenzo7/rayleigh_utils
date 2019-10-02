@@ -45,6 +45,7 @@ minmax = None
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
 plotlatlines = False
 nlevs = 10
+plotboundary = True
 
 args = sys.argv[2:]
 nargs = len(args)
@@ -68,6 +69,8 @@ for i in range(nargs):
         plotlatlines = True
     elif arg == '-nlevs':
         nlevs = int(args[i+1])
+    elif arg == '-nobound':
+        plotboundary = False
 
 # See if magnetism is "on"
 try:
@@ -200,7 +203,7 @@ for iplot in range(nplots):
     ax = fig.add_axes((ax_left, ax_bottom, subplot_width, subplot_height))
     plot_azav (eft_terms[iplot], rr, cost, fig=fig, ax=ax,\
             units=units, minmax=minmax, plotlatlines=plotlatlines,\
-            plotcontours=plotcontours, nlevs=nlevs)
+            plotcontours=plotcontours, nlevs=nlevs, plotboundary=plotboundary)
     ax.set_title(titles[iplot], va='bottom', **csfont)
 
 # Put some metadata in upper left
