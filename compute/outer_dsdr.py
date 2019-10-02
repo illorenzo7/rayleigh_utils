@@ -12,6 +12,7 @@ from polytrope import compute_polytrope
 from common import lsun, rhom, rm, ro
 
 sys.path.append(os.environ['rapp'])
+from rayleigh_diagnostics import ReferenceState
 from reference_tools import equation_coefficients
 from get_parameter import get_parameter
 
@@ -57,11 +58,16 @@ if polytropic_reference:
     di = compute_polytrope(rm, ro, poly_nrho, nr, poly_n, rhom)
     rho = di['density']
     T = di['temperature']
-else: # get rho, T from equation_coefficients file
-    eq = equation_coefficients()
-    eq.read(dirname + '/equation_coefficients')
-    rho = eq.functions[0]
-    T = eq.functions[3]
+else: # get rho, T from equation_coefficients file, or reference/transport pair
+    try:
+        eq = equation_coefficients()
+        eq.read(dirname + '/equation_coefficients')
+        rho = eq.functions[0]
+        T = eq.functions[3]
+    except:
+        ref = ReferenceState(dirname + '/reference')
+        rho = ref.density
+        T = ref.temperature
 
 # get kappa_top from main_input
 kappa_top = get_parameter(dirname, 'kappa_top')
@@ -74,5 +80,5 @@ print('For lum=%1.3e, ro=%1.7e, kappa_top=%1.3e' %(lum, ro, kappa_top))
 if polytropic_reference:
     print('and polytropic reference: nrho=%1.1f, poly_n=%1.1f, rhom=%1.7e' %(poly_nrho, poly_n, rhom))
 else:
-    print('equation_coefficients file ')
+    print('equation_coefficients/reference file ')
 print ('Set outer_dsdr (dtdr_top) to %1.8e' %desired_dsdr)

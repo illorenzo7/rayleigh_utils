@@ -8,12 +8,13 @@ import sys, os
 sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
 from common import get_file_lists, strip_dirname, rsun, reverse_dict,\
-        get_satvals, saturate_array
+        get_satvals, saturate_array, get_widest_range_file, get_dict
 from plotcommon import axis_range, default_axes_1by1
 from translate_times import translate_times
-from rayleigh_diagnostics import Meridional_Slices
+from rayleigh_diagnostics import Meridional_Slices, ReferenceState
 from varprops import texlabels, var_indices, texunits
 from azav_util import plot_azav
+from get_parameter import get_parameter
 
 # Get command line arguments
 dirname = sys.argv[1]
@@ -77,12 +78,22 @@ mer = Meridional_Slices(radatadir + fname, '')
 rr = mer.radius
 cost = mer.costheta
 
+# Get AZ Avgs data
+datadir = dirname + '/data/'
+the_file = get_widest_range_file(datadir, 'AZ_Avgs')
+di = get_dict(datadir + the_file)
+vals_az = di['vals']
+lut_az = di['lut']
+
 var_indices_rev = reverse_dict(var_indices)
 
 if varname == 'all': # plot everything
     index_list = mer.qv
 else:
-    index_list = [var_indices[varname]]
+    if varname == 't':
+        index_list = ['t_index']
+    else:
+        index_list = [var_indices[varname]]
 
 # Figure dimensions
 subplot_width_inches = 2.5
@@ -101,7 +112,10 @@ subplot_width = subplot_width_inches/fig_width_inches
 subplot_height = subplot_height_inches/fig_height_inches
 
 for var_index in index_list:
-    varname = var_indices_rev[var_index]
+    if var_index != 't_index':
+        varname = var_indices_rev[var_index]
+    if var_index in [501, 502, 't_index']:
+        varname += '_prime'
     
     texlabel = texlabels[varname]
 
@@ -110,9 +124,24 @@ for var_index in index_list:
         os.makedirs(plotdir)
     
     for iphi in range(mer.nphi):
-        field = mer.vals[iphi, :, :, mer.lut[var_index], 0]
+        if var_index != 't_index':
+            field = mer.vals[iphi, :, :, mer.lut[var_index], 0]
+        else:
+            s_az, p_az = vals_az[:, :, lut_az[501]], vals_az[:, :, lut_az[502]]
+            field_s = mer.vals[iphi, :, :, mer.lut[501], 0] - s_az
+            field_p = mer.vals[iphi, :, :, mer.lut[502], 0] - p_az
+            nt, nr = np.shape(field_s)
+            ref = ReferenceState(dirname + '/reference', '')
+            ref_p = ref.pressure.reshape((1, nr))
+            ref_t = ref.temperature.reshape((1, nr))
+            cp = get_parameter(dirname, 'pressure_specific_heat')
+            gam = 5./3.
+            field = ref_t*(field_p/ref_p*(1 - 1/gam) + field_s/cp)
+
         if var_index in [1, 2, 3]:
             field /= 100.
+        elif var_index in [501, 502]:
+            field -= vals_az[:, :, lut_az[var_index]]
 
         # Get default bounds if not specified
         if minmax is None:
@@ -144,7 +173,7 @@ for var_index in index_list:
                  'iter = ' + fname, ha='left', va='bottom', fontsize=fsize,\
                  **csfont)
         fig.text(margin_x, 1 - 3*space, texlabels[varname] +\
-                (' phi = %03.1f' %lon),\
+                ('      phi = %03.1f' %lon),\
                  ha='left', va='bottom', fontsize=fsize, **csfont)
         savefile = plotdir + savename
         print ('Saving plot at %s ...' %savefile)
