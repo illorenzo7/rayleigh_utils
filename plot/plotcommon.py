@@ -65,6 +65,7 @@ def integerticks(lmax):
 
 def default_axes_1by1(width=6.):
     # Good for orthographic projections and AZ_Avgs in HALF meridional plane 
+    # and equatorial slices
     subplot_width_inches = width
     subplot_height_inches = width
     margin_inches = 1./8.

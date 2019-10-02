@@ -392,3 +392,6 @@ def is_positive(arr):
     # If the array is positive everywhere, the number of positive points
     # will equal the total number of points
     return (how_many_positive_points == how_many_overall_points)
+
+def reverse_dict(di):
+    return dict((v, u) for u, v in di.items())

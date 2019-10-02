@@ -93,7 +93,7 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
                 norm=colors.LogNorm(vmin=minmax[0], vmax=minmax[1]),\
                 levels=levs)  
         elif posdef:
-            levs = np.linspace(minmax[0], minmax[1])
+            levs = np.linspace(minmax[0], minmax[1], 150)
             im = ax.contourf(xx, zz, field, cmap='plasma', levels=levs)
         elif symlog:
             linthresh_default, linscale_default =\
