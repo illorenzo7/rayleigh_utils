@@ -103,10 +103,17 @@ for ir in range(a.nr):
     vals = get_sslice(a, varname, dirname=dirname)
     field = vals[:, :, ir]
     
-    savename = 'ortho_' + varname + '_iter' + fname +\
-        ('_rval%0.3f_' %(rval/rsun)) + '.png'
+    savename = 'ortho_iter' + fname     
+    if clat >= 0:
+        hemisphere = 'N'
+    else:
+        hemisphere = 'S'
+    savename += ('_clat' + hemisphere + '%02.0f_' %(np.abs(clat))) 
+    savename += (varname + ('_rval%0.3f.png' %(rval/rsun)))
+
     print('Plotting ortho: ' + varname + (', r/rsun = %0.3f (ir = %02i), '\
-            %(rval/rsun, ir)) + 'iter ' + fname + ' ...')
+            %(rval/rsun, ir)) + 'iter ' + fname +\
+            ', clat = %02.0f' %clat + ' ...')
     
     # Make axes and plot the orthographic projection
     fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
