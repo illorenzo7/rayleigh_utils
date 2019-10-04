@@ -93,7 +93,10 @@ else:
     if varname == 't':
         index_list = ['t_index']
     else:
-        index_list = [var_indices[varname]]
+        try:
+            index_list = [var_indices[varname]]
+        except:
+            index_list = [int(varname)]
 
 # Figure dimensions
 subplot_width_inches = 2.5
@@ -112,12 +115,13 @@ subplot_width = subplot_width_inches/fig_width_inches
 subplot_height = subplot_height_inches/fig_height_inches
 
 for var_index in index_list:
-    if var_index != 't_index':
-        varname = var_indices_rev[var_index]
     if var_index in [501, 502, 't_index']:
         varname += '_prime'
-    
-    texlabel = texlabels[varname]
+
+    try:
+        texlabel = texlabels[varname]
+    except:
+        texlabel = str(var_index).zfill(4)
 
     plotdir = basedir + varname + '/'
     if not os.path.isdir(plotdir):
@@ -158,9 +162,13 @@ for var_index in index_list:
                 (', lon %03f' %lon) + ' ...')
 
         # create axes
+        try:
+            units = texunits[varname]
+        except:
+            units = 'cgs'
         fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
         ax = fig.add_axes((margin_x, margin_y, subplot_width, subplot_height))
-        plot_azav (field, rr, cost, fig=fig, ax=ax, units=texunits[varname],\
+        plot_azav (field, rr, cost, fig=fig, ax=ax, units=units,\
                 minmax=minmax)
 
         # Make title + label diff. rot. contrast and no. contours
@@ -172,7 +180,7 @@ for var_index in index_list:
         fig.text(margin_x, 1 - 2*space,\
                  'iter = ' + fname, ha='left', va='bottom', fontsize=fsize,\
                  **csfont)
-        fig.text(margin_x, 1 - 3*space, texlabels[varname] +\
+        fig.text(margin_x, 1 - 3*space, texlabel +\
                 ('      phi = %03.1f' %lon),\
                  ha='left', va='bottom', fontsize=fsize, **csfont)
         savefile = plotdir + savename
