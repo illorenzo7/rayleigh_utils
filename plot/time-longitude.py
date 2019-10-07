@@ -10,7 +10,7 @@ import pickle
 import sys, os
 sys.path.append(os.environ['raco'])
 from common import get_file_lists, get_widest_range_file, strip_dirname,\
-        rsun, get_dict
+        rsun, get_dict, allthrees_start
 from plotcommon import axis_range
 from get_parameter import get_parameter
 
@@ -19,21 +19,23 @@ dirname = sys.argv[1]
 
 # Data and plot directories
 datadir = dirname + '/data/'
-plotdir = dirname + '/plots/'
+plotdir = dirname + '/plots/time-longitude/'
 if (not os.path.isdir(plotdir)):
     os.makedirs(plotdir)
 dirname_stripped = strip_dirname(dirname)
 
-# Find the time-longitude file(s) the data directory. If there are 
-# multiple, by default choose the one with widest range in the trace.
-time_longitude_file = get_widest_range_file(datadir, 'time-longitude')
-print('the file', time_longitude_file)
+# Get global rotation rate; this script fails for non-rotating models
+angular_velocity = get_parameter(dirname, 'angular_velocity')
+Prot = 2*np.pi/angular_velocity
+Om0_nhz = angular_velocity/(2*np.pi)*1e9
+print('Om0: ', Om0_nhz, ' nHz')
 
 # more defaults
 minmax = None # this may be true at first
 minmax_wasnone = True # This always will be true unless user specifies
             # values through -minmax
-xminmax = None
+# By default (if tminmax is None) will plot over whole time trace
+tminmax = None
 saveplot = True
 showplot = True # will only show if plotting one figure
 
@@ -43,8 +45,12 @@ desired_rvals = [0.83] # by default, plot time-radius diagram for fields
 # By default, plot longitudinal B field
 qval = 803
 
-# By default (if tminmax is None) will plot over whole time trace
-tminmax = None
+clat = 10. # ten degrees north latitude by default
+dlat = 0. # no time averaging by default
+
+Om_subtract = None # by default, do not subtract any differential rotation
+# if nonzero, subtract a CONSTANT DR
+
 
 # Default no. rotations to plot per inch (vertically)
 rpi = 100.
@@ -68,8 +74,8 @@ for i in range(nargs):
             desired_rvals = []
             for j in range(len(string_desired_rvals)):
                 desired_rvals.append(float(string_desired_rvals[j]))
-    elif arg == '-xminmax':
-        xminmax = float(args[i+1]), float(args[i+2])
+    elif arg == '-tminmax':
+        tminmax = float(args[i+1]), float(args[i+2])
     elif arg == '-nosave':
         saveplot = False
     elif arg == '-noshow':
@@ -80,14 +86,31 @@ for i in range(nargs):
         qval = int(args[i+1])
     elif arg == '-tag':
         tag = args[i+1] + '_'
+    elif arg == '-clat':
+        clat = float(args[i+1])
+    elif arg == '-dlat':
+        dlat = float(args[i+1])
+    elif arg == '-om': # enter this value in nHz, in the LAB frame
+        Om_subtract = float(args[i+1]) - Om0_nhz
+        Om_subtract *= (2*np.pi/1e9) # convert nHz --> rad s^-1
+
+# Find the time-longitude file(s) the data directory, for clat and dlat. 
+# If there are 
+# multiple, by default choose the one with widest range in the trace.
+if clat >= 0.:
+    hemisphere = 'N'
+else:
+    hemisphere = 'S'
+
+the_file = get_widest_range_file(datadir, 'time-longitude_clat' + hemisphere +\
+        '%02.0f_dlat%03.0f' %(np.abs(clat), dlat))
 
 # Read in the time-longitude data (dictionary form)
-print ('Getting time-longitude trace from ' + datadir +\
-       time_longitude_file + ' ...')
-di = get_dict(datadir + time_longitude_file)
+print ('Getting time-longitude trace from ' + datadir + the_file + ' ...')
+di = get_dict(datadir + the_file)
 
 vals = di['vals']
-times = di['times']
+times = di['times'] - allthrees_start*Prot
 iters = di['iters']
 lut = di['lut']
 rr = di['rr']
@@ -101,15 +124,12 @@ nphi = di['nphi']
 
 niter = di['niter']
 nr = di['nr']
-nrvals = di['ndepths']
+nrvals = di['nrvals']
 nq = di['nq']
 
 iter1 = di['iter1']
 iter2 = di['iter2']
 
-# Get global rotation rate; this script fails for non-rotating models
-angular_velocity = get_parameter(dirname, 'angular_velocity')
-Prot = 2*np.pi/angular_velocity
 
 # Get radial indices of values we want to plot
 i_desiredrvals = []
@@ -140,6 +160,14 @@ t1, t2 = times[0], times[-1] # These begin times and end times
 # Make meshgrid of time/radius
 lons_2d, times_2d = np.meshgrid(lons, times, indexing='ij')
 
+# Subtract DR, if desired
+if not Om_subtract is None:
+    phi_deflections = (times*Prot*Om_subtract*180/np.pi) % 360
+    for it in range(len(times)):
+        phi_deflection = phi_deflections[it]
+        nroll = int(phi_deflection/360*nphi)
+        quant[it, :, :] = np.roll(quant[it, :, :], -nroll, axis=0)
+
 # Loop over the desired radii and save plots
 for i in range(len(i_desiredrvals)):
     i_desiredrval = i_desiredrvals[i]
@@ -147,15 +175,9 @@ for i in range(len(i_desiredrvals)):
     
     quant_loc = quant[:, :, i_desiredrval]
     
-    # Make appropriate file name to save
-    if clat > 0.:
-        hemisphere = 'N'
-    else:
-        hemisphere = 'S'
-
-    savename = dirname_stripped + '_time-longitude_' + tag + ('%i_' %qval) +\
-            ('Prot%05.0f-to-%05.0f_clat%s%02.0f_dlat%02.0f_' %(t1, t2, hemisphere, np.abs(clat), dlat)) +\
-        ('rval%0.3f' %rval_to_plot) + '.png'
+    savename = tag + ('Prot%05.0f-to-%05.0f_clat%s%02.0f_dlat%02.0f_' \
+            %(t1, t2, hemisphere, np.abs(clat), dlat)) + ('qv%i_' %qval) +\
+            ('rval%0.3f' %rval_to_plot) + '.png'
 
     if minmax is None or minmax_wasnone:
         std_quant = np.std(quant_loc)
@@ -210,7 +232,8 @@ for i in range(len(i_desiredrvals)):
     # Put some useful information on the title
     title = dirname_stripped + (', iq = %i' %qval) + '\n' +\
             (r'$r/R_\odot\ =\ %0.3f$' %rval_to_plot) + '\n' +\
-            (r'$\lambda_c=%02.0f^\circ\ \ \ \ \ \Delta\lambda=%02.0f^\circ$' %(clat, dlat)) 
+            (r'$\lambda_c=%02.0f^\circ\ \ \ \ \ \Delta\lambda=%02.0f^\circ$'\
+            %(clat, dlat)) 
     ax.set_title(title, **csfont)
 
     # Get ticks everywhere
@@ -222,7 +245,7 @@ for i in range(len(i_desiredrvals)):
     ax.grid(color='k', linestyle='-', linewidth=1., alpha=0.3)
     ax.grid(which='minor', color='k', linestyle='-', linewidth=0.5, alpha=0.3)
 
-    # Save the plot
+    #Save the plot
     if saveplot:
         print ('Saving the time-latitude plot at ' + plotdir +\
                 savename + ' ...')
