@@ -6,9 +6,13 @@ from get_parameter import get_parameter
 
 def translate_times(time, dirname, translate_from='prot'):
     datadir = dirname + '/data/'
-
-    trace_G_Avgs_file = get_widest_range_file(datadir, 'trace_G_Avgs')
-    di = get_dict(datadir + trace_G_Avgs_file)
+    
+    try:        
+        the_file = get_widest_range_file(datadir, 'trace_G_Avgs')
+        di = get_dict(datadir + the_file)
+    except:
+        the_file = get_widest_range_file(datadir, 'time-latitude')
+        di = get_dict(datadir + the_file)
 
     times = di['times']
     iters = di['iters']
