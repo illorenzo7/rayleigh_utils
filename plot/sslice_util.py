@@ -333,6 +333,7 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
     if figwasNone: # user probably called plot_ortho from the python 
         # command line, wanting to view the projection immediately
         plt.show()
+    return im
 
 def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
         clon=0., posdef=False, logscale=False, symlog=False, varname='vr',\
@@ -550,3 +551,4 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
     if figwasNone: # user probably called plot_moll from the python 
         # command line, wanting to view the projection immediately
         plt.show()
+    return im

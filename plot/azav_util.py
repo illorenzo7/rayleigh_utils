@@ -21,8 +21,8 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
     units='', minmax=None, posdef=False, logscale=False, symlog=False,\
     plotcontours=True, plotfield=True, nlevs=10, levels=None,\
 	plotlatlines=False, rvals=None, rvals_norm=None, fsize=8,\
-    showplot=False, plot_cbar=True, lw=1., linthresh=None, linscale=None,\
-    plotboundary=True):
+    showplot=False, plot_cbar=True, lw_scaling=1.,\
+    linthresh=None, linscale=None, plotboundary=True):
 
     ''' Takes (or creates) set of axes with physical aspect ratio 1x2
     and adds a plot of [field] in the meridional plane to the axes,
@@ -83,7 +83,7 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
 
     # Specify linewidths to be used in the meridional plane, one for the 
     # boundary (lw) and one for the contours (contour_lw)
-    contour_lw = 0.2
+    contour_lw = 0.3*lw_scaling
     
     if (plotfield):
         if logscale:
@@ -213,10 +213,10 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
     # Plot the boundary of the meridional plane, if desired
     if plotboundary:
         plt.sca(ax)
-        plt.plot(rr[0]/ro*sint, rr[0]/ro*cost, 'k', linewidth=lw)
-        plt.plot(rr[-1]/ro*sint, rr[-1]/ro*cost, 'k', linewidth=lw)
-        plt.plot([0.,0.], [rr[-1]/ro, rr[0]/ro], 'k', linewidth=lw)
-        plt.plot([0.,0.], [-rr[-1]/ro, -rr[0]/ro], 'k', linewidth=lw)
+        plt.plot(rr[0]/ro*sint, rr[0]/ro*cost, 'k', linewidth=lw_scaling)
+        plt.plot(rr[-1]/ro*sint, rr[-1]/ro*cost, 'k', linewidth=lw_scaling)
+        plt.plot([0.,0.], [rr[-1]/ro, rr[0]/ro], 'k', linewidth=lw_scaling)
+        plt.plot([0.,0.], [-rr[-1]/ro, -rr[0]/ro], 'k', linewidth=lw_scaling)
 
     # Plot latitude lines, if desired
     if plotlatlines: 
@@ -239,7 +239,8 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
             plt.sca(ax)
             rval_dim = rval*rvals_norm/ro
             # "dimensional" rval (in dimensions of ro!)
-            plt.plot(rval_dim*sint, rval_dim*cost, 'k--', linewidth=.7)
+            plt.plot(rval_dim*sint, rval_dim*cost, 'k--',\
+                    linewidth=.7*lw_scaling)
 
     # Set ax ranges to be just outside the boundary lines
     lilbit = 0.01
@@ -249,6 +250,7 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
 
     if showplot:
         plt.show()
+    return im
 
 def plot_azav_half(field, rr, cost, sym='even', fig=None, ax=None,\
         cmap='RdYlBu_r', units='', minmax=None, posdef=False, logscale=False,\
