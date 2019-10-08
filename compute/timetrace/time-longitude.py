@@ -77,7 +77,7 @@ for i in range(nargs):
         
 # Set the timetrace savename by the directory, what we are saving, 
 # and first and last iteration files for the trace (and optional tag)
-if clat > 0.:
+if clat >= 0.:
     hemisphere = 'N'
 else:
     hemisphere = 'S'
