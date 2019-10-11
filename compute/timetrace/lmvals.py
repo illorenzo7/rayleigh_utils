@@ -85,7 +85,7 @@ for i in range(index_first, index_last + 1):
 
     local_ntimes = spec.niter
     for j in range(local_ntimes):
-        vals_loc = spec.vals[:, :, :, :, j] 
+        vals_loc = spec.vals[:, :10, :, :, j] 
                 # [ilval, ir, iq, iiter, i(tot,mean,conv)]
         vals.append(vals_loc.tolist())
         times.append(spec.time[j])
@@ -101,12 +101,15 @@ niter = len(iters)
 
 print ('Traced over %i Shell_Spectra slice(s) ...' %niter)
 
+# Get mvals (we chose the first 10)
+mvals = np.arange(10)
 # Save the trace
 print ('Saving file at ' + savefile + ' ...')
 f = open(savefile, 'wb')
 pickle.dump({'vals': vals, 'times': times, 'iters': iters, \
 'iter1': iter1, 'iter2': iter2, 'niter': niter, 'lut': spec0.lut, \
 'qv': spec0.qv, 'nq': spec0.nq, 'rvals': spec0.radius, 'rinds': spec0.inds,\
-'nr': spec0.nr, 'lvals': lvals, 'nell': spec0.nell, 'lmax': lmax},\
+'nr': spec0.nr, 'lvals': lvals, 'mvals': mvals, 'nell': spec0.nell,\
+'lmax': lmax},\
     f, protocol=4)
 f.close()
