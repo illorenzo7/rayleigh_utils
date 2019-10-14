@@ -42,7 +42,7 @@ tag = ''
 for i in range(n_total_args):
     arg = args[i]
     if arg == '-tag':
-        tag = args[i+1]
+        tag = args[i+1] + '_'
 
 # Read in all the dictionaries to be conjoined
 di_list = []
@@ -93,7 +93,7 @@ iter1, iter2 = di_list[0]['iter1'], di_list[nfiles - 1]['iter2']
 di_all['iter1'] = iter1
 di_all['iter2'] = iter2
 
-savename = dirname_stripped + '_time-latitude_' + tag + '_' + str(iter1).zfill(8) +\
+savename = dirname_stripped + '_time-latitude_' + tag + str(iter1).zfill(8) +\
         '_' + str(iter2).zfill(8) + '.pkl'
 savefile = datadir + savename
 f = open(savefile, 'wb')
