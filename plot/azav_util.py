@@ -250,7 +250,8 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
 
     if showplot:
         plt.show()
-    return im
+    if plotfield:
+        return im
 
 def plot_azav_half(field, rr, cost, sym='even', fig=None, ax=None,\
         cmap='RdYlBu_r', units='', minmax=None, posdef=False, logscale=False,\
