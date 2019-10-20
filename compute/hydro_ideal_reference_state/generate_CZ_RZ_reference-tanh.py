@@ -30,9 +30,9 @@ rm = bc.ri
 ro = bc.ro
 cp = bc.cp
 
-Tm = bc.T_i
-pm = bc.p_i
-rhom = bc.rho_i
+Tm = bc.Tm
+pm = bc.pm
+rhom = bc.rhom
 gam = bc.gamma
 k = 2.0
 delta = 0.005*ro
