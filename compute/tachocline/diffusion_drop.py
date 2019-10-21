@@ -59,8 +59,8 @@ args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
-    if arg == '-rm':
-        rm = float(args[i+1])
+    if arg == '-rt':
+        rt = float(args[i+1])
     elif arg == '-delta':
         delta = float(args[i+1])*rsun
     elif arg == '-power':
