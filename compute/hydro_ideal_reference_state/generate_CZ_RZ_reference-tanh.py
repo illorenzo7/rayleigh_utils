@@ -7,27 +7,45 @@
 # a neutrally stable CZ
 
 # Parameters: output_dir (first argument), 
+# Command-line options:
+#
+# -ri, -rm, -ro
 # Inner, outer, and transition radii (default ri = 3.4139791e10, 
 # rm = 5e10, ro = 6.5860209e10...for CZ corresponding to 3 density
 # scale heights )
-# nr1 (number of Chebyshevs to use for CZ, -nr1) default 96
-# nr2 (number of Chebyshevs to use for RZ, -nr2) default 64
-# Density at transition boundary (-rhom) default 0.18053428
-# Temperature at transition boundary (-tm) default 2.111256e6
-# Stiffness k (-k) default 2
-# Transition width delta (-delta) (as a fraction of rm) default 0.005
-# gamma (-gam) default 5/3
-# pressure specific heat cp (-cp) default 3.5e8
-# central mass (-M) default M_sun
+#
+# -rhom
+# Density at transition boundary default 0.18053428
+#
+# -tm
+# Temperature at transition boundary default 2.111256e6
+#
+# -k
+# Stiffness k, default 2
+# 
+# -delta
+# Transition width delta as a fraction of rsun, default 0.005
+#
+# -gam
+# specific heat ratio gamma, default 5/3
+#
+# -cp
+# pressure specific heat cp, default 3.5e8
+#
+# -M
+# central mass M, default M_sun
 
 import numpy as np
 import sys, os
 from arbitrary_atmosphere import arbitrary_atmosphere
 
-import basic_constants as bc
-
 sys.path.append(os.environ['rapp'])
+sys.path.append(os.environ['raco'])
+sys.path.append(os.environ['raco'] + '/tachocline')
+
 from reference_tools import equation_coefficients
+from common import rsun
+import basic_constants as bc
 
 # Set default constants
 ri = 4.176e10  # Set RZ width about 0.5x CZ width
@@ -40,7 +58,7 @@ pm = bc.pm
 rhom = bc.rhom
 gam = bc.gamma
 k = 2.0
-delta = 0.005*ro
+delta = 0.005*rsun
 
 # Get directory to save binary files for reference state and heating
 dirname = sys.argv[1]
@@ -64,7 +82,7 @@ for i in range(nargs):
     elif arg == '-k':
         k = float(args[i+1])  
     elif arg == '-delta':
-        delta = float(args[i+1])*ro
+        delta = float(args[i+1])*rsun
     elif arg == '-gam':
         gam = float(args[i+1]) 
     elif arg == '-cp':
@@ -106,15 +124,10 @@ eq.set_function(d2lnrho, 9)
 eq.set_function(dlnT, 10)
 eq.set_function(dsdr, 14)
 
-print("Setting c_2, c_3, c_4, c_5, c_6, c_7, c_8, and c_9")
+print("Setting c_2, c_3, and c_4")
 eq.set_constant(1.0, 2) # multiplies buoyancy
 eq.set_constant(1.0, 3) # multiplies pressure grad.
 eq.set_constant(1.0/4.0/np.pi, 4) # multiplies Lorentz force
-eq.set_constant(1.0, 5) # multiplies viscous force
-eq.set_constant(1.0, 6) # multiplies thermal diffusion term
-eq.set_constant(1.0, 7) # multiplies eta in induction equation
-eq.set_constant(1.0, 8) # multiplies viscous heating term
-eq.set_constant(1.0/4.0/np.pi, 9) # multiplies magnetic diffusion term
 
 # Will need to figure out how to deal with c_1 (supposed to be 2 x angular velocity, i.e., the Coriolis coefficient. Hopefully we don't need c_1 in the
 # custom reference framework and will just specify angular_velocity
@@ -122,8 +135,8 @@ eq.set_constant(1.0/4.0/np.pi, 9) # multiplies magnetic diffusion term
 
 # c_10 will be set in the "generate heating" scripts
 
-# The "generate transport" scripts will only set the profiles, not
-# the constants c_5, c_6, c_7, c_8, c_9
+# The "generate transport" scripts will set the transport
+# "radial shapes", and the constants c_5, c_6, c_7, c_8, and c_9
 
 the_file = dirname + '/custom_reference_binary'
 
