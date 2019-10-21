@@ -21,7 +21,6 @@
 # central mass (-M) default M_sun
 
 import numpy as np
-import matplotlib.pyplot as plt
 import sys, os
 from arbitrary_atmosphere import arbitrary_atmosphere
 
@@ -78,15 +77,9 @@ nr = 5000
 rr = np.linspace(ro, ri, nr)
 
 d2sdr2 = -k*cp/rm*(1./2./delta)*(1./np.cosh((rr - rm)/delta))**2.
-plt.plot(rr,d2sdr2)
-plt.show()
 dsdr = k*cp/rm*0.5*(1.0 - np.tanh((rr - rm)/delta))
-plt.plot(rr,dsdr)
-plt.show()
 s = k*cp*0.5*((rr/rm - 1.0) -\
         (delta/rm)*np.log(np.cosh((rr - rm)/delta)))
-plt.plot(rr,s)
-plt.show()
 
 g = bc.G*bc.M/rr**2
 dgdr = -2.0*g/rr
