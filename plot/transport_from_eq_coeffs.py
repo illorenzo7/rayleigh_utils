@@ -40,14 +40,14 @@ for i in range(nargs):
 eq = equation_coefficients()
 eq.read(dirname + '/equation_coefficients')
 r = eq.radius
-nu = eq.functions[2, :]
+nu = eq.constants[4]*eq.functions[2, :]
 dlnu = eq.functions[10, :]
-kappa = eq.functions[4, :]
+kappa = eq.constants[5]*eq.functions[4, :]
 dlnkappa = eq.functions[11, :]
 
 magnetism = get_parameter(dirname, 'magnetism')
 if magnetism:
-    eta = eq.functions[6, :]
+    eta = eq.constants[6]*eq.functions[6, :]
     dlneta = eq.functions[12, :]
 
 if magnetism:
