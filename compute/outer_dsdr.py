@@ -12,7 +12,7 @@ from polytrope import compute_polytrope
 from common import lsun, rhom, rm, ro
 
 sys.path.append(os.environ['rapp'])
-from rayleigh_diagnostics import ReferenceState
+from rayleigh_diagnostics import ReferenceState, TransportCoeffs
 from reference_tools import equation_coefficients
 from get_parameter import get_parameter
 
@@ -64,13 +64,14 @@ else: # get rho, T from equation_coefficients file, or reference/transport pair
         eq.read(dirname + '/equation_coefficients')
         rho = eq.functions[0]
         T = eq.functions[3]
+        kappa = eq.constants[5]*eq.functions[4]
+        kappa_top = kappa[0]
     except:
         ref = ReferenceState(dirname + '/reference')
         rho = ref.density
         T = ref.temperature
-
-# get kappa_top from main_input
-kappa_top = get_parameter(dirname, 'kappa_top')
+        trans = TransportCoeffs(dirname + '/transport')
+        kappa_top = trans.kappa[0]
 
 # Now compute desired entropy gradient
 flux_top = lum/(4*np.pi*ro**2)

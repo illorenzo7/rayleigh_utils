@@ -63,7 +63,7 @@ T = eq.functions[3]
 smooth = 0.5*(1.0 + np.tanh((rr - rt)/delta)) # "detects" CZ
 profile = (rho*T - rho[0]*T[0])*smooth
 
-int_profile = 4*np.pi*simps(profile*rr**2.0, rr)
+int_profile = -4*np.pi*simps(profile*rr**2.0, rr) # remember rr is reversed
 
 radial_shape = profile/int_profile
 
