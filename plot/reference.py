@@ -2,6 +2,7 @@
 # Author: Loren Matilsky
 
 import matplotlib as mpl
+import numpy as np
 mpl.use('TkAgg')
 import matplotlib.pyplot as plt
 plt.rcParams['mathtext.fontset'] = 'dejavuserif'
@@ -14,7 +15,9 @@ sys.path.append(os.environ['idref'])
 
 from common import strip_dirname
 from plotref import plotref
-from rayleigh_diagnostics import ReferenceState
+from rayleigh_diagnostics import ReferenceState, GridInfo
+from reference_tools import equation_coefficients
+
 # Get the run directory on which to perform the analysis
 dirname = sys.argv[1]
 dirname_stripped = strip_dirname(dirname)
@@ -36,17 +39,45 @@ plotdir = dirname + '/plots/'
 if (not os.path.isdir(plotdir)):
     os.makedirs(plotdir)
 
-ref = ReferenceState(dirname + '/reference', '')
-r = ref.radius
-T = ref.temperature
-rho = ref.density
-p = ref.pressure
-dlnT = ref.dlnt
-dlnrho = ref.dlnrho
-dlnp = dlnT + dlnrho
-s = ref.entropy
-dsdr = ref.dsdr
-d2lnrho = ref.d2lnrho
+try:
+    ref = ReferenceState(dirname + '/reference', '')
+    r = ref.radius
+    T = ref.temperature
+    rho = ref.density
+    p = ref.pressure
+    dlnT = ref.dlnt
+    dlnrho = ref.dlnrho
+    dlnp = dlnT + dlnrho
+    s = ref.entropy
+    dsdr = ref.dsdr
+    d2lnrho = ref.d2lnrho
+except:
+    eq = equation_coefficients()
+    eq.read(dirname + '/equation_coefficients')
+    r = eq.radius
+    T = eq.functions[3]
+    rho = eq.functions[0]
+    cp = 3.5e8
+    gam = 5.0/3.0
+    gas_R = (gam - 1.0)*cp/gam
+    p = rho*gas_R*T
+    dlnT = eq.functions[9]
+    dlnrho = eq.functions[7]
+    dlnp = dlnT + dlnrho
+    dsdr = eq.functions[13]
+    nr = len(dsdr)
+    s = np.zeros(nr)
+    gi = GridInfo(dirname + '/grid_info')
+    rw = gi.rweights
+    ri, ro = np.min(r), np.max(r)
+    factor = 1.0/3.0*ro**3 - 1.0/3.0*ri**3
+    # Remember r is reversed
+    r_rev = np.copy(r[::-1])
+    rw_rev = np.copy(rw[::-1])
+    dsdr_rev = np.copy(dsdr[::-1])
+    for ir in range(nr):
+        s[nr - 1 - ir] = factor*np.sum((dsdr_rev/r_rev**2*rw_rev)[:ir])     
+    d2lnrho = eq.functions[8]
 
 fig, axs = plotref(r, T, rho, p, dlnT, dlnrho, dlnp, s, dsdr,\
     d2lnrho, color='k', xminmax=xminmax)

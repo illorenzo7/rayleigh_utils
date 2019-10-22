@@ -2,7 +2,7 @@ import sys, os
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.ticker import ScalarFormatter
-sys.path.append(os.environ['idref'])
+sys.path.append(os.environ['raco'] + '/tachocline')
 
 #class ScalarFormatterForceFormat(ScalarFormatter):
 #    def _set_format(self,vmin,vmax):  # Override function that finds format to use.
