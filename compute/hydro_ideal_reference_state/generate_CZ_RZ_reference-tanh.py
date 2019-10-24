@@ -34,6 +34,9 @@
 #
 # -M
 # central mass M, default M_sun
+#
+# -mag
+# Whether magnetism is True or False, default False (hydro)
 
 import numpy as np
 import sys, os
@@ -59,9 +62,11 @@ rhom = bc.rhom
 gam = bc.gamma
 k = 2.0
 delta = 0.005*rsun
+mag = False
 
 # Get directory to save binary files for reference state and heating
 dirname = sys.argv[1]
+fname = 'custom_reference_binary'
 
 args = sys.argv[2:]
 nargs = len(args)
@@ -89,6 +94,10 @@ for i in range(nargs):
         cp = float(args[i+1]) 
     elif arg == '-M':
         M = float(args[i+1])  
+    elif arg == '-fname':
+        fname = args[i+1]
+    elif arg == '-mag':
+        mag = True
         
 # First, compute reference state on super-fine grid to interpolate onto later    
 nr = 5000
@@ -113,6 +122,7 @@ eq = equation_coefficients(rr)
 
 # Set only the thermodynamic functions/constants in this routine
 # In other routines, we can set the heating and transport coefficients
+# Only set c_4 = 1/(4*pi) if mag = True
 
 print("Setting f_1, f_2, f_4, f_8, f_9, f_10, and f_14")
 eq.set_function(rho, 1)
@@ -124,10 +134,16 @@ eq.set_function(d2lnrho, 9)
 eq.set_function(dlnT, 10)
 eq.set_function(dsdr, 14)
 
-print("Setting c_2, c_3, and c_4")
+print("Setting c_2 and c_3")
+if mag:
+    print("magnetism = True, so setting c_4 = 1/(4*pi)")
+    eq.set_constant(1.0/4.0/np.pi, 4) # multiplies Lorentz force
+else:
+    print("magnetism = False, so setting c_4 = 0.0")
+    eq.set_constant(0.0, 4) # multiplies Lorentz force
+
 eq.set_constant(1.0, 2) # multiplies buoyancy
 eq.set_constant(1.0, 3) # multiplies pressure grad.
-eq.set_constant(1.0/4.0/np.pi, 4) # multiplies Lorentz force
 
 # Will need to figure out how to deal with c_1 (supposed to be 2 x angular velocity, i.e., the Coriolis coefficient. Hopefully we don't need c_1 in the
 # custom reference framework and will just specify angular_velocity
@@ -138,7 +154,7 @@ eq.set_constant(1.0/4.0/np.pi, 4) # multiplies Lorentz force
 # The "generate transport" scripts will set the transport
 # "radial shapes", and the constants c_5, c_6, c_7, c_8, and c_9
 
-the_file = dirname + '/custom_reference_binary'
+the_file = dirname + '/' + fname
 
 print("Writing the atmosphere to %s" %the_file)
 eq.write(the_file)

@@ -29,6 +29,9 @@
 #
 # -etatop
 # default 3 x 10^12 c.g.s
+#
+# -mag
+# Whether magnetism is True or False, default False (hydro)
 
 import numpy as np
 import sys, os
@@ -50,6 +53,7 @@ drop = 1000.
 nutop = 3.0e12
 kappatop = 3.0e12
 etatop = 3.0e12
+mag = False
 
 # Get directory to save binary files for reference state and heating
 dirname = sys.argv[1]
@@ -75,7 +79,14 @@ for i in range(nargs):
         etatop = float(args[i+1])
     elif arg == '-fname':
         fname = args[i+1]
-        
+    elif arg == '-mag':
+        mag = True
+
+# If hydro, better make sure whatever multiplies eta in energy/induction
+# is zero... but "had we better?" does eta != 0 cause crashes?
+if not mag:
+    etatop = 0.0
+
 # Open and read the hopefully already existing reference file!
 eq = equation_coefficients()
 the_file = dirname + '/' + fname
@@ -103,20 +114,23 @@ print("Computed radial shape for RZ-CZ diffusions, joined with tanh")
 # nu, kappa, eta, all get the same radial shapes (unless we want radially
 # dependent Prandtl numbers, which would be stupid)
 print("Setting f_3, f_5, f_7, f_11, f_12, and f_13")
-eq.set_function(radial_shape, 3)
-eq.set_function(radial_shape, 5)
-eq.set_function(radial_shape, 7)
+eq.set_function(nutop*radial_shape, 3)
+eq.set_function(kappatop*radial_shape, 5)
+eq.set_function(etatop*radial_shape, 7)
 
 eq.set_function(dlnradial_shape, 11)
 eq.set_function(dlnradial_shape, 12)
 eq.set_function(dlnradial_shape, 13)
 
 print("Setting c_5, c_6, c_7, c_8, and c_9")
-eq.set_constant(nutop, 5) # multiplies viscous force
-eq.set_constant(kappatop, 6) # multiplies thermal diffusion term
-eq.set_constant(etatop, 7) # multiplies eta in induction equation
-eq.set_constant(nutop, 8) # multiplies viscous heating term
-eq.set_constant(etatop/4.0/np.pi, 9) # multiplies magnetic diffusion term
+if not mag:
+    print ("magnetism = False, so c_7 and c_9 = 0")
+
+eq.set_constant(1.0, 5) # multiplies viscous force
+eq.set_constant(1.0, 6) # multiplies thermal diffusion term
+eq.set_constant(1.0, 7) # multiplies eta in induction equation
+eq.set_constant(1.0, 8) # multiplies viscous heating term
+eq.set_constant(1.0/4.0/np.pi, 9) # multiplies magnetic diffusion term
 
 # Will need to figure out how to deal with c_1 (supposed to be 2 x angular velocity, i.e., the Coriolis coefficient. Hopefully we don't need c_1 in the
 # custom reference framework and will just specify angular_velocity
