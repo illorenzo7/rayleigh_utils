@@ -17,6 +17,7 @@ csfont = {'fontname':'DejaVu Serif'}
 import sys, os
 sys.path.append(os.environ['rapp'])
 from rayleigh_diagnostics import TransportCoeffs
+from reference_tools import equation_coefficients
 from common import strip_dirname, get_widest_range_file,\
         get_iters_from_file, get_dict
 
@@ -75,9 +76,15 @@ vsq_r, vsq_t, vsq_p = vals[:, :, lut[422]], vals[:, :, lut[423]],\
 vsq = vsq_r + vsq_t + vsq_p
 d = di['d']
 
-# Get magnetic diffusivity from 'transport' file
-t = TransportCoeffs(dirname + '/transport')
-eta = t.eta
+# Get magnetic diffusivity from 'transport' file or equation_coefficients
+try:
+    t = TransportCoeffs(dirname + '/transport')
+    eta = t.eta
+except:
+    eq = equation_coefficients()
+    eq.read(dirname + '/equation_coefficients')
+    # eta(r) = c_7 * f_7
+    eta = eq.constants[6]*eq.functions[6]
 
 # Compute magnetic Reynolds number
 Rm = np.sqrt(vsq)*d/eta

@@ -19,6 +19,7 @@ csfont = {'fontname':'DejaVu Serif'}
 import sys, os
 sys.path.append(os.environ['rapp'])
 from rayleigh_diagnostics import TransportCoeffs, ReferenceState
+from reference_tools import equation_coefficients
 from common import strip_dirname, get_widest_range_file,\
         get_iters_from_file, get_dict, rsun
 
@@ -85,14 +86,25 @@ vsq_r, vsq_t, vsq_p = vals[:, lut[422]], vals[:, lut[423]],\
     vals[:, lut[424]]
 vsq = vsq_r + vsq_t + vsq_p
 
-# Get molecular diffusivity from 'transport' file
-t = TransportCoeffs(dirname + '/transport')
-eta = t.eta
+# Get molecular diffusivity from 'transport' file or equation_coefficients
+try:
+    t = TransportCoeffs(dirname + '/transport')
+    eta = t.eta
+except:
+    eq = equation_coefficients()
+    eq.read(dirname + '/equation_coefficients')
+    # eta(r) = c_7 * f_7
+    eta = eq.constants[6]*eq.functions[6]
 
 # Compute convective Reynolds number
 if use_hrho:
-    ref = ReferenceState(dirname + '/reference')
-    hrho = -1./ref.dlnrho
+    try:
+        ref = ReferenceState(dirname + '/reference')
+        hrho = -1./ref.dlnrho
+    except:
+        eq = equation_coefficients()
+        eq.read(dirname + '/equation_coefficients')
+        hrho = -1./eq.functions[7]
     Rm = np.sqrt(vsq)*hrho/nu
     Rm_r = np.sqrt(vsq_r)*hrho/eta
     Rm_t = np.sqrt(vsq_t)*hrho/eta

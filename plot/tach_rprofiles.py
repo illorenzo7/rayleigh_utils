@@ -20,6 +20,7 @@ from common import get_widest_range_file, strip_dirname,\
         get_iters_from_file, get_dict, rsun, lsun
 from get_parameter import get_parameter
 from rayleigh_diagnostics import ReferenceState, TransportCoeffs
+from reference_tools import equation_coefficients
 # Get the run directory on which to perform the analysis
 dirname = sys.argv[1]
 dirname_stripped = strip_dirname(dirname)
@@ -87,12 +88,23 @@ om = vals_az[:, :, lut_az[3]]/xx
 om_eq = om[nt//2, :]
 
 # Get dsdr
-ref = ReferenceState(dirname + '/reference')
-dsdr = ref.dsdr
+try:
+    ref = ReferenceState(dirname + '/reference')
+    dsdr = ref.dsdr
+except:
+    eq = equation_coefficients()
+    eq.read(dirname + '/equation_coefficients')
+    dsdr = eq.functions[13]
 
 # Get nu profile
-t = TransportCoeffs(dirname + '/transport')
-nu = t.nu
+try:
+    t = TransportCoeffs(dirname + '/transport')
+    nu = t.nu
+except:
+    eq = equation_coefficients()
+    eq.read(dirname + '/equation_coefficients')
+    # nu(r) = c_5 * f_3
+    nu = eq.constants[4]*eq.functions[2]
 
 # Make the plot name, labelling the first/last iterations we average over
 savename = dirname_stripped + '_tach_rprofiles_' +\
