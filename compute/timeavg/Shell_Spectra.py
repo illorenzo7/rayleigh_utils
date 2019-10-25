@@ -24,7 +24,7 @@ import numpy as np
 import pickle
 import sys, os
 sys.path.append(os.environ['rapp'])
-from rayleigh_diagnostics import Shell_Spectra, ReferenceState
+from rayleigh_diagnostics import Shell_Spectra, GridInfo
 sys.path.append(os.environ['raco'])
 from common import get_file_lists, get_desired_range, strip_dirname
 
@@ -53,9 +53,9 @@ nargs = len(args)
 index_first, index_last = get_desired_range(int_file_list, args)
 
 # Get grid_info for radius stuff (not contained in Shell_Spectra objects
-# Get from the referencestate file
-ref = ReferenceState(dirname + '/reference')
-rr = ref.radius
+# Get from the file grid_info
+gi = GridInfo(dirname + '/grid_info')
+rr = gi.radius
 ri, ro = np.min(rr), np.max(rr)
 shell_depth = ro - ri
 
