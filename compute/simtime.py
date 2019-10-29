@@ -9,6 +9,7 @@ import os, sys
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from rayleigh_diagnostics import G_Avgs, AZ_Avgs, TransportCoeffs
+from reference_tools import equation_coefficients
 from common import get_file_lists, get_desired_range, strip_dirname,\
         get_widest_range_file
 from get_parameter import get_parameter
@@ -60,9 +61,18 @@ except:
 simtime = t2 - t1
 
 # Get the thermal diffusion time
-t = TransportCoeffs(dirname + '/transport')
-nu_top = t.nu[0]
-shell_depth = np.max(t.radius) - np.min(t.radius)
+try:
+    t = TransportCoeffs(dirname + '/transport')
+    nu_top = t.nu[0]
+    radius = t.radius
+except:
+    eq = equation_coefficients()
+    eq.read(dirname + '/equation_coefficients')
+    nu = eq.constants[4]*eq.functions[2]
+    nu_top = nu[0]
+    radius = eq.radius
+
+shell_depth = np.max(radius) - np.min(radius)
 tdt = shell_depth**2/nu_top
 
 simtime_tdt = simtime/tdt
