@@ -169,9 +169,9 @@ texunits = {\
     't_prime' :         r'$\rm{K}$',          
     't_prime_sph' :     r'$\rm{K}$',            
     
-    'vrs'       :       r'$(cm\ s^{-1})(\rm{erg}\ \rm{K}^{-1}\ \rm{g}^{-1})$', 
-    'vrt'       :       r'$(cm\ s^{-1})(K)$', 
-    'vtt'       :       r'$(cm\ s^{-1})(K)$', 
+    'vrs'       :       r'$\rm{cm\ s^{-1}\ erg\ K^{-1}\ g^{-1}}$', 
+    'vrt'       :       r'$\rm{cm\ s^{-1}\ K}$', 
+    'vtt'       :       r'$\rm{cm\ s^{-1}\ K}$', 
            
     'vrvp'      :       r'$\rm{dyn}\ \rm{cm}^{-2}$', 
     'vrvt'      :       r'$\rm{dyn}\ \rm{cm}^{-2}$', 
