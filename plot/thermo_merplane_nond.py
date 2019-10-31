@@ -126,6 +126,13 @@ prs_fluc = prs_az - prs_sph
 temp_fluc = temp_az - temp_sph
 rho_fluc = rho_az - rho_sph
 
+# Now divide out the reference profiles (and cp)
+entropy_fluc /= prs_spec_heat
+prs_fluc /= ref_prs
+temp_fluc /= ref_temp
+rho_fluc /= ref_rho
+
+
 # Set up the actual figure from scratch
 fig_width_inches = 7 # TOTAL figure width, in inches
     # (i.e., 8x11.5 paper with 1/2-inch margins)
@@ -161,10 +168,10 @@ subplot_height = subplot_height_inches/fig_height_inches
 
 thermo_terms = [entropy_fluc, prs_fluc, temp_fluc, rho_fluc]
 
-titles = [r'$\langle S\rangle_{\rm{az}} - \langle S \rangle_{\rm{sph}}$',\
-        r'$\langle P\rangle_{\rm{az}} - \langle P \rangle_{\rm{sph}}$',\
-        r'$\langle T\rangle_{\rm{az}} - \langle T \rangle_{\rm{sph}}$',\
-        r'$\langle \rho\rangle_{\rm{az}} - \langle \rho \rangle_{\rm{sph}}$']
+titles = [r'$(\langle S\rangle_{\rm{az}} - \langle S \rangle_{\rm{sph}})/c_{\rm{p}}$',\
+        r'$(\langle P\rangle_{\rm{az}} - \langle P \rangle_{\rm{sph}})/\overline{P}$',\
+        r'$(\langle T\rangle_{\rm{az}} - \langle T \rangle_{\rm{sph}})/\overline{T}$',\
+        r'$(\langle \rho\rangle_{\rm{az}} - \langle \rho \rangle_{\rm{sph}})/\overline{\rho}$']
 units = [r'$\rm{erg}\ \rm{K}^{-1}\ \rm{g}^{-1}$',\
         r'$\rm{dyn}\ \rm{cm}^{-2}$', r'$\rm{K}$', r'$\rm{g}\ \rm{cm}^{-3}$']
 
@@ -190,7 +197,7 @@ fig.text(margin_x, 1 - 0.5*margin_top,\
          str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8),\
          ha='left', va='top', fontsize=fsize, **csfont)
 
-savefile = plotdir + dirname_stripped + '_thermo_merplane_' +\
+savefile = plotdir + dirname_stripped + '_thermo_merplane_nond_' +\
     str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
 
 if saveplot:
