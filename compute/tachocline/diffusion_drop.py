@@ -108,7 +108,12 @@ radial_shape = smooth1*monotone + smooth2*(1.0/drop)
 dradial_shape = dsmooth1*monotone + smooth1*dmonotone + dsmooth2*(1.0/drop)
 dlnradial_shape = dradial_shape/radial_shape
 
+print("---------------------------------")
 print("Computed radial shape for RZ-CZ diffusions, joined with tanh")
+print("rt: %1.3e cm" %rt) 
+print("delta/rsun: %.3f"  %(delta/rsun))
+print("drop: %.0f"  %drop)
+print("---------------------------------")
 
 # Now write to file using the equation_coefficients framework
 # nu, kappa, eta, all get the same radial shapes (unless we want radially
@@ -139,4 +144,5 @@ eq.set_constant(1.0/4.0/np.pi, 9) # multiplies magnetic diffusion term
 # c_10 will be set in the "generate heating" scripts
 
 print("Writing the atmosphere to %s" %the_file)
+print("---------------------------------")
 eq.write(the_file)

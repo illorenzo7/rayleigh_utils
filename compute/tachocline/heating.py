@@ -67,7 +67,11 @@ int_profile = -4*np.pi*simps(profile*rr**2.0, rr) # remember rr is reversed
 
 radial_shape = profile/int_profile
 
+print("---------------------------------")
 print("Computed radial shape of heating for RZ-CZ, joined with tanh")
+print("rt: %1.3e cm" %rt) 
+print("delta/rsun: %.3f"  %(delta/rsun))
+print("---------------------------------")
 
 # Now write to file using the equation_coefficients framework
 print("Setting f_6 and c_10")
@@ -80,4 +84,5 @@ eq.set_constant(lum, 10) # Total luminosity normalizes heating function
 # If this doesn't work, will need to use override_constants framework
 
 print("Writing the heating to %s" %the_file)
+print("---------------------------------")
 eq.write(the_file)

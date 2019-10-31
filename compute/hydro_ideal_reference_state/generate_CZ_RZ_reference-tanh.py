@@ -115,7 +115,11 @@ T, rho, p, dlnT, dlnrho, dlnp, d2lnrho =\
     arbitrary_atmosphere(rr, s, dsdr, d2sdr2, g,\
                          dgdr, rm, Tm, pm, cp, gam)
 
+print("---------------------------------")
 print("Computed atmosphere for RZ-CZ, ds/dr joined with tanh")
+print("rm: %1.3e cm" %rm) 
+print("delta/rsun: %.3f"  %(delta/rsun))
+print("---------------------------------")
 
 # Now write to file using the equation_coefficients framework
 eq = equation_coefficients(rr)
@@ -157,4 +161,5 @@ eq.set_constant(1.0, 3) # multiplies pressure grad.
 the_file = dirname + '/' + fname
 
 print("Writing the atmosphere to %s" %the_file)
+print("---------------------------------")
 eq.write(the_file)
