@@ -44,13 +44,14 @@ try:
     r = ref.radius
     T = ref.temperature
     rho = ref.density
-    p = ref.pressure
     dlnT = ref.dlnt
     dlnrho = ref.dlnrho
-    dlnp = dlnT + dlnrho
     s = ref.entropy
     dsdr = ref.dsdr
     d2lnrho = ref.d2lnrho
+    gravity = ref.gravity
+    heating = ref.heating
+    Q = heating*rho*T
 except:
     eq = equation_coefficients()
     eq.read(dirname + '/equation_coefficients')
@@ -63,7 +64,6 @@ except:
     p = rho*gas_R*T
     dlnT = eq.functions[9]
     dlnrho = eq.functions[7]
-    dlnp = dlnT + dlnrho
     dsdr = eq.functions[13]
     nr = len(dsdr)
     s = np.zeros(nr)
@@ -79,8 +79,15 @@ except:
         s[nr - 1 - ir] = factor*np.sum((dsdr_rev/r_rev**2*rw_rev)[:ir])     
     d2lnrho = eq.functions[8]
 
-fig, axs = plotref(r, T, rho, p, dlnT, dlnrho, dlnp, s, dsdr,\
-    d2lnrho, color='k', xminmax=xminmax)
+    # Gravity
+    buoy = eq.functions[1]
+    gravity = buoy*cp/rho
+
+    # Heating
+    Q = eq.constants[9]*eq.functions[5]
+    
+fig, axs = plotref(r, T, rho, p, dlnT, dlnrho, s, dsdr,\
+    d2lnrho, gravity, Q, color='k', xminmax=xminmax)
 
 plt.tight_layout() 
     

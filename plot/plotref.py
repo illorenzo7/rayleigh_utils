@@ -1,20 +1,14 @@
 import sys, os
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.ticker import ScalarFormatter
 sys.path.append(os.environ['raco'] + '/tachocline')
-
-#class ScalarFormatterForceFormat(ScalarFormatter):
-#    def _set_format(self,vmin,vmax):  # Override function that finds format to use.
-#        self.format = "%1.1f"  # Give format here
-#yfmt = ScalarFormatterForceFormat()
-#yfmt.set_powerlimits((0,0))
 
 plt.rcParams['mathtext.fontset'] = 'dejavuserif'
 csfont = {'fontname':'DejaVu Serif'}
 import basic_constants as bc
 
-def plotref(r, T, rho, p, dlnT, dlnrho, dlnp, s, dsdr, d2lnrho,\
+def plotref(r, T, rho, p, dlnT, dlnrho, s, dsdr, d2lnrho,\
+        gravity, Q,\
             label=None, color=None, fig=None, axs=None, ylog=True,\
             xminmax=None): 
     if not xminmax is None:
@@ -26,112 +20,80 @@ def plotref(r, T, rho, p, dlnT, dlnrho, dlnp, s, dsdr, d2lnrho,\
         p = np.copy(p[ir_max:ir_min + 1])
         dlnT = np.copy(dlnT[ir_max:ir_min + 1])
         dlnrho = np.copy(dlnrho[ir_max:ir_min + 1])
-        dlnp = np.copy(dlnp[ir_max:ir_min + 1])
         s = np.copy(s[ir_max:ir_min + 1])
         dsdr = np.copy(dsdr[ir_max:ir_min + 1])
         d2lnrho = np.copy(d2lnrho[ir_max:ir_min + 1])
+        gravity = np.copy(gravity[ir_max:ir_min + 1])
+        Q = np.copy(Q[ir_max:ir_min + 1])
 
     figwasNone = False
     if fig is None:     
         figwasNone = True
-        fig, axs = plt.subplots(3, 3, figsize= (12,10), sharex=True)
+        fig, axs = plt.subplots(3, 4, figsize= (10,6), sharex=True)
     
     lw = 0.7
     axs[0,0].plot(r/bc.rsun, T, label=label, color=color, linewidth=lw)
-#    axs[0,0].yaxis.set_major_formatter(yfmt)
     axs[0,0].ticklabel_format(scilimits = (0,0), useMathText=True, axis='y')
     axs[0,0].set_ylabel(r'$T(r)$' +  ' [K]')
     if ylog:
         axs[0,0].set_yscale('log')
     axs[0,0].set_xlim(np.min(r)/bc.rsun, np.max(r)/bc.rsun)
     
-    axs[1,0].plot(r/bc.rsun, rho, label=label, color=color, linewidth=lw)
-#    axs[1,0].yaxis.set_major_formatter(yfmt)
-    axs[1,0].ticklabel_format(scilimits = (0,0), useMathText=True, axis='y')
-    axs[1,0].set_ylabel(r'$\rho(r)\ $' +  r'$\rm{[g\ cm^{-3}]}$')
-    if ylog:
-        axs[1,0].set_yscale('log')
-        
-    axs[2,0].plot(r/bc.rsun, p, label=label, color=color, linewidth=lw)
-#    axs[2,0].yaxis.set_major_formatter(yfmt)
-    axs[2,0].ticklabel_format(scilimits = (0,0), useMathText=True, axis='y')
-    axs[2,0].set_xlabel(r'$r/R_\odot$')
-    axs[2,0].set_ylabel(r'$p(r)\ $' +  r'$\rm{[erg\ cm^{-3}]}$')
-    if ylog:
-        axs[2,0].set_yscale('log')
-        
-    axs[0,1].plot(r/bc.rsun, s, label=label, color=color, linewidth=lw)
-#    axs[0,1].yaxis.set_major_formatter(yfmt)
+    axs[0,1].plot(r/bc.rsun, rho, label=label, color=color, linewidth=lw)
     axs[0,1].ticklabel_format(scilimits = (0,0), useMathText=True, axis='y')
-    axs[0,1].set_xlabel(r'$r/R_\odot$')
-    axs[0,1].set_ylabel(r'$s(r)\ $' +  r'$\rm{[erg\ g^{-1}\ K^{-1}]}$') 
+    axs[0,1].set_ylabel(r'$\rho(r)\ $' +  r'$\rm{[g\ cm^{-3}]}$')
+    if ylog:
+        axs[0,1].set_yscale('log')
         
-    axs[1,1].plot(r/bc.rsun, dlnT, label=label, color=color, linewidth=lw)
-#    axs[1,1].yaxis.set_major_formatter(yfmt)
-    axs[1,1].ticklabel_format(scilimits = (0,0), useMathText=True, axis='y')
-    axs[1,1].set_ylabel(r'$d\ln{T}/dr\ $' +  r'$\rm{[cm^{-1}]}$')
-        
-    axs[2,1].plot(r/bc.rsun, dlnrho, label=label, color=color, linewidth=lw)
-#    axs[2,1].yaxis.set_major_formatter(yfmt)
-    axs[2,1].ticklabel_format(scilimits = (0,0), useMathText=True, axis='y')
-    axs[2,1].set_ylabel(r'$d\ln{\rho}/dr\ $' +  r'$\rm{[cm^{-1}]}$')
-        
-    axs[0,2].plot(r/bc.rsun, dlnp, label=label, color=color, linewidth=lw)
-#    axs[0,2].yaxis.set_major_formatter(yfmt)
+    axs[0,2].plot(r/bc.rsun, p, label=label, color=color, linewidth=lw)
     axs[0,2].ticklabel_format(scilimits = (0,0), useMathText=True, axis='y')
     axs[0,2].set_xlabel(r'$r/R_\odot$')
-    axs[0,2].set_ylabel(r'$d\ln{p}/dr\ $' +  r'$\rm{[cm^{-1}]}$')  
-
-    axs[1,2].plot(r/bc.rsun, dsdr, label=label, color=color, linewidth=lw)
-#    axs[1,2].yaxis.set_major_formatter(yfmt)
+    axs[0,2].set_ylabel(r'$p(r)\ $' +  r'$\rm{[erg\ cm^{-3}]}$')
+    if ylog:
+        axs[0,2].set_yscale('log')
+        
+    axs[0,3].plot(r/bc.rsun, s, label=label, color=color, linewidth=lw)
+    axs[0,3].ticklabel_format(scilimits = (0,0), useMathText=True, axis='y')
+    axs[0,3].set_xlabel(r'$r/R_\odot$')
+    axs[0,3].set_ylabel(r'$s(r)\ $' +  r'$\rm{[erg\ g^{-1}\ K^{-1}]}$') 
+        
+    axs[1,0].plot(r/bc.rsun, dlnT, label=label, color=color, linewidth=lw)
+    axs[1,0].ticklabel_format(scilimits = (0,0), useMathText=True, axis='y')
+    axs[1,0].set_ylabel(r'$d\ln{T}/dr\ $' +  r'$\rm{[cm^{-1}]}$')
+        
+    axs[1,1].plot(r/bc.rsun, dlnrho, label=label, color=color, linewidth=lw)
+    axs[1,1].ticklabel_format(scilimits = (0,0), useMathText=True, axis='y')
+    axs[1,1].set_ylabel(r'$d\ln{\rho}/dr\ $' +  r'$\rm{[cm^{-1}]}$')
+        
+    axs[1,2].plot(r/bc.rsun, d2lnrho, label=label, color=color, linewidth=lw)
     axs[1,2].ticklabel_format(scilimits = (0,0), useMathText=True, axis='y')
     axs[1,2].set_xlabel(r'$r/R_\odot$')
-    axs[1,2].set_ylabel(r'$ds/dr\ $' +\
-       r'$\rm{[erg\ g^{-1}\ K^{-1}\ cm^{-1}]}$')  
-        
-    axs[2,2].plot(r/bc.rsun, d2lnrho, label=label, color=color, linewidth=lw)
-#    axs[2,2].yaxis.set_major_formatter(yfmt)
-    axs[2,2].ticklabel_format(scilimits = (0,0), useMathText=True, axis='y')
-    axs[2,2].set_xlabel(r'$r/R_\odot$')
-    axs[2,2].set_ylabel(r'$d^2\ln{\rho}/dr^2\ $' +\
+    axs[1,2].set_ylabel(r'$d^2\ln{\rho}/dr^2\ $' +\
        r'$\rm{[cm^{-2}]}$')  
-        
+
+    axs[1,3].plot(r/bc.rsun, dsdr, label=label, color=color, linewidth=lw)
+    axs[1,3].ticklabel_format(scilimits = (0,0), useMathText=True, axis='y')
+    axs[1,3].set_xlabel(r'$r/R_\odot$')
+    axs[1,3].set_ylabel(r'$ds/dr\ $' +\
+       r'$\rm{[erg\ g^{-1}\ K^{-1}\ cm^{-1}]}$')  
+
+    # Gravity and heating, last row
+    axs[2,0].plot(r/bc.rsun, gravity, label=label, color=color, linewidth=lw)
+    axs[2,0].ticklabel_format(scilimits = (0,0), useMathText=True, axis='y')
+    axs[2,0].set_xlabel(r'$r/R_\odot$')
+    axs[2,0].set_ylabel(r'$g(r)\ $' +\
+       r'$\rm{[cm\ s^{-2}$')  
+
+    axs[2,1].plot(r/bc.rsun, Q, label=label, color=color, linewidth=lw)
+    axs[2,1].ticklabel_format(scilimits = (0,0), useMathText=True, axis='y')
+    axs[2,1].set_xlabel(r'$r/R_\odot$')
+    axs[2,1].set_ylabel(r'$Q(r)\ $' + r'$\rm{[erg\ cm^{-3}\ s^{-1}]}$')  
+      
     # Get ticks everywhere
-    plt.sca(axs[0,0])
-    plt.minorticks_on()
-    plt.tick_params(top=True, right=True, direction='in', which='both')
-    
-    plt.sca(axs[1,0])
-    plt.minorticks_on()
-    plt.tick_params(top=True, right=True, direction='in', which='both')
-    
-    plt.sca(axs[2,0])
-    plt.minorticks_on()
-    plt.tick_params(top=True, right=True, direction='in', which='both')
- 
-    plt.sca(axs[0,1])
-    plt.minorticks_on()
-    plt.tick_params(top=True, right=True, direction='in', which='both')    
-    
-    plt.sca(axs[1,1])
-    plt.minorticks_on()
-    plt.tick_params(top=True, right=True, direction='in', which='both')  
-    
-    plt.sca(axs[2,1])
-    plt.minorticks_on()
-    plt.tick_params(top=True, right=True, direction='in', which='both')
-    
-    plt.sca(axs[0,2])
-    plt.minorticks_on()
-    plt.tick_params(top=True, right=True, direction='in', which='both') 
-    
-    plt.sca(axs[1,2])
-    plt.minorticks_on()
-    plt.tick_params(top=True, right=True, direction='in', which='both')
-    
-    plt.sca(axs[2,2])
-    plt.minorticks_on()
-    plt.tick_params(top=True, right=True, direction='in', which='both')
+    for ax in axs.flatten():
+        plt.sca(ax)
+        plt.minorticks_on()
+        plt.tick_params(top=True, right=True, direction='in', which='both')
     
     if figwasNone:
         return fig, axs
