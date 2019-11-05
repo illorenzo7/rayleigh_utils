@@ -13,7 +13,7 @@ sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['idref'])
 
-from common import strip_dirname
+from common import strip_dirname, rsun
 from plotref import plotref
 from rayleigh_diagnostics import ReferenceState, GridInfo
 from reference_tools import equation_coefficients
@@ -24,6 +24,7 @@ dirname_stripped = strip_dirname(dirname)
 
 # Get other arguments
 xminmax = None
+rvals = None
 
 args = sys.argv[2:]
 nargs = len(args)
@@ -31,6 +32,11 @@ for i in range(nargs):
     arg = args[i]
     if arg == '-xminmax':
         xminmax = float(args[i+1]), float(args[i+2])
+    elif arg == '-rvals':
+        rvals_str = args[i+1].split()
+        rvals = []
+        for rval_str in rvals_str:
+            rvals.append(float(rval_str))
 
 # Directory with data and plots, make the plotting directory if it doesn't
 # already exist    
@@ -88,6 +94,16 @@ except:
     
 fig, axs = plotref(r, T, rho, p, dlnT, dlnrho, s, dsdr,\
     d2lnrho, gravity, Q, color='k', xminmax=xminmax)
+
+# Mark radii if desired
+if not rvals is None:
+    for ax in axs.flatten():
+        ymin, ymax = ax.get_ylim()
+        yvals = np.linspace(ymin, ymax, 100)
+        for rval in rvals:
+            rval_n = rval/rsun
+    #        plt.ylim(ymin, ymax)
+            ax.plot(rval_n + np.zeros(100), yvals, 'k--', linewidth=0.8)
 
 plt.tight_layout() 
     
