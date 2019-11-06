@@ -28,6 +28,7 @@ polytropic_reference = True
 
 # Get directory name
 dirname = sys.argv[1]
+fname = None
 
 # Now change the defaults via command-line arguments
 args = sys.argv[2:]
@@ -48,6 +49,11 @@ for i in range(nargs):
         rm = float(args[i+1])
     elif arg == '-ro':
         ro = float(args[i+1])
+    elif arg == '-fname':
+        fname = args[i+1]
+    elif arg == '-crb':
+        polytropic_reference = False
+        fname = 'custom_reference_binary'
 
 nr = 128 # this is arbitrary -- the top thermodynamic values will be
          # independent of the number of interior grid points
@@ -61,17 +67,23 @@ if polytropic_reference:
 else: # get rho, T from equation_coefficients file, or reference/transport pair
     try:
         eq = equation_coefficients()
-        eq.read(dirname + '/equation_coefficients')
+        if fname is None:
+            fname = 'equation_coefficients'
+        eq.read(dirname + '/' + fname)
         rho = eq.functions[0]
         T = eq.functions[3]
-        kappa = eq.constants[5]*eq.functions[4]
-        kappa_top = kappa[0]
+        try:
+            kappa_top = get_parameter(dirname, 'kappa_top')
+        except:
+            kappa = eq.constants[5]*eq.functions[4]
+            kappa_top = kappa[0]
     except:
         ref = ReferenceState(dirname + '/reference')
         rho = ref.density
         T = ref.temperature
         trans = TransportCoeffs(dirname + '/transport')
         kappa_top = trans.kappa[0]
+        fname = 'reference'
 
 # Now compute desired entropy gradient
 flux_top = lum/(4*np.pi*ro**2)
@@ -81,5 +93,5 @@ print('For lum=%1.3e, ro=%1.7e, kappa_top=%1.3e' %(lum, ro, kappa_top))
 if polytropic_reference:
     print('and polytropic reference: nrho=%1.1f, poly_n=%1.1f, rhom=%1.7e' %(poly_nrho, poly_n, rhom))
 else:
-    print('equation_coefficients/reference file ')
+    print('and reference file: %s' %fname)
 print ('Set outer_dsdr (dtdr_top) to %1.8e' %desired_dsdr)
