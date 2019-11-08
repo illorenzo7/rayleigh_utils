@@ -51,6 +51,7 @@ for i in range(nargs):
         min_vr, max_vr  = float(args[i+1]), float(args[i+2])
         min_vt, max_vt  = float(args[i+3]), float(args[i+4])
         min_vp, max_vp  = float(args[i+5]), float(args[i+6])
+        minmax = True # not none
     elif arg == '-noshow':
         showplot = False
     elif arg == '-nosave':

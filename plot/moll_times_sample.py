@@ -7,7 +7,8 @@ import numpy as np
 import sys, os
 sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
-from common import get_file_lists, strip_dirname, rsun, get_desired_range
+from common import get_file_lists, strip_dirname, rsun, get_desired_range,\
+        allthrees_start
 from plotcommon import axis_range
 from sslice_util import plot_moll
 from get_sslice import get_sslice
@@ -115,8 +116,11 @@ for iiter in range(index_first, index_last + 1):
     ax_center_x = ax_xmin + 0.5*ax_delta_x    
     
     varlabel = texlabels[varname]
+    prot = 2*np.pi/8.61e-6
+    t_loc = a.time[0]/prot - allthrees_start
     title = varlabel + '     ' + (r'$r/R_\odot\ =\ %0.3f$' %rval) +\
-            '     ' + ('iter = ' + fname)    
+            '     ' + ('iter = ' + fname) + '\t' +\
+            (r'$t = %.1f\ P_{\rm{rot}}$' %t_loc)
     fig.text(ax_center_x, ax_ymax + 0.02*ax_delta_y, title,\
          verticalalignment='bottom', horizontalalignment='center',\
          fontsize=14, **csfont)   
