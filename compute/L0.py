@@ -15,11 +15,19 @@ sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
 from get_parameter import get_parameter
 from rayleigh_diagnostics import GridInfo, ReferenceState
+from reference_tools import equation_coefficients
 
 dirname = sys.argv[1]
 
-# get reference state and grid info
-ref = ReferenceState(dirname + '/reference', '')
+# get density and grid info
+try:
+    ref = ReferenceState(dirname + '/reference', '')
+    rho = ref.density
+except:
+    eq = equation_coefficients()
+    eq.read(dirname + '/equation_coefficients')
+    rho = eq.functions[0]
+
 gi = GridInfo(dirname + '/grid_info', '')
 
 # By default integrate over the whole shell
@@ -51,7 +59,6 @@ Om0 = get_parameter(dirname, 'angular_velocity')
 
 # Get the radial integration weights and density
 rw = gi.rweights
-rho = ref.density
 
 # Compute L0
 scaling = 1./3.*(rmax**3. - rmin**3.)
