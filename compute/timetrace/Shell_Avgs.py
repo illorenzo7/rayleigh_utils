@@ -73,7 +73,8 @@ for i in range(index_first, index_last + 1):
     else:   
         sh = Shell_Avgs(radatadir + file_list[i], '')
 
-    local_ntimes = sh.niter
+    #local_ntimes = sh.niter
+    local_ntimes = 1 # just do the first one, or else there is too much data!
     for j in range(local_ntimes):
         vals.append(list(sh.vals[:, 0, :, j])) #  Each Shell_Avgs slice has shape (nr, nq)
                         # End "vals" array will have shape (ntimes, nr, nq)
