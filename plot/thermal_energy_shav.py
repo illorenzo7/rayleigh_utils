@@ -17,9 +17,8 @@ sys.path.append(os.environ['raco'])
 from common import get_widest_range_file, strip_dirname,\
         get_iters_from_file, get_dict, rsun
 from get_parameter import get_parameter
-from rayleigh_diagnostics import ReferenceState
+from rayleigh_diagnostics import ReferenceState, GridInfo
 from reference_tools import equation_coefficients
-from compute_grid_info import compute_theta_grid
 
 # Get the run directory on which to perform the analysis
 dirname = sys.argv[1]
@@ -108,6 +107,12 @@ if magnetism:
     joule_heating_fluc = vals[:, lut[1437]]
     joule_heating_mean = joule_heating_tot - joule_heating_fluc
     tot_heating += joule_heating_tot
+
+# Compute the INTEGRATED total heating
+gi = GridInfo(dirname + '/grid_info')
+rw = gi.rweights
+shell_volume = 4.0*np.pi/3.0*(np.max(rr)**3.0 - np.min(rr)**3.0)
+tot_heating_integrated = shell_volume*np.sum(tot_heating*rw)
 
 if entropy_equation:
     advec_tot /= rhot
@@ -209,8 +214,13 @@ if entropy_equation:
 else:
     basetitle = 'thermal energy eqn., ' 
 
-plt.title(dirname_stripped + '\n' + basetitle +\
-          str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8), **csfont)
+lum = 3.846e33
+
+title = dirname_stripped + '\n' + basetitle +\
+          str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8) +\
+          '\nintegrated total heating: %1.3e erg/cm^3/s\n = %1.3e lsun'\
+          %(tot_heating_integrated/shell_volume, tot_heating_integrated/lum)
+plt.title(title, **csfont)
 
 # Create a see-through legend
 plt.legend(loc='lower left', shadow=True, ncol=2, fontsize=8)

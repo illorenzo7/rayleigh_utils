@@ -220,10 +220,13 @@ def get_widest_range_file(datadir, data_name):
                 num = 16
             possible_iter = datafile[istart + len_name + num:istart + len_name + num + 8]
             if is_an_int(possible_iter):
-                if data_name == 'G_Avgs': # can't confuse "G_Avgs" with 
-                    # "trace_G_Avgs"; please NEVER make a run directory
-                    # with "trace" in the name
-                    if not 'trace' in datafile:
+                if data_name == 'G_Avgs' or data_name == 'Shell_Avgs':
+                    # can't confuse "G_Avgs" or "Shell_Avgs"  with 
+                    # "trace_G_Avgs"/"trace_Shell_Avgs"; 
+                    # please NEVER make a run directory with "trace" in 
+                    # the name!
+                    if not 'trace' in datafile and \
+                            not 'inte_from' in datafile:
                         specific_files.append(datafile)
                 else:
                     specific_files.append(datafile)
