@@ -32,6 +32,7 @@ magnetism = False
 ylog = False
 user_specified_minmax = False
 user_specified_xminmax = False
+plot_inte = False
 
 # Get command-line arguments
 args = sys.argv[2:]
@@ -57,6 +58,8 @@ for i in range(nargs):
         user_specified_xminmax = True
         my_xmin = float(args[i+1])
         my_xmax = float(args[i+2])
+    elif arg == '-inte':
+        plot_inte = True
 
 # Tag the plot by whether or not the x axis is in "time" or "iteration"
 if (xiter):
@@ -91,7 +94,7 @@ else:
         rmin = np.min(domain_bounds)
         rmax = np.max(domain_bounds)
     depth = rmax - rmin
-    tdt = d**2/ktop
+    tdt = depth**2/ktop
     tnorm = tdt
 
 # Make appropriate file name to save
@@ -129,6 +132,29 @@ if (magnetism):
     ftme = vals[lut[1111]]
     fpme = vals[lut[1112]]
 
+have_thermal_energy = False
+if plot_inte:
+    try: # get the internal energy if it is available
+        try: # First try to get it from Shell_Avgs data
+            the_file = get_widest_range_file(datadir, 'inte_from_Shell_Avgs')
+            di_inte = get_dict(datadir + the_file)
+            inte = di_inte['inte']
+            print("Got internal energy from Shell_Avgs")
+        except:
+            inte = vals[lut[701]]
+            print("Got internal energy from G_Avgs")
+
+        have_thermal_energy = True
+        sign = np.sign(np.mean(inte))
+        if sign == -1:
+            sign_str = 'negative'
+        else:
+            sign_str = 'positive'
+        inte = np.abs(inte)
+
+    except:
+        pass
+
 # Get global min/max vals
 if magnetism:
     mmax = np.max((np.max(ke), np.max(me)))
@@ -137,6 +163,10 @@ if magnetism:
 else:
     mmax = np.max(ke)
     mmin = np.min((np.min(mrke), np.min(mtke), np.min(mpke), np.min(frke), np.min(ftke), np.min(fpke)))   
+
+if have_thermal_energy:
+    mmax = max(np.max(inte), mmax)
+    mmin = min(np.min(inte), mmin)
 
 if (not xiter):
     xaxis = times/tnorm
@@ -156,9 +186,6 @@ ax1 = axs[0]; ax2 = axs[1]; ax3 = axs[2]
 lw = 0.5
 
 # first plot: total kinetic energy trace      
-ax1.set_title(dirname_stripped + '\n ' +\
-          str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8) +\
-          '\n\ntotal energy')
 ax1.plot(xaxis, ke, 'k', linewidth=lw, label=r'$\rm{KE_{tot}}$')
 ax1.plot(xaxis, rke, 'r', linewidth=lw, label=r'$\rm{KE}_r$')
 ax1.plot(xaxis, tke, 'g', linewidth=lw, label=r'$\rm{KE}_\theta$')
@@ -171,11 +198,24 @@ if magnetism:
     ax1.plot(xaxis, tme, 'g--', linewidth=lw, label=r'$\rm{ME}_\theta$')
     ax1.plot(xaxis, pme, 'b--', linewidth=lw, label=r'$\rm{ME}_\phi$')
 
+if have_thermal_energy:
+    ax1.plot(xaxis, np.abs(inte), 'm', linewidth=lw, label='|INT E|')
+
+title = dirname_stripped + '\n ' +\
+          str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8) +\
+          '\ntotal energy'
+if have_thermal_energy:
+    title += ('\n' + r'$\rm{\ sign(\overline{INT\ E})\ = %s}$' %sign_str)
+ax1.set_title(title)
+
 if not ylog:
-    ax1.set_ylim(0, mmax*1.05)
+    ydiff = mmax - mmin
+    ybuffer = 0.05*ydiff 
+    ax1.set_ylim(mmin - ybuffer, mmax + ybuffer)
 else:
     ax1.set_yscale('log')
     ax1.set_ylim((mmin/3.0, mmax*3.0))
+
 if user_specified_minmax:
     ax1.set_ylim((my_min, my_max))
     
@@ -211,6 +251,7 @@ if magnetism:
 
 # Title and axis label
 ax2.set_title('mean energy')
+
 # Put the y-label on the middle plot
 ax2.set_ylabel(r'$\rm{energy\ density\ (erg}\ cm^{-3})$')
 
