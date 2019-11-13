@@ -2,6 +2,7 @@
 # "allthrees" sims
 # Created: 11/10/2019
 import matplotlib.pyplot as plt
+from matplotlib import colors
 SMALL_SIZE = 7
 MEDIUM_SIZE = 9
 BIGGER_SIZE = 11
@@ -22,7 +23,8 @@ import sys, os
 sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
 from common import get_file_lists, get_widest_range_file, strip_dirname,\
-        rsun, get_dict, allthrees_start, get_exp
+        rsun, get_dict, allthrees_start, get_exp, get_symlog_params,\
+        sci_format
 from plotcommon import axis_range
 from rayleigh_diagnostics import GridInfo
 from get_parameter import get_parameter
@@ -45,7 +47,7 @@ dr = 0.03 # By default average energies over 10% the depth of the shell
 gi = GridInfo('/altair/loma3853/dyn_nkeom3.0-1/grid_info', '')
 rw = gi.rweights
 saveplot = True
-showplot = True # will only show if plotting one figure
+symlog = False
 varname = 'bp' # by default, plot B_phi and KE_phi
 
 desired_rvals = [0.83] # by default, plot time-radius diagram for fields 
@@ -57,7 +59,8 @@ nargs = len(args)
 for i in range(nargs):
     arg = args[i]
     if arg == '-minmax1': # minmax1 is for time-latitude
-        minmax = float(args[i+1]), float(args[i+2])
+        minmax1 = float(args[i+1]), float(args[i+2])
+        print("Got CLA minmax1: ", minmax1)
     elif arg == '-minmax2':
         minmax2 = float(args[i+3]), float(args[i+4])
     elif arg == '-dr':
@@ -70,12 +73,10 @@ for i in range(nargs):
             desired_rvals = []
             for j in range(len(string_desired_rvals)):
                 desired_rvals.append(float(string_desired_rvals[j]))
-    elif arg == '-nosave':
-        saveplot = False
-    elif arg == '-noshow':
-        showplot = False
     elif arg == '-var':
         varname = args[i+1]
+    elif arg == '-symlog':
+        symlog = True
 
 # Get global rotation rate; this script fails for non-rotating models
 angular_velocity = get_parameter(dirname, 'angular_velocity')
@@ -122,6 +123,10 @@ fig_width_inches = 7+1/4
 margin_inches = 1/8
 margin_vert_inches = 1/4 # space for time label
 margin_bottom_inches = 3/8 # space for x-axis label
+if symlog:
+    margin_top_inches = 5/8 # space for colorbar
+else:
+    margin_top_inches = 1/8
 margin_left_inches = 5/8 # space for latitude label
 subplot_width_inches = fig_width_inches - margin_inches - margin_left_inches
 subplot_pad_inches = 0. # space between time-latude and energy-trace pairs
@@ -130,7 +135,8 @@ tl_height_inches = 0.9
 etr_height_inches = two_subplots_height_inches - tl_height_inches - subplot_pad_inches
 
 fig_height_inches = nrows*two_subplots_height_inches +\
-        (nrows - 1)*margin_vert_inches + margin_bottom_inches + margin_inches
+        (nrows - 1)*margin_vert_inches + margin_bottom_inches +\
+        margin_top_inches
 fig_aspect = fig_height_inches/fig_width_inches
 
 margin_x = margin_inches/fig_width_inches
@@ -140,7 +146,8 @@ tl_height = tl_height_inches/fig_height_inches
 etr_height = etr_height_inches/fig_height_inches
 subplot_width = subplot_width_inches/fig_width_inches
 margin_left = margin_left_inches/fig_width_inches
-margin_bottom = margin_bottom_inches/fig_width_inches
+margin_bottom = margin_bottom_inches/fig_height_inches
+margin_top = margin_top_inches/fig_height_inches
 
 two_subplots_height = two_subplots_height_inches/fig_height_inches
 
@@ -178,16 +185,22 @@ for i in range(len(i_desiredrvals)):
     rval_to_plot = rvals_to_plot[i]
     # Time-latitude of quantity
     quant_loc = quant[:, :, i_desiredrval]
+    print("minmax1 is ", minmax1)
+    print("len(i_desired_rvals) is ", len(i_desiredrvals))
     if minmax1 is None or len(i_desiredrvals) > 1:
-        minmax1 = -3.*np.std(quant_loc), 3.*np.std(quant_loc)
+        if symlog:
+            nstd = 15.
+        else:
+            nstd= 5.
+        minmax1 = -nstd*np.std(quant_loc), nstd*np.std(quant_loc)
         print ("Setting time-latitude minmax to (%1.2e, %1.2e)"\
                 %(minmax1[0], minmax1[1]))
     # Associated energy, in range r_loc \pm dr/2
     ir1 = np.argmin(np.abs(rr/rsun - (rval_to_plot + dr/2.)))
     ir2 = np.argmin(np.abs(rr/rsun - (rval_to_plot - dr/2.)))
     print("Averaging energy over (ir1, ir2) = ", ir1, ir2)
-    print ("or (rmin/rsun, rmax/rsun) = (%1.3f, %1.3f)" %(rr[ir1]/rsun,\
-            rr[ir2]/rsun))
+    print ("or (rmin/rsun, rmax/rsun) = (%1.3f, %1.3f)" %(rr[ir2]/rsun,\
+            rr[ir1]/rsun))
     quant_energy_loc = np.sum((quant_energy*rw)[:, ir1:ir2+1], axis=1)/\
             np.sum(rw[0, ir1:ir2+1])
     quant_energy_exp = get_exp(np.max(quant_energy_loc))
@@ -197,16 +210,20 @@ for i in range(len(i_desiredrvals)):
         print ("Setting energy minmax to (%1.2e, %1.2e)"\
                 %(minmax2[0], minmax2[1]*quant_energy_exp))
 
+    if symlog:
+        # get symlog parameters
+        linthresh, linscale = get_symlog_params(quant_loc, field_max=minmax1[1])
+
     # Make the figure, spanning multiple rows
     fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
     axs = []
     for irow in range(nrows): 
-        axs.append(fig.add_axes((margin_left, 1 - margin_y - tl_height -\
+        axs.append(fig.add_axes((margin_left, 1 - margin_top - tl_height -\
                                  irow*(margin_vert + two_subplots_height),\
                     subplot_width, tl_height)))                 
 
         axs.append(fig.add_axes((margin_left,\
-                1 - margin_y - two_subplots_height -\
+                1 - margin_top - two_subplots_height -\
                 irow*(margin_vert + two_subplots_height),\
                 subplot_width, etr_height)))
 
@@ -226,8 +243,14 @@ for i in range(len(i_desiredrvals)):
         quant_interval = quant_loc[it1:it2+1, :]
         quant_energy_interval = quant_energy_loc[it1_shtr:it2_shtr + 1]
 
-        axs[2*irow].pcolormesh(times_2d, tt_lat_2d, quant_interval,\
-                vmin=minmax1[0], vmax=minmax1[1], cmap='RdYlBu_r')
+        if symlog:
+            norm = colors.SymLogNorm(linthresh=linthresh,\
+                linscale=linscale, vmin=minmax1[0], vmax=minmax1[1])
+        else:
+            norm = None
+
+        im = axs[2*irow].pcolormesh(times_2d, tt_lat_2d, quant_interval,\
+                cmap='RdYlBu_r', norm=norm)
         axs[2*irow + 1].plot(times_interval_shtr, quant_energy_interval, 'k',\
                 linewidth=0.5)
 
@@ -283,7 +306,7 @@ for i in range(len(i_desiredrvals)):
         # Draw some arrows where asymmetric cycle is "born" from symmetric cycle
         axs[0].arrow(2125, -85, 0, 40, head_width=10, head_length=10,\
                 fc='k', ec='k')
-        axs[4].arrow(4765, -85, 0, 40, head_width=10, head_length=10,\
+        axs[4].arrow(4770, -85, 0, 40, head_width=10, head_length=10,\
                 fc='k', ec='k')
         axs[6].arrow(8413, -85, 0, 40, head_width=10, head_length=10,\
                 fc='k', ec='k')
@@ -297,8 +320,39 @@ for i in range(len(i_desiredrvals)):
         axs[0].plot(1300 + np.zeros(100), np.linspace(-90, 90, 100),\
                 'k--', linewidth=lw)
 
-    # Save it in the "tl" subdirectory of the "figure_set" directory
-    savedir = '/home5/loma3853/Desktop/Publications/allthrees/figure_set/tl/'
+    if i_desiredrval == 4 and varname == 'bp':
+         # Mark region in blow-up with vertical dashed lines
+        lw = 0.7
+        axs[2].plot(3150 + np.zeros(100), np.linspace(-90, 90, 100),\
+                'k--', linewidth=lw)
+        axs[2].plot(3450 + np.zeros(100), np.linspace(-90, 90, 100),\
+                'k--', linewidth=lw)
+      
+    # Set up the colorbar
+    if symlog:
+        cbar_width = subplot_width/3
+        cbar_aspect = 1/20
+        cbar_height = cbar_width*cbar_aspect/fig_aspect
+        cbar_left = margin_left + 0.5*(subplot_width - cbar_width)
+        cbar_bottom = 1 - margin_y - cbar_height
+        cax = fig.add_axes((cbar_left, cbar_bottom, cbar_width, cbar_height))
+
+        cbar = plt.colorbar(im, cax=cax, orientation='horizontal')
+
+        cbticks = [minmax1[0], -linthresh, 0, linthresh, minmax1[1]]
+#        ticks = minmax1[1]*(2.0*norm(cbticks) - 1.0)
+
+#        cbar.set_ticks(ticks)
+
+        cbar.set_ticks(cbticks)
+        cbar.set_ticklabels([sci_format(minmax1[0]), sci_format(-linthresh),\
+                r'$0$', sci_format(linthresh), sci_format(minmax1[1])])
+        fig.text(cbar_left + cbar_width + 0.5*cbar_height/fig_aspect,\
+                cbar_bottom + 0.5*cbar_height, r'$\rm{G}$', va='center',\
+                **csfont, fontsize=7)
+
+    # Save it in the "tl/symlog" subdirectory of the "figure_set" directory
+    savedir = '/home5/loma3853/Desktop/Publications/allthrees/figure_set/tl/symlog/'
     savename = dirname_stripped + '_whole_' + varname + ('_trace_rval%0.3f.png'\
             %rvals_sampled[i_desiredrval])
 
