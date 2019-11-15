@@ -230,7 +230,7 @@ plt.tight_layout()
 
 # Save the plot
 print ('Saving the energy eqn. plot at ' + plotdir + savename + ' ...')
-#plt.savefig(plotdir + savename, dpi=300)
+plt.savefig(plotdir + savename, dpi=300)
 
 # Show the plot
 plt.show()
