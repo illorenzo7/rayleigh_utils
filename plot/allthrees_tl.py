@@ -49,6 +49,7 @@ rw = gi.rweights
 saveplot = True
 symlog = False
 varname = 'bp' # by default, plot B_phi and KE_phi
+nstd = None
 
 desired_rvals = [0.83] # by default, plot time-radius diagram for fields 
     # mid-CZ (units of solar radius)
@@ -77,6 +78,8 @@ for i in range(nargs):
         varname = args[i+1]
     elif arg == '-symlog':
         symlog = True
+    elif arg == '-nstd':
+        nstd = float(args[i+1])
 
 # Get global rotation rate; this script fails for non-rotating models
 angular_velocity = get_parameter(dirname, 'angular_velocity')
@@ -188,13 +191,14 @@ for i in range(len(i_desiredrvals)):
     print("minmax1 is ", minmax1)
     print("len(i_desired_rvals) is ", len(i_desiredrvals))
     if minmax1 is None or len(i_desiredrvals) > 1:
-        if symlog:
-            nstd = 15.
-        else:
-            nstd= 5.
+        if nstd is None:
+            if symlog:
+                nstd = 9.
+            else:
+                nstd= 3.
         minmax1 = -nstd*np.std(quant_loc), nstd*np.std(quant_loc)
-        print ("Setting time-latitude minmax to (%1.2e, %1.2e)"\
-                %(minmax1[0], minmax1[1]))
+        print ("Setting time-latitude minmax to (%1.2e, %1.2e), (nstd = %.1f)"\
+                %(minmax1[0], minmax1[1], nstd))
     # Associated energy, in range r_loc \pm dr/2
     ir1 = np.argmin(np.abs(rr/rsun - (rval_to_plot + dr/2.)))
     ir2 = np.argmin(np.abs(rr/rsun - (rval_to_plot - dr/2.)))
@@ -246,11 +250,12 @@ for i in range(len(i_desiredrvals)):
         if symlog:
             norm = colors.SymLogNorm(linthresh=linthresh,\
                 linscale=linscale, vmin=minmax1[0], vmax=minmax1[1])
+            im = axs[2*irow].pcolormesh(times_2d, tt_lat_2d, quant_interval,\
+                    cmap='RdYlBu_r', norm=norm)
         else:
-            norm = None
+            im = axs[2*irow].pcolormesh(times_2d, tt_lat_2d, quant_interval,\
+                    cmap='RdYlBu_r', vmin=minmax1[0], vmax=minmax1[1])
 
-        im = axs[2*irow].pcolormesh(times_2d, tt_lat_2d, quant_interval,\
-                cmap='RdYlBu_r', norm=norm)
         axs[2*irow + 1].plot(times_interval_shtr, quant_energy_interval, 'k',\
                 linewidth=0.5)
 
@@ -302,7 +307,8 @@ for i in range(len(i_desiredrvals)):
     # Label the axes
     axs[2*nrows - 1].set_xlabel(r'$t\ (P_{\rm{rot}})$')
 
-    if i_desiredrval == 7 and varname == 'bp':
+    if i_desiredrval == 7 and varname == 'bp' and \
+            dirname_stripped == 'dyn_nkeom3.0-alldata':
         # Draw some arrows where asymmetric cycle is "born" from symmetric cycle
         axs[0].arrow(2125, -85, 0, 40, head_width=10, head_length=10,\
                 fc='k', ec='k')
@@ -320,7 +326,8 @@ for i in range(len(i_desiredrvals)):
         axs[0].plot(1300 + np.zeros(100), np.linspace(-90, 90, 100),\
                 'k--', linewidth=lw)
 
-    if i_desiredrval == 4 and varname == 'bp':
+    if i_desiredrval == 4 and varname == 'bp' and \
+            dirname_stripped == 'dyn_nkeom3.0-alldata':
          # Mark region in blow-up with vertical dashed lines
         lw = 0.7
         axs[2].plot(3150 + np.zeros(100), np.linspace(-90, 90, 100),\
@@ -351,9 +358,13 @@ for i in range(len(i_desiredrvals)):
                 cbar_bottom + 0.5*cbar_height, r'$\rm{G}$', va='center',\
                 **csfont, fontsize=7)
 
-    # Save it in the "tl/symlog" subdirectory of the "figure_set" directory
-    savedir = '/home5/loma3853/Desktop/Publications/allthrees/figure_set/tl/symlog/'
-    savename = dirname_stripped + '_whole_' + varname + ('_trace_rval%0.3f.png'\
+    # Save it in the "tl[/symlog]" subdirectory of the "figure_set" directory
+
+    savedir = '/home5/loma3853/Desktop/Publications/allthrees/figure_set/tl/'
+    if symlog:
+        savedir += 'symlog/'
+    savename = dirname_stripped + '_whole_' + varname + ('_trace_rval%0.3f.png'
+
             %rvals_sampled[i_desiredrval])
 
     print ("Saving figure at ", savedir + savename)
