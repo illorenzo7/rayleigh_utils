@@ -11,7 +11,7 @@ sys.path.append(os.environ['raco'])
 from rayleigh_diagnostics import G_Avgs, AZ_Avgs, TransportCoeffs
 from reference_tools import equation_coefficients
 from common import get_file_lists, get_desired_range, strip_dirname,\
-        get_widest_range_file
+        get_widest_range_file, get_dict
 from get_parameter import get_parameter
 
 dirname = sys.argv[1]
@@ -26,6 +26,7 @@ try: # first try to get data from pre-computed time trace:
     iters = di['iters']
     t1, t2 = times[0], times[-1]
     iter1, iter2 = iters[0], iters[-1]
+    print ("Got timing info from data/*trace_G_Avgs* file")
 except:
     try:
         gavg_dir = dirname + '/G_Avgs/'
@@ -42,6 +43,7 @@ except:
 
         iter1 = a1.iters[0]
         iter2 = a2.iters[-1]
+        print ("Got timing info from G_Avgs directory")
     except: # and if that fails, try the AZ_Avgs
         azavg_dir = dirname + '/AZ_Avgs/'
         file_list, int_file_list, nfiles = get_file_lists(azavg_dir)
@@ -57,6 +59,7 @@ except:
 
         iter1 = a1.iters[0]
         iter2 = a2.iters[-1]
+        print ("Got timing info from AZ_Avgs directory")
 
 simtime = t2 - t1
 
@@ -95,7 +98,7 @@ except:
 print ('t2 - t1: %.1f %s' %(simtime, unit))
 print ('t2 - t1: %.2f TDTs' %simtime_tdt)
 print ('----------------------')
-print ('iter1: %s, iter2: %s' %(f1, f2))
+print ('iter1: %s, iter2: %s' %(str(iter1).zfill(8), str(iter2).zfill(8)))
 print ('t1: %.1f, t2: %.1f (%s)' %(t1, t2, unit))
 print ('----------------------')
 
