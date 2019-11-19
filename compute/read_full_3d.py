@@ -4,14 +4,12 @@ import sys, os
 sys.path.append(os.environ['rapp'])
 from rayleigh_diagnostics import Spherical_3D
 
-snapshots = {'12400001': 3094.943, '12500001': 3115.839,\
+times = {'12400001': 3094.943, '12500001': 3115.839,\
         '12600001': 3137.165, '12700001': 3155.358,\
         '12800001': 3174.888,\
         '13200001': 3253.259, '13300001': 3270.732,\
         '13350001': 3382.610, '13450001': 3302.782,\
         '13550001': 3324.979}
-
-snapshot_start = snapshots['13200001']
 
 #fname = input('Filenumber: ')
 dirname = sys.argv[1]
@@ -29,11 +27,7 @@ for i in range(nargs):
     elif arg == '-sub':
         Om_subtract_nHz = float(args[i+1])
 
-try:
-    snapshot_now = snapshots[fname]
-    delta_Prot = snapshot_now - snapshot_start
-except:
-    delta_Prot = 0.0
+time_Prot = times[fname]
 
 br_3d = Spherical_3D(fname + '_0801')
 bt_3d = Spherical_3D(fname + '_0802')
@@ -49,12 +43,9 @@ nphi = br_3d.nphi
 
 Om_subtract_Hz = Om_subtract_nHz*1e-9
 Prot = 2*np.pi/8.61e-6 # rotation period in sec.
-phi_deflection = ((delta_Prot*Prot*Om_subtract_Hz) % 1.0)*(2*np.pi)
+phi_deflection = ((time_Prot*Prot*Om_subtract_Hz) % 1.0)*(2*np.pi)
 nroll = int(phi_deflection/(2*np.pi)*nphi)
 print ("Om_subtract (nHz): ", Om_subtract_nHz)
-print ("Starting Prot: ", snapshot_start, " Current Prot: ",\
-        snapshot_now)
-print ("Delta Prot: ", delta_Prot)
 print ("Longitude deflection: ", phi_deflection*180.0/np.pi)
 print ("nroll: ", nroll)
 
