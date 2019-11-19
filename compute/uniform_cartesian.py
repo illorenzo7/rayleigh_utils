@@ -66,6 +66,9 @@ zero = np.zeros((n_x,n_y,n_z))
 r_u= zero + (x_u**2 + y_u**2 + z_u**2)**0.5
 theta_u = zero + np.arccos(z_u/r_u)
 phi_u = zero + np.arctan2(y_u,x_u) + np.pi
+#phi_u = zero + np.arctan2(y_u,x_u)
+## Get phi value in range (0, 2*pi)
+#phi_u[np.where(phi_u < 0.)] += (2*np.pi)
 
 from scipy.interpolate import RegularGridInterpolator
 original_coords_flat = (phi.flatten(), theta.flatten(), r.flatten())
