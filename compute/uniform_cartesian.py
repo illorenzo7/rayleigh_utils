@@ -35,6 +35,7 @@ logger = logging.getLogger(__name__)
 
 f = h5py.File('{:s}'.format(filename), 'r')
 r = f['r']/np.max(f['r'])
+aspect = np.min(f['r'])/np.max(f['r'])
 theta = f['theta']
 phi = f['phi']
 
@@ -82,15 +83,21 @@ xset = dataset.createDimension('x', n)
 yset = dataset.createDimension('y', n)
 zset = dataset.createDimension('z', n)
 tset = dataset.createDimension('t', None)
-xs = dataset.createVariable('x', np.float64, ('x',))
-ys = dataset.createVariable('y', np.float64, ('y',))
-zs = dataset.createVariable('z', np.float64, ('z',))
+xs = dataset.createVariable('X', np.float64, ('z','y','x'))
+ys = dataset.createVariable('Y', np.float64, ('z','y','x'))
+zs = dataset.createVariable('Z', np.float64, ('z','y','x'))
+#xs = dataset.createVariable('x', np.float64, ('x',))
+#ys = dataset.createVariable('y', np.float64, ('y',))
+#zs = dataset.createVariable('z', np.float64, ('z',))
 ts = dataset.createVariable('t', np.float64, ('t',))
-xs[:] = x_u
-ys[:] = y_u
-zs[:] = z_u
+xs[:] = (x_u + zero).T
+ys[:] = (y_u + zero).T
+zs[:] = (z_u + zero).T
+#xs[:] = x_u
+#ys[:] = y_u
+#zs[:] = z_u
 ts[:] = 0
-var_string = ""
+var_string = "X:Y:Z:"
 
 data_dict = {}
 
@@ -157,6 +164,8 @@ for field in data_dict.keys():
 
     start_int = time.time()
     data_u = F_interp(points).reshape((n_x, n_y, n_z))
+    data_u[np.where(r_u < aspect)] = 0.0 # Make sure data is zero outside shell boundaries
+    data_u[np.where(r_u > 1.0)] = 0.0 # Make sure data is zero outside shell boundaries
     end_int = time.time()
     print("Interpolation took {:g} seconds for {}".format(end_int-start_int, field))
     datas = dataset.createVariable(field, np.float64, ('z','y','x'))
