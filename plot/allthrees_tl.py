@@ -307,14 +307,14 @@ for i in range(len(i_desiredrvals)):
     # Label the axes
     axs[2*nrows - 1].set_xlabel(r'$t\ (P_{\rm{rot}})$')
 
-    if i_desiredrval == 7 and varname == 'bp' and \
+    if i_desiredrval == 4 and varname == 'bp' and \
             dirname_stripped == 'dyn_nkeom3.0-alldata':
         # Draw some arrows where asymmetric cycle is "born" from symmetric cycle
         axs[0].arrow(2125, -85, 0, 40, head_width=10, head_length=10,\
                 fc='k', ec='k')
-        axs[4].arrow(4770, -85, 0, 40, head_width=10, head_length=10,\
+        axs[4].arrow(4730, -85, 0, 40, head_width=10, head_length=10,\
                 fc='k', ec='k')
-        axs[6].arrow(8413, -85, 0, 40, head_width=10, head_length=10,\
+        axs[6].arrow(8400, -85, 0, 40, head_width=10, head_length=10,\
                 fc='k', ec='k')
 #        axs[8].arrow(9265, 85, 0, -40, head_width=10, head_length=10,\
 #                fc='k', ec='k')
