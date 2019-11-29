@@ -306,8 +306,8 @@ for i in range(len(i_desiredrvals)):
     axs[0].text(100., -75., r'$r/R_\odot = %0.3f$' %rvals_sampled[i_desiredrval],\
             va='bottom', ha='left')
 
-    axs[1].text(100, 0.1*minmax2[1], '(b) ' + blabels[varname],\
-            va='bottom', ha='left')
+    axs[1].text(100, 0.8*minmax2[1], '(b) ' + blabels[varname],\
+            va='top', ha='left')
 
     # Label the axes
     axs[2*nrows - 1].set_xlabel(r'$t\ (P_{\rm{rot}})$')
@@ -392,7 +392,7 @@ for i in range(len(i_desiredrvals)):
             **csfont, fontsize=7)
 
         # Put case label in upper left
-        fig.text(margin_left + 2*margin_x, 1 - margin_top + 2*margin_y,\
+        fig.text(margin_left, 1 - margin_top + 1/16/fig_height_inches,\
                 label, va='bottom', ha='left', **csfont, fontsize=8)
 
     # Save it in the "tl[/symlog]" subdirectory of the "figure_set" directory
