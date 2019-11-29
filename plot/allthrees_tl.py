@@ -50,6 +50,7 @@ saveplot = True
 symlog = False
 varname = 'bp' # by default, plot B_phi and KE_phi
 nstd = None
+linthresh = None
 
 desired_rvals = [0.83] # by default, plot time-radius diagram for fields 
     # mid-CZ (units of solar radius)
@@ -80,6 +81,8 @@ for i in range(nargs):
         symlog = True
     elif arg == '-nstd':
         nstd = float(args[i+1])
+    elif arg == '-linthresh':
+        linthresh = float(args[i+1])
 
 # Get global rotation rate; this script fails for non-rotating models
 angular_velocity = get_parameter(dirname, 'angular_velocity')
@@ -216,7 +219,9 @@ for i in range(len(i_desiredrvals)):
 
     if symlog:
         # get symlog parameters
-        linthresh, linscale = get_symlog_params(quant_loc, field_max=minmax1[1])
+        linthresh_tmp, linscale = get_symlog_params(quant_loc, field_max=minmax1[1])
+        if linthresh is None:
+            linthresh = linthresh_tmp
 
     # Make the figure, spanning multiple rows
     fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
@@ -298,14 +303,22 @@ for i in range(len(i_desiredrvals)):
             va='top', ha='left')
     axs[0].text(2135., 75., r'$\pm %1.2f\ kG$' %(minmax1[1]/1000),\
             va='top', ha='right')
-    axs[0].text(100, 0, r'$r/R_\odot = %0.3f$' %rvals_sampled[i_desiredrval],\
-            va='top', ha='left')
+    axs[0].text(100., -75., r'$r/R_\odot = %0.3f$' %rvals_sampled[i_desiredrval],\
+            va='bottom', ha='left')
 
-    axs[1].text(100, 0.8*minmax2[1], '(b) ' + blabels[varname],\
-            va='top', ha='left')
+    axs[1].text(100, 0.1*minmax2[1], '(b) ' + blabels[varname],\
+            va='bottom', ha='left')
 
     # Label the axes
     axs[2*nrows - 1].set_xlabel(r'$t\ (P_{\rm{rot}})$')
+
+    # Label with the case name in upper left
+    if dirname_stripped == 'dyn_nkeom3.0-alldata':
+        label = 'Case D3-1'
+    elif dirname_stripped == 'dyn_nk3.0_e1.5_om3.0-alldata':
+        label = 'Case D3-2'
+    elif dirname_stripped == 'dyn_nk3.0_e0.8_om3.0-alldata':
+        label = 'Case D3-4'
 
     if i_desiredrval == 4 and varname == 'bp' and \
             dirname_stripped == 'dyn_nkeom3.0-alldata':
@@ -373,9 +386,14 @@ for i in range(len(i_desiredrvals)):
 #            cbar.set_ticks(cbticks)
 #            cbar.set_ticklabels([sci_format(minmax1[0]), sci_format(-linthresh),\
 #                    r'$0$', sci_format(linthresh), sci_format(minmax1[1])])
-        fig.text(cbar_left + cbar_width + 0.5*cbar_height/fig_aspect,\
-                cbar_bottom + 0.5*cbar_height, r'$\rm{G}$', va='center',\
-                **csfont, fontsize=7)
+
+        fig.text(cbar_left + cbar_width + 1/8/fig_width_inches,\
+            cbar_bottom + 0.5*cbar_height, r'$\rm{G}$', va='center',\
+            **csfont, fontsize=7)
+
+        # Put case label in upper left
+        fig.text(margin_left + 2*margin_x, 1 - margin_top + 2*margin_y,\
+                label, va='bottom', ha='left', **csfont, fontsize=8)
 
     # Save it in the "tl[/symlog]" subdirectory of the "figure_set" directory
 
