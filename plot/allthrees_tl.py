@@ -346,14 +346,33 @@ for i in range(len(i_desiredrvals)):
 
         cbar = plt.colorbar(im, cax=cax, orientation='horizontal')
 
-        cbticks = [minmax1[0], -linthresh, 0, linthresh, minmax1[1]]
-#        ticks = minmax1[1]*(2.0*norm(cbticks) - 1.0)
+        nlin = 5
+        nlog = 6
+        lin_ticks = np.linspace(-linthresh, linthresh, nlin)
+        log_ticks1 = np.linspace(minmax1[0], -linthresh, nlog, endpoint=False)
+        log_ticks2 = -log_ticks1[::-1]
+        ticks = np.hstack((log_ticks1, lin_ticks, log_ticks2))
+        nticks = nlin + 2*nlog
+        cbar.set_ticks(ticks)
+        #ticklabels = np.zeros(nticks, dtype='str')
+        ticklabels = []
+        for i in range(nticks):
+            ticklabels.append(r'')
+        #ticklabels = np.array(ticklabels)    
+        ticklabels[0] = sci_format(minmax1[0])
+        ticklabels[nlog] = sci_format(-linthresh)
+        ticklabels[nticks//2] = r'$0$'
+        ticklabels[nlog + nlin - 1] = sci_format(linthresh)
+        ticklabels[nticks - 1] = sci_format(minmax1[1])
+        cbar.set_ticklabels(ticklabels)
+#            cbticks = [minmax1[0], -linthresh, 0, linthresh, minmax1[1]]
+    #        ticks = minmax1[1]*(2.0*norm(cbticks) - 1.0)
 
-#        cbar.set_ticks(ticks)
+    #        cbar.set_ticks(ticks)
 
-        cbar.set_ticks(cbticks)
-        cbar.set_ticklabels([sci_format(minmax1[0]), sci_format(-linthresh),\
-                r'$0$', sci_format(linthresh), sci_format(minmax1[1])])
+#            cbar.set_ticks(cbticks)
+#            cbar.set_ticklabels([sci_format(minmax1[0]), sci_format(-linthresh),\
+#                    r'$0$', sci_format(linthresh), sci_format(minmax1[1])])
         fig.text(cbar_left + cbar_width + 0.5*cbar_height/fig_aspect,\
                 cbar_bottom + 0.5*cbar_height, r'$\rm{G}$', va='center',\
                 **csfont, fontsize=7)
