@@ -3,6 +3,7 @@
 
 import matplotlib as mpl
 import numpy as np
+from scipy.integrate import cumtrapz
 mpl.use('TkAgg')
 import matplotlib.pyplot as plt
 plt.rcParams['mathtext.fontset'] = 'dejavuserif'
@@ -28,6 +29,7 @@ rvals = None
 
 args = sys.argv[2:]
 nargs = len(args)
+custom_name = None
 for i in range(nargs):
     arg = args[i]
     if arg == '-xminmax':
@@ -37,6 +39,10 @@ for i in range(nargs):
         rvals = []
         for rval_str in rvals_str:
             rvals.append(float(rval_str))
+    elif arg == '-fname':
+        custom_name = args[i+1]
+    elif arg == '-crb':
+        custom_name = 'custom_reference_binary'
 
 # Directory with data and plots, make the plotting directory if it doesn't
 # already exist    
@@ -60,7 +66,9 @@ try:
     Q = heating*rho*T
 except:
     eq = equation_coefficients()
-    eq.read(dirname + '/equation_coefficients')
+    if custom_name is None:
+        custom_name = 'equation_coefficients'
+    eq.read(dirname + '/' + custom_name)
     r = eq.radius
     T = eq.functions[3]
     rho = eq.functions[0]
@@ -71,18 +79,9 @@ except:
     dlnT = eq.functions[9]
     dlnrho = eq.functions[7]
     dsdr = eq.functions[13]
-    nr = len(dsdr)
-    s = np.zeros(nr)
-    gi = GridInfo(dirname + '/grid_info')
-    rw = gi.rweights
-    ri, ro = np.min(r), np.max(r)
-    factor = 1.0/3.0*ro**3 - 1.0/3.0*ri**3
-    # Remember r is reversed
-    r_rev = np.copy(r[::-1])
-    rw_rev = np.copy(rw[::-1])
-    dsdr_rev = np.copy(dsdr[::-1])
-    for ir in range(nr):
-        s[nr - 1 - ir] = factor*np.sum((dsdr_rev/r_rev**2*rw_rev)[:ir])     
+
+    # Integrate to obtain s(r)
+    s = cumtrapz(dsdr, r, initial=0)
     d2lnrho = eq.functions[8]
 
     # Gravity
