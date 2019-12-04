@@ -39,7 +39,7 @@ mag = False
 # Get directory to save binary files for reference state and heating
 dirname = sys.argv[1]
 fname = 'custom_reference_binary'
-rmax = None
+ro = None
 
 args = sys.argv[2:]
 nargs = len(args)
@@ -56,8 +56,8 @@ for i in range(nargs):
         fname = args[i+1]
     elif arg == '-mag':
         mag = True
-    elif arg == '-rmax':
-        rmax = float(args[i+1])
+    elif arg == '-ro':
+        ro = float(args[i+1])
 
 # Open and read the hopefully already existing reference file!
 eq = equation_coefficients()
@@ -67,10 +67,10 @@ nr = eq.nr
 rr = eq.radius
 rho = eq.functions[0]
 dlnrho = eq.functions[7]
-if rmax is None:
-    rmax = np.max(rr)
-irmax = np.argmin(np.abs(rr - rmax))
-rhotop = rho[irmax]
+if ro is None:
+    ro = np.max(rr)
+iro = np.argmin(np.abs(rr - ro))
+rhotop = rho[iro]
 shape = np.sqrt(rhotop/rho)
 
 # If hydro, better make sure whatever multiplies eta in energy/induction

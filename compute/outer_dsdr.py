@@ -42,15 +42,16 @@ for i in range(nargs):
         poly_n = float(args[i+1])
     elif arg == '-nrho':
         poly_nrho = float(args[i+1])
-    elif arg == '-file':
-        polytropic_reference = False
     elif arg == '-rhom':
         rhom = float(args[i+1])
     elif arg == '-rm':
         rm = float(args[i+1])
     elif arg == '-ro':
         ro = float(args[i+1])
+    elif arg == '-file':
+        polytropic_reference = False
     elif arg == '-fname':
+        polytropic_reference = False
         fname = args[i+1]
     elif arg == '-crb':
         polytropic_reference = False
@@ -67,7 +68,9 @@ if polytropic_reference:
     di = compute_polytrope(rm, ro, poly_nrho, nr, poly_n, rhom)
     rho = di['density']
     T = di['temperature']
-else: # get rho, T from equation_coefficients file, or reference/transport pair
+    irtop = 0
+else: # get rho, T from equation_coefficients file,\
+      # or reference/transport pair
     try:
         eq = equation_coefficients()
         if fname is None:
@@ -75,26 +78,27 @@ else: # get rho, T from equation_coefficients file, or reference/transport pair
         eq.read(dirname + '/' + fname)
         rho = eq.functions[0]
         T = eq.functions[3]
-        try:
-            kappa_top_ff = get_parameter(dirname, 'kappa_top')
-            # ff for "from file"
-        except:
-            kappa = eq.constants[5]*eq.functions[4]
-            kappa_top_ff = kappa[0]
+        kappa = eq.constants[5]*eq.functions[4]
+        rr = eq.radius
     except:
         ref = ReferenceState(dirname + '/reference')
         rho = ref.density
         T = ref.temperature
         trans = TransportCoeffs(dirname + '/transport')
-        kappa_top_ff = trans.kappa[0] # ff for "from file"
-        fname = 'reference'
+        kappa = trans.kappa
+        rr = ref.radius
+#        fname = 'reference'
+    irtop = np.argmin(np.abs(rr - ro))
 
-    if kappa_top is None:
-        kappa_top = kappa_top_ff
+if kappa_top is None:
+    try: # this will work for reading from file
+        kappa_top = kappa[irtop]
+    except: # this will work for polytropic_reference
+        kappa_top = 3.0e12
 
 # Now compute desired entropy gradient
 flux_top = lum/(4*np.pi*ro**2)
-desired_dsdr = -flux_top/rho[0]/T[0]/kappa_top
+desired_dsdr = -flux_top/rho[irtop]/T[irtop]/kappa_top
 
 print('For lum=%1.3e, ro=%1.7e, kappa_top=%1.3e' %(lum, ro, kappa_top))
 if polytropic_reference:
