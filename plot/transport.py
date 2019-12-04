@@ -13,9 +13,9 @@ sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from get_parameter import get_parameter
 
-from common import strip_dirname
+from common import strip_dirname, rsun
 from rayleigh_diagnostics import TransportCoeffs
-from common import rsun
+from reference_tools import equation_coefficients
 
 # Get the run directory on which to perform the analysis
 dirname = sys.argv[1]
@@ -33,22 +33,57 @@ if (not os.path.isdir(plotdir)):
 
 args = sys.argv[2:]
 nargs = len(args)
+fname = None
+xminmax = None
 for i in range(nargs):
     arg = args[i]
     if arg == '-log':
         ylog = True
-
-t = TransportCoeffs(dirname + '/transport', '')
-r = t.radius
-nu = t.nu
-dlnu = t.dlnu
-kappa = t.kappa
-dlnkappa = t.dlnkappa
+    elif arg == '-fname':
+        fname = args[i+1]
+    elif arg == '-crb':
+        fname = 'custom_reference_binary'
+    elif arg == '-xminmax':
+        xminmax = float(args[i+1]), float(args[i+2])
 
 magnetism = get_parameter(dirname, 'magnetism')
-if magnetism:
-    eta = t.eta
-    dlneta = t.dlneta
+
+if not fname is None:
+    print ("Getting transport coefs from ", fname)
+    eq = equation_coefficients()
+    eq.read(dirname + '/' + fname)
+    r = eq.radius
+    nu = eq.constants[4]*eq.functions[2, :]
+    dlnu = eq.functions[10, :]
+    kappa = eq.constants[5]*eq.functions[4, :]
+    dlnkappa = eq.functions[11, :]
+    if magnetism:
+        eta = eq.constants[6]*eq.functions[6, :]
+        dlneta = eq.functions[12, :]
+else:
+    try:
+        t = TransportCoeffs(dirname + '/transport', '')
+        print ("Getting transport coefs from 'transport' file")
+        r = t.radius
+        nu = t.nu
+        dlnu = t.dlnu
+        kappa = t.kappa
+        dlnkappa = t.dlnkappa
+        if magnetism:
+            eta = t.eta
+            dlneta = t.dlneta
+    except:
+        print ("Getting transport coefs from 'equation_coefficients' file")
+        eq = equation_coefficients()
+        eq.read(dirname + '/equation_coefficients')
+        r = eq.radius
+        nu = eq.constants[4]*eq.functions[2, :]
+        dlnu = eq.functions[10, :]
+        kappa = eq.constants[5]*eq.functions[4, :]
+        dlnkappa = eq.functions[11, :]
+        if magnetism:
+            eta = eq.constants[6]*eq.functions[6, :]
+            dlneta = eq.functions[12, :]
 
 if magnetism:
     figsize = 7., 10.
@@ -56,6 +91,23 @@ if magnetism:
 else:
     figsize = 7., 7.
     fig, axs = plt.subplots(2, 2, figsize=figsize, sharex=True)
+
+# If xminmax was specified only a plot a portion of the profiles
+if not xminmax is None:
+    if r[0] < r[-1]: # radii in increasing order
+        ir1 = np.argmin(np.abs(r - xminmax[0]))
+        ir2 = np.argmin(np.abs(r - xminmax[1]))
+    else: # radii in decreasing order
+        ir1 = np.argmin(np.abs(r - xminmax[1]))
+        ir2 = np.argmin(np.abs(r - xminmax[0]))
+    r = r[ir1:ir2+1]
+    nu = nu[ir1:ir2+1]
+    kappa = kappa[ir1:ir2+1]
+    dlnu = dlnu[ir1:ir2+1]
+    dlnkappa = dlnkappa[ir1:ir2+1]
+    if magnetism:
+        eta = eta[ir1:ir2+1]
+        dlneta = dlneta[ir1:ir2+1]
 
 # Plot transport coeff and log derivatives one-by-one
 lw = 1.
