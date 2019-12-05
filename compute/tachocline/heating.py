@@ -71,6 +71,7 @@ print("---------------------------------")
 print("Computed radial shape of heating for RZ-CZ, joined with tanh")
 print("rt: %1.3e cm" %rt) 
 print("delta/rsun: %.3f"  %(delta/rsun))
+print("c_10: %1.3e"  %lum)
 print("---------------------------------")
 
 # Now write to file using the equation_coefficients framework

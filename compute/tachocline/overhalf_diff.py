@@ -79,6 +79,16 @@ if not mag:
     etatop = 0.0
 
 # Now write to file using the equation_coefficients framework
+message = "Setting nu(r), kappa(r)"
+if mag:
+    message += ", eta(r)"
+message += " to vary like (rho/rhotop)^(-1/2)"
+print(message)
+print("nutop = %1.3e" %nutop)
+print("kappatop = %1.3e" %kappatop)
+if mag:
+    print("eta_top = %1.3e" %eta_top)
+
 print("Setting f_3, f_5, f_7, f_11, f_12, and f_13")
 eq.set_function(nutop*shape, 3)
 eq.set_function(kappatop*shape, 5)
