@@ -12,7 +12,7 @@ import pickle
 import sys, os
 sys.path.append(os.environ['raco'])
 from common import get_file_lists, get_widest_range_file, strip_dirname,\
-        rsun, get_dict
+        rsun, get_dict, allthrees_start
 from plotcommon import axis_range
 from get_parameter import get_parameter
 
@@ -135,7 +135,8 @@ for i in range(navg):
     Omega_av += Omega[i:niter - navg + 1 + i]
 Omega_av /= navg
 
-times_trace = times[over2:niter - over2]/Prot # time_trace is in units of
+times_trace = times[over2:niter - over2]/Prot - allthrees_start 
+# time_trace is in units of
     # Prot
 
 # Make meshgrid of time/radius
