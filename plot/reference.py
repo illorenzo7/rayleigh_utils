@@ -56,6 +56,7 @@ try:
     r = ref.radius
     T = ref.temperature
     rho = ref.density
+    p = ref.pressure
     dlnT = ref.dlnt
     dlnrho = ref.dlnrho
     s = ref.entropy
@@ -64,6 +65,7 @@ try:
     gravity = ref.gravity
     heating = ref.heating
     Q = heating*rho*T
+    print("Got thermo. vars from 'reference' file")
 except:
     eq = equation_coefficients()
     if custom_name is None:
@@ -90,6 +92,8 @@ except:
 
     # Heating
     Q = eq.constants[9]*eq.functions[5]
+
+    print("Got thermo. vars from '%s' file" %custom_name)
     
 fig, axs = plotref(r, T, rho, p, dlnT, dlnrho, s, dsdr,\
     d2lnrho, gravity, Q, color='k', xminmax=xminmax)
