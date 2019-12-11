@@ -30,9 +30,10 @@ xiter = False
 notfrom0 = False
 magnetism = False
 ylog = False
-user_specified_minmax = False
-user_specified_xminmax = False
+minmax = None
+xminmax = None
 plot_inte = False
+plot_tote = False
 
 # Get command-line arguments
 args = sys.argv[2:]
@@ -51,15 +52,13 @@ for i in range(nargs):
     elif arg == '-log':
         ylog = True
     elif arg == '-minmax':
-        user_specified_minmax = True
-        my_min = float(args[i+1])
-        my_max = float(args[i+2])
+        minmax = float(args[i+1]), float(args[i+2])
     elif arg == '-xminmax':
-        user_specified_xminmax = True
-        my_xmin = float(args[i+1])
-        my_xmax = float(args[i+2])
+        xminmax = float(args[i+1]), float(args[i+2])
     elif arg == '-inte':
         plot_inte = True
+    elif arg == '-tote':
+        plot_tote = True
 
 # Tag the plot by whether or not the x axis is in "time" or "iteration"
 if (xiter):
@@ -116,7 +115,7 @@ ftke = vals[lut[411]]
 fpke = vals[lut[412]]
 
 # Get the magnetic energies if they are available
-if (magnetism):
+if magnetism:
     me = vals[lut[1101]]
     rme = vals[lut[1102]]
     tme = vals[lut[1103]]
@@ -132,28 +131,25 @@ if (magnetism):
     ftme = vals[lut[1111]]
     fpme = vals[lut[1112]]
 
-have_thermal_energy = False
-if plot_inte:
+if plot_inte or plot_tote:
     try: # get the internal energy if it is available
         try: # First try to get it from Shell_Avgs data
-            the_file = get_widest_range_file(datadir, 'inte_from_Shell_Avgs')
+            the_file = get_widest_range_file(datadir,\
+                    'inte_from_Shell_Avgs')
             di_inte = get_dict(datadir + the_file)
             inte = di_inte['inte']
             print("Got internal energy from Shell_Avgs")
         except:
             inte = vals[lut[701]]
             print("Got internal energy from G_Avgs")
-
-        have_thermal_energy = True
-        sign = np.sign(np.mean(inte))
-        if sign == -1:
-            sign_str = 'negative'
-        else:
-            sign_str = 'positive'
-        inte = np.abs(inte)
-
     except:
-        pass
+        print ("Internal energy not available; setting to 0")
+        int_e = np.zeros_like(times)
+
+if plot_tote:
+    tote = ke + inte
+    if magnetism:
+        tote += me
 
 # Get global min/max vals
 if magnetism:
@@ -164,16 +160,20 @@ else:
     mmax = np.max(ke)
     mmin = np.min((np.min(mrke), np.min(mtke), np.min(mpke), np.min(frke), np.min(ftke), np.min(fpke)))   
 
-if have_thermal_energy:
-    mmax = max(np.max(inte), mmax)
-    mmin = min(np.min(inte), mmin)
+if plot_inte:
+    mmax = max(np.max(np.abs(inte)), mmax)
+    mmin = min(np.min(np.abs(inte)), mmin)
 
-if (not xiter):
+if plot_tote:
+    mmax = max(np.max(np.abs(tote)), mmax)
+    mmin = min(np.min(np.abs(tote)), mmin)
+
+if not xiter:
     xaxis = times/tnorm
 else:
     xaxis = iters
 
-if (notfrom0):
+if notfrom0:
     x_min = np.min(xaxis)
 else:
     x_min = 0
@@ -198,33 +198,48 @@ if magnetism:
     ax1.plot(xaxis, tme, 'g--', linewidth=lw, label=r'$\rm{ME}_\theta$')
     ax1.plot(xaxis, pme, 'b--', linewidth=lw, label=r'$\rm{ME}_\phi$')
 
-if have_thermal_energy:
+
+if plot_inte:
+    sign = np.sign(np.mean(inte))
+    if sign == -1:
+        sign_str1 = 'negative'
+    else:
+        sign_str1 = 'positive'
     ax1.plot(xaxis, np.abs(inte), 'm', linewidth=lw, label='|INT E|')
+
+if plot_tote:
+    sign = np.sign(np.mean(tote))
+    if sign == -1:
+        sign_str2 = 'negative'
+    else:
+        sign_str2 = 'positive'
+    ax1.plot(xaxis, np.abs(tote), 'c', linewidth=lw, label='|TOT E|')
 
 title = dirname_stripped + '\n ' +\
           str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8) +\
           '\ntotal energy'
-if have_thermal_energy:
-    title += ('\n' + r'$\rm{\ sign(\overline{INT\ E})\ = %s}$' %sign_str)
+if plot_inte:
+    title += ('\n' + r'$\rm{\ sign(\overline{INT\ E})\ = %s}$' %sign_str1)
+if plot_tote:
+    title += ('\n' + r'$\rm{\ sign(\overline{TOT\ E})\ = %s}$' %sign_str2)
+
 ax1.set_title(title)
 
-if not ylog:
-    ydiff = mmax - mmin
-    ybuffer = 0.05*ydiff 
-    ax1.set_ylim(mmin - ybuffer, mmax + ybuffer)
-else:
-    ax1.set_yscale('log')
-    ax1.set_ylim((mmin/3.0, mmax*3.0))
+if minmax is None:
+    if ylog:
+        minmax = mmin/3.0, mmax*3.0
+    else:
+        ydiff = mmax - mmin
+        ybuffer = 0.05*ydiff 
+        minmax = mmin - ybuffer, mmax + ybuffer
 
-if user_specified_minmax:
-    ax1.set_ylim((my_min, my_max))
+ax1.set_ylim((minmax[0], minmax[1]))
     
 # Set x limits  
-if user_specified_xminmax:
-    ax1.set_xlim((my_xmin, my_xmax))
-else:
-    ax1.set_xlim((x_min, np.max(xaxis)))
+if xminmax is None:
+    xminmax = x_min, np.max(xaxis)
 
+ax1.set_xlim((xminmax[0], xminmax[1]))
 
 # legend
 ax1.legend(ncol=2, fontsize=8)
@@ -232,6 +247,7 @@ ax1.legend(ncol=2, fontsize=8)
 # Make axes use scientific notation
 # Only x-axis if on log scale
 if ylog:
+    ax1.set_yscale('log')
     ax1.ticklabel_format(axis='x', scilimits = (-3,4), useMathText=True)
 else:
     ax1.ticklabel_format(scilimits = (-3,4), useMathText=True)
