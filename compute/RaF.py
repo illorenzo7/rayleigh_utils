@@ -14,19 +14,16 @@ sys.path.append(os.environ['raco'])
 from get_parameter import get_parameter
 from rayleigh_diagnostics import Shell_Avgs, ReferenceState, GridInfo,\
         TransportCoeffs
+from reference_tools import equation_coefficients
 
 # Get directory name
 dirname = sys.argv[1]
 
 # Read in reference state, grid info for radial weights,
 # and transport coefficients at the top of the domain
-ref = ReferenceState(dirname + '/reference')
-t = TransportCoeffs(dirname + '/transport')
 gi = GridInfo(dirname + '/grid_info')
 rw = gi.rweights
-nu_vsr = t.nu
-kappa_vsr = t.kappa
-cp = get_parameter(dirname, 'pressure_specific_heat')
+
 
 
 # Read in one Shell_Avgs file to get heat flux,
@@ -40,10 +37,32 @@ H = np.max(sh.radius) - np.min(sh.radius)
 
 # Read in necessary radial profiles for the flux Rayleigh number
 # "vsr" for "profile vs radius"
-F_vsr = sh.vals[:, 0, sh.lut[1433], 0]
-g_vsr = ref.gravity
-rho_vsr = ref.density
-T_vsr = ref.temperature
+F_rad = sh.vals[:, 0, sh.lut[1433], 0]
+# Get the luminosity from F_rad
+lum = F_rad[-1]*4*np.pi*np.min(sh.radius)**2
+print ("Luminosity calculated from F_rad is %1.3e" %lum)
+F_vsr = lum/4/np.pi/sh.radius**2 - F_rad
+
+# Get reference info from reference/transport or equation_coefficients
+cp = 3.5e8
+try:
+    ref = ReferenceState(dirname + '/reference')
+    t = TransportCoeffs(dirname + '/transport')
+    nu_vsr = t.nu
+    kappa_vsr = t.kappa
+    g_vsr = ref.gravity
+    rho_vsr = ref.density
+    T_vsr = ref.temperature
+    print ("Got reference info from 'reference'/'transport'")
+except:
+    eq = equation_coefficients()
+    eq.read(dirname + '/equation_coefficients')
+    rho_vsr = eq.functions[0]
+    T_vsr = eq.functions[3]
+    g_vsr = eq.functions[1]*cp/rho_vsr
+    nu_vsr = eq.functions[2]
+    kappa_vsr = eq.functions[4]
+    print ("Got reference info from 'equation_coefficients'")
 
 # Compute volume-averages of the radial profiles using the radial 
 # integration weights
