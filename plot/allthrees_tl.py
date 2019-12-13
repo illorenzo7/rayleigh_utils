@@ -299,15 +299,17 @@ for i in range(len(i_desiredrvals)):
     #    axs[2*irow + 1].ticklabel_format(scilimits = (-3,4), useMathText=True)
 
     # Label with saturation values
+    fs = 9
     axs[0].text(100., 75., '(a) ' + alabels[varname],\
-            va='top', ha='left')
+            va='top', ha='left', fontsize=fs)
     axs[0].text(2135., 75., r'$\pm %1.2f\ kG$' %(minmax1[1]/1000),\
-            va='top', ha='right')
-    axs[0].text(100., -75., r'$r/R_\odot = %0.3f$' %rvals_sampled[i_desiredrval],\
-            va='bottom', ha='left')
+            va='top', ha='right', fontsize=fs)
+    axs[0].text(100., -75., r'$r/R_\odot = %0.3f$'\
+            %rvals_sampled[i_desiredrval], va='bottom', ha='left',\
+            fontsize=fs)
 
     axs[1].text(100, 0.8*minmax2[1], '(b) ' + blabels[varname],\
-            va='top', ha='left')
+            va='top', ha='left', fontsize=fs)
 
     # Label the axes
     axs[2*nrows - 1].set_xlabel(r'$t\ (P_{\rm{rot}})$')
@@ -393,7 +395,7 @@ for i in range(len(i_desiredrvals)):
 
         # Put case label in upper left
         fig.text(margin_left, 1 - margin_top + 1/16/fig_height_inches,\
-                label, va='bottom', ha='left', **csfont, fontsize=8)
+                label, va='bottom', ha='left', **csfont, fontsize=fs)
 
     # Save it in the "tl[/symlog]" subdirectory of the "figure_set" directory
 
