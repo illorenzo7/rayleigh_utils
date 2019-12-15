@@ -19,7 +19,8 @@ sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
 from common import get_file_lists, rsun, get_desired_range, range_options,\
         get_dict, get_widest_range_file, sci_format, saturate_array,\
-        get_symlog_params, get_exp, append_logfile
+        get_symlog_params, get_exp, append_logfile, allthrees_start,\
+        sci_format
 from sslice_util import plot_moll, get_satvals
 from get_sslice import get_sslice
 from azav_util import plot_azav
@@ -182,7 +183,7 @@ if log_progress:
 di = get_dict(datadir + time_latitude_file)
 
 vals = di['vals']
-times = di['times']/Prot
+times = di['times']/Prot - allthrees_start
 rinds = di['rinds'] # radial locations sampled for the trace
 rvals_sampled = rr[rinds]/rsun
 ir_tl = np.argmin(np.abs(rvals_sampled - rval))
@@ -317,7 +318,7 @@ for fname in fnames:
 
     # Loop over times and make plots
     for j in range(a.niter):
-        time = a.time[j]/Prot
+        time = a.time[j]/Prot - allthrees_start
             
         # Create the plot using subplot axes
         savename = 'img' + str(count).zfill(4) + '.png'
@@ -395,11 +396,24 @@ for fname in fnames:
         # Set custom ticks, dependent on True/False-ness of symlog
         if symlog:
             title = r'$\rm{G}$'
-            cbar.set_ticks([-max_tl, -linthresh_tl, 0, linthresh_tl,\
-                    max_tl])
-            cbar.set_ticklabels([sci_format(-max_tl),\
-                    sci_format(-linthresh_tl), '0',\
-                    sci_format(linthresh_tl), sci_format(max_tl)])            
+            nlin = 5
+            nlog = 6
+            lin_ticks = np.linspace(-linthresh_tl, linthresh_tl, nlin)
+            log_ticks1 = np.linspace(min_tl, -linthresh_tl, nlog,\
+                    endpoint=False)
+            log_ticks2 = -log_ticks1[::-1]
+            ticks = np.hstack((log_ticks1, lin_ticks, log_ticks2))
+            nticks = nlin + 2*nlog
+            cbar.set_ticks(ticks)
+            ticklabels = []
+            for i in range(nticks):
+                ticklabels.append(r'')
+            ticklabels[0] = sci_format(min_tl)
+            ticklabels[nlog] = sci_format(-linthresh_tl)
+            ticklabels[nticks//2] = r'$0$'
+            ticklabels[nlog + nlin - 1] = sci_format(linthresh_tl)
+            ticklabels[nticks - 1] = sci_format(max_tl)
+            cbar.set_ticklabels(ticklabels)
         else:
             title = r'$\times10^{%i}\ \rm{G}$' %tl_exp
             cbar.set_ticks([min_tl, 0, max_tl])

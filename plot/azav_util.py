@@ -159,12 +159,24 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
                 cbar.set_ticklabels(['%1.1f' %minmax[0], '%1.1f' %minmax[1]])
             elif symlog:
                 cbar_label = units
-                cbar.set_ticks([-minmax[1], -linthresh, 0, linthresh,\
-                        minmax[1]])
-                cbar.set_ticklabels([sci_format(-minmax[1]),\
-                        sci_format(-linthresh), '0', sci_format(linthresh),\
-                        sci_format(minmax[1])])
-        #            cax.minorticks_on()
+                nlin = 5
+                nlog = 6
+                lin_ticks = np.linspace(-linthresh, linthresh, nlin)
+                log_ticks1 = np.linspace(minmax[0], -linthresh, nlog,\
+                        endpoint=False)
+                log_ticks2 = -log_ticks1[::-1]
+                ticks = np.hstack((log_ticks1, lin_ticks, log_ticks2))
+                nticks = nlin + 2*nlog
+                cbar.set_ticks(ticks)
+                ticklabels = []
+                for i in range(nticks):
+                    ticklabels.append(r'')
+                ticklabels[0] = sci_format(minmax[0])
+                ticklabels[nlog] = sci_format(-linthresh)
+                ticklabels[nticks//2] = r'$0$'
+                ticklabels[nlog + nlin - 1] = sci_format(linthresh)
+                ticklabels[nticks - 1] = sci_format(minmax[1])
+                cbar.set_ticklabels(ticklabels)
             else:
                 cbar_label = (r'$\times10^{%i}\ $' %exp) + units
                 cbar.set_ticks([minmax[0], 0, minmax[1]])
