@@ -284,7 +284,7 @@ for i in range(len(i_desiredrvals)):
 
         # Label y-axis
         label_fs = 7
-        axs[2*irow].set_ylabel(r'$\rm{latitude\ (^\circ)}$',\
+        axs[2*irow].set_ylabel(r'$\rm{latitude\ (deg)}$',\
                 fontsize=label_fs)
 #        axs[2*irow + 1].set_ylabel(r'$\rm{[10^{%i}\ erg\ cm^{-3}]}$'\
         axs[2*irow + 1].set_ylabel(r'$\rm{[\times10^{%i}\ cgs]}$'\
@@ -345,9 +345,9 @@ for i in range(len(i_desiredrvals)):
             dirname_stripped == 'dyn_nkeom3.0-alldata':
          # Mark region in blow-up with vertical dashed lines
         lw = 0.7
-        axs[2].plot(3150 + np.zeros(100), np.linspace(-90, 90, 100),\
+        axs[2].plot(2900. + np.zeros(100), np.linspace(-90, 90, 100),\
                 'k--', linewidth=lw)
-        axs[2].plot(3450 + np.zeros(100), np.linspace(-90, 90, 100),\
+        axs[2].plot(3200. + np.zeros(100), np.linspace(-90, 90, 100),\
                 'k--', linewidth=lw)
       
     # Set up the colorbar
