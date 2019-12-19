@@ -345,9 +345,9 @@ for i in range(len(i_desiredrvals)):
             dirname_stripped == 'dyn_nkeom3.0-alldata':
          # Mark region in blow-up with vertical dashed lines
         lw = 0.7
-        axs[2].plot(2900. + np.zeros(100), np.linspace(-90, 90, 100),\
+        axs[2].plot(3000. + np.zeros(100), np.linspace(-90, 90, 100),\
                 'k--', linewidth=lw)
-        axs[2].plot(3200. + np.zeros(100), np.linspace(-90, 90, 100),\
+        axs[2].plot(3300. + np.zeros(100), np.linspace(-90, 90, 100),\
                 'k--', linewidth=lw)
       
     # Set up the colorbar
