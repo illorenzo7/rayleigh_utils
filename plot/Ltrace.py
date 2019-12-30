@@ -6,9 +6,13 @@ import matplotlib.pyplot as plt
 import pickle
 import numpy as np
 import sys, os
+sys.path.append(os.environ['raco'])
+sys.path.append(os.environ['rapp'])
 from subprocess import call
 from common import get_file_lists, get_widest_range_file, strip_dirname, get_dict
 from get_parameter import get_parameter
+from reference_tools import equation_coefficients
+from rayleigh_diagnostics import ReferenceState
 
 # Get the run directory on which to perform the analysis
 dirname = sys.argv[1]
@@ -82,7 +86,14 @@ if rotation:
     Prot = 2*np.pi/angular_velocity
     tnorm = Prot # normalize the time axis by rotation period if applicable
 else:
-    ktop = get_parameter(dirname, 'kappa_top')
+    try:
+        trans = TransportCoeffs(dirname + '/reference', '')
+        ktop = trans.kappa[0]
+    except:
+        eq = equation_coefficients()
+        eq.read(dirname + '/equation_coefficients')
+        ktop = eq.functions[4][0]
+#    ktop = get_parameter(dirname, 'kappa_top')
     try:
         rmin = get_parameter(dirname, 'rmin')
         rmax = get_parameter(dirname, 'rmax')
@@ -91,7 +102,7 @@ else:
         rmin = np.min(domain_bounds)
         rmax = np.max(domain_bounds)
     depth = rmax - rmin
-    tdt = d**2/ktop
+    tdt = depth**2/ktop
     tnorm = tdt
 
 # Get the first and last indices in the time direction, depending on 
