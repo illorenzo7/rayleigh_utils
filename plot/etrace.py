@@ -13,7 +13,7 @@ from common import get_file_lists, get_widest_range_file, strip_dirname,\
         get_dict
 from get_parameter import get_parameter
 from reference_tools import equation_coefficients
-from rayleigh_diagnostics import ReferenceState
+from rayleigh_diagnostics import ReferenceState, GridInfo
 
 # Get the run directory on which to perform the analysis
 dirname = sys.argv[1]
@@ -230,9 +230,22 @@ title = dirname_stripped + '\n ' +\
           str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8) +\
           '\ntotal energy'
 if plot_inte:
-    title += ('\n' + r'$\rm{\ sign(\overline{INT\ E})\ = %s}$' %sign_str1)
+    # Compute change in energy over time, to add to label
+    gi = GridInfo(dirname + '/grid_info')
+    ri, ro = np.min(gi.radius), np.max(gi.radius)
+    shell_volume = 4/3*np.pi*(ro**3 - ri**3)
+    dE = (inte[-1] - inte[0])*shell_volume
+    dt = times[-1] - times[0]
+    title += (('\n' + r'$\rm{\ sign(\overline{INT\ E})\ = %s}$' + '\n' +\
+            r'$\rm{\Delta E/\Delta t = %1.3e\ cgs}$') %(sign_str1, dE/dt))
 if plot_tote:
-    title += ('\n' + r'$\rm{\ sign(\overline{TOT\ E})\ = %s}$' %sign_str2)
+    gi = GridInfo(dirname + '/grid_info')
+    ri, ro = np.min(gi.radius), np.max(gi.radius)
+    shell_volume = 4/3*np.pi*(ro**3 - ri**3)
+    dE = (tote[-1] - tote[0])*shell_volume
+    dt = times[-1] - times[0]
+    title += (('\n' + r'$\rm{\ sign(\overline{TOT\ E})\ = %s}$' + '\n' +\
+            r'$\rm{\Delta E/\Delta t = %1.3e\ cgs}$') %(sign_str2, dE/dt))
 
 ax1.set_title(title)
 
