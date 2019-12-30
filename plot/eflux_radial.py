@@ -160,7 +160,11 @@ if rnorm is None:
 else:
     rr_n = rr/rnorm                                           
 
-lstar = get_parameter(dirname, 'luminosity')
+# Make lstar = lsun unless otherwise specified in main_input
+try:
+    lstar = get_parameter(dirname, 'luminosity')
+except:
+    lstar = 3.845e33
 
 plt.plot(rr_n, hflux_int/lstar, label=r'$\rm{F}_{heat}$', linewidth=lw)
 plt.plot(rr_n, eflux_int/lstar, 'm', label = r'$\rm{F}_{enth}$',\
