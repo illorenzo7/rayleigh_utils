@@ -22,14 +22,22 @@ from azav_util import plot_azav, streamfunction
 from common import get_widest_range_file, strip_dirname, get_dict,\
         trim_field
 from rayleigh_diagnostics import ReferenceState
+from reference_tools import equation_coefficients
 
 # Get directory name and stripped_dirname for plotting purposes
 dirname = sys.argv[1]
 dirname_stripped = strip_dirname(dirname)
 
 # Get density
-ref = ReferenceState(dirname + '/reference', '')
-rho = ref.density
+try:
+    ref = ReferenceState(dirname + '/reference', '')
+    rho = ref.density
+    print ("Got density from 'reference' file")
+except:
+    eq = equation_coefficients()
+    eq.read(dirname + '/equation_coefficients')
+    rho = eq.functions[0]
+    print ("Got density from 'equation_coefficients' file")
 
 # Directory with data and plots, make the plotting directory if it doesn't
 # already exist    
