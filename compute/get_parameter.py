@@ -1,5 +1,7 @@
-import sys
+import sys, os
+sys.path.append(os.environ['rapp'])
 from string_to_num import string_to_number_or_array
+from reference_tools import equation_coefficients
 
 def get_parameter(dirname, parameter):
     f = open(dirname + '/main_input')
@@ -17,6 +19,15 @@ def get_parameter(dirname, parameter):
 #        print('exiting ...')
         if parameter == 'magnetism' or parameter == 'use_extrema':
             return False # if magnetism wasn't specified, it is "False"
+        elif parameter == 'angular_velocity':
+            try: 
+                eq = equation_coefficients()
+                eq.read(dirname + '/equation_coefficients')
+                return eq.constants[0]/2.0
+            except:
+                raise Exception('The parameter ' + parameter + ' was not\n' +\
+                                'specified in run: ' + dirname + '. \n' +\
+                                'exiting ....\n')
         else:
             raise Exception('The parameter ' + parameter + ' was not\n' +\
                             'specified in run: ' + dirname + '. \n' +\
