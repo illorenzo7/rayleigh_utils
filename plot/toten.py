@@ -43,15 +43,17 @@ showplot = True
 saveplot = True
 plotcontours = False
 minmax = None
+minmax2 = None
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
 
 args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
-    if (arg == '-minmax'):
-        my_boundstype = 'manual'
+    if arg == '-minmax': 
         minmax = float(args[i+1]), float(args[i+2])
+    elif arg == '-minmax2': 
+        minmax2 = float(args[i+1]), float(args[i+2])
     elif arg == '-noshow':
         showplot = False
     elif arg == '-nosave':
@@ -116,6 +118,8 @@ work_rad = vals[:, :, lut[1434]] # Q(r)
 
 work_visc_on_KE = vals[:, :, lut[1907]]
 work_visc_on_intE = vals[:, :, lut[1435]] # (irreversible) viscous heating
+print ("visc on KE: ", np.std(work_visc_on_KE))
+print ("visc on intE: ", np.std(work_visc_on_intE))
 work_visc = work_visc_on_KE + work_visc_on_intE
 
 vr = vals[:, :, lut[1]]
@@ -146,6 +150,13 @@ work_tot_r = work_KE_r + work_enth_r + work_cond_r + work_rad_r +\
         work_visc_r + work_dsdr_r + work_dsdr_negligible_r
 
 ri, ro = np.min(rr), np.max(rr)
+integrated_KE = fourpi/3*(ro**3 - ri**3)*np.sum(work_KE_r*rw)
+integrated_enth = fourpi/3*(ro**3 - ri**3)*np.sum(work_enth_r*rw)
+integrated_cond = fourpi/3*(ro**3 - ri**3)*np.sum(work_cond_r*rw)
+integrated_rad = fourpi/3*(ro**3 - ri**3)*np.sum(work_rad_r*rw)
+integrated_visc = fourpi/3*(ro**3 - ri**3)*np.sum(work_visc_r*rw)
+integrated_dsdr = fourpi/3*(ro**3 - ri**3)*np.sum(work_dsdr_r*rw)
+integrated_dsdr_negligible = fourpi/3*(ro**3 - ri**3)*np.sum(work_dsdr_negligible_r*rw)
 integrated_total = fourpi/3*(ro**3 - ri**3)*np.sum(work_tot_r*rw)
 
 #max_sig = max(np.std(torque_rs), np.std(torque_mc), np.std(torque_visc))
@@ -232,11 +243,22 @@ ax_r.plot(rr/rsun, work_tot_r, label='tot', linewidth=lw)
 ax_r.set_xlabel(r'$r/R_\odot$')
 ax_r.set_ylabel("spherically avg'd terms")
 ax_r.set_xlim((ri/rsun, ro/rsun))
+if not minmax2 is None:
+    ax_r.set_ylim((minmax2[0], minmax2[1]))
 
 leg = ax_r.legend(loc = (-0.4, 0), fontsize=7)
 
-# Output total rate of change of energy
-fig.text(0.75, 0.1, 'total rate of change = \n%1.3e erg/s' %integrated_total)
+# Output total rates of change of energy due to various terms
+fs = 6
+offset = 0.03
+fig.text(0.75, margin_bottom + 0*offset, 'total dE/dt = %1.3e erg/s' %integrated_total, fontsize=fs)
+fig.text(0.75, margin_bottom + 1*offset, 'dsdr (small) dE/dt = %1.3e erg/s' %integrated_dsdr_negligible, fontsize=fs)
+fig.text(0.75, margin_bottom + 2*offset, 'dsdr dE/dt = %1.3e erg/s' %integrated_dsdr, fontsize=fs)
+fig.text(0.75, margin_bottom + 3*offset, 'visc dE/dt = %1.3e erg/s' %integrated_visc, fontsize=fs)
+fig.text(0.75, margin_bottom + 4*offset, 'rad dE/dt = %1.3e erg/s' %integrated_rad, fontsize=fs)
+fig.text(0.75, margin_bottom + 5*offset, 'cond dE/dt = %1.3e erg/s' %integrated_cond, fontsize=fs)
+fig.text(0.75, margin_bottom + 6*offset, 'enth dE/dt = %1.3e erg/s' %integrated_enth, fontsize=fs)
+fig.text(0.75, margin_bottom + 7*offset, 'KE dE/dt = %1.3e erg/s' %integrated_KE, fontsize=fs)
 
 # Get ticks everywhere
 plt.sca(ax_r)
