@@ -1,29 +1,53 @@
 # Author: Loren Matilsky
 # Created: 05/01/2019
+# Modified to work with new cref framework: 10/20/2019
+#
 # Purpose: generate a binary file (for Rayleigh to read) that contains
 # a reference state, consisting of a stable region (stiffness k) underlying 
 # a neutrally stable CZ
 
 # Parameters: output_dir (first argument), 
+# Command-line options:
+#
+# -ri, -rm, -ro
 # Inner, outer, and transition radii (default ri = 3.4139791e10, 
 # rm = 5e10, ro = 6.5860209e10...for CZ corresponding to 3 density
 # scale heights )
-# nr1 (number of Chebyshevs to use for CZ, -nr1) default 96
-# nr2 (number of Chebyshevs to use for RZ, -nr2) default 64
-# Density at transition boundary (-rhom) default 0.18053428
-# Temperature at transition boundary (-tm) default 2.111256e6
-# Stiffness k (-k) default 2
-# Transition width delta (-delta) (as a fraction of rm) default 0.005
-# gamma (-gam) default 5/3
-# pressure specific heat cp (-cp) default 3.5e8
-# central mass (-M) default M_sun
+#
+# -rhom
+# Density at transition boundary default 0.18053428
+#
+# -tm
+# Temperature at transition boundary default 2.111256e6
+#
+# -k
+# Stiffness k, default 2
+# 
+# -delta
+# Transition width delta as a fraction of rsun, default 0.005
+#
+# -gam
+# specific heat ratio gamma, default 5/3
+#
+# -cp
+# pressure specific heat cp, default 3.5e8
+#
+# -M
+# central mass M, default M_sun
+#
+# -mag
+# Whether magnetism is True or False, default False (hydro)
 
 import numpy as np
 import sys, os
 from arbitrary_atmosphere import arbitrary_atmosphere
-sys.path.append(os.environ['co'])
-from write_reference import write_reference
 
+sys.path.append(os.environ['rapp'])
+sys.path.append(os.environ['raco'])
+sys.path.append(os.environ['raco'] + '/tachocline')
+
+from reference_tools import equation_coefficients
+from common import rsun
 import basic_constants as bc
 
 # Set default constants
@@ -37,11 +61,12 @@ pm = bc.pm
 rhom = bc.rhom
 gam = bc.gamma
 k = 2.0
-delta = 0.005*ro
-nr = 5000 # make the grid super-fine by default
+delta = 0.005*rsun
+mag = False
 
-# Get directory to save binary files for reference state and heating
+# Get directory to save binary files for reference
 dirname = sys.argv[1]
+fname = 'custom_reference_binary'
 
 args = sys.argv[2:]
 nargs = len(args)
@@ -62,23 +87,24 @@ for i in range(nargs):
     elif arg == '-k':
         k = float(args[i+1])  
     elif arg == '-delta':
-        delta = float(args[i+1])*ro
+        delta = float(args[i+1])*rsun
     elif arg == '-gam':
         gam = float(args[i+1]) 
     elif arg == '-cp':
         cp = float(args[i+1]) 
     elif arg == '-M':
         M = float(args[i+1])  
-    elif arg == '-nr':
-        nr = int(args[i+1])
+    elif arg == '-fname':
+        fname = args[i+1]
+    elif arg == '-mag':
+        mag = True
 
-        
-# First, compute reference state on evenly spaced grid, possibly letting
-# Rayleigh interpolate later    
+# First, compute reference state on super-fine grid to interpolate onto later    
+nr = 5000
 rr = np.linspace(ro, ri, nr)
 
-# Define an entropy profile that is +1 for r < rm, 0 for r > rm, and 
-# continuously differentiable (a quartic) in between
+# Define an entropy profile that is +1 for r < rm - delta, 0 for r > rm,
+# and continuously differentiable (a quartic) in between
 
 s = np.zeros(nr)
 dsdr = np.zeros(nr)
@@ -100,6 +126,7 @@ for i in range(nr):
         dsdr[i] = 0.0
         d2sdr2[i] = 0.0
 
+# Make gravity due to a point mass at the origin
 g = bc.G*bc.M/rr**2
 dgdr = -2.0*g/rr
 
@@ -107,25 +134,51 @@ T, rho, p, dlnT, dlnrho, dlnp, d2lnrho =\
     arbitrary_atmosphere(rr, s, dsdr, d2sdr2, g,\
                          dgdr, rm, Tm, pm, cp, gam)
 
-thefile = dirname + '/custom_reference_binary'
+print("---------------------------------")
+print("Computed atmosphere for RZ-CZ, ds/dr joined with a quartic")
+print("rm: %1.3e cm" %rm) 
+print("delta/rsun: %.3f"  %(delta/rsun))
+print("---------------------------------")
 
-write_reference(thefile, rr, rho, dlnrho, d2lnrho, p, T, dlnT, dsdr, s, g)
+# Now write to file using the equation_coefficients framework
+eq = equation_coefficients(rr)
 
-##f = open(thefile, "wb")
+# Set only the thermodynamic functions/constants in this routine
+# In other routines, we can set the heating and transport coefficients
+# Only set c_4 = 1/(4*pi) if mag = True
 
-#may need to specify the data type for a successful read on Rayleigh's end
-#sigpi = np.array(314, dtype=np.int32)
-#nr = np.array(nr, dtype=np.int32)
-#f.write(sigpi.tobytes())
-#f.write(nr.tobytes())
-#f.write(rr[::-1].tobytes())
-#f.write(rho[::-1].tobytes())
-#f.write(dlnrho[::-1].tobytes())
-#f.write(d2lnrho[::-1].tobytes())
-#f.write(p[::-1].tobytes())
-#f.write(T[::-1].tobytes())
-#f.write(dlnT[::-1].tobytes())
-#f.write(dsdr[::-1].tobytes())
-#f.write(s[::-1].tobytes())
-#f.write(g[::-1].tobytes())
-#f.close()
+print("Setting f_1, f_2, f_4, f_8, f_9, f_10, and f_14")
+eq.set_function(rho, 1)
+buoy = rho*g/cp
+eq.set_function(buoy, 2)
+eq.set_function(T, 4)
+eq.set_function(dlnrho, 8)
+eq.set_function(d2lnrho, 9)
+eq.set_function(dlnT, 10)
+eq.set_function(dsdr, 14)
+
+print("Setting c_2 and c_3")
+if mag:
+    print("magnetism = True, so setting c_4 = 1/(4*pi)")
+    eq.set_constant(1.0/4.0/np.pi, 4) # multiplies Lorentz force
+else:
+    print("magnetism = False, so setting c_4 = 0.0")
+    eq.set_constant(0.0, 4) # multiplies Lorentz force
+
+eq.set_constant(1.0, 2) # multiplies buoyancy
+eq.set_constant(1.0, 3) # multiplies pressure grad.
+
+# Will need to figure out how to deal with c_1 (supposed to be 2 x angular velocity, i.e., the Coriolis coefficient. Hopefully we don't need c_1 in the
+# custom reference framework and will just specify angular_velocity
+# If this doesn't work, will need to use override_constants framework
+
+# c_10 will be set in the "generate heating" scripts
+
+# The "generate transport" scripts will set the transport
+# "radial shapes", and the constants c_5, c_6, c_7, c_8, and c_9
+
+the_file = dirname + '/' + fname
+
+print("Writing the atmosphere to %s" %the_file)
+print("---------------------------------")
+eq.write(the_file)
