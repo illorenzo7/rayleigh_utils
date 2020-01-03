@@ -108,7 +108,13 @@ else:
     tnorm = tdt
 
 # Make appropriate file name to save
-savename = dirname_stripped + '_etrace_' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + tag + '.png'
+basename = '_etrace_'
+if plot_inte:
+    basename += 'inte_'
+if plot_tote:
+    basename += 'tote_'
+
+savename = dirname_stripped + basename + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + tag + '.png'
 
 ke = vals[lut[401]]
 rke = vals[lut[402]]
