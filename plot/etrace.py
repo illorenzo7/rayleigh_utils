@@ -38,6 +38,7 @@ minmax = None
 xminmax = None
 plot_inte = False
 plot_tote = False
+savename = None
 
 # Get command-line arguments
 args = sys.argv[2:]
@@ -63,6 +64,8 @@ for i in range(nargs):
         plot_inte = True
     elif arg == '-tote':
         plot_tote = True
+    elif arg == '-name':
+        savename = args[i+1] + '.png'
 
 # Tag the plot by whether or not the x axis is in "time" or "iteration"
 if (xiter):
@@ -114,39 +117,57 @@ if plot_inte:
 if plot_tote:
     basename += 'tote_'
 
-savename = dirname_stripped + basename + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + tag + '.png'
+if savename is None:
+    savename = dirname_stripped + basename + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + tag + '.png'
 
-ke = vals[lut[401]]
-rke = vals[lut[402]]
-tke = vals[lut[403]]
-pke = vals[lut[404]]
+# Take slices based on what xminmax is
+if not xiter:
+    xaxis = times/tnorm
+else:
+    xaxis = iters
 
-mke = vals[lut[405]]
-mrke = vals[lut[406]]
-mtke = vals[lut[407]]
-mpke = vals[lut[408]]
+if notfrom0:
+    x_min = np.min(xaxis)
+else:
+    x_min = 0
 
-fke = vals[lut[409]]
-frke = vals[lut[410]]
-ftke = vals[lut[411]]
-fpke = vals[lut[412]]
+if xminmax is None:
+    xminmax = x_min, np.max(xaxis)
+
+ix_min = np.argmin(np.abs(xaxis - xminmax[0]))
+ix_max = np.argmin(np.abs(xaxis - xminmax[1]))
+
+ke = vals[lut[401]][ix_min:ix_max + 1]
+rke = vals[lut[402]][ix_min:ix_max + 1]
+tke = vals[lut[403]][ix_min:ix_max + 1]
+pke = vals[lut[404]][ix_min:ix_max + 1]
+
+mke = vals[lut[405]][ix_min:ix_max + 1]
+mrke = vals[lut[406]][ix_min:ix_max + 1]
+mtke = vals[lut[407]][ix_min:ix_max + 1]
+mpke = vals[lut[408]][ix_min:ix_max + 1]
+
+fke = vals[lut[409]][ix_min:ix_max + 1]
+frke = vals[lut[410]][ix_min:ix_max + 1]
+ftke = vals[lut[411]][ix_min:ix_max + 1]
+fpke = vals[lut[412]][ix_min:ix_max + 1]
 
 # Get the magnetic energies if they are available
 if magnetism:
-    me = vals[lut[1101]]
-    rme = vals[lut[1102]]
-    tme = vals[lut[1103]]
-    pme = vals[lut[1104]]
+    me = vals[lut[1101]][ix_min:ix_max + 1]
+    rme = vals[lut[1102]][ix_min:ix_max + 1]
+    tme = vals[lut[1103]][ix_min:ix_max + 1]
+    pme = vals[lut[1104]][ix_min:ix_max + 1]
 
-    mme = vals[lut[1105]]
-    mrme = vals[lut[1106]]
-    mtme = vals[lut[1107]]
-    mpme = vals[lut[1108]]
+    mme = vals[lut[1105]][ix_min:ix_max + 1]
+    mrme = vals[lut[1106]][ix_min:ix_max + 1]
+    mtme = vals[lut[1107]][ix_min:ix_max + 1]
+    mpme = vals[lut[1108]][ix_min:ix_max + 1]
 
-    fme = vals[lut[1109]]
-    frme = vals[lut[1110]]
-    ftme = vals[lut[1111]]
-    fpme = vals[lut[1112]]
+    fme = vals[lut[1109]][ix_min:ix_max + 1]
+    frme = vals[lut[1110]][ix_min:ix_max + 1]
+    ftme = vals[lut[1111]][ix_min:ix_max + 1]
+    fpme = vals[lut[1112]][ix_min:ix_max + 1]
 
 if plot_inte or plot_tote:
     try: # get the internal energy if it is available
@@ -154,14 +175,14 @@ if plot_inte or plot_tote:
             the_file = get_widest_range_file(datadir,\
                     'inte_from_Shell_Avgs')
             di_inte = get_dict(datadir + the_file)
-            inte = di_inte['inte']
+            inte = di_inte['inte'][ix_min:ix_max + 1]
             print("Got internal energy from Shell_Avgs")
         except:
-            inte = vals[lut[701]]
+            inte = vals[lut[701]][ix_min:ix_max + 1]
             print("Got internal energy from G_Avgs")
     except:
         print ("Internal energy not available; setting to 0")
-        int_e = np.zeros_like(times)
+        int_e = np.zeros_like(times[ix_min:ix_max + 1])
 
 if plot_tote:
     tote = ke + inte
@@ -185,16 +206,6 @@ if plot_tote:
     mmax = max(np.max(tote), mmax)
     mmin = min(np.min(tote), mmin)
 
-if not xiter:
-    xaxis = times/tnorm
-else:
-    xaxis = iters
-
-if notfrom0:
-    x_min = np.min(xaxis)
-else:
-    x_min = 0
-
 # create figure with  3 panels in a row (total, mean and fluctuating energy)
 fig, axs = plt.subplots(3, 1, figsize=(5, 10), sharex=True, sharey=True)
 ax1 = axs[0]; ax2 = axs[1]; ax3 = axs[2]
@@ -203,6 +214,7 @@ ax1 = axs[0]; ax2 = axs[1]; ax3 = axs[2]
 lw = 0.5
 
 # first plot: total kinetic energy trace      
+xaxis = xaxis[ix_min:ix_max + 1]
 ax1.plot(xaxis, ke, 'k', linewidth=lw, label=r'$\rm{KE_{tot}}$')
 ax1.plot(xaxis, rke, 'r', linewidth=lw, label=r'$\rm{KE}_r$')
 ax1.plot(xaxis, tke, 'g', linewidth=lw, label=r'$\rm{KE}_\theta$')
@@ -253,13 +265,9 @@ if minmax is None:
         ybuffer = 0.05*ydiff 
         minmax = mmin - ybuffer, mmax + ybuffer
 
-ax1.set_ylim((minmax[0], minmax[1]))
-    
-# Set x limits 
-if xminmax is None:
-    xminmax = x_min, np.max(xaxis)
-
+#  set axis limits
 ax1.set_xlim((xminmax[0], xminmax[1]))
+ax1.set_ylim((minmax[0], minmax[1]))
 
 # legend
 ax1.legend(ncol=2, fontsize=8)
