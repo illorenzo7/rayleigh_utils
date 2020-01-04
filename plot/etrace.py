@@ -178,12 +178,12 @@ else:
     mmin = np.min((np.min(mrke), np.min(mtke), np.min(mpke), np.min(frke), np.min(ftke), np.min(fpke)))   
 
 if plot_inte:
-    mmax = max(np.max(np.abs(inte)), mmax)
-    mmin = min(np.min(np.abs(inte)), mmin)
+    mmax = max(np.max(inte), mmax)
+    mmin = min(np.min(inte), mmin)
 
 if plot_tote:
-    mmax = max(np.max(np.abs(tote)), mmax)
-    mmin = min(np.min(np.abs(tote)), mmin)
+    mmax = max(np.max(tote), mmax)
+    mmin = min(np.min(tote), mmin)
 
 if not xiter:
     xaxis = times/tnorm
@@ -217,20 +217,10 @@ if magnetism:
 
 
 if plot_inte:
-    sign = np.sign(np.mean(inte))
-    if sign == -1:
-        sign_str1 = 'negative'
-    else:
-        sign_str1 = 'positive'
-    ax1.plot(xaxis, np.abs(inte), 'm', linewidth=lw, label='|INT E|')
+    ax1.plot(xaxis, inte, 'm', linewidth=lw, label='INT E')
 
 if plot_tote:
-    sign = np.sign(np.mean(tote))
-    if sign == -1:
-        sign_str2 = 'negative'
-    else:
-        sign_str2 = 'positive'
-    ax1.plot(xaxis, np.abs(tote), 'c', linewidth=lw, label='|TOT E|')
+    ax1.plot(xaxis, tote, 'c', linewidth=lw, label='TOT E')
 
 title = dirname_stripped + '\n ' +\
           str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8) +\
@@ -242,16 +232,16 @@ if plot_inte:
     shell_volume = 4/3*np.pi*(ro**3 - ri**3)
     dE = (inte[-1] - inte[0])*shell_volume
     dt = times[-1] - times[0]
-    title += (('\n' + r'$\rm{\ sign(\overline{INT\ E})\ = %s}$' + '\n' +\
-            r'$\rm{\Delta E/\Delta t = %1.3e\ cgs}$') %(sign_str1, dE/dt))
+    title += (('\nINT E: ' + r'$\rm{\Delta E/\Delta t = %1.3e\ cgs}$')\
+            %(dE/dt))
 if plot_tote:
     gi = GridInfo(dirname + '/grid_info')
     ri, ro = np.min(gi.radius), np.max(gi.radius)
     shell_volume = 4/3*np.pi*(ro**3 - ri**3)
     dE = (tote[-1] - tote[0])*shell_volume
     dt = times[-1] - times[0]
-    title += (('\n' + r'$\rm{\ sign(\overline{TOT\ E})\ = %s}$' + '\n' +\
-            r'$\rm{\Delta E/\Delta t = %1.3e\ cgs}$') %(sign_str2, dE/dt))
+    title += (('\nTOT E: ' + r'$\rm{\Delta E/\Delta t = %1.3e\ cgs}$')\
+            %(dE/dt))
 
 ax1.set_title(title)
 
@@ -265,7 +255,7 @@ if minmax is None:
 
 ax1.set_ylim((minmax[0], minmax[1]))
     
-# Set x limits  
+# Set x limits 
 if xminmax is None:
     xminmax = x_min, np.max(xaxis)
 
