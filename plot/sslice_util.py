@@ -356,7 +356,7 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
 def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
         clon=0., posdef=False, logscale=False, symlog=False, varname='vr',\
         lw_scaling=1., plot_cbar=True, cbar_fs=10, linscale=None,\
-        linthresh=None): 
+        linthresh=None, units=None): 
     
     if 'sq' in varname or logscale:
         posdef = True
@@ -530,18 +530,24 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
         cax = fig.add_axes((cbar_left, cbar_bottom, cbar_width, cbar_height))        
         cbar = plt.colorbar(im, cax=cax, orientation='horizontal')
         
-        # make a "title" (label "m/s" to the right of the colorbar)
+        # make a "title" (label "m/s" to the right of the colorbar by default)
+        # If user wants to manually specify units (instead of getting them
+        # from the variable name), change that now
+        if units is None:
+            base_units = texunits[varname]
+        else:
+            base_units = units
         if logscale:
             locator = ticker.LogLocator(subs='all')
             cbar.set_ticks(locator)
-            cbar_units = ' ' + texunits[varname]
+            cbar_units = ' ' + base_units
         elif posdef:
             cbar_units = ' ' + (r'$\times10^{%i}$' %maxabs_exp) + ' ' +\
                 texunits[varname]
             cbar.set_ticks([minmax[0], minmax[1]])
             cbar.set_ticklabels(['%1.1f' %minmax[0], '%1.1f' %minmax[1]])
         elif symlog:
-            cbar_units = ' ' + texunits[varname]
+            cbar_units = ' ' + base_units
             nlin = 5
             nlog = 6
             lin_ticks = np.linspace(-linthresh, linthresh, nlin)
@@ -562,10 +568,11 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
             cbar.set_ticklabels(ticklabels)
         else:
             cbar_units = ' ' + (r'$\times10^{%i}$' %maxabs_exp) +\
-                    ' ' + texunits[varname]
+                    ' ' + base_units
             cbar.set_ticks([minmax[0], 0, minmax[1]])
             cbar.set_ticklabels(['%1.1f' %minmax[0], '0', '%1.1f'\
                     %minmax[1]])
+
         # Title the colorbar based on the field's units
         fig.text(cbar_left + cbar_width, cbar_bottom + 0.5*cbar_height,\
                  cbar_units, verticalalignment='center', **csfont,\

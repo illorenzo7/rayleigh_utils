@@ -1135,7 +1135,7 @@ def get_sslice(a, varname, dirname=None, old=False):
             poly_gamma = 5./3.
         t_prime_slice = ref_temp*(p_prime_slice/ref_p*(1. - 1./poly_gamma) + s_prime_slice/cp)          
         sslice = vr_prime_slice*t_prime_slice          
-    elif (varname == 'vtt'):       
+    elif varname == 'vtt':       
         ind_vt, ind_s, ind_p = a.lut[qind_vt], a.lut[qind_s], a.lut[qind_p]
         vt_slice = vals[:, :, :, ind_vt]
         s_slice = vals[:, :, :, ind_s] 
