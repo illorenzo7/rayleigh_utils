@@ -12,7 +12,7 @@ from common import get_file_lists, strip_dirname, rsun, get_desired_range,\
 from plotcommon import axis_range
 from sslice_util import plot_moll
 from get_sslice import get_sslice
-from rayleigh_diagnostics import Shell_Slices, ReferenceState
+from rayleigh_diagnostics import Shell_Slices, GridInfo
 from varprops import texlabels
 
 # Get command line arguments
@@ -26,11 +26,11 @@ file_list, int_file_list, nfiles = get_file_lists(radatadir)
 args = sys.argv[2:]
 nargs = len(args)
 
-if '-n' in args or '-range' in args or '-centerrange' in args \
-    or '-all' in args or '-iter' in args:        
-    index_first, index_last = get_desired_range(int_file_list, args)
-else:  # By default plot the last 10 Shell_Slices
+the_tuple = get_desired_range(int_file_list, args)
+if the_tuple is None: # By default plot the last 10 Shell_Slices
     index_first, index_last = nfiles - 11, nfiles - 1  
+else:
+    index_first, index_last = the_tuple
 
 # Other defaults
 ir = 0 # by default plot just below the surface
@@ -52,9 +52,9 @@ for i in range(nargs):
     elif arg == '-var':
         varname = args[i+1]
 
-# We need the radius, which we can get from the reference state
-ref = ReferenceState(dirname + '/reference', '')
-radius = ref.radius
+# We need the radius, which we can get from grid_info
+gi = GridInfo(dirname + '/grid_info', '')
+radius = gi.radius
 
 # Create the plot template
 fig_width_inches = 12.
