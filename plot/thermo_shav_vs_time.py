@@ -27,7 +27,7 @@ dirname_stripped = strip_dirname(dirname)
 
 # Directory with data and plots, make the plotting directory if it doesn't
 # already exist    
-plotdir = dirname + '/plots/vamp_vs_time/'
+plotdir = dirname + '/plots/thermo_shav_vs_time/'
 if not os.path.isdir(plotdir):
     os.makedirs(plotdir)
 radatadir = dirname + '/Shell_Avgs/'
@@ -77,6 +77,22 @@ d = ro - ri
 rr_height = (rr - ri)/d
 rr_depth = (ro - rr)/d
 
+# Read reference state
+prs_spec_heat = 3.5e8
+try:
+    ref = ReferenceState(dirname + '/reference', '')
+    ref_rho = ref.density
+    ref_prs = ref.pressure
+    ref_temp = ref.temperature
+except:
+    eq = equation_coefficients()
+    eq.read(dirname + '/equation_coefficients')
+    ref_rho = eq.functions[0]
+    ref_temp = eq.functions[3]
+    gam = 5.0/3.0
+    gas_R = (gam - 1.0)/gam*prs_spec_heat
+    ref_prs = gas_R*ref_rho*ref_temp
+
 # User can specify what to normalize the radius by
 # By default, normalize by the solar radius
 if rnorm is None:
@@ -100,31 +116,29 @@ for i in range(index_first, index_last + 1):
     for j in range(local_ntimes):
         iter_loc = sh.iters[j]
 
-        # Convective velocity amplitudes...
-        vsq_r, vsq_t, vsq_p = vals[:, 0, lut[422], j],\
-                vals[:, 0, lut[423], j],\
-                vals[:, 0, lut[424], j] 
-        vsq = vsq_r + vsq_t + vsq_p
+        # Thermal deviations
+        entropy = vals[:, 0, lut[501], j]/prs_spec_heat
+        prs = vals[:, 0, lut[502], j]/ref_prs
+        # Calculate temp. from EOS
+        poly_n = 1.5
+        temp = prs/(poly_n + 1.) + entropy
 
-        amp_v = np.sqrt(vsq)/100.
-        amp_vr = np.sqrt(vsq_r)/100.
-        amp_vt = np.sqrt(vsq_t)/100.
-        amp_vp = np.sqrt(vsq_p)/100.
+        # Calculate  density from Ideal Gas Law
+        rho = prs - temp
 
         # Create the plot
         fig = plt.figure()
         ax = fig.add_subplot(111)
 
-        # Get extrema values for diff. rot.
-        maxes = [] # Get the max-value of Omega for plotting purposes
-        mins = []  # ditto for the min-value
-                                                       
-
-        # Plot Re vs radius
-        ax.plot(rr_n, amp_v, label= r'$(v^\prime)_{\rm{rms}}$')
-        ax.plot(rr_n, amp_vr, label= r'$(v^\prime_r)_{\rm{rms}}$')
-        ax.plot(rr_n, amp_vt, label = r'$(v^\prime_\theta)_{\rm{rms}}$')
-        ax.plot(rr_n, amp_vp, label = r'$(v^\prime_\phi)_{\rm{rms}}$')
+        # Plot thermal deviations vs radius
+        ax.plot(rr_n, entropy,\
+                label=r'$\langle S\rangle_{\rm{sph}}/c_{\rm{p}}$')
+        ax.plot(rr_n, prs,\
+                label=r'$\langle P\rangle_{\rm{sph}}/\overline{P}$')
+        ax.plot(rr_n, temp,\
+                label=r'$\langle T\rangle_{\rm{sph}}/\overline{T}$')
+        ax.plot(rr_n, rho,\
+                label=r'$\langle \rho\rangle_{\rm{sph}}/\overline{\rho}$')
 
         # Label the axes
         if rnorm is None:
@@ -132,7 +146,7 @@ for i in range(index_first, index_last + 1):
         else:
             plt.xlabel(r'r/(%.1e cm)' %rnorm, fontsize=12, **csfont)
 
-        plt.ylabel('velocity (m/s)',fontsize=12,\
+        plt.ylabel('thermal deviation',fontsize=12,\
                 **csfont)
 
         # Set the axis limits
@@ -141,29 +155,29 @@ for i in range(index_first, index_last + 1):
 
         # Compute maximum/minimum Reynolds numbers (ignore the upper/lower 5%
         # of the shell to avoid extreme values associated with boundaries
-        ir1, ir2 = np.argmin(np.abs(rr_depth - 0.05)),\
-                np.argmin(np.abs(rr_depth - 0.95))
-        amp_min = min(np.min(amp_vr[ir1:ir2]), np.min(amp_vt[ir1:ir2]),\
-                np.min(amp_vp[ir1:ir2]))
-        amp_max = np.max(amp_v[ir1:ir2])
+#        ir1, ir2 = np.argmin(np.abs(rr_depth - 0.05)),\
+#                np.argmin(np.abs(rr_depth - 0.95))
+#        amp_min = min(np.min(amp_vr[ir1:ir2]), np.min(amp_vt[ir1:ir2]),\
+#                np.min(amp_vp[ir1:ir2]))
+#        amp_max = np.max(amp_v[ir1:ir2])
 
-        if minmax is None:
-            if logscale:
-                ratio = amp_max/amp_min
-                ybuffer = 0.2*ratio
-                ymin = amp_min/ybuffer
-                ymax = amp_max*ybuffer
-            else:
-                difference = amp_max - amp_min
-                ybuffer = 0.2*difference
-                ymin, ymax = amp_min - ybuffer, amp_max + ybuffer
-        else:
-            ymin, ymax = minmax
+#        if minmax is None:
+#            if logscale:
+#                ratio = amp_max/amp_min
+#                ybuffer = 0.2*ratio
+#                ymin = amp_min/ybuffer
+#                ymax = amp_max*ybuffer
+#            else:
+#                difference = amp_max - amp_min
+#                ybuffer = 0.2*difference
+#                ymin, ymax = amp_min - ybuffer, amp_max + ybuffer
+#        else:
+#            ymin, ymax = minmax
 
-        plt.ylim((ymin, ymax))
-        if logscale:
-            plt.yscale('log')
-
+#        plt.ylim((ymin, ymax))
+#        if logscale:
+#            plt.yscale('log')
+        ymin, :
         xvals = np.linspace(xmin, xmax, 100)
         yvals = np.linspace(ymin, ymax, 100)
 
