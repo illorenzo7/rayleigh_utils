@@ -8,11 +8,11 @@
 ! velocities [r --> phi], vorticities [r --> phi], pressure, t-var, magnetic fields [r --> phi] !
 !
 ! Shell slices/spectra and equatorial/meridional/3D cuts: velocities, vorticities, t-var, pressure, maybe B field
-shellslice_level_nrm = 0.01, 0.025, 0.05, 0.075, 0.1, 0.125, 0.15, 0.175, 0.19, 0.24, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.96
+shellslice_levels_nrm = 0.01, 0.025, 0.05, 0.075, 0.1, 0.125, 0.15, 0.175, 0.19, 0.24, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.96
 shellslice_values    = 1,2,3, 301,302,303, 501,502
 shellslice_frequency = 2500
 shellslice_nrec      = 1
-shellspectra_level_nrm = 0.01, 0.025, 0.05, 0.075, 0.1, 0.125, 0.15, 0.175, 0.19, 0.24, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.96
+shellspectra_levels_nrm = 0.01, 0.025, 0.05, 0.075, 0.1, 0.125, 0.15, 0.175, 0.19, 0.24, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.96
 shellspectra_values    = 1,2,3, 301,302,303, 501,502
 shellspectra_frequency = 2500
 shellspectra_nrec      = 1
