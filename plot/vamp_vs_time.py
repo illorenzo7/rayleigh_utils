@@ -27,9 +27,6 @@ dirname_stripped = strip_dirname(dirname)
 
 # Directory with data and plots, make the plotting directory if it doesn't
 # already exist    
-plotdir = dirname + '/plots/vamp_vs_time/'
-if not os.path.isdir(plotdir):
-    os.makedirs(plotdir)
 radatadir = dirname + '/Shell_Avgs/'
 
 # Set defaults
@@ -65,6 +62,14 @@ for i in range(nargs):
         rvals = []
         for rval_str in rvals_str:
             rvals.append(float(rval_str))
+
+# Make plot directory
+if logscale:
+    plotdir = dirname + '/plots/vamp_vs_time_log/'
+else:
+    plotdir = dirname + '/plots/vamp_vs_time/'
+if not os.path.isdir(plotdir):
+    os.makedirs(plotdir)
 
 # Read in vavg data from Shell_Avgs
 sh0 = Shell_Avgs(radatadir + file_list[index_first], '')
