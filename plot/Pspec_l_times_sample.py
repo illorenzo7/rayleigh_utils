@@ -1,0 +1,191 @@
+# Author: Loren Matilsky
+# Created: 01/30/2020
+# This script generates powerspectra (amplitude-squared power vs spherical-
+# harmonic-degree l) for m = 0, m != 0, and total for a given variable at a
+# a given radius, from the Shell_Spectra data
+# Plots the last 10 Shell_Spectra (by default) at an instant, saving the 
+# plots in directory
+# plots/Pspec_l_vs_time/
+
+import matplotlib as mpl
+mpl.use('TkAgg')
+import matplotlib.pyplot as plt
+plt.rcParams['mathtext.fontset'] = 'dejavuserif'
+csfont = {'fontname':'DejaVu Serif'}
+import numpy as np
+import sys, os
+sys.path.append(os.environ['raco'])
+sys.path.append(os.environ['rapp'])
+from varprops import texunits, texlabels, var_indices
+from common import get_file_lists, get_desired_range, rsun
+from rayleigh_diagnostics import Shell_Spectra
+from get_parameter import get_parameter
+
+# Get directory name and stripped_dirname for plotting purposes
+dirname = sys.argv[1]
+
+# Data with Shell_Spectra
+radatadir = dirname + '/Shell_Spectra/'
+
+# Set defaults
+ir = 0 # by default plot just below the surface
+rval = None # can also find ir by finding the closest point
+            # to a local radius divided by rsun
+varname = 'vr'
+logscale = True
+minmax = None
+
+# Get all the file names in datadir and their integer counterparts
+file_list, int_file_list, nfiles = get_file_lists(radatadir)
+
+# Read in CLAs
+args = sys.argv[2:]
+nargs = len(args)
+
+the_tuple = get_desired_range(int_file_list, args)
+if the_tuple is None: # By default average over the last 10 files
+    index_first, index_last = nfiles - 11, nfiles - 1  
+else:
+    index_first, index_last = the_tuple
+
+# Change the defaults using the CLAs
+for i in range(nargs):
+    arg = args[i]
+    if arg == '-var':
+        varname = args[i+1]
+    elif arg == '-ir':
+        ir = int(args[i+1])
+    elif arg == '-rval':
+        rval = float(args[i+1])
+    elif arg == '-minmax':
+        minmax = float(args[i+1]), float(args[i+2])
+    elif arg == '-nolog':
+        logscale = False
+    elif arg == '-show':
+        showplot = True
+
+# directory for plots (depends on whether logscale = True, so do this after
+# command-line-arguments are read
+if logscale:
+    plotdir = dirname + '/plots/Pspec_l/times_sample/'
+else:
+    plotdir = dirname + '/plots/Pspec_l/times_sample_notlog/'
+
+if not os.path.isdir(plotdir):
+    os.makedirs(plotdir)
+
+# Read in Pspec data, use first file for grid stuff
+spec0 = Shell_Spectra(radatadir + file_list[index_first], '')
+rvals = spec0.radius/rsun
+qv = spec0.qv
+nr = spec0.nr
+nell = spec0.nell
+lvals = np.arange(nell + 0.)
+
+# Plotting loop
+print ('Plotting Shell_Spectra files %s through %s ...'\
+       %(file_list[index_first], file_list[index_last]))
+
+for i in range(index_first, index_last + 1):
+    fname = file_list[i]
+    if i == index_first:
+        spec = spec0
+    else:   
+        spec = Shell_Spectra(radatadir + fname, '')
+
+    # Get the l power (various units)
+    # take square root, so has same unit as variable itself
+    lpower = np.sqrt(spec.lpower[:, :, :, 0, :])
+    # Here is where we would make a time loop if multiple Shell Spectra
+    # are stored in a file (nrec > 1)
+    if varname in ['vr', 'vt', 'vp', 'vtot']: # convert to m/s
+        lpower /= 100.
+
+    # Find desired radius (by default ir=0--near outer surface)
+    if not rval is None:
+        ir = np.argmin(np.abs(spec.radius/rsun - rval))
+    rval = spec.radius[ir]/rsun 
+    # in any case, this is the actual rvalue we get
+
+    # Get power associated with desired quantity 
+    # (should really have a contigency
+    # where the routine exits if the desired quantity isn't present)
+    if (varname == 'vtot' or varname == 'btot' or varname == 'omtot'):
+        if varname == 'vtot':
+            qv_vals = [1, 2, 3]
+            varlabel = r'$|\mathbf{v}|$'
+            units = r'$\rm{m}\ \rm{s}^{-1}$'
+        elif varname == 'omtot':
+            qv_vals = [501, 502, 503]
+            varlabel = r'$|\mathbf{\omega}|$'
+            units = r'$\rm{s^{-1}}$'
+        elif varname == 'btot':
+            qv_vals = [801, 802, 803]
+            varlabel = r'$|\mathbf{B}|$'
+            units = r'$\rm{G}$'
+        field_lpower = np.sqrt(lpower[:, ir, spec.lut[qv_vals[0]], :]**2.\
+                + lpower[:, ir, spec.lut[qv_vals[1]], :]**2. +\
+                lpower[:, ir, spec.lut[qv_vals[2]], :]**2.)
+    else:
+        field_lpower = lpower[:, ir, spec.lut[var_indices[varname]], :]
+        varlabel = texlabels[varname]
+        units = texunits[varname] 
+
+    # Get saturation values if not specified--avoid the two extreme 
+    # l-values in calculation
+    if minmax is None:
+        lpower_cut = field_lpower[1:-1, :]
+        if logscale:
+            yminmax = np.min(lpower_cut)/3., np.max(lpower_cut)*3.
+        else:
+            yminmax = 0., np.max(lpower_cut)*1.1
+    else:
+        yminmax = minmax
+
+    # Make the savename like for Mollweide times sample
+    savename = 'Pspec_l_' + varname + ('_rval%0.3f' %rval) + '_iter' +\
+            fname + '.png'
+    print('Plotting: ' + savename)
+
+    # Get the tot, m=0, and m!=0 power
+    lpower_tot = field_lpower[:, 0]
+    lpower_m0 = field_lpower[:, 1]
+    lpower_mnot0 = field_lpower[:, 2]
+
+    if logscale:
+        plt.loglog(lvals, lpower_tot, label='tot')
+        plt.loglog(lvals, lpower_m0, label='m = 0')
+        plt.loglog(lvals, lpower_mnot0, label='|m| > 0')
+    else:
+        plt.plot(lvals, lpower_tot, label='tot')
+        plt.plot(lvals, lpower_m0, label='m = 0')
+        plt.plot(lvals, lpower_mnot0, label='|m| > 0')
+
+    # set bounds
+    plt.xlim(1, nell - 1)
+    plt.ylim(yminmax[0], yminmax[1])
+
+    # make legend
+    plt.legend()
+
+    # label axes
+    plt.xlabel('l-value')
+    plt.ylabel(r'$\sqrt{P_l}$' + ' (' + units + ')')
+
+    # Get ticks everywhere
+    plt.minorticks_on()
+    plt.tick_params(top=True, right=True, direction='in', which='both')
+
+    # Make title
+    # Compute l_rms
+    l_rms = np.sum(lpower_mnot0**2*lvals)/np.sum(lpower_mnot0**2)
+
+    title = varlabel + '     ' + (r'$r/R_\odot\ =\ %0.3f$' %rval) +\
+            '     ' + (r'$l_{\rm{rms},\ m\neq0} = %.1f$' %l_rms) +\
+            '\n' + fname
+    plt.title(title)
+
+    # Final commands
+    plt.tight_layout()
+    plt.savefig(plotdir + savename, dpi=300)
+    plt.close()
