@@ -31,7 +31,7 @@ def compute_tdt(dirname, mag=False):
         else:
             diff = trans.kappa
         rr = trans.radius
-        print ("Got diffusion time from 'transport' file")
+        print ("compute_tdt(): Got diffusion time from 'transport' file")
     except:
         eq = equation_coefficients()
         eq.read(dirname + '/equation_coefficients')
@@ -40,7 +40,7 @@ def compute_tdt(dirname, mag=False):
         else:
             diff = eq.constants[5]*eq.functions[4]
         rr = eq.radius
-        print ("Got diffusion time from 'equation_coefficients' file")
+        print ("compute_tdt(): Got diffusion time from 'equation_coefficients' file")
 
     # Compute and return the diffusion time
     diff_top = diff[0]
@@ -50,10 +50,10 @@ def compute_tdt(dirname, mag=False):
 def compute_Prot(dirname):
     try:
         Om0 = get_parameter(dirname, 'angular_velocity')
-        print ("Got Prot from 'main_input' file")
+        print ("compute_Prot(): Got Prot from 'main_input' file")
     except:
         eq = equation_coefficients()
         eq.read(dirname + '/equation_coefficients')
         Om0 = eq.constants[0]/2.
-        print ("Got Prot from 'equation_coefficients' file")
+        print ("compute_Prot(): Got Prot from 'equation_coefficients' file")
     return 2*np.pi/Om0

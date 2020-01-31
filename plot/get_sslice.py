@@ -15,9 +15,9 @@ from get_parameter import get_parameter
 from rayleigh_diagnostics import ReferenceState
 from reference_tools import equation_coefficients
 
-def get_sslice(a, varname, dirname=None, old=False):
+def get_sslice(a, varname, dirname=None, old=False, j=0):
     # Given a shell_slice (nphi, ntheta, nr, nq, nt), return the shell slice
-    # (nphi, ntheta, nr) associated with [varname] (use it = 0)
+    # (nphi, ntheta, nr) associated with [varname] (take the jth slice (default j=0))
     # for "primed" variables, the script will need shell and/or azimuthal averages
     # to be pre-computed, or will throw an error, so provide "dirname" where these
     # averages are located

@@ -17,13 +17,14 @@ import sys, os
 sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
 from varprops import texunits, texlabels, var_indices
-from common import get_file_lists, get_desired_range, rsun
+from common import get_file_lists, get_desired_range, rsun, strip_dirname
 from rayleigh_diagnostics import Shell_Spectra
 from get_parameter import get_parameter
 from time_scales import compute_Prot, compute_tdt
 
 # Get directory name and stripped_dirname for plotting purposes
 dirname = sys.argv[1]
+dirname_stripped = strip_dirname(dirname)
 
 # Data with Shell_Spectra
 radatadir = dirname + '/Shell_Spectra/'
@@ -106,6 +107,7 @@ for i in range(index_first, index_last + 1):
     for j in range(spec.niter):
         # Get local time (in seconds)
         t_loc = spec.time[j]
+        iter_loc = spec.iters[j]
 
         # Get the l power (various units)
         # take square root, so has same unit as variable itself
@@ -157,7 +159,7 @@ for i in range(index_first, index_last + 1):
 
         # Make the savename like for Mollweide times sample
         savename = 'Pspec_l_' + varname + ('_rval%0.3f' %rval) + '_iter' +\
-                fname + '.png'
+                str(iter_loc).zfill(8) + '.png'
         print('Plotting: ' + savename)
 
         # Get the tot, m=0, and m!=0 power
@@ -202,7 +204,8 @@ for i in range(index_first, index_last + 1):
                     ' (1 ' + time_label + (' = %.1f days)'\
                     %(time_unit/86400.))
 
-        title = r'$\rm{Pspec\ vs.\ \ell}$' + '     '  + time_string +\
+        title = dirname_stripped +\
+            '\n' + r'$\rm{Pspec\ vs.\ \ell}$' + '     '  + time_string +\
             '\n' + varlabel + '     ' + (r'$r/R_\odot\ =\ %0.3f$' %rval) +\
                 '     ' + (r'$\ell_{\rm{rms},\ m\neq0} = %.1f$' %l_rms)
         plt.title(title, **csfont)
