@@ -20,6 +20,7 @@ from varprops import texunits, texlabels, var_indices
 from common import get_file_lists, get_desired_range, rsun
 from rayleigh_diagnostics import Shell_Spectra
 from get_parameter import get_parameter
+from time_scales import compute_Prot, compute_tdt
 
 # Get directory name and stripped_dirname for plotting purposes
 dirname = sys.argv[1]
@@ -64,6 +65,15 @@ for i in range(nargs):
     elif arg == '-show':
         showplot = True
 
+# Get the baseline time unit
+rotation = get_parameter(dirname, 'rotation')
+if rotation:
+    time_unit = compute_Prot(dirname)
+    time_label = r'$\rm{P_{rot}}$'
+else:
+    time_unit = compute_tdt(dirname)
+    time_label = r'$\rm{TDT}$'
+
 # directory for plots (depends on whether logscale = True, so do this after
 # command-line-arguments are read
 if logscale:
@@ -93,99 +103,111 @@ for i in range(index_first, index_last + 1):
     else:   
         spec = Shell_Spectra(radatadir + fname, '')
 
-    # Get the l power (various units)
-    # take square root, so has same unit as variable itself
-    lpower = np.sqrt(spec.lpower[:, :, :, 0, :])
-    # Here is where we would make a time loop if multiple Shell Spectra
-    # are stored in a file (nrec > 1)
-    if varname in ['vr', 'vt', 'vp', 'vtot']: # convert to m/s
-        lpower /= 100.
+    for j in range(spec.niter):
+        # Get local time (in seconds)
+        t_loc = spec.time[j]
 
-    # Find desired radius (by default ir=0--near outer surface)
-    if not rval is None:
-        ir = np.argmin(np.abs(spec.radius/rsun - rval))
-    rval = spec.radius[ir]/rsun 
-    # in any case, this is the actual rvalue we get
+        # Get the l power (various units)
+        # take square root, so has same unit as variable itself
+        lpower = np.sqrt(spec.lpower[:, :, :, j, :])
+        if varname in ['vr', 'vt', 'vp', 'vtot']: # convert to m/s
+            lpower /= 100.
 
-    # Get power associated with desired quantity 
-    # (should really have a contigency
-    # where the routine exits if the desired quantity isn't present)
-    if (varname == 'vtot' or varname == 'btot' or varname == 'omtot'):
-        if varname == 'vtot':
-            qv_vals = [1, 2, 3]
-            varlabel = r'$|\mathbf{v}|$'
-            units = r'$\rm{m}\ \rm{s}^{-1}$'
-        elif varname == 'omtot':
-            qv_vals = [501, 502, 503]
-            varlabel = r'$|\mathbf{\omega}|$'
-            units = r'$\rm{s^{-1}}$'
-        elif varname == 'btot':
-            qv_vals = [801, 802, 803]
-            varlabel = r'$|\mathbf{B}|$'
-            units = r'$\rm{G}$'
-        field_lpower = np.sqrt(lpower[:, ir, spec.lut[qv_vals[0]], :]**2.\
-                + lpower[:, ir, spec.lut[qv_vals[1]], :]**2. +\
-                lpower[:, ir, spec.lut[qv_vals[2]], :]**2.)
-    else:
-        field_lpower = lpower[:, ir, spec.lut[var_indices[varname]], :]
-        varlabel = texlabels[varname]
-        units = texunits[varname] 
+        # Find desired radius (by default ir=0--near outer surface)
+        if not rval is None:
+            ir = np.argmin(np.abs(spec.radius/rsun - rval))
+        rval = spec.radius[ir]/rsun 
+        # in any case, this is the actual rvalue we get
 
-    # Get saturation values if not specified--avoid the two extreme 
-    # l-values in calculation
-    if minmax is None:
-        lpower_cut = field_lpower[1:-1, :]
-        if logscale:
-            yminmax = np.min(lpower_cut)/3., np.max(lpower_cut)*3.
+        # Get power associated with desired quantity 
+        # (should really have a contigency
+        # where the routine exits if the desired quantity isn't present)
+        if (varname == 'vtot' or varname == 'btot' or varname == 'omtot'):
+            if varname == 'vtot':
+                qv_vals = [1, 2, 3]
+                varlabel = r'$|\mathbf{v}|$'
+                units = r'$\rm{m}\ \rm{s}^{-1}$'
+            elif varname == 'omtot':
+                qv_vals = [301, 302, 303]
+                varlabel = r'$|\mathbf{\omega}|$'
+                units = r'$\rm{s^{-1}}$'
+            elif varname == 'btot':
+                qv_vals = [801, 802, 803]
+                varlabel = r'$|\mathbf{B}|$'
+                units = r'$\rm{G}$'
+            field_lpower = np.sqrt(lpower[:, ir,\
+                    spec.lut[qv_vals[0]], :]**2. +\
+                    lpower[:, ir, spec.lut[qv_vals[1]], :]**2. +\
+                    lpower[:, ir, spec.lut[qv_vals[2]], :]**2.)
         else:
-            yminmax = 0., np.max(lpower_cut)*1.1
-    else:
-        yminmax = minmax
+            field_lpower = lpower[:, ir, spec.lut[var_indices[varname]], :]
+            varlabel = texlabels[varname]
+            units = texunits[varname] 
 
-    # Make the savename like for Mollweide times sample
-    savename = 'Pspec_l_' + varname + ('_rval%0.3f' %rval) + '_iter' +\
-            fname + '.png'
-    print('Plotting: ' + savename)
+        # Get saturation values if not specified--avoid the two extreme 
+        # l-values in calculation
+        if minmax is None:
+            lpower_cut = field_lpower[1:-1, :]
+            if logscale:
+                yminmax = np.min(lpower_cut)/3., np.max(lpower_cut)*3.
+            else:
+                yminmax = 0., np.max(lpower_cut)*1.1
+        else:
+            yminmax = minmax
 
-    # Get the tot, m=0, and m!=0 power
-    lpower_tot = field_lpower[:, 0]
-    lpower_m0 = field_lpower[:, 1]
-    lpower_mnot0 = field_lpower[:, 2]
+        # Make the savename like for Mollweide times sample
+        savename = 'Pspec_l_' + varname + ('_rval%0.3f' %rval) + '_iter' +\
+                fname + '.png'
+        print('Plotting: ' + savename)
 
-    if logscale:
-        plt.loglog(lvals, lpower_tot, label='tot')
-        plt.loglog(lvals, lpower_m0, label='m = 0')
-        plt.loglog(lvals, lpower_mnot0, label='|m| > 0')
-    else:
-        plt.plot(lvals, lpower_tot, label='tot')
-        plt.plot(lvals, lpower_m0, label='m = 0')
-        plt.plot(lvals, lpower_mnot0, label='|m| > 0')
+        # Get the tot, m=0, and m!=0 power
+        lpower_tot = field_lpower[:, 0]
+        lpower_m0 = field_lpower[:, 1]
+        lpower_mnot0 = field_lpower[:, 2]
 
-    # set bounds
-    plt.xlim(1, nell - 1)
-    plt.ylim(yminmax[0], yminmax[1])
+        if logscale:
+            plt.loglog(lvals, lpower_tot, label=r'$\rm{tot}$')
+            plt.loglog(lvals, lpower_m0, label=r'$\rm{m = 0}$')
+            plt.loglog(lvals, lpower_mnot0, label=r'$\rm{|m| > 0}$')
+        else:
+            plt.plot(lvals, lpower_tot, label=r'$\rm{tot}$')
+            plt.plot(lvals, lpower_m0, label=r'$\rm{m = 0}$')
+            plt.plot(lvals, lpower_mnot0, label=r'$\rm{|m| > 0}$')
 
-    # make legend
-    plt.legend()
+        # set bounds
+        plt.xlim(1, nell - 1)
+        plt.ylim(yminmax[0], yminmax[1])
 
-    # label axes
-    plt.xlabel('l-value')
-    plt.ylabel(r'$\sqrt{P_l}$' + ' (' + units + ')')
+        # make legend
+        plt.legend()
 
-    # Get ticks everywhere
-    plt.minorticks_on()
-    plt.tick_params(top=True, right=True, direction='in', which='both')
+        # label axes
+        plt.xlabel(r'$\ell$')
+        plt.ylabel(r'$\sqrt{P_\ell}$' + ' (' + units + ')')
 
-    # Make title
-    # Compute l_rms
-    l_rms = np.sum(lpower_mnot0**2*lvals)/np.sum(lpower_mnot0**2)
+        # Get ticks everywhere
+        plt.minorticks_on()
+        plt.tick_params(top=True, right=True, direction='in', which='both')
 
-    title = varlabel + '     ' + (r'$r/R_\odot\ =\ %0.3f$' %rval) +\
-            '     ' + (r'$l_{\rm{rms},\ m\neq0} = %.1f$' %l_rms) +\
-            '\n' + fname
-    plt.title(title)
+        # Make title
+        # Compute l_rms
+        l_rms = np.sum(lpower_mnot0**2*lvals)/np.sum(lpower_mnot0**2)
 
-    # Final commands
-    plt.tight_layout()
-    plt.savefig(plotdir + savename, dpi=300)
-    plt.close()
+        if rotation:
+            time_string = ('t = %.1f ' %(t_loc/time_unit)) + time_label +\
+                    ' (1 ' + time_label + (' = %.2f days)'\
+                    %(time_unit/86400.))
+        else:
+            time_string = ('t = %.3f ' %(t_loc/time_unit)) + time_label +\
+                    ' (1 ' + time_label + (' = %.1f days)'\
+                    %(time_unit/86400.))
+
+        title = r'$\rm{Pspec\ vs.\ \ell}$' + '     '  + time_string +\
+            '\n' + varlabel + '     ' + (r'$r/R_\odot\ =\ %0.3f$' %rval) +\
+                '     ' + (r'$\ell_{\rm{rms},\ m\neq0} = %.1f$' %l_rms)
+        plt.title(title, **csfont)
+
+        # Final commands
+        plt.tight_layout()
+        plt.savefig(plotdir + savename, dpi=300)
+        plt.close()

@@ -7,13 +7,13 @@ import numpy as np
 import sys, os
 sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
-from common import get_file_lists, strip_dirname, rsun, get_desired_range,\
-        allthrees_start
+from common import get_file_lists, strip_dirname, rsun, get_desired_range
 from plotcommon import axis_range
 from sslice_util import plot_moll
 from get_sslice import get_sslice
 from rayleigh_diagnostics import Shell_Slices, GridInfo
 from varprops import texlabels
+from tdt import tdt
 
 # Get command line arguments
 dirname = sys.argv[1]
@@ -117,7 +117,7 @@ for iiter in range(index_first, index_last + 1):
     
     varlabel = texlabels[varname]
     prot = 2*np.pi/8.61e-6
-    t_loc = a.time[0]/prot - allthrees_start
+    t_loc = a.time[0]/prot
     title = varlabel + '     ' + (r'$r/R_\odot\ =\ %0.3f$' %rval) +\
             '     ' + ('iter = ' + fname) + '\t' +\
             (r'$t = %.1f\ P_{\rm{rot}}$' %t_loc)
