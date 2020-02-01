@@ -5,7 +5,7 @@
 # (use a range specified at the command line)
 # to investigate why stuff blows up
 # Saves plots as
-# plots/vamp_vs_time/[iter].png
+# plots/vamp_times_sample/[iter].png
 
 # Import relevant modules
 import numpy as np
@@ -15,18 +15,20 @@ import matplotlib.pyplot as plt
 plt.rcParams['mathtext.fontset'] = 'dejavuserif'
 csfont = {'fontname':'DejaVu Serif'}
 import sys, os
+sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
 from rayleigh_diagnostics import Shell_Avgs
 from common import strip_dirname, get_widest_range_file,\
         get_iters_from_file, get_dict, rsun, get_file_lists,\
         get_desired_range
+from get_parameter import get_parameter
+from time_scales import compute_Prot, compute_tdt
 
 # Get directory name and stripped_dirname for plotting purposes
 dirname = sys.argv[1]
 dirname_stripped = strip_dirname(dirname)
 
-# Directory with data and plots, make the plotting directory if it doesn't
-# already exist    
+# Directory with Shell_Avgs
 radatadir = dirname + '/Shell_Avgs/'
 
 # Set defaults
@@ -42,11 +44,11 @@ file_list, int_file_list, nfiles = get_file_lists(radatadir)
 args = sys.argv[2:]
 nargs = len(args)
 
-if nargs == 0:
+the_tuple = get_desired_range(int_file_list, args)
+if the_tuple is None: # By default average over the last 10 files
     index_first, index_last = nfiles - 11, nfiles - 1  
-    # By default average over the last 10 files
 else:
-    index_first, index_last = get_desired_range(int_file_list, args)
+    index_first, index_last = the_tuple
 
 # Change defaults
 for i in range(nargs):
@@ -63,11 +65,20 @@ for i in range(nargs):
         for rval_str in rvals_str:
             rvals.append(float(rval_str))
 
+# Get the baseline time unit
+rotation = get_parameter(dirname, 'rotation')
+if rotation:
+    time_unit = compute_Prot(dirname)
+    time_label = r'$\rm{P_{rot}}$'
+else:
+    time_unit = compute_tdt(dirname)
+    time_label = r'$\rm{TDT}$'
+
 # Make plot directory
 if logscale:
-    plotdir = dirname + '/plots/vamp_vs_time_log/'
+    plotdir = dirname + '/plots/vamp_times_sample_log/'
 else:
-    plotdir = dirname + '/plots/vamp_vs_time/'
+    plotdir = dirname + '/plots/vamp_times_sample/'
 if not os.path.isdir(plotdir):
     os.makedirs(plotdir)
 
@@ -90,9 +101,9 @@ else:
     rr_n = rr/rnorm                                           
 
 # Plotting loop
-print ('Plotting Shell_Avgs files %s through %s ...'\
+print ('Plotting Shell_Avgs files %s through %s'\
        %(file_list[index_first], file_list[index_last]))
-
+print('Saving plots to '  + plotdir)
 for i in range(index_first, index_last + 1):
     if i == index_first:
         sh = sh0
@@ -104,6 +115,11 @@ for i in range(index_first, index_last + 1):
     lut = sh.lut
     for j in range(local_ntimes):
         iter_loc = sh.iters[j]
+        t_loc = sh.time[j]
+
+        # Make the savename like for Mollweide times sample
+        savename = 'vamp_iter' + str(iter_loc).zfill(8) + '.png'
+        print('Plotting: ' + savename)
 
         # Convective velocity amplitudes...
         vsq_r, vsq_t, vsq_p = vals[:, 0, lut[422], j],\
@@ -144,7 +160,8 @@ for i in range(index_first, index_last + 1):
         xmin, xmax = np.min(rr_n), np.max(rr_n)
         plt.xlim((xmin, xmax))
 
-        # Compute maximum/minimum Reynolds numbers (ignore the upper/lower 5%
+        # Compute maximum/minimum Reynolds numbers 
+        # (ignore the upper/lower 5%
         # of the shell to avoid extreme values associated with boundaries
         ir1, ir2 = np.argmin(np.abs(rr_depth - 0.05)),\
                 np.argmin(np.abs(rr_depth - 0.95))
@@ -155,19 +172,20 @@ for i in range(index_first, index_last + 1):
         if minmax is None:
             if logscale:
                 ratio = amp_max/amp_min
-                ybuffer = 0.2*ratio
+                ybuffer = ratio**0.2
                 ymin = amp_min/ybuffer
                 ymax = amp_max*ybuffer
             else:
                 difference = amp_max - amp_min
                 ybuffer = 0.2*difference
-                ymin, ymax = amp_min - ybuffer, amp_max + ybuffer
+                ymin, ymax = 0., amp_max + ybuffer
         else:
             ymin, ymax = minmax
 
-        plt.ylim((ymin, ymax))
         if logscale:
             plt.yscale('log')
+
+        plt.ylim((ymin, ymax))
 
         xvals = np.linspace(xmin, xmax, 100)
         yvals = np.linspace(ymin, ymax, 100)
@@ -181,9 +199,21 @@ for i in range(index_first, index_last + 1):
                     rval_n = rval/rnorm
                 plt.plot(rval_n + np.zeros(100), yvals, 'k--')
 
+        # Make title
+        if rotation:
+            time_string = ('t = %.1f ' %(t_loc/time_unit)) + time_label +\
+                    ' (1 ' + time_label + (' = %.2f days)'\
+                    %(time_unit/86400.))
+        else:
+            time_string = ('t = %.3f ' %(t_loc/time_unit)) + time_label +\
+                    ' (1 ' + time_label + (' = %.1f days)'\
+                    %(time_unit/86400.))
+
         # Create a title    
-        plt.title(dirname_stripped + '\n' +'Velocity Amplitudes, ' +\
-                  str(iter_loc).zfill(8))
+        title = dirname_stripped + '\n' +'Velocity Amplitudes' +\
+                '     ' + time_string
+
+        plt.title(title, **csfont)
         plt.legend()
 
         # Get ticks everywhere
@@ -191,7 +221,6 @@ for i in range(index_first, index_last + 1):
         plt.tick_params(top=True, right=True, direction='in', which='both')
         plt.tight_layout()
 
-        savefile = plotdir + str(iter_loc).zfill(8) + '.png'
-        print('Saving plot at ' + savefile + ' ...')
+        savefile = plotdir + savename
         plt.savefig(savefile, dpi=300)
         plt.close()

@@ -26,7 +26,7 @@ from time_scales import compute_Prot, compute_tdt
 dirname = sys.argv[1]
 dirname_stripped = strip_dirname(dirname)
 
-# Data with Shell_Spectra
+# Directory with Shell_Spectra
 radatadir = dirname + '/Shell_Spectra/'
 
 # Set defaults
@@ -96,6 +96,7 @@ lvals = np.arange(nell + 0.)
 # Plotting loop
 print ('Plotting Shell_Spectra files %s through %s ...'\
        %(file_list[index_first], file_list[index_last]))
+print('Saving plots to '  + plotdir)
 
 for i in range(index_first, index_last + 1):
     fname = file_list[i]
@@ -150,12 +151,18 @@ for i in range(index_first, index_last + 1):
         # l-values in calculation
         if minmax is None:
             lpower_cut = field_lpower[1:-1, :]
+            amp_min, amp_max = np.min(lpower_cut), np.max(lpower_cut)
             if logscale:
-                yminmax = np.min(lpower_cut)/3., np.max(lpower_cut)*3.
+                ratio = amp_max/amp_min
+                ybuffer = ratio**0.2
+                ymin = amp_min/ybuffer
+                ymax = amp_max*ybuffer
             else:
-                yminmax = 0., np.max(lpower_cut)*1.1
+                difference = amp_max - amp_min
+                ybuffer = 0.2*difference
+                ymin, ymax = 0., amp_max + ybuffer
         else:
-            yminmax = minmax
+            ymin, ymax = minmax
 
         # Make the savename like for Mollweide times sample
         savename = 'Pspec_l_' + varname + ('_rval%0.3f' %rval) + '_iter' +\
@@ -178,7 +185,7 @@ for i in range(index_first, index_last + 1):
 
         # set bounds
         plt.xlim(1, nell - 1)
-        plt.ylim(yminmax[0], yminmax[1])
+        plt.ylim(ymin, ymax)
 
         # make legend
         plt.legend()
