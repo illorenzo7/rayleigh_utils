@@ -11,7 +11,7 @@ texlabels = {\
     'vt'        :       r'$v_\theta$',
     'vp'        :       r'$v_\phi$',
     'vr_prime'  :       r'$v_r - \langle v_r\rangle$',
-    'vt_prime'  :       r'$v_\theta - \langle v_\theta\rangle$',             
+    'vt_prime'  :       r'$v_\theta - \langle v_\theta\rangle$',
     'vp_prime'  :       r'$v_\phi - \langle v_\phi\rangle$',
     'vl'        :       r'$v_\lambda$',
     'vz'        :       r'$v_z$',   
@@ -22,7 +22,7 @@ texlabels = {\
     'bt'        :       r'$B_\theta$',
     'bp'        :       r'$B_\phi$',
     'br_prime'  :       r'$B_r - \langle B_r\rangle$',
-    'bt_prime'  :       r'$B_\theta - \langle B_\theta\rangle$',             
+    'bt_prime'  :       r'$B_\theta - \langle B_\theta\rangle$',
     'bp_prime'  :       r'$B_\phi - \langle B_\phi\rangle$',             
     'bl'        :       r'$B_\lambda$',
     'bz'        :       r'$B_z$',   
@@ -34,24 +34,23 @@ texlabels = {\
     'omp'       :       r'$\omega_\phi$',
     'omr_prime' :       r'$\omega_r - \langle \omega_r\rangle$',  
     'omt_prime' :       r'$\omega_\theta - \langle \omega_\theta\rangle$', 
-    'omp_prime' :       r'$\omega_\phi - \langle \omega_\phi\rangle$',              
+    'omp_prime' :       r'$\omega_\phi - \langle \omega_\phi\rangle$',
     'oml'       :       r'$\omega_\lambda$',
     'omz'       :       r'$\omega_z$',
-    'oml_prime' :       r'$\omega_\lambda - \langle \omega_\lambda\rangle$', 
-    'omz_prime' :       r'$\omega_z - \langle \omega_z\rangle$',              
+    'oml_prime' :       r'$\omega_\lambda - \langle \omega_\lambda\rangle$',
+    'omz_prime' :       r'$\omega_z - \langle \omega_z\rangle$',
              
     'vsq'       :       r'$\overline{\rho}(v^\prime)^2$',
     'vrsq'      :       r'$\overline{\rho}(v^\prime_r)^2$',
     'vtsq'      :       r'$\overline{\rho}(v^\prime_\theta)^2$',
     'vpsq'      :       r'$\overline{\rho}(v^\prime_\phi)^2$',             
     'vhsq'      :       r'$\overline{\rho}[(v^\prime_\theta)^2\ +\ (v^\prime_\phi)^2]$',
-             
     'vlsq'      :       r'$\overline{\rho}(v^\prime_\lambda)^2$',    
     'vzsq'      :       r'$\overline{\rho}(v^\prime_z)^2$', 
-    'vpolsq'    :       r'$\overline{\rho}[(v^\prime_r)^2 + (v^\prime_\theta)^2]$', 
+    'vmsq'    :       r'$\overline{\rho}[(v^\prime_r)^2 + (v^\prime_\theta)^2]$', 
              
     'omsq'      :       r'$\omega^2$',
-    'omsq_fluc' :       r'$(\omega^\prime)^2$',
+    'omsq_prime' :       r'$(\omega^\prime)^2$',
              
     'bsq'       :       r'$(1/4\pi)(B^\prime)^2$',
     'brsq'      :       r'$(1/4\pi)(B^\prime_r)^2$',
@@ -61,7 +60,7 @@ texlabels = {\
              
     'blsq'      :       r'$(1/4\pi)(B^\prime_\lambda)^2$',    
     'bzsq'      :       r'$(1/4\pi)(B^\prime_z)^2$', 
-    'bpolsq'    :       r'$(1/4\pi)[(B^\prime_r)^2 + (B^\prime_\theta)^2]$',             
+    'bmsq'    :       r'$(1/4\pi)[(B^\prime_r)^2 + (B^\prime_\theta)^2]$',             
              
     's'         :       r'$S$',
     'p'         :       r'$P$',  
@@ -85,7 +84,6 @@ texlabels = {\
     'vrvp'      :       r'$\overline{\rho}v_r^\prime v_\phi^\prime$',
     'vrvt'      :       r'$\overline{\rho}v_r^\prime v_\theta^\prime$',
     'vtvp'      :       r'$\overline{\rho}v_\theta^\prime v_\phi^\prime$',
-    
     'vlvp'      :       r'$\overline{\rho}v_\lambda^\prime v_\phi^\prime$',
     'vpvz'      :       r'$\overline{\rho}v_\phi^\prime v_z^\prime$',
     'vlvz'      :       r'$\overline{\rho}v_\lambda^\prime v_z^\prime$',
@@ -93,7 +91,6 @@ texlabels = {\
     'brbp'      :       r'$(1/4\pi)B_r^\prime B_\phi^\prime$',
     'brbt'      :       r'$(1/4\pi)B_r^\prime B_\theta^\prime$',
     'btbp'      :       r'$(1/4\pi)B_\theta^\prime B_\phi^\prime$',
-    
     'blbp'      :       r'$(1/4\pi)B_\lambda^\prime B_\phi^\prime$',
     'bpbz'      :       r'$(1/4\pi)B_\phi^\prime B_z^\prime$',
     'blbz'      :       r'$(1/4\pi)B_\lambda^\prime B_z^\prime$' }
@@ -140,10 +137,10 @@ texunits = {\
              
     'vlsq'      :       r'$\rm{dyn}\ \rm{cm}^{-2}$',    
     'vzsq'      :       r'$\rm{dyn}\ \rm{cm}^{-2}$', 
-    'vpolsq'    :       r'$\rm{dyn}\ \rm{cm}^{-2}$', 
+    'vmsq'    :       r'$\rm{dyn}\ \rm{cm}^{-2}$', 
             
     'omsq'      :       r'$\rm{rad}^2\ \rm{s}^{-2}$',
-    'omsq_fluc' :       r'$\rm{rad}^2\ \rm{s}^{-2}$',            
+    'omsq_prime' :       r'$\rm{rad}^2\ \rm{s}^{-2}$',            
 
     'bsq'       :       r'$\rm{dyn}\ \rm{cm}^{-2}$',
     'brsq'      :       r'$\rm{dyn}\ \rm{cm}^{-2}$',
@@ -153,7 +150,7 @@ texunits = {\
              
     'blsq'      :       r'$\rm{dyn}\ \rm{cm}^{-2}$',    
     'bzsq'      :       r'$\rm{dyn}\ \rm{cm}^{-2}$', 
-    'bpolsq'    :       r'$\rm{dyn}\ \rm{cm}^{-2}$',    
+    'bmsq'    :       r'$\rm{dyn}\ \rm{cm}^{-2}$',    
             
             
     's'         :       r'$\rm{erg}\ \rm{K}^{-1}\ \rm{g}^{-1}$',

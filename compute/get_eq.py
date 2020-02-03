@@ -10,6 +10,7 @@
 # d2lnrho
 # temperature (T)
 # dlnT
+# pressure (P)
 # gravity (g)
 # dsdr
 # heating (Q)
@@ -28,7 +29,7 @@ sys.path.append(os.environ['raco'])
 
 from reference_tools import equation_coefficients
 from rayleigh_diagnostics import ReferenceState, TransportCoeffs
-from common import c_P
+from common import c_P, thermo_R
 
 class eq_human_readable:
     """Rayleigh Universal Equation Coefficients Structure
@@ -42,6 +43,8 @@ class eq_human_readable:
     self.temperature : temperature
     self.T           : temperature
     self.dlnT        : logarithmic derivative of temperature
+    self.pressure    : pressure (rho*R*T)
+    self.P           : pressure (rho*R*T)
     self.dsdr        : radial entropy gradient
     self.gravity     : gravity 
     self.heating     : volumetric heating (Q) 
@@ -61,6 +64,8 @@ class eq_human_readable:
         self.temperature = np.zeros(nr)
         self.T = np.zeros(nr) # same as temperature
         self.dlnT = np.zeros(nr)
+        self.pressure = np.zeros(nr)
+        self.P = np.zeros(nr)
         self.gravity = np.zeros(nr) 
         self.g = np.zeros(nr) # same as gravity
         self.dsdr = np.zeros(nr)
@@ -89,6 +94,8 @@ def get_eq(dirname): # return an eq_human_readable class associated with
         eq_hr.d2lnrho = eq.functions[8]
         eq_hr.temperature = eq.functions[3]
         eq_hr.T = eq_hr.temperature
+        eq_hr.pressure = thermo_R*eq_hr.rho*eq_hr.T
+        eq_hr.P = eq_hr.pressure
         eq_hr.dlnT = eq.functions[9]
         eq_hr.gravity = eq.functions[1]/eq_hr.rho*c_P
         eq_hr.g = eq_hr.gravity
@@ -116,6 +123,8 @@ def get_eq(dirname): # return an eq_human_readable class associated with
         eq_hr.temperature = ref.temperature
         eq_hr.T = eq_hr.temperature
         eq_hr.dlnT = ref.dlnt
+        eq_hr.pressure = thermo_R*eq_hr.rho*eq_hr.T
+        eq_hr.P = eq_hr.pressure
         eq_hr.gravity = ref.gravity
         eq_hr.g = eq_hr.gravity
         eq_hr.dsdr = ref.dsdr
