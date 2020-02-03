@@ -4,8 +4,8 @@
 # Extremely long and boring script to find fundamental fluid quantities
 # or derivative quantities from a shell slice. Takes a shellslice [a] and
 # varname in [vr, vt, vp, vl, vz, ...]
-# returns the slice for the variable as an array of shape (nphi, ntheta, nr)
-#
+# returns the slice for the variable as an array of shape 
+# (nphi, ntheta, nr)
 import numpy as np
 import sys, os
 sys.path.append(os.environ['rapp'])
