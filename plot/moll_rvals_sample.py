@@ -13,10 +13,15 @@ from sslice_util import plot_moll
 from get_sslice import get_sslice
 from rayleigh_diagnostics import Shell_Slices
 from translate_times import translate_times
+from get_parameter import get_parameter
 from varprops import texlabels
+from time_scales import compute_Prot, compute_tdt
 
 # Get command line arguments
 dirname = sys.argv[1]
+dirname_stripped = strip_dirname(dirname)
+
+# Data with Shell_Slices
 radatadir = dirname + '/Shell_Slices/'
 
 file_list, int_file_list, nfiles = get_file_lists(radatadir)
@@ -55,20 +60,32 @@ for i in range(nargs):
     elif (arg == '-clon'):
         clon = float(args[i+1])
 
+# Get the baseline time unit
+rotation = get_parameter(dirname, 'rotation')
+if rotation:
+    time_unit = compute_Prot(dirname)
+    time_label = r'$\rm{P_{rot}}$'
+else:
+    time_unit = compute_tdt(dirname)
+    time_label = r'$\rm{TDT}$'
+
 iter_val = int_file_list[iiter]
 fname = file_list[iiter]
 
 # Read in desired shell slice
 a = Shell_Slices(radatadir + fname, '')
 
+# Get local time (in seconds)
+t_loc = a.time[0]
+
 # Create the plot using subplot axes
 # Offset axes slightly (at the end) to deal with annoying white space cutoff
-fig_width_inches = 12.
+fig_width_inches = 6.
 
 # General parameters for main axis/color bar
-margin_bottom_inches = 1.
-margin_top_inches = 1.
-margin_inches = 1/8
+margin_bottom_inches = 1./2.
+margin_top_inches = 5./8.
+margin_inches = 1./8.
 
 subplot_width_inches = fig_width_inches - 2*margin_inches
 subplot_height_inches = 0.5*subplot_width_inches
@@ -92,14 +109,14 @@ if not os.path.isdir(plotdir):
     
 # Loop over rvals and make plots
 for ir in range(a.nr):
-    rval = a.radius[ir]
+    rval = a.radius[ir]/rsun
     vals = get_sslice(a, varname, dirname=dirname)
     field = vals[:, :, ir]
 
-    savename = 'moll_iter' + fname + '_' + varname +\
-        ('_rval%0.3f' %(rval/rsun)) + '.png'
+    savename = 'moll_' + varname + '_iter' + fname +\
+            ('_rval%0.3f' %rval) + '.png'
     print('Plotting moll: ' + varname + (', r/rsun = %0.3f (ir = %02i), '\
-            %(rval/rsun, ir)) + 'iter ' + fname + ' ...')
+            %(rval, ir)) + 'iter ' + fname + ' ...')
 
     fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
     ax = fig.add_axes([margin_x, margin_bottom, subplot_width,\
@@ -114,15 +131,21 @@ for ir in range(a.nr):
     ax_delta_y = ax_ymax - ax_ymin
     ax_center_x = ax_xmin + 0.5*ax_delta_x    
     
+    if rotation:
+        time_string = ('t = %.1f ' %(t_loc/time_unit)) + time_label +\
+                ' (1 ' + time_label + (' = %.2f days)'\
+                %(time_unit/86400.))
+    else:
+        time_string = ('t = %.3f ' %(t_loc/time_unit)) + time_label +\
+                ' (1 ' + time_label + (' = %.1f days)'\
+                %(time_unit/86400.))
     varlabel = texlabels[varname]
-    title = varlabel + '     ' + (r'$r/R_\odot\ =\ %0.3f$' %(rval/rsun)) +\
-            '     ' + ('iter = ' + fname)    
+
+    title = dirname_stripped +\
+        '\n' + r'$\rm{Mollweide}$' + '     '  + time_string +\
+        '\n' + varlabel + '     ' + (r'$r/R_\odot\ =\ %0.3f$' %rval)
     fig.text(ax_center_x, ax_ymax + 0.02*ax_delta_y, title,\
          verticalalignment='bottom', horizontalalignment='center',\
-         fontsize=14, **csfont)   
-    
-    fig.text(margin_x + 0.5*subplot_width, 1. - 0.5*margin_top,\
-        strip_dirname(dirname), ha='center', va='bottom', **csfont,\
-        fontsize=14)
+         fontsize=10, **csfont)   
     plt.savefig(plotdir + savename, dpi=300)
     plt.close()
