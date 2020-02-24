@@ -13,10 +13,15 @@ from translate_times import translate_times
 from sslice_util import plot_moll
 from rayleigh_diagnostics import Shell_Slices
 from get_sslice import get_sslice
+from get_parameter import get_parameter
 from varprops import texlabels
+from time_scales import compute_Prot, compute_tdt
 
 # Get command line arguments
 dirname = sys.argv[1]
+dirname_stripped = strip_dirname(dirname)
+
+# Data with Shell_Slices
 radatadir = dirname + '/Shell_Slices/'
 
 file_list, int_file_list, nfiles = get_file_lists(radatadir)
@@ -68,6 +73,15 @@ for i in range(nargs):
     elif arg == '-clon':
         clon = float(args[i+1])
 
+# Get the baseline time unit
+rotation = get_parameter(dirname, 'rotation')
+if rotation:
+    time_unit = compute_Prot(dirname)
+    time_label = r'$\rm{P_{rot}}$'
+else:
+    time_unit = compute_tdt(dirname)
+    time_label = r'$\rm{TDT}$'
+
 iter_val = int_file_list[iiter]
 fname = file_list[iiter]
 
@@ -75,20 +89,23 @@ fname = file_list[iiter]
 a = Shell_Slices(radatadir + fname, '')
 vals = get_sslice(a, varname, dirname=dirname)
 
+# Get local time (in seconds)
+t_loc = a.time[0]
+
 # Find desired radius (by default ir=0--near outer surface)
 if not rval is None:
     ir = np.argmin(np.abs(a.radius/rsun - rval))
 field = vals[:, :, ir]
-rval = a.radius[ir] # in any case, this is the actual rvalue we get
+rval = a.radius[ir]/rsun # in any case, this is the actual rvalue we get
 
 # Create the plot using subplot axes
 # Offset axes slightly (at the end) to deal with annoying white space cutoff
-fig_width_inches = 12.
+fig_width_inches = 6.
 
 # General parameters for main axis/color bar
-margin_bottom_inches = 1.
-margin_top_inches = 1.
-margin_inches = 1/8
+margin_bottom_inches = 1./2.
+margin_top_inches = 5./8.
+margin_inches = 1./8.
 
 subplot_width_inches = fig_width_inches - 2*margin_inches
 subplot_height_inches = 0.5*subplot_width_inches
@@ -117,14 +134,22 @@ plot_moll(field, a.costheta, fig=fig, ax=ax, minmax=minmax, clon=clon,\
 ax_xmin, ax_xmax, ax_ymin, ax_ymax = axis_range(ax)
 ax_delta_x = ax_xmax - ax_xmin
 ax_delta_y = ax_ymax - ax_ymin
-ax_center_x = ax_xmin + 0.5*ax_delta_x
+ax_center_x = ax_xmin + 0.5*ax_delta_x    
 
+if rotation:
+    time_string = ('t = %.1f ' %(t_loc/time_unit)) + time_label +\
+            ' (1 ' + time_label + (' = %.2f days)'\
+            %(time_unit/86400.))
+else:
+    time_string = ('t = %.3f ' %(t_loc/time_unit)) + time_label +\
+            ' (1 ' + time_label + (' = %.1f days)'\
+            %(time_unit/86400.))
 varlabel = texlabels[varname]
-title = varlabel + '     ' + (r'$r/R_\odot\ =\ %0.3f$' %(rval/rsun)) +\
-            '     ' + ('iter = ' + fname)
+
+title = dirname_stripped +\
+    '\n' + r'$\rm{Mollweide}$' + '     '  + time_string +\
+    '\n' + varlabel + '     ' + (r'$r/R_\odot\ =\ %0.3f$' %rval)
 fig.text(ax_center_x, ax_ymax + 0.02*ax_delta_y, title,\
      verticalalignment='bottom', horizontalalignment='center',\
-     fontsize=14, **csfont)   
-fig.text(margin_x + 0.5*subplot_width, 1. - 0.5*margin_top,\
-    strip_dirname(dirname), ha='center', va='bottom', **csfont, fontsize=14)
+     fontsize=10, **csfont)   
 plt.show()   
