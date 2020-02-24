@@ -409,3 +409,27 @@ def is_positive(arr):
 
 def reverse_dict(di):
     return dict((v, u) for u, v in di.items())
+
+def read_log(fname):
+    f = open(fname, 'r')
+    lines = f.readlines()
+    iters = []
+    delta_t = []
+    iters_per_sec = []
+    for line in lines:
+        if "Iteration:" in line:
+            split = line.split()
+            for i in range(len(split)):
+                if split[i] == 'Iteration:':
+                    iters.append(int(split[i+1]))
+                elif split[i] == 'DeltaT:':
+                    delta_t.append(float(split[i+1]))
+                elif split[i] == 'Iter/sec:':
+                    iters_per_sec.append(float(split[i+1]))
+    if len(iters_per_sec) > 0:
+        di = dict({'iters': np.array(iters), 'delta_t': np.array(delta_t),\
+                'iters_per_sec': np.array(iters_per_sec)})
+    else:
+        di = dict({'iters': np.array(iters), 'delta_t': np.array(delta_t)})
+
+    return di
