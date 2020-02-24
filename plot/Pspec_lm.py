@@ -167,10 +167,12 @@ for ir in range(len(ir_vals)):
     print ('max power: %1.1e' %np.max(power_loc))
     # Get minmax, if not specified
     if minmax is None:
-        minmax = 0, 5*rms(power_loc)
+        minmax_loc = 0, 5*rms(power_loc)
+    else:
+        minmax_loc = minmax
     # Make plot
     plt.pcolormesh(lvals_2d_new, mvals_2d_new, power_loc, cmap='Greys',\
-            vmin=minmax[0], vmax=minmax[1])
+            vmin=minmax_loc[0], vmax=minmax_loc[1])
 
     # set bounds
 #    plt.xlim(0.5, nell - 0.5)
