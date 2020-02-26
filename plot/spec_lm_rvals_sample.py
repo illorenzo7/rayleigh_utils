@@ -21,12 +21,13 @@ import sys, os
 sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
 from varprops import texunits, texlabels, var_indices
-from common import strip_dirname, get_widest_range_file,\
+from common import strip_dirname, get_file_lists,\
         get_iters_from_file, get_dict, rsun, sci_format, get_satvals, rms
 from plotcommon import axis_range, xy_grid
 from get_parameter import get_parameter
 from time_scales import compute_Prot, compute_tdt
 from translate_times import translate_times
+from rayleigh_diagnostics import Shell_Spectra
 
 # Get directory name and stripped_dirname for plotting purposes
 dirname = sys.argv[1]
@@ -36,14 +37,17 @@ dirname_stripped = strip_dirname(dirname)
 # already exist    
 datadir = dirname + '/data/'
 
+# Data with Shell_Slices
+radatadir = dirname + '/Shell_Spectra/'
+file_list, int_file_list, nfiles = get_file_lists(radatadir)
+
 # Set defaults
+iiter = nfiles - 1 # by default plot the last iteration
 varname = 'vr'
 desired_rvals = ['all']
 ir_vals = None
-showplot = False
 rnorm = None
 minmax = None
-the_file = get_widest_range_file(datadir, 'Shell_Spectra')
 lminmax = None
 mminmax = None
 fs = 12.
@@ -66,9 +70,6 @@ for i in range(nargs):
         ir_vals = []
         for j in range(len(my_str)):
             ir_vals.append(int(my_str[j]))
-    elif arg == '-usefile':
-        the_file = args[i+1]
-        the_file = Shell_Spectra_file.split('/')[-1]
     elif arg == '-rnorm':
         rnorm = float(args[i+1])
     elif arg == '-minmax':
@@ -81,6 +82,24 @@ for i in range(nargs):
         mminmax = float(args[i+1]), float(args[i+2])
     elif arg == '-tag':
         tag = '_' + args[i+1]
+    elif arg == '-iter':
+        desired_iter = int(args[i+1])
+        iiter = np.argmin(np.abs(int_file_list - desired_iter))
+    elif arg == '-sec':
+        time = float(args[i+1])
+        di_trans = translate_times(time, dirname, translate_from='sec')
+        desired_iter = di_trans['val_iter']
+        iiter = np.argmin(np.abs(int_file_list - desired_iter))
+    elif arg == '-day':
+        time = float(args[i+1])
+        di_trans = translate_times(time, dirname, translate_from='day')
+        desired_iter = di_trans['val_iter']
+        iiter = np.argmin(np.abs(int_file_list - desired_iter))
+    elif arg == '-prot':
+        time = float(args[i+1])
+        di_trans = translate_times(time, dirname, translate_from='prot')
+        desired_iter = di_trans['val_iter']
+        iiter = np.argmin(np.abs(int_file_list - desired_iter))
 
 # Get the baseline time unit
 rotation = get_parameter(dirname, 'rotation')
@@ -91,32 +110,29 @@ else:
     time_unit = compute_tdt(dirname)
     time_label = r'$\rm{TDT}$'
 
+# File name to read
+iter_val = int_file_list[iiter]
+fname = file_list[iiter]
+
+# Read in desired shell spectrum
+spec = Shell_Spectra(radatadir + fname, '')
+rvals = spec.radius/rsun
+qv = spec.qv
+lut = spec.lut
+nr = spec.nr
+nell = spec.nell
+nm = spec.nm
+lvals = np.arange(nell, dtype='float')
+mvals = np.arange(nm, dtype='float')
+
+# Get local time (in seconds)
+t_loc = spec.time[0]
+
 # directory for plots 
-plotdir = dirname + '/plots/specav_lm/rvals_sample' + tag + '/'
+plotdir = dirname + '/plots/spec_lm/rvals_sample' + tag + '/'
 
 if not os.path.isdir(plotdir):
     os.makedirs(plotdir)
-
-
-# Read in spec data
-print ('Reading Shell_Spectra data from ' + datadir + the_file +\
-        ' ...')
-di = get_dict(datadir + the_file)
-rvals = di['rvals']/rsun
-qv = di['qv']
-lut = di['lut']
-nr = di['nr']
-lvals = di['lvals']
-mvals = di['mvals']
-nell = di['nell']
-nm = di['nm']
-
-# Get time interval associated with averaging
-iter1, iter2 = di['iter1'], di['iter2']
-di_trans1 = translate_times(iter1, dirname, translate_from='iter')
-di_trans2 = translate_times(iter2, dirname, translate_from='iter')
-t1 = di_trans1['val_sec']
-t2 = di_trans2['val_sec']
 
 if not lminmax is None:
     il1 = np.argmin(np.abs(lvals - lminmax[0]))
@@ -169,11 +185,11 @@ mvals = mvals[im1:im2+1]
 
 lvals_2d, mvals_2d = np.meshgrid(lvals, mvals, indexing='ij')
 lvals_2d_new, mvals_2d_new = xy_grid(lvals_2d, mvals_2d)
-iter1, iter2 = di['iter1'], di['iter2']
 
 # Get full power
-fullpower = di['fullpower']
+fullpower = np.abs(spec.vals[:, :, :, :, 0])**2
 
+# Get indices associated with desired r-values
 if ir_vals is None:
     ir_vals = []
     if desired_rvals == ['all']:
@@ -193,16 +209,13 @@ if not (varname == 'vtot' or varname == 'btot'):
     desired_qv = var_indices[varname]
     iq = np.argmin(np.abs(qv - desired_qv))
     varlabel = texlabels[varname]
-    units = texunits[varname] 
 else:
     if varname == 'vtot':
         desired_qv_vals = [1, 2, 3]
         varlabel = r'$|\mathbf{v}|$'
-        units = r'$\rm{m}\ \rm{s}^{-1}$'
     elif varname == 'btot':
         desired_qv_vals = [801, 802, 803]
         varlabel = r'$|\mathbf{B}|$'
-        units = r'$\rm{G}$'
     iq_vals = []
     for desired_qv in desired_qv_vals:
         iq_vals.append(np.argmin(np.abs(qv - desired_qv)))
@@ -218,12 +231,11 @@ else:
 # Now make plots
 for ir in range(len(ir_vals)):
     rval =  desired_rvals[ir]
-    savename = 'specav_lm_' + str(iter1).zfill(8) + '_' +\
-            str(iter2).zfill(8) + '_' +  varname + ('_rval%0.3f' %rval) +\
-            '.png'
-    print('Plotting specav_lm: ' + varname +\
-            (', r/rsun = %0.3f (ir = %02i), ' %(rval, ir_vals[ir])) +\
-            ' ...')
+    savename = 'spec_lm_' + varname + '_iter' + fname +\
+            ('_rval%0.3f' %rval) + '.png'
+    print('Plotting spec_lm: ' + varname +\
+            (', r/rsun = %0.3f (ir = %02i), ' %(rval, ir)) + 'iter ' +\
+            fname + ' ...')
     power_loc = power[il1:il2+1, im1:im2+1, ir]
 
     # Get minmax, if not specified
@@ -294,12 +306,12 @@ for ir in range(len(ir_vals)):
     ax_center_x = ax_xmin + 0.5*ax_delta_x    
     
     if rotation:
-        time_string = ('t = %.1f to %.1f ' %(t1/time_unit, t2/time_unit))\
-                + time_label + ' (1 ' + time_label + (' = %.2f days)'\
+        time_string = ('t = %.1f ' %(t_loc/time_unit)) + time_label +\
+                ' (1 ' + time_label + (' = %.2f days)'\
                 %(time_unit/86400.))
     else:
-        time_string = ('t = %.3f to %.3f ' %(t1/time_unit, t2/time_unit))\
-                + time_label + ' (1 ' + time_label + (' = %.1f days)'\
+        time_string = ('t = %.3f ' %(t_loc/time_unit)) + time_label +\
+                ' (1 ' + time_label + (' = %.1f days)'\
                 %(time_unit/86400.))
 
     # Make title
@@ -312,9 +324,5 @@ for ir in range(len(ir_vals)):
          verticalalignment='bottom', horizontalalignment='center',\
          fontsize=fs, **csfont)   
 
-    print ('Saving ' + plotdir + savename + ' ...')
-
     plt.savefig(plotdir + savename, dpi=300)
-    if showplot:
-        plt.show()
     plt.close()

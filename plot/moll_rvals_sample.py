@@ -23,7 +23,6 @@ dirname_stripped = strip_dirname(dirname)
 
 # Data with Shell_Slices
 radatadir = dirname + '/Shell_Slices/'
-
 file_list, int_file_list, nfiles = get_file_lists(radatadir)
 
 minmax = None
@@ -35,11 +34,11 @@ args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
-    if (arg == '-minmax'):
+    if arg == '-minmax':
         minmax = float(args[i+1]), float(args[i+2])
-    elif (arg == '-var'):
+    elif arg == '-var':
         varname = args[i+1]
-    elif (arg == '-iter'):
+    elif arg == '-iter':
         desired_iter = int(args[i+1])
         iiter = np.argmin(np.abs(int_file_list - desired_iter))
     elif arg == '-sec':
@@ -57,7 +56,7 @@ for i in range(nargs):
         di_trans = translate_times(time, dirname, translate_from='prot')
         desired_iter = di_trans['val_iter']
         iiter = np.argmin(np.abs(int_file_list - desired_iter))
-    elif (arg == '-clon'):
+    elif arg == '-clon':
         clon = float(args[i+1])
 
 # Get the baseline time unit
@@ -69,6 +68,7 @@ else:
     time_unit = compute_tdt(dirname)
     time_label = r'$\rm{TDT}$'
 
+# File name to read
 iter_val = int_file_list[iiter]
 fname = file_list[iiter]
 
