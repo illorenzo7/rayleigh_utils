@@ -128,7 +128,12 @@ nl_used = il2 - il1 + 1
 nm_used = im2 - im1 + 1
 
 # Create the plot using subplot axes
-fig_width_inches = 6.
+if nl_used >= nm_used:
+    subplot_width_inches = 5.
+    subplot_height_inches = nm_used/nl_used*subplot_width_inches
+else:
+    subplot_height_inches = 5.
+    subplot_width_inches = nl_used/nm_used*subplot_height_inches
 
 # General parameters for main axis/color bar
 margin_bottom_inches = 1./2.
@@ -137,10 +142,8 @@ margin_right_inches = 1.
 margin_top_inches = 1.
 margin_inches = 1./8.
 
-subplot_width_inches = fig_width_inches - margin_left_inches -\
+fig_width_inches = subplot_width_inches + margin_left_inches +\
         margin_right_inches
-subplot_aspect = nm_used/nl_used
-subplot_height_inches = subplot_width_inches*subplot_aspect
 fig_height_inches = margin_bottom_inches + subplot_height_inches +\
     margin_top_inches
 
@@ -203,11 +206,11 @@ for varname in varlist:
 
     # Get power in l,m space for desired variable
     if varname == 'vtot' or varname == 'btot' or varname=='omtot':
-        power = np.abs(fullpower[:, :, ir, iq_vals[0]])**2 +\
-                np.abs(fullpower[:, :, ir, iq_vals[1]])**2 +\
-                np.abs(fullpower[:, :, ir, iq_vals[2]])**2 
+        power = fullpower[:, :, ir, iq_vals[0]] +\
+                fullpower[:, :, ir, iq_vals[1]] +\
+                fullpower[:, :, ir, iq_vals[2]]
     else:
-        power = np.abs(fullpower[:, :, ir, iq])**2
+        power = fullpower[:, :, ir, iq]
 
     savename = 'specav_lm_' + str(iter1).zfill(8) + '_' +\
             str(iter2).zfill(8) +  ('_rval%0.3f_' %rval) +\

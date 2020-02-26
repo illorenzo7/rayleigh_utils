@@ -41,7 +41,6 @@ varname = 'vr'
 desired_rvals = ['all']
 ir_vals = None
 showplot = False
-rnorm = None
 minmax = None
 the_file = get_widest_range_file(datadir, 'Shell_Spectra')
 lminmax = None
@@ -69,8 +68,6 @@ for i in range(nargs):
     elif arg == '-usefile':
         the_file = args[i+1]
         the_file = Shell_Spectra_file.split('/')[-1]
-    elif arg == '-rnorm':
-        rnorm = float(args[i+1])
     elif arg == '-minmax':
         minmax = float(args[i+1]), float(args[i+2])
     elif arg == '-show':
@@ -135,7 +132,12 @@ nl_used = il2 - il1 + 1
 nm_used = im2 - im1 + 1
 
 # Create the plot using subplot axes
-fig_width_inches = 6.
+if nl_used >= nm_used:
+    subplot_width_inches = 5.
+    subplot_height_inches = nm_used/nl_used*subplot_width_inches
+else:
+    subplot_height_inches = 5.
+    subplot_width_inches = nl_used/nm_used*subplot_height_inches
 
 # General parameters for main axis/color bar
 margin_bottom_inches = 1./2.
@@ -144,10 +146,8 @@ margin_right_inches = 1.
 margin_top_inches = 1.
 margin_inches = 1./8.
 
-subplot_width_inches = fig_width_inches - margin_left_inches -\
+fig_width_inches = subplot_width_inches + margin_left_inches +\
         margin_right_inches
-subplot_aspect = nm_used/nl_used
-subplot_height_inches = subplot_width_inches*subplot_aspect
 fig_height_inches = margin_bottom_inches + subplot_height_inches +\
     margin_top_inches
 
@@ -209,11 +209,11 @@ else:
 
 # Get power in l,m space for desired variable
 if varname == 'vtot' or varname == 'btot':
-    power = np.abs(fullpower[:, :, :, iq_vals[0]]) +\
-            np.abs(fullpower[:, :, :, iq_vals[1]]) +\
-            np.abs(fullpower[:, :, :, iq_vals[2]]) 
+    power = fullpower[:, :, :, iq_vals[0]] +\
+            fullpower[:, :, :, iq_vals[1]] +\
+            fullpower[:, :, :, iq_vals[2]]
 else:
-    power = np.abs(fullpower[:, :, :, iq])
+    power = fullpower[:, :, :, iq]
 
 # Now make plots
 for ir in range(len(ir_vals)):
@@ -295,12 +295,12 @@ for ir in range(len(ir_vals)):
     
     if rotation:
         time_string = ('t = %.1f to %.1f ' %(t1/time_unit, t2/time_unit))\
-                + time_label + ' (1 ' + time_label + (' = %.2f days)'\
-                %(time_unit/86400.))
+                + time_label + (r'$\ (\Delta t = %.1f\ $'\
+                %((t2 - t1)/time_unit)) + time_label + ')'
     else:
         time_string = ('t = %.3f to %.3f ' %(t1/time_unit, t2/time_unit))\
-                + time_label + ' (1 ' + time_label + (' = %.1f days)'\
-                %(time_unit/86400.))
+                + time_label + (r'$\ (\Delta t = %.3f\ $'\
+                %((t2 - t1)/time_unit)) + time_label + ')'
 
     # Make title
     title = dirname_stripped +\
@@ -311,8 +311,6 @@ for ir in range(len(ir_vals)):
     fig.text(ax_center_x, ax_ymax + 0.02*ax_delta_y, title,\
          verticalalignment='bottom', horizontalalignment='center',\
          fontsize=fs, **csfont)   
-
-    print ('Saving ' + plotdir + savename + ' ...')
 
     plt.savefig(plotdir + savename, dpi=300)
     if showplot:
