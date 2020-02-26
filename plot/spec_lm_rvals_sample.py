@@ -12,6 +12,7 @@
 
 import matplotlib as mpl
 mpl.use('TkAgg')
+from matplotlib import ticker, colors
 import matplotlib.pyplot as plt
 plt.rcParams['mathtext.fontset'] = 'dejavuserif'
 csfont = {'fontname':'DejaVu Serif'}
@@ -20,12 +21,12 @@ import sys, os
 sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
 from varprops import texunits, texlabels, var_indices
-
-from common import strip_dirname, get_widest_range_file, get_iters_from_file,\
-        get_dict, rsun, sci_format, get_satvals, rms
-
-from plotcommon import default_axes_1by1, axis_range, xy_grid
+from common import strip_dirname, get_widest_range_file,\
+        get_iters_from_file, get_dict, rsun, sci_format, get_satvals, rms
+from plotcommon import axis_range, xy_grid
 from get_parameter import get_parameter
+from time_scales import compute_Prot, compute_tdt
+from translate_times import translate_times
 
 # Get directory name and stripped_dirname for plotting purposes
 dirname = sys.argv[1]
@@ -45,6 +46,7 @@ rnorm = None
 minmax = None
 the_file = get_widest_range_file(datadir, 'Shell_Spectra')
 lminmax = None
+fs = 12.
 
 # Read command-line arguments (CLAs)
 args = sys.argv[2:]
@@ -77,15 +79,52 @@ for i in range(nargs):
     elif arg == '-lminmax':
         lminmax = float(args[i+1]), float(args[i+2])
 
+# Get the baseline time unit
+rotation = get_parameter(dirname, 'rotation')
+if rotation:
+    time_unit = compute_Prot(dirname)
+    time_label = r'$\rm{P_{rot}}$'
+else:
+    time_unit = compute_tdt(dirname)
+    time_label = r'$\rm{TDT}$'
+
 # directory for plots (depends on whether logscale = True, so do this after
 # command-line-arguments are read
-plotdir = dirname + '/plots/Pspec/Pspec_lm/'
-if not logscale:
-    plotdir = plotdir + 'notlog/'
-if (not os.path.isdir(plotdir)):
+if logscale:
+    plotdir = dirname + '/plots/spec_lm/rvals_sample/'
+else:
+    plotdir = dirname + '/plots/spec_lm_notlog/rvals_sample/'
+if not os.path.isdir(plotdir):
     os.makedirs(plotdir)
 
-# Read in Pspec data
+# Create the plot using subplot axes
+fig_width_inches = 6.
+
+# General parameters for main axis/color bar
+margin_bottom_inches = 1./2.
+margin_left_inches = 5./8.
+margin_right_inches = 3./4.
+margin_top_inches = 1.
+margin_inches = 1./8.
+
+subplot_width_inches = fig_width_inches - margin_left_inches -\
+        margin_right_inches
+subplot_height_inches = subplot_width_inches
+fig_height_inches = margin_bottom_inches + subplot_height_inches +\
+    margin_top_inches
+
+# "Non-dimensional" figure parameters
+margin_x = margin_inches/fig_width_inches
+margin_y = margin_inches/fig_height_inches
+margin_bottom = margin_bottom_inches/fig_height_inches
+margin_top = margin_top_inches/fig_height_inches
+margin_left = margin_left_inches/fig_width_inches
+margin_right = margin_right_inches/fig_width_inches
+
+subplot_width = subplot_width_inches/fig_width_inches
+subplot_height = subplot_height_inches/fig_height_inches
+
+# Read in spec data
 print ('Reading Shell_Spectra data from ' + datadir + the_file +\
         ' ...')
 di = get_dict(datadir + the_file)
@@ -97,6 +136,13 @@ lvals = di['lvals']
 mvals = di['mvals']
 nell = di['nell']
 nm = di['nm']
+
+# Get time interval associated with averaging
+iter1, iter2 = di['iter1'], di['iter2']
+di_trans1 = translate_times(iter1, dirname, translate_from='iter')
+di_trans2 = translate_times(iter2, dirname, translate_from='iter')
+t1 = di_trans1['val_sec']
+t2 = di_trans2['val_sec']
 
 if not lminmax is None:
     il1 = np.argmin(np.abs(lvals - lminmax[0]))
@@ -126,7 +172,8 @@ if ir_vals is None:
 # What is given is now what is desired
 desired_rvals = rvals[ir_vals]
 
-# Get power associated with desired quantity (should really have a contigency
+# Get power associated with desired quantity 
+# (should really have a contigency
 # where the routine exits if the desired quantity isn't present
 if not (varname == 'vtot' or varname == 'btot'):
     desired_qv = var_indices[varname]
@@ -151,57 +198,93 @@ if varname == 'vtot' or varname == 'btot':
     power = np.abs(fullpower[:, :, :, iq_vals[0]])**2 +\
             np.abs(fullpower[:, :, :, iq_vals[1]])**2 +\
             np.abs(fullpower[:, :, :, iq_vals[2]])**2 
-
 else:
     power = np.abs(fullpower[:, :, :, iq])**2
 
 # Now make plots
 for ir in range(len(ir_vals)):
     rval =  desired_rvals[ir]
-    savename = varname + ('_rval%0.3f' %rval) + '_' +\
-          str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
-    print('Plotting Pspec_lm: ' + varname + (', r/rsun = %0.3f (ir = %02i), '\
-            %(rval, ir_vals[ir])) + ' ...')
+    savename = 'spec_lm_' + str(iter1).zfill(8) + '_' +\
+            str(iter2).zfill(8) + '_' +  varname + ('_rval%0.3f' %rval) +\
+            '.png'
+    print('Plotting spec_lm: ' + varname +\
+            (', r/rsun = %0.3f (ir = %02i), ' %(rval, ir_vals[ir])) +\
+            ' ...')
     power_loc = power[il1:il2+1, il1:il2+1, ir]
 
-    print ('max power: %1.1e' %np.max(power_loc))
     # Get minmax, if not specified
     if minmax is None:
-        minmax_loc = 0, 5*rms(power_loc)
+        if il1 == 0 and il2 == nell - 1: 
+            # power gets wierd (close to 0?) at the two
+            # most extreme l-values
+            power_not0 = np.copy(power_loc[1:-1, :])
+        elif il1 == 0: 
+            power_not0 = np.copy(power_loc[1:, :])
+        elif il2 == 0: 
+            power_not0 = np.copy(power_loc[:-1, :])
+        else:
+            power_not0 = np.copy(power_loc)
+        power_not0 = power_not0[power_not0 != 0.]
+        minmax_loc = get_satvals(power_not0, posdef=True, logscale=logscale)
     else:
         minmax_loc = minmax
+
     # Make plot
-    plt.pcolormesh(lvals_2d_new, mvals_2d_new, power_loc, cmap='Greys',\
-            vmin=minmax_loc[0], vmax=minmax_loc[1])
+    fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
+    ax = fig.add_axes([margin_left, margin_bottom, subplot_width,\
+            subplot_height])
+    plt.sca(ax)
+    if logscale:
+        im = plt.pcolormesh(lvals_2d_new, mvals_2d_new, power_loc,\
+                cmap='Greys',\
+            norm=colors.LogNorm(vmin=minmax_loc[0], vmax=minmax_loc[1]))  
+    else:
+        im = plt.pcolormesh(lvals_2d_new, mvals_2d_new, power_loc,\
+                cmap='plasma', vmin=minmax_loc[0], vmax=minmax_loc[1])
 
     # set bounds
 #    plt.xlim(0.5, nell - 0.5)
 #    plt.ylim(0.5, nm - 0.5)
 
     # label axes
-    plt.xlabel('l-value')
-    plt.ylabel('m-value')
+    plt.xlabel(r'$\ell$', fontsize=fs)
+    plt.ylabel(r'$m$', fontsize=fs)
 
     # Get ticks everywhere
     plt.minorticks_on()
     plt.tick_params(top=True, right=True, direction='in', which='both')
 
     # Get colorbar
-    cbar = plt.colorbar()
+#    cbar = plt.colorbar()
 
     # Make title
     # Compute l_rms and m_rms
     l_rms = np.sum(power_loc*lvals_2d)/np.sum(power_loc)
     m_rms = np.sum(power_loc*mvals_2d)/np.sum(power_loc)
 
-    title = varlabel + '     ' + (r'$r/R_\odot\ =\ %0.3f$' %rval) + '\n' +\
-            (r'$l_{\rm{rms}} = %.1f$' %l_rms) + '     ' +\
-            (r'$m_{\rm{rms}} = %.1f$' %m_rms)+ '\n' +\
-            ('%08i to %08i' %(iter1, iter2))    
-    plt.title(title)
+    ax_xmin, ax_xmax, ax_ymin, ax_ymax = axis_range(ax)
+    ax_delta_x = ax_xmax - ax_xmin
+    ax_delta_y = ax_ymax - ax_ymin
+    ax_center_x = ax_xmin + 0.5*ax_delta_x    
+    
+    if rotation:
+        time_string = ('t = %.1f to %.1f ' %(t1/time_unit, t2/time_unit))\
+                + time_label + ' (1 ' + time_label + (' = %.2f days)'\
+                %(time_unit/86400.))
+    else:
+        time_string = ('t = %.3f to %.3f ' %(t1/time_unit, t2/time_unit))\
+                + time_label + ' (1 ' + time_label + (' = %.1f days)'\
+                %(time_unit/86400.))
 
-    # Final command
-    plt.tight_layout()
+    # Make title
+    title = dirname_stripped +\
+        '\n' + r'$\rm{spec\_lm}$' + '     '  + time_string +\
+        '\n' + varlabel + '     ' + (r'$r/R_\odot\ =\ %0.3f$' %rval) +\
+        '\n' + (r'$\ell_{\rm{rms}} = %.1f$' %l_rms) + '     ' +\
+        (r'$m_{\rm{rms}} = %.1f$' %m_rms)
+    fig.text(ax_center_x, ax_ymax + 0.02*ax_delta_y, title,\
+         verticalalignment='bottom', horizontalalignment='center',\
+         fontsize=fs, **csfont)   
 
     print ('Saving ' + plotdir + savename + ' ...')
 
