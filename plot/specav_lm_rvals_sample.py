@@ -8,7 +8,7 @@
 # longest averaging range, use -usefile [complete path-name of desired vavg 
 # file]
 # Saves plot in
-# [dirname]/plots/Pspec/Pspec_lm/[varname]_[rval]_[first iter]_[last iter].png
+# [dirname]/plots/specav_lm/rvals_sample/[varname]_[first iter]_[last iter]_[rval].png
 
 import matplotlib as mpl
 mpl.use('TkAgg')
@@ -40,13 +40,13 @@ datadir = dirname + '/data/'
 varname = 'vr'
 desired_rvals = ['all']
 ir_vals = None
-logscale = True
 showplot = False
 rnorm = None
 minmax = None
 the_file = get_widest_range_file(datadir, 'Shell_Spectra')
 lminmax = None
 fs = 12.
+tag = ''
 
 # Read command-line arguments (CLAs)
 args = sys.argv[2:]
@@ -72,12 +72,12 @@ for i in range(nargs):
         rnorm = float(args[i+1])
     elif arg == '-minmax':
         minmax = float(args[i+1]), float(args[i+2])
-    elif arg == '-nolog':
-        logscale = False
     elif arg == '-show':
         showplot = True
     elif arg == '-lminmax':
         lminmax = float(args[i+1]), float(args[i+2])
+    elif arg == '-tag':
+        tag = '_' + args[i+1]
 
 # Get the baseline time unit
 rotation = get_parameter(dirname, 'rotation')
@@ -88,12 +88,9 @@ else:
     time_unit = compute_tdt(dirname)
     time_label = r'$\rm{TDT}$'
 
-# directory for plots (depends on whether logscale = True, so do this after
-# command-line-arguments are read
-if logscale:
-    plotdir = dirname + '/plots/spec_lm/rvals_sample/'
-else:
-    plotdir = dirname + '/plots/spec_lm_notlog/rvals_sample/'
+# directory for plots 
+plotdir = dirname + '/plots/specav_lm/rvals_sample' + tag + '/'
+
 if not os.path.isdir(plotdir):
     os.makedirs(plotdir)
 
@@ -103,7 +100,7 @@ fig_width_inches = 6.
 # General parameters for main axis/color bar
 margin_bottom_inches = 1./2.
 margin_left_inches = 5./8.
-margin_right_inches = 3./4.
+margin_right_inches = 1.
 margin_top_inches = 1.
 margin_inches = 1./8.
 
@@ -123,6 +120,8 @@ margin_right = margin_right_inches/fig_width_inches
 
 subplot_width = subplot_width_inches/fig_width_inches
 subplot_height = subplot_height_inches/fig_height_inches
+
+fig_aspect = fig_height_inches/fig_width_inches
 
 # Read in spec data
 print ('Reading Shell_Spectra data from ' + datadir + the_file +\
@@ -204,10 +203,10 @@ else:
 # Now make plots
 for ir in range(len(ir_vals)):
     rval =  desired_rvals[ir]
-    savename = 'spec_lm_' + str(iter1).zfill(8) + '_' +\
+    savename = 'specav_lm_' + str(iter1).zfill(8) + '_' +\
             str(iter2).zfill(8) + '_' +  varname + ('_rval%0.3f' %rval) +\
             '.png'
-    print('Plotting spec_lm: ' + varname +\
+    print('Plotting specav_lm: ' + varname +\
             (', r/rsun = %0.3f (ir = %02i), ' %(rval, ir_vals[ir])) +\
             ' ...')
     power_loc = power[il1:il2+1, il1:il2+1, ir]
@@ -225,7 +224,7 @@ for ir in range(len(ir_vals)):
         else:
             power_not0 = np.copy(power_loc)
         power_not0 = power_not0[power_not0 != 0.]
-        minmax_loc = get_satvals(power_not0, posdef=True, logscale=logscale)
+        minmax_loc = get_satvals(power_not0, logscale=True)
     else:
         minmax_loc = minmax
 
@@ -234,21 +233,33 @@ for ir in range(len(ir_vals)):
     ax = fig.add_axes([margin_left, margin_bottom, subplot_width,\
             subplot_height])
     plt.sca(ax)
-    if logscale:
-        im = plt.pcolormesh(lvals_2d_new, mvals_2d_new, power_loc,\
-                cmap='Greys',\
-            norm=colors.LogNorm(vmin=minmax_loc[0], vmax=minmax_loc[1]))  
-    else:
-        im = plt.pcolormesh(lvals_2d_new, mvals_2d_new, power_loc,\
-                cmap='plasma', vmin=minmax_loc[0], vmax=minmax_loc[1])
+    im = plt.pcolormesh(lvals_2d_new, mvals_2d_new, power_loc,\
+            cmap='jet',\
+        norm=colors.LogNorm(vmin=minmax_loc[0], vmax=minmax_loc[1]))  
 
+    # Set up the colorbar "by hand"
+    ax_left, ax_right, ax_bottom, ax_top = axis_range(ax)
+    ax_width = ax_right - ax_left
+    ax_height = ax_top - ax_bottom
+    cbax_center_y = ax_bottom + ax_height/2.
+    cbax_left = ax_right + 1/8/fig_width_inches
+    cbax_width = 1/8/fig_width_inches
+    cbax_aspect = 20.
+    cbax_height = cbax_width*cbax_aspect/fig_aspect
+    cbax_bottom = cbax_center_y - cbax_height/2. 
+    
+    cbaxes = fig.add_axes([cbax_left, cbax_bottom,\
+                   cbax_width, cbax_height])
+    cbar = plt.colorbar(im, cax=cbaxes)
+
+    plt.sca(ax)
     # set bounds
 #    plt.xlim(0.5, nell - 0.5)
 #    plt.ylim(0.5, nm - 0.5)
 
     # label axes
-    plt.xlabel(r'$\ell$', fontsize=fs)
-    plt.ylabel(r'$m$', fontsize=fs)
+    plt.xlabel(r'${\rm{spherical\ harmonic\ degree}}\ \ell$', fontsize=fs)
+    plt.ylabel(r'${\rm{azimuthal\ order}}\ m$', fontsize=fs)
 
     # Get ticks everywhere
     plt.minorticks_on()
@@ -278,7 +289,7 @@ for ir in range(len(ir_vals)):
 
     # Make title
     title = dirname_stripped +\
-        '\n' + r'$\rm{spec\_lm}$' + '     '  + time_string +\
+        '\n' + r'$\rm{specav\_lm}$' + '     '  + time_string +\
         '\n' + varlabel + '     ' + (r'$r/R_\odot\ =\ %0.3f$' %rval) +\
         '\n' + (r'$\ell_{\rm{rms}} = %.1f$' %l_rms) + '     ' +\
         (r'$m_{\rm{rms}} = %.1f$' %m_rms)
