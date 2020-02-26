@@ -45,6 +45,7 @@ rnorm = None
 minmax = None
 the_file = get_widest_range_file(datadir, 'Shell_Spectra')
 lminmax = None
+mminmax = None
 fs = 12.
 tag = ''
 
@@ -76,6 +77,8 @@ for i in range(nargs):
         showplot = True
     elif arg == '-lminmax':
         lminmax = float(args[i+1]), float(args[i+2])
+    elif arg == '-mminmax':
+        mminmax = float(args[i+1]), float(args[i+2])
     elif arg == '-tag':
         tag = '_' + args[i+1]
 
@@ -94,34 +97,6 @@ plotdir = dirname + '/plots/specav_lm/rvals_sample' + tag + '/'
 if not os.path.isdir(plotdir):
     os.makedirs(plotdir)
 
-# Create the plot using subplot axes
-fig_width_inches = 6.
-
-# General parameters for main axis/color bar
-margin_bottom_inches = 1./2.
-margin_left_inches = 5./8.
-margin_right_inches = 1.
-margin_top_inches = 1.
-margin_inches = 1./8.
-
-subplot_width_inches = fig_width_inches - margin_left_inches -\
-        margin_right_inches
-subplot_height_inches = subplot_width_inches
-fig_height_inches = margin_bottom_inches + subplot_height_inches +\
-    margin_top_inches
-
-# "Non-dimensional" figure parameters
-margin_x = margin_inches/fig_width_inches
-margin_y = margin_inches/fig_height_inches
-margin_bottom = margin_bottom_inches/fig_height_inches
-margin_top = margin_top_inches/fig_height_inches
-margin_left = margin_left_inches/fig_width_inches
-margin_right = margin_right_inches/fig_width_inches
-
-subplot_width = subplot_width_inches/fig_width_inches
-subplot_height = subplot_height_inches/fig_height_inches
-
-fig_aspect = fig_height_inches/fig_width_inches
 
 # Read in spec data
 print ('Reading Shell_Spectra data from ' + datadir + the_file +\
@@ -149,8 +124,48 @@ if not lminmax is None:
 else:
     il1, il2 = 0, nell - 1
 
+if not mminmax is None:
+    im1 = np.argmin(np.abs(mvals - mminmax[0]))
+    im2 = np.argmin(np.abs(mvals - mminmax[1]))
+else:
+    im1, im2 = 0, nm - 1
+
+# This will set the aspect ratio for the plot
+nl_used = il2 - il1 + 1
+nm_used = im2 - im1 + 1
+
+# Create the plot using subplot axes
+fig_width_inches = 6.
+
+# General parameters for main axis/color bar
+margin_bottom_inches = 1./2.
+margin_left_inches = 5./8.
+margin_right_inches = 1.
+margin_top_inches = 1.
+margin_inches = 1./8.
+
+subplot_width_inches = fig_width_inches - margin_left_inches -\
+        margin_right_inches
+subplot_aspect = nm_used/nl_used
+subplot_height_inches = subplot_width_inches*subplot_aspect
+fig_height_inches = margin_bottom_inches + subplot_height_inches +\
+    margin_top_inches
+
+# "Non-dimensional" figure parameters
+margin_x = margin_inches/fig_width_inches
+margin_y = margin_inches/fig_height_inches
+margin_bottom = margin_bottom_inches/fig_height_inches
+margin_top = margin_top_inches/fig_height_inches
+margin_left = margin_left_inches/fig_width_inches
+margin_right = margin_right_inches/fig_width_inches
+
+subplot_width = subplot_width_inches/fig_width_inches
+subplot_height = subplot_height_inches/fig_height_inches
+
+fig_aspect = fig_height_inches/fig_width_inches
+
 lvals = lvals[il1:il2+1]
-mvals = mvals[il1:il2+1]
+mvals = mvals[im1:im2+1]
 
 lvals_2d, mvals_2d = np.meshgrid(lvals, mvals, indexing='ij')
 lvals_2d_new, mvals_2d_new = xy_grid(lvals_2d, mvals_2d)
@@ -209,7 +224,7 @@ for ir in range(len(ir_vals)):
     print('Plotting specav_lm: ' + varname +\
             (', r/rsun = %0.3f (ir = %02i), ' %(rval, ir_vals[ir])) +\
             ' ...')
-    power_loc = power[il1:il2+1, il1:il2+1, ir]
+    power_loc = power[il1:il2+1, im1:im2+1, ir]
 
     # Get minmax, if not specified
     if minmax is None:
@@ -219,7 +234,7 @@ for ir in range(len(ir_vals)):
             power_not0 = np.copy(power_loc[1:-1, :])
         elif il1 == 0: 
             power_not0 = np.copy(power_loc[1:, :])
-        elif il2 == 0: 
+        elif il2 == nell - 1: 
             power_not0 = np.copy(power_loc[:-1, :])
         else:
             power_not0 = np.copy(power_loc)
