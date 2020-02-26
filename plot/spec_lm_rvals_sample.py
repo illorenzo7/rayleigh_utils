@@ -151,7 +151,12 @@ nl_used = il2 - il1 + 1
 nm_used = im2 - im1 + 1
 
 # Create the plot using subplot axes
-fig_width_inches = 6.
+if nl_used >= nm_used:
+    subplot_width_inches = 5.
+    subplot_height_inches = nm_used/nl_used*subplot_width_inches
+else:
+    subplot_height_inches = 5.
+    subplot_width_inches = nl_used/nm_used*subplot_height_inches
 
 # General parameters for main axis/color bar
 margin_bottom_inches = 1./2.
@@ -160,10 +165,8 @@ margin_right_inches = 1.
 margin_top_inches = 1.
 margin_inches = 1./8.
 
-subplot_width_inches = fig_width_inches - margin_left_inches -\
+fig_width_inches = subplot_width_inches + margin_left_inches +\
         margin_right_inches
-subplot_aspect = nm_used/nl_used
-subplot_height_inches = subplot_width_inches*subplot_aspect
 fig_height_inches = margin_bottom_inches + subplot_height_inches +\
     margin_top_inches
 
