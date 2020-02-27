@@ -2,8 +2,9 @@
 # Created by: Loren Matilsky
 # On: 02/26/2020
 ############################################################################
-# This routine computes the trace in time/spherical harmonics l and m
-# of the absolute-squared power associated with  v_r, v_theta, and v_phi
+# This routine computes a trace in time/spherical harmonics l and m
+# contained in file [fname] and
+# computes the power spectrum by doing a Fourier transform in time
 # 
 # By default, the routine traces over the last  niter = 100 files available,# though the user can specify a different range in sevaral ways:
 # -n 10 (last 10 files)
@@ -90,9 +91,9 @@ for i in range(index_first, index_last + 1):
     local_ntimes = spec.niter
     lut = spec.lut
     for j in range(local_ntimes):
-        vals_vr_loc = spec.vals[:, :, :, lut[1], j]
-        vals_vt_loc = spec.vals[:, :, :, lut[2], j]
-        vals_vp_loc = spec.vals[:, :, :, lut[3], j]
+        vals_vr_loc = np.abs(spec.vals[:, :, :, lut[1], j])**2
+        vals_vt_loc = np.abs(spec.vals[:, :, :, lut[2], j])**2
+        vals_vp_loc = np.abs(spec.vals[:, :, :, lut[3], j])**2
         vals_vr.append(vals_vr_loc.tolist())
         vals_vt.append(vals_vt_loc.tolist())
         vals_vp.append(vals_vp_loc.tolist())
