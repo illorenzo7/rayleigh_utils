@@ -3,17 +3,17 @@
 # On: 02/26/2020
 ############################################################################
 # This routine computes a trace in time/spherical harmonics l and m
-# contained in file [fname] and
-# computes the power spectrum by doing a Fourier transform in time
+# contained in file [fname] (produced by compute/timetrace/lmvals_v) and
+# computes the (one-sided) power spectrum by doing a (one-sided) Fourier
+# transform in time
+# spectrum is 3D (function of l, m and omega)
 # 
-# By default, the routine traces over the last  niter = 100 files available,# though the user can specify a different range in sevaral ways:
-# -n 10 (last 10 files)
-# -range iter1 iter2 (no.s for start/stop data files; iter2 can be "last")
-# -centerrange iter0 nfiles (trace about central file iter0 over nfiles)
-# -all (all the files in the data directory)
+# stores data in a new .pkl file, named after the lmvals_v trace:
+# [dirname]_trace_lmvals_v_[iter1]_[iter2].pkl -->
+# [dirname]_lmvals_v_pspec_[iter1]_[iter2].pkl
 #
 # The final datacube output ('vals') will have shape
-# (ntimes, nell, ndepths, 3)
+# (nfreq, nell, ndepths, 3) = (ntimes, nell, ndepths, 3)
 
 # Import relevant modules
 import numpy as np
