@@ -20,7 +20,7 @@ from plotcommon import axis_range, default_axes_1by2, default_axes_1by1
 def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
     units='', minmax=None, posdef=False, logscale=False, symlog=False,\
     plotcontours=True, plotfield=True, nlevs=10, levels=None,\
-	plotlatlines=False, rvals=None, rvals_norm=None, fsize=8,\
+	plotlatlines=False, rvals=None, rvals_norm=None, cbar_fs=10,\
     showplot=False, plot_cbar=True, lw_scaling=1.,\
     linthresh=None, linscale=None, plotboundary=True):
 
@@ -146,8 +146,8 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
                            cbax_width, cbax_height])
             cbar = plt.colorbar(im, cax=cbaxes)
     
-            cbaxes.tick_params(labelsize=fsize)
-            cbar.ax.tick_params(labelsize=fsize)   #font size for the ticks
+            cbaxes.tick_params(labelsize=cbar_fs)
+            cbar.ax.tick_params(labelsize=cbar_fs)   #font size for the ticks
 
             if logscale:
                 locator = ticker.LogLocator(subs='all')
@@ -186,7 +186,7 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
             # Put the units (and possibly the exponent) to left of colorbar
             fig.text(cbax_left - 0.3*cbax_width, cbax_center_y,\
                     cbar_label, ha='right', va='center', rotation=90,\
-                    fontsize=fsize)
+                    fontsize=cbar_fs)
 
     # Plot contours in the meridional plane, if desired
     if plotcontours:
@@ -269,7 +269,7 @@ def plot_azav_half(field, rr, cost, sym='even', fig=None, ax=None,\
         cmap='RdYlBu_r', units='', minmax=None, posdef=False, logscale=False,\
         symlog=False, linthresh=None, linscale=None, plotcontours=True,\
         plotfield=True, nlevs=10, levels=None, plotlatlines=False, rvals=None,\
-        norm=None, fsize=8, showplot=False, plot_cbar=True):
+        norm=None, cbar_fs=10, showplot=False, plot_cbar=True):
 	
     '''Takes a figure with a subplot (axis) of aspect ratio 1x1 (or
     generates default axes if they are not provided) and adds
@@ -376,8 +376,8 @@ def plot_azav_half(field, rr, cost, sym='even', fig=None, ax=None,\
                        cbax_width, cbax_height])
         cbar = plt.colorbar(cax=cbaxes)
 
-        cbaxes.tick_params(labelsize=fsize)
-        cbar.ax.tick_params(labelsize=fsize)   #font size for the ticks
+        cbaxes.tick_params(labelsize=cbar_fs)
+        cbar.ax.tick_params(labelsize=cbar_fs)   #font size for the ticks
 
         if not logscale:
             if posdef:
@@ -397,7 +397,7 @@ def plot_azav_half(field, rr, cost, sym='even', fig=None, ax=None,\
         # Put the units and exponent to left of colorbar
         fig.text(cbax_left - 0.3*cbax_width, cbax_bottom + cbax_height/2.,\
                 cbar_label, ha='right', va='center', rotation=90,\
-                fontsize=fsize)
+                fontsize=cbar_fs)
 
     # Plot the boundary of the meridional plane
     plt.sca(ax)
@@ -453,7 +453,7 @@ def plot_azav_half(field, rr, cost, sym='even', fig=None, ax=None,\
         plt.show()
 
 def plot_quiver(vr, vt, rr, cost, fig=None, ax=None, minmax=None,\
-        plotlatlines=False, rvals=None, rvals_norm=None, fsize=8,\
+        plotlatlines=False, rvals=None, rvals_norm=None, cbar_fs=10,\
         showplot=False, scale=None, plot_poles=False, nsample_t=20,\
         nsample_r=10, scale_by_mag=True, plotboundary=True):
 
