@@ -22,7 +22,10 @@ from reference_tools import equation_coefficients
 # Get directory name
 dirname = sys.argv[1]
 
-def compute_tdt(dirname, mag=False):
+def compute_tdt(dirname, mag=False, tach=False):
+    # Returns computed diffusion time (in sec) across whole layer
+    # If tach=True, return diffusion time across whole layer,
+    # across CZ and across RZ (tuple of 3)
     # Read in the diffusion profile
     try: 
         trans = TransportCoeffs(dirname + '/transport')
@@ -43,9 +46,23 @@ def compute_tdt(dirname, mag=False):
         print ("compute_tdt(): Got diffusion time from 'equation_coefficients' file")
 
     # Compute and return the diffusion time
-    diff_top = diff[0]
-    H = np.max(rr) - np.min(rr)
-    return H**2.0/diff_top
+    if tach:
+        domain_bounds = get_parameter(dirname, 'domain_bounds')
+        ri, rm, ro = domain_bounds
+        iri = np.argmin(np.abs(rr - ri))
+        irm = np.argmin(np.abs(rr - rm))
+        iro = np.argmin(np.abs(rr - ro))
+        diff_top_CZ = diff[iro]
+        diff_top_RZ = diff[irm]
+        H = ro - ri
+        H_CZ = ro - rm
+        H_RZ = rm - ri
+        return H**2.0/diff_top_CZ, H_CZ**2.0/diff_top_CZ,\
+                H_RZ**2.0/diff_top_RZ
+    else:
+        diff_top = diff[0]
+        H = np.max(rr) - np.min(rr)
+        return H**2.0/diff_top
 
 def compute_Prot(dirname):
     try:
