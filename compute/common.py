@@ -417,15 +417,26 @@ def read_log(fname):
     delta_t = []
     iters_per_sec = []
     for line in lines:
-        if "Iteration:" in line:
+        if "teration" in line:
             split = line.split()
-            for i in range(len(split)):
-                if split[i] == 'Iteration:':
-                    iters.append(int(split[i+1]))
-                elif split[i] == 'DeltaT:':
-                    delta_t.append(float(split[i+1]))
-                elif split[i] == 'Iter/sec:':
-                    iters_per_sec.append(float(split[i+1]))
+            lensplit = len(split)
+            if lensplit == 6:
+                for i in range(lensplit):
+                    if split[i] == 'Iteration:':
+                        iters.append(int(split[i+1]))
+                    elif split[i] == 'DeltaT:':
+                        delta_t.append(float(split[i+1]))
+                    elif split[i] == 'Iter/sec:':
+                        iters_per_sec.append(float(split[i+1]))
+            elif lensplit == 7:
+                for i in range(lensplit):
+                    if split[i] == 'Iteration':
+                        iters.append(int(split[i+2]))
+                    elif split[i] == 'DeltaT':
+                        delta_t.append(float(split[i+2]))
+            else:
+                print("read_log(%s): unrecognized text file format")
+
     if len(iters_per_sec) > 0:
         di = dict({'iters': np.array(iters), 'delta_t': np.array(delta_t),\
                 'iters_per_sec': np.array(iters_per_sec)})
