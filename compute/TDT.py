@@ -21,12 +21,15 @@ tach = False
 mag = False
 args = sys.argv[2:]
 nargs = len(args)
+in_sec = False
 for i in range(nargs):
     arg = args[i]
     if arg == '-tach':
         tach = True
     elif arg == '-mag':
         mag = True
+    elif arg == '-sec':
+        in_sec = True
 
 # Get the diffusion time
 if tach:
@@ -37,15 +40,28 @@ else:
 # Get the baseline time unit
 rotation = get_parameter(dirname, 'rotation')
 if rotation:
-    time_unit = compute_Prot(dirname)
-    time_string = ' rotations'
+    if in_sec:
+        time_unit = 1.
+        time_string = ' sec'
+    else:
+        time_unit = compute_Prot(dirname)
+        time_string = ' rotations'
 else:
-    time_unit = 86400.
-    time_string = ' days'
+    if in_sec:
+        time_unit = 1.
+        time_string = ' sec'
+    else:
+        time_unit = 86400.
+        time_string = ' days'
+
+if in_sec:
+    format_string = "%1.1e"
+else:
+    format_string = "%.1f"
 
 if tach:
-    print(("TDT across layer: %.1f" %(TDT/time_unit)) + time_string)
-    print(("TDT across CZ: %.1f" %(TDT_CZ/time_unit)) + time_string)
-    print(("TDT across RZ: %.1f" %(TDT_RZ/time_unit)) + time_string)
+    print(("TDT across layer: " + format_string %(TDT/time_unit)) + time_string)
+    print(("TDT across CZ: " + format_string %(TDT_CZ/time_unit)) + time_string)
+    print(("TDT across RZ: " + format_string %(TDT_RZ/time_unit)) + time_string)
 else:
-    print(("TDT across layer: %.1f" %(TDT/time_unit)) + time_string)
+    print(("TDT across layer: " + format_string %(TDT/time_unit)) + time_string)
