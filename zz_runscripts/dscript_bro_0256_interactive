@@ -1,1 +1,1 @@
-qsub -I -q devel -W group_list=s2175 -l select=10:ncpus=28:mpiprocs=24:model=bro -l walltime=02:00:00
+qsub -I -q devel -W group_list=s2175 -l select=10:ncpus=28:mpiprocs=28:model=bro -l walltime=02:00:00
