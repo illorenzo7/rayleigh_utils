@@ -185,7 +185,7 @@ for iplot in range(nplots):
             (iplot//ncol)*(subplot_height + margin_subplot_top)
     ax = fig.add_axes((ax_left, ax_bottom, subplot_width, subplot_height))
     plot_azav (thermo_terms[iplot], rr, cost, fig=fig, ax=ax,\
-            units=units[iplot], plotcontours=plotcontours, fsize=fsize)
+            units=units[iplot], plotcontours=plotcontours, cbar_fs=fsize)
     ax.set_title(titles[iplot], va='bottom', **csfont)
 
 # Put some metadata in upper left
