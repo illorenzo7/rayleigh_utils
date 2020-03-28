@@ -18,7 +18,7 @@ from binormalized_cbar import MidpointNormalize
 import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
-from common import get_widest_range_file, strip_dirname, get_dict
+from common import get_widest_range_file, strip_dirname, get_dict, lsun
 from get_parameter import get_parameter
 
 # Get directory name and stripped_dirname for plotting purposes
@@ -29,26 +29,30 @@ dirname_stripped = strip_dirname(dirname)
 # already exist    
 datadir = dirname + '/data/'
 plotdir = dirname + '/plots/'
-if (not os.path.isdir(plotdir)):
+if not os.path.isdir(plotdir):
     os.makedirs(plotdir)
 
 # Set defaults
-my_boundstype = 'manual'
-user_specified_minmax = False
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
 
 # Read in CLAs (if any) to change default variable ranges and other options
+minmax = None
+xminmax = None
 args = sys.argv[2:]
 nargs = len(args)
+lum = lsun
 for i in range(nargs):
     arg = args[i]
-    if (arg == '-minmax'):
-        my_min, my_max = float(args[i+1]), float(args[i+2])
-        user_specified_minmax = True
-    elif (arg == '-usefile'):
+    if arg == '-minmax':
+        minmax = float(args[i+1]), float(args[i+2])
+    elif arg == '-xminmax':
+        xminmax = float(args[i+1]), float(args[i+2])
+    elif arg == '-usefile':
         AZ_Avgs_file = args[i+1]
         AZ_Avgs_file = AZ_Avgs_file.split('/')[-1]
-        
+    elif arg == '-lum':
+        lum = float(args[i+1])
+
 # Read in AZ_Avgs data
 print ('Getting AZ_Avgs data from ' + datadir + AZ_Avgs_file + ' ...')
 di = get_dict(datadir + AZ_Avgs_file)
@@ -61,46 +65,69 @@ cflux_azav = vals[:, :, lut[1470]]
 rr = di['rr']
 ro = di['ro']
 rr_depth = di['rr_depth']
-
 tt_lat = di['tt_lat']
-
 nr, nt = di['nr'], di['nt']
+
+# compute the x limits
+if xminmax is None:
+    xmin, xmax = -75., 75.
+else:
+    xmin, xmax = xminmax
+ 
+# Get minmax lat info
+ilat1 = np.argmin(np.abs(tt_lat - xmin))
+ilat2 = np.argmin(np.abs(tt_lat - xmax))
+
+# Compute luminosity that must be carried out as a flux
+eq_flux = lum/4/np.pi/ro**2
 
 # Plot the entropy deviation vs. latitude, at several depths: 
 # 0, 5, 10, 15, and 25 per cent down
-rvals_desired = np.array([0., 0.05, 0.1, 0.15, 0.25])
-nrvals = len(rvals_desired)
-for i in range(nrvals):
-    rval_desired = rvals_desired[i]
-    ir_to_plot = np.argmin(np.abs(rr_depth - rval_desired))
-    plt.plot(tt_lat, cflux_azav[:, ir_to_plot],\
+depths_desired = np.array([0., 0.05, 0.1, 0.15, 0.25])
+ndepths = len(depths_desired)
+vmins = []
+vmaxes = []
+for i in range(ndepths):
+    depth_desired = depths_desired[i]
+    ir_to_plot = np.argmin(np.abs(rr_depth - depth_desired))
+    plt.plot(tt_lat[ilat1:ilat2+1], cflux_azav[ilat1:ilat2+1,\
+            ir_to_plot]/eq_flux,\
             label=r'$r/r_o=%0.3f$' %(rr[ir_to_plot]/ro))
-
-# Plot the luminosity that must be carried out as a flux:
-lum = get_parameter(dirname, 'luminosity')
-Flux_out = lum/4/np.pi/ro**2
-plt.plot(tt_lat, Flux_out*np.ones(nt), 'k--', alpha=0.3, label=r'$L_*/4\pi r_o^2$')
+    vmins.append(np.min(cflux_azav[ilat1:ilat2+1, ir_to_plot]))
+    vmaxes.append(np.max(cflux_azav[ilat1:ilat2+1, ir_to_plot]))
+vmins = np.array(vmins)/eq_flux
+vmaxes = np.array(vmaxes)/eq_flux
+vmin, vmax = np.min(vmins), np.max(vmaxes)
 
 # Get ticks everywhere
 plt.minorticks_on()
 plt.tick_params(top=True, right=True, direction='in', which='both')
 
 # Set the x limits
-xmin, xmax = -90, 90
-delta_x = xmax - xmin
 plt.xlim(xmin, xmax)
 
-# Set y limits if user wanted you to
-if user_specified_minmax:
-    plt.ylim(my_min, my_max)
+# Set y limits
+if minmax is None:
+    ybuffer = 0.2*(vmax - vmin)
+    ymin, ymax = vmin - ybuffer, vmax + ybuffer
+else:
+    ymin, ymax = minmax
+plt.ylim(ymin, ymax)
+
+# Plot reference line at y = 1
+plt.plot(tt_lat[ilat1:ilat2+1], np.ones(ilat2 - ilat1 + 1), 'k--')
+
+# Plot lat = 0 (equator)
+yvals = np.linspace(ymin, ymax, 100)
+plt.plot(np.zeros(100), yvals, 'k--')
 
 # Create a see-through legend
 leg=plt.legend(shadow=True,fontsize=10)
 leg.get_frame().set_alpha(0.3)
 
 # Label the axes
-plt.xlabel(r'$\rm{Latitude} \ (^\circ)$', fontsize=12)
-plt.ylabel(r'$\mathcal{F}_{{\rm{cond}},r} = -\kappa \overline{\rho}\overline{T}\partial\langle S\rangle_\phi/\partial r\ [\rm{erg}\ \rm{cm}^{-2}\ \rm{s}^{-1}]$',\
+plt.xlabel(r'$\rm{Latitude} \ (deg)$', fontsize=12)
+plt.ylabel(r'$\mathcal{F}_{{\rm{cond}},\ r}/(L_*/4\pi r_{\rm{o}}^2)$',
         fontsize=12)
 
 # Make title

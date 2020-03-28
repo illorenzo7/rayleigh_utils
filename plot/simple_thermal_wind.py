@@ -22,7 +22,7 @@ sys.path.append(os.environ['raco'])
 from azav_util import plot_azav
 from common import get_widest_range_file, strip_dirname, get_file_lists,\
         get_desired_range, get_dict
-from rayleigh_diagnostics import ReferenceState, TransportCoeffs
+from get_eq import get_eq
 from get_parameter import get_parameter
 from derivs import drad, dth
 
@@ -99,14 +99,14 @@ dvpdz = cost_2d*dvpdr - sint_2d*dvpdt/rr_2d
 T1 = 2*Om0*dvpdz
 
 # Baroclinic term:
-ref = ReferenceState(dirname + '/reference')
-trans = TransportCoeffs(dirname + '/transport')
-g = ref.gravity
+eq = get_eq(dirname)
+
+g = eq.gravity
 cp = get_parameter(dirname, 'pressure_specific_heat')
 
-rho_bar = ref.density
-t_bar = ref.temperature
-kappa = trans.kappa
+rho_bar = eq.density
+t_bar = eq.temperature
+kappa = eq.kappa
 cond_flux_theta = vals[:, :, lut[1471]]
 dsdrt = -cond_flux_theta/(rho_bar*t_bar*kappa).reshape((1, nr))
 T2 = -g.reshape((1, nr))*dsdrt/cp
