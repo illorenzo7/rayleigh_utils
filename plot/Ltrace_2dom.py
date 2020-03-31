@@ -1,5 +1,5 @@
 # Author: Loren Matilsky
-# Date created: 06/08/2017
+# Date created: 03/31/2020
 import matplotlib as mpl
 mpl.use('TkAgg')
 import matplotlib.pyplot as plt
@@ -25,7 +25,7 @@ dirname_stripped = strip_dirname(dirname)
 
 # Find the etrace file(s) in the data directory. If there are multiple, by
 # default choose the one with widest range in the trace.
-trace_G_Avgs_file = get_widest_range_file(datadir, 'trace_G_Avgs')
+the_file = get_widest_range_file(datadir, 'trace_2dom_G_Avgs')
 
 # Set defaults
 xiter = False
@@ -43,8 +43,8 @@ for i in range(nargs):
     if arg == '-xiter': # plot w.r.t. iterations
         xiter = True
     elif arg == '-usefile':
-        trace_G_Avgs_file = args[i+1]
-        trace_G_Avgs_file = trace_G_Avgs_file.split('/')[-1]
+        the_file = args[i+1]
+        the_file = the_file.split('/')[-1]
     elif arg == '-notfrom0':
         notfrom0 = True
     elif arg == '-minmax':
@@ -69,9 +69,10 @@ else:
     tag = '_xtime'
 
 # Read in the KE data (dictionary form)
-di = get_dict(datadir + trace_G_Avgs_file)
+di = get_dict(datadir + the_file)
 
-vals = di['vals']
+vals_cz = di['vals_cz']
+vals_rz = di['vals_rz']
 lut = di['lut']
 times = di['times']
 iters = di['iters']
@@ -101,32 +102,42 @@ else:
         it2 = np.argmin(np.abs(times/time_unit - xminmax[1]))
 
 # Make appropriate file name to save
-savename = dirname_stripped + '_Ltrace_' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + tag + '.png'
+savename = dirname_stripped + '_Ltrace_2dom_' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + tag + '.png'
 
 # Get data in apropriate time range
 times = times[it1:it2+1]
 t1 = np.min(times)
 t2 = np.max(times)
 iters = iters[it1:it2+1]
-Lz = vals[lut[1819], it1:it2+1]
+Lz_cz = vals_cz[it1:it2+1, lut[1819]]
+Lz_rz = vals_rz[it1:it2+1, lut[1819]]
 if plotall:
-    Lx = vals[lut[1820], it1:it2+1]
-    Ly = vals[lut[1821], it1:it2+1]
+    Lx_cz = vals_cz[it1:it2+1, lut[1820]]
+    Lx_rz = vals_rz[it1:it2+1, lut[1820]]
+    Ly_cz = vals_cz[it1:it2+1, lut[1821]]
+    Ly_rz = vals_rz[it1:it2+1, lut[1821]]
 
-Lpz = vals[lut[1822], it1:it2+1]
+Lpz_cz = vals_cz[it1:it2+1, lut[1822]]
+Lpz_rz = vals_rz[it1:it2+1, lut[1822]]
 if plotall:
-    Lpx = vals[lut[1823], it1:it2+1]
-    Lpy = vals[lut[1824], it1:it2+1]
+    Lpx_cz = vals_cz[it1:it2+1, lut[1823]]
+    Lpx_rz = vals_rz[it1:it2+1, lut[1823]]
+    Lpy_cz = vals_cz[it1:it2+1, lut[1824]]
+    Lpy_rz = vals_rz[it1:it2+1, lut[1824]]
 
-Lmz = vals[lut[1825], it1:it2+1]
+Lmz_cz = vals_cz[it1:it2+1, lut[1825]]
+Lmz_rz = vals_rz[it1:it2+1, lut[1825]]
 if plotall:
-    Lmx = vals[lut[1826], it1:it2+1]
-    Lmy = vals[lut[1827], it1:it2+1]
+    Lmx_cz = vals_cz[it1:it2+1, lut[1826]]
+    Lmx_rz = vals_rz[it1:it2+1, lut[1826]]
+    Lmy_cz = vals_cz[it1:it2+1, lut[1827]]
+    Lmy_rz = vals_rz[it1:it2+1, lut[1827]]
 
 # Get global min/max vals
-varlist = [Lz, Lpz, Lmz]
+varlist = [Lz_cz, Lpz_cz, Lmz_cz, Lz_rz, Lpz_rz, Lmz_rz]
 if plotall:
-    varlist.extend([Lx, Ly, Lpx, Lpy, Lmx, Lmy])
+    varlist.extend([Lx_cz, Ly_cz, Lpx_cz, Lpy_cz, Lmx_cz, Lmy_cz,\
+        Lx_rz, Ly_rz, Lpx_rz, Lpy_rz, Lmx_rz, Lmy_rz])
 mmax = -np.inf
 mmin = np.inf
 for var in varlist:
@@ -137,11 +148,6 @@ if not xiter:
     xaxis = times/time_unit
 else:
     xaxis = iters
-
-if notfrom0:
-    x_min = np.min(xaxis)
-else:
-    x_min = 0.
 
 # create figure with  3 panels in a row (total, mean and fluctuating amom)
 fig, axs = plt.subplots(3, 1, figsize=(5, 10), sharex=True)
@@ -166,10 +172,13 @@ else:
 # Make title
 ax1.set_title(dirname_stripped + '\n ' + time_string +\
           '\n\nangular momentum')
-ax1.plot(xaxis, Lz, 'k', linewidth=lw, label=r'$\mathcal{L}_z$')
+ax1.plot(xaxis, Lz_cz, 'k', linewidth=lw, label=r'$\mathcal{L}_z\ \rm{(CZ)}$')
+ax1.plot(xaxis, Lz_rz, 'k--', linewidth=lw, label=r'$\mathcal{L}_z\ \rm{(RZ)}$')
 if plotall:
-    ax1.plot(xaxis, Lx, 'r', linewidth=lw, label=r'$\mathcal{L}_x$')
-    ax1.plot(xaxis, Ly, 'g', linewidth=lw, label=r'$\mathcal{L}_y$')
+    ax1.plot(xaxis, Lx_cz, 'r', linewidth=lw, label=r'$\mathcal{L}_x\ \rm{(CZ)}$')
+    ax1.plot(xaxis, Lx_rz, 'r--', linewidth=lw, label=r'$\mathcal{L}_x\ \rm{(RZ)}$')
+    ax1.plot(xaxis, Ly_cz, 'g', linewidth=lw, label=r'$\mathcal{L}_y\ \rm{(CZ)}$')
+    ax1.plot(xaxis, Ly_rz, 'g--', linewidth=lw, label=r'$\mathcal{L}_y\ \rm{(RZ)}$')
 
 # If we're looking for machine-precision variations, just determine
 # min and max ranges for y-axes automatically in Python...
@@ -203,10 +212,13 @@ ax2.ticklabel_format(scilimits = (-3,4), useMathText=True)
 ax3.ticklabel_format(scilimits = (-3,4), useMathText=True)
 
 # Make the second plot (angular momentum of fluctuating motions)
-ax2.plot(xaxis, Lpz, 'k', linewidth=lw, label=r'$\mathcal{L}_z^\prime$')
+ax2.plot(xaxis, Lpz_cz, 'k', linewidth=lw, label=r'$\mathcal{L}_z^\prime\ \rm{(CZ)}$')
+ax2.plot(xaxis, Lpz_rz, 'k--', linewidth=lw, label=r'$\mathcal{L}_z^\prime\ \rm{(RZ)}$')
 if plotall:
-    ax2.plot(xaxis, Lpx, 'r', linewidth=lw, label=r'$\mathcal{L}_x^\prime$')
-    ax2.plot(xaxis, Lpy, 'g', linewidth=lw, label=r'$\mathcal{L}_y^\prime$')
+    ax2.plot(xaxis, Lpx_cz, 'r', linewidth=lw, label=r'$\mathcal{L}_x^\prime\ \rm{(CZ)}$')
+    ax2.plot(xaxis, Lpx_rz, 'r--', linewidth=lw, label=r'$\mathcal{L}_x^\prime\ \rm{(RZ)}$')
+    ax2.plot(xaxis, Lpy_cz, 'g', linewidth=lw, label=r'$\mathcal{L}_y^\prime\ \rm{(CZ)}$')
+    ax2.plot(xaxis, Lpy_rz, 'g--', linewidth=lw, label=r'$\mathcal{L}_y^\prime\ \rm{(RZ)}$')
 
 # Title and axis label
 ax2.set_title('convection amom')
@@ -214,10 +226,13 @@ ax2.set_title('convection amom')
 ax2.set_ylabel(r'$\rm{angular\ momentum\ density\ (g\ cm^{-1}\ s^{-1})}$')
 
 # Third plot: angular momentum of mean energies
-ax3.plot(xaxis, Lmz, 'k', linewidth=lw, label=r'$\langle\mathcal{L}\rangle_z$')
+ax3.plot(xaxis, Lmz_cz, 'k', linewidth=lw, label=r'$\langle\mathcal{L}\rangle_z\ \rm{(CZ)}$')
+ax3.plot(xaxis, Lmz_rz, 'k--', linewidth=lw, label=r'$\langle\mathcal{L}\rangle_z\ \rm{(RZ)}$')
 if plotall:
-    ax3.plot(xaxis, Lmx, 'r', linewidth=lw, label=r'$\langle\mathcal{L}\rangle_x$')
-    ax3.plot(xaxis, Lmy, 'g', linewidth=lw, label=r'$\langle\mathcal{L}\rangle_y$')
+    ax3.plot(xaxis, Lmx_cz, 'r', linewidth=lw, label=r'$\langle\mathcal{L}\rangle_x\ \rm{(CZ)}$')
+    ax3.plot(xaxis, Lmx_rz, 'r--', linewidth=lw, label=r'$\langle\mathcal{L}\rangle_x\ \rm{(RZ)}$')
+    ax3.plot(xaxis, Lmy_cz, 'g', linewidth=lw, label=r'$\langle\mathcal{L}\rangle_y\ \rm{(CZ)}$')
+    ax3.plot(xaxis, Lmy_rz, 'g--', linewidth=lw, label=r'$\langle\mathcal{L}\rangle_y\ \rm{(RZ)}$')
 
 # title and x-axis label
 ax3.set_title('mean-motion amom')
