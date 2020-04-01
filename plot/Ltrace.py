@@ -29,7 +29,7 @@ trace_G_Avgs_file = get_widest_range_file(datadir, 'trace_G_Avgs')
 
 # Set defaults
 xiter = False
-notfrom0 = False
+from0 = False
 magnetism = False
 minmax = None
 xminmax = None
@@ -45,8 +45,8 @@ for i in range(nargs):
     elif arg == '-usefile':
         trace_G_Avgs_file = args[i+1]
         trace_G_Avgs_file = trace_G_Avgs_file.split('/')[-1]
-    elif arg == '-notfrom0':
-        notfrom0 = True
+    elif arg == '-from0':
+        from0 = True
     elif arg == '-minmax':
         try: # first see if user wants to set all three ranges set
             # If "plotall", then use the first range for the total amom,
@@ -138,10 +138,13 @@ if not xiter:
 else:
     xaxis = iters
 
-if notfrom0:
-    x_min = np.min(xaxis)
+if from0:
+    xmin = 0.
 else:
-    x_min = 0.
+    xmin = np.min(xaxis)
+
+if xminmax is None:
+    xminmax = xmin, np.max(xaxis)
 
 # create figure with  3 panels in a row (total, mean and fluctuating amom)
 fig, axs = plt.subplots(3, 1, figsize=(5, 10), sharex=True)
@@ -189,10 +192,7 @@ else:
         ax1.set_ylim(minmax[4], minmax[5])
  
 # Set x limits  
-if xminmax is None:
-    ax1.set_xlim((np.min(xaxis), np.max(xaxis)))
-else:
-    ax1.set_xlim(xminmax)
+ax1.set_xlim(xminmax)
 
 # legend
 ax1.legend(ncol=2, fontsize=8)

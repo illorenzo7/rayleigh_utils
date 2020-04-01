@@ -12,8 +12,8 @@ from subprocess import call
 from common import get_file_lists, get_widest_range_file, strip_dirname,\
         get_dict
 from get_parameter import get_parameter
-from reference_tools import equation_coefficients
-from rayleigh_diagnostics import ReferenceState, GridInfo
+from rayleigh_diagnostics import GridInfo
+from time_scales import compute_Prot, compute_tdt
 
 # Get the run directory on which to perform the analysis
 dirname = sys.argv[1]
@@ -27,11 +27,11 @@ dirname_stripped = strip_dirname(dirname)
 
 # Find the etrace file(s) in the data directory. If there are multiple, by
 # default choose the one with widest range in the trace.
-trace_G_Avgs_file = get_widest_range_file(datadir, 'trace_G_Avgs')
+the_file = get_widest_range_file(datadir, 'trace_G_Avgs')
 
 # Set defaults
 xiter = False
-notfrom0 = False
+from0 = False
 magnetism = False
 ylog = False
 minmax = None
@@ -48,10 +48,10 @@ for i in range(nargs):
     if arg == '-xiter': # plot w.r.t. iterations
         xiter = True
     elif arg == '-usefile':
-        trace_G_Avgs_file = args[i+1]
-        trace_G_Avgs_file = trace_G_Avgs_file.split('/')[-1]
-    elif arg == '-notfrom0':
-        notfrom0 = True
+        the_file = args[i+1]
+        the_file = the_file.split('/')[-1]
+    elif arg == '-from0':
+        from0 = True
     elif arg == '-mag':
         magnetism = True
     elif arg == '-log':
@@ -74,8 +74,8 @@ else:
     tag = '_xtime'
 
 # Read in the KE data (dictionary form)
-print ('Getting energy trace from ' + datadir + trace_G_Avgs_file + ' ...')
-di = get_dict(datadir + trace_G_Avgs_file)
+print ('Getting energy trace from ' + datadir + the_file + ' ...')
+di = get_dict(datadir + the_file)
 
 vals = di['vals']
 lut = di['lut']
@@ -84,31 +84,14 @@ iters = di['iters']
 iter1 = di['iter1']
 iter2 = di['iter2']
 
-# Get global rotation rate, if present
+# Get the baseline time unit
 rotation = get_parameter(dirname, 'rotation')
 if rotation:
-    angular_velocity = get_parameter(dirname, 'angular_velocity')
-    Prot = 2*np.pi/angular_velocity
-    tnorm = Prot # normalize the time axis by rotation period if applicable
+    time_unit = compute_Prot(dirname)
+    time_label = r'$\rm{P_{rot}}$'
 else:
-    try:
-        trans = TransportCoeffs(dirname + '/reference', '')
-        ktop = trans.kappa[0]
-    except:
-        eq = equation_coefficients()
-        eq.read(dirname + '/equation_coefficients')
-        ktop = eq.functions[4][0]
-#    ktop = get_parameter(dirname, 'kappa_top')
-    try:
-        rmin = get_parameter(dirname, 'rmin')
-        rmax = get_parameter(dirname, 'rmax')
-    except: # two domains stitched together
-        domain_bounds = get_parameter(dirname, 'domain_bounds')
-        rmin = np.min(domain_bounds)
-        rmax = np.max(domain_bounds)
-    depth = rmax - rmin
-    tdt = depth**2/ktop
-    tnorm = tdt
+    time_unit = compute_tdt(dirname)
+    time_label = r'$\rm{TDT}$'
 
 # Make appropriate file name to save
 basename = '_etrace_'
@@ -122,52 +105,55 @@ if savename is None:
 
 # Take slices based on what xminmax is
 if not xiter:
-    xaxis = times/tnorm
+    xaxis = times/time_unit
 else:
     xaxis = iters
 
-if notfrom0:
-    x_min = np.min(xaxis)
+if from0:
+    xmin = 0.
 else:
-    x_min = 0
+    xmin = np.min(xaxis)
 
 if xminmax is None:
-    xminmax = x_min, np.max(xaxis)
+    xminmax = xmin, np.max(xaxis)
 
-ix_min = np.argmin(np.abs(xaxis - xminmax[0]))
+ixmin = np.argmin(np.abs(xaxis - xminmax[0]))
 ix_max = np.argmin(np.abs(xaxis - xminmax[1]))
+t1 = times[ixmin]
+t2 = times[ix_max]
 
-ke = vals[lut[401]][ix_min:ix_max + 1]
-rke = vals[lut[402]][ix_min:ix_max + 1]
-tke = vals[lut[403]][ix_min:ix_max + 1]
-pke = vals[lut[404]][ix_min:ix_max + 1]
+xaxis = xaxis[ixmin:ix_max + 1]
+ke = vals[lut[401]][ixmin:ix_max + 1]
+rke = vals[lut[402]][ixmin:ix_max + 1]
+tke = vals[lut[403]][ixmin:ix_max + 1]
+pke = vals[lut[404]][ixmin:ix_max + 1]
 
-mke = vals[lut[405]][ix_min:ix_max + 1]
-mrke = vals[lut[406]][ix_min:ix_max + 1]
-mtke = vals[lut[407]][ix_min:ix_max + 1]
-mpke = vals[lut[408]][ix_min:ix_max + 1]
+mke = vals[lut[405]][ixmin:ix_max + 1]
+mrke = vals[lut[406]][ixmin:ix_max + 1]
+mtke = vals[lut[407]][ixmin:ix_max + 1]
+mpke = vals[lut[408]][ixmin:ix_max + 1]
 
-fke = vals[lut[409]][ix_min:ix_max + 1]
-frke = vals[lut[410]][ix_min:ix_max + 1]
-ftke = vals[lut[411]][ix_min:ix_max + 1]
-fpke = vals[lut[412]][ix_min:ix_max + 1]
+fke = vals[lut[409]][ixmin:ix_max + 1]
+frke = vals[lut[410]][ixmin:ix_max + 1]
+ftke = vals[lut[411]][ixmin:ix_max + 1]
+fpke = vals[lut[412]][ixmin:ix_max + 1]
 
 # Get the magnetic energies if they are available
 if magnetism:
-    me = vals[lut[1101]][ix_min:ix_max + 1]
-    rme = vals[lut[1102]][ix_min:ix_max + 1]
-    tme = vals[lut[1103]][ix_min:ix_max + 1]
-    pme = vals[lut[1104]][ix_min:ix_max + 1]
+    me = vals[lut[1101]][ixmin:ix_max + 1]
+    rme = vals[lut[1102]][ixmin:ix_max + 1]
+    tme = vals[lut[1103]][ixmin:ix_max + 1]
+    pme = vals[lut[1104]][ixmin:ix_max + 1]
 
-    mme = vals[lut[1105]][ix_min:ix_max + 1]
-    mrme = vals[lut[1106]][ix_min:ix_max + 1]
-    mtme = vals[lut[1107]][ix_min:ix_max + 1]
-    mpme = vals[lut[1108]][ix_min:ix_max + 1]
+    mme = vals[lut[1105]][ixmin:ix_max + 1]
+    mrme = vals[lut[1106]][ixmin:ix_max + 1]
+    mtme = vals[lut[1107]][ixmin:ix_max + 1]
+    mpme = vals[lut[1108]][ixmin:ix_max + 1]
 
-    fme = vals[lut[1109]][ix_min:ix_max + 1]
-    frme = vals[lut[1110]][ix_min:ix_max + 1]
-    ftme = vals[lut[1111]][ix_min:ix_max + 1]
-    fpme = vals[lut[1112]][ix_min:ix_max + 1]
+    fme = vals[lut[1109]][ixmin:ix_max + 1]
+    frme = vals[lut[1110]][ixmin:ix_max + 1]
+    ftme = vals[lut[1111]][ixmin:ix_max + 1]
+    fpme = vals[lut[1112]][ixmin:ix_max + 1]
 
 if plot_inte or plot_tote:
     try: # get the internal energy if it is available
@@ -175,14 +161,14 @@ if plot_inte or plot_tote:
             the_file = get_widest_range_file(datadir,\
                     'inte_from_Shell_Avgs')
             di_inte = get_dict(datadir + the_file)
-            inte = di_inte['inte'][ix_min:ix_max + 1]
+            inte = di_inte['inte'][ixmin:ix_max + 1]
             print("Got internal energy from Shell_Avgs")
         except:
-            inte = vals[lut[701]][ix_min:ix_max + 1]
+            inte = vals[lut[701]][ixmin:ix_max + 1]
             print("Got internal energy from G_Avgs")
     except:
         print ("Internal energy not available; setting to 0")
-        int_e = np.zeros_like(times[ix_min:ix_max + 1])
+        int_e = np.zeros_like(times[ixmin:ix_max + 1])
 
 if plot_tote:
     tote = ke + inte
@@ -214,7 +200,6 @@ ax1 = axs[0]; ax2 = axs[1]; ax3 = axs[2]
 lw = 0.5
 
 # first plot: total kinetic energy trace      
-xaxis = xaxis[ix_min:ix_max + 1]
 ax1.plot(xaxis, ke, 'k', linewidth=lw, label=r'$\rm{KE_{tot}}$')
 ax1.plot(xaxis, rke, 'r', linewidth=lw, label=r'$\rm{KE}_r$')
 ax1.plot(xaxis, tke, 'g', linewidth=lw, label=r'$\rm{KE}_\theta$')
@@ -234,8 +219,18 @@ if plot_inte:
 if plot_tote:
     ax1.plot(xaxis, tote, 'c', linewidth=lw, label='TOT E')
 
-title = dirname_stripped + '\n ' +\
-          str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8) +\
+# Label trace interval
+if rotation:
+    time_string = ('t = %.1f to %.1f ' %(t1/time_unit, t2/time_unit))\
+            + time_label + (r'$\ (\Delta t = %.1f\ $'\
+            %((t2 - t1)/time_unit)) + time_label + ')'
+else:
+    time_string = ('t = %.3f to %.3f ' %(t1/time_unit, t2/time_unit))\
+            + time_label + (r'$\ (\Delta t = %.3f\ $'\
+            %((t2 - t1)/time_unit)) + time_label + ')'
+
+# Mkae title
+title = dirname_stripped + '\n ' + time_string +\
           '\ntotal energy'
 if plot_inte:
     # Compute change in energy over time, to add to label
