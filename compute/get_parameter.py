@@ -9,7 +9,7 @@ def get_parameter(dirname, parameter):
     n = len(lines)
     try:
         for i in range(n):
-            if (parameter in lines[i] and '=' in lines[i] and \
+            if (parameter in lines[i].lower() and '=' in lines[i] and \
                     lines[i][0] != '!'):
                 line = lines[i]
         line = line[:] # test if line was assigned
@@ -35,11 +35,15 @@ def get_parameter(dirname, parameter):
     
     # Make line lowercase
     line = line.lower()
-    
+
     # Remove spaces and newline character (at the end of each line)
     line = line.replace(' ', '')
     line = line.replace('\n', '')
 
+    # Remove possible trailing comma from line
+    if line[-1] == ',':
+        line = line[:-1]
+ 
     equals_index = line.index('=') # find where the actual number
         # or array starts (should be after the equals sign)
     num_string = line[equals_index + 1:]

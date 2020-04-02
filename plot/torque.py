@@ -23,6 +23,8 @@ sys.path.append(os.environ['rapl'])
 from azav_util import plot_azav
 from common import get_widest_range_file, strip_dirname, get_dict
 from get_parameter import get_parameter
+from read_inner_vp import read_inner_vp
+from get_eq import get_eq
 
 # Get directory name and stripped_dirname for plotting purposes
 dirname = sys.argv[1]
@@ -40,13 +42,13 @@ saveplot = True
 plotcontours = True
 minmax = None
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
+forced = False
 
 args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
-    if (arg == '-minmax'):
-        my_boundstype = 'manual'
+    if arg == '-minmax':
         minmax = float(args[i+1]), float(args[i+2])
     elif arg == '-noshow':
         showplot = False
@@ -54,10 +56,11 @@ for i in range(nargs):
         saveplot = False
     elif arg == '-nocontour':
         plotcontours = False
-    elif (arg == '-usefile'):
+    elif arg == '-usefile':
         AZ_Avgs_file = args[i+1]
         AZ_Avgs_file = AZ_Avgs_file.split('/')[-1]
-
+    elif arg == '-forced':
+        forced = True
 
 # See if magnetism is "on"
 try:
@@ -79,6 +82,7 @@ cost = di['cost']
 sint = di['sint']
 tt_lat = di['tt_lat']
 xx = di['xx']
+nr, nt = di['nr'], di['nt']
 
 ind_pp = lut[1801]
 ind_mm = lut[1802]
@@ -104,6 +108,35 @@ if magnetism:
     max_sig = max(max_sig, np.std(torque_Maxwell_mean),\
                   np.std(torque_Maxwell_rs))
 
+if forced: # compute torque associated with forcing function
+    mean_vp = vals[:, :, lut[3]]
+    tacho_r = get_parameter(dirname, 'tacho_r')
+    tacho_dr = get_parameter(dirname, 'tacho_dr')
+    tacho_tau = get_parameter(dirname, 'tacho_tau')
+    forcing = np.zeros((nt, nr))
+    eq = get_eq(dirname)
+    rho = eq.rho
+
+    if os.path.exists(dirname + '/inner_vp'):
+        print ("inner_vp file exists, so I assume you have a forcing function which\n quartically matches on to a CZ differential rotation")
+        inner_vp = read_inner_vp(dirname + '/inner_vp')
+        for it in range(nt):
+            for ir in range(nr):
+                if rr[ir] <= tacho_r:
+                    desired_vp = inner_vp[it]*(1.0 - ( (rr[ir] - tacho_r)/(tacho_dr*rr[0]) )**2)**2
+                else:
+                    desired_vp = 0.0
+                forcing[it, ir] = -rho[ir]*(mean_vp[it, ir] - desired_vp)/tacho_tau
+    else:
+        forcing_coeff = -rho/tacho_tau*0.5*(1.0 - np.tanh((rr - tacho_r)/(tacho_dr*rr[0])))
+        forcing = forcing_coeff.reshape((1, nr))*mean_vp
+
+    # convert forcing function into a torque
+    torque_forcing = di['xx']*forcing
+    torque_tot += torque_forcing
+    
+    max_sig = max(max_sig, np.std(torque_forcing))
+
 # Set up the actual figure from scratch
 fig_width_inches = 7. # TOTAL figure width, in inches
     # (i.e., 8x11.5 paper with 1/2-inch margins)
@@ -111,7 +144,7 @@ margin_inches = 1./8. # margin width in inches (for both x and y) and
     # horizontally in between figures
 margin_top_inches = 2. # wider top margin to accommodate subplot titles AND metadata
 margin_subplot_top_inches = 1. # margin to accommodate just subplot titles
-nplots = 4 + 2*magnetism
+nplots = 4 + 2*magnetism + 1*forced
 ncol = 3 # put three plots per row
 nrow = np.int(np.ceil(nplots/3))
 
@@ -145,9 +178,16 @@ units = r'$\rm{g}\ \rm{cm}^{-1}\ \rm{s}^{-2}$'
 
 if magnetism:
     torques.insert(3, torque_Maxwell_mean)
-    torques.insert(3, torque_Maxwell_rs)
+    torques.insert(4, torque_Maxwell_rs)
     titles.insert(3, r'$\tau_{\rm{mm}}$')
-    titles.insert(3, r'$\tau_{\rm{ms}}$')
+    titles.insert(4, r'$\tau_{\rm{ms}}$')
+
+if forced and magnetism:
+    torques.insert(5, torque_forcing)
+    titles.insert(5, r'$\tau_{\rm{forcing}}$')
+elif forced:
+    torques.insert(3, torque_forcing)
+    titles.insert(3, r'$\tau_{\rm{forcing}}$')
 
 # Generate the actual figure of the correct dimensions
 fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
