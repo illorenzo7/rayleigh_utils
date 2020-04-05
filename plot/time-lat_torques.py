@@ -15,13 +15,14 @@ from common import get_file_lists, get_widest_range_file, strip_dirname,\
 from plotcommon import axis_range
 from get_parameter import get_parameter
 from time_scales import compute_Prot, compute_tdt
+from get_eq import get_eq
 
 # Get the run directory on which to perform the analysis
 dirname = sys.argv[1]
 
 # Data and plot directories
 datadir = dirname + '/data/'
-plotdir = dirname + '/plots/'
+plotdir = dirname + '/plots/time-lat/'
 nosave = False
 if not os.path.isdir(plotdir):
     os.makedirs(plotdir)
@@ -39,6 +40,7 @@ tag = ''
 desired_rvals = [0.692] # by default, plot time-radius diagram for fields 
     # mid-RZ (units of solar radius)
 navg = 11 # by default average over 11 AZ_Avgs files for each time
+forced = False
 
 # Get command-line arguments
 args = sys.argv[2:]
@@ -71,6 +73,8 @@ for i in range(nargs):
         xminmax = float(args[i+1]), float(args[i+2])
     elif arg == '-tag':
         tag = '_' + args[i+1]
+    elif arg == '-forced':
+        forced = True
 
 # Read in the time-latitude data (dictionary form)
 print ('Getting time-latitude torques trace from ' + datadir +\
@@ -93,6 +97,7 @@ qvals = np.array(di['qvals'])
 niter = di['niter']
 nr = di['nr']
 nrvals = di['ndepths']
+nt = di['ntheta']
 
 iter1 = di['iter1']
 iter2 = di['iter2']
@@ -158,6 +163,7 @@ if forced:
     torque_forcing = di['xx'][:, rinds].reshape((1, nt, nrvals))*forcing
 
 # Average these traces in time
+# "_all" means "all depths"
 over2 = navg//2
 torque_rs_all = np.zeros((niter - navg + 1, ntheta, nrvals))
 torque_mc_all = np.zeros((niter - navg + 1, ntheta, nrvals))
@@ -180,7 +186,7 @@ Lz_all /= navg
 if forced:
     torque_forcing_all /= navg
 
-times_trace = times[over2:niter - over2]/time_unit
+times = times[over2:niter - over2]/time_unit
 
 # Make meshgrid of time/radius
 # Take into account if user specified xmin, xmax
@@ -188,166 +194,144 @@ if xminmax is None: # By default use all times available
     it1 = 0
     it2 = niter - navg
 else:
-    it1 = np.argmin(np.abs(times_trace - xmin))
-    it2 = np.argmin(np.abs(times_trace - xmax))
-times_trace = times_trace[it1:it2+1]
-bp_all = bp_all[it1:it2+1]
-trans_tot_all = trans_tot_all[it1:it2+1]
-trans_mm_all = trans_mm_all[it1:it2+1]
-diff_all = diff_all[it1:it2+1]
-times2, tt_lat2 = np.meshgrid(times_trace, tt_lat, indexing='ij')
+    it1 = np.argmin(np.abs(times - xmin))
+    it2 = np.argmin(np.abs(times - xmax))
+times = times[it1:it2+1]
+torque_rs_all = torque_rs_all[it1:it2+1]
+torque_mc_all = torque_mc_all[it1:it2+1]
+torque_v_all = torque_v_all[it1:it2+1]
+Lz_all = Lz_all[it1:it2+1]
+if forced:
+    torque_forcing_all = torque_forcing_all[it1:it2+1]
+
+times_2d, tt_lat_2d = np.meshgrid(times, tt_lat, indexing='ij')
 
 # Loop over the desired radii and save plots
 for i in range(len(i_desiredrvals)):
     i_desiredrval = i_desiredrvals[i]
     rval_to_plot = rvals_to_plot[i]
-    bp_trace = bp_all[:, :, i_desiredrval]
-    trans_tot_trace = trans_tot_all[:, :, i_desiredrval]
-    trans_mm_trace = trans_mm_all[:, :, i_desiredrval]
-    trans_pp_trace = trans_tot_trace - trans_mm_trace
-    diff_trace = diff_all[:, :, i_desiredrval]
-    tot_trace = trans_tot_trace + diff_trace
-  
+    torque_rs_loc = torque_rs_all[:, :, i_desiredrval]
+    torque_mc_loc = torque_mc_all[:, :, i_desiredrval]
+    torque_v_loc = torque_v_all[:, :, i_desiredrval]
+    torque_tot_loc = torque_rs_loc + torque_mc_loc + torque_v_loc
+    Lz_loc = Lz_all[:, :, i_desiredrval]
+
+    if forced:
+        torque_forcing_loc = torque_forcing_all[:, :, i_desiredrval]
+        torque_tot_loc += torque_forcing_loc
+ 
     # Make appropriate file name to save
-    savename = dirname_stripped + '_time-lat_induction_p_' +\
+    savename = dirname_stripped + '_time-lat_torques_' +\
         ('rval%0.3f_' %rval_to_plot) + str(iter1).zfill(8) + '_' +\
         str(iter2).zfill(8) + tag + '.png'
 
-    if not user_specified_minmax:
-        std_bp = np.std(bp_trace)
-        my_min_bp, my_max_bp = -3.*std_bp, 3.*std_bp
+    if minmax is None:
+        std_rs = np.std(torque_rs_loc)
+        std_mc = np.std(torque_mc_loc)
+        std_v = np.std(torque_v_loc)
+        std_tot = np.std(torque_tot_loc)
+        std_max = max(std_rs, std_mc, std_v, std_tot, std_tot)
 
-        std_diff = np.std(diff_trace)
-        std_trans_tot = np.std(trans_tot_trace)
-        std_trans_mm = np.std(trans_mm_trace)
-        std_trans_pp = np.std(trans_pp_trace)
-        std_tot = np.std(tot_trace)
-        std_max = max(std_diff, std_trans_tot, std_trans_mm, std_trans_pp,\
-                std_tot)
-        my_min_induction, my_max_induction = -3.*std_max, 3.*std_max
+        if forced:
+            std_forcing = np.std(torque_forcing_loc)
+            std_max = max(std_max, std_forcing)
+
+        minmax = -3.*std_max, 3.*std_max
+
+    std_Lz = np.std(Lz_loc)
+    minmax_Lz = -3.*std_Lz, 3.*std_Lz
      
-    # Create figure with  5 panels in a row (phi induction terms:
-    # mean-mean transport, prime-prime transport, total transport, diffusion,
-    # actual bphi )
-    fig, axs = plt.subplots(5, 1, figsize=(12, 8), sharex=True, sharey=True)
-    ax1 = axs[0]; ax2 = axs[1]; ax3 = axs[2]; ax4 = axs[3]; ax5 = axs[4]
+    # Create figure with  5-6 panels in a row 
+    # (torques: rs, mc, v, maybe forcing, tot, and L_z)
+    nrow = 5 + forced
+    fig, axs = plt.subplots(nrow, 1, figsize=(nrow*2., 8.),\
+            sharex=True, sharey=True)
 
-    im1 = ax1.pcolormesh(times2, tt_lat2, trans_mm_trace,\
-            vmin=my_min_induction, vmax=my_max_induction, cmap='RdYlBu_r')
-    im2 = ax2.pcolormesh(times2, tt_lat2, trans_pp_trace,\
-            vmin=my_min_induction, vmax=my_max_induction, cmap='RdYlBu_r')
-    im3 = ax3.pcolormesh(times2, tt_lat2, diff_trace,\
-            vmin=my_min_induction, vmax=my_max_induction, cmap='RdYlBu_r')
-    im4 = ax4.pcolormesh(times2, tt_lat2, tot_trace,\
-            vmin=my_min_induction, vmax=my_max_induction, cmap='RdYlBu_r')
-    im5 = ax5.pcolormesh(times2, tt_lat2, bp_trace,\
-            vmin=my_min_bp, vmax=my_max_bp, cmap='RdYlBu_r')
+    ims = []
+    ims.append(axs[0].pcolormesh(times_2d, tt_lat_2d, torque_rs_loc,\
+            vmin=minmax[0], vmax=minmax[1], cmap='RdYlBu_r'))
+    ims.append(axs[1].pcolormesh(times_2d, tt_lat_2d, torque_mc_loc,\
+            vmin=minmax[0], vmax=minmax[1], cmap='RdYlBu_r'))
+    ims.append(axs[2].pcolormesh(times_2d, tt_lat_2d, torque_v_loc,\
+            vmin=minmax[0], vmax=minmax[1], cmap='RdYlBu_r'))
+    if forced:
+        ims.append(axs[3].pcolormesh(times_2d, tt_lat_2d,\
+                torque_forcing_loc,\
+                vmin=minmax[0], vmax=minmax[1], cmap='RdYlBu_r'))
+        ims.append(axs[4].pcolormesh(times_2d, tt_lat_2d, torque_tot_loc,\
+                vmin=minmax[0], vmax=minmax[1], cmap='RdYlBu_r'))
+        ims.append(axs[5].pcolormesh(times_2d, tt_lat_2d, Lz_loc,\
+                vmin=minmax_Lz[0], vmax=minmax_Lz[1], cmap='RdYlBu_r'))
+    else:
+        ims.append(axs[3].pcolormesh(times_2d, tt_lat_2d, torque_tot_loc,\
+                vmin=minmax[0], vmax=minmax[1], cmap='RdYlBu_r'))
+        ims.append(axs[4].pcolormesh(times_2d, tt_lat_2d, Lz_loc,\
+                vmin=minmax_Lz[0], vmax=minmax_Lz[1], cmap='RdYlBu_r'))
 
     # Put colorbar next to all plots (possibly normalized separately)
     # First make room and then find location of subplots
     plt.subplots_adjust(left=0.1, right=0.85, wspace=0.03, top=0.9)
 
-    # First, trans_mm:
-    ax_xmin, ax_xmax, ax_ymin, ax_ymax = axis_range(ax1)
-    ax_delta_x = ax_xmax - ax_xmin
-    ax_delta_y = ax_ymax - ax_ymin
-    ax_center_x = ax_xmin + 0.5*ax_delta_x
+    cbar_units = [r'$\rm{g\ cm^{-1}\ s^{-2}}$',\
+        r'$\rm{g\ cm^{-1}\ s^{-2}}$',\
+        r'$\rm{g\ cm^{-1}\ s^{-2}}$',\
+        r'$\rm{g\ cm^{-1}\ s^{-2}}$',\
+        r'$\rm{g\ cm^{-1}\ s^{-1}}$']
+    if forced:
+        cbar_units.insert(3, r'$\rm{g\ cm^{-1}\ s^{-2}}$')
 
-    cbar_left = ax_xmax + 0.3*(1 - ax_xmax)
-    cbar_bottom = ax_ymin
-    cbar_width = 0.07*(1 - ax_xmax)
-    cbar_height = ax_delta_y
-    cax = fig.add_axes((cbar_left, cbar_bottom, cbar_width, cbar_height))
-    cax.set_title(r'$\rm{G}\ \rm{s}^{-1}$', **csfont)
-    plt.colorbar(im1, cax=cax)
+    for irow in range(nrow):
+        ax = axs[irow]
+        im = ims[irow]
+    
+        ax_xmin, ax_xmax, ax_ymin, ax_ymax = axis_range(ax)
+        ax_delta_x = ax_xmax - ax_xmin
+        ax_delta_y = ax_ymax - ax_ymin
+        ax_center_x = ax_xmin + 0.5*ax_delta_x
 
-    # Next, db dt:
-    ax_xmin, ax_xmax, ax_ymin, ax_ymax = axis_range(ax4)
-    ax_delta_x = ax_xmax - ax_xmin
-    ax_delta_y = ax_ymax - ax_ymin
-    ax_center_x = ax_xmin + 0.5*ax_delta_x
-
-    cbar_left = ax_xmax + 0.3*(1 - ax_xmax)
-    cbar_bottom = ax_ymin
-    cbar_width = 0.07*(1 - ax_xmax)
-    cbar_height = ax_delta_y
-    cax = fig.add_axes((cbar_left, cbar_bottom, cbar_width, cbar_height))
-    cax.set_title(r'$\rm{G}\ \rm{s}^{-1}$', **csfont)
-    plt.colorbar(im4, cax=cax)
-
-    # Next, B_phi:
-    ax_xmin, ax_xmax, ax_ymin, ax_ymax = axis_range(ax5)
-    ax_delta_x = ax_xmax - ax_xmin
-    ax_delta_y = ax_ymax - ax_ymin
-    ax_center_x = ax_xmin + 0.5*ax_delta_x
-
-    cbar_left = ax_xmax + 0.3*(1 - ax_xmax)
-    cbar_bottom = ax_ymin
-    cbar_width = 0.07*(1 - ax_xmax)
-    cbar_height = ax_delta_y
-    cax = fig.add_axes((cbar_left, cbar_bottom, cbar_width, cbar_height))
-    cax.set_title(r'$\rm{G}$', **csfont)
-    plt.colorbar(im5, cax=cax)
+        cbar_left = ax_xmax + 0.3*(1 - ax_xmax)
+        cbar_bottom = ax_ymin
+        cbar_width = 0.07*(1 - ax_xmax)
+        cbar_height = ax_delta_y
+        cax = fig.add_axes((cbar_left, cbar_bottom,\
+                cbar_width, cbar_height))
+        cax.set_title(cbar_units[irow], **csfont)
+        plt.colorbar(im, cax=cax)
 
     # Label x (time) axis
-    if rotation:
-        timeunit = r'$P_{\rm{rot}}$'
-    else:
-        timeunit = 'days'
 
-    xlabel = 'time (' + timeunit + ')'
-    ax5.set_xlabel(xlabel, **csfont)
+    xlabel = 'time (' + time_label + ')'
+    axs[-1].set_xlabel(xlabel, **csfont)
 
     # Label y-axis
-    ax3.set_ylabel('latitude (deg.)', **csfont)
-    ax3.set_yticks(np.arange(-90, 90, 30))
+    axs[2].set_ylabel('latitude (deg.)', **csfont)
+    axs[2].set_yticks(np.arange(-90, 90, 30))
 
-    # Label the plots by induction terms, , , ... B_r
-    ax_xmin, ax_xmax = ax1.get_xlim()
+    # Label the plots by torques and L_z
+    ax_xmin, ax_xmax = axs[0].get_xlim()
     ax_Dx = ax_xmax - ax_xmin
-    label1 = r'$[\nabla\times(\overline{\mathbf{v}}\times\overline{\mathbf{B}})]_\phi$'
-    ax1.text(ax_xmin + 1.01*ax_Dx, 0., label1, va='center',\
-            rotation=270)
-    label1 = r'$[\nabla\times(\overline{\mathbf{v}^\prime\times\mathbf{B}^\prime})]_\phi$'
-    ax2.text(ax_xmin + 1.01*ax_Dx, 0.,  label1, va='center',\
-            rotation=270)
-    label1 = r'$[-\nabla\times(\eta(r)\nabla\times\overline{\mathbf{B}})]_\phi$'
-    ax3.text(ax_xmin + 1.01*ax_Dx, 0., label1, va='center',\
-            rotation=270)
-    label1 = r'$\partial B_\phi/\partial t$'
-    ax4.text(ax_xmin + 1.01*ax_Dx, 0.,  label1, va='center',\
-            rotation=270)
-    ax5.text(ax_xmin + 1.01*ax_Dx, 0.,  r'$\overline{B_\phi}$', va='center',\
+    labels = [r'$\tau_{\rm{rs}}$', r'$\tau_{\rm{mc}}$',\
+            r'$\tau_{\rm{v}}$', r'$\tau_{\rm{tot}}$', r'$\mathcal{L}_z$']
+    if forced:
+        labels.insert(2, r'$\tau_{\rm{forcing}}$')
+
+    for irow in range(nrow):
+        label = labels[irow]
+        axs[irow].text(ax_xmin + 1.01*ax_Dx, 0., label, va='center',\
             rotation=270)
 
     # Put some useful information on the title
-    averaging_time = (times[-1] - times[0])/niter*navg/86400.
+    averaging_time = (times[-1] - times[0])/len(times)*navg/time_unit
     title = dirname_stripped + '     ' +\
             (r'$r/R_\odot\ =\ %0.3f$' %rval_to_plot) + '     ' +\
-            ('t_avg = %.1f days' %averaging_time) +\
-            '     ' + ('time_unit = %.1f days' %(tnorm/86400.))
+            (('t_avg = %.1f ' + time_label) %averaging_time)
 
-    ax1.set_title(title, **csfont)
+    axs[0].set_title(title, **csfont)
     # Get ticks everywhere
-    plt.sca(ax1)
-    plt.minorticks_on()
-    plt.tick_params(top=True, right=True, direction='in', which='both')
-
-    plt.sca(ax2)
-    plt.minorticks_on()
-    plt.tick_params(top=True, right=True, direction='in', which='both')
-
-    plt.sca(ax3)
-    plt.minorticks_on()
-    plt.tick_params(top=True, right=True, direction='in', which='both')
-
-    plt.sca(ax4)
-    plt.minorticks_on()
-    plt.tick_params(top=True, right=True, direction='in', which='both')
-
-    plt.sca(ax5)
-    plt.minorticks_on()
-    plt.tick_params(top=True, right=True, direction='in', which='both')
+    for ax in axs:
+        plt.sca(ax)
+        plt.minorticks_on()
+        plt.tick_params(top=True, right=True, direction='in', which='both')
 
     # Save the plot
     print ('Saving the time-latitude plot at ' + plotdir +\
