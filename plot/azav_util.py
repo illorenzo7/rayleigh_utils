@@ -85,7 +85,7 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
     # boundary (lw) and one for the contours (contour_lw)
     contour_lw = 0.3*lw_scaling
     
-    if (plotfield):
+    if plotfield:
         if logscale:
             log_min, log_max = np.log10(minmax[0]), np.log10(minmax[1])
             levs = np.logspace(log_min, log_max, 150)

@@ -1,5 +1,5 @@
 # Author: Loren Matilsky
-# Date created: 03/02/2019
+# Date created: 04/05/2020
 import matplotlib as mpl
 from matplotlib import ticker
 mpl.use('TkAgg')
@@ -16,6 +16,7 @@ from plotcommon import axis_range
 from get_parameter import get_parameter
 from time_scales import compute_Prot, compute_tdt
 from get_eq import get_eq
+from tl_util import plot_tl
 
 # Get the run directory on which to perform the analysis
 dirname = sys.argv[1]
@@ -34,6 +35,7 @@ the_file = get_widest_range_file(datadir, 'time-latitude_torques')
 
 # more defaults
 minmax = None
+minmax_Lz = None
 xminmax = None
 tag = ''
 
@@ -51,7 +53,6 @@ for i in range(nargs):
         minmax = float(args[i+1]), float(args[i+2])
     elif arg == '-nosave':
         nosave = True
-
     elif arg == '-usefile':
         the_file = args[i+1]
         the_file = the_file.split('/')[-1]
@@ -71,6 +72,8 @@ for i in range(nargs):
             navg += 1
     elif arg == '-xminmax':
         xminmax = float(args[i+1]), float(args[i+2])
+    elif arg == '-lzminmax':
+        minmax_Lz = float(args[i+1]), float(args[i+2])
     elif arg == '-tag':
         tag = '_' + args[i+1]
     elif arg == '-forced':
@@ -194,8 +197,8 @@ if xminmax is None: # By default use all times available
     it1 = 0
     it2 = niter - navg
 else:
-    it1 = np.argmin(np.abs(times - xmin))
-    it2 = np.argmin(np.abs(times - xmax))
+    it1 = np.argmin(np.abs(times - xminmax[0]))
+    it2 = np.argmin(np.abs(times - xminmax[1]))
 times = times[it1:it2+1]
 torque_rs_all = torque_rs_all[it1:it2+1]
 torque_mc_all = torque_mc_all[it1:it2+1]
@@ -225,81 +228,69 @@ for i in range(len(i_desiredrvals)):
         ('rval%0.3f_' %rval_to_plot) + str(iter1).zfill(8) + '_' +\
         str(iter2).zfill(8) + tag + '.png'
 
-    if minmax is None:
-        std_rs = np.std(torque_rs_loc)
-        std_mc = np.std(torque_mc_loc)
-        std_v = np.std(torque_v_loc)
-        std_tot = np.std(torque_tot_loc)
-        std_max = max(std_rs, std_mc, std_v, std_tot, std_tot)
-
-        if forced:
-            std_forcing = np.std(torque_forcing_loc)
-            std_max = max(std_max, std_forcing)
-
-        minmax = -3.*std_max, 3.*std_max
-
-    std_Lz = np.std(Lz_loc)
-    minmax_Lz = -3.*std_Lz, 3.*std_Lz
-     
     # Create figure with  5-6 panels in a row 
     # (torques: rs, mc, v, maybe forcing, tot, and L_z)
     nrow = 5 + forced
-    fig, axs = plt.subplots(nrow, 1, figsize=(nrow*2., 8.),\
-            sharex=True, sharey=True)
 
-    ims = []
-    ims.append(axs[0].pcolormesh(times_2d, tt_lat_2d, torque_rs_loc,\
-            vmin=minmax[0], vmax=minmax[1], cmap='RdYlBu_r'))
-    ims.append(axs[1].pcolormesh(times_2d, tt_lat_2d, torque_mc_loc,\
-            vmin=minmax[0], vmax=minmax[1], cmap='RdYlBu_r'))
-    ims.append(axs[2].pcolormesh(times_2d, tt_lat_2d, torque_v_loc,\
-            vmin=minmax[0], vmax=minmax[1], cmap='RdYlBu_r'))
-    if forced:
-        ims.append(axs[3].pcolormesh(times_2d, tt_lat_2d,\
-                torque_forcing_loc,\
-                vmin=minmax[0], vmax=minmax[1], cmap='RdYlBu_r'))
-        ims.append(axs[4].pcolormesh(times_2d, tt_lat_2d, torque_tot_loc,\
-                vmin=minmax[0], vmax=minmax[1], cmap='RdYlBu_r'))
-        ims.append(axs[5].pcolormesh(times_2d, tt_lat_2d, Lz_loc,\
-                vmin=minmax_Lz[0], vmax=minmax_Lz[1], cmap='RdYlBu_r'))
-    else:
-        ims.append(axs[3].pcolormesh(times_2d, tt_lat_2d, torque_tot_loc,\
-                vmin=minmax[0], vmax=minmax[1], cmap='RdYlBu_r'))
-        ims.append(axs[4].pcolormesh(times_2d, tt_lat_2d, Lz_loc,\
-                vmin=minmax_Lz[0], vmax=minmax_Lz[1], cmap='RdYlBu_r'))
+    # set figure dimensions
+    fig_width_inches = 7. + 1./4.
+    margin_inches = 1./4.
+    margin_bottom_inches = 1./2. # space for x-axis label
+    margin_top_inches = 1./2.
+    margin_left_inches = 5./8. # space for latitude label
+    margin_right_inches = 1.
+    subplot_width_inches = fig_width_inches - margin_right_inches -\
+            margin_left_inches
+    subplot_height_inches = 1.5
 
-    # Put colorbar next to all plots (possibly normalized separately)
-    # First make room and then find location of subplots
-    plt.subplots_adjust(left=0.1, right=0.85, wspace=0.03, top=0.9)
+    fig_height_inches = nrow*subplot_height_inches +\
+            (nrow - 1)*margin_inches + margin_bottom_inches +\
+            margin_top_inches
 
-    cbar_units = [r'$\rm{g\ cm^{-1}\ s^{-2}}$',\
+    margin_x = margin_inches/fig_width_inches
+    margin_y = margin_inches/fig_height_inches
+    subplot_width = subplot_width_inches/fig_width_inches
+    subplot_height = subplot_height_inches/fig_height_inches
+    margin_left = margin_left_inches/fig_width_inches
+    margin_bottom = margin_bottom_inches/fig_height_inches
+    margin_top = margin_top_inches/fig_height_inches
+
+    fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
+    
+    fields = [torque_rs_loc, torque_mc_loc, torque_v_loc, torque_tot_loc,\
+            Lz_loc]
+    units = [r'$\rm{g\ cm^{-1}\ s^{-2}}$',\
         r'$\rm{g\ cm^{-1}\ s^{-2}}$',\
         r'$\rm{g\ cm^{-1}\ s^{-2}}$',\
         r'$\rm{g\ cm^{-1}\ s^{-2}}$',\
         r'$\rm{g\ cm^{-1}\ s^{-1}}$']
+
     if forced:
-        cbar_units.insert(3, r'$\rm{g\ cm^{-1}\ s^{-2}}$')
+        fields.insert(2, torque_forcing_loc)
+        units.insert(2, r'$\rm{g\ cm^{-1}\ s^{-2}}$')
+        mins_and_maxes.insert(2, minmax)
 
-    for irow in range(nrow):
-        ax = axs[irow]
-        im = ims[irow]
-    
-        ax_xmin, ax_xmax, ax_ymin, ax_ymax = axis_range(ax)
-        ax_delta_x = ax_xmax - ax_xmin
-        ax_delta_y = ax_ymax - ax_ymin
-        ax_center_x = ax_xmin + 0.5*ax_delta_x
+    axs = []
+    for irow in range(nrow): 
+        if irow < nrow - 1: 
+            minmax_loc = minmax
+        else:
+            minmax_loc = minmax_Lz
+        axs.append(fig.add_axes((margin_left, 1. - margin_top -\
+                subplot_height - irow*(subplot_height + margin_y),\
+                subplot_width, subplot_height)))
+        plot_tl(fields[irow], times, tt_lat, minmax=minmax_loc,\
+                xminmax=xminmax, navg=navg, fig=fig, ax=axs[irow],\
+                units=units[irow])
+        if irow < nrow - 1:
+            axs[irow].set_xticklabels([])
 
-        cbar_left = ax_xmax + 0.3*(1 - ax_xmax)
-        cbar_bottom = ax_ymin
-        cbar_width = 0.07*(1 - ax_xmax)
-        cbar_height = ax_delta_y
-        cax = fig.add_axes((cbar_left, cbar_bottom,\
-                cbar_width, cbar_height))
-        cax.set_title(cbar_units[irow], **csfont)
-        plt.colorbar(im, cax=cax)
+    # Put colorbar next to all plots (possibly normalized separately)
+    # First make room and then find location of subplots
+#    plt.subplots_adjust(left=0.1, right=0.85, wspace=0.03, top=0.9)
+
 
     # Label x (time) axis
-
     xlabel = 'time (' + time_label + ')'
     axs[-1].set_xlabel(xlabel, **csfont)
 
@@ -308,8 +299,6 @@ for i in range(len(i_desiredrvals)):
     axs[2].set_yticks(np.arange(-90, 90, 30))
 
     # Label the plots by torques and L_z
-    ax_xmin, ax_xmax = axs[0].get_xlim()
-    ax_Dx = ax_xmax - ax_xmin
     labels = [r'$\tau_{\rm{rs}}$', r'$\tau_{\rm{mc}}$',\
             r'$\tau_{\rm{v}}$', r'$\tau_{\rm{tot}}$', r'$\mathcal{L}_z$']
     if forced:
@@ -317,8 +306,10 @@ for i in range(len(i_desiredrvals)):
 
     for irow in range(nrow):
         label = labels[irow]
-        axs[irow].text(ax_xmin + 1.01*ax_Dx, 0., label, va='center',\
-            rotation=270)
+        fig.text(margin_left + 0.5*margin_x, 1. - margin_top - \
+                0.5*margin_y - irow*(subplot_height + margin_y), label,\
+                va='top', ha='left', fontsize=14,\
+                bbox=dict(facecolor='white'))
 
     # Put some useful information on the title
     averaging_time = (times[-1] - times[0])/len(times)*navg/time_unit

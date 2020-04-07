@@ -123,3 +123,28 @@ def default_axes_1by2(width=3.75):
     fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
     ax = fig.add_axes((margin_x, margin_y, subplot_width, subplot_height))
     return fig, ax
+
+def default_axes_tl(width=7.):
+    # Good for time-latitude plots
+    subplot_width_inches = width
+    subplot_height_inches = 1.5
+    margin_inches = 1./8.
+    margin_left_inches = 1./2.
+    margin_right_inches = 1.25
+    margin_bottom_inches = 1./2.
+
+    fig_width_inches = subplot_width_inches + margin_left_inches +\
+            margin_right_inches
+    fig_height_inches = subplot_height_inches + margin_inches +\
+            margin_bottom_inches
+
+    margin_bottom = margin_bottom_inches/fig_height_inches
+    margin_left = margin_left_inches/fig_width_inches
+    subplot_width = subplot_width_inches/fig_width_inches
+    subplot_height = subplot_height_inches/fig_height_inches
+
+    fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
+    ax = fig.add_axes((margin_left, margin_bottom, subplot_width,\
+            subplot_height))
+    return fig, ax
+
