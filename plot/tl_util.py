@@ -71,6 +71,9 @@ def plot_tl(field, times, tt_lat, fig=None, ax=None, cmap='RdYlBu_r',\
     # for the linear-scaled color bars (default and posdef)
     if not (logscale or symlog) and plotfield:
         maxabs = max(np.abs(minmax[0]), np.abs(minmax[1]))
+        if maxabs == 0.:
+            maxabs = 1.
+            minmax = -1., 1.
         exp = float(np.floor(np.log10(maxabs)))
         divisor = 10.**exp
         

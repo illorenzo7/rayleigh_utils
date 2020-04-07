@@ -266,9 +266,8 @@ for i in range(len(i_desiredrvals)):
         r'$\rm{g\ cm^{-1}\ s^{-1}}$']
 
     if forced:
-        fields.insert(2, torque_forcing_loc)
-        units.insert(2, r'$\rm{g\ cm^{-1}\ s^{-2}}$')
-        mins_and_maxes.insert(2, minmax)
+        fields.insert(3, torque_forcing_loc)
+        units.insert(3, r'$\rm{g\ cm^{-1}\ s^{-2}}$')
 
     axs = []
     for irow in range(nrow): 
@@ -302,7 +301,7 @@ for i in range(len(i_desiredrvals)):
     labels = [r'$\tau_{\rm{rs}}$', r'$\tau_{\rm{mc}}$',\
             r'$\tau_{\rm{v}}$', r'$\tau_{\rm{tot}}$', r'$\mathcal{L}_z$']
     if forced:
-        labels.insert(2, r'$\tau_{\rm{forcing}}$')
+        labels.insert(3, r'$\tau_{\rm{forcing}}$')
 
     for irow in range(nrow):
         label = labels[irow]
