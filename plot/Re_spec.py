@@ -1,0 +1,209 @@
+# Author: Loren Matilsky
+# Created: 04/08/2020
+# This script generates the spherically averaged convective Reynolds 
+# number (Re), using (a) length scale from vorticity field and (b)
+# length scale from power spectra
+# Computes contributions from v_r, v_theta, and v_phi separately 
+# To use  time-averaged 
+# AZ_Avgs file different than the one associated with the longest averaging 
+# range, use -usefile [complete name of desired vavg file]
+# Saves plot in
+# [dirname]_Re_spec_[first iter]_[last iter].png
+
+# Import relevant modules
+import numpy as np
+import matplotlib as mpl
+mpl.use('TkAgg')
+import matplotlib.pyplot as plt
+plt.rcParams['mathtext.fontset'] = 'dejavuserif'
+csfont = {'fontname':'DejaVu Serif'}
+import sys, os
+sys.path.append(os.environ['rapp'])
+from rayleigh_diagnostics import TransportCoeffs, ReferenceState
+from reference_tools import equation_coefficients
+from common import strip_dirname, get_widest_range_file,\
+        get_iters_from_file, get_dict, rsun
+
+# Get directory name and stripped_dirname for plotting purposes
+dirname = sys.argv[1]
+dirname_stripped = strip_dirname(dirname)
+
+# Directory with data and plots, make the plotting directory if it doesn't
+# already exist    
+datadir = dirname + '/data/'
+plotdir = dirname + '/plots/'
+if not os.path.isdir(plotdir):
+    os.makedirs(plotdir)
+
+# Set defaults
+rnorm = None
+minmax = None
+logscale = False
+rvals = None # user can specify radii to mark by vertical lines
+tag = ''
+use_hrho = False
+the_file = get_widest_range_file(datadir, 'Shell_Avgs')
+
+# Read command-line arguments (CLAs)
+args = sys.argv[2:]
+nargs = len(args)
+for i in range(nargs):
+    arg = args[i]
+    if arg == '-usefile':
+        Shell_Avgs_file = args[i+1]
+        Shell_Avgs_file = Shell_Avgs_file.split('/')[-1]
+    elif arg == '-rnorm':
+        rnorm = float(args[i+1])
+    elif arg == '-minmax':
+        minmax = float(args[i+1]), float(args[i+2])
+    elif arg == '-log':
+        logscale = True
+    elif arg == '-hrho':
+        use_hrho = True
+    elif arg == '-tag':
+        tag = '_' + args[i+1]
+    elif arg == '-rvals':
+        rvals_str = args[i+1].split()
+        rvals = []
+        for rval_str in rvals_str:
+            rvals.append(float(rval_str))
+
+# Read in vavg data
+print ('Reading Shell_Avgs data from ' + datadir + Shell_Avgs_file + ' ...')
+di = get_dict(datadir + Shell_Avgs_file)
+vals = di['vals']
+lut = di['lut']
+iter1, iter2 = di['iter1'], di['iter2']
+rr = di['rr']
+
+# Derivative grid info
+nr = len(rr)
+ri, ro = np.min(rr), np.max(rr)
+shell_depth = ro - ri
+
+# Convective velocity amplitudes...
+print(np.shape(vals))
+vsq_r, vsq_t, vsq_p = vals[:, lut[422]], vals[:, lut[423]],\
+    vals[:, lut[424]]
+vsq = vsq_r + vsq_t + vsq_p
+
+# Get molecular diffusivity from 'transport' file or equation_coefficients
+try:
+    t = TransportCoeffs(dirname + '/transport')
+    nu = t.nu
+except:
+    eq = equation_coefficients()
+    eq.read(dirname + '/equation_coefficients')
+    # nu(r) = c_5 * f_3
+    nu = eq.constants[4]*eq.functions[2]
+
+# Compute convective Reynolds number
+if use_hrho:
+    try:
+        ref = ReferenceState(dirname + '/reference')
+        hrho = -1./ref.dlnrho
+    except:
+        eq = equation_coefficients()
+        eq.read(dirname + '/equation_coefficients')
+        hrho = -1./eq.functions[7]
+    Re = np.sqrt(vsq)*hrho/nu
+    Re_r = np.sqrt(vsq_r)*hrho/nu
+    Re_t = np.sqrt(vsq_t)*hrho/nu
+    Re_p = np.sqrt(vsq_p)*hrho/nu
+else:
+    Re = np.sqrt(vsq)*shell_depth/nu
+    Re_r = np.sqrt(vsq_r)*shell_depth/nu
+    Re_t = np.sqrt(vsq_t)*shell_depth/nu
+    Re_p = np.sqrt(vsq_p)*shell_depth/nu
+
+# Create the plot
+fig = plt.figure()
+ax = fig.add_subplot(111)
+
+# Get extrema values for diff. rot.
+maxes = [] # Get the max-value of Omega for plotting purposes
+mins = []  # ditto for the min-value
+                                               
+# User can specify what to normalize the radius by
+# By default, normalize by the solar radius
+if rnorm is None:
+    rr_n = rr/rsun
+else:
+    rr_n = rr/rnorm                                           
+
+# Plot Re vs radius
+ax.plot(rr_n, Re, label=r'$\rm{Re}$')
+ax.plot(rr_n, Re_r, label=r'${\rm{Re}}_r$')
+ax.plot(rr_n, Re_t, label = r'${\rm{Re}}_\theta$')
+ax.plot(rr_n, Re_p, label = r'${\rm{Re}}_\phi$')
+
+# Label the axes
+if rnorm is None:
+    plt.xlabel(r'$r/R_\odot$',fontsize=12, **csfont)
+else:
+    plt.xlabel(r'r/(%.1e cm)' %rnorm, fontsize=12, **csfont)
+
+if use_hrho:
+    plt.ylabel(r'${\rm{Re}} = H_\rho v^\prime \nu^{-1}$',fontsize=12,\
+        **csfont)
+else:
+    plt.ylabel(r'${\rm{Re}} = (r_o-r_i)v^\prime \nu^{-1}$',fontsize=12,\
+        **csfont)
+
+# Set the axis limits
+xmin, xmax = np.min(rr_n), np.max(rr_n)
+plt.xlim((xmin, xmax))
+
+# Compute maximum/minimum Reynolds numbers (ignore the upper/lower 5%
+# of the shell to avoid extreme values associated with boundary conditions
+rr_depth = (ro - rr)/shell_depth
+ir1, ir2 = np.argmin(np.abs(rr_depth - 0.05)),\
+        np.argmin(np.abs(rr_depth - 0.95))
+Re_min = min(np.min(Re_r[ir1:ir2]), np.min(Re_t[ir1:ir2]),\
+        np.min(Re_p[ir1:ir2]))
+Re_max = np.max(Re[ir1:ir2])
+
+if minmax is None:
+    if logscale:
+        ratio = Re_max/Re_min
+        ybuffer = 0.2*ratio
+        ymin = Re_min/ybuffer
+        ymax = Re_max*ybuffer
+    else:
+        difference = Re_max - Re_min
+        ybuffer = 0.2*difference
+        ymin, ymax = Re_min - ybuffer, Re_max + ybuffer
+else:
+    ymin, ymax = minmax
+
+plt.ylim((ymin, ymax))
+if logscale:
+    plt.yscale('log')
+
+xvals = np.linspace(xmin, xmax, 100)
+yvals = np.linspace(ymin, ymax, 100)
+
+# Mark radii if desired
+if not rvals is None:
+    for rval in rvals:
+        if rnorm is None:
+            rval_n = rval/rsun
+        else:
+            rval_n = rval/rnorm
+        plt.plot(rval_n + np.zeros(100), yvals, 'k--')
+
+# Create a title    
+plt.title(dirname_stripped + '\n' +'Convective Reynolds number, ' +\
+          str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8), **csfont)
+plt.legend()
+
+# Get ticks everywhere
+plt.minorticks_on()
+plt.tick_params(top=True, right=True, direction='in', which='both')
+plt.tight_layout()
+
+savefile = plotdir + dirname_stripped + '_Re_' +\
+    str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + tag + '.png'
+print('Saving plot at ' + savefile + ' ...')
+plt.savefig(savefile, dpi=300)
+plt.show()

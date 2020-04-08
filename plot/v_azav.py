@@ -75,8 +75,8 @@ rr = di['rr']
 cost = di['cost']
 sint = di['sint']
 
-vr, vt, vp = vals[:, :, lut[1]]/100, vals[:, :, lut[2]]/100,\
-        vals[:, :, lut[3]]
+vr, vt, vp = vals[:, :, lut[1]]/100., vals[:, :, lut[2]]/100.,\
+        vals[:, :, lut[3]]/100.
 
 if minmax is None:
     nstd = 5.
