@@ -146,7 +146,7 @@ if log:
 plt.tight_layout()
 
 # Save the plot
-print ('Saving the eflux plot at ' + plotdir + savename + ' ...')
+print ('Saving the length_scales plot at ' + plotdir + savename + ' ...')
 plt.savefig(plotdir + savename, dpi=300)
 
 # Show the plot

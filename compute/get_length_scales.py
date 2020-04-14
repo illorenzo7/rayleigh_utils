@@ -109,7 +109,6 @@ def get_length_scales(dirname):
         vsq_power = vrsq_power + vtsq_power + vpsq_power
         # Compute rms l-values
         l_rms_vr = np.sum(vrsq_power*lvals, axis=0)/np.sum(vrsq_power, axis=0)
-        print('l_rms_vr:',  l_rms_vr)
         l_rms_vh = np.sum(vhsq_power*lvals, axis=0)/np.sum(vhsq_power, axis=0)
         l_rms_v = np.sum(vsq_power*lvals, axis=0)/np.sum(vsq_power, axis=0)
         # Compute lengthscales and add to dictionary
