@@ -108,9 +108,8 @@ plt.xlim(xmin, xmax)
 # Set the y-limits (the following values seem to "work well" for my models
 # so far...perhaps adjust this in the future. 
 
-if minmax is None:
-    minmax = -0.7, 1.3
-#plt.ylim(minmax[0], minmax[1])
+if not minmax is None:
+    plt.ylim(minmax[0], minmax[1])
 
 # Label the axes
 if rnorm is None:
@@ -137,7 +136,7 @@ plt.title(dirname_stripped + '\n' + 'length scales, ' +\
           str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8), **csfont)
 
 # Create a see-through legend
-plt.legend(loc='lower left', shadow=True, ncol=3, fontsize=14, framealpha=0.5)
+plt.legend(shadow=True, ncol=3, fontsize=14, framealpha=0.5)
 
 if log:
     plt.yscale('log')
