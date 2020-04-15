@@ -33,6 +33,11 @@ dirname_stripped = strip_dirname(dirname)
 # Find the time/latitude file(s) the data directory. If there are 
 # multiple, by default choose the one with widest range in the trace.
 the_file = get_widest_range_file(datadir, 'time-latitude_torques')
+if the_file == '': # I saved a bunch of files with tag "torque" instead of
+    # "torques" and I am too lazy to go back and change them
+    the_file = get_widest_range_file(datadir, 'time-latitude_torque')
+    print ("Rememer to tag your time-latitude files with 'torques',")
+    print("not 'torque'!")
 
 # more defaults
 minmax = None

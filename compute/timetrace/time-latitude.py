@@ -87,7 +87,29 @@ for i in range(nargs):
     elif arg == '-tag':
         tag_already_provided = True
         tag = args[i+1] + '_'
-
+    elif arg == '-rzquarter': # 9 depths in RZ and CZ, with RZ depth
+        # 0.25 of CZ depth
+        print("Taking 9 depths in CZ and RZ each")
+        print("assuming depth RZ = (1/4) depth CZ")
+        depths = [0.04, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.76,\
+               0.81, 0.825, 0.85, 0.875, 0.9, 0.925, 0.95, 0.975, 0.990]
+        tag_already_provided = True
+    elif arg == '-torques':
+        print("tracing over TORQUES")
+        qvals = [3, 1801, 1802, 1803, 1804, 1819]
+        if magnetism:
+            qvals.append(1805)
+            qvals.append(1806)
+        tag_already_provided = True
+        tag = 'torques' + '_'
+    elif arg == '-induction':
+        print("tracing over INDUCTION QUANTITIES")
+        qvals = [1604, 1605, 1609, 1610, 1614, 1615, 1619, 1620, 1623,\
+                1624, 1629, 1630, 1601, 1602, 1603, 1606, 1607, 1608,\
+                1611, 1612, 1613, 1616, 1617, 1618, 1621, 1622, 1623,\
+                1626, 1627, 1628]
+        tag_already_provided = True
+        tag = 'induction' + '_'
 
 # If the user chose different depths/vals, they must put a unique tag
 # on the data
@@ -173,7 +195,7 @@ nq = len(qvals)
 print ('Traced over %i AZ_Avgs slice(s) ...' %niter)
 
 # Save the avarage
-print ('Saving file at ' + savefile + ' ...')
+print ('Saving file at ' + savefile)
 f = open(savefile, 'wb')
 pickle.dump({'vals': vals, 'times': times, 'iters': iters,\
 'depths': depths,'qvals': qvals, 'rinds': rinds, 'qinds': qinds,\
