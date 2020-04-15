@@ -17,6 +17,7 @@ from get_parameter import get_parameter
 from time_scales import compute_Prot, compute_tdt
 from get_eq import get_eq
 from tl_util import plot_tl
+from read_inner_vp import read_inner_vp
 
 # Get the run directory on which to perform the analysis
 dirname = sys.argv[1]
@@ -134,8 +135,10 @@ else:
         rvals_to_plot.append(rvals_sampled[i_desiredrval])
 
 # Get raw traces of torques and Lz 
-torque_mc = vals[:, :, :, torque_mm_index] + vals[:, :, :, torque_cor_index]
-torque_rs = vals[:, :, :, torque_rs_index] 
+# REMEMBER NICK'S WEIRD SIGN CONVENTIONS!
+torque_mc = -vals[:, :, :, torque_mm_index] +\
+        vals[:, :, :, torque_cor_index]
+torque_rs = -vals[:, :, :, torque_rs_index] 
 torque_v = vals[:, :, :, torque_v_index] 
 Lz = vals[:, :, :, Lz_index] 
 if forced:
@@ -152,12 +155,15 @@ if forced:
         print ("inner_vp file exists, so I assume you have a forcing function which\n quartically matches on to a CZ differential rotation")
         inner_vp = read_inner_vp(dirname + '/inner_vp')
         for it in range(nt):
-            for ir in rinds:
-                if rr[ir] <= tacho_r:
+            for ir_sampled in range(len(rinds)):
+                ir = rinds[ir_sampled]
+                if rr[ir] <= tacho_r - tacho_dr*rr[0]:
+                    desired_vp = 0.0
+                elif rr[ir] <= tacho_r:
                     desired_vp = inner_vp[it]*(1.0 - ( (rr[ir] - tacho_r)/(tacho_dr*rr[0]) )**2)**2
                 else:
-                    desired_vp = 0.0
-                forcing[:, it, ir] = -rho[ir]*(vp[:, it, ir] - desired_vp)/tacho_tau
+                    desired_vp = vp[:, it, ir_sampled] # No forcing in CZ
+                forcing[:, it, ir_sampled] = -rho[ir]*(vp[:, it, ir_sampled] - desired_vp)/tacho_tau
     else:
         forcing_coeff = -rho/tacho_tau*0.5*(1.0 - np.tanh((rr - tacho_r)/(tacho_dr*rr[0])))
         forcing = forcing_coeff[rinds].reshape((1, 1, nrvals))*vp
