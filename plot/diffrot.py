@@ -14,12 +14,14 @@ mpl.use('TkAgg')
 import matplotlib.pyplot as plt
 plt.rcParams['mathtext.fontset'] = 'dejavuserif'
 csfont = {'fontname':'DejaVu Serif'}
-from binormalized_cbar import MidpointNormalize
 import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from azav_util import plot_azav
 from common import get_widest_range_file, strip_dirname, get_dict
+from get_parameter import get_parameter
+from time_scales import compute_Prot, compute_tdt
+from translate_times import translate_times
 
 # Get directory name and stripped_dirname for plotting purposes
 dirname = sys.argv[1]
@@ -59,6 +61,19 @@ di = get_dict(datadir + AZ_Avgs_file)
 iter1, iter2 = di['iter1'], di['iter2']
 vals = di['vals']
 lut = di['lut']
+
+# Get the time range in sec
+t1 = translate_times(iter1, dirname, translate_from='iter')['val_sec']
+t2 = translate_times(iter2, dirname, translate_from='iter')['val_sec']
+
+# Get the baseline time unit
+rotation = get_parameter(dirname, 'rotation')
+if rotation:
+    time_unit = compute_Prot(dirname)
+    time_label = r'$\rm{P_{rot}}$'
+else:
+    time_unit = compute_tdt(dirname)
+    time_label = r'$\rm{TDT}$'
 
 vr_av, vt_av, vp_av = vals[:, :, lut[1]], vals[:, :, lut[2]],\
         vals[:, :, lut[3]]
@@ -108,18 +123,27 @@ plot_azav (diffrot, rr, cost, fig=fig, ax=ax, units='nHz',\
         nlevs=my_nlevs, minmax = (my_min, my_max))
 
 # Make title + label diff. rot. contrast and no. contours
+
+# Label averaging interval
+if rotation:
+    time_string = ('t = %.1f to %.1f ' %(t1/time_unit, t2/time_unit))\
+            + time_label + '\n' + (r'$\ (\Delta t = %.1f\ $'\
+            %((t2 - t1)/time_unit)) + time_label + ')'
+else:
+    time_string = ('t = %.3f to %.3f ' %(t1/time_unit, t2/time_unit))\
+            + time_label + (r'$\ (\Delta t = %.3f\ $'\
+            %((t2 - t1)/time_unit)) + time_label + ')'
 fsize = 12
 fig.text(margin_x, 1 - 0.05*margin_top, dirname_stripped,\
          ha='left', va='top', fontsize=fsize, **csfont)
 fig.text(margin_x, 1 - 0.2*margin_top, r'$\Omega - \Omega_0$',\
          ha='left', va='top', fontsize=fsize, **csfont)
-fig.text(margin_x, 1 - 0.35*margin_top,\
-         str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8),\
-         ha='left', va='top', fontsize=fsize, **csfont)
-fig.text(margin_x, 1 - 0.5*margin_top,\
-         r'$\Delta\Omega_{\rm{tot}} = %.1f\ nHz$' %Delta_Om,\
+fig.text(margin_x, 1 - 0.35*margin_top, time_string,\
          ha='left', va='top', fontsize=fsize, **csfont)
 fig.text(margin_x, 1 - 0.65*margin_top,\
+         r'$\Delta\Omega_{\rm{tot}} = %.1f\ nHz$' %Delta_Om,\
+         ha='left', va='top', fontsize=fsize, **csfont)
+fig.text(margin_x, 1 - 0.8*margin_top,\
          'nlevs = %i' %my_nlevs,
          ha='left', va='top', fontsize=fsize, **csfont)
 savefile = plotdir + dirname_stripped + '_diffrot_' + str(iter1).zfill(8) +\
