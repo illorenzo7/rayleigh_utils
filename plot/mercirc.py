@@ -21,47 +21,42 @@ sys.path.append(os.environ['raco'])
 from azav_util import plot_azav, streamfunction
 from common import get_widest_range_file, strip_dirname, get_dict,\
         trim_field
-from rayleigh_diagnostics import ReferenceState
-from reference_tools import equation_coefficients
+from get_eq import get_eq
 
 # Get directory name and stripped_dirname for plotting purposes
 dirname = sys.argv[1]
 dirname_stripped = strip_dirname(dirname)
 
 # Get density
-try:
-    ref = ReferenceState(dirname + '/reference', '')
-    rho = ref.density
-    print ("Got density from 'reference' file")
-except:
-    eq = equation_coefficients()
-    eq.read(dirname + '/equation_coefficients')
-    rho = eq.functions[0]
-    print ("Got density from 'equation_coefficients' file")
+eq = get_eq(dirname)
+rho = eq.density
 
 # Directory with data and plots, make the plotting directory if it doesn't
 # already exist    
 datadir = dirname + '/data/'
 plotdir = dirname + '/plots/'
-if (not os.path.isdir(plotdir)):
+if not os.path.isdir(plotdir):
     os.makedirs(plotdir)
 
 # Set defaults
 minmax = None
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
+plotcontours = True
 
 # Read in CLAs (if any) to change default variable ranges and other options
 args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
-    if (arg == '-minmax'):
+    if arg == '-minmax':
         minmax = float(args[i+1]), float(args[i+2])
-    elif (arg == '-nlevs'):
+    elif arg == '-nlevs':
         my_nlevs = int(args[i+1])
-    elif (arg == '-usefile'):
+    elif arg == '-usefile':
         AZ_Avgs_file = args[i+1]
         AZ_Avgs_file = AZ_Avgs_file.split('/')[-1]
+    elif arg == '-nocontour':
+        plotcontours = False
 
 # Read in AZ_Avgs data
 print ('Getting data from ' + datadir + AZ_Avgs_file + ' ...')
@@ -117,13 +112,14 @@ plot_azav (rhovm, rr, cost, fig=fig, ax=ax,\
     units = r'$\rm{g}\ \rm{cm}^{-2}\ \rm{s}^{-1}$', plotcontours=False,\
     minmax=minmax)
 
-# Plot streamfunction contours
-lilbit = 0.01
-maxabs = np.max(np.abs(psi))
-levels = (-maxabs/2., -maxabs/4., -lilbit*maxabs, 0., lilbit*maxabs,\
-        maxabs/4., maxabs/2.)
-plot_azav (psi, rr, cost, fig=fig, ax=ax, plotfield=False,\
-    levels=levels)
+# Plot streamfunction contours, if desired
+if plotcontours:
+    lilbit = 0.01
+    maxabs = np.max(np.abs(psi))
+    levels = (-maxabs/2., -maxabs/4., -lilbit*maxabs, 0., lilbit*maxabs,\
+            maxabs/4., maxabs/2.)
+    plot_azav (psi, rr, cost, fig=fig, ax=ax, plotfield=False,\
+        levels=levels)
 
 # Make title
 fsize = 12
