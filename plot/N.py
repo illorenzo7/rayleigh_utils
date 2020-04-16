@@ -133,7 +133,12 @@ if not rvals is None:
         plt.plot(rval_n + np.zeros(100), yvals, 'k--')
 
 # Create a title    
-plt.title(dirname_stripped + '\n' +'Brunt-Vaisala Frequency', **csfont)
+# Put max frequency (and time-step limit) in title
+N_max = np.sqrt(val_max)
+dtlimit = 1./N_max
+plt.title(dirname_stripped + '\n' +'Brunt-Vaisala Frequency' +\
+        '\n' + r'$N_{\rm{max}} = %1.1e\ s^{-1},\ (\Delta t)_N = %1.1e\ s$'\
+        %(N_max, dtlimit), **csfont)
 
 # Get ticks everywhere
 plt.minorticks_on()
