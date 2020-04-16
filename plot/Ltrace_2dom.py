@@ -61,7 +61,6 @@ for i in range(nargs):
     elif arg == '-plotall':
         plotall = True
 
-
 # Tag the plot by whether or not the x axis is in "time" or "iteration"
 if xiter:
     tag = '_xiter'
@@ -104,46 +103,53 @@ else:
 # Make appropriate file name to save
 savename = dirname_stripped + '_Ltrace_2dom_' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + tag + '.png'
 
+# Compute the volumes of the two shells
+ri, rt, ro = get_parameter(dirname, 'domain_bounds')
+Vcz = 4./3.*np.pi*(ro**3. - rt**3.)
+Vrz = 4./3.*np.pi*(rt**3. - ri**3.)
+
 # Get data in apropriate time range
 times = times[it1:it2+1]
 t1 = np.min(times)
 t2 = np.max(times)
 iters = iters[it1:it2+1]
-Lz_cz = vals_cz[it1:it2+1, lut[1819]]
-Lz_rz = vals_rz[it1:it2+1, lut[1819]]
-if plotall:
-    Lx_cz = vals_cz[it1:it2+1, lut[1820]]
-    Lx_rz = vals_rz[it1:it2+1, lut[1820]]
-    Ly_cz = vals_cz[it1:it2+1, lut[1821]]
-    Ly_rz = vals_rz[it1:it2+1, lut[1821]]
 
-Lpz_cz = vals_cz[it1:it2+1, lut[1822]]
-Lpz_rz = vals_rz[it1:it2+1, lut[1822]]
+# Compute the total angular momentum in the shell
+Lz_cz = vals_cz[it1:it2+1, lut[1819]]*Vcz
+Lz_rz = vals_rz[it1:it2+1, lut[1819]]*Vrz
 if plotall:
-    Lpx_cz = vals_cz[it1:it2+1, lut[1823]]
-    Lpx_rz = vals_rz[it1:it2+1, lut[1823]]
-    Lpy_cz = vals_cz[it1:it2+1, lut[1824]]
-    Lpy_rz = vals_rz[it1:it2+1, lut[1824]]
+    Lx_cz = vals_cz[it1:it2+1, lut[1820]]*Vcz
+    Lx_rz = vals_rz[it1:it2+1, lut[1820]]*Vrz
+    Ly_cz = vals_cz[it1:it2+1, lut[1821]]*Vcz
+    Ly_rz = vals_rz[it1:it2+1, lut[1821]]*Vrz
 
-Lmz_cz = vals_cz[it1:it2+1, lut[1825]]
-Lmz_rz = vals_rz[it1:it2+1, lut[1825]]
+Lpz_cz = vals_cz[it1:it2+1, lut[1822]]*Vcz
+Lpz_rz = vals_rz[it1:it2+1, lut[1822]]*Vrz
 if plotall:
-    Lmx_cz = vals_cz[it1:it2+1, lut[1826]]
-    Lmx_rz = vals_rz[it1:it2+1, lut[1826]]
-    Lmy_cz = vals_cz[it1:it2+1, lut[1827]]
-    Lmy_rz = vals_rz[it1:it2+1, lut[1827]]
+    Lpx_cz = vals_cz[it1:it2+1, lut[1823]]*Vcz
+    Lpx_rz = vals_rz[it1:it2+1, lut[1823]]*Vrz
+    Lpy_cz = vals_cz[it1:it2+1, lut[1824]]*Vcz
+    Lpy_rz = vals_rz[it1:it2+1, lut[1824]]*Vrz
+
+Lmz_cz = vals_cz[it1:it2+1, lut[1825]]*Vcz
+Lmz_rz = vals_rz[it1:it2+1, lut[1825]]*Vrz
+if plotall:
+    Lmx_cz = vals_cz[it1:it2+1, lut[1826]]*Vcz
+    Lmx_rz = vals_rz[it1:it2+1, lut[1826]]*Vrz
+    Lmy_cz = vals_cz[it1:it2+1, lut[1827]]*Vcz
+    Lmy_rz = vals_rz[it1:it2+1, lut[1827]]*Vrz
 
 # Get global min/max vals
-varlist = [Lz_cz, Lpz_cz, Lmz_cz, Lz_rz, Lpz_rz, Lmz_rz]
-if plotall:
-    varlist.extend([Lx_cz, Ly_cz, Lpx_cz, Lpy_cz, Lmx_cz, Lmy_cz,\
-        Lx_rz, Ly_rz, Lpx_rz, Lpy_rz, Lmx_rz, Lmy_rz])
-mmax = -np.inf
-mmin = np.inf
-for var in varlist:
-    mmax = max(mmax, np.max(var))
-    mmin = min(mmin, np.min(var))
+mmin = min(np.min(Lz_cz), np.min(Lz_rz), np.min(Lz_cz + Lz_rz))
+mmax = max(np.max(Lz_cz), np.max(Lz_rz), np.max(Lz_cz + Lz_rz))
+mminm = min(np.min(Lmz_cz), np.min(Lmz_rz), np.min(Lmz_cz + Lmz_rz))
+mmaxm = max(np.max(Lmz_cz), np.max(Lmz_rz), np.max(Lmz_cz + Lmz_rz))
+mminp = min(np.min(Lpz_cz), np.min(Lpz_rz), np.min(Lpz_cz + Lpz_rz))
+mmaxp = max(np.max(Lpz_cz), np.max(Lpz_rz), np.max(Lpz_cz + Lpz_rz))
 
+print('mmin mmax: ', mmin, mmax)
+print('mminm mmaxm: ', mminm, mmaxm)
+print('mminp mmaxp: ', mminp, mmaxp)
 if not xiter:
     xaxis = times/time_unit
 else:
@@ -156,9 +162,6 @@ ax1 = axs[0]; ax2 = axs[1]; ax3 = axs[2]
 # Make thin lines to see structure of variation
 lw = 0.5
 
-# first plot: average angular momentum density trace      
-# Include title
-
 # Time string showing trace interval
 if rotation:
     time_string = ('t = %.1f to %.1f ' %(t1/time_unit, t2/time_unit))\
@@ -169,24 +172,65 @@ else:
             + time_label + (r'$\ (\Delta t = %.3f\ $'\
             %((t2 - t1)/time_unit)) + time_label + ')'
 
+# Make first plot (total angular momentum trace)
+ax1.plot(xaxis, Lz_cz, 'r', linewidth=lw, label=r'$\mathcal{L}_z\ \rm{(CZ)}$')
+ax1.plot(xaxis, Lz_rz, 'b', linewidth=lw, label=r'$\mathcal{L}_z\ \rm{(RZ)}$')
+ax1.plot(xaxis, Lz_cz + Lz_rz, 'k', linewidth=lw, label=r'$\mathcal{L}_z\ \rm{(tot)}$')
+if plotall:
+    ax1.plot(xaxis, Lx_cz, 'r--', linewidth=lw, label=r'$\mathcal{L}_x\ \rm{(CZ)}$')
+    ax1.plot(xaxis, Lx_rz, 'b--', linewidth=lw, label=r'$\mathcal{L}_x\ \rm{(RZ)}$')
+    ax1.plot(xaxis, Ly_cz, 'r:', linewidth=lw, label=r'$\mathcal{L}_y\ \rm{(CZ)}$')
+    ax1.plot(xaxis, Ly_rz, 'b:', linewidth=lw, label=r'$\mathcal{L}_y\ \rm{(RZ)}$')
+
 # Make title
 ax1.set_title(dirname_stripped + '\n ' + time_string +\
           '\n\nangular momentum')
-ax1.plot(xaxis, Lz_cz, 'k', linewidth=lw, label=r'$\mathcal{L}_z\ \rm{(CZ)}$')
-ax1.plot(xaxis, Lz_rz, 'k--', linewidth=lw, label=r'$\mathcal{L}_z\ \rm{(RZ)}$')
-if plotall:
-    ax1.plot(xaxis, Lx_cz, 'r', linewidth=lw, label=r'$\mathcal{L}_x\ \rm{(CZ)}$')
-    ax1.plot(xaxis, Lx_rz, 'r--', linewidth=lw, label=r'$\mathcal{L}_x\ \rm{(RZ)}$')
-    ax1.plot(xaxis, Ly_cz, 'g', linewidth=lw, label=r'$\mathcal{L}_y\ \rm{(CZ)}$')
-    ax1.plot(xaxis, Ly_rz, 'g--', linewidth=lw, label=r'$\mathcal{L}_y\ \rm{(RZ)}$')
 
-# If we're looking for machine-precision variations, just determine
-# min and max ranges for y-axes automatically in Python...
+# Make the second plot (angular momentum of fluctuating motions)
+ax2.plot(xaxis, Lpz_cz, 'r', linewidth=lw, label=r'$\mathcal{L}_z^\prime\ \rm{(CZ)}$')
+ax2.plot(xaxis, Lpz_rz, 'b', linewidth=lw, label=r'$\mathcal{L}_z^\prime\ \rm{(RZ)}$')
+ax2.plot(xaxis, Lpz_cz + Lpz_rz, 'k', linewidth=lw, label=r'$\mathcal{L}_z^\prime\ \rm{(tot)}$')
+if plotall:
+    ax2.plot(xaxis, Lpx_cz, 'r--', linewidth=lw, label=r'$\mathcal{L}_x^\prime\ \rm{(CZ)}$')
+    ax2.plot(xaxis, Lpx_rz, 'b--', linewidth=lw, label=r'$\mathcal{L}_x^\prime\ \rm{(RZ)}$')
+    ax2.plot(xaxis, Lpy_cz, 'r:', linewidth=lw, label=r'$\mathcal{L}_y^\prime\ \rm{(CZ)}$')
+    ax2.plot(xaxis, Lpy_rz, 'b:', linewidth=lw, label=r'$\mathcal{L}_y^\prime\ \rm{(RZ)}$')
+
+# Title and axis label
+ax2.set_title('convection amom')
+# Put the y-label on the middle plot
+ax2.set_ylabel(r'$\rm{angular\ momentum\ density\ (g\ cm^{2}\ s^{-1})}$')
+
+# Third plot: angular momentum of mean energies
+ax3.plot(xaxis, Lmz_cz, 'r', linewidth=lw, label=r'$\langle\mathcal{L}\rangle_z\ \rm{(CZ)}$')
+ax3.plot(xaxis, Lmz_rz, 'b', linewidth=lw, label=r'$\langle\mathcal{L}\rangle_z\ \rm{(RZ)}$')
+ax3.plot(xaxis, Lmz_cz + Lmz_rz, 'k', linewidth=lw, label=r'$\langle\mathcal{L}_z\rangle\ \rm{(tot)}$')
+if plotall:
+    ax3.plot(xaxis, Lmx_cz, 'r--', linewidth=lw, label=r'$\langle\mathcal{L}\rangle_x\ \rm{(CZ)}$')
+    ax3.plot(xaxis, Lmx_rz, 'b--', linewidth=lw, label=r'$\langle\mathcal{L}\rangle_x\ \rm{(RZ)}$')
+    ax3.plot(xaxis, Lmy_cz, 'k', linewidth=lw, label=r'$\langle\mathcal{L}\rangle_y\ \rm{(CZ)}$')
+    ax3.plot(xaxis, Lmy_rz, 'k--', linewidth=lw, label=r'$\langle\mathcal{L}\rangle_y\ \rm{(RZ)}$')
+
+# title and x-axis label
+ax3.set_title('mean-motion amom')
+ 
+# Set x limits  
+if xminmax is None:
+    ax1.set_xlim((np.min(xaxis), np.max(xaxis)))
+else:
+    ax1.set_xlim(xminmax)
+
+# Determine default minmax range
 if minmax is None:
-    pass
-#    diff = mmax - mmin
-#    buff = 0.05*diff
-#    ax1.set_ylim(mmin - buff, mmax + buff)
+    diff = mmax - mmin
+    buff = 0.05*diff
+    diffm = mmaxm - mminm
+    buffm = 0.05*diffm
+    diffp = mmaxp - mminp
+    buffp = 0.05*diffp
+    ax1.set_ylim(mmin - buff, mmax + buff)
+    ax2.set_ylim(mminp - buffp, mmaxp + buffp)
+    ax3.set_ylim(mminm - buffm, mmaxm + buffm)
 else:
     if len(minmax) == 2:
         ax1.set_ylim(minmax)
@@ -196,12 +240,6 @@ else:
         ax1.set_ylim(minmax[0], minmax[1])
         ax1.set_ylim(minmax[2], minmax[3])
         ax1.set_ylim(minmax[4], minmax[5])
- 
-# Set x limits  
-if xminmax is None:
-    ax1.set_xlim((np.min(xaxis), np.max(xaxis)))
-else:
-    ax1.set_xlim(xminmax)
 
 # legend
 ax1.legend(ncol=2, fontsize=8)
@@ -211,31 +249,6 @@ ax1.ticklabel_format(scilimits = (-3,4), useMathText=True)
 ax2.ticklabel_format(scilimits = (-3,4), useMathText=True)
 ax3.ticklabel_format(scilimits = (-3,4), useMathText=True)
 
-# Make the second plot (angular momentum of fluctuating motions)
-ax2.plot(xaxis, Lpz_cz, 'k', linewidth=lw, label=r'$\mathcal{L}_z^\prime\ \rm{(CZ)}$')
-ax2.plot(xaxis, Lpz_rz, 'k--', linewidth=lw, label=r'$\mathcal{L}_z^\prime\ \rm{(RZ)}$')
-if plotall:
-    ax2.plot(xaxis, Lpx_cz, 'r', linewidth=lw, label=r'$\mathcal{L}_x^\prime\ \rm{(CZ)}$')
-    ax2.plot(xaxis, Lpx_rz, 'r--', linewidth=lw, label=r'$\mathcal{L}_x^\prime\ \rm{(RZ)}$')
-    ax2.plot(xaxis, Lpy_cz, 'g', linewidth=lw, label=r'$\mathcal{L}_y^\prime\ \rm{(CZ)}$')
-    ax2.plot(xaxis, Lpy_rz, 'g--', linewidth=lw, label=r'$\mathcal{L}_y^\prime\ \rm{(RZ)}$')
-
-# Title and axis label
-ax2.set_title('convection amom')
-# Put the y-label on the middle plot
-ax2.set_ylabel(r'$\rm{angular\ momentum\ density\ (g\ cm^{-1}\ s^{-1})}$')
-
-# Third plot: angular momentum of mean energies
-ax3.plot(xaxis, Lmz_cz, 'k', linewidth=lw, label=r'$\langle\mathcal{L}\rangle_z\ \rm{(CZ)}$')
-ax3.plot(xaxis, Lmz_rz, 'k--', linewidth=lw, label=r'$\langle\mathcal{L}\rangle_z\ \rm{(RZ)}$')
-if plotall:
-    ax3.plot(xaxis, Lmx_cz, 'r', linewidth=lw, label=r'$\langle\mathcal{L}\rangle_x\ \rm{(CZ)}$')
-    ax3.plot(xaxis, Lmx_rz, 'r--', linewidth=lw, label=r'$\langle\mathcal{L}\rangle_x\ \rm{(RZ)}$')
-    ax3.plot(xaxis, Lmy_cz, 'g', linewidth=lw, label=r'$\langle\mathcal{L}\rangle_y\ \rm{(CZ)}$')
-    ax3.plot(xaxis, Lmy_rz, 'g--', linewidth=lw, label=r'$\langle\mathcal{L}\rangle_y\ \rm{(RZ)}$')
-
-# title and x-axis label
-ax3.set_title('mean-motion amom')
 
 # Put the x-axis label on the bottom
 if (xiter):
