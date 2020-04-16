@@ -9,7 +9,7 @@
 #PBS -l site=needed=/home1+/nobackupp2
 
 module purge
-module load mpi-sgi/mpt
+module load mpi-hpe
 module load comp-intel
 
 export MPI_LAUNCH_TIMEOUT=40

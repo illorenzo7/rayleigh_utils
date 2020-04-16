@@ -8,7 +8,7 @@
 #PBS -m e
 
 module purge
-module load mpi-sgi/mpt
+module load mpi-hpe
 module load comp-intel
 
 export MPI_BUFS_PER_PROC=256
