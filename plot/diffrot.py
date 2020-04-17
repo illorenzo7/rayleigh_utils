@@ -27,6 +27,13 @@ from translate_times import translate_times
 dirname = sys.argv[1]
 dirname_stripped = strip_dirname(dirname)
 
+# Split dirname_stripped into two lines if it is very long
+if len(dirname_stripped) > 25:
+    dirname_stripped_title = dirname_stripped[:25] + '\n' +\
+            dirname_stripped[25:]
+else:
+    dirname_stripped_title = dirname_stripped
+
 # Directory with data and plots, make the plotting directory if it doesn't
 # already exist    
 datadir = dirname + '/data/'
@@ -132,12 +139,9 @@ else:
     time_string = ('t = %.3f to %.3f ' %(t1/time_unit, t2/time_unit))\
             + time_label + (r'$\ (\Delta t = %.3f\ $'\
             %((t2 - t1)/time_unit)) + time_label + ')'
-# Split dirname_stripped into two lines if it is very long
-if len(dirname_stripped) > 25:
-    dirname_stripped = dirname_stripped[:25] + '\n' + dirname_stripped[25:]
 fsize = 12.
 line_height = 1./4./fig_height_inches
-fig.text(margin_x, 1 - margin_y, dirname_stripped,\
+fig.text(margin_x, 1 - margin_y, dirname_stripped_title,\
          ha='left', va='top', fontsize=fsize, **csfont)
 fig.text(margin_x, 1 - margin_y - 2*line_height, r'$\Omega - \Omega_0$',\
          ha='left', va='top', fontsize=fsize, **csfont)

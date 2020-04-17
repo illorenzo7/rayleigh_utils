@@ -137,10 +137,12 @@ if forced: # compute torque associated with forcing function
         inner_vp = read_inner_vp(dirname + '/inner_vp')
         for it in range(nt):
             for ir in range(nr):
-                if rr[ir] <= tacho_r:
+                if rr[ir] <= tacho_r - tacho_dr*rr[0]:
+                    desired_vp = 0.0
+                elif rr[ir] <= tacho_r:
                     desired_vp = inner_vp[it]*(1.0 - ( (rr[ir] - tacho_r)/(tacho_dr*rr[0]) )**2)**2
                 else:
-                    desired_vp = 0.0
+                    desired_vp = mean_vp[it, ir] # No forcing in CZ
                 forcing[it, ir] = -rho[ir]*(mean_vp[it, ir] - desired_vp)/tacho_tau
     else:
         forcing_coeff = -rho/tacho_tau*0.5*(1.0 - np.tanh((rr - tacho_r)/(tacho_dr*rr[0])))
