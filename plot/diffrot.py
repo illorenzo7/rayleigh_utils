@@ -103,8 +103,8 @@ if (not user_specified_minmax):
 # Create plot
 subplot_width_inches = 2.5
 subplot_height_inches = 5.
-margin_inches = 1/8
-margin_top_inches = 3/2 # larger top margin to make room for titles
+margin_inches = 1./8.
+margin_top_inches = 2. # larger top margin to make room for titles
 
 fig_width_inches = subplot_width_inches + 2*margin_inches
 fig_height_inches = subplot_height_inches + margin_top_inches + margin_inches
@@ -123,7 +123,6 @@ plot_azav (diffrot, rr, cost, fig=fig, ax=ax, units='nHz',\
         nlevs=my_nlevs, minmax = (my_min, my_max))
 
 # Make title + label diff. rot. contrast and no. contours
-
 # Label averaging interval
 if rotation:
     time_string = ('t = %.1f to %.1f ' %(t1/time_unit, t2/time_unit))\
@@ -133,17 +132,21 @@ else:
     time_string = ('t = %.3f to %.3f ' %(t1/time_unit, t2/time_unit))\
             + time_label + (r'$\ (\Delta t = %.3f\ $'\
             %((t2 - t1)/time_unit)) + time_label + ')'
-fsize = 12
-fig.text(margin_x, 1 - 0.05*margin_top, dirname_stripped,\
+# Split dirname_stripped into two lines if it is very long
+if len(dirname_stripped) > 25:
+    dirname_stripped = dirname_stripped[:25] + '\n' + dirname_stripped[25:]
+fsize = 12.
+line_height = 1./4./fig_height_inches
+fig.text(margin_x, 1 - margin_y, dirname_stripped,\
          ha='left', va='top', fontsize=fsize, **csfont)
-fig.text(margin_x, 1 - 0.2*margin_top, r'$\Omega - \Omega_0$',\
+fig.text(margin_x, 1 - margin_y - 2*line_height, r'$\Omega - \Omega_0$',\
          ha='left', va='top', fontsize=fsize, **csfont)
-fig.text(margin_x, 1 - 0.35*margin_top, time_string,\
+fig.text(margin_x, 1 - margin_y - 3*line_height, time_string,\
          ha='left', va='top', fontsize=fsize, **csfont)
-fig.text(margin_x, 1 - 0.65*margin_top,\
+fig.text(margin_x, 1 - margin_y - 5*line_height,\
          r'$\Delta\Omega_{\rm{tot}} = %.1f\ nHz$' %Delta_Om,\
          ha='left', va='top', fontsize=fsize, **csfont)
-fig.text(margin_x, 1 - 0.8*margin_top,\
+fig.text(margin_x, 1 - margin_y - 6*line_height,\
          'nlevs = %i' %my_nlevs,
          ha='left', va='top', fontsize=fsize, **csfont)
 savefile = plotdir + dirname_stripped + '_diffrot_' + str(iter1).zfill(8) +\

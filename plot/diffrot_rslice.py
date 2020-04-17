@@ -16,9 +16,12 @@ import matplotlib.pyplot as plt
 plt.rcParams['mathtext.fontset'] = 'dejavuserif'
 csfont = {'fontname':'DejaVu Serif'}
 import sys, os
+sys.path.append(os.environ['raco'])
 from get_parameter import get_parameter
 from common import strip_dirname, get_widest_range_file,\
-        get_iters_from_file, get_dict
+        get_iters_from_file, get_dict, rsun
+from time_scales import compute_Prot
+from translate_times import translate_times
 
 # Get directory name and stripped_dirname for plotting purposes
 dirname = sys.argv[1]
@@ -28,44 +31,47 @@ dirname_stripped = strip_dirname(dirname)
 # already exist    
 datadir = dirname + '/data/'
 plotdir = dirname + '/plots/'
-if (not os.path.isdir(plotdir)):
+if not os.path.isdir(plotdir):
     os.makedirs(plotdir)
 
 # Set defaults
-user_specified_rnorm = False
-user_specified_minmax = False
-lats = [0, 15, 30, 45, 60, 75]
-AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
+rnorm = None
+minmax = None
+lats = [0., 15., 30., 45., 60., 75.]
+the_file = get_widest_range_file(datadir, 'AZ_Avgs')
+rvals = None
 
 # Read command-line arguments (CLAs)
 args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
-    if (arg == '-lats'):
+    if arg == '-lats':
         lats_str = args[i+1].split()
         lats = []
         for j in range(len(lats_str)):
             lats.append(float(lats_str[j]))
-    elif (arg == '-usefile'):
-        AZ_Avgs_file = args[i+1]
-        AZ_Avgs_file = AZ_Avgs_file.split('/')[-1]
-    elif (arg == '-rnorm'):
-        user_specified_rnorm = True
-        user_supplied_rnorm = float(args[i+1])
+    elif arg == '-usefile':
+        the_file = args[i+1]
+        the_file = the_file.split('/')[-1]
+    elif arg == '-rnorm':
+        rnorm = float(args[i+1])
     elif arg == '-minmax':
-        user_specified_minmax = True
-        my_min = float(args[i+1])
-        my_max = float(args[i+2])
+        minmax = float(args[i+1]), float(args[i+2])
+    elif arg == '-rvals':
+        rvals_str = args[i+1].split()
+        rvals = []
+        for rval_str in rvals_str:
+            rvals.append(float(rval_str))
 
 # Get the spherical theta values associated with [lats]       
 lats = np.array(lats)
-colats = 90 - lats
-theta_vals = colats*np.pi/180
+colats = 90. - lats
+theta_vals = colats*np.pi/180.
 
 # Read in vavg data
-print ('Reading AZ_Avgs data from ' + datadir + AZ_Avgs_file + ' ...')
-di = get_dict(datadir + AZ_Avgs_file)
+print ('Reading AZ_Avgs data from ' + datadir + the_file)
+di = get_dict(datadir + the_file)
 
 vals = di['vals']
 lut = di['lut']
@@ -79,11 +85,17 @@ ri = di['ri']
 vr_av, vt_av, vp_av = vals[:, :, lut[1]], vals[:, :, lut[2]],\
         vals[:, :, lut[3]]
 
-#iter1, iter2 = get_iters_from_file(AZ_Avgs_file)
+# Get the time range in sec
+t1 = translate_times(iter1, dirname, translate_from='iter')['val_sec']
+t2 = translate_times(iter2, dirname, translate_from='iter')['val_sec']
+
+# Get the baseline time unit
+time_unit = compute_Prot(dirname)
+time_label = r'$\rm{P_{rot}}$'
 
 # Get frame rate rotation and compute differential rotation in the 
 # lab frame. 
-Om0 = get_parameter(dirname, 'angular_velocity')
+Om0 = 2.*np.pi/time_unit
 Om = vp_av/xx + Om0
 Om *= 1.0e9/2/np.pi # convert from rad/s --> nHz
 
@@ -97,11 +109,12 @@ mins = []  # ditto for the min-value
                                                
 # User can specify what to normalize the radius by
 # By default, normalize by the solar radius
-Rsun = 6.955e10
-if not user_specified_rnorm:
-    rr_n = rr/Rsun
+if rnorm is None:
+    rnorm = rsun
+    xlabel = r'$r/R_\odot$'
 else:
-    rr_n = rr/user_supplied_rnorm                                           
+    xlabel = r'r/(%.1e cm)' %rnorm
+rr_n = rr/rnorm
 
 # Plot rotation vs radius at the desired latitudes
 for theta_val in theta_vals:
@@ -116,34 +129,38 @@ for theta_val in theta_vals:
 # Global extrema
 mmax = np.max(maxes)
 mmin = np.min(mins)
-difference = mmax - mmin
-buffer = difference*0.2 # "Guard" the yrange of the plot with whitespace
 
 # Label the axes
-if not user_specified_rnorm:
-    plt.xlabel(r'$r/R_\odot$',fontsize=12, **csfont)
-else:
-    plt.xlabel(r'r/(%.1e cm)' %user_supplied_rnorm, fontsize=12, **csfont)
-    
+plt.xlabel(xlabel, fontsize=12, **csfont)
 plt.ylabel(r'$\Omega/2\pi \ \rm{(nHz)}$',fontsize=12, **csfont)
 
 # Set the axis limits
+# x axis
 xmin, xmax = np.min(rr_n), np.max(rr_n)
-ymin, ymax = mmin - buffer, mmax + buffer
 plt.xlim((xmin, xmax))
-if not user_specified_minmax:
-    plt.ylim((ymin, ymax))
-else:
-    plt.ylim((my_min, my_max))
+# y axis
+if minmax is None:
+    ydiff = mmax - mmin
+    ybuffer = ydiff*0.05 # "Guard" the yrange of the plot with whitespace
+    minmax = mmin - ybuffer, mmax + ybuffer
+plt.ylim((minmax[0], minmax[1]))
 
-delta_x = xmax - xmin
-delta_y = ymax - ymin
-xvals = np.linspace(xmin, xmax, 100)
-yvals = np.linspace(ymin, ymax, 100)
+# Mark radii if desired
+if not rvals is None:
+    yvals = np.linspace(minmax[0], minmax[1], 100)
+    for rval in rvals:
+        rval_n = rval/rnorm
+        plt.plot(rval_n + np.zeros(100), yvals, 'k--')
 
 # Create a title    
-plt.title(dirname_stripped + '\n' + r'$\Omega(r,\theta),\ \rm{rslice},\ $' +\
-          str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8), **csfont)
+# Label averaging interval
+time_string = ('t = %.1f to %.1f ' %(t1/time_unit, t2/time_unit))\
+        + time_label + '\n' + (r'$\ (\Delta t = %.1f\ $'\
+        %((t2 - t1)/time_unit)) + time_label + ')'
+
+plt.title(dirname_stripped + '\n' +\
+        r'$\Omega(r,\theta),\ \rm{rslice},\ $' +\
+          time_string, **csfont)
 plt.legend(title='latitude')
 
 # Get ticks everywhere
