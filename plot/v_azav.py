@@ -42,6 +42,7 @@ saveplot = True
 plotcontours = True
 minmax = None
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
+rvals = None
 
 args = sys.argv[2:]
 nargs = len(args)
@@ -61,6 +62,11 @@ for i in range(nargs):
     elif (arg == '-usefile'):
         AZ_Avgs_file = args[i+1]
         AZ_Avgs_file = AZ_Avgs_file.split('/')[-1]
+    elif arg == '-rvals':
+        rvals_str = args[i+1].split()
+        rvals = []
+        for rval_str in rvals_str:
+            rvals.append(float(rval_str))
        
 # Read in AZ_Avgs data
 print ('Getting data from ' + datadir + AZ_Avgs_file + ' ...')
@@ -74,6 +80,7 @@ lut = di['lut']
 rr = di['rr']
 cost = di['cost']
 sint = di['sint']
+ro = di['ro']
 
 vr, vt, vp = vals[:, :, lut[1]]/100., vals[:, :, lut[2]]/100.,\
         vals[:, :, lut[3]]/100.
@@ -134,6 +141,12 @@ for iplot in range(3):
         units=units, minmax=(my_mins[iplot], my_maxes[iplot]),\
            plotcontours=plotcontours)
     ax.set_title(titles[iplot], verticalalignment='bottom', **csfont)
+
+    # Mark radii if desired
+    if not rvals is None:
+        for rval in rvals:
+            rval_n = rval/ro
+            plt.plot(rval_n*sint, rval_n*cost, 'k--', linewidth=0.5)
 
 # Put some metadata in upper left
 fsize = 12
