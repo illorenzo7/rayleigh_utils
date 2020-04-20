@@ -19,6 +19,7 @@ from reference_tools import equation_coefficients
 
 dirname = sys.argv[1]
 
+
 # get density and grid info
 try:
     ref = ReferenceState(dirname + '/reference', '')
@@ -35,6 +36,7 @@ rr = gi.radius
 nr = len(rr)
 ir_min = 0
 ir_max = nr - 1
+density = False # by default plot total amom (not density)
 
 # Read in CLAs
 args = sys.argv[2:]
@@ -49,6 +51,8 @@ for i in range(nargs):
     elif arg == '-rmax':
         desired_rmax = float(args[i+1])
         ir_min = np.argmin(np.abs(rr - desired_rmax))
+    elif arg == '-dens':
+        density = True
 
 # Get the actual rmin/rmax values associated with the index
 rmin = rr[ir_max] # remember reversed radius array ...
@@ -66,6 +70,12 @@ total_amom = 8.*np.pi*Om0/3.*np.sum((rho*rr**2.*rw)[ir_min:ir_max+1])*scaling
 shell_volume = 4./3.*np.pi*(rmax**3. - rmin**3.)
 L0 = total_amom/shell_volume
 
-print ("Average amom_z density between ")
-print ("rmin = %1.3e cm and rmax = %1.3e cm:" %(rmin, rmax))
-print ("%1.3e g/cm/s" %L0)
+if density:
+    print ("Average amom_z density between ")
+    print ("rmin = %1.3e cm and rmax = %1.3e cm:" %(rmin, rmax))
+    print ("%1.3e g/cm/s" %L0)
+else:
+    print ("Total amom_z between ")
+    print ("rmin = %1.3e cm and rmax = %1.3e cm:" %(rmin, rmax))
+    print ("%1.3e g cm^2/s" %(L0*shell_volume))
+

@@ -17,12 +17,17 @@ azav_file = None
 args = sys.argv[2:]
 nargs = len(args)
 two_domains = True
+r0 = None
 for i in range(nargs):
     arg = args[i]
     if arg == '-usefile':
         azav_file = args[i+1]
     elif arg == '-cz':
         two_domains = False
+    elif arg == '-fname':
+        fname = args[i+1]
+    elif arg == '-r0':
+        r0 = float(args[i+1])
 
 # Read in the AZ_Avgs data
 datadir = dirname + '/data/'
@@ -32,6 +37,7 @@ print("getting data from data/", azav_file)
 di = get_dict(datadir + azav_file)
 vals = di['vals']
 lut = di['lut']
+rr = di['rr']
 mean_vp = vals[:, :, lut[3]]
 
 # Get relevant info from main_input file
@@ -43,9 +49,17 @@ else:
     nr = get_parameter(dirname, 'n_r')
     ir_base_CZ = nr - 1
 
-inner_vp = mean_vp[:, ir_base_CZ]
+if r0 is None:
+    ir0 = ir_base_CZ
+else:
+    ir0 = np.argmin(np.abs(rr - r0))
+    
+inner_vp = mean_vp[:, ir0]
 
 # Write the data
+print ("Writing <v_phi> as a function of theta for ")
+print("r0 = %1.3e cm" %rr[ir0])
+
 f = open(dirname + '/' + fname, 'wb')
 sigpi = np.array(314, dtype=np.int32)
 
