@@ -32,7 +32,12 @@
 #
 # -mag
 # Whether magnetism is True or False, default False (hydro)
-
+#
+# -nodropnu
+# -nodropkappa
+# -nodropeta
+# By default all False (drop all diffusions); can exempt some diffusions
+# from the drop by using these flags
 import numpy as np
 import sys, os
 
@@ -47,13 +52,16 @@ from common import rsun
 
 # Set default constants
 rt = 4.87e10 # by default transition a bit below RZ-CZ transition
-delta = 0.005*rsun
+delta = 0.01*rsun
 power = -0.5
 drop = 1000.
 nutop = 3.0e12
 kappatop = 3.0e12
 etatop = 3.0e12
 mag = False
+nodropnu = False
+nodropkappa = False
+nodropeta = False
 
 # Get directory to save binary files for reference state and heating
 dirname = sys.argv[1]
@@ -81,6 +89,12 @@ for i in range(nargs):
         fname = args[i+1]
     elif arg == '-mag':
         mag = True
+    elif arg == '-nodropnu':
+        nodropnu = True
+    elif arg == '-nodropkappa':
+        nodropkappa = True
+    elif arg == '-nodropeta':
+        nodropeta = True
 
 # If hydro, better make sure whatever multiplies eta in energy/induction
 # is zero... but "had we better?" does eta != 0 cause crashes?
@@ -112,16 +126,32 @@ print("---------------------------------")
 print("Computed radial shape for RZ-CZ diffusions, joined with tanh")
 print("rt: %1.3e cm" %rt) 
 print("delta/rsun: %.3f"  %(delta/rsun))
-print("drop: %.0f"  %drop)
+print("drop: %1.2e"  %drop)
+if nodropnu:
+    print ("nodropnu = True")
+if nodropkappa:
+    print ("nodropkappa = True")
+if nodropeta:
+    print ("nodropeta = True")
+print("Not dropping diffusions for variables that have 'nodrop' = True")
 print("---------------------------------")
 
 # Now write to file using the equation_coefficients framework
 # nu, kappa, eta, all get the same radial shapes (unless we want radially
 # dependent Prandtl numbers, which would be stupid)
 print("Setting f_3, f_5, f_7, f_11, f_12, and f_13")
-eq.set_function(nutop*radial_shape, 3)
-eq.set_function(kappatop*radial_shape, 5)
-eq.set_function(etatop*radial_shape, 7)
+if nodropnu:
+    eq.set_function(nutop*monotone, 3)
+else:
+    eq.set_function(nutop*radial_shape, 3)
+if nodropkappa:
+    eq.set_function(kappatop*monotone, 5)
+else:
+    eq.set_function(kappatop*radial_shape, 5)
+if nodropeta:
+    eq.set_function(etatop*monotone, 7)
+else:
+    eq.set_function(etatop*radial_shape, 7)
 
 eq.set_function(dlnradial_shape, 11)
 eq.set_function(dlnradial_shape, 12)
