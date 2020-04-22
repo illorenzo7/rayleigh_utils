@@ -108,9 +108,9 @@ def get_length_scales(dirname):
         vhsq_power = vtsq_power + vpsq_power
         vsq_power = vrsq_power + vtsq_power + vpsq_power
         # Compute rms l-values
-        l_rms_vr = np.sum(vrsq_power*lvals, axis=0)/np.sum(vrsq_power, axis=0)
-        l_rms_vh = np.sum(vhsq_power*lvals, axis=0)/np.sum(vhsq_power, axis=0)
-        l_rms_v = np.sum(vsq_power*lvals, axis=0)/np.sum(vsq_power, axis=0)
+        l_rms_vr = np.sum(vrsq_power*(lvals + 1.), axis=0)/np.sum(vrsq_power, axis=0)
+        l_rms_vh = np.sum(vhsq_power*(lvals + 1.), axis=0)/np.sum(vhsq_power, axis=0)
+        l_rms_v = np.sum(vsq_power*(lvals + 1.), axis=0)/np.sum(vsq_power, axis=0)
         # Compute lengthscales and add to dictionary
         pir = np.pi*rr_spec
         L_vr = pir/l_rms_vr
@@ -129,9 +129,9 @@ def get_length_scales(dirname):
             Bmsq_power = Brsq_power + Btsq_power
             Bsq_power = Brsq_power + Btsq_power + Bpsq_power
             # Compute rms l-values
-            l_rms_Br = np.sum(Brsq_power*lvals, axis=0)/np.sum(Brsq_power, axis=0)
-            l_rms_Bh = np.sum(Bhsq_power*lvals, axis=0)/np.sum(Bhsq_power, axis=0)
-            l_rms_B = np.sum(Bsq_power*lvals, axis=0)/np.sum(Bsq_power, axis=0)
+            l_rms_Br = np.sum(Brsq_power*(lvals + 1.), axis=0)/np.sum(Brsq_power, axis=0)
+            l_rms_Bh = np.sum(Bhsq_power*(lvals + 1.), axis=0)/np.sum(Bhsq_power, axis=0)
+            l_rms_B = np.sum(Bsq_power*(lvals + 1.), axis=0)/np.sum(Bsq_power, axis=0)
 
             # Compute lengthscales and add to dictionary
             L_Bp = pir/l_rms_Bp
