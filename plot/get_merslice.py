@@ -22,12 +22,12 @@ def get_merslice(mer, varname, dirname=None, az=None, sh=None, old=False,\
         j=0):
     # Given a Meridional_Slices object (nphi, ntheta, nr, nq, niter), 
     # return the field (nphi, ntheta, nr) associated with [varname] 
-    # take the jth time slice (default j=0)
-    # for "primed" variables, the script will use provided AZ_Avgs object 
-    # [az], or else estimate the longitudinal average from [mer]
-    # for "sphericallly primed" variables, the script will use provided
-    # Shell_Avgs object [sh], or else estimate spherical average from [mer]
-    # if [az] or [sh] are not provided for _prime or _prime_sph vars,
+    # take the jth time slice (default j=0).
+    # For "primed" variables, the routine will use provided AZ_Avgs object 
+    # [az], or else estimate the longitudinal average from [mer].
+    # for "sphericallly primed" variables, the routine will use provided
+    # Shell_Avgs object [sh], or else estimate spherical average from [mer].
+    # If [az] or [sh] are not provided for _prime or _prime_sph vars,
     # will use integration weights (from GridInfo) to subtract off various 
     # averages 
     # reference-state parameters (get_eq) come from [dirname]
