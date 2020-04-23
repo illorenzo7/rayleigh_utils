@@ -115,8 +115,9 @@ for ir in range(a.nr):
 
     savename = 'moll_' + varname + '_iter' + fname +\
             ('_rval%0.3f' %rval) + '.png'
+    # Display at terminal what we are plotting
     print('Plotting moll: ' + varname + (', r/rsun = %0.3f (ir = %02i), '\
-            %(rval, ir)) + 'iter ' + fname + ' ...')
+            %(rval, ir)) + 'iter ' + fname)
 
     fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
     ax = fig.add_axes([margin_x, margin_bottom, subplot_width,\

@@ -280,7 +280,7 @@ def get_merslice(mer, varname, dirname=None, az=None, sh=None, old=False,\
         merslice = p_slice - p_sh.reshape((1, 1, nr))
 
     # Spherical magnetic fields
-    if varname == 'br':
+    elif varname == 'br':
         ind_br = mer.lut[qind_br]
         merslice = vals[:, :, :, ind_br]
     elif varname == 'bt':

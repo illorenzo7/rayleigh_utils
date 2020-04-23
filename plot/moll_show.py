@@ -98,13 +98,17 @@ if not rval is None:
 field = vals[:, :, ir]
 rval = a.radius[ir]/rsun # in any case, this is the actual rvalue we get
 
+# Display at terminal what we are plotting
+print('Plotting moll: ' + varname + (', r/rsun = %0.3f (ir = %02i), '\
+        %(rval, ir)) + 'iter ' + fname)
+
 # Create the plot using subplot axes
 # Offset axes slightly (at the end) to deal with annoying white space cutoff
 fig_width_inches = 6.
 
 # General parameters for main axis/color bar
 margin_bottom_inches = 1./2.
-margin_top_inches = 5./8.
+margin_top_inches = 3./4.
 margin_inches = 1./8.
 
 subplot_width_inches = fig_width_inches - 2*margin_inches

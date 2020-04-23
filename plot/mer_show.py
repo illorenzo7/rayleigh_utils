@@ -25,7 +25,14 @@ from time_scales import compute_Prot, compute_tdt
 dirname = sys.argv[1]
 dirname_stripped = strip_dirname(dirname)
 
-# Data with Shell_Slices
+# Split dirname_stripped into two lines if it is very long
+if len(dirname_stripped) > 25:
+    dirname_stripped_title = dirname_stripped[:25] + '\n' +\
+            dirname_stripped[25:]
+else:
+    dirname_stripped_title = dirname_stripped
+
+# Data with Meridional_Slices
 radatadir = dirname + '/Meridional_Slices/'
 file_list, int_file_list, nfiles = get_file_lists(radatadir)
 
@@ -94,7 +101,7 @@ iter_val = int_file_list[iiter]
 fname = file_list[iiter]
 
 # Check if there are corresponding Shell_Avgs or AZ_Avgs files if needed
-if use_az:
+if use_az and varname[-5:] == 'prime':
     try:
         az = AZ_Avgs(dirname + '/AZ_Avgs/' + fname, '')
         print ("read AZ_Avgs/" + fname)
@@ -105,7 +112,7 @@ if use_az:
 else:
     az = None
 
-if use_sh:
+if use_sh and 'prime_sph' in varname:
     try:
         sh = Shell_Avgs(dirname + '/Shell_Avgs/' + fname, '')
         print ("read Shell_Avgs/" + fname)
@@ -127,11 +134,15 @@ t_loc = mer.time[0]
 field = vals[iphi, :, :]
 lonval = mer.phi[iphi]*180./np.pi
 
+# Display at terminal what we are plotting
+print('Plotting mer: ' + varname + (', lon = %.1f deg (iphi = %02i), '\
+        %(lonval, iphi)) + 'iter ' + fname)
+
 # Figure dimensions
 subplot_width_inches = 2.5
 subplot_height_inches = 5.
 margin_inches = 1./8.
-margin_top_inches = 1. # larger top margin to make room for titles
+margin_top_inches = 1.75 # larger top margin to make room for titles
 
 fig_width_inches = subplot_width_inches + 2*margin_inches
 fig_height_inches = subplot_height_inches + margin_top_inches +\
@@ -152,22 +163,30 @@ ax = fig.add_axes((margin_x, margin_y, subplot_width, subplot_height))
 plot_azav (field, mer.radius, mer.costheta, fig=fig, ax=ax, units=units,\
         minmax=minmax, plotlatlines=plotlatlines, plotcontours=plotcontours)
 
-# Make title + label diff. rot. contrast and no. contours
-# Label what time it is
+# Make title
 if rotation:
-    time_string = ('t = %.1f ' %(t_loc/time_unit)) + time_label
+    time_string = ('t = %.1f ' %(t_loc/time_unit)) + time_label +\
+            '\n (1 ' + time_label + (' = %.2f days)'\
+            %(time_unit/86400.))
 else:
-    time_string = ('t = %.3f ' %(t_loc/time_unit)) + time_label
+    time_string = ('t = %.3f ' %(t_loc/time_unit)) + time_label +\
+            '\n (1 ' + time_label + (' = %.1f days)'\
+            %(time_unit/86400.))
+#if rotation:
+#    time_string = ('t = %.1f ' %(t_loc/time_unit)) + time_label
+#else:
+#    time_string = ('t = %.3f ' %(t_loc/time_unit)) + time_label
 
 fsize = 12.
-line_spacing_inches = 1./4.
-space = line_spacing_inches/fig_height_inches
-fig.text(margin_x, 1 - space, dirname_stripped, ha='left',\
-        va='bottom', fontsize=fsize, **csfont)
-fig.text(margin_x, 1 - 2*space,\
-         time_string, ha='left', va='bottom', fontsize=fsize,\
+line_height = 1./4./fig_height_inches
+fig.text(margin_x, 1. - margin_y, dirname_stripped_title, ha='left',\
+        va='top', fontsize=fsize, **csfont)
+fig.text(margin_x, 1. - margin_y - 2*line_height, 'Meridional Slice',\
+        ha='left', va='top', fontsize=fsize, **csfont)
+fig.text(margin_x, 1. - margin_y - 3*line_height,\
+         time_string, ha='left', va='top', fontsize=fsize,\
          **csfont)
-fig.text(margin_x, 1 - 3*space, texlabel +\
+fig.text(margin_x, 1 - margin_y - 5*line_height, texlabel +\
         (r'$\ \ \ \ \ \phi = %03.1f^\circ$' %lonval),\
-         ha='left', va='bottom', fontsize=fsize, **csfont)
+         ha='left', va='top', fontsize=fsize, **csfont)
 plt.show()
