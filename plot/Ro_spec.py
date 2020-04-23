@@ -2,8 +2,8 @@
 # Author: Loren Matilsky
 # Date created: 04/21/2020
 #
-# This script plots Rossby numbers using various length_scales as 
-# functions of radius, using from the Shell_Avgs/Shell_Spectra data
+# This script plots Rossby numbers using various spectral length_scales as 
+# functions of radius, using data from the Shell_Avgs/Shell_Spectra
 
 import matplotlib as mpl
 mpl.use('TkAgg')
@@ -69,7 +69,7 @@ L_v = di['L_v']
 
 # Get the velocity amplitude
 the_file = get_widest_range_file(datadir, 'Shell_Avgs')
-print ("Getting convective velocity amplitudes from ", the_file)
+print ("Ro_spec: Getting convective velocity amplitudes from ", the_file)
 di_sh = get_dict(datadir + the_file)
 vals = di_sh['vals']
 lut = di_sh['lut']
@@ -81,7 +81,6 @@ vsq = vals[:, lut[422]] + vals[:, lut[423]] + vals[:, lut[424]]
 ir_spec = np.zeros(nr_spec, dtype='int')
 for ir in range(nr_spec):
     ir_spec[ir] = np.argmin(np.abs(rr - rr_spec[ir]))
-print(np.pi*rr_spec/L_vr)
 
 # Compute the spectral Rossby number
 Ror_spec = np.sqrt(vrsq[ir_spec])/(2.*Om0*L_vr)
@@ -101,7 +100,7 @@ vars_to_plot = [Ror_spec, Roh_spec, Ro_spec]
 tex_names = [r'$v_r^\prime/2\Omega_0L_{v_r^\prime}$', r'$v_h^\prime/2\Omega_0L_{v_h^\prime}$',  r'$v^\prime/2\Omega_0L_{v^\prime}$']
 
 # Make the plot name, labelling the first/last iterations we average over
-savename = dirname_stripped + '_Ro_' +\
+savename = dirname_stripped + '_Ro_spec_' +\
     str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
 
 # Loop through and plot length scales
@@ -128,6 +127,7 @@ if rnorm is None:
     plt.xlabel(r'$r/R_\odot$',fontsize=12, **csfont)
 else:
     plt.xlabel(r'r/(%.1e cm)' %rnorm, fontsize=12, **csfont)
+plt.ylabel('Spectral Rossby number', fontsize=12, **csfont)
 
 # Mark radii if desired
 if not rvals is None:
@@ -140,14 +140,12 @@ if not rvals is None:
 #        plt.ylim(ymin, ymax)
         plt.plot(rval_n + np.zeros(100), yvals, 'k--')
 
-plt.ylabel('Rossby number', fontsize=12, **csfont)
-
 # Make title
-plt.title(dirname_stripped + '\n' + 'Rossby numbers, ' +\
+plt.title(dirname_stripped + '\n' + 'Spectral Rossby numbers, ' +\
           str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8), **csfont)
 
 # Create a see-through legend
-plt.legend(shadow=True, ncol=3, fontsize=14, framealpha=0.5)
+plt.legend(shadow=True, fontsize=14, framealpha=0.5)
 
 if log:
     plt.yscale('log')
@@ -156,7 +154,7 @@ if log:
 plt.tight_layout()
 
 # Save the plot
-print ('Saving the Rossby number plot at ' + plotdir + savename + ' ...')
+print ('Saving the Rossby number plot at ' + plotdir + savename)
 plt.savefig(plotdir + savename, dpi=300)
 
 # Show the plot
