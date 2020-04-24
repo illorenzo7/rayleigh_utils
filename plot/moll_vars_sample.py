@@ -112,7 +112,7 @@ margin_top = margin_top_inches/fig_height_inches
 subplot_width = subplot_width_inches/fig_width_inches
 subplot_height = subplot_height_inches/fig_height_inches
 
-# Loop over depths and make plots
+# Make plotting directory if it doesn't already exist
 plotdir = dirname + '/plots/moll/vars_sample/'
 if not os.path.isdir(plotdir):
     os.makedirs(plotdir)

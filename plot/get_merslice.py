@@ -173,6 +173,33 @@ def get_merslice(mer, varname, dirname=None, az=None, sh=None, old=False,\
     elif varname == 'omp':
         ind_omp = mer.lut[qind_omp]
         merslice = vals[:, :, :, ind_omp]
+    elif varname == 'omr_prime':
+        ind_omr = mer.lut[qind_omr]
+        omr_slice = vals[:, :, :, ind_omr]
+        if az is None:
+            print("CAUTION: for %s, getting azav from merslice" %varname)
+            omr_az = np.mean(omr_slice, axis=0)
+        else:
+            omr_az = az.vals[:, :, az.lut[qind_omr], j]
+        merslice = omr_slice - omr_az.reshape((1, nt, nr))
+    elif varname == 'omt_prime':
+        ind_omt = mer.lut[qind_omt]
+        omt_slice = vals[:, :, :, ind_omt]
+        if az is None:
+            print("CAUTION: for %s, getting azav from merslice" %varname)
+            omt_az = np.mean(omt_slice, axis=0)
+        else:
+            omt_az = az.vals[:, :, az.lut[qind_omt], j]
+        merslice = omt_slice - omt_az
+    elif varname == 'omp_prime':
+        ind_omp = mer.lut[qind_omp]
+        omp_slice = vals[:, :, :, ind_omp]
+        if az is None:
+            print("CAUTION: for %s, getting azav from merslice" %varname)
+            omp_az = np.mean(omp_slice, axis=0)
+        else:
+            omp_az = az.vals[:, :, az.lut[qind_omp], j]/100.
+        merslice = omp_slice - omp_az
             
     # Cylindrical vorticities
     elif varname == 'oml':
