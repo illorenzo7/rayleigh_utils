@@ -250,7 +250,7 @@ def get_merslice(mer, varname, dirname=None, az=None, sh=None, old=False,\
         omr_prime = omr_slice - omr_az
         omt_prime = omt_slice - omt_az
         omp_prime = omp_slice - omp_az
-        merslice = omr_prime**2 + omt_slice**2 + omp_slice**2
+        merslice = omr_prime**2 + omt_prime**2 + omp_prime**2
         
     # Thermodynamic variables: deviations from reference state
     elif varname == 's':

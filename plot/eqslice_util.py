@@ -20,7 +20,7 @@ from plotcommon import axis_range, default_axes_1by2, default_axes_1by1
 def plot_eqslice(field, rr, phi, fig=None, ax=None, cmap='RdYlBu_r',\
     units='', minmax=None, posdef=False, logscale=False, symlog=False,\
     plotcontours=True, plotfield=True, nlevs=10, levels=None,\
-	plotlonlines=False, rvals=None, rvals_norm=None, fsize=8,\
+	plotlonlines=False, rvals=None, rvals_norm=None, cbar_fs=10,\
     showplot=False, plot_cbar=True, lw=1., linthresh=None, linscale=None,\
     plotboundary=True):
 
@@ -150,8 +150,8 @@ def plot_eqslice(field, rr, phi, fig=None, ax=None, cmap='RdYlBu_r',\
             cbar = plt.colorbar(im, cax=cbaxes, orientation='horizontal')
 
     
-            cbaxes.tick_params(labelsize=fsize)
-            cbar.ax.tick_params(labelsize=fsize)   #font size for the ticks
+            cbaxes.tick_params(labelsize=cbar_fs)
+            cbar.ax.tick_params(labelsize=cbar_fs)   #font size for the ticks
 
             if logscale:
                 locator = ticker.LogLocator(subs='all')
@@ -178,7 +178,7 @@ def plot_eqslice(field, rr, phi, fig=None, ax=None, cmap='RdYlBu_r',\
             # Put the units (and possibly the exponent) to left of colorbar
             fig.text(cbax_left + cbax_width + 1/16/fig_width_inches,\
                     cbax_bottom + 0.5*cbax_height, cbar_label, ha='left',\
-                    va='center', fontsize=fsize)
+                    va='center', fontsize=cbar_fs)
 
     # Plot contours in the equatorial plane, if desired
     if plotcontours:
