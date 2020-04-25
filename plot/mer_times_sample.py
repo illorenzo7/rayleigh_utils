@@ -157,9 +157,7 @@ for i in range(index_first, index_last + 1):
 
         # Get field associated with particular time/longitude
         field = vals[iphi, :, :]
-        savename = 'mer_' + varname + '_iter' + fname +\
-                ('_lonval%05.1f' %lonval) + '.png'
-        savename = 'mer_' + varname + ('_lonval%0.3f' %lonval) + '_iter' +\
+        savename = 'mer_' + varname + ('_lonval%05.1f' %lonval) + '_iter' +\
                     str(iter_loc).zfill(8) + '.png'
 
         # Display at terminal what we are plotting

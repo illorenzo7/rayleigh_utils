@@ -64,24 +64,24 @@ def get_eqslice(eq, varname, dirname=None, az=None, old=False, j=0):
         qind_bp = var_indices_old['bp']
     
     # Spherical velocities
-    if varname == 'vr':
+    if varname in ['vr', 'vr_prime']:
         ind = eq.lut[qind_vr]
         eqslice = vals[:, :, ind]/100. # measure velocities in m/s
-    elif varname == 'vt':
+    elif varname in ['vt', 'vt_prime']:
         ind = eq.lut[qind_vt]
         eqslice = vals[:, :, ind]/100.
-    elif varname == 'vp':
+    elif varname in ['vp', 'vp_prime']:
         ind = eq.lut[qind_vp]
         eqslice = vals[:, :, ind]/100.
 
     # Spherical vorticities
-    elif varname == 'omr':
+    elif varname in ['omr', 'omr_prime']:
         ind = eq.lut[qind_omr]
         eqslice = vals[:, :, ind]
-    elif varname == 'omt':
+    elif varname in ['omt', 'omt_prime']:
         ind = eq.lut[qind_omt]
         eqslice = vals[:, :, ind]
-    elif varname == 'omp':
+    elif varname in ['omp', 'omp_prime']:
         ind = eq.lut[qind_omp]
         eqslice = vals[:, :, ind]
             
@@ -106,21 +106,21 @@ def get_eqslice(eq, varname, dirname=None, az=None, old=False, j=0):
         eqslice = omr_prime**2 + omt_prime**2 + omp_prime**2
         
     # Thermodynamic variables: deviations from reference state
-    elif varname == 's':
+    elif varname in ['s', 's_prime']:
         ind = eq.lut[qind_s]
-        eqslice = vals[:, :, :, ind]
-    elif varname == 'p':
+        eqslice = vals[:, :, ind]
+    elif varname in ['p', 'p_prime']:
         ind = eq.lut[qind_p]
-        eqslice = vals[:, :, :, ind]
+        eqslice = vals[:, :, ind]
 
     # Spherical magnetic fields
-    elif varname == 'br':
+    elif varname in ['br', 'br_prime']:
         ind = eq.lut[qind_omr]
         eqslice = vals[:, :, ind]
-    elif varname == 'bt':
+    elif varname in ['bt', 'bt_prime']:
         ind = eq.lut[qind_bt]
         eqslice = vals[:, :, ind]
-    elif varname == 'bp':
+    elif varname in ['bp', 'bp_prime']:
         ind = eq.lut[qind_bp]
         eqslice = vals[:, :, ind]
     else:
