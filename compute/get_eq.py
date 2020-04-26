@@ -78,13 +78,13 @@ class eq_human_readable:
         self.eta = np.zeros(nr) # these should stay zero 
         self.dlneta = np.zeros(nr) # if magnetism = False
 
-def get_eq(dirname): # return an eq_human_readable class associated with
+def get_eq(dirname, fname='equation_coefficients'): # return an eq_human_readable class associated with
     # [dirname], either using equation_coefficients or 
     # transport/reference files
-    if os.path.exists(dirname + '/equation_coefficients'):
+    if os.path.exists(dirname + '/' + fname):
         # by default, get info from equation_coefficients (if file exists)
         eq = equation_coefficients()
-        eq.read(dirname + '/equation_coefficients')
+        eq.read(dirname + '/' + fname)
         eq_hr = eq_human_readable(eq.nr)
 
         eq_hr.radius = eq.radius
@@ -109,10 +109,9 @@ def get_eq(dirname): # return an eq_human_readable class associated with
         eq_hr.eta = eq.constants[6]*eq.functions[6] # these are built-in to
         eq_hr.dlneta = eq.functions[12] # equation_coefficients as "zero"
         # if magnetism = False
-        print ("get_eq(%s): got equation coefficients from 'equation_coefficients' file" %dirname)
+        print ("get_eq(%s): got equation coefficients from '%s' file" %(dirname, fname))
     else:
         ref = ReferenceState(dirname + '/reference')
-        trans = TransportCoeffs(dirname + '/transport')
         eq_hr = eq_human_readable(ref.nr)
 
         eq_hr.radius = ref.radius
@@ -130,15 +129,20 @@ def get_eq(dirname): # return an eq_human_readable class associated with
         eq_hr.dsdr = ref.dsdr
         eq_hr.heating = eq_hr.rho*eq_hr.T*ref.heating
         eq_hr.Q = eq_hr.heating
-        eq_hr.nu = trans.nu
-        eq_hr.dlnu = trans.dlnu
-        eq_hr.kappa = trans.kappa
-        eq_hr.dlnkappa = trans.dlnkappa
-        try:
-            eq_hr.eta = trans.eta
-            eq_hr.dlneta = dlneta # this will fail for hydro cases
-            # "trans" will not have attributes eta, dlneta
-        except: # if it failed, just keep the arrays zero             
-            pass # (magnetism = False)
+        # 'transport' didn't always used to exist, so only read it if possible
+        if os.path.exists(dirname + '/transport'):
+            trans = TransportCoeffs(dirname + '/transport')
+            eq_hr.nu = trans.nu
+            eq_hr.dlnu = trans.dlnu
+            eq_hr.kappa = trans.kappa
+            eq_hr.dlnkappa = trans.dlnkappa
+            try:
+                eq_hr.eta = trans.eta
+                eq_hr.dlneta = dlneta # this will fail for hydro cases
+                # "trans" will not have attributes eta, dlneta
+            except: # if it failed, just keep the arrays zero             
+                pass # (magnetism = False)
+        else:
+            print("'transport' file not found; nu, dlnu, etc. will be zero")
         print ("get_eq(%s): got equation coefficients from 'reference' and 'transport' files" %dirname)
     return eq_hr

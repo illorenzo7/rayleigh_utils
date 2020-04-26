@@ -61,7 +61,7 @@ pm = bc.pm
 rhom = bc.rhom
 gam = bc.gamma
 k = 2.0
-delta = 0.005*rsun
+delta = 0.010*rsun
 mag = False
 
 # Get directory to save binary files for reference
@@ -136,8 +136,11 @@ T, rho, p, dlnT, dlnrho, dlnp, d2lnrho =\
 
 print("---------------------------------")
 print("Computed atmosphere for RZ-CZ, ds/dr joined with a quartic")
+print("ri: %1.3e cm" %ri) 
 print("rm: %1.3e cm" %rm) 
+print("ro: %1.3e cm" %ro) 
 print("delta/rsun: %.3f"  %(delta/rsun))
+print("k [(dsdr in RZ)/cp*rm]: %1.1e"  %k)
 print("---------------------------------")
 
 # Now write to file using the equation_coefficients framework
