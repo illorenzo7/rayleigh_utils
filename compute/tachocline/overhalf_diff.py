@@ -87,7 +87,7 @@ print(message)
 print("nutop = %1.3e" %nutop)
 print("kappatop = %1.3e" %kappatop)
 if mag:
-    print("eta_top = %1.3e" %eta_top)
+    print("eta_top = %1.3e" %etatop)
 
 print("Setting f_3, f_5, f_7, f_11, f_12, and f_13")
 eq.set_function(nutop*shape, 3)
