@@ -1,5 +1,5 @@
-##########################################################################################
-# This file contains utilities useful for plotting the data from azimuthal averages,
+# This file contains utilities useful for plotting the data from azimuthal
+# averages,
 # files in the directory AZ_Avgs.
 # Written by Nick Featherstone
 # First modified by Loren Matilsky, 03/09/2018
@@ -22,7 +22,7 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
     plotcontours=True, plotfield=True, nlevs=10, levels=None,\
 	plotlatlines=False, rvals=None, rvals_norm=None, cbar_fs=10,\
     showplot=False, plot_cbar=True, lw_scaling=1.,\
-    linthresh=None, linscale=None, plotboundary=True):
+    linthresh=None, linscale=None, plotboundary=True, rbcz=None):
 
     ''' Takes (or creates) set of axes with physical aspect ratio 1x2
     and adds a plot of [field] in the meridional plane to the axes,
@@ -43,8 +43,20 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
     rr_2d = rr.reshape((1, nr))
     cost_2d = cost.reshape((nt, 1))
     sint_2d = sint.reshape((nt, 1))
-    xx = rr_2d*sint_2d/ro
-    zz = rr_2d*cost_2d/ro
+
+    if rbcz is None: # just plotting 1 domain
+        xx = rr_2d*sint_2d/ro
+        zz = rr_2d*cost_2d/ro
+    else:
+        irbcz = np.argmin(np.abs(rr - rbcz))
+        fieldcz = field[:, :irbcz+1]
+        fieldrz = field[:, irbcz+1:]
+        rrcz = rr[:irbcz+1]
+        rrrz = rr[irbcz+1:]
+        xxcz = (rr_2d*sint_2d)[:, :irbcz+1]/ro
+        zzcz = (rr_2d*cost_2d)[:, :irbcz+1]/ro
+        xxrz = (rr_2d*sint_2d)[:, irbcz+1:]/ro
+        zzrz = (rr_2d*cost_2d)[:, irbcz+1:]/ro
 
     # Deal with saturation values for the field
     
@@ -55,23 +67,49 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
     # Get default bounds if not specified
     if minmax is None:
         # Cut away the data near the domain boundaries
-        trimmed_field = trim_field(field, rr, cost)
-        minmax = get_satvals(trimmed_field, posdef=posdef,\
-                logscale=logscale, symlog=symlog)
+        if rbcz is None:
+            trimmed_field = trim_field(field, rr, cost)
+            minmax = get_satvals(trimmed_field, posdef=posdef,\
+                    logscale=logscale, symlog=symlog)
+        else:
+            trimmed_fieldcz = trim_field(fieldcz, rrcz, cost)
+            trimmed_fieldrz = trim_field(fieldrz, rrrz, cost)
+            minmax = get_satvals(trimmed_fieldcz, posdef=posdef,\
+                    logscale=logscale, symlog=symlog) +\
+                    get_satvals(trimmed_fieldrz, posdef=posdef,\
+                    logscale=logscale, symlog=symlog)
 
     # Factor out the exponent on the field and put it on the color bar
     # for the linear-scaled color bars (default and posdef)
     if not (logscale or symlog) and plotfield:
-        maxabs = max(np.abs(minmax[0]), np.abs(minmax[1]))
-        exp = float(np.floor(np.log10(maxabs)))
-        divisor = 10.**exp
-        
-        # Normalize field by divisor
-        field /= divisor
-        minmax = minmax[0]/divisor, minmax[1]/divisor
+        if rbcz is None:
+            maxabs = max(np.abs(minmax[0]), np.abs(minmax[1]))
+            exp = float(np.floor(np.log10(maxabs)))
+            divisor = 10.**exp
+            
+            # Normalize field by divisor
+            field /= divisor
+            minmax = minmax[0]/divisor, minmax[1]/divisor
+        else:
+            maxabscz = max(np.abs(minmax[0]), np.abs(minmax[1]))
+            maxabsrz = max(np.abs(minmax[2]), np.abs(minmax[3]))
+            exp = expcz = float(np.floor(np.log10(maxabscz)))
+            exprz = float(np.floor(np.log10(maxabsrz)))
+            divisorcz = 10.**expcz
+            divisorrz = 10.**exprz
+            
+            # Normalize field by divisor
+            fieldcz /= divisorcz
+            fieldrz /= divisorrz
+            minmax = minmax[0]/divisorcz, minmax[1]/divisorcz,\
+                    minmax[2]/divisorrz, minmax[3]/divisorrz
 
-    # Saturate the array (otherwise contourf will show white areas)
-    saturate_array(field, minmax[0], minmax[1])
+    if rbcz is None:
+        # Saturate the array (otherwise contourf will show white areas)
+        saturate_array(field, minmax[0], minmax[1])
+    else:
+        saturate_array(fieldcz, minmax[0], minmax[1])
+        saturate_array(fieldrz, minmax[2], minmax[3])
 
     # Create a default set of figure axes if they weren't already
     # specified by user
@@ -86,40 +124,102 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
     contour_lw = 0.3*lw_scaling
     
     if plotfield:
-        if logscale:
-            log_min, log_max = np.log10(minmax[0]), np.log10(minmax[1])
-            levs = np.logspace(log_min, log_max, 150)
-            im = ax.contourf(xx, zz, field, cmap='Greys',\
-                norm=colors.LogNorm(vmin=minmax[0], vmax=minmax[1]),\
-                levels=levs)  
-        elif posdef:
-            levs = np.linspace(minmax[0], minmax[1], 150)
-            im = ax.contourf(xx, zz, field, cmap='plasma', levels=levs)
-        elif symlog:
-            linthresh_default, linscale_default =\
-                get_symlog_params(field, field_max=minmax[1])
-            if linthresh is None:
-                linthresh = linthresh_default
-            if linscale is None:
-                linscale = linscale_default
-            log_thresh = np.log10(linthresh)
-            log_max = np.log10(minmax[1])
-            nlevs_per_interval = 100
-            levels_neg = -np.logspace(log_max, log_thresh,\
-                    nlevs_per_interval,\
-                    endpoint=False)
-            levels_mid = np.linspace(-linthresh, linthresh,\
-                    nlevs_per_interval, endpoint=False)
-            levels_pos = np.logspace(log_thresh, log_max,\
-                    nlevs_per_interval)
-            levs = np.hstack((levels_neg, levels_mid, levels_pos))
-            im = ax.contourf(xx, zz, field, cmap='RdYlBu_r',\
-                norm=colors.SymLogNorm(linthresh=linthresh,\
-                linscale=linscale, vmin=minmax[0], vmax=minmax[1]),\
-                levels=levs)
+        if rbcz is None:
+            if logscale:
+                log_min, log_max = np.log10(minmax[0]), np.log10(minmax[1])
+                levs = np.logspace(log_min, log_max, 150)
+                im = ax.contourf(xx, zz, field, cmap='Greys',\
+                    norm=colors.LogNorm(vmin=minmax[0], vmax=minmax[1]),\
+                    levels=levs)  
+            elif posdef:
+                levs = np.linspace(minmax[0], minmax[1], 150)
+                im = ax.contourf(xx, zz, field, cmap='plasma', levels=levs)
+            elif symlog:
+                linthresh_default, linscale_default =\
+                    get_symlog_params(field, field_max=minmax[1])
+                if linthresh is None:
+                    linthresh = linthreshcz = linthresh_default
+                if linscale is None:
+                    linscale = linscale_default
+                log_thresh = np.log10(linthresh)
+                log_max = np.log10(minmax[1])
+                nlevs_per_interval = 100
+                levels_neg = -np.logspace(log_max, log_thresh,\
+                        nlevs_per_interval,\
+                        endpoint=False)
+                levels_mid = np.linspace(-linthresh, linthresh,\
+                        nlevs_per_interval, endpoint=False)
+                levels_pos = np.logspace(log_thresh, log_max,\
+                        nlevs_per_interval)
+                levs = np.hstack((levels_neg, levels_mid, levels_pos))
+                im = ax.contourf(xx, zz, field, cmap='RdYlBu_r',\
+                    norm=colors.SymLogNorm(linthresh=linthresh,\
+                    linscale=linscale, vmin=minmax[0], vmax=minmax[1]),\
+                    levels=levs)
+            else:
+                im = ax.contourf(xx, zz, field, cmap='RdYlBu_r',\
+                        levels=np.linspace(minmax[0], minmax[1], 150))                
         else:
-            im = ax.contourf(xx, zz, field, cmap='RdYlBu_r',\
-                    levels=np.linspace(minmax[0], minmax[1], 150))                
+            if logscale:
+                log_min, log_max = np.log10(minmax[0]), np.log10(minmax[1])
+                levs = np.logspace(log_min, log_max, 150)
+                im = ax.contourf(xxcz, zzcz, fieldcz, cmap='Greys',\
+                    norm=colors.LogNorm(vmin=minmax[0], vmax=minmax[1]),\
+                    levels=levs)  
+                log_min, log_max = np.log10(minmax[2]), np.log10(minmax[3])
+                levs = np.logspace(log_min, log_max, 150)
+                ax.contourf(xxrz, zzrz, fieldrz, cmap='Greys',\
+                    norm=colors.LogNorm(vmin=minmax[2], vmax=minmax[3]),\
+                    levels=levs)  
+            elif posdef:
+                levs = np.linspace(minmax[0], minmax[1], 150)
+                im = ax.contourf(xxcz, zzcz, fieldcz, cmap='plasma',\
+                        levels=levs)
+                levs = np.linspace(minmax[2], minmax[3], 150)
+                im = ax.contourf(xxrz, zzrz, fieldrz, cmap='plasma',\
+                        levels=levs)
+            elif symlog:
+                linthresh_defaultcz, linscale_defaultcz =\
+                    get_symlog_params(fieldcz, field_max=minmax[1])
+                linthresh_defaultrz, linscale_defaultrz =\
+                    get_symlog_params(fieldrz, field_max=minmax[3])
+                if linthresh is None:
+                    linthresh = linthresh_defaultcz, linnthresh_defaultrz
+                if linscale is None:
+                    linscale = linscale_defaultcz, linscale_defaultrz
+                log_thresh = np.log10(linthresh[0]), np.log10(linthresh[1])
+                log_max = np.log10(minmax[1]), np.log10(minmax[3])
+                nlevs_per_interval = 100
+
+                levels_neg = -np.logspace(log_max[0], log_thresh[0],\
+                        nlevs_per_interval,\
+                        endpoint=False)
+                levels_mid = np.linspace(-linthresh[0], linthresh[0],\
+                        nlevs_per_interval, endpoint=False)
+                levels_pos = np.logspace(log_thresh[0], log_max[0],\
+                        nlevs_per_interval)
+                levs = np.hstack((levels_neg, levels_mid, levels_pos))
+                im = ax.contourf(xxcz, zzcz, fieldcz, cmap='RdYlBu_r',\
+                    norm=colors.SymLogNorm(linthresh=linthresh[0],\
+                    linscale=linscale[0], vmin=minmax[0], vmax=minmax[1]),\
+                    levels=levs)
+                levels_neg = -np.logspace(log_max[1], log_thresh[1],\
+                        nlevs_per_interval,\
+                        endpoint=False)
+                levels_mid = np.linspace(-linthresh[1], linthresh[1],\
+                        nlevs_per_interval, endpoint=False)
+                levels_pos = np.logspace(log_thresh[1], log_max[1],\
+                        nlevs_per_interval)
+                levs = np.hstack((levels_neg, levels_mid, levels_pos))
+                ax.contourf(xxrz, zzrz, fieldrz, cmap='RdYlBu_r',\
+                    norm=colors.SymLogNorm(linthresh=linthresh[1],\
+                    linscale=linscale[1], vmin=minmax[2], vmax=minmax[3]),\
+                    levels=levs)
+            else:
+                im = ax.contourf(xxcz, zzcz, fieldcz, cmap='RdYlBu_r',\
+                        levels=np.linspace(minmax[0], minmax[1], 150)) 
+                ax.contourf(xxrz, zzrz, fieldrz, cmap='RdYlBu_r',\
+                        levels=np.linspace(minmax[2], minmax[3], 150)) 
 
         if plot_cbar:
             # Get the position of the axes on the figure
@@ -129,8 +229,10 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
             fig_width_inches, fig_height_inches = fig.get_size_inches()
             fig_aspect = fig_height_inches/fig_width_inches
           
-            # Set the colorbar ax to be in the "cavity" of the meridional plane
-            # The colorbar height is set by making sure it "fits" in the cavity
+            # Set the colorbar ax to be in the "cavity" of the meridional 
+            # plane
+            # The colorbar height is set by making sure it "fits" in the 
+            # cavity
             beta = ri/ro
             cavity_height = ax_height*beta
             cbax_center_y = ax_bottom + ax_height/2.
@@ -147,7 +249,8 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
             cbar = plt.colorbar(im, cax=cbaxes)
     
             cbaxes.tick_params(labelsize=cbar_fs)
-            cbar.ax.tick_params(labelsize=cbar_fs)   #font size for the ticks
+            cbar.ax.tick_params(labelsize=cbar_fs)   
+            # font size for the ticks
 
             if logscale:
                 locator = ticker.LogLocator(subs='all')
@@ -156,13 +259,14 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
             elif posdef:
                 cbar_label = (r'$\times10^{%i}\ $' %exp) + units
                 cbar.set_ticks([minmax[0], minmax[1]])
-                cbar.set_ticklabels(['%1.1f' %minmax[0], '%1.1f' %minmax[1]])
+                cbar.set_ticklabels(['%1.1f' %minmax[0],\
+                        '%1.1f' %minmax[1]])
             elif symlog:
                 cbar_label = units
                 nlin = 5
                 nlog = 6
-                lin_ticks = np.linspace(-linthresh, linthresh, nlin)
-                log_ticks1 = np.linspace(minmax[0], -linthresh, nlog,\
+                lin_ticks = np.linspace(-linthreshcz, linthreshcz, nlin)
+                log_ticks1 = np.linspace(minmax[0], -linthreshcz, nlog,\
                         endpoint=False)
                 log_ticks2 = -log_ticks1[::-1]
                 ticks = np.hstack((log_ticks1, lin_ticks, log_ticks2))
@@ -172,9 +276,9 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
                 for i in range(nticks):
                     ticklabels.append(r'')
                 ticklabels[0] = sci_format(minmax[0])
-                ticklabels[nlog] = sci_format(-linthresh)
+                ticklabels[nlog] = sci_format(-linthreshcz)
                 ticklabels[nticks//2] = r'$0$'
-                ticklabels[nlog + nlin - 1] = sci_format(linthresh)
+                ticklabels[nlog + nlin - 1] = sci_format(linthreshcz)
                 ticklabels[nticks - 1] = sci_format(minmax[1])
                 cbar.set_ticklabels(ticklabels)
             else:
@@ -188,39 +292,98 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
                     cbar_label, ha='right', va='center', rotation=90,\
                     fontsize=cbar_fs)
 
+            # Put minmax in the RZ in plain text (using same colorbar)
+            if not rbcz is None:
+                string = ('minmax in RZ: %1.1e, %1.1e'\
+                        %(minmax[2], minmax[3])) + units
+                fig.text(ax_left + 0.5*ax_width, ax_bottom -\
+                        1./16./fig_height_inches, string, ha='center',\
+                        va='top', fontsize=cbar_fs)
+
     # Plot contours in the meridional plane, if desired
     if plotcontours:
-        # Determine the contour levels
-        if levels is None:
+        if rbcz is None:
+            # Determine the contour levels
+            if levels is None:
+                if logscale:
+                    min_log = np.log10(minmax[0])
+                    max_log = np.log10(minmax[1])
+                    levels = np.logspace(min_log, max_log, nlevs)
+                elif symlog:
+                    log_thresh = np.log10(linthresh)
+                    log_max = np.log10(minmax[1])
+                    nlevs_per_interval = nlevs//3
+                    levels_neg = -np.logspace(log_max, log_thresh,\
+                            nlevs_per_interval, endpoint=False)
+                    levels_mid = np.linspace(-linthresh, linthresh,\
+                            nlevs_per_interval, endpoint=False)
+                    levels_pos = np.logspace(log_thresh, log_max,\
+                            nlevs_per_interval)
+                    levels = np.hstack((levels_neg, levels_mid, levels_pos))
+                else:
+                    levels = np.linspace(minmax[0], minmax[1], nlevs)
+            else: # the caller specified specific contour levels to plot!
+                levels = np.array(levels)
+            # Determine how to color the contours
             if logscale:
-                min_log = np.log10(minmax[0])
-                max_log = np.log10(minmax[1])
-                levels = np.logspace(min_log, max_log, nlevs)
-            elif symlog:
-                log_thresh = np.log10(linthresh)
-                log_max = np.log10(minmax[1])
-                nlevs_per_interval = nlevs//3
-                levels_neg = -np.logspace(log_max, log_thresh,\
-                        nlevs_per_interval, endpoint=False)
-                levels_mid = np.linspace(-linthresh, linthresh,\
-                        nlevs_per_interval, endpoint=False)
-                levels_pos = np.logspace(log_thresh, log_max,\
-                        nlevs_per_interval)
-                levels = np.hstack((levels_neg, levels_mid, levels_pos))
+                contour_color = 'r'
+            elif posdef:
+                contour_color = 'w'
             else:
-                levels = np.linspace(minmax[0], minmax[1], nlevs)
-        else: # the caller specified specific contour levels to plot!
-            levels = np.array(levels)
-        # Determine how to color the contours
-        if logscale:
-            contour_color = 'r'
-        elif posdef:
-            contour_color = 'w'
+                contour_color = 'k'
+            # plot the contours
+            ax.contour(xx, zz, field, colors=contour_color, levels=levels,\
+                    linewidths=contour_lw)
         else:
-            contour_color = 'k'
-        # plot the contours
-        ax.contour(xx, zz, field, colors=contour_color, levels=levels,\
-                linewidths=contour_lw)
+            # Determine the contour levels
+            if levels is None:
+                if logscale:
+                    min_log = np.log10(minmax[0])
+                    max_log = np.log10(minmax[1])
+                    levelscz = np.logspace(min_log, max_log, nlevs)
+                    min_log = np.log10(minmax[2])
+                    max_log = np.log10(minmax[3])
+                    levelsrz = np.logspace(min_log, max_log, nlevs)
+                elif symlog:
+                    log_thresh = np.log10(linthresh[0])
+                    log_max = np.log10(minmax[1])
+                    nlevs_per_interval = nlevs//3
+                    levels_neg = -np.logspace(log_max, log_thresh,\
+                            nlevs_per_interval, endpoint=False)
+                    levels_mid = np.linspace(-linthresh, linthresh,\
+                            nlevs_per_interval, endpoint=False)
+                    levels_pos = np.logspace(log_thresh, log_max,\
+                            nlevs_per_interval)
+                    levelscz = np.hstack((levels_neg, levels_mid,\
+                            levels_pos))
+                    log_thresh = np.log10(linthresh[1])
+                    log_max = np.log10(minmax[3])
+                    nlevs_per_interval = nlevs//3
+                    levels_neg = -np.logspace(log_max, log_thresh,\
+                            nlevs_per_interval, endpoint=False)
+                    levels_mid = np.linspace(-linthresh, linthresh,\
+                            nlevs_per_interval, endpoint=False)
+                    levels_pos = np.logspace(log_thresh, log_max,\
+                            nlevs_per_interval)
+                    levelsrz = np.hstack((levels_neg, levels_mid,\
+                            levels_pos))
+                else:
+                    levelscz = np.linspace(minmax[0], minmax[1], nlevs)
+                    levelsrz = np.linspace(minmax[2], minmax[3], nlevs)
+            else: # the caller specified specific contour levels to plot!
+                levels = np.array(levels)
+            # Determine how to color the contours
+            if logscale:
+                contour_color = 'r'
+            elif posdef:
+                contour_color = 'w'
+            else:
+                contour_color = 'k'
+            # plot the contours
+            ax.contour(xxcz, zzcz, fieldcz, colors=contour_color,\
+                    levels=levelscz, linewidths=contour_lw)
+            ax.contour(xxrz, zzrz, fieldrz, colors=contour_color,\
+                    levels=levelsrz, linewidths=contour_lw)
 
     # Plot the boundary of the meridional plane, if desired
     if plotboundary:

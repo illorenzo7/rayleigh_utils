@@ -46,6 +46,7 @@ plotcontours = True
 plotlatlines = True
 use_az = True
 use_sh = True
+rbcz = None
 
 args = sys.argv[2:]
 nargs = len(args)
@@ -69,6 +70,10 @@ for i in range(nargs):
         use_az = False
     elif arg == '-nosh':
         use_sh = False
+    elif arg == '-tach':
+        rbcz = get_parameter(dirname, 'domain_bounds')[1]
+        print ("Specified tach = True")
+        print ("Setting rbcz = %1.1e" %rbcz)
     elif arg == '-iter':
         desired_iter = int(args[i+1])
         iiter = np.argmin(np.abs(int_file_list - desired_iter))
@@ -143,14 +148,16 @@ subplot_width_inches = 2.5
 subplot_height_inches = 5.
 margin_inches = 1./8.
 margin_top_inches = 1.75 # larger top margin to make room for titles
+margin_bottom_inches = 0.5 # larger top margin to make room for titles
 
 fig_width_inches = subplot_width_inches + 2*margin_inches
 fig_height_inches = subplot_height_inches + margin_top_inches +\
-        margin_inches
+        margin_bottom_inches
 
 margin_x = margin_inches/fig_width_inches
 margin_y = margin_inches/fig_height_inches
 margin_top = margin_top_inches/fig_height_inches
+margin_bottom = margin_bottom_inches/fig_height_inches
 subplot_width = subplot_width_inches/fig_width_inches
 subplot_height = subplot_height_inches/fig_height_inches
 
@@ -159,9 +166,10 @@ units = texunits[varname]
 texlabel = texlabels[varname]
 
 fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
-ax = fig.add_axes((margin_x, margin_y, subplot_width, subplot_height))
+ax = fig.add_axes((margin_x, margin_bottom, subplot_width, subplot_height))
 plot_azav (field, mer.radius, mer.costheta, fig=fig, ax=ax, units=units,\
-        minmax=minmax, plotlatlines=plotlatlines, plotcontours=plotcontours)
+        minmax=minmax, plotlatlines=plotlatlines,\
+        plotcontours=plotcontours, rbcz=rbcz)
 
 # Make title
 if rotation:
