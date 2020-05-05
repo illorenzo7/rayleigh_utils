@@ -50,8 +50,15 @@ azavg_values =
 	414,415,416, 422,423,424,
     ! MAGNETIC ENERGY
  	1102,1103,1104,  1110,1111,1112,
-    ! VOL. HEATING TERMS (Radiative, Viscous, Joule)
-	1434,1435,1436,
+    ! THERMAL ENERGY
+    701,704, !internal energy, enthalpy (density)
+    ! THERMAL ENERGY EQUATION !, Conductive, Radiative, Viscous)
+	1401,1402,1406, ! (minus?) Advection (tot., fluc., ref.)
+    1421,1434,1435,1436, ! (vol. heating: conductive, internal, viscous,
+                         ! Joule)
+    ! Terms for TOTAL ENERGY EQUATION
+    1901,1907,1910,1440,
+    ! Pressure work, viscous work on KE, minus advec. work, rhot*v_r*S
     ! ENTHALPY FLUX (r,theta,phi: tot, pp)
 	1455,1456,1457, 1458,1459,1460, 
     ! CONDUCTIVE FLUX (r,theta,phi=0: tot; fluc=0)
@@ -103,8 +110,15 @@ shellavg_values =
 	414,415,416, 422,423,424,
     ! MAGNETIC ENERGY
  	1102,1103,1104,  1110,1111,1112,
-    ! VOL. HEATING TERMS (Radiative, Viscous, Joule)
-	1434,1435,1436,
+    ! THERMAL ENERGY
+    701,704, !internal energy, enthalpy (density)
+    ! THERMAL ENERGY EQUATION !, Conductive, Radiative, Viscous)
+	1401,1402,1406, ! (minus?) Advection (tot., fluc., ref.)
+    1421,1434,1435,1436, ! (vol. heating: conductive, internal, viscous,
+                        ! Joule)
+    ! Terms for TOTAL ENERGY EQUATION
+    1901,1907,1910,1440,
+    ! Pressure work, viscous work on KE, minus advec. work, rhot*v_r*S
     ! ENTHALPY FLUX (r,theta,phi: tot, pp)
 	1455,1456,1457, 1458,1459,1460, 
     ! CONDUCTIVE FLUX (r,theta,phi=0: tot; fluc=0)
@@ -163,8 +177,15 @@ globalavg_values =
 	413,414,415,416, 417,418,419,420, 421,422,423,424,
     ! MAGNETIC ENERGY
 	1101,1102,1103,1104, 1105,1106,1107,1108,  1109,1110,1111,1112,
-    ! VOL. HEATING TERMS (Radiative, Viscous, Joule)
-	1434,1435,1436,
+    ! THERMAL ENERGY
+    701,704, !internal energy, enthalpy (density)
+    ! THERMAL ENERGY EQUATION !, Conductive, Radiative, Viscous)
+	1401,1402,1406, ! (minus?) Advection (tot., fluc., ref.)
+    1421,1434,1435,1436, ! (vol. heating: conductive, internal, viscous,
+                         ! Joule)
+    ! Terms for TOTAL ENERGY EQUATION
+    1901,1907,1910,1440,
+    ! Pressure work, viscous work on KE, minus advec. work, rhot*v_r*S
     ! ENTHALPY FLUX (r,theta,phi: tot, pp)
 	1455,1456,1457, 1458,1459,1460, 
     ! CONDUCTIVE FLUX (r,theta,phi=0: tot; fluc=0)
