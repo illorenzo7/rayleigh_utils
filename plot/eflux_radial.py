@@ -17,8 +17,9 @@ sys.path.append(os.environ['raco'])
 from common import get_widest_range_file, strip_dirname,\
         get_iters_from_file, get_dict, rsun
 from get_parameter import get_parameter
-from rayleigh_diagnostics import ReferenceState
 from compute_grid_info import compute_theta_grid
+from time_scales import compute_Prot, compute_tdt
+from translate_times import translate_times
 
 # Get the run directory on which to perform the analysis
 dirname = sys.argv[1]
@@ -77,6 +78,19 @@ nq = di['nq']
 iter1, iter2 = di['iter1'], di['iter2']
 rr = di['rr']
 nr = di['nr']
+
+# Get the time range in sec
+t1 = translate_times(iter1, dirname, translate_from='iter')['val_sec']
+t2 = translate_times(iter2, dirname, translate_from='iter')['val_sec']
+
+# Get the baseline time unit
+rotation = get_parameter(dirname, 'rotation')
+if rotation:
+    time_unit = compute_Prot(dirname)
+    time_label = r'$\rm{P_{rot}}$'
+else:
+    time_unit = compute_tdt(dirname)
+    time_label = r'$\rm{TDT}$'
 
 # Determine the simulation is magnetic
 magnetism = get_parameter(dirname, 'magnetism')
@@ -187,6 +201,9 @@ if plot_enth_fluc:
     plt.plot(rr_n, eflux_mean_int/lstar, 'm:',\
             label=r'$\rm{F}_{enth,\ mm}$', linewidth=lw)
 
+# Mark zero line
+plt.plot(rr_n, np.zeros_like(rr_n), 'k--', linewidth=lw)
+
 # Get the y-axis in scientific notation
 plt.ticklabel_format(useMathText=True, axis='y', scilimits=(0,0))
 
@@ -214,31 +231,48 @@ else:
 
 # Try to find the BCZ from where enthalpy flux goes negative, if desired
 # avoid the outer boundary
+yvals = np.linspace(minmax[0], minmax[1], 100)
 if mark_bcz:
-    irbcz = np.argmin(eflux[20:] > 0) + 20
-    if rvals is None:
-        rvals = np.array([rr[irbcz]])
-    else:
-        rvals = np.hstack((rvals,np.array([rr[irbcz]])))
+    irneg = np.argmin(eflux[20:] > 0) + 20
+    irpos = np.argmin(eflux[20:] > 0) + 19
+    rrneg = rr_n[irneg]
+    rrpos = rr_n[irpos]
+    efluxneg = eflux[irneg]
+    efluxpos = eflux[irpos]
+    slope =  (efluxpos - efluxneg)/(rrpos - rrneg)
+    rbcz = rrpos - efluxpos/slope
+    plt.plot(rbcz + np.zeros(100), yvals, 'k--', linewidth=lw)
 
 # Mark radii if desired
 if not rvals is None:
-    yvals = np.linspace(minmax[0], minmax[1], 100)
     for rval in rvals:
         if rnorm is None:
             rval_n = rval/rsun
         else:
             rval_n = rval/rnorm
 #        plt.ylim(ymin, ymax)
-        plt.plot(rval_n + np.zeros(100), yvals, 'k--')
+        plt.plot(rval_n + np.zeros(100), yvals, 'k--', linewidth=lw)
 
 
 plt.ylabel(r'$4\pi r^2\ \rm{\times \ (energy \ flux)}\ /\ L_*$',\
         fontsize=12, **csfont)
 
+# Label trace interval
+if rotation:
+    time_string = ('t = %.1f to %.1f ' %(t1/time_unit, t2/time_unit))\
+            + time_label + (r'$\ (\Delta t = %.1f\ $'\
+            %((t2 - t1)/time_unit)) + time_label + ')'
+else:
+    time_string = ('t = %.3f to %.3f ' %(t1/time_unit, t2/time_unit))\
+            + time_label + (r'$\ (\Delta t = %.3f\ $'\
+            %((t2 - t1)/time_unit)) + time_label + ')'
+
 # Make title
-plt.title(dirname_stripped + '\n' + 'energy flux, ' +\
-          str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8), **csfont)
+the_title = dirname_stripped + '\n' + 'radial energy flux, ' + time_string
+if mark_bcz:
+    the_title += ('\n' + r'$r_{BCZ}/\rm{rnorm} = %.3f$' %rbcz)
+
+plt.title(the_title, **csfont)
 
 # Create a see-through legend
 plt.legend(loc='lower left', shadow=True, ncol=3, fontsize=10)

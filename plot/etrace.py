@@ -229,7 +229,7 @@ else:
             + time_label + (r'$\ (\Delta t = %.3f\ $'\
             %((t2 - t1)/time_unit)) + time_label + ')'
 
-# Mkae title
+# Make title
 title = dirname_stripped + '\n ' + time_string +\
           '\ntotal energy'
 if plot_inte:
