@@ -77,8 +77,9 @@ texlabels = {\
     'rho_prime_sph' :       r'$\rho - \langle \rho \rangle_s$',
     't_prime_sph'   :       r'$T - \langle T \rangle_s$',             
              
-    'vrs'       :       r'$v_r^\prime S^\prime$',
-    'vrt'       :       r'$v_r^\prime T^\prime$',
+    'vrt_sph'   :       r'$\overline{\rho}c_p(v_r - \langle v_r\rangle_{\rm{sph}})(T - \langle T\rangle_{\rm{sph}})$',
+    'vrs_sph'   :       r'$\overline{\rho}\overline{T}(v_r - \langle v_r\rangle_{\rm{sph}})(S - \langle S\rangle_{\rm{sph}})$',
+    'vrp_sph'   :       r'$(v_r - \langle v_r\rangle_{\rm{sph}})(P - \langle P\rangle_{\rm{sph}})$',
     'vtt'       :       r'$v_\theta^\prime T^\prime$',
              
     'vrvp'      :       r'$\overline{\rho}v_r^\prime v_\phi^\prime$',
@@ -166,8 +167,9 @@ texunits = {\
     't_prime' :         r'$\rm{K}$',          
     't_prime_sph' :     r'$\rm{K}$',            
     
-    'vrs'       :       r'$\rm{cm\ s^{-1}\ erg\ K^{-1}\ g^{-1}}$', 
-    'vrt'       :       r'$\rm{cm\ s^{-1}\ K}$', 
+    'vrt_sph'   :       r'$\rm{erg\ cm^{-2}\ s^{-1}}$', 
+    'vrs_sph'   :       r'$\rm{erg\ cm^{-2}\ s^{-1}}$', 
+    'vrp_sph'   :       r'$\rm{erg\ cm^{-2}\ s^{-1}}$', 
     'vtt'       :       r'$\rm{cm\ s^{-1}\ K}$', 
            
     'vrvp'      :       r'$\rm{dyn}\ \rm{cm}^{-2}$', 

@@ -39,7 +39,7 @@ def get_sslice(a, varname, dirname=None, old=False, j=0):
     # _prime_sph refers to sph-avg subtracted
 
     # Get integration weights if needed
-    if 'prime_sph' in varname:
+    if '_sph' in varname:
         gi = GridInfo(dirname + '/grid_info')
         tw = gi.tweights
 
@@ -545,24 +545,32 @@ def get_sslice(a, varname, dirname=None, old=False, j=0):
         sslice = bp_prime_slice*bz_prime_slice/(4.*np.pi)
         
     # Correlations between vertical flow (vr) and temperature/entropy
-    elif varname == 'vrs':       
-        ind_vr, ind_s = a.lut[qind_vr], a.lut[qind_s]
-        vr_slice = vals[:, :, :, ind_vr]
-        s_slice = vals[:, :, :, ind_s]      
-        vr_prime_slice = prime(vr_slice)
-        s_prime_slice = prime(s_slice)
-        sslice = vr_prime_slice*s_prime_slice      
-    elif varname == 'vrt':       
+    elif varname == 'vrt_sph':       
         ind_vr, ind_s, ind_p = a.lut[qind_vr], a.lut[qind_s], a.lut[qind_p]
         vr_slice = vals[:, :, :, ind_vr]
         s_slice = vals[:, :, :, ind_s] 
         p_slice = vals[:, :, :, ind_p]         
-        vr_prime_slice = prime(vr_slice)
-        s_prime_slice = prime(s_slice)
-        p_prime_slice = prime(p_slice)
-        t_prime_slice = ref_T*(p_prime_slice/ref_P*(1. - 1./thermo_gamma)\
-                + s_prime_slice/c_P)
-        sslice = vr_prime_slice*t_prime_slice          
+        t_slice = ref_T*(p_slice/ref_P*(1. - 1./thermo_gamma)\
+                + s_slice/c_P)
+        vr_prime_sph = prime_sph(vr_slice, tw)
+        t_prime_sph = prime_sph(t_slice, tw)
+        sslice = ref_rho*c_P*vr_prime_sph*t_prime_sph
+    elif varname == 'vrs_sph':       
+        ind_vr, ind_s, ind_p = a.lut[qind_vr], a.lut[qind_s], a.lut[qind_p]
+        vr_slice = vals[:, :, :, ind_vr]
+        s_slice = vals[:, :, :, ind_s] 
+        p_slice = vals[:, :, :, ind_p]         
+        vr_prime_sph = prime_sph(vr_slice, tw)
+        s_prime_sph = prime_sph(s_slice, tw)
+        sslice = ref_rho*ref_T*vr_prime_sph*s_prime_sph
+    elif varname == 'vrp_sph':       
+        ind_vr, ind_s, ind_p = a.lut[qind_vr], a.lut[qind_s], a.lut[qind_p]
+        vr_slice = vals[:, :, :, ind_vr]
+        s_slice = vals[:, :, :, ind_s] 
+        p_slice = vals[:, :, :, ind_p]         
+        vr_prime_sph = prime_sph(vr_slice, tw)
+        p_prime_sph = prime_sph(p_slice, tw)
+        sslice = vr_prime_sph*p_prime_sph
     elif varname == 'vtt':       
         ind_vt, ind_s, ind_p = a.lut[qind_vt], a.lut[qind_s], a.lut[qind_p]
         vt_slice = vals[:, :, :, ind_vt]
