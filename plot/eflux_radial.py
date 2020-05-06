@@ -40,6 +40,7 @@ minmax = None
 rnorm = None
 rvals = None
 plot_enth_fluc = False
+mark_bcz = False
 
 args = sys.argv[2:]
 nargs = len(args)
@@ -59,6 +60,9 @@ for i in range(nargs):
         rvals = []
         for rval_str in rvals_str:
             rvals.append(float(rval_str))
+    elif arg == '-bcz': # try to estimate the real BCZ (and mark it)
+                        # from where the enthalpy flux first goes negative
+        mark_bcz = True
 
 #Create the plot
 lw = 1. # regular lines
@@ -208,6 +212,15 @@ if rnorm is None:
 else:
     plt.xlabel(r'r/(%.1e cm)' %rnorm, fontsize=12, **csfont)
 
+# Try to find the BCZ from where enthalpy flux goes negative, if desired
+# avoid the outer boundary
+if mark_bcz:
+    irbcz = np.argmin(eflux[20:] > 0) + 20
+    if rvals is None:
+        rvals = np.array([rr[irbcz]])
+    else:
+        rvals = np.hstack((rvals,np.array([rr[irbcz]])))
+
 # Mark radii if desired
 if not rvals is None:
     yvals = np.linspace(minmax[0], minmax[1], 100)
@@ -218,6 +231,7 @@ if not rvals is None:
             rval_n = rval/rnorm
 #        plt.ylim(ymin, ymax)
         plt.plot(rval_n + np.zeros(100), yvals, 'k--')
+
 
 plt.ylabel(r'$4\pi r^2\ \rm{\times \ (energy \ flux)}\ /\ L_*$',\
         fontsize=12, **csfont)
