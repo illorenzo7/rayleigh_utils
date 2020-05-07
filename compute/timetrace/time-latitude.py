@@ -53,7 +53,7 @@ file_list, int_file_list, nfiles = get_file_lists(radatadir)
 args = sys.argv[2:]
 nargs = len(args)
 
-if (nargs == 0):
+if nargs == 0:
     index_first, index_last = nfiles - 101, nfiles - 1  
     # By default trace over the last 100 files
 else:
@@ -93,7 +93,11 @@ for i in range(nargs):
         print("assuming depth RZ = (1/4) depth CZ")
         depths = [0.04, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.76,\
                0.81, 0.825, 0.85, 0.875, 0.9, 0.925, 0.95, 0.975, 0.990]
-        tag_already_provided = True
+    elif arg == '-rzhalf': # 9 depths in RZ and CZ, with RZ depth
+        # 0.5 of CZ depth
+        print("Taking 9 depths in CZ and RZ each")
+        print("assuming depth RZ = (1/2) depth CZ")
+        depths =[0.01666667, 0.04166667, 0.08333333, 0.125, 0.16666667, 0.20833333, 0.25, 0.29166667, 0.31666667, 0.36666667, 0.41666667, 0.5, 0.58333333, 0.66666667, 0.75, 0.83333333, 0.91666667, 0.96666667]
     elif arg == '-torques':
         print("tracing over TORQUES")
         qvals = [3, 1801, 1802, 1803, 1804, 1819]
