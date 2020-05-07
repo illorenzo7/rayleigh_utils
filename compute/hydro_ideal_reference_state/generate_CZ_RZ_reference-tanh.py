@@ -149,6 +149,9 @@ else:
 eq.set_constant(1.0, 2) # multiplies buoyancy
 eq.set_constant(1.0, 3) # multiplies pressure grad.
 
+eq.set_constant(1.0, 7) # multiplies viscous heating
+eq.set_constant(1.0, 8) # multiplies conductive heating
+
 # Will need to figure out how to deal with c_1 (supposed to be 2 x angular velocity, i.e., the Coriolis coefficient. Hopefully we don't need c_1 in the
 # custom reference framework and will just specify angular_velocity
 # If this doesn't work, will need to use override_constants framework

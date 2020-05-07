@@ -162,14 +162,21 @@ eq.set_function(dsdr, 14)
 
 print("Setting c_2 and c_3")
 if mag:
-    print("magnetism = True, so setting c_4 = 1/(4*pi)")
+    print("magnetism = True, so setting c_4 = 1/(4*pi), c_7 = c_9 = 1")
     eq.set_constant(1.0/4.0/np.pi, 4) # multiplies Lorentz force
+    eq.set_constant(1.0, 7) # multiplies eta in induction-diffusion term
+    eq.set_constant(1.0, 9) # multiplies Joule heating
 else:
-    print("magnetism = False, so setting c_4 = 0.0")
+    print("magnetism = False, so setting c_4, c_7, c_9 = 0.0")
     eq.set_constant(0.0, 4) # multiplies Lorentz force
+    eq.set_constant(0.0, 7) # multiplies eta in induction-diffusion term
+    eq.set_constant(0.0, 9) # multiplies Ohmic heating
 
 eq.set_constant(1.0, 2) # multiplies buoyancy
 eq.set_constant(1.0, 3) # multiplies pressure grad.
+eq.set_constant(1.0, 3) # multiplies pressure grad.
+
+eq.set_constant(1.0, 8) # multiplies viscous heating
 
 # Will need to figure out how to deal with c_1 (supposed to be 2 x angular velocity, i.e., the Coriolis coefficient. Hopefully we don't need c_1 in the
 # custom reference framework and will just specify angular_velocity
@@ -178,7 +185,7 @@ eq.set_constant(1.0, 3) # multiplies pressure grad.
 # c_10 will be set in the "generate heating" scripts
 
 # The "generate transport" scripts will set the transport
-# "radial shapes", and the constants c_5, c_6, c_7, c_8, and c_9
+# "radial shapes", and the constants c_5, c_6, c_7
 
 the_file = dirname + '/' + fname
 
