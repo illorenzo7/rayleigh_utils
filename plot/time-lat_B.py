@@ -19,7 +19,7 @@ dirname = sys.argv[1]
 
 # Data and plot directories
 datadir = dirname + '/data/'
-plotdir = dirname + '/plots/'
+plotdir = dirname + '/plots/time-lat/'
 if (not os.path.isdir(plotdir)):
     os.makedirs(plotdir)
 dirname_stripped = strip_dirname(dirname)
@@ -164,7 +164,7 @@ for i in range(len(i_desiredrvals)):
     bp_trace = bp_trace_av[:, :, i_desiredrval]
     
     # Make appropriate file name to save
-    savename = dirname_stripped + '_time-latitude_B_' +\
+    savename = dirname_stripped + '_time-lat_B_' +\
             ('Prot%05.0f-to-%05.0f_' %(t1, t2)) +\
         ('rval%0.3f' %rval_to_plot) + '.png'
 
