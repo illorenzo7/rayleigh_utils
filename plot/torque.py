@@ -45,6 +45,7 @@ plotcontours = True
 minmax = None
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
 forced = False
+rvals = None
 
 args = sys.argv[2:]
 nargs = len(args)
@@ -63,6 +64,13 @@ for i in range(nargs):
         AZ_Avgs_file = AZ_Avgs_file.split('/')[-1]
     elif arg == '-forced':
         forced = True
+    elif arg == '-rvals':
+        rvals_str = args[i+1].split()
+        rvals = []
+        for rval_str in rvals_str:
+            rvals.append(float(rval_str))
+        rvals = np.array(rvals)
+
 
 # See if magnetism is "on"
 try:
@@ -215,7 +223,7 @@ for iplot in range(nplots):
             (iplot//ncol)*(subplot_height + margin_subplot_top)
     ax = fig.add_axes((ax_left, ax_bottom, subplot_width, subplot_height))
     plot_azav (torques[iplot], rr, cost, fig=fig, ax=ax, units=units,\
-           minmax=minmax, plotcontours=plotcontours)
+           minmax=minmax, plotcontours=plotcontours, rvals=rvals)
 
     ax.set_title(titles[iplot], verticalalignment='bottom', **csfont)
 

@@ -20,7 +20,7 @@ from plotcommon import axis_range, default_axes_1by2, default_axes_1by1
 def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
     units='', minmax=None, posdef=False, logscale=False, symlog=False,\
     plotcontours=True, plotfield=True, nlevs=10, levels=None,\
-	plotlatlines=False, rvals=None, rvals_norm=None, cbar_fs=10,\
+	plotlatlines=False, rvals=None, cbar_fs=10,\
     showplot=False, plot_cbar=True, lw_scaling=1.,\
     linthresh=None, linscale=None, plotboundary=True, rbcz=None):
 
@@ -406,15 +406,12 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
                     linewidth=contour_lw)
 
     # Plot various radii, if desired
-    # rvals must be given normalized to outer rr
     if not rvals is None:
-        if rvals_norm is None:
-            rvals_norm = rsun
         for rval in rvals: 
             plt.sca(ax)
-            rval_dim = rval*rvals_norm/ro
+            rval /= ro
             # "dimensional" rval (in dimensions of ro!)
-            plt.plot(rval_dim*sint, rval_dim*cost, 'k--',\
+            plt.plot(rval*sint, rval*cost, 'k--',\
                     linewidth=.7*lw_scaling)
 
     # Set ax ranges to be just outside the boundary lines
@@ -616,7 +613,7 @@ def plot_azav_half(field, rr, cost, sym='even', fig=None, ax=None,\
         plt.show()
 
 def plot_quiver(vr, vt, rr, cost, fig=None, ax=None, minmax=None,\
-        plotlatlines=False, rvals=None, rvals_norm=None, cbar_fs=10,\
+        plotlatlines=False, rvals=None, cbar_fs=10,\
         showplot=False, scale=None, plot_poles=False, nsample_t=20,\
         nsample_r=10, scale_by_mag=True, plotboundary=True):
 
@@ -713,13 +710,10 @@ def plot_quiver(vr, vt, rr, cost, fig=None, ax=None, minmax=None,\
     # Plot various radii, if desired
     # rvals must be given normalized to outer rr
     if not rvals is None:
-        if rvals_norm is None:
-            rvals_norm = rsun
         for rval in rvals: 
             plt.sca(ax)
-            rval_dim = rval*rvals_norm/ro
-            # "dimensional" rval (in dimensions of ro!)
-            plt.plot(rval_dim*sint, rval_dim*cost, 'k--', linewidth=.7)
+            rval /= ro
+            plt.plot(rval*sint, rval*cost, 'k--', linewidth=.7)
 
     # Set ax ranges to be just outside the boundary lines
     lilbit = 0.01
