@@ -11,11 +11,10 @@ import numpy as np
 import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
-from get_parameter import get_parameter
-from rayleigh_diagnostics import Shell_Avgs, GridInfo,\
-        TransportCoeffs
+from rayleigh_diagnostics import Shell_Avgs, GridInfo
 from common import get_widest_range_file, get_dict
-from reference_tools import equation_coefficients
+from get_eq import get_eq
+from time_scales import compute_Prot
 
 # Get directory name
 dirname = sys.argv[1]
@@ -27,25 +26,11 @@ rr = gi.radius
 H = np.max(rr) - np.min(rr)
 
 # Read in transport coefficients for nu-profile
-try:
-    t = TransportCoeffs(dirname + '/transport')
-    nu = t.nu
-    print ("Got nu(r) from 'transport' file")
-except:
-    eq = equation_coefficients()
-    eq.read(dirname + '/equation_coefficients')
-    nu = eq.constants[4]*eq.functions[2]
-    print ("Got nu(r) from 'equation_coefficients' file")
+eq = get_eq(dirname)
+nu = eq.nu
 
 # Get angular velocity 
-try:
-    Om0 = get_parameter(dirname, 'angular_velocity')
-    print ("Got Omega_0 from 'main_input' file")
-except:
-    eq = equation_coefficients()
-    eq.read(dirname + '/equation_coefficients')
-    Om0 = eq.constants[0]/2.
-    print ("Got Omega_0 from 'equation_coefficients' file")
+Om0 = 2.*np.pi/compute_Prot(dirname)
 
 # Compute volume-averaged Ekman number
 # using the radial integration weights

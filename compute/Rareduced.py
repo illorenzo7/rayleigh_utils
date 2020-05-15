@@ -1,27 +1,42 @@
 # Author: Loren Matilsky
-# Created: 05/18/2019
-# This script computes the flux Rayleigh number for a Rayleigh run in
-# directory [dirname], following the definition (eq. 14) in Featherstone
-# & Hindman (2016) (ApJ paper, not letter)
-# Takes the heat flux from Shell_Avgs file and the rest from the reference
-# state file and grid_info for the radial weights
-# Displays the computed Rayleigh number at the terminal. 
+# Created: 01/17/2020
+# This script computes the volume-averaged Ekman number for a 
+# Rayleigh run in directory [dirname], using the (constant) shell depth
+# as the length scale. 
+# Gets diffusion profiles from transport or equation_coefficients
+# Reads grid_info for the radial weights
+# Displays the computed Ekman number at the terminal
 
 import numpy as np
 import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
-from get_parameter import get_parameter
 from rayleigh_diagnostics import Shell_Avgs, GridInfo
+from common import get_widest_range_file, get_dict
 from get_eq import get_eq
+from time_scales import compute_Prot
 
 # Get directory name
 dirname = sys.argv[1]
 
-# Read in reference state, grid info for radial weights,
-# and transport coefficients at the top of the domain
+# Read in grid info for radial weights and reference velocity
 gi = GridInfo(dirname + '/grid_info')
 rw = gi.rweights
+rr = gi.radius
+H = np.max(rr) - np.min(rr)
+
+# Read in transport coefficients for nu-profile
+eq = get_eq(dirname)
+nu = eq.nu
+
+# Get angular velocity 
+Om0 = 2.*np.pi/compute_Prot(dirname)
+
+# Compute volume-averaged Ekman number
+# using the radial integration weights
+Ek_vs_r = nu/(2*H**2*Om0) # note there is technically a 1/sin(theta) in the 
+# Definition of Ek, but this averages to 1 over latitude
+Ek = np.sum(rw*Ek_vs_r)
 
 # Read in one Shell_Avgs file to get heat flux,
 # the last one just because
@@ -36,6 +51,7 @@ H = np.max(sh.radius) - np.min(sh.radius)
 # Read in necessary radial profiles for the flux Rayleigh number
 # "vsr" for "profile vs radius"
 F_rad = sh.vals[:, 0, sh.lut[1433], 0]
+
 # Get the luminosity from F_rad
 lum = F_rad[-1]*4*np.pi*np.min(sh.radius)**2
 print ("Luminosity calculated from F_rad is %1.3e" %lum)
@@ -43,7 +59,6 @@ F_vsr = lum/4/np.pi/sh.radius**2 - F_rad
 
 # Get reference info from reference/transport or equation_coefficients
 cp = 3.5e8
-eq = get_eq(dirname)
 nu_vsr = eq.nu
 kappa_vsr = eq.kappa
 g_vsr = eq.gravity
@@ -62,16 +77,8 @@ kappa = np.sum(rw*kappa_vsr)
 # Compute the flux Rayleigh number!
 Ra = g*F*H**4/(cp*rho*T*nu*kappa**2)
 
-# And print it
-print("The flux Rayleigh number is %1.3e" %Ra)
+# Compute the reduced Rayleigh number
+R = Ra*Ek**(4./3.)
 
-# Also write it as an empty file in [dirname]
-# Remove all other "RaF_is_" that might be present
-# (in case this definition of Ra is replaced
-names = os.listdir(dirname)
-for name in names:
-    if "RaF_is_" in name:
-        os.remove(dirname + '/' + name)
-fname = dirname + ("/00_RaF_is_%1.3e" %Ra)
-f = open(fname, "w")
-f.close()
+# And print it
+print("The reduced Rayleigh number Ra_F*Ek**(4/3) is %1.3e" %R)

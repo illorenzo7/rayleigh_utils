@@ -16,6 +16,7 @@ sys.path.append(os.environ['raco'])
 from get_parameter import get_parameter
 from rayleigh_diagnostics import Shell_Avgs, GridInfo
 from common import get_widest_range_file, get_dict
+from time_scales import compute_Prot
 
 # Get directory name
 dirname = sys.argv[1]
@@ -34,7 +35,7 @@ H = np.max(rr) - np.min(rr)
 # Read in grid info for radial weights and reference velocity
 gi = GridInfo(dirname + '/grid_info')
 rw = gi.rweights
-Om = get_parameter(dirname, 'angular_velocity')
+Om = 2.*np.pi/compute_Prot(dirname)
 
 # Find the rms convective velocity
 vsq_r, vsq_t, vsq_p = vals[:, lut[422]], vals[:, lut[423]],\
