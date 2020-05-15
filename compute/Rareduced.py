@@ -75,10 +75,12 @@ nu = np.sum(rw*nu_vsr)
 kappa = np.sum(rw*kappa_vsr)
 
 # Compute the flux Rayleigh number!
-Ra = g*F*H**4/(cp*rho*T*nu*kappa**2)
+Ra = g*F*H**4./(cp*rho*T*nu*kappa**2.)
 
 # Compute the reduced Rayleigh number
 R = Ra*Ek**(4./3.)
 
 # And print it
+print ("Ra_F = %1.3e" %Ra)
+print ("Ek = %1.3e" %Ek)
 print("The reduced Rayleigh number Ra_F*Ek**(4/3) is %1.3e" %R)
