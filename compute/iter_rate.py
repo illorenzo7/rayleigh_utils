@@ -38,9 +38,9 @@ for name in os.listdir(dirname):
             lognumbers.append(int(lastpart))
             lognames.append(name)
         except:
-            print ("Can't discern a number for %s" %logname)
-            print ("Not considering %s by default" %logname)
-            print ("To use it, specify -fname %s" %logname)
+            print ("Can't discern a number for %s" %name)
+            print ("Not considering %s by default" %name)
+            print ("To use it, specify -fname %s" %name)
 
 # convert to arrays
 lognames = np.array(lognames)
