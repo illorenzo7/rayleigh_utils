@@ -21,6 +21,7 @@ use_gav = True      # Use the G_Avgs/ directory directly
 use_sslice = False  # Use the Shell_Slices/ directory directly
 use_gtr = False     # Use the pre-computed G_Avgs time trace
 verbose = False
+trace_file = None
 
 # Get command-line arguments
 args = sys.argv[2:]
@@ -37,6 +38,9 @@ for i in range(nargs):
         use_gtr = True
     elif arg == '-v': # verbose
         verbose = True
+    elif arg == '-usefile':
+        trace_file = args[i+1]
+        trace_file = Shell_Avgs_file.split('/')[-1]
 
 datadir = dirname + '/data/'
 
@@ -44,8 +48,14 @@ if use_gav:
     gavg_dir = dirname + '/G_Avgs/'
     file_list, int_file_list, nfiles = get_file_lists(gavg_dir)
 
-    f1 = file_list[0]
-    f2 = file_list[-1]
+    the_tuple = get_desired_range(int_file_list, args)
+    if the_tuple is None:
+        index_first, index_last = 0, -1 # by default get the WHOLE sim time
+    else:
+        index_first, index_last = the_tuple
+
+    f1 = file_list[index_first]
+    f2 = file_list[index_last]
 
     a1 = G_Avgs(gavg_dir + f1, '')
     a2 = G_Avgs(gavg_dir + f2, '')
@@ -56,13 +66,20 @@ if use_gav:
     iter1 = a1.iters[0]
     iter2 = a2.iters[-1]
     print ("simtime(): Got timing info from G_Avgs/ directory")
+    print (f1, " to ", f2)
 
 elif use_sslice:
     sslice_dir = dirname + '/Shell_Slices/'
     file_list, int_file_list, nfiles = get_file_lists(sslice_dir)
 
-    f1 = file_list[0]
-    f2 = file_list[-1]
+    the_tuple = get_desired_range(int_file_list, args)
+    if the_tuple is None:
+        index_first, index_last = 0, -1 # by default get the WHOLE sim time
+    else:
+        index_first, index_last = the_tuple
+
+    f1 = file_list[index_first]
+    f2 = file_list[index_last]
 
     a1 = Shell_Slices(sslice_dir + f1, '')
     a2 = Shell_Slices(sslice_dir + f2, '')
@@ -73,15 +90,18 @@ elif use_sslice:
     iter1 = a1.iters[0]
     iter2 = a2.iters[-1]
     print ("simtime(): Got timing info from Shell_Slices/ directory")
+    print (f1, " to ", f2)
 
 elif use_gtr:
-    trace_file = get_widest_range_file(datadir, 'trace_G_Avgs')
+    if trace_file == None:
+        trace_file = get_widest_range_file(datadir, 'trace_G_Avgs')
     di = get_dict(datadir + trace_file)
     times = di['times']
     iters = di['iters']
     t1, t2 = times[0], times[-1]
     iter1, iter2 = iters[0], iters[-1]
     print ("simtime(): Got timing info from data/*trace_G_Avgs* file")
+    print ("fname = ", trace_file)
 
 simtime = t2 - t1
 
