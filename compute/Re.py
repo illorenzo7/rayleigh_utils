@@ -12,8 +12,8 @@ import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from get_parameter import get_parameter
-from rayleigh_diagnostics import Shell_Avgs, GridInfo,\
-        TransportCoeffs
+from rayleigh_diagnostics import Shell_Avgs, GridInfo
+from get_eq import get_eq
 from common import get_widest_range_file, get_dict
 
 # Get directory name
@@ -35,8 +35,8 @@ gi = GridInfo(dirname + '/grid_info')
 rw = gi.rweights
 
 # Read in transport coefficients for nu-profile
-t = TransportCoeffs(dirname + '/transport')
-nu = t.nu
+eq = get_eq(dirname)
+nu = eq.nu
 
 # Find the rms convective velocity, averaged over spheres
 vsq_r, vsq_t, vsq_p = vals[:, lut[422]], vals[:, lut[423]],\
