@@ -21,6 +21,7 @@ from common import get_file_lists, get_desired_range, rsun, strip_dirname
 from rayleigh_diagnostics import Shell_Spectra
 from get_parameter import get_parameter
 from time_scales import compute_Prot, compute_tdt
+from translate_times import translate_times
 
 # Get directory name and stripped_dirname for plotting purposes
 dirname = sys.argv[1]

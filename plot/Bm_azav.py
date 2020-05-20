@@ -22,6 +22,9 @@ sys.path.append(os.environ['raco'])
 from azav_util import plot_azav, streamfunction
 from common import get_widest_range_file, strip_dirname, get_file_lists,\
         get_desired_range
+from get_parameter import get_parameter
+from time_scales import compute_Prot, compute_tdt
+from translate_times import translate_times
 from rayleigh_diagnostics import AZ_Avgs
 
 # Get directory name and stripped_dirname for plotting purposes
@@ -95,6 +98,19 @@ iter1, iter2 = int_file_list[index_first], int_file_list[index_last]
 
 vals = np.zeros_like(az0.vals[:, :, :, 0])
 
+# Get the time range in sec
+t1 = translate_times(iter1, dirname, translate_from='iter')['val_sec']
+t2 = translate_times(iter2, dirname, translate_from='iter')['val_sec']
+
+# Get the baseline time unit
+rotation = get_parameter(dirname, 'rotation')
+if rotation:
+    time_unit = compute_Prot(dirname)
+    time_label = r'$\rm{P_{rot}}$'
+else:
+    time_unit = compute_tdt(dirname)
+    time_label = r'$\rm{TDT}$'
+
 # Average over the relevant data range, summing everything and then dividing
 #   by the number of "slices" added at the end
 print ('Considering AZ_Avgs files %s through %s for the average ...'\
@@ -137,7 +153,7 @@ if minmax is None:
 subplot_width_inches = 2.5
 subplot_height_inches = 5.
 margin_inches = 1/8
-margin_top_inches = 1 # larger top margin to make room for titles
+margin_top_inches = 1.25 # larger top margin to make room for titles
 
 fig_width_inches = subplot_width_inches + 2*margin_inches
 fig_height_inches = subplot_height_inches + margin_top_inches + margin_inches
@@ -163,16 +179,26 @@ maxabs = 3*np.std(psi)
 levels = np.linspace(-maxabs, maxabs, 20)
 plot_azav (psi, rr, cost, fig=fig, ax=ax, plotfield=False, levels=levels)
 
+# Label averaging interval
+if rotation:
+    time_string = ('t = %.1f to %.1f ' %(t1/time_unit, t2/time_unit))\
+            + time_label + '\n' + (r'$\ (\Delta t = %.1f\ $'\
+            %((t2 - t1)/time_unit)) + time_label + ')'
+else:
+    time_string = ('t = %.3f to %.3f ' %(t1/time_unit, t2/time_unit))\
+            + time_label + (r'$\ (\Delta t = %.3f\ $'\
+            %((t2 - t1)/time_unit)) + time_label + ')'
+
 # Make title
 fsize = 12
-fig.text(margin_x, 1 - 1/8*margin_top, dirname_stripped,\
+line_height = 1./4./fig_height_inches
+fig.text(margin_x, 1 - margin_y, dirname_stripped,\
          ha='left', va='top', fontsize=fsize, **csfont)
-fig.text(margin_x, 1 - 3/8*margin_top,\
+fig.text(margin_x, 1 - margin_y - line_height,\
          r'$|\langle\mathbf{B}_m\rangle|$',\
          ha='left', va='top', fontsize=fsize, **csfont)
-fig.text(margin_x, 1 - 5/8*margin_top,\
-         str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8),\
-         ha='left', va='top', fontsize=fsize, **csfont)
+fig.text(margin_x, 1 - margin_y - 2*line_height,\
+        time_string, ha='left', va='top', fontsize=fsize, **csfont)
 
 savefile = plotdir + dirname_stripped + '_Bm_' + str(iter1).zfill(8) +\
     '_' + str(iter2).zfill(8) + '.png'

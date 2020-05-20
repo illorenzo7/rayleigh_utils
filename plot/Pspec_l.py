@@ -21,11 +21,13 @@ sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
 from varprops import texunits, texlabels, var_indices
 
-from common import strip_dirname, get_widest_range_file, get_iters_from_file,\
-        get_dict, rsun, sci_format
+from common import strip_dirname, get_widest_range_file,\
+        get_iters_from_file, get_dict, rsun, sci_format
 
 from plotcommon import default_axes_1by1, axis_range
 from get_parameter import get_parameter
+from time_scales import compute_Prot, compute_tdt
+from translate_times import translate_times
 
 # Get directory name and stripped_dirname for plotting purposes
 dirname = sys.argv[1]
@@ -92,6 +94,19 @@ nr = di['nr']
 lvals = di['lvals']
 nell = di['nell']
 iter1, iter2 = di['iter1'], di['iter2']
+
+# Get the time range in sec
+t1 = translate_times(iter1, dirname, translate_from='iter')['val_sec']
+t2 = translate_times(iter2, dirname, translate_from='iter')['val_sec']
+
+# Get the baseline time unit
+rotation = get_parameter(dirname, 'rotation')
+if rotation:
+    time_unit = compute_Prot(dirname)
+    time_label = r'$\rm{P_{rot}}$'
+else:
+    time_unit = compute_tdt(dirname)
+    time_label = r'$\rm{TDT}$'
 
 # Scale so power corresponds to representative field strength
 lpower = di['lpower']
@@ -194,13 +209,23 @@ for ir in range(len(ir_vals)):
     plt.minorticks_on()
     plt.tick_params(top=True, right=True, direction='in', which='both')
 
+    # Label averaging interval
+    if rotation:
+        time_string = ('t = %.1f to %.1f ' %(t1/time_unit, t2/time_unit))\
+                + time_label + ' ' + (r'$\ (\Delta t = %.1f\ $'\
+                %((t2 - t1)/time_unit)) + time_label + ')'
+    else:
+        time_string = ('t = %.3f to %.3f ' %(t1/time_unit, t2/time_unit))\
+                + time_label + (r'$\ (\Delta t = %.3f\ $'\
+                %((t2 - t1)/time_unit)) + time_label + ')'
+
     # Make title
     # Compute l_rms
     l_rms = np.sum(lpower_mnot0**2*lvals)/np.sum(lpower_mnot0**2)
 
     title = varlabel + '     ' + (r'$r/R_\odot\ =\ %0.3f$' %rval) +\
             '     ' + (r'$l_{\rm{rms},\ m\neq0} = %.1f$' %l_rms) + '\n' +\
-            ('%08i to %08i' %(iter1, iter2))    
+            time_string
     plt.title(title)
 
     # Final command

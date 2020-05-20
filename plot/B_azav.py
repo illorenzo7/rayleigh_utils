@@ -22,6 +22,9 @@ sys.path.append(os.environ['raco'])
 from azav_util import plot_azav
 from common import get_widest_range_file, strip_dirname, get_file_lists,\
         get_desired_range
+from get_parameter import get_parameter
+from time_scales import compute_Prot, compute_tdt
+from translate_times import translate_times
 from rayleigh_diagnostics import AZ_Avgs
 
 # Get directory name and stripped_dirname for plotting purposes
@@ -57,6 +60,21 @@ else:
     index_first, index_last = nfiles - 1, nfiles - 1  
     # By default, don't average over any files;
     # just plot the last file
+
+# Get the time range in sec
+t1 = translate_times(int_file_list[index_first], dirname,\
+        translate_from='iter')['val_sec']
+t2 = translate_times(int_file_list[index_last], dirname,\
+        translate_from='iter')['val_sec']
+
+# Get the baseline time unit
+rotation = get_parameter(dirname, 'rotation')
+if rotation:
+    time_unit = compute_Prot(dirname)
+    time_label = r'$\rm{P_{rot}}$'
+else:
+    time_unit = compute_tdt(dirname)
+    time_label = r'$\rm{TDT}$'
 
 # Change other defaults
 for i in range(nargs):
@@ -130,7 +148,7 @@ fig_width_inches = 7. # TOTAL figure width, in inches
     # (i.e., 8x11.5 paper with 1/2-inch margins)
 margin_inches = 1./8. # margin width in inches (for both x and y) and 
     # horizontally in between figures
-margin_top_inches = 1. # wider top margin to accommodate subplot titles AND metadata
+margin_top_inches = 1.5 # wider top margin to accommodate subplot titles AND metadata
 margin_subplot_top_inches = 1. # margin to accommodate just subplot titles
 ncol = 3 # put three plots per row
 nrow = 1
@@ -174,16 +192,25 @@ for iplot in range(3):
            plotcontours=plotcontours)
     ax.set_title(titles[iplot], verticalalignment='bottom', **csfont)
 
+# Label averaging interval
+if rotation:
+    time_string = ('t = %.1f to %.1f ' %(t1/time_unit, t2/time_unit))\
+            + time_label + '\n' + (r'$\ (\Delta t = %.1f\ $'\
+            %((t2 - t1)/time_unit)) + time_label + ')'
+else:
+    time_string = ('t = %.3f to %.3f ' %(t1/time_unit, t2/time_unit))\
+            + time_label + (r'$\ (\Delta t = %.3f\ $'\
+            %((t2 - t1)/time_unit)) + time_label + ')'
+
 # Put some metadata in upper left
 fsize = 12
-fig.text(margin_x, 1 - 0.1*margin_top, dirname_stripped,\
+line_height = 1./4./fig_height_inches
+fig.text(margin_x, 1 - margin_y, dirname_stripped,\
          ha='left', va='top', fontsize=fsize, **csfont)
-fig.text(margin_x, 1 - 0.3*margin_top, 'Magnetic field (zonally averaged)',\
-         ha='left', va='top', fontsize=fsize, **csfont)
-iter_string = 'iter ' + str(iter1).zfill(8) 
-if count > 1:         
-    iter_string += ' to ' + str(iter2).zfill(8)
-fig.text(margin_x, 1 - 0.5*margin_top, iter_string,\
+fig.text(margin_x, 1 - margin_y - line_height,\
+        'Magnetic field (zonally averaged)', ha='left', va='top',\
+        fontsize=fsize, **csfont)
+fig.text(margin_x, 1 - margin_y - 2*line_height, time_string,\
          ha='left', va='top', fontsize=fsize, **csfont)
 
 savename = dirname_stripped + '_B_azav_' + str(iter1).zfill(8) + '_' +\

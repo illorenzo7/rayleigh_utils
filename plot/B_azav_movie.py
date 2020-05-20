@@ -24,6 +24,8 @@ from common import get_widest_range_file, strip_dirname, get_file_lists,\
         get_desired_range
 from rayleigh_diagnostics import AZ_Avgs
 from get_parameter import get_parameter
+from time_scales import compute_Prot, compute_tdt
+from translate_times import translate_times
 
 # Get directory name and stripped_dirname for plotting purposes
 dirname = sys.argv[1]
@@ -34,9 +36,14 @@ radatadir = dirname + '/AZ_Avgs/'
 # Get all the file names in datadir and their integer counterparts
 file_list, int_file_list, nfiles = get_file_lists(radatadir)
 
-# Get rotation rate
-Omega0 = get_parameter(dirname, 'angular_velocity')
-Prot = 2*np.pi/Omega0
+# Get the baseline time unit
+rotation = get_parameter(dirname, 'rotation')
+if rotation:
+    time_unit = compute_Prot(dirname)
+    time_label = r'$\rm{P_{rot}}$'
+else:
+    time_unit = compute_tdt(dirname)
+    time_label = r'$\rm{TDT}$'
 
 # Set defaults
 count = 0
@@ -96,7 +103,7 @@ if mins is None and maxes is None:
     maxes = nstd*np.std(br0), nstd*np.std(bt0), nstd*np.std(bp0)
 
 # Create the save directory if it doesn't already exist
-plotdir = dirname + '/plots/Bazav_movie/' + '/'
+plotdir = dirname + '/plots/Bazav_movie/'
 if not os.path.isdir(plotdir):
     os.makedirs(plotdir)
 
@@ -172,7 +179,10 @@ for i in range(index_first, index_last + 1):
         # Make the title indicating the simulation time
         fsize = 12
         time = az.time[j]
-        title = r'$t = %02.1f\ P_{\rm{rot}}$' %(time/Prot)
+        if rotation:
+            title = ('t = %07.1f ' %(time/time_unit)) + time_label 
+        else:
+            title = ('t = %06.3f ' %(time/time_unit)) + time_label
         fig.text(margin_x + 0.5*subplot_width + (margin_x + subplot_width),\
                 1. - 0.3*margin_top, title, ha='center',\
                 va='center', **csfont)

@@ -18,11 +18,15 @@ import matplotlib.pyplot as plt
 plt.rcParams['mathtext.fontset'] = 'dejavuserif'
 csfont = {'fontname':'DejaVu Serif'}
 import sys, os
-sys.path.append(os.environ['rapp'])
-from rayleigh_diagnostics import TransportCoeffs, ReferenceState
+sys.path.append(os.environ['rapp']) 
+sys.path.append(os.environ['raco']) 
+from rayleigh_diagnostics import TransportCoeffs, ReferenceState 
 from reference_tools import equation_coefficients
 from common import strip_dirname, get_widest_range_file,\
         get_iters_from_file, get_dict, rsun
+from get_parameter import get_parameter
+from time_scales import compute_Prot, compute_tdt
+from translate_times import translate_times
 
 # Get directory name and stripped_dirname for plotting purposes
 dirname = sys.argv[1]
@@ -75,6 +79,19 @@ vals = di['vals']
 lut = di['lut']
 iter1, iter2 = di['iter1'], di['iter2']
 rr = di['rr']
+
+# Get the time range in sec
+t1 = translate_times(iter1, dirname, translate_from='iter')['val_sec']
+t2 = translate_times(iter2, dirname, translate_from='iter')['val_sec']
+
+# Get the baseline time unit
+rotation = get_parameter(dirname, 'rotation')
+if rotation:
+    time_unit = compute_Prot(dirname)
+    time_label = r'$\rm{P_{rot}}$'
+else:
+    time_unit = compute_tdt(dirname)
+    time_label = r'$\rm{TDT}$'
 
 # Derivative grid info
 nr = len(rr)
@@ -192,9 +209,19 @@ if not rvals is None:
             rval_n = rval/rnorm
         plt.plot(rval_n + np.zeros(100), yvals, 'k--')
 
+# Label averaging interval
+if rotation:
+    time_string = ('t = %.1f to %.1f ' %(t1/time_unit, t2/time_unit))\
+            + time_label + ' ' + (r'$\ (\Delta t = %.1f\ $'\
+            %((t2 - t1)/time_unit)) + time_label + ')'
+else:
+    time_string = ('t = %.3f to %.3f ' %(t1/time_unit, t2/time_unit))\
+            + time_label + (r'$\ (\Delta t = %.3f\ $'\
+            %((t2 - t1)/time_unit)) + time_label + ')'
+
 # Create a title    
-plt.title(dirname_stripped + '\n' +'Convective Reynolds number, ' +\
-          str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8), **csfont)
+plt.title(dirname_stripped + '\n' +'Convective Reynolds number\n' +\
+          time_string, **csfont)
 plt.legend()
 
 # Get ticks everywhere

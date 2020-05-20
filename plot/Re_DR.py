@@ -23,6 +23,9 @@ sys.path.append(os.environ['raco'])
 from get_eq import get_eq
 from common import strip_dirname, get_widest_range_file,\
         get_iters_from_file, get_dict, rsun
+from get_parameter import get_parameter
+from time_scales import compute_Prot, compute_tdt
+from translate_times import translate_times
 
 # Get directory name and stripped_dirname for plotting purposes
 dirname = sys.argv[1]
@@ -79,6 +82,19 @@ rr = di['rr']
 tt = di['tt']
 tt_lat = di['tt_lat']
 rr_depth = di['rr_depth']
+
+# Get the time range in sec
+t1 = translate_times(iter1, dirname, translate_from='iter')['val_sec']
+t2 = translate_times(iter2, dirname, translate_from='iter')['val_sec']
+
+# Get the baseline time unit
+rotation = get_parameter(dirname, 'rotation')
+if rotation:
+    time_unit = compute_Prot(dirname)
+    time_label = r'$\rm{P_{rot}}$'
+else:
+    time_unit = compute_tdt(dirname)
+    time_label = r'$\rm{TDT}$'
 
 # Mean rotation velocity amplitudes
 mean_vp = vals[:, :, lut[3]]
@@ -164,11 +180,20 @@ if not rvals is None:
             rval_n = rval/rnorm
         plt.plot(rval_n + np.zeros(100), yvals, 'k--')
 
+# Label averaging interval
+if rotation:
+    time_string = ('t = %.1f to %.1f ' %(t1/time_unit, t2/time_unit))\
+            + time_label + ' ' + (r'$\ (\Delta t = %.1f\ $'\
+            %((t2 - t1)/time_unit)) + time_label + ')'
+else:
+    time_string = ('t = %.3f to %.3f ' %(t1/time_unit, t2/time_unit))\
+            + time_label + (r'$\ (\Delta t = %.3f\ $'\
+            %((t2 - t1)/time_unit)) + time_label + ')'
+
 # Create a title    
 plt.title(dirname_stripped + '\n' +'DR Reynolds number, ' +\
         ('%.1f deg to %.1f deg' %(tt_lat[it1], tt_lat[it2])) +\
-          '\n' + str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8), **csfont)
-plt.legend()
+          '\n' + time_string, **csfont)
 
 # Get ticks everywhere
 plt.minorticks_on()

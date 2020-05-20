@@ -23,6 +23,9 @@ sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapl'])
 from azav_util import plot_azav_half
 from common import get_widest_range_file, get_dict, strip_dirname, my_bool
+from get_parameter import get_parameter
+from time_scales import compute_Prot, compute_tdt
+from translate_times import translate_times
 
 # Get directory name and stripped_dirname for plotting purposes
 dirname = sys.argv[1]
@@ -116,6 +119,19 @@ iter1, iter2 = di['iter1'], di['iter2']
 vals = di['vals']
 lut = di['lut']
 
+# Get the time range in sec
+t1 = translate_times(iter1, dirname, translate_from='iter')['val_sec']
+t2 = translate_times(iter2, dirname, translate_from='iter')['val_sec']
+
+# Get the baseline time unit
+rotation = get_parameter(dirname, 'rotation')
+if rotation:
+    time_unit = compute_Prot(dirname)
+    time_label = r'$\rm{P_{rot}}$'
+else:
+    time_unit = compute_tdt(dirname)
+    time_label = r'$\rm{TDT}$'
+
 # Get necessary grid info
 rr = di['rr']
 cost = di['cost']
@@ -126,7 +142,7 @@ fig_width_inches = 7. # TOTAL figure width, in inches
     # (i.e., 8x11.5 paper with 1/2-inch margins)
 margin_inches = 1./8. # margin width in inches (for both x and y) and 
     # horizontally in between figures
-margin_top_inches = 1. # wider top margin to accommodate subplot titles AND metadata
+margin_top_inches = 1.25 # wider top margin to accommodate subplot titles AND metadata
 margin_subplot_top_inches = 1. # margin to accommodate just subplot titles
 nplots = len(qv)
 nrow = np.int(np.ceil(nplots/ncol))
@@ -196,13 +212,23 @@ for iplot in range(nplots):
             logscale=this_logscale, sym=this_sym)
     ax.set_title('iq = %i' %iq, verticalalignment='bottom', **csfont)
 
+# Label averaging interval
+if rotation:
+    time_string = ('t = %.1f to %.1f ' %(t1/time_unit, t2/time_unit))\
+            + time_label + '\n' + (r'$\ (\Delta t = %.1f\ $'\
+            %((t2 - t1)/time_unit)) + time_label + ')'
+else:
+    time_string = ('t = %.3f to %.3f ' %(t1/time_unit, t2/time_unit))\
+            + time_label + (r'$\ (\Delta t = %.3f\ $'\
+            %((t2 - t1)/time_unit)) + time_label + ')'
+
 # Put some metadata in upper left
 fsize = 12
-fig.text(margin_x, 1. - 0.1*margin_top, dirname_stripped,\
+line_height = 1./4./fig_height_inches
+fig.text(margin_x, 1. - margin_y, dirname_stripped,\
          ha='left', va='top', fontsize=fsize, **csfont)
-fig.text(margin_x, 1 - 0.4*margin_top,\
-         str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8),\
-         ha='left', va='top', fontsize=fsize, **csfont)
+fig.text(margin_x, 1 - margin_y - line_height,\
+        time_string, ha='left', va='top', fontsize=fsize, **csfont)
 
 if saveplot:
     savefile = plotdir + savename + '.png'

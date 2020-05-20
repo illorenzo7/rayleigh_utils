@@ -26,6 +26,8 @@ from common import strip_dirname, get_widest_range_file, get_iters_from_file,\
 
 from plotcommon import default_axes_1by1, axis_range, xy_grid
 from get_parameter import get_parameter
+from time_scales import compute_Prot, compute_tdt
+from translate_times import translate_times
 
 # Get directory name and stripped_dirname for plotting purposes
 dirname = sys.argv[1]
@@ -40,6 +42,7 @@ varname = 'vr'
 desired_rvals = ['all']
 ir_vals = None
 logscale = True
+showplot = False
 ylog = False
 linear = False
 showplot = False
@@ -105,6 +108,19 @@ nell = di['nell']
 nm = di['nm']
 
 iter1, iter2 = di['iter1'], di['iter2']
+
+# Get the time range in sec
+t1 = translate_times(iter1, dirname, translate_from='iter')['val_sec']
+t2 = translate_times(iter2, dirname, translate_from='iter')['val_sec']
+
+# Get the baseline time unit
+rotation = get_parameter(dirname, 'rotation')
+if rotation:
+    time_unit = compute_Prot(dirname)
+    time_label = r'$\rm{P_{rot}}$'
+else:
+    time_unit = compute_tdt(dirname)
+    time_label = r'$\rm{TDT}$'
 
 # Get full power
 fullpower = di['fullpower']
@@ -193,12 +209,21 @@ for ir in range(len(ir_vals)):
     plt.tick_params(top=True, right=True, direction='in', which='both')
 
     # Make title
+    # Label averaging interval
+    if rotation:
+        time_string = ('t = %.1f to %.1f ' %(t1/time_unit, t2/time_unit))\
+                + time_label + ' ' + (r'$\ (\Delta t = %.1f\ $'\
+                %((t2 - t1)/time_unit)) + time_label + ')'
+    else:
+        time_string = ('t = %.3f to %.3f ' %(t1/time_unit, t2/time_unit))\
+                + time_label + (r'$\ (\Delta t = %.3f\ $'\
+                %((t2 - t1)/time_unit)) + time_label + ')'
     # Compute l_rms
     m_rms = np.sum(mvals*power_loc)/np.sum(power_loc)
 
     title = varlabel + '     ' + (r'$r/R_\odot\ =\ %0.3f$' %rval) +\
             '     ' + (r'$m_{\rm{rms}} = %.1f$' %m_rms) + '\n' +\
-            ('%08i to %08i' %(iter1, iter2))    
+            time_string
     plt.title(title)
 
     # Final command
@@ -206,4 +231,6 @@ for ir in range(len(ir_vals)):
 
     print ('Saving ' + plotdir + savename + ' ...')
     plt.savefig(plotdir + savename, dpi=300)
+    if showplot:
+        plt.show()
     plt.close()
