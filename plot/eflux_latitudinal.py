@@ -145,7 +145,11 @@ tw = gi.tweights
 for it in range(nt):
     # Remember the variables are index "backwards" w.r.t. it (theta
     # runs from pi to 0)
-    eqflux_int[it] = 2*np.sum(tw[it:]*integrand[it:])
+    #eqflux_int[it] = 2*np.sum(tw[it:]*integrand[it:])
+    if it <= nt//2:
+        eqflux_int[it] = 2*np.sum(tw[it:nt//2]*integrand[it:nt//2])
+    else:
+        eqflux_int[it] = -2*np.sum(tw[nt//2:it]*integrand[nt//2:it])
 
 # Create the plot; start with plotting all the energy fluxes
 lats = 180*(np.pi/2 - tt)/np.pi
