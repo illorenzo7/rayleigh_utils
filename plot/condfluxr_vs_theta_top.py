@@ -18,8 +18,11 @@ from binormalized_cbar import MidpointNormalize
 import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
-from common import get_widest_range_file, strip_dirname, get_dict, lsun
+from common import get_widest_range_file, strip_dirname, get_dict
 from get_parameter import get_parameter
+from get_eq import get_eq
+from time_scales import compute_Prot, compute_tdt
+from translate_times import translate_times
 
 # Get directory name and stripped_dirname for plotting purposes
 dirname = sys.argv[1]
@@ -40,7 +43,6 @@ minmax = None
 xminmax = None
 args = sys.argv[2:]
 nargs = len(args)
-lum = lsun
 for i in range(nargs):
     arg = args[i]
     if arg == '-minmax':
@@ -50,8 +52,6 @@ for i in range(nargs):
     elif arg == '-usefile':
         AZ_Avgs_file = args[i+1]
         AZ_Avgs_file = AZ_Avgs_file.split('/')[-1]
-    elif arg == '-lum':
-        lum = float(args[i+1])
 
 # Read in AZ_Avgs data
 print ('Getting AZ_Avgs data from ' + datadir + AZ_Avgs_file + ' ...')
@@ -60,6 +60,19 @@ iter1, iter2 = di['iter1'], di['iter2']
 vals = di['vals']
 lut = di['lut']
 cflux_azav = vals[:, :, lut[1470]]
+
+# Get the time range in sec
+t1 = translate_times(iter1, dirname, translate_from='iter')['val_sec']
+t2 = translate_times(iter2, dirname, translate_from='iter')['val_sec']
+
+# Get the baseline time unit
+rotation = get_parameter(dirname, 'rotation')
+if rotation:
+    time_unit = compute_Prot(dirname)
+    time_label = r'$\rm{P_{rot}}$'
+else:
+    time_unit = compute_tdt(dirname)
+    time_label = r'$\rm{TDT}$'
 
 # Get necessary grid info
 rr = di['rr']
@@ -79,6 +92,8 @@ ilat1 = np.argmin(np.abs(tt_lat - xmin))
 ilat2 = np.argmin(np.abs(tt_lat - xmax))
 
 # Compute luminosity that must be carried out as a flux
+eq = get_eq(dirname)
+lum = eq.lum 
 eq_flux = lum/4/np.pi/ro**2
 
 # Plot the entropy deviation vs. latitude, at several depths: 
@@ -130,10 +145,19 @@ plt.xlabel(r'$\rm{Latitude} \ (deg)$', fontsize=12)
 plt.ylabel(r'$\mathcal{F}_{{\rm{cond}},\ r}/(L_*/4\pi r_{\rm{o}}^2)$',
         fontsize=12)
 
+# Label averaging interval
+if rotation:
+    time_string = ('t = %.1f to %.1f ' %(t1/time_unit, t2/time_unit))\
+            + time_label + (r'$\ (\Delta t = %.1f\ $'\
+            %((t2 - t1)/time_unit)) + time_label + ')'
+else:
+    time_string = ('t = %.3f to %.3f ' %(t1/time_unit, t2/time_unit))\
+            + time_label + (r'$\ (\Delta t = %.3f\ $'\
+            %((t2 - t1)/time_unit)) + time_label + ')'
+
 # Make title
-plt.title(dirname_stripped + '     ' + str(iter1).zfill(8) + ' to ' +\
-        str(iter2).zfill(8) + '\n' +\
-        'radial conductive flux, top', **csfont)
+plt.title(dirname_stripped + '\nradial conductive flux, top\n' +\
+        time_string, **csfont)
 
 # Last command
 plt.tight_layout()

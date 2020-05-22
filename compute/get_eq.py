@@ -30,6 +30,7 @@ sys.path.append(os.environ['raco'])
 from reference_tools import equation_coefficients
 from rayleigh_diagnostics import ReferenceState, TransportCoeffs
 from common import c_P, thermo_R
+from get_parameter import get_parameter
 
 class eq_human_readable:
     """Rayleigh Universal Equation Coefficients Structure
@@ -54,6 +55,7 @@ class eq_human_readable:
     self.dlkappa     : logarithmic derivative of the temp. diffusivity
     self.eta :       : magnetic diffusivity 
     self.dlneta      : logarithmic derivative of magnetic diffusivity
+    self.lum         : (scalar) stellar luminosity
     """
     def __init__(self, nr):
         self.nr = nr
@@ -77,6 +79,7 @@ class eq_human_readable:
         self.dlnkappa = np.zeros(nr)
         self.eta = np.zeros(nr) # these should stay zero 
         self.dlneta = np.zeros(nr) # if magnetism = False
+        self.lum = 0.0 # luminosity
 
 def get_eq(dirname, fname='equation_coefficients'): # return an eq_human_readable class associated with
     # [dirname], either using equation_coefficients or 
@@ -108,6 +111,7 @@ def get_eq(dirname, fname='equation_coefficients'): # return an eq_human_readabl
         eq_hr.dlnkappa = eq.functions[11]
         eq_hr.eta = eq.constants[6]*eq.functions[6] # these are built-in to
         eq_hr.dlneta = eq.functions[12] # equation_coefficients as "zero"
+        eq_hr.lum = eq.constants[9]
         # if magnetism = False
         print ("get_eq(%s): got equation coefficients from '%s' file" %(dirname, fname))
     else:
@@ -144,5 +148,6 @@ def get_eq(dirname, fname='equation_coefficients'): # return an eq_human_readabl
                 pass # (magnetism = False)
         else:
             print("'transport' file not found; nu, dlnu, etc. will be zero")
+        eq.lum = get_parameter(dirname, 'luminosity')
         print ("get_eq(%s): got equation coefficients from 'reference' and 'transport' files" %dirname)
     return eq_hr

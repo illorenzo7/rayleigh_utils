@@ -20,6 +20,9 @@ sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from common import get_widest_range_file, strip_dirname, get_dict
 from get_parameter import get_parameter
+from get_eq import get_eq
+from time_scales import compute_Prot, compute_tdt
+from translate_times import translate_times
 
 # Get directory name and stripped_dirname for plotting purposes
 dirname = sys.argv[1]
@@ -57,6 +60,20 @@ vals = di['vals']
 lut = di['lut']
 cflux_azav = vals[:, :, lut[1470]]
 
+# Get the time range in sec
+t1 = translate_times(iter1, dirname, translate_from='iter')['val_sec']
+t2 = translate_times(iter2, dirname, translate_from='iter')['val_sec']
+
+# Get the baseline time unit
+rotation = get_parameter(dirname, 'rotation')
+if rotation:
+    time_unit = compute_Prot(dirname)
+    time_label = r'$\rm{P_{rot}}$'
+else:
+    time_unit = compute_tdt(dirname)
+    time_label = r'$\rm{TDT}$'
+
+
 # Get necessary grid info
 rr = di['rr']
 ri = di['ri']
@@ -78,7 +95,8 @@ for i in range(nrvals):
             label=r'$r/r_o=%0.3f$' %(rr[ir_to_plot]/ro))
 
 # Plot the luminosity that must be driven through (heat) as a flux:
-lum = get_parameter(dirname, 'luminosity')
+eq = get_eq(dirname)
+lum = eq.lum 
 Flux_in = lum/4/np.pi/ri**2
 plt.plot(tt_lat, Flux_in*np.ones(nt), 'k--', alpha=0.3, label=r'$L_*/4\pi r_i^2$')
 
@@ -104,10 +122,19 @@ plt.xlabel(r'$\rm{Latitude} \ (^\circ)$', fontsize=12)
 plt.ylabel(r'$\mathcal{F}_{{\rm{cond}},r} = -\kappa \overline{\rho}\overline{T}\partial\langle S\rangle_\phi/\partial r\ [\rm{erg}\ \rm{cm}^{-2}\ \rm{s}^{-1}]$',\
         fontsize=12)
 
+# Label averaging interval
+if rotation:
+    time_string = ('t = %.1f to %.1f ' %(t1/time_unit, t2/time_unit))\
+            + time_label  + (r'$\ (\Delta t = %.1f\ $'\
+            %((t2 - t1)/time_unit)) + time_label + ')'
+else:
+    time_string = ('t = %.3f to %.3f ' %(t1/time_unit, t2/time_unit))\
+            + time_label + (r'$\ (\Delta t = %.3f\ $'\
+            %((t2 - t1)/time_unit)) + time_label + ')'
+
 # Make title
-plt.title(dirname_stripped + '     ' + str(iter1).zfill(8) + ' to ' +\
-        str(iter2).zfill(8) + '\n' +\
-        'radial conductive flux, bottom', **csfont)
+plt.title(dirname_stripped + '\nradial conductive flux, bottom\n' +\
+        time_string, **csfont)
 
 # Last command
 plt.tight_layout()

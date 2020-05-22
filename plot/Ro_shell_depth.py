@@ -21,6 +21,7 @@ from common import get_widest_range_file, strip_dirname,\
 from get_length_scales import get_length_scales
 from get_parameter import get_parameter
 from time_scales import compute_Prot
+from translate_times import translate_times
 
 # Get the run directory on which to perform the analysis
 dirname = sys.argv[1]
@@ -64,6 +65,19 @@ rr = di['rr']
 nr = di['nr']
 iter1, iter2 = di['iter1'], di['iter2']
 shell_depth = di['shell_depth']
+
+# Get the time range in sec
+t1 = translate_times(iter1, dirname, translate_from='iter')['val_sec']
+t2 = translate_times(iter2, dirname, translate_from='iter')['val_sec']
+
+# Get the baseline time unit
+rotation = get_parameter(dirname, 'rotation')
+if rotation:
+    time_unit = compute_Prot(dirname)
+    time_label = r'$\rm{P_{rot}}$'
+else:
+    time_unit = compute_tdt(dirname)
+    time_label = r'$\rm{TDT}$'
 
 # Get the velocity amplitude
 the_file = get_widest_range_file(datadir, 'Shell_Avgs')
@@ -133,9 +147,19 @@ if not rvals is None:
 #        plt.ylim(ymin, ymax)
         plt.plot(rval_n + np.zeros(100), yvals, 'k--')
 
+# Label averaging interval
+if rotation:
+    time_string = ('t = %.1f to %.1f ' %(t1/time_unit, t2/time_unit))\
+            + time_label + ' ' + (r'$\ (\Delta t = %.1f\ $'\
+            %((t2 - t1)/time_unit)) + time_label + ')'
+else:
+    time_string = ('t = %.3f to %.3f ' %(t1/time_unit, t2/time_unit))\
+            + time_label + (r'$\ (\Delta t = %.3f\ $'\
+            %((t2 - t1)/time_unit)) + time_label + ')'
+
 # Make title
-plt.title(dirname_stripped + '\n' + 'Shell-depth Rossby numbers, ' +\
-          str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8), **csfont)
+plt.title(dirname_stripped + '\n' + 'Shell-depth Rossby number\n' +\
+          time_string, **csfont)
 
 # Create a see-through legend
 plt.legend(shadow=True, fontsize=14, framealpha=0.5)

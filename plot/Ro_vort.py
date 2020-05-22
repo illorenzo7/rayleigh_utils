@@ -21,6 +21,7 @@ from common import get_widest_range_file, strip_dirname,\
 from get_length_scales import get_length_scales
 from get_parameter import get_parameter
 from time_scales import compute_Prot
+from translate_times import translate_times
 
 # Get the run directory on which to perform the analysis
 dirname = sys.argv[1]
@@ -62,7 +63,6 @@ Om0 = 2.*np.pi/compute_Prot(dirname)
 di = get_length_scales(dirname)
 rr = di['rr']
 nr = di['nr']
-iter1, iter2 = di['iter1'], di['iter2']
 L_omr = di['L_omr']
 L_omh = di['L_omh']
 L_om = di['L_om']
@@ -74,6 +74,20 @@ di_sh = get_dict(datadir + the_file)
 vals = di_sh['vals']
 lut = di_sh['lut']
 vamp = np.sqrt(vals[:, lut[422]] + vals[:, lut[423]] + vals[:, lut[424]])
+iter1, iter2 = di_sh['iter1'], di_sh['iter2']
+
+# Get the time range in sec
+t1 = translate_times(iter1, dirname, translate_from='iter')['val_sec']
+t2 = translate_times(iter2, dirname, translate_from='iter')['val_sec']
+
+# Get the baseline time unit
+rotation = get_parameter(dirname, 'rotation')
+if rotation:
+    time_unit = compute_Prot(dirname)
+    time_label = r'$\rm{P_{rot}}$'
+else:
+    time_unit = compute_tdt(dirname)
+    time_label = r'$\rm{TDT}$'
 
 # Compute the spectral Rossby number
 Ror_vort = vamp/(2.*Om0*L_omr)
@@ -131,9 +145,19 @@ if not rvals is None:
 #        plt.ylim(ymin, ymax)
         plt.plot(rval_n + np.zeros(100), yvals, 'k--')
 
+# Label averaging interval
+if rotation:
+    time_string = ('t = %.1f to %.1f ' %(t1/time_unit, t2/time_unit))\
+            + time_label + ' ' + (r'$\ (\Delta t = %.1f\ $'\
+            %((t2 - t1)/time_unit)) + time_label + ')'
+else:
+    time_string = ('t = %.3f to %.3f ' %(t1/time_unit, t2/time_unit))\
+            + time_label + (r'$\ (\Delta t = %.3f\ $'\
+            %((t2 - t1)/time_unit)) + time_label + ')'
+
 # Make title
-plt.title(dirname_stripped + '\n' + 'Vorticity Rossby numbers, ' +\
-          str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8), **csfont)
+plt.title(dirname_stripped + '\n' + 'Vorticity Rossby numbers\n' +\
+        time_string, **csfont)
 
 # Create a see-through legend
 plt.legend(shadow=True, fontsize=14, framealpha=0.5)

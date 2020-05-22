@@ -16,9 +16,12 @@ import matplotlib.pyplot as plt
 plt.rcParams['mathtext.fontset'] = 'dejavuserif'
 csfont = {'fontname':'DejaVu Serif'}
 import sys, os
+sys.path.append(os.environ['raco'])
 from get_parameter import get_parameter
 from common import strip_dirname, get_widest_range_file,\
         get_iters_from_file, get_dict, rsun
+from time_scales import compute_Prot, compute_tdt
+from translate_times import translate_times
 
 # Get directory name and stripped_dirname for plotting purposes
 dirname = sys.argv[1]
@@ -85,6 +88,19 @@ cost, sint = di['cost'], di['sint']
 xx = di['xx']
 ri = di['ri']
 
+# Get the time range in sec
+t1 = translate_times(iter1, dirname, translate_from='iter')['val_sec']
+t2 = translate_times(iter2, dirname, translate_from='iter')['val_sec']
+
+# Get the baseline time unit
+rotation = get_parameter(dirname, 'rotation')
+if rotation:
+    time_unit = compute_Prot(dirname)
+    time_label = r'$\rm{P_{rot}}$'
+else:
+    time_unit = compute_tdt(dirname)
+    time_label = r'$\rm{TDT}$'
+
 nq = len(qvals)
 ncol = 3
 nrow = int(np.ceil(nq/ncol))
@@ -146,7 +162,29 @@ for qval in qvals:
 
     iplot += 1
 
+# Label averaging interval
+if rotation:
+    time_string = ('t = %.1f to %.1f ' %(t1/time_unit, t2/time_unit))\
+            + time_label + '\n' + (r'$\ (\Delta t = %.1f\ $'\
+            %((t2 - t1)/time_unit)) + time_label + ')'
+else:
+    time_string = ('t = %.3f to %.3f ' %(t1/time_unit, t2/time_unit))\
+            + time_label + (r'$\ (\Delta t = %.3f\ $'\
+            %((t2 - t1)/time_unit)) + time_label + ')'
+
+# Put some metadata in upper left
+fig_width_inches, fig_height_inches = fig.get_size_inches()
+margin_x = 1./8./fig_width_inches
+margin_y = 1./8./fig_height_inches
+fsize = 12
+line_height = 1./4./fig_height_inches
+fig.text(margin_x, 1. - margin_y, dirname_stripped,\
+         ha='left', va='top', fontsize=fsize, **csfont)
+fig.text(margin_x, 1 - margin_y - line_height,\
+        time_string, ha='left', va='top', fontsize=fsize, **csfont)
+
 plt.xlim((xmin, xmax))
 plt.tight_layout()
+plt.subplots_adjust(top=0.7)
 plt.legend(title='latitude')
 plt.show()

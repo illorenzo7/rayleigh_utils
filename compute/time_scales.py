@@ -34,7 +34,7 @@ def compute_tdt(dirname, mag=False, tach=False):
         else:
             diff = trans.kappa
         rr = trans.radius
-        print ("compute_tdt(): Got diffusion time from 'transport' file")
+        print ("compute_tdt(%s, mag=%s, tach=%s): Got diffusion time from 'transport' file" %(dirname, mag, tach))
     except:
         eq = equation_coefficients()
         eq.read(dirname + '/equation_coefficients')
@@ -43,7 +43,7 @@ def compute_tdt(dirname, mag=False, tach=False):
         else:
             diff = eq.constants[5]*eq.functions[4]
         rr = eq.radius
-        print ("compute_tdt(): Got diffusion time from 'equation_coefficients' file")
+        print ("compute_tdt(%s, mag=%s, tach=%s): Got diffusion time from 'equation_coefficients' file" %(dirname, mag, tach))
 
     # Compute and return the diffusion time
     if tach:
@@ -67,10 +67,10 @@ def compute_tdt(dirname, mag=False, tach=False):
 def compute_Prot(dirname):
     try:
         Om0 = get_parameter(dirname, 'angular_velocity')
-        print ("compute_Prot(): Got Prot from 'main_input' file")
+        print ("compute_Prot(%s): Got Prot from 'main_input' file" %dirname)
     except:
         eq = equation_coefficients()
         eq.read(dirname + '/equation_coefficients')
         Om0 = eq.constants[0]/2.
-        print ("compute_Prot(): Got Prot from 'equation_coefficients' file")
+        print ("compute_Prot(%s): Got Prot from 'equation_coefficients' file" %dirname)
     return 2*np.pi/Om0

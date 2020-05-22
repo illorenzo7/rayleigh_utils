@@ -18,9 +18,13 @@ plt.rcParams['mathtext.fontset'] = 'dejavuserif'
 csfont = {'fontname':'DejaVu Serif'}
 import sys, os
 sys.path.append(os.environ['rapp'])
-from rayleigh_diagnostics import TransportCoeffs, ReferenceState
+sys.path.append(os.environ['raco'])
 from common import strip_dirname, get_widest_range_file,\
         get_iters_from_file, get_dict, rsun
+from get_parameter import get_parameter
+from time_scales import compute_Prot, compute_tdt
+from translate_times import translate_times
+from get_eq import get_eq
 
 # Get directory name and stripped_dirname for plotting purposes
 dirname = sys.argv[1]
@@ -74,6 +78,19 @@ lut = di['lut']
 iter1, iter2 = di['iter1'], di['iter2']
 rr = di['rr']
 
+# Get the time range in sec
+t1 = translate_times(iter1, dirname, translate_from='iter')['val_sec']
+t2 = translate_times(iter2, dirname, translate_from='iter')['val_sec']
+
+# Get the baseline time unit
+rotation = get_parameter(dirname, 'rotation')
+if rotation:
+    time_unit = compute_Prot(dirname)
+    time_label = r'$\rm{P_{rot}}$'
+else:
+    time_unit = compute_tdt(dirname)
+    time_label = r'$\rm{TDT}$'
+
 # Derivative grid info
 nr = len(rr)
 ri, ro = np.min(rr), np.max(rr)
@@ -87,14 +104,13 @@ vsq_p = vals[:, lut[416]] - vals[:, lut[424]]
 vsq = vsq_r + vsq_t + vsq_p
 
 # Get molecular diffusivity from 'transport' file
-t = TransportCoeffs(dirname + '/transport')
-eta = t.eta
+eq = get_eq(dirname)
+eta = eq.eta
 
 # Compute convective Reynolds number
 if use_hrho:
-    ref = ReferenceState(dirname + '/reference')
-    hrho = -1./ref.dlnrho
-    Rm = np.sqrt(vsq)*hrho/nu
+    hrho = -1./eq.dlnrho
+    Rm = np.sqrt(vsq)*hrho/eta
     Rm_r = np.sqrt(vsq_r)*hrho/eta
     Rm_t = np.sqrt(vsq_t)*hrho/eta
     Rm_p = np.sqrt(vsq_p)*hrho/eta
@@ -180,9 +196,19 @@ if not rvals is None:
             rval_n = rval/rnorm
         plt.plot(rval_n + np.zeros(100), yvals, 'k--')
 
+# Label averaging interval
+if rotation:
+    time_string = ('t = %.1f to %.1f ' %(t1/time_unit, t2/time_unit))\
+            + time_label + ' ' + (r'$\ (\Delta t = %.1f\ $'\
+            %((t2 - t1)/time_unit)) + time_label + ')'
+else:
+    time_string = ('t = %.3f to %.3f ' %(t1/time_unit, t2/time_unit))\
+            + time_label + (r'$\ (\Delta t = %.3f\ $'\
+            %((t2 - t1)/time_unit)) + time_label + ')'
+
 # Create a title    
-plt.title(dirname_stripped + '\n' +'Mean-Flow Reynolds number, ' +\
-          str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8), **csfont)
+plt.title(dirname_stripped + '\n' +'Mean-field magnetic Reynolds number\n'\
+        + time_string, **csfont)
 plt.legend()
 
 # Get ticks everywhere

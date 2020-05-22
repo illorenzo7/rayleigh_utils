@@ -20,7 +20,7 @@ def translate_times(time, dirname, translate_from='iter'):
     if translate_from == 'iter': # just read in individual G_Avgs file
         file_list, int_file_list, nfiles = get_file_lists(dirname + '/G_Avgs')
         if nfiles > 0: # first see if we can use the G_Avgs data
-            print ("translate_times(): translating using G_Avgs data")
+            #print ("translate_times(): translating using G_Avgs data")
             funct = G_Avgs
             radatadir = dirname + '/G_Avgs'
             iiter = np.argmin(np.abs(int_file_list - time))
@@ -34,7 +34,7 @@ def translate_times(time, dirname, translate_from='iter'):
             file_list, int_file_list, nfiles = get_file_lists(dirname +\
                     '/Shell_Slices')
             if nfiles > 0: # next see if we can use Shell_Slices data
-                print ("translate_times(): translating using Shell_Slices data")
+                #print ("translate_times(): translating using Shell_Slices data")
                 funct = Shell_Slices
                 radatadir = dirname + '/Shell_Slices'
                 iiter = np.argmin(np.abs(int_file_list - time))
@@ -49,7 +49,7 @@ def translate_times(time, dirname, translate_from='iter'):
                 try:        
                     the_file = get_widest_range_file(datadir, 'trace_G_Avgs')
                     di = get_dict(datadir + the_file)
-                    print ("translate_times(): translating using trace_G_Avgs file")
+                    #print ("translate_times(): translating using trace_G_Avgs file")
                 except:
                     the_file = get_widest_range_file(datadir, 'time-latitude')
                     di = get_dict(datadir + the_file)
@@ -71,11 +71,11 @@ def translate_times(time, dirname, translate_from='iter'):
         try:        
             the_file = get_widest_range_file(datadir, 'trace_G_Avgs')
             di = get_dict(datadir + the_file)
-            print ("translate_times(): translating using trace_G_Avgs file")
+            #print ("translate_times(): translating using trace_G_Avgs file")
         except:
             the_file = get_widest_range_file(datadir, 'time-latitude')
             di = get_dict(datadir + the_file)
-            print ("translate_times(): translating using time-latitude file")
+            #print ("translate_times(): translating using time-latitude file")
 
         # Get times and iters from trace file
         times = di['times']
