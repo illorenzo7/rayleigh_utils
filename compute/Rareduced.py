@@ -38,24 +38,34 @@ Ek_vs_r = nu/(2*H**2*Om0) # note there is technically a 1/sin(theta) in the
 # Definition of Ek, but this averages to 1 over latitude
 Ek = np.sum(rw*Ek_vs_r)
 
-# Read in one Shell_Avgs file to get heat flux,
-# the last one just because
-files = os.listdir(dirname + '/Shell_Avgs')
-files.sort()
-sh = Shell_Avgs(dirname + '/Shell_Avgs/' + files[-1], '')
-print ("Getting F_rad from Shell_Avgs/" + files[-1])
+try:
+    # By default, read in one Shell_Avgs file to get heat flux,
+    # the last one just because
+    files = os.listdir(dirname + '/Shell_Avgs')
+    files.sort()
+    sh = Shell_Avgs(dirname + '/Shell_Avgs/' + files[-1], '')
+    F_rad = sh.vals[:, 0, sh.lut[1433], 0]
+    rr = sh.radius
+    print ("Got F_rad and rr from Shell_Avgs/" + files[-1])
+except:
+    # otherwise, get data from time-averaged data product
+    datadir = dirname + '/data/'
+    the_file = get_widest_range_file(datadir, 'Shell_Avgs')
+    di = get_dict(datadir + the_file)
+    F_rad = di['vals'][:, di['lut'][1433]]
+    rr = di['rr']
+    print ("Got F_rad and rr from ", the_file)
 
 # Get the shell depth:
-H = np.max(sh.radius) - np.min(sh.radius)
+H = np.max(rr) - np.min(rr)
 
 # Read in necessary radial profiles for the flux Rayleigh number
 # "vsr" for "profile vs radius"
-F_rad = sh.vals[:, 0, sh.lut[1433], 0]
 
 # Get the luminosity from F_rad
-lum = F_rad[-1]*4*np.pi*np.min(sh.radius)**2
+lum = F_rad[-1]*4*np.pi*np.min(rr)**2
 print ("Luminosity calculated from F_rad is %1.3e" %lum)
-F_vsr = lum/4/np.pi/sh.radius**2 - F_rad
+F_vsr = lum/4/np.pi/rr**2 - F_rad
 
 # Get reference info from reference/transport or equation_coefficients
 cp = 3.5e8
