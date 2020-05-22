@@ -19,22 +19,50 @@ def translate_times(time, dirname, translate_from='iter'):
     # First, if translating from an iter, just use an individual data file
     if translate_from == 'iter': # just read in individual G_Avgs file
         file_list, int_file_list, nfiles = get_file_lists(dirname + '/G_Avgs')
-        if nfiles == 0: # probably this is a movie, for which there are no G_Avgs, but Shell_Slices
-            file_list, int_file_list, nfiles = get_file_lists(dirname + '/Shell_Slices')
-            print ("translate_times(): translating using Shell_Slices data")
-            funct = Shell_Slices
-            radatadir = dirname + '/Shell_Slices'
-        else:
+        if nfiles > 0: # first see if we can use the G_Avgs data
             print ("translate_times(): translating using G_Avgs data")
             funct = G_Avgs
             radatadir = dirname + '/G_Avgs'
-        iiter = np.argmin(np.abs(int_file_list - time))
-        a = funct(radatadir + '/' + file_list[iiter], '')
-        jiter = np.argmin(np.abs(a.iters - time))
-        val_sec = a.time[jiter]
-        val_iter = a.iters[jiter]
-        val_day = val_sec/86400.
-        val_unit = val_sec/time_unit
+            iiter = np.argmin(np.abs(int_file_list - time))
+            a = funct(radatadir + '/' + file_list[iiter], '')
+            jiter = np.argmin(np.abs(a.iters - time))
+            val_sec = a.time[jiter]
+            val_iter = a.iters[jiter]
+            val_day = val_sec/86400.
+            val_unit = val_sec/time_unit
+        else:
+            file_list, int_file_list, nfiles = get_file_lists(dirname +\
+                    '/Shell_Slices')
+            if nfiles > 0: # next see if we can use Shell_Slices data
+                print ("translate_times(): translating using Shell_Slices data")
+                funct = Shell_Slices
+                radatadir = dirname + '/Shell_Slices'
+                iiter = np.argmin(np.abs(int_file_list - time))
+                a = funct(radatadir + '/' + file_list[iiter], '')
+                jiter = np.argmin(np.abs(a.iters - time))
+                val_sec = a.time[jiter]
+                val_iter = a.iters[jiter]
+                val_day = val_sec/86400.
+                val_unit = val_sec/time_unit
+            else: # Finally use trace_G_Avgs or time-latitude data
+                datadir = dirname + '/data/'
+                try:        
+                    the_file = get_widest_range_file(datadir, 'trace_G_Avgs')
+                    di = get_dict(datadir + the_file)
+                    print ("translate_times(): translating using trace_G_Avgs file")
+                except:
+                    the_file = get_widest_range_file(datadir, 'time-latitude')
+                    di = get_dict(datadir + the_file)
+                    print ("translate_times(): translating using time-latitude file")
+
+                # Get times and iters from trace file
+                times = di['times']
+                iters = di['iters']
+                ind = np.argmin(np.abs(iters - time))
+                val_sec = times[ind]
+                val_iter = iters[ind]
+                val_day = times[ind]/86400.
+                val_unit = times[ind]/time_unit
 
     else: # otherwise, hopefully you computed some time traces beforehand!
         # Get the data directory

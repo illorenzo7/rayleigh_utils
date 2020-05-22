@@ -39,10 +39,14 @@ ro = 6.5860209e10 # Radii consistent with the bottom 3 density scale
 allthrees_start = 6387.05 # start time for all-threes dynamo cases
 
 def get_file_lists(radatadir):
-    file_list = os.listdir(radatadir)
-    file_list.sort()
-    nfiles = len(file_list)
-    file_list = np.array(file_list)
+    try:
+        file_list = os.listdir(radatadir)
+        file_list.sort()
+        nfiles = len(file_list)
+        file_list = np.array(file_list)
+    except: # if this fails, the directory must not have existed
+        nfiles = 0
+        file_list = np.array([])
     
     # Create an integer file list
     int_file_list = np.zeros(len(file_list), dtype=int)
