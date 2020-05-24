@@ -40,8 +40,11 @@ if not os.path.isdir(plotdir):
 
 # Set defaults
 minmax = None
+minmaxrz = None
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
 plotcontours = True
+rbcz = None
+symlog = False
 
 # Read in CLAs (if any) to change default variable ranges and other options
 args = sys.argv[2:]
@@ -50,6 +53,8 @@ for i in range(nargs):
     arg = args[i]
     if arg == '-minmax':
         minmax = float(args[i+1]), float(args[i+2])
+    elif arg == '-minmaxrz':
+        minmaxrz = float(args[i+1]), float(args[i+2])
     elif arg == '-nlevs':
         my_nlevs = int(args[i+1])
     elif arg == '-usefile':
@@ -57,6 +62,10 @@ for i in range(nargs):
         AZ_Avgs_file = AZ_Avgs_file.split('/')[-1]
     elif arg == '-nocontour':
         plotcontours = False
+    elif arg == '-rbcz':
+        rbcz = float(args[i+1])
+    elif arg == '-symlog':
+        symlog = True
 
 # Read in AZ_Avgs data
 print ('Getting data from ' + datadir + AZ_Avgs_file + ' ...')
@@ -82,35 +91,39 @@ psi = streamfunction(rho*vr_av, rho*vt_av, rr, cost)
 # Make CCW negative and CW positive
 rhovm *= np.sign(psi)
 
-if minmax is None:
-    trimmed_rhovm = trim_field(rhovm, rr, cost)
-    std = np.std(trimmed_rhovm)
-    nstd = 3.
-    minmax = -nstd*std, nstd*std
+#if minmax is None:
+#    trimmed_rhovm = trim_field(rhovm, rr, cost)
+#    std = np.std(trimmed_rhovm)
+#    nstd = 3.
+#    minmax = -nstd*std, nstd*std
 
 # Create plot
 subplot_width_inches = 2.5
 subplot_height_inches = 5.
-margin_inches = 1/8
-margin_top_inches = 1 # larger top margin to make room for titles
+margin_inches = 1./8.
+margin_top_inches = 1. # larger top margin to make room for titles
+margin_bottom_inches = 1./2. # larger bottom margin to make room possible
+    # second set of saturation values
 
 fig_width_inches = subplot_width_inches + 2*margin_inches
-fig_height_inches = subplot_height_inches + margin_top_inches + margin_inches
+fig_height_inches = subplot_height_inches + margin_top_inches +\
+        margin_bottom_inches
 
 fig_aspect = fig_height_inches/fig_width_inches
 margin_x = margin_inches/fig_width_inches
 margin_y = margin_inches/fig_height_inches
 margin_top = margin_top_inches/fig_height_inches
+margin_bottom = margin_bottom_inches/fig_height_inches
 subplot_width = subplot_width_inches/fig_width_inches
 subplot_height = subplot_height_inches/fig_height_inches
 
 fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
-ax = fig.add_axes((margin_x, margin_y, subplot_width, subplot_height))
+ax = fig.add_axes((margin_x, margin_bottom, subplot_width, subplot_height))
 
 # Plot mass flux
 plot_azav (rhovm, rr, cost, fig=fig, ax=ax,\
     units = r'$\rm{g}\ \rm{cm}^{-2}\ \rm{s}^{-1}$', plotcontours=False,\
-    minmax=minmax)
+    minmax=minmax, minmaxrz=minmaxrz, rbcz=rbcz, symlog=symlog)
 
 # Plot streamfunction contours, if desired
 if plotcontours:
@@ -119,7 +132,7 @@ if plotcontours:
     levels = (-maxabs/2., -maxabs/4., -lilbit*maxabs, 0., lilbit*maxabs,\
             maxabs/4., maxabs/2.)
     plot_azav (psi, rr, cost, fig=fig, ax=ax, plotfield=False,\
-        levels=levels)
+        levels=levels, symlog=symlog)
 
 # Make title
 fsize = 12
