@@ -22,6 +22,9 @@ from azav_util import plot_azav, streamfunction
 from common import get_widest_range_file, strip_dirname, get_dict,\
         trim_field
 from get_eq import get_eq
+from get_parameter import get_parameter
+from time_scales import compute_Prot, compute_tdt
+from translate_times import translate_times
 
 # Get directory name and stripped_dirname for plotting purposes
 dirname = sys.argv[1]
@@ -49,6 +52,7 @@ AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
 plotcontours = True
 rbcz = None
 symlog = False
+plotlatlines = False
 
 # Read in CLAs (if any) to change default variable ranges and other options
 args = sys.argv[2:]
@@ -78,6 +82,8 @@ for i in range(nargs):
         linthreshrz = float(args[i+1])
     elif arg == '-linscalerz':
         linscalerz = float(args[i+1])
+    elif arg == '-plotlats':
+        plotlatlines = True
 
 # Read in AZ_Avgs data
 print ('Getting data from ' + datadir + AZ_Avgs_file + ' ...')
@@ -90,6 +96,19 @@ rr = di['rr']
 tt = di['tt']
 cost = di['cost']
 sint = di['sint']
+
+# Get the time range in sec
+t1 = translate_times(iter1, dirname, translate_from='iter')['val_sec']
+t2 = translate_times(iter2, dirname, translate_from='iter')['val_sec']
+
+# Get the baseline time unit
+rotation = get_parameter(dirname, 'rotation')
+if rotation:
+    time_unit = compute_Prot(dirname)
+    time_label = r'$\rm{P_{rot}}$'
+else:
+    time_unit = compute_tdt(dirname)
+    time_label = r'$\rm{TDT}$'
 
 vr_av, vt_av, vp_av = vals[:, :, lut[1]], vals[:, :, lut[2]],\
         vals[:, :, lut[3]]
@@ -113,7 +132,7 @@ rhovm *= np.sign(psi)
 subplot_width_inches = 2.5
 subplot_height_inches = 5.
 margin_inches = 1./8.
-margin_top_inches = 1. # larger top margin to make room for titles
+margin_top_inches = 1.25 # larger top margin to make room for titles
 margin_bottom_inches = 0.75*(2 - (rbcz is None)) 
     # larger bottom margin to make room for colorbar(s)
 
@@ -137,7 +156,7 @@ plot_azav (rhovm, rr, cost, fig=fig, ax=ax,\
     units = r'$\rm{g}\ \rm{cm}^{-2}\ \rm{s}^{-1}$', plotcontours=False,\
     minmax=minmax, minmaxrz=minmaxrz, rbcz=rbcz, symlog=symlog,\
     linthresh=linthresh, linscale=linscale, linthreshrz=linthreshrz,\
-    linscalerz=linscalerz)
+    linscalerz=linscalerz, plotlatlines=plotlatlines)
 
 # Plot streamfunction contours, if desired
 if plotcontours:
@@ -148,6 +167,16 @@ if plotcontours:
     plot_azav (psi, rr, cost, fig=fig, ax=ax, plotfield=False,\
         levels=levels, symlog=symlog)
 
+# Label averaging interval
+if rotation:
+    time_string = ('t = %.1f to %.1f ' %(t1/time_unit, t2/time_unit))\
+            + time_label + '\n' + (r'$\ (\Delta t = %.1f\ $'\
+            %((t2 - t1)/time_unit)) + time_label + ')'
+else:
+    time_string = ('t = %.3f to %.3f ' %(t1/time_unit, t2/time_unit))\
+            + time_label + (r'$\ (\Delta t = %.3f\ $'\
+            %((t2 - t1)/time_unit)) + time_label + ')'
+
 # Make title
 fsize = 12
 fig.text(margin_x, 1 - 1/8*margin_top, dirname_stripped,\
@@ -156,8 +185,7 @@ fig.text(margin_x, 1 - 3/8*margin_top,\
          r'$|\langle\overline{\rho}\mathbf{v}_m\rangle|$',\
          ha='left', va='top', fontsize=fsize, **csfont)
 fig.text(margin_x, 1 - 5/8*margin_top,\
-         str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8),\
-         ha='left', va='top', fontsize=fsize, **csfont)
+        time_string, ha='left', va='top', fontsize=fsize, **csfont)
 
 savefile = plotdir + dirname_stripped + '_mercirc_' + str(iter1).zfill(8) +\
     '_' + str(iter2).zfill(8) + '.png'

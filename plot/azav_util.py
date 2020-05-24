@@ -454,6 +454,12 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
         plt.plot(rr[-1]/ro*sint, rr[-1]/ro*cost, 'k', linewidth=lw_scaling)
         plt.plot([0.,0.], [rr[-1]/ro, rr[0]/ro], 'k', linewidth=lw_scaling)
         plt.plot([0.,0.], [-rr[-1]/ro, -rr[0]/ro], 'k', linewidth=lw_scaling)
+        # Look for consecutive repeated values in radius array: 
+        # these will correspond to domain divisions, which should be plotted
+        for ir in range(1, nr):
+            if rr[ir] == rr[ir - 1]:
+                plt.plot(rr[ir]/ro*sint, rr[ir]/ro*cost, 'k',\
+                        linewidth=0.5*lw_scaling)
 
     # Plot latitude lines, if desired
     if plotlatlines: 
@@ -468,6 +474,12 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
                     linewidth=contour_lw)
 
     # Plot various radii, if desired
+    # If rbcz has been provided, it should be one of the radii plotted
+    if not rbcz is None:
+        if rvals is None:
+            rvals = []
+        rvals.append(rbcz)
+    
     if not rvals is None:
         for rval in rvals: 
             plt.sca(ax)
