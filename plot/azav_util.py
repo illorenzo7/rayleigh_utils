@@ -167,7 +167,7 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
                         levels=np.linspace(minmax[0], minmax[1], 150))                
         else:
             if logscale:
-                # First plot field in CZ (for which we get the image handle)
+                # First plot field in CZ
                 log_min, log_max = np.log10(minmax[0]), np.log10(minmax[1])
                 levs = np.logspace(log_min, log_max, 150)
                 im = ax.contourf(xxcz, zzcz, fieldcz, cmap='Greys',\
@@ -177,7 +177,7 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
                 log_min, log_max = np.log10(minmaxrz[0]),\
                         np.log10(minmaxrz[1])
                 levs = np.logspace(log_min, log_max, 150)
-                ax.contourf(xxrz, zzrz, fieldrz, cmap='Greys',\
+                imrz = ax.contourf(xxrz, zzrz, fieldrz, cmap='Greys',\
                     norm=colors.LogNorm(vmin=minmaxrz[0],\
                     vmax=minmaxrz[1]), levels=levs)  
             elif posdef:
@@ -187,7 +187,7 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
                         levels=levs)
                 # Then plot field in RZ
                 levs = np.linspace(minmaxrz[0], minmaxrz[1], 150)
-                ax.contourf(xxrz, zzrz, fieldrz, cmap='plasma',\
+                imrz = ax.contourf(xxrz, zzrz, fieldrz, cmap='plasma',\
                         levels=levs)
             elif symlog:
                 # First plot field in CZ
@@ -235,7 +235,7 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
                         nlevs_per_interval)
                 levs = np.hstack((levels_neg, levels_mid, levels_pos))
 
-                ax.contourf(xxrz, zzrz, fieldrz, cmap='RdYlBu_r',\
+                imrz = ax.contourf(xxrz, zzrz, fieldrz, cmap='RdYlBu_r',\
                     norm=colors.SymLogNorm(linthresh=linthreshrz,\
                     linscale=linscalerz, vmin=minmaxrz[0],\
                     vmax=minmaxrz[1]), levels=levs)
@@ -244,37 +244,25 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
                 im = ax.contourf(xxcz, zzcz, fieldcz, cmap='RdYlBu_r',\
                         levels=np.linspace(minmax[0], minmax[1], 150)) 
                 # Then plot field in RZ
-                ax.contourf(xxrz, zzrz, fieldrz, cmap='RdYlBu_r',\
+                imrz = ax.contourf(xxrz, zzrz, fieldrz, cmap='RdYlBu_r',\
                         levels=np.linspace(minmaxrz[0], minmaxrz[1], 150)) 
 
         if plot_cbar:
-            # Get the position of the axes on the figure
-            ax_left, ax_right, ax_bottom, ax_top = axis_range(ax)
-            ax_width = ax_right - ax_left
-            ax_height = ax_top - ax_bottom
+            ax_xmin, ax_xmax, ax_ymin, ax_ymax = axis_range(ax)
+            ax_delta_x = ax_xmax - ax_xmin
+            cbar_aspect = 1./20.
+            cbar_width = 0.75*ax_delta_x # make cbar a fraction as long as\
+                    # plot is wide            
             fig_width_inches, fig_height_inches = fig.get_size_inches()
             fig_aspect = fig_height_inches/fig_width_inches
-          
-            # Set the colorbar ax to be in the "cavity" of the meridional 
-            # plane
-            # The colorbar height is set by making sure it "fits" in the 
-            # cavity
-            beta = ri/ro
-            cavity_height = ax_height*beta
-            cbax_center_y = ax_bottom + ax_height/2.
-            cbax_aspect = 20.
-            cbax_height = 0.5*cavity_height
-            #cbax_width = cbax_height/cbax_aspect/ax_aspect
-            cbax_width = cbax_height*fig_aspect/cbax_aspect
-            
-            cbax_left = ax_left + 0.1*ax_width
-            cbax_bottom = cbax_center_y - cbax_height/2. 
-            
-            cbaxes = fig.add_axes([cbax_left, cbax_bottom,\
-                           cbax_width, cbax_height])
-            cbar = plt.colorbar(im, cax=cbaxes)
-    
-            cbaxes.tick_params(labelsize=cbar_fs)
+            cbar_height = cbar_width*cbar_aspect/fig_aspect
+            cbar_bottom = ax_ymin - 2.5*cbar_height
+            cbar_left = ax_xmin + 0.5*ax_delta_x - 0.5*cbar_width
+            cax = fig.add_axes((cbar_left, cbar_bottom, cbar_width,\
+                    cbar_height))        
+            cbar = plt.colorbar(im, cax=cax, orientation='horizontal')
+                
+            cax.tick_params(labelsize=cbar_fs)
             cbar.ax.tick_params(labelsize=cbar_fs)   
             # font size for the ticks
 
@@ -301,10 +289,10 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
                 ticklabels = []
                 for i in range(nticks):
                     ticklabels.append(r'')
-                ticklabels[0] = sci_format(minmax[0])
+#                ticklabels[0] = sci_format(minmax[0])
                 ticklabels[nlog] = sci_format(-linthresh)
-                ticklabels[nticks//2] = r'$0$'
-                ticklabels[nlog + nlin - 1] = sci_format(linthresh)
+#                ticklabels[nticks//2] = r'$0$'
+#                ticklabels[nlog + nlin - 1] = sci_format(linthresh)
                 ticklabels[nticks - 1] = sci_format(minmax[1])
                 cbar.set_ticklabels(ticklabels)
             else:
@@ -313,23 +301,66 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
                 cbar.set_ticklabels(['%1.1f' %minmax[0], '0', '%1.1f'\
                         %minmax[1]])
     
-            # Put the units (and possibly the exponent) to left of colorbar
-            fig.text(cbax_left - 0.3*cbax_width, cbax_center_y,\
-                    cbar_label, ha='right', va='center', rotation=90,\
-                    fontsize=cbar_fs)
+            # Title the colorbar based on the field's units
+            line_height = 1./4./fig_height_inches
+            fig.text(cbar_left + 0.5*cbar_width, cbar_bottom - line_height,\
+                     cbar_label, ha='center', va='top', **csfont,\
+                     fontsize=cbar_fs) 
+            #fig.text(cbax_left - 0.3*cbax_width, cbax_center_y,\
+            #        cbar_label, ha='right', va='center', rotation=90,\
+            #        fontsize=cbar_fs)
 
-            # Put minmax in the RZ in plain text (using same colorbar)
-            if not rbcz is None:
-                if logscale or symlog: # in this case, exponent has not
-                    # been factored out
-                    factor_loc = 1.0
+            if not rbcz is None: # Make a colorbar for the RZ
+                cbar_bottom = ax_ymin - 2.5*cbar_height - 3*line_height
+                cbar_left = ax_xmin + 0.5*ax_delta_x - 0.5*cbar_width
+                cax = fig.add_axes((cbar_left, cbar_bottom, cbar_width,\
+                        cbar_height))        
+                cbar = plt.colorbar(imrz, cax=cax, orientation='horizontal')
+                    
+                cax.tick_params(labelsize=cbar_fs)
+                cbar.ax.tick_params(labelsize=cbar_fs)   
+                # font size for the ticks
+
+                if logscale:
+                    locator = ticker.LogLocator(subs='all')
+                    cbar.set_ticks(locator)
+                    cbar_label = units
+                elif posdef:
+                    cbar_label = (r'$\times10^{%i}\ $' %exprz) + units
+                    cbar.set_ticks([minmaxrz[0], minmaxrz[1]])
+                    cbar.set_ticklabels(['%1.1f' %minmaxrz[0],\
+                            '%1.1f' %minmaxrz[1]])
+                elif symlog:
+                    cbar_label = units
+                    nlin = 5
+                    nlog = 6
+                    lin_ticks = np.linspace(-linthreshrz, linthreshrz, nlin)
+                    log_ticks1 = np.linspace(minmaxrz[0], -linthreshrz,\
+                            nlog, endpoint=False)
+                    log_ticks2 = -log_ticks1[::-1]
+                    ticks = np.hstack((log_ticks1, lin_ticks, log_ticks2))
+                    nticks = nlin + 2*nlog
+                    cbar.set_ticks(ticks)
+                    ticklabels = []
+                    for i in range(nticks):
+                        ticklabels.append(r'')
+    #                ticklabels[0] = sci_format(minmax[0])
+                    ticklabels[nlog] = sci_format(-linthreshrz)
+    #                ticklabels[nticks//2] = r'$0$'
+    #                ticklabels[nlog + nlin - 1] = sci_format(linthresh)
+                    ticklabels[nticks - 1] = sci_format(minmaxrz[1])
+                    cbar.set_ticklabels(ticklabels)
                 else:
-                    factor_loc = 10.0**exprz
-                string = ('minmax in RZ:\n%1.1e, %1.1e'\
-                        %(minmaxrz[0]*factor_loc, minmaxrz[1]*factor_loc))
-                fig.text(ax_left + 0.5*ax_width, ax_bottom -\
-                        1./16./fig_height_inches, string, ha='center',\
-                        va='top', fontsize=cbar_fs)
+                    cbar_label = (r'$\times10^{%i}\ $' %exprz) + units
+                    cbar.set_ticks([minmaxrz[0], 0, minmaxrz[1]])
+                    cbar.set_ticklabels(['%1.1f' %minmaxrz[0], '0', '%1.1f'\
+                            %minmaxrz[1]])
+        
+                # Title the colorbar based on the field's units
+                line_height = 1./4./fig_height_inches
+                fig.text(cbar_left + 0.5*cbar_width, cbar_bottom -\
+                        line_height, cbar_label, ha='center', va='top',\
+                        **csfont, fontsize=cbar_fs) 
 
     # Plot contours in the meridional plane, if desired
     if plotcontours:

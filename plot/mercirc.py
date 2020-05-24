@@ -40,7 +40,11 @@ if not os.path.isdir(plotdir):
 
 # Set defaults
 minmax = None
+linthresh = None
+linscale = None
 minmaxrz = None
+linthreshrz = None
+linscalerz = None
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
 plotcontours = True
 rbcz = None
@@ -66,6 +70,14 @@ for i in range(nargs):
         rbcz = float(args[i+1])
     elif arg == '-symlog':
         symlog = True
+    elif arg == '-linthresh':
+        linthresh = float(args[i+1])
+    elif arg == '-linscale':
+        linscale = float(args[i+1])
+    elif arg == '-linthreshrz':
+        linthreshrz = float(args[i+1])
+    elif arg == '-linscalerz':
+        linscalerz = float(args[i+1])
 
 # Read in AZ_Avgs data
 print ('Getting data from ' + datadir + AZ_Avgs_file + ' ...')
@@ -102,8 +114,8 @@ subplot_width_inches = 2.5
 subplot_height_inches = 5.
 margin_inches = 1./8.
 margin_top_inches = 1. # larger top margin to make room for titles
-margin_bottom_inches = 1./2. # larger bottom margin to make room possible
-    # second set of saturation values
+margin_bottom_inches = 0.75*(2 - (rbcz is None)) 
+    # larger bottom margin to make room for colorbar(s)
 
 fig_width_inches = subplot_width_inches + 2*margin_inches
 fig_height_inches = subplot_height_inches + margin_top_inches +\
@@ -123,7 +135,9 @@ ax = fig.add_axes((margin_x, margin_bottom, subplot_width, subplot_height))
 # Plot mass flux
 plot_azav (rhovm, rr, cost, fig=fig, ax=ax,\
     units = r'$\rm{g}\ \rm{cm}^{-2}\ \rm{s}^{-1}$', plotcontours=False,\
-    minmax=minmax, minmaxrz=minmaxrz, rbcz=rbcz, symlog=symlog)
+    minmax=minmax, minmaxrz=minmaxrz, rbcz=rbcz, symlog=symlog,\
+    linthresh=linthresh, linscale=linscale, linthreshrz=linthreshrz,\
+    linscalerz=linscalerz)
 
 # Plot streamfunction contours, if desired
 if plotcontours:
