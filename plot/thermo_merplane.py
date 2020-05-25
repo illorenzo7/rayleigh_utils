@@ -44,6 +44,7 @@ saveplot = True
 plotcontours = True
 minmax = None
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
+rbcz = None
 
 args = sys.argv[2:]
 nargs = len(args)
@@ -53,6 +54,8 @@ for i in range(nargs):
         my_boundstype = 'manual'
         my_min, my_max = float(args[i+1]), float(args[i+2])
         user_specified_minmax = True
+    elif arg == '-rbcz':
+        rbcz = float(args[i+1])
     elif arg == '-noshow':
         showplot = False
     elif arg == '-nosave':
@@ -131,6 +134,8 @@ fig_width_inches = 7 # TOTAL figure width, in inches
     # (i.e., 8x11.5 paper with 1/2-inch margins)
 margin_inches = 1/8 # margin width in inches (for both x and y) and 
     # horizontally in between figures
+margin_bottom_inches = 0.75*(2 - (rbcz is None)) 
+    # larger bottom margin to make room for colorbar(s)
 margin_top_inches = 2 # wider top margin to accommodate subplot titles AND metadata
 margin_subplot_top_inches = 1/2 # margin to accommodate just subplot titles
 nplots = 4
@@ -153,6 +158,7 @@ fig_aspect = fig_height_inches/fig_width_inches
 margin_x = margin_inches/fig_width_inches
 margin_y = margin_inches/fig_height_inches
 margin_top = margin_top_inches/fig_height_inches
+margin_bottom = margin_bottom_inches/fig_height_inches
 margin_subplot_top = margin_subplot_top_inches/fig_height_inches
 
 # Subplot dimensions in figure units

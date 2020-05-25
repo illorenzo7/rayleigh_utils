@@ -21,16 +21,15 @@ sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from azav_util import plot_azav, streamfunction
 from common import get_widest_range_file, strip_dirname, get_dict
-from rayleigh_diagnostics import ReferenceState
-from get_parameter import get_parameter
+from get_eq import get_eq
 
 # Get directory name and stripped_dirname for plotting purposes
 dirname = sys.argv[1]
 dirname_stripped = strip_dirname(dirname)
 
 # Get density
-ref = ReferenceState(dirname + '/reference', '')
-rho = ref.density
+eq = get_eq(dirname)
+rho = eq.density
 
 # Directory with data and plots, make the plotting directory if it doesn't
 # already exist    
@@ -43,6 +42,7 @@ if (not os.path.isdir(plotdir)):
 nlevs = 15
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
 minmax = None
+rbcz = None
 
 # Read in CLAs (if any) to change default variable ranges and other options
 args = sys.argv[2:]
@@ -51,6 +51,8 @@ for i in range(nargs):
     arg = args[i]
     if arg == '-minmax':
         minmax = float(args[i+1]), float(args[i+2])
+    elif arg == '-rbcz':
+        rbcz = float(args[i+1])
     elif arg == '-nlevs':
         nlevs = int(args[i+1])
     elif arg == '-usefile':
@@ -76,7 +78,7 @@ vflux_r = -vals[:, :, lut[1935]]
 hflux = vals[:, :, lut[1433]]
 tflux_r = eflux_r + cflux_r + kflux_r + vflux_r + hflux 
 # compute the total radial flux
-lum = get_parameter(dirname, 'luminosity')
+lum = eq.lum
 tflux_r -= lum/(4.*np.pi*rr**2.) 
 # Subtract out spherically symmetric bit
 
@@ -110,21 +112,25 @@ subplot_width_inches = 2.5
 subplot_height_inches = 5.
 margin_inches = 1/8
 margin_top_inches = 1 # larger top margin to make room for titles
+margin_bottom_inches = 0.75*(2 - (rbcz is None)) 
+    # larger bottom margin to make room for colorbar(s)
 
 fig_width_inches = subplot_width_inches + 2*margin_inches
-fig_height_inches = subplot_height_inches + margin_top_inches + margin_inches
+fig_height_inches = subplot_height_inches + margin_top_inches +\
+        margin_bottom_inches
 
 fig_aspect = fig_height_inches/fig_width_inches
 margin_x = margin_inches/fig_width_inches
 margin_y = margin_inches/fig_height_inches
 margin_top = margin_top_inches/fig_height_inches
+margin_bottom = margin_bottom_inches/fig_height_inches
 subplot_width = subplot_width_inches/fig_width_inches
 subplot_height = subplot_height_inches/fig_height_inches
 
 fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
-ax = fig.add_axes((margin_x, margin_y, subplot_width, subplot_height))
+ax = fig.add_axes((margin_x, margin_bottom, subplot_width, subplot_height))
 
-# Plot mass flux
+# Plot energy flux
 plot_azav (flux_mag, rr, cost, fig=fig, ax=ax,\
     units = r'$\rm{erg}\ \rm{cm}^{-2}\ \rm{s}^{-1}$', plotcontours=False,\
     minmax=minmax)

@@ -19,8 +19,8 @@ plt.rcParams['mathtext.fontset'] = 'dejavuserif'
 csfont = {'fontname':'DejaVu Serif'}
 import sys, os
 sys.path.append(os.environ['rapp'])
-sys.path.append(os.environ['co'])
-sys.path.append(os.environ['pl'])
+sys.path.append(os.environ['raco'])
+sys.path.append(os.environ['rapl'])
 from rayleigh_diagnostics import ReferenceState
 from azavg_util import plot_azav
 from binormalized_cbar import MidpointNormalize
@@ -38,17 +38,20 @@ if (not os.path.isdir(plotdir)):
 # Read command-line arguments (CLAs)
 my_boundstype = 'manual'
 user_specified_minmax = False
+rbcz = None
 
 args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
-    if (arg == '-minmax'):
+    if arg == '-minmax':
         my_boundstype = 'manual'
         my_min, my_max = float(args[i+1]), float(args[i+2])
         user_specified_minmax = True
-    if (arg == '-show'):
+    elif arg == '-show':
         showplot = True
+    elif arg == '-rbcz':
+        rbcz = float(args[i+1])
 
 
 # See if magnetism is "on"
@@ -135,8 +138,10 @@ fig_width_inches = 7 # TOTAL figure width, in inches
     # (i.e., 8x11.5 paper with 1/2-inch margins)
 margin_inches = 1/8 # margin width in inches (for both x and y) and 
     # horizontally in between figures
-margin_top_inches = 2 # wider top margin to accommodate subplot titles AND metadata
-margin_subplot_top_inches = 1 # margin to accommodate just subplot titles
+margin_top_inches = 1 # wider top margin to accommodate subplot titles AND metadata
+margin_bottom_inches = 0.75*(2 - (rbcz is None)) 
+    # larger bottom margin to make room for colorbar(s)
+margin_subplot_top_inches = 1/4 # margin to accommodate just subplot titles
 nplots = 10 + magnetism
 ncol = 3 # put three plots per row
 nrow = np.int(np.ceil(nplots/3))
@@ -146,9 +151,8 @@ subplot_width_inches = (fig_width_inches - (ncol + 1)*margin_inches)/ncol
     # with margins in between them and at the left and right.
 subplot_height_inches = 2*subplot_width_inches # Each subplot should have an
     # aspect ratio of y/x = 2/1 to accommodate meridional planes. 
-fig_height_inches = nrow*subplot_height_inches + margin_top_inches +\
-    (nrow - 1)*margin_subplot_top_inches + margin_inches 
-    # Room for titles on each row and a regular margin on the bottom
+fig_height_inches = margin_top_inches + nrow*(subplot_height_inches +\
+        margin_subplot_top_inches + margin_bottom_inches)
 fig_aspect = fig_height_inches/fig_width_inches
 
 # "Margin" in "figure units"; figure units extend from 0 to 1 in BOTH 
@@ -157,6 +161,7 @@ fig_aspect = fig_height_inches/fig_width_inches
 margin_x = margin_inches/fig_width_inches
 margin_y = margin_inches/fig_height_inches
 margin_top = margin_top_inches/fig_height_inches
+margin_bottom = margin_bottom_inches/fig_height_inches
 margin_subplot_top = margin_subplot_top_inches/fig_height_inches
 
 # Subplot dimensions in figure units
@@ -191,8 +196,9 @@ fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
 
 for iplot in range(nplots):
     ax_left = margin_x + (iplot%ncol)*(subplot_width + margin_x)
-    ax_bottom = 1 - margin_top - subplot_height - \
-            (iplot//ncol)*(subplot_height + margin_subplot_top)
+    ax_bottom = 1 - margin_top - subplot_height - margin_subplot_top -\
+            (iplot//ncol)*(subplot_height + margin_subplot_top +\
+            margin_bottom)
     ax = fig.add_axes((ax_left, ax_bottom, subplot_width, subplot_height))
     plot_azav (fig, ax, theta_forces[iplot], rr, cost, sint,\
            units = units,\

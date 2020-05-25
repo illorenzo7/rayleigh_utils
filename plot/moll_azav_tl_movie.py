@@ -64,6 +64,7 @@ clon = 0.
 count = 0 # start the plot count at 0000 by default
 tlabel_string_width = None
 alpha = 0.05 # how greyed out some of the TL is
+rbcz = None
 
 # Get desired data range to plot
 args = sys.argv[2:]
@@ -91,6 +92,8 @@ for i in range(nargs):
         minmax = float(args[i+1]), float(args[i+2]),\
                 float(args[i+3]), float(args[i+4]),\
                 float(args[i+5]), float(args[i+6])
+    elif arg == '-rbcz':
+        rbcz = float(args[i+1])
     elif arg == '-symlog':
         symlog = True
     elif arg == '-linscale':
@@ -262,7 +265,8 @@ azav_width_inches = 0.5*azav_height_inches
 tl_height_inches = 1.5
 margin_inches = 1/8
 margin_top_inches = 1/2
-margin_bottom_inches = 1/2
+margin_bottom_inches = 0.75*(2 - (rbcz is None)) 
+    # larger bottom margin to make room for colorbar(s)
 hspace_inches = 3/4
 
 # Global figure dimensions
@@ -363,8 +367,8 @@ for fname in fnames:
         field = az.vals[:, :, az.lut[var_index], 0]
         plot_azav (field, rr, cost, fig=fig, ax=ax_azav,\
                units=texunits[varname], minmax=(min_az, max_az),\
-               plotcontours=False, plotlatlines=True, fsize=10,\
-               rvals=(rval,), symlog=symlog, linthresh=linthresh_az,\
+               plotcontours=False, plotlatlines=True, cbar_fs=10,\
+               rvals=[rval], symlog=symlog, linthresh=linthresh_az,\
                linscale=linscale_az)
 
         # Make the time-latitude plot underneath everything

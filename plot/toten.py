@@ -45,6 +45,7 @@ plotcontours = False
 minmax = None
 minmax2 = None
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
+rbcz = None
 
 args = sys.argv[2:]
 nargs = len(args)
@@ -52,6 +53,8 @@ for i in range(nargs):
     arg = args[i]
     if arg == '-minmax': 
         minmax = float(args[i+1]), float(args[i+2])
+    elif arg == '-rbcz':
+        rbcz = float(args[i+1])
     elif arg == '-minmax2': 
         minmax2 = float(args[i+1]), float(args[i+2])
     elif arg == '-noshow':
@@ -167,7 +170,8 @@ fig_width_inches = 7. # TOTAL figure width, in inches
 margin_inches = 1./8. # margin width in inches (for both x and y) and 
     # horizontally in between figures
 margin_top_inches = 2. # wider top margin to accommodate subplot titles AND metadata
-margin_bottom_inches = 1. # wider top margin to accommodate subplot titles AND metadata
+margin_bottom_inches = 0.75*(2 - (rbcz is None)) 
+    # larger bottom margin to make room for colorbar(s)
 margin_subplot_top_inches = 1. # margin to accommodate just subplot titles
 nplots = 8 + magnetism
 ncol = 3 # put three plots per row

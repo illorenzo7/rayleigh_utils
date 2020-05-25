@@ -43,6 +43,7 @@ iiter = nfiles - 1 # by default plot the last iteration
 iphi = -1 # by default plot the meridian closest to 0 longitude
 varname = 'vr' # by default plot the radial velocity
 plotcontours = True
+rbcz = None
 plotlatlines = True
 use_az = True
 use_sh = True
@@ -54,6 +55,8 @@ for i in range(nargs):
     arg = args[i]
     if arg == '-minmax':
         minmax = float(args[i+1]), float(args[i+2])
+    elif arg == '-rbcz':
+        rbcz = float(args[i+1])
     elif arg == '-iphi':
         iphi = int(args[i+1])
     elif arg == '-var':
@@ -147,8 +150,9 @@ print('Plotting mer: ' + varname + (', lon = %.1f deg (iphi = %02i), '\
 subplot_width_inches = 2.5
 subplot_height_inches = 5.
 margin_inches = 1./8.
+margin_bottom_inches = 0.75*(2 - (rbcz is None)) 
+    # larger bottom margin to make room for colorbar(s)
 margin_top_inches = 1.75 # larger top margin to make room for titles
-margin_bottom_inches = 0.5 # larger top margin to make room for titles
 
 fig_width_inches = subplot_width_inches + 2*margin_inches
 fig_height_inches = subplot_height_inches + margin_top_inches +\

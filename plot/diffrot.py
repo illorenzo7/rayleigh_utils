@@ -46,6 +46,7 @@ my_boundstype = 'manual'
 user_specified_minmax = False 
 my_nlevs = 20
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
+rbcz = None
 
 # Read in CLAs (if any) to change default variable ranges and other options
 args = sys.argv[2:]
@@ -55,6 +56,8 @@ for i in range(nargs):
     if (arg == '-minmax'):
         my_min, my_max = float(args[i+1]), float(args[i+2])
         user_specified_minmax = True
+    elif arg == '-rbcz':
+        rbcz = float(args[i+1])
     elif (arg == '-nlevs'):
         my_nlevs = int(args[i+1])
     elif (arg == '-usefile'):
@@ -112,19 +115,23 @@ subplot_width_inches = 2.5
 subplot_height_inches = 5.
 margin_inches = 1./8.
 margin_top_inches = 2. # larger top margin to make room for titles
+margin_bottom_inches = 0.75*(2 - (rbcz is None)) 
+    # larger bottom margin to make room for colorbar(s)
 
 fig_width_inches = subplot_width_inches + 2*margin_inches
-fig_height_inches = subplot_height_inches + margin_top_inches + margin_inches
+fig_height_inches = subplot_height_inches + margin_top_inches +\
+        margin_bottom_inches
 
 fig_aspect = fig_height_inches/fig_width_inches
 margin_x = margin_inches/fig_width_inches
 margin_y = margin_inches/fig_height_inches
 margin_top = margin_top_inches/fig_height_inches
+margin_bottom = margin_bottom_inches/fig_height_inches
 subplot_width = subplot_width_inches/fig_width_inches
 subplot_height = subplot_height_inches/fig_height_inches
 
 fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
-ax = fig.add_axes((margin_x, margin_y, subplot_width, subplot_height))
+ax = fig.add_axes((margin_x, margin_bottom, subplot_width, subplot_height))
 
 plot_azav (diffrot, rr, cost, fig=fig, ax=ax, units='nHz',\
         nlevs=my_nlevs, minmax = (my_min, my_max))

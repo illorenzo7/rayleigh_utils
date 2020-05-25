@@ -403,8 +403,8 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
                     min_log = np.log10(minmax[0])
                     max_log = np.log10(minmax[1])
                     levelscz = np.logspace(min_log, max_log, nlevs)
-                    min_log = np.log10(minmax[2])
-                    max_log = np.log10(minmax[3])
+                    min_log = np.log10(minmaxrz[0])
+                    max_log = np.log10(minmaxrz[1])
                     levelsrz = np.logspace(min_log, max_log, nlevs)
                 elif symlog:
                     log_thresh = np.log10(linthresh[0])
@@ -418,8 +418,8 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
                             nlevs_per_interval)
                     levelscz = np.hstack((levels_neg, levels_mid,\
                             levels_pos))
-                    log_thresh = np.log10(linthresh[1])
-                    log_max = np.log10(minmax[3])
+                    log_thresh = np.log10(linthreshrz)
+                    log_max = np.log10(minmaxrz[1])
                     nlevs_per_interval = nlevs//3
                     levels_neg = -np.logspace(log_max, log_thresh,\
                             nlevs_per_interval, endpoint=False)
@@ -431,7 +431,7 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
                             levels_pos))
                 else:
                     levelscz = np.linspace(minmax[0], minmax[1], nlevs)
-                    levelsrz = np.linspace(minmax[2], minmax[3], nlevs)
+                    levelsrz = np.linspace(minmaxrz[0], minmax[1], nlevs)
             else: # the caller specified specific contour levels to plot!
                 levels = np.array(levels)
             # Determine how to color the contours

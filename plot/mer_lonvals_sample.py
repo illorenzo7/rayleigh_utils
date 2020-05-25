@@ -42,6 +42,7 @@ logscale = False
 iiter = nfiles - 1 # by default plot the last iteration
 varname = 'vr' # by default plot the radial velocity
 plotcontours = True
+rbcz = None
 plotlatlines = True
 use_az = True
 use_sh = True
@@ -52,6 +53,8 @@ for i in range(nargs):
     arg = args[i]
     if arg == '-minmax':
         minmax = float(args[i+1]), float(args[i+2])
+    elif arg == '-rbcz':
+        rbcz = float(args[i+1])
     elif arg == '-var':
         varname = args[i+1]
     elif arg == '-symlog':
@@ -132,15 +135,18 @@ t_loc = mer.time[0]
 subplot_width_inches = 2.5
 subplot_height_inches = 5.
 margin_inches = 1./8.
+margin_bottom_inches = 0.75*(2 - (rbcz is None)) 
+    # larger bottom margin to make room for colorbar(s)
 margin_top_inches = 1.75 # larger top margin to make room for titles
 
 fig_width_inches = subplot_width_inches + 2*margin_inches
 fig_height_inches = subplot_height_inches + margin_top_inches +\
-        margin_inches
+        margin_bottom_inches
 
 margin_x = margin_inches/fig_width_inches
 margin_y = margin_inches/fig_height_inches
 margin_top = margin_top_inches/fig_height_inches
+margin_bottom = margin_bottom_inches/fig_height_inches
 subplot_width = subplot_width_inches/fig_width_inches
 subplot_height = subplot_height_inches/fig_height_inches
 
@@ -167,7 +173,8 @@ for iphi in range(mer.nphi):
 
     # Create axes
     fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
-    ax = fig.add_axes((margin_x, margin_y, subplot_width, subplot_height))
+    ax = fig.add_axes((margin_x, margin_bottom, subplot_width,\
+            subplot_height))
     plot_azav (field, mer.radius, mer.costheta, fig=fig, ax=ax,\
             units=units, minmax=minmax, plotlatlines=plotlatlines,\
             plotcontours=plotcontours)
