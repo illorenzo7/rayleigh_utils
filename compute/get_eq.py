@@ -148,6 +148,6 @@ def get_eq(dirname, fname='equation_coefficients'): # return an eq_human_readabl
                 pass # (magnetism = False)
         else:
             print("'transport' file not found; nu, dlnu, etc. will be zero")
-        eq.lum = get_parameter(dirname, 'luminosity')
+        eq_hr.lum = get_parameter(dirname, 'luminosity')
         print ("get_eq(%s): got equation coefficients from 'reference' and 'transport' files" %dirname)
     return eq_hr
