@@ -15,7 +15,6 @@ mpl.use('TkAgg')
 import matplotlib.pyplot as plt
 plt.rcParams['mathtext.fontset'] = 'dejavuserif'
 csfont = {'fontname':'DejaVu Serif'}
-from binormalized_cbar import MidpointNormalize
 import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
@@ -49,6 +48,7 @@ my_boundstype = 'manual'
 user_specified_minmax = False 
 my_nlevs = 20
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
+rbcz = None
 
 # Read in CLAs (if any) to change default variable ranges and other options
 minmax = None
@@ -59,8 +59,10 @@ nargs = len(args)
 # Change other defaults
 for i in range(nargs):
     arg = args[i]
-    if (arg == '-minmax'):
+    if arg == '-minmax':
         minmax = float(args[i+1]), float(args[i+2])
+    elif arg == '-rbcz':
+        rbcz = float(args[i+1])
     elif arg == '-nosave':
         save = False
     elif arg == '-nlevs':
@@ -116,8 +118,10 @@ fig_width_inches = 7 # TOTAL figure width, in inches
     # (i.e., 8x11.5 paper with 1/2-inch margins)
 margin_inches = 1/8 # margin width in inches (for both x and y) and 
     # horizontally in between figures
+margin_bottom_inches = 0.75*(2 - (rbcz is None)) 
+    # larger bottom margin to make room for colorbar(s)
 margin_top_inches = 1 # wider top margin to accommodate subplot titles AND metadata
-margin_subplot_top_inches = 1 # margin to accommodate just subplot titles
+margin_subplot_top_inches = 1/4 # margin to accommodate just subplot titles
 ncol = 3 # put three plots per row: T1, T2, and T1 + T2
 nrow = 1
 
@@ -126,9 +130,8 @@ subplot_width_inches = (fig_width_inches - (ncol + 1)*margin_inches)/ncol
     # with margins in between them and at the left and right.
 subplot_height_inches = 2*subplot_width_inches # Each subplot should have an
     # aspect ratio of y/x = 2/1 to accommodate meridional planes. 
-fig_height_inches = nrow*subplot_height_inches + margin_top_inches +\
-    (nrow - 1)*margin_subplot_top_inches + margin_inches 
-    # Room for titles on each row and a regular margin on the bottom
+fig_height_inches = margin_top_inches + nrow*(subplot_height_inches +\
+        margin_subplot_top_inches + margin_bottom_inches)
 fig_aspect = fig_height_inches/fig_width_inches
 
 # "Margin" in "figure units"; figure units extend from 0 to 1 in BOTH 
@@ -136,6 +139,7 @@ fig_aspect = fig_height_inches/fig_width_inches
 # to force an equal physical margin
 margin_x = margin_inches/fig_width_inches
 margin_y = margin_inches/fig_height_inches
+margin_bottom = margin_bottom_inches/fig_height_inches
 margin_top = margin_top_inches/fig_height_inches
 margin_subplot_top = margin_subplot_top_inches/fig_height_inches
 
@@ -154,8 +158,9 @@ fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
 
 for iplot in range(3):
     ax_left = margin_x + (iplot%ncol)*(subplot_width + margin_x)
-    ax_bottom = 1 - margin_top - subplot_height - \
-            (iplot//ncol)*(subplot_height + margin_subplot_top)
+    ax_bottom = 1 - margin_top - subplot_height - margin_subplot_top -\
+            (iplot//ncol)*(subplot_height + margin_subplot_top +\
+            margin_bottom)
     ax = fig.add_axes((ax_left, ax_bottom, subplot_width, subplot_height))
     plot_azav (field_components[iplot], rr, cost, fig=fig, ax=ax,\
            units=units, nlevs=my_nlevs, minmax=minmax,\

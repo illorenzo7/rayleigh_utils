@@ -26,7 +26,6 @@ from rayleigh_diagnostics import ReferenceState
 from reference_tools import equation_coefficients
 from common import get_widest_range_file, strip_dirname, get_dict
 from get_parameter import get_parameter
-from binormalized_cbar import MidpointNormalize
 
 # Get directory name and stripped_dirname for plotting purposes
 dirname = sys.argv[1]

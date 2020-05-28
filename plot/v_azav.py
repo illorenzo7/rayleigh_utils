@@ -101,8 +101,8 @@ margin_inches = 1./8. # margin width in inches (for both x and y) and
     # horizontally in between figures
 margin_bottom_inches = 0.75*(2 - (rbcz is None)) 
     # larger bottom margin to make room for colorbar(s)
-margin_top_inches = 1. # wider top margin to accommodate subplot titles AND metadata
-margin_subplot_top_inches = 1. # margin to accommodate just subplot titles
+margin_top_inches = 1 # wider top margin to accommodate subplot titles AND metadata
+margin_subplot_top_inches = 1/4 # margin to accommodate just subplot titles
 ncol = 3 # put three plots per row
 nrow = 1
 
@@ -111,9 +111,8 @@ subplot_width_inches = (fig_width_inches - (ncol + 1)*margin_inches)/ncol
     # with margins in between them and at the left and right.
 subplot_height_inches = 2*subplot_width_inches # Each subplot should have an
     # aspect ratio of y/x = 2/1 to accommodate meridional planes. 
-fig_height_inches = nrow*subplot_height_inches + margin_top_inches +\
-    (nrow - 1)*margin_subplot_top_inches + margin_inches 
-    # Room for titles on each row and a regular margin on the bottom
+fig_height_inches = margin_top_inches + nrow*(subplot_height_inches +\
+        margin_subplot_top_inches + margin_bottom_inches)
 fig_aspect = fig_height_inches/fig_width_inches
 
 # "Margin" in "figure units"; figure units extend from 0 to 1 in BOTH 
@@ -140,8 +139,9 @@ fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
 
 for iplot in range(3):
     ax_left = margin_x + (iplot%ncol)*(subplot_width + margin_x)
-    ax_bottom = 1 - margin_top - subplot_height - \
-            (iplot//ncol)*(subplot_height + margin_subplot_top)
+    ax_bottom = 1 - margin_top - subplot_height - margin_subplot_top -\
+            (iplot//ncol)*(subplot_height + margin_subplot_top +\
+            margin_bottom)
     ax = fig.add_axes((ax_left, ax_bottom, subplot_width, subplot_height))
     plot_azav (field_components[iplot], rr, cost, fig=fig, ax=ax,\
         units=units, minmax=(my_mins[iplot], my_maxes[iplot]),\
