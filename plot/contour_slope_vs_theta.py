@@ -117,7 +117,7 @@ plt.xlim(xmin, xmax)
 
 # Set y limits if user wanted you to
 if not minmax is None:
-    plt.ylim(ymin[0], ymin[1])
+    plt.ylim(minmax[0], minmax[1])
 
 # Create a see-through legend
 leg=plt.legend(shadow=True,fontsize=8, loc=2)

@@ -42,25 +42,23 @@ if (not os.path.isdir(plotdir)):
     os.makedirs(plotdir)
 
 # Set defaults
-my_boundstype = 'manual'
-user_specified_minmax = False 
-my_nlevs = 20
+nlevs = 20
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
 rbcz = None
+minmax = None
 
 # Read in CLAs (if any) to change default variable ranges and other options
 args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
-    if (arg == '-minmax'):
-        my_min, my_max = float(args[i+1]), float(args[i+2])
-        user_specified_minmax = True
+    if arg == '-minmax':
+        minmax = float(args[i+1]), float(args[i+2])
     elif arg == '-rbcz':
         rbcz = float(args[i+1])
-    elif (arg == '-nlevs'):
-        my_nlevs = int(args[i+1])
-    elif (arg == '-usefile'):
+    elif arg == '-nlevs':
+        nlevs = int(args[i+1])
+    elif arg == '-usefile':
         AZ_Avgs_file = args[i+1]
         AZ_Avgs_file = AZ_Avgs_file.split('/')[-1]
         
@@ -107,9 +105,6 @@ global_min, global_max = np.min(diffrot[it15:it75, :]),\
 Delta_Om = global_max - global_min
 maxabs = np.max((np.abs(global_min), np.abs(global_max)))
 
-if (not user_specified_minmax):
-    my_min, my_max = -maxabs, maxabs
-
 # Create plot
 subplot_width_inches = 2.5
 subplot_height_inches = 5.
@@ -132,10 +127,8 @@ subplot_height = subplot_height_inches/fig_height_inches
 
 fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
 ax = fig.add_axes((margin_x, margin_bottom, subplot_width, subplot_height))
-
 plot_azav (diffrot, rr, cost, fig=fig, ax=ax, units='nHz',\
-        nlevs=my_nlevs, minmax = (my_min, my_max))
-
+        nlevs=nlevs, minmax=minmax)
 # Make title + label diff. rot. contrast and no. contours
 # Label averaging interval
 if rotation:
@@ -158,7 +151,7 @@ fig.text(margin_x, 1 - margin_y - 5*line_height,\
          r'$\Delta\Omega_{\rm{tot}} = %.1f\ nHz$' %Delta_Om,\
          ha='left', va='top', fontsize=fsize, **csfont)
 fig.text(margin_x, 1 - margin_y - 6*line_height,\
-         'nlevs = %i' %my_nlevs,
+         'nlevs = %i' %nlevs,
          ha='left', va='top', fontsize=fsize, **csfont)
 savefile = plotdir + dirname_stripped + '_diffrot_' + str(iter1).zfill(8) +\
     '_' + str(iter2).zfill(8) + '.png'

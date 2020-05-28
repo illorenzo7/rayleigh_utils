@@ -14,7 +14,6 @@ mpl.use('TkAgg')
 import matplotlib.pyplot as plt
 plt.rcParams['mathtext.fontset'] = 'dejavuserif'
 csfont = {'fontname':'DejaVu Serif'}
-from binormalized_cbar import MidpointNormalize
 import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
@@ -36,18 +35,16 @@ if (not os.path.isdir(plotdir)):
     os.makedirs(plotdir)
 
 # Set defaults
-my_boundstype = 'manual'
-user_specified_minmax = False
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
+minmax = None
 
 # Read in CLAs (if any) to change default variable ranges and other options
 args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
-    if (arg == '-minmax'):
-        my_min, my_max = float(args[i+1]), float(args[i+2])
-        user_specified_minmax = True
+    if arg == '-minmax':
+        minmax = float(args[i+1]), float(args[i+2])
     elif (arg == '-usefile'):
         AZ_Avgs_file = args[i+1]
         AZ_Avgs_file = AZ_Avgs_file.split('/')[-1]
@@ -110,8 +107,8 @@ delta_x = xmax - xmin
 plt.xlim(xmin, xmax)
 
 # Set y limits if user wanted you to
-if user_specified_minmax:
-    plt.ylim(my_min, my_max)
+if not minmax is None:
+    plt.ylim(minmax[0], minmax[1])
 
 # Create a see-through legend
 leg=plt.legend(shadow=True,fontsize=10)

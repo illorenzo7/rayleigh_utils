@@ -44,8 +44,6 @@ file_list, int_file_list, nfiles = get_file_lists(radatadir)
 # Set defaults
 save = True
 plotcontours = True
-my_boundstype = 'manual'
-user_specified_minmax = False 
 my_nlevs = 20
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
 rbcz = None

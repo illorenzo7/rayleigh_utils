@@ -50,9 +50,7 @@ nargs = len(args)
 for i in range(nargs):
     arg = args[i]
     if arg == '-minmax':
-        my_boundstype = 'manual'
-        my_min, my_max = float(args[i+1]), float(args[i+2])
-        user_specified_minmax = True
+        minmax = float(args[i+1]), float(args[i+2])
     elif arg == '-rbcz':
         rbcz = float(args[i+1])
     elif arg == '-noshow':
@@ -190,7 +188,8 @@ for iplot in range(nplots):
             margin_bottom)
     ax = fig.add_axes((ax_left, ax_bottom, subplot_width, subplot_height))
     plot_azav (thermo_terms[iplot], rr, cost, fig=fig, ax=ax,\
-            units=units[iplot], plotcontours=plotcontours, cbar_fs=fsize)
+            units=units[iplot], plotcontours=plotcontours, cbar_fs=fsize,\
+            minmax=minmax)
     ax.set_title(titles[iplot], va='bottom', **csfont)
 
 # Put some metadata in upper left
