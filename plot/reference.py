@@ -16,8 +16,7 @@ sys.path.append(os.environ['idref'])
 
 from common import strip_dirname, rsun
 from plotref import plotref
-from rayleigh_diagnostics import ReferenceState, GridInfo
-from reference_tools import equation_coefficients
+from get_eq import get_eq
 
 # Get the run directory on which to perform the analysis
 dirname = sys.argv[1]
@@ -29,7 +28,7 @@ rvals = None
 
 args = sys.argv[2:]
 nargs = len(args)
-custom_name = None
+fname = 'equation_coefficients'
 for i in range(nargs):
     arg = args[i]
     if arg == '-xminmax':
@@ -40,60 +39,31 @@ for i in range(nargs):
         for rval_str in rvals_str:
             rvals.append(float(rval_str))
     elif arg == '-fname':
-        custom_name = args[i+1]
+        fname = args[i+1]
     elif arg == '-crb':
-        custom_name = 'custom_reference_binary'
+        fname = 'custom_reference_binary'
 
 # Directory with data and plots, make the plotting directory if it doesn't
 # already exist    
 datadir = dirname + '/data/'
 plotdir = dirname + '/plots/'
-if (not os.path.isdir(plotdir)):
+if not os.path.isdir(plotdir):
     os.makedirs(plotdir)
 
-try:
-    ref = ReferenceState(dirname + '/reference', '')
-    r = ref.radius
-    T = ref.temperature
-    rho = ref.density
-    p = ref.pressure
-    dlnT = ref.dlnt
-    dlnrho = ref.dlnrho
-    s = ref.entropy
-    dsdr = ref.dsdr
-    d2lnrho = ref.d2lnrho
-    gravity = ref.gravity
-    heating = ref.heating
-    Q = heating*rho*T
-    print("Got thermo. vars from 'reference' file")
-except:
-    eq = equation_coefficients()
-    if custom_name is None:
-        custom_name = 'equation_coefficients'
-    eq.read(dirname + '/' + custom_name)
-    r = eq.radius
-    T = eq.functions[3]
-    rho = eq.functions[0]
-    cp = 3.5e8
-    gam = 5.0/3.0
-    gas_R = (gam - 1.0)*cp/gam
-    p = rho*gas_R*T
-    dlnT = eq.functions[9]
-    dlnrho = eq.functions[7]
-    dsdr = eq.functions[13]
-
-    # Integrate to obtain s(r)
-    s = cumtrapz(dsdr, r, initial=0)
-    d2lnrho = eq.functions[8]
-
-    # Gravity
-    buoy = eq.functions[1]
-    gravity = buoy*cp/rho
-
-    # Heating
-    Q = eq.constants[9]*eq.functions[5]
-
-    print("Got thermo. vars from '%s' file" %custom_name)
+eq = get_eq(dirname, fname=fname)
+r = eq.radius
+T = eq.temperature
+rho = eq.density
+p = eq.pressure
+dlnT = eq.dlnT
+dlnrho = eq.dlnrho
+dsdr = eq.dsdr
+# Integrate to obtain s(r)
+s = cumtrapz(dsdr, r, initial=0)
+d2lnrho = eq.d2lnrho
+gravity = eq.gravity
+heating = eq.heating
+Q = heating*rho*T
     
 fig, axs = plotref(r, T, rho, p, dlnT, dlnrho, s, dsdr,\
     d2lnrho, gravity, Q, color='k', xminmax=xminmax)

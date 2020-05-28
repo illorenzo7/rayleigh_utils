@@ -25,10 +25,10 @@ sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapl'])
 from azav_util import plot_azav
-from rayleigh_diagnostics import ReferenceState
 from common import get_widest_range_file, strip_dirname, get_dict
 from get_parameter import get_parameter
 from compute_grid_info import compute_theta_grid
+from get_eq import get_eq
 
 # Get directory name and stripped_dirname for plotting purposes
 dirname = sys.argv[1]
@@ -131,11 +131,11 @@ if lut[1458] < nq and lut_sph[1458] < nq_sph:
     efr_enth_mean_sph = efr_enth_sph - efr_enth_fluc_sph
 else: # do the Reynolds decomposition "by hand"
     # Compute the enthalpy flux from mean flows (MER. CIRC.)
-    ref = ReferenceState(dirname + '/reference', '')
-    rho = (ref.density).reshape((1, nr))
-    ref_prs = (ref.pressure).reshape((1, nr))
-    ref_temp = (ref.temperature).reshape((1, nr))
-    prs_spec_heat = get_parameter(dirname, 'pressure_specific_heat')
+    eq = get_eq(dirname)
+    rho = (eq.density).reshape((1, nr))
+    ref_prs = (eq.pressure).reshape((1, nr))
+    ref_temp = (eq.temperature).reshape((1, nr))
+    prs_spec_heat = 3.5e8
 
     gamma = 5./3.
     vr_av = vals[:, :, lut[1]]

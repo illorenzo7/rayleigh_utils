@@ -19,7 +19,8 @@ sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from common import get_widest_range_file, strip_dirname, get_dict
 from get_parameter import get_parameter
-from rayleigh_diagnostics import GridInfo, ReferenceState
+from rayleigh_diagnostics import GridInfo
+from get_eq import get_eq
 
 # Get the run directory on which to perform the analysis
 dirname = sys.argv[1]
@@ -84,15 +85,15 @@ kflux = vals[:, :, qindex_kflux]
 vflux = -vals[:, :, qindex_vflux]
 tflux = eflux + cflux + kflux + vflux # compute the total flux
 
+eq = get_eq(dirname)
 try:
     eflux_pp = vals[:, :, qindex_eflux_pp]
 except:
     # the fluctuating enthalpy flux wasn't computed directly
     # so compute it by subtracting out the flux due to meridional 
     # circulation
-    ref = ReferenceState(dirname + '/reference')
-    rho_bar = ref.density
-    T_bar = ref.temperature
+    rho_bar = eq.density
+    T_bar = eq.temperature
     S_azav = vals[:, :, lut[501]]
     P_azav = vals[:, :, lut[502]]
     vt_azav = vals[:, :, lut[2]]
@@ -125,13 +126,11 @@ if magnetism:
     mflux_int = np.sum(mflux*areas, axis=1)
 tflux_int = np.sum(tflux*areas, axis=1)
 
-solar_lum = 3.846e33 # We'll normalize by the solar luminosity
-
 # compute the "equilibrium flux" (latitudinal flux needed to balance out
 # any differences between the inner and outer radial fluxes
 cfluxr = vals[:, :, lut[1470]]
 cflux_out = cfluxr[:, 0]
-lum = get_parameter(dirname, 'luminosity') 
+lum = eq.lum
 rsq_Flux_in = lum/4/np.pi
 integrand = -2*np.pi*(ro**2*cflux_out - rsq_Flux_in*np.ones(nt))
     
@@ -151,21 +150,21 @@ for it in range(nt):
 
 # Create the plot; start with plotting all the energy fluxes
 lats = 180*(np.pi/2 - tt)/np.pi
-plt.plot(lats, eflux_int/solar_lum, 'm', label=r'$\rm{F}_{enth}$',\
+plt.plot(lats, eflux_int/lum, 'm', label=r'$\rm{F}_{enth}$',\
         linewidth=lw)
-plt.plot(lats, eflux_pp_int/solar_lum, 'm--', label=r'$\rm{F}_{enth,\ pp}$',\
+plt.plot(lats, eflux_pp_int/lum, 'm--', label=r'$\rm{F}_{enth,\ pp}$',\
         linewidth=lw)
-plt.plot(lats, eflux_mm_int/solar_lum, 'm:', label=r'$\rm{F}_{enth,\ mm}$',\
+plt.plot(lats, eflux_mm_int/lum, 'm:', label=r'$\rm{F}_{enth,\ mm}$',\
         linewidth=lw)
-plt.plot(lats, cflux_int/solar_lum, label=r'$\rm{F}_{cond}$', linewidth=lw)
-plt.plot(lats, kflux_int/solar_lum, label=r'$\rm{F}_{KE}$', linewidth=lw)
-plt.plot(lats, vflux_int/solar_lum, label=r'$\rm{F}_{visc}$', linewidth=lw)
+plt.plot(lats, cflux_int/lum, label=r'$\rm{F}_{cond}$', linewidth=lw)
+plt.plot(lats, kflux_int/lum, label=r'$\rm{F}_{KE}$', linewidth=lw)
+plt.plot(lats, vflux_int/lum, label=r'$\rm{F}_{visc}$', linewidth=lw)
 if magnetism:
-    plt.plot(lats, mflux_int/solar_lum, label=r'$\rm{F}_{Poynting}$',\
+    plt.plot(lats, mflux_int/lum, label=r'$\rm{F}_{Poynting}$',\
             linewidth=lw)
-plt.plot(lats, tflux_int/solar_lum, label=r'$\rm{F}_{total}$',\
+plt.plot(lats, tflux_int/lum, label=r'$\rm{F}_{total}$',\
         linewidth=lw, color='black')
-plt.plot(lats, eqflux_int/solar_lum, 'k--', label=r'$\rm{F}_{eq}$',\
+plt.plot(lats, eqflux_int/lum, 'k--', label=r'$\rm{F}_{eq}$',\
         linewidth=lw)
 
 # Get the y-axis in scientific notation
@@ -188,7 +187,7 @@ maxabs = max((np.max(np.abs(eflux_int)), np.max(np.abs(cflux_int)),\
 if not minmax is None:
     plt.ylim(minmax[0], minmax[1])
 else:
-    ymin, ymax = -1.2*maxabs/solar_lum, 1.2*maxabs/solar_lum
+    ymin, ymax = -1.2*maxabs/lum, 1.2*maxabs/lum
     delta_y = ymax - ymin
     plt.ylim(ymin, ymax)
 

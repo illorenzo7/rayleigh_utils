@@ -12,7 +12,7 @@ from common import get_file_lists, strip_dirname, rsun, get_desired_range,\
 from plotcommon import axis_range
 from sslice_util import plot_moll
 from get_sslice import get_sslice
-from rayleigh_diagnostics import Shell_Slices, ReferenceState
+from rayleigh_diagnostics import Shell_Slices
 from varprops import texlabels
 from get_parameter import get_parameter
 

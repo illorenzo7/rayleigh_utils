@@ -17,8 +17,8 @@ sys.path.append(os.environ['raco'])
 from common import get_widest_range_file, strip_dirname,\
         get_iters_from_file, get_dict, rsun
 from get_parameter import get_parameter
-from rayleigh_diagnostics import ReferenceState, GridInfo
-from reference_tools import equation_coefficients
+from rayleigh_diagnostics import GridInfo
+from get_eq import get_eq
 
 # Get the run directory on which to perform the analysis
 dirname = sys.argv[1]
@@ -74,13 +74,8 @@ rr = di['rr']
 nr = di['nr']
 
 # Get the rho*T
-try:
-    ref = ReferenceState(dirname + '/reference')
-    rhot = ref.density*ref.temperature
-except:
-    eq = equation_coefficients()
-    eq.read(dirname + '/equation_coefficients')
-    rhot = eq.functions[0]*eq.functions[3]
+eq = get_eq(dirname)
+rhot = eq.density*eq.temperature
 
 # Determine the simulation is magnetic
 magnetism = get_parameter(dirname, 'magnetism')

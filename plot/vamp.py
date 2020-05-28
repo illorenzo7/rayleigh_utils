@@ -19,8 +19,7 @@ plt.rcParams['mathtext.fontset'] = 'dejavuserif'
 csfont = {'fontname':'DejaVu Serif'}
 import sys, os
 sys.path.append(os.environ['rapp'])
-from rayleigh_diagnostics import TransportCoeffs, ReferenceState
-from reference_tools import equation_coefficients
+sys.path.append(os.environ['raco'])
 from common import strip_dirname, get_widest_range_file,\
         get_iters_from_file, get_dict, rsun
 

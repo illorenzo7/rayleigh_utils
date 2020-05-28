@@ -19,10 +19,10 @@ plt.rcParams['mathtext.fontset'] = 'dejavuserif'
 csfont = {'fontname':'DejaVu Serif'}
 import sys, os
 sys.path.append(os.environ['rapp'])
-from rayleigh_diagnostics import TransportCoeffs, ReferenceState
-from reference_tools import equation_coefficients
+sys.path.append(os.environ['raco'])
 from common import strip_dirname, get_widest_range_file,\
         get_iters_from_file, get_dict, rsun
+from get_eq import get_eq
 
 # Get directory name and stripped_dirname for plotting purposes
 dirname = sys.argv[1]
@@ -83,20 +83,11 @@ shell_depth = ro - ri
 
 
 # Read reference state
+eq = get_eq(dirname)
 prs_spec_heat = 3.5e8
-try:
-    ref = ReferenceState(dirname + '/reference', '')
-    ref_rho = ref.density
-    ref_prs = ref.pressure
-    ref_temp = ref.temperature
-except:
-    eq = equation_coefficients()
-    eq.read(dirname + '/equation_coefficients')
-    ref_rho = eq.functions[0]
-    ref_temp = eq.functions[3]
-    gam = 5.0/3.0
-    gas_R = (gam - 1.0)/gam*prs_spec_heat
-    ref_prs = gas_R*ref_rho*ref_temp
+ref_rho = eq.density
+ref_prs = eq.pressure
+ref_temp = eq.temperature
 
 # Read in entropy and pressure, nond
 entropy = vals[:, lut[501]]/prs_spec_heat

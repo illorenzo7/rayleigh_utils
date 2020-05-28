@@ -25,6 +25,7 @@ sys.path.append(os.environ['rapl'])
 from azav_util import plot_azav
 from common import get_widest_range_file, strip_dirname, get_dict
 from get_parameter import get_parameter
+from get_eq import get_eq
 
 # Get directory name and stripped_dirname for plotting purposes
 dirname = sys.argv[1]
@@ -102,11 +103,11 @@ if lut[1460] < nq:
     efp_enth_mean = efp_enth - efp_enth_fluc
 else: # do the Reynolds decomposition "by hand"
     # Compute the enthalpy flux from mean flows (MER. CIRC.)
-    ref = ReferenceState(dirname + '/reference', '')
-    rho = (ref.density).reshape((1, nr))
-    ref_prs = (ref.pressure).reshape((1, nr))
-    ref_temp = (ref.temperature).reshape((1, nr))
-    prs_spec_heat = get_parameter(dirname, 'pressure_specific_heat')
+    eq = get_eq(dirname)
+    rho = (eq.density).reshape((1, nr))
+    ref_prs = (eq.pressure).reshape((1, nr))
+    ref_temp = (eq.temperature).reshape((1, nr))
+    prs_spec_heat = 3.5e8
 
     gamma = 5./3.
     vp_av = vals[:, :, lut[3]]

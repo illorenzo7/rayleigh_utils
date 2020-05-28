@@ -22,10 +22,9 @@ sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapl'])
 from azav_util import plot_azav
-from rayleigh_diagnostics import ReferenceState
-from reference_tools import equation_coefficients
 from common import get_widest_range_file, strip_dirname, get_dict
 from get_parameter import get_parameter
+from get_eq import get_eq
 
 # Get directory name and stripped_dirname for plotting purposes
 dirname = sys.argv[1]
@@ -85,19 +84,10 @@ nr, nt = di['nr'], di['nt']
 # Compute the thermodynamic variables
 prs_spec_heat = get_parameter(dirname, 'pressure_specific_heat')
 
-try:
-    ref = ReferenceState(dirname + '/reference', '')
-    ref_rho = (ref.density).reshape((1, nr))
-    ref_prs = (ref.pressure).reshape((1, nr))
-    ref_temp = (ref.temperature).reshape((1, nr))
-except:
-    eq = equation_coefficients()
-    eq.read(dirname + '/equation_coefficients')
-    ref_rho = eq.functions[0].reshape((1, nr))
-    ref_temp = eq.functions[3].reshape((1, nr))
-    gam = 5.0/3.0
-    gas_R = (gam - 1.0)/gam*prs_spec_heat
-    ref_prs = gas_R*ref_rho*ref_temp
+eq = get_eq(dirname)
+ref_rho = (eq.density).reshape((1, nr))
+ref_prs = (eq.pressure).reshape((1, nr))
+ref_temp = (eq.temperature).reshape((1, nr))
 
 try:
     poly_n = get_parameter(dirname, 'poly_n')

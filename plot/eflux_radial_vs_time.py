@@ -21,6 +21,7 @@ from get_parameter import get_parameter
 from compute_grid_info import compute_theta_grid
 from time_scales import compute_Prot, compute_tdt
 from translate_times import translate_times
+from get_eq import get_eq
 
 # Get the run directory on which to perform the analysis
 dirname = sys.argv[1]
@@ -123,16 +124,16 @@ if plot_enth_fluc:
         eflux_mean = eflux_enth - eflux_fluc
     else: # do the Reynolds decomposition "by hand"
         # Compute the enthalpy flux from mean flows (MER. CIRC.)
-        ref = ReferenceState(dirname + '/reference', '')
+        eq = get_eq(dirname)
         nt = get_parameter(dirname, 'n_theta')
         tt, tw = compute_theta_grid(nt)
         tw_2d = tw.reshape((nt, 1))
 
         AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
-        rho = (ref.density).reshape((1, nr))
-        ref_prs = (ref.pressure).reshape((1, nr))
-        ref_temp = (ref.temperature).reshape((1, nr))
-        prs_spec_heat = get_parameter(dirname, 'pressure_specific_heat')
+        rho = (eq.density).reshape((1, nr))
+        ref_prs = (eq.pressure).reshape((1, nr))
+        ref_temp = (eq.temperature).reshape((1, nr))
+        prs_spec_heat = 3.5e8
         gamma = 5./3.
 
         di_az = get_dict(datadir + AZ_Avgs_file)

@@ -20,13 +20,12 @@ csfont = {'fontname':'DejaVu Serif'}
 import sys, os
 sys.path.append(os.environ['rapp']) 
 sys.path.append(os.environ['raco']) 
-from rayleigh_diagnostics import TransportCoeffs, ReferenceState 
-from reference_tools import equation_coefficients
 from common import strip_dirname, get_widest_range_file,\
         get_iters_from_file, get_dict, rsun
 from get_parameter import get_parameter
 from time_scales import compute_Prot, compute_tdt
 from translate_times import translate_times
+from get_eq import get_eq
 
 # Get directory name and stripped_dirname for plotting purposes
 dirname = sys.argv[1]
@@ -105,24 +104,12 @@ vsq_r, vsq_t, vsq_p = vals[:, lut[422]], vals[:, lut[423]],\
 vsq = vsq_r + vsq_t + vsq_p
 
 # Get molecular diffusivity from 'transport' file or equation_coefficients
-try:
-    t = TransportCoeffs(dirname + '/transport')
-    nu = t.nu
-except:
-    eq = equation_coefficients()
-    eq.read(dirname + '/equation_coefficients')
-    # nu(r) = c_5 * f_3
-    nu = eq.constants[4]*eq.functions[2]
+eq = get_eq(dirname)
+nu = eq.nu
 
 # Compute convective Reynolds number
 if use_hrho:
-    try:
-        ref = ReferenceState(dirname + '/reference')
-        hrho = -1./ref.dlnrho
-    except:
-        eq = equation_coefficients()
-        eq.read(dirname + '/equation_coefficients')
-        hrho = -1./eq.functions[7]
+    hrho = -1./eq.dlnrho
     Re = np.sqrt(vsq)*hrho/nu
     Re_r = np.sqrt(vsq_r)*hrho/nu
     Re_t = np.sqrt(vsq_t)*hrho/nu

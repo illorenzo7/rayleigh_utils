@@ -18,9 +18,8 @@ from common import get_widest_range_file, strip_dirname,\
         get_iters_from_file, get_dict, rsun, get_file_lists,\
         get_desired_range
 from get_parameter import get_parameter
-from rayleigh_diagnostics import ReferenceState, GridInfo,\
-        Meridional_Slices
-from reference_tools import equation_coefficients
+from rayleigh_diagnostics import GridInfo, Meridional_Slices
+from get_eq import get_eq
 
 # Get the run directory on which to perform the analysis
 dirname = sys.argv[1]
@@ -51,15 +50,8 @@ rnorm = None
 rvals = None
 
 # Get rho*T ds dr
-try:
-    ref = ReferenceState(dirname + '/reference')
-    rhotdsdr = ref.density*ref.temperature*ref.dsdr
-    print ("Got rho*T*dsdr from 'reference' file")
-except:
-    eq = equation_coefficients()
-    eq.read(dirname + '/equation_coefficients')
-    rhotdsdr = eq.functions[0]*eq.functions[3]*eq.functions[13]
-    print ("Got rho*T*dsdr from 'equation_coefficients' file")
+eq = get_eq(dirname)
+rhotdsdr = eq.density*eq.temperature*eq.dsdr
 
 # Defaults and CLAs
 args = sys.argv[2:]

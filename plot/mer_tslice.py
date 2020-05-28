@@ -16,15 +16,17 @@ plt.rcParams['mathtext.fontset'] = 'dejavuserif'
 csfont = {'fontname':'DejaVu Serif'}
 import sys, os
 sys.path.append(os.environ['rapp'])
+sys.path.append(os.environ['raco'])
 from get_parameter import get_parameter
 from common import get_file_lists, rsun
-from rayleigh_diagnostics import Meridional_Slices, ReferenceState
+from rayleigh_diagnostics import Meridional_Slices
+from get_eq import get_eq
 
 # Get directory name and stripped_dirname for plotting purposes
 dirname = sys.argv[1]
 # Get radial geometry from ReferenceState
-ref = ReferenceState(dirname + '/reference')
-ri, ro = np.min(ref.radius), np.max(ref.radius)
+eq = get_eq(dirname)
+ri, ro = np.min(eq.radius), np.max(eq.radius)
 
 radatadir = dirname + '/Meridional_Slices/'
 file_list, int_file_list, nfiles = get_file_lists(radatadir)

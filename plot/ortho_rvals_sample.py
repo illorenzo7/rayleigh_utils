@@ -11,9 +11,10 @@ from common import get_file_lists, strip_dirname, rsun
 from plotcommon import axis_range
 from sslice_util import plot_ortho
 from get_sslice import get_sslice
-from rayleigh_diagnostics import Shell_Slices, ReferenceState
+from rayleigh_diagnostics import Shell_Slices
 from translate_times import translate_times
 from varprops import texlabels
+from get_eq import get_eq
 
 # Get command line arguments
 dirname = sys.argv[1]
@@ -66,8 +67,8 @@ fname = file_list[iiter]
 a = Shell_Slices(radatadir + fname, '')
 
 # We also need the radius, which we can get from the reference state
-ref = ReferenceState(dirname + '/reference', '')
-radius = ref.radius
+eq = get_eq(dirname)
+radius = eq.radius
 
 # Create the plot template
 fig_width_inches = 6.

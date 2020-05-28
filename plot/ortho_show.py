@@ -12,8 +12,9 @@ from plotcommon import axis_range
 from translate_times import translate_times
 from sslice_util import plot_ortho
 from get_sslice import get_sslice
-from rayleigh_diagnostics import Shell_Slices, ReferenceState
+from rayleigh_diagnostics import Shell_Slices
 from varprops import texlabels
+from get_eq import get_eq
 
 # Get command line arguments
 dirname = sys.argv[1]
@@ -79,8 +80,8 @@ a = Shell_Slices(radatadir + fname, '')
 vals = get_sslice(a, varname, dirname=dirname)
 
 # We also need the radius, which we can get from the reference state
-ref = ReferenceState(dirname + '/reference', '')
-radius = ref.radius
+eq = get_eq(dirname)
+radius = eq.radius
 
 # Find desired radius (by default ir=0--near outer surface)
 if not rval is None:
