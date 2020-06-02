@@ -40,20 +40,36 @@ radatadir = dirname + '/AZ_Avgs/'
 showplot = True
 saveplot = True
 plotcontours = True
-minmax = None
+
+minmaxvr = None
+minmaxvt = None
+minmaxvp = None
+
+minmaxvrrz = None
+minmaxvtrz = None
+minmaxvprz = None
+
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
 rvals = None
 rbcz = None
+plotlatlines = False
 
 args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
-    if arg == '-minmax':
-        min_vr, max_vr  = float(args[i+1]), float(args[i+2])
-        min_vt, max_vt  = float(args[i+3]), float(args[i+4])
-        min_vp, max_vp  = float(args[i+5]), float(args[i+6])
-        minmax = True # not none
+    if arg == '-minmaxvr':
+        minmaxvr = float(args[i+1]), float(args[i+2])
+    elif arg == '-minmaxvt':
+        minmaxvt = float(args[i+1]), float(args[i+2])
+    elif arg == '-minmaxvp':
+        minmaxvp = float(args[i+1]), float(args[i+2])
+    elif arg == '-minmaxvrrz':
+        minmaxvrrz = float(args[i+1]), float(args[i+2])
+    elif arg == '-minmaxvtrz':
+        minmaxvtrz = float(args[i+1]), float(args[i+2])
+    elif arg == '-minmaxvprz':
+        minmaxvprz = float(args[i+1]), float(args[i+2])
     elif arg == '-rbcz':
         rbcz = float(args[i+1])
     elif arg == '-noshow':
@@ -70,6 +86,8 @@ for i in range(nargs):
         rvals = []
         for rval_str in rvals_str:
             rvals.append(float(rval_str))
+    elif arg == '-plotlats':
+        plotlatlines = True
        
 # Read in AZ_Avgs data
 print ('Getting data from ' + datadir + AZ_Avgs_file + ' ...')
@@ -87,12 +105,6 @@ ro = di['ro']
 
 vr, vt, vp = vals[:, :, lut[1]]/100., vals[:, :, lut[2]]/100.,\
         vals[:, :, lut[3]]/100.
-
-if minmax is None:
-    nstd = 5.
-    min_vr, max_vr = -nstd*np.std(vr), nstd*np.std(vr)
-    min_vt, max_vt = -nstd*np.std(vt), nstd*np.std(vt)
-    min_vp, max_vp = -nstd*np.std(vp), nstd*np.std(vp)
 
 # Set up the actual figure from scratch
 fig_width_inches = 7. # TOTAL figure width, in inches
@@ -131,8 +143,8 @@ subplot_height = subplot_height_inches/fig_height_inches
 field_components = [vr, vt, vp]
 titles = [r'$v_r$', r'$v_\theta$', r'$v_\phi$']
 units = r'$\rm{m}\ \rm{s}^{-1}$'
-my_mins = [min_vr, min_vt, min_vp]
-my_maxes = [max_vr, max_vt, max_vp]
+minmax = [minmaxvr, minmaxvt, minmaxvp]
+minmaxrz = [minmaxvrrz, minmaxvtrz, minmaxvprz]
 
 # Generate the actual figure of the correct dimensions
 fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
@@ -144,9 +156,9 @@ for iplot in range(3):
             margin_bottom)
     ax = fig.add_axes((ax_left, ax_bottom, subplot_width, subplot_height))
     plot_azav (field_components[iplot], rr, cost, fig=fig, ax=ax,\
-        units=units, minmax=(my_mins[iplot], my_maxes[iplot]),\
-           plotcontours=plotcontours)
-    ax.set_title(titles[iplot], verticalalignment='bottom', **csfont)
+        units=units, minmax=minmax[iplot], plotlatlines=plotlatlines,\
+           plotcontours=plotcontours, rbcz=rbcz, minmaxrz=minmaxrz[iplot])
+    ax.set_title(titles[iplot], va='bottom', **csfont)
 
     # Mark radii if desired
     if not rvals is None:
