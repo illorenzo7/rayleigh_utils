@@ -163,8 +163,8 @@ work_rad = vals[:, :, lut[1434]] # Q(r)
 
 work_visc_on_KE = vals[:, :, lut[1907]]
 work_visc_on_intE = vals[:, :, lut[1435]] # (irreversible) viscous heating
-print ("visc on KE: ", np.std(work_visc_on_KE))
-print ("visc on intE: ", np.std(work_visc_on_intE))
+print ("std (visc work on KE): ", np.std(work_visc_on_KE))
+print ("std (visc_heating: visc work on intE): ", np.std(work_visc_on_intE))
 work_visc = work_visc_on_KE + work_visc_on_intE
 
 vr = vals[:, :, lut[1]]
