@@ -36,17 +36,25 @@ dirname_stripped = strip_dirname(dirname)
 # already exist    
 datadir = dirname + '/data/'
 plotdir = dirname + '/plots/'
-if (not os.path.isdir(plotdir)):
+if not os.path.isdir(plotdir):
     os.makedirs(plotdir)
+
 # Read command-line arguments (CLAs)
 showplot = True
 saveplot = True
 plotcontours = True
+plotlatlines = True
 minmax = None
+linthresh = None
+linscale = None
+minmaxrz = None
+linthreshrz = None
+linscalerz = None
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
 forced = False
 rvals = None
 rbcz = None
+symlog = False
 
 args = sys.argv[2:]
 nargs = len(args)
@@ -54,6 +62,8 @@ for i in range(nargs):
     arg = args[i]
     if arg == '-minmax':
         minmax = float(args[i+1]), float(args[i+2])
+    elif arg == '-minmaxrz':
+        minmaxrz = float(args[i+1]), float(args[i+2])
     elif arg == '-rbcz':
         rbcz = float(args[i+1])
     elif arg == '-noshow':
@@ -72,8 +82,18 @@ for i in range(nargs):
         rvals = []
         for rval_str in rvals_str:
             rvals.append(float(rval_str))
-        rvals = np.array(rvals)
-
+    elif arg == '-symlog':
+        symlog = True
+    elif arg == '-linthresh':
+        linthresh = float(args[i+1])
+    elif arg == '-linscale':
+        linscale = float(args[i+1])
+    elif arg == '-linthreshrz':
+        linthreshrz = float(args[i+1])
+    elif arg == '-linscalerz':
+        linscalerz = float(args[i+1])
+    elif arg == '-nolats':
+        plotlatlines = False
 
 # See if magnetism is "on"
 try:
@@ -200,7 +220,6 @@ margin_subplot_top = margin_subplot_top_inches/fig_height_inches
 subplot_width = subplot_width_inches/fig_width_inches
 subplot_height = subplot_height_inches/fig_height_inches
 
-
 torques = [torque_rs, torque_mc, torque_visc, torque_tot]
 titles = [r'$\tau_{\rm{rs}}$', r'$\tau_{\rm{mc}}$', r'$\tau_{\rm{v}}$',\
           r'$\tau_{\rm{tot}}$']
@@ -229,7 +248,10 @@ for iplot in range(nplots):
             margin_bottom)
     ax = fig.add_axes((ax_left, ax_bottom, subplot_width, subplot_height))
     plot_azav (torques[iplot], rr, cost, fig=fig, ax=ax, units=units,\
-           minmax=minmax, plotcontours=plotcontours, rvals=rvals)
+           minmax=minmax, plotcontours=plotcontours, rvals=rvals,\
+           minmaxrz=minmaxrz, rbcz=rbcz, symlog=symlog,\
+    linthresh=linthresh, linscale=linscale, linthreshrz=linthreshrz,\
+    linscalerz=linscalerz, plotlatlines=plotlatlines)
 
     ax.set_title(titles[iplot], verticalalignment='bottom', **csfont)
 

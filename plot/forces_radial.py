@@ -23,6 +23,8 @@ sys.path.append(os.environ['rapl'])
 from azav_util import plot_azav
 from common import get_widest_range_file, strip_dirname, get_dict
 from get_parameter import get_parameter
+from time_scales import compute_Prot, compute_tdt
+from translate_times import translate_times
 
 # Get directory name and stripped_dirname for plotting purposes
 dirname = sys.argv[1]
@@ -36,12 +38,21 @@ if (not os.path.isdir(plotdir)):
     os.makedirs(plotdir)
 
 # Read command-line arguments (CLAs)
-AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
 showplot = True
 saveplot = True
 plotcontours = True
-rbcz = None
+plotlatlines = True
 minmax = None
+linthresh = None
+linscale = None
+minmaxrz = None
+linthreshrz = None
+linscalerz = None
+AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
+forced = False
+rvals = None
+rbcz = None
+symlog = False
 
 args = sys.argv[2:]
 nargs = len(args)
@@ -49,17 +60,38 @@ for i in range(nargs):
     arg = args[i]
     if arg == '-minmax':
         minmax = float(args[i+1]), float(args[i+2])
+    elif arg == '-minmaxrz':
+        minmaxrz = float(args[i+1]), float(args[i+2])
     elif arg == '-rbcz':
         rbcz = float(args[i+1])
-    elif (arg == '-usefile'):
-        AZ_Avgs_file = args[i+1]
-        AZ_Avgs_file = AZ_Avgs_file.split('/')[-1]
     elif arg == '-noshow':
         showplot = False
     elif arg == '-nosave':
         saveplot = False
     elif arg == '-nocontour':
         plotcontours = False
+    elif arg == '-usefile':
+        AZ_Avgs_file = args[i+1]
+        AZ_Avgs_file = AZ_Avgs_file.split('/')[-1]
+    elif arg == '-forced':
+        forced = True
+    elif arg == '-rvals':
+        rvals_str = args[i+1].split()
+        rvals = []
+        for rval_str in rvals_str:
+            rvals.append(float(rval_str))
+    elif arg == '-symlog':
+        symlog = True
+    elif arg == '-linthresh':
+        linthresh = float(args[i+1])
+    elif arg == '-linscale':
+        linscale = float(args[i+1])
+    elif arg == '-linthreshrz':
+        linthreshrz = float(args[i+1])
+    elif arg == '-linscalerz':
+        linscalerz = float(args[i+1])
+    elif arg == '-nolats':
+        plotlatlines = False
 
 # See if magnetism is "on"
 try:
@@ -74,6 +106,19 @@ di = get_dict(datadir + AZ_Avgs_file)
 iter1, iter2 = di['iter1'], di['iter2']
 vals = di['vals']
 lut = di['lut']
+
+# Get the time range in sec
+t1 = translate_times(iter1, dirname, translate_from='iter')['val_sec']
+t2 = translate_times(iter2, dirname, translate_from='iter')['val_sec']
+
+# Get the baseline time unit
+rotation = get_parameter(dirname, 'rotation')
+if rotation:
+    time_unit = compute_Prot(dirname)
+    time_label = r'$\rm{P_{rot}}$'
+else:
+    time_unit = compute_tdt(dirname)
+    time_label = r'$\rm{TDT}$'
 
 # Get necessary grid info
 rr = di['rr']
@@ -166,9 +211,22 @@ for iplot in range(nplots):
             margin_bottom)
     ax = fig.add_axes((ax_left, ax_bottom, subplot_width, subplot_height))
     plot_azav (r_forces[iplot], rr, cost, fig=fig, ax=ax, units=units,\
-    minmax=minmax, plotcontours=plotcontours)
+           minmax=minmax, plotcontours=plotcontours, rvals=rvals,\
+           minmaxrz=minmaxrz, rbcz=rbcz, symlog=symlog,\
+    linthresh=linthresh, linscale=linscale, linthreshrz=linthreshrz,\
+    linscalerz=linscalerz, plotlatlines=plotlatlines)
 
     ax.set_title(titles[iplot], verticalalignment='bottom', **csfont)
+
+# Label averaging interval
+if rotation:
+    time_string = ('t = %.1f to %.1f ' %(t1/time_unit, t2/time_unit))\
+            + time_label + (r'$\ (\Delta t = %.1f\ $'\
+            %((t2 - t1)/time_unit)) + time_label + ')'
+else:
+    time_string = ('t = %.3f to %.3f ' %(t1/time_unit, t2/time_unit))\
+            + time_label + (r'$\ (\Delta t = %.3f\ $'\
+            %((t2 - t1)/time_unit)) + time_label + ')'
 
 # Put some metadata in upper left
 fsize = 12
@@ -177,8 +235,7 @@ fig.text(margin_x, 1 - 0.1*margin_top, dirname_stripped,\
 fig.text(margin_x, 1 - 0.3*margin_top,\
         'Radial force balance (zonally averaged)', ha='left', va='top',\
         fontsize=fsize, **csfont)
-fig.text(margin_x, 1 - 0.5*margin_top,\
-         str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8),\
+fig.text(margin_x, 1 - 0.5*margin_top, time_string,\
          ha='left', va='top', fontsize=fsize, **csfont)
 
 savefile = plotdir + dirname_stripped + '_forces_radial_' +\
