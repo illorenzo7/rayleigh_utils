@@ -331,6 +331,9 @@ def get_satvals(field, posdef=False, logscale=False, symlog=False):
     else:
         sig = np.std(field)
         minmax = -3.*sig, 3.*sig
+    # Make sure minmax isn't 0, 0
+    tinybit = 1.0e-100
+    minmax = minmax[0] - tinybit, minmax[1] + tinybit
     return minmax
 
 def get_symlog_params(field, field_max=None):

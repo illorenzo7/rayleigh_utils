@@ -14,7 +14,7 @@ plt.rcParams['mathtext.fontset'] = 'dejavuserif'
 csfont = {'fontname':'DejaVu Serif'}
 plt.rcParams['contour.negative_linestyle'] = 'solid'
 from common import get_satvals, rsun, trim_field, saturate_array,\
-    sci_format, get_symlog_params
+    sci_format, get_symlog_params, get_exp
 from plotcommon import axis_range, default_axes_1by2, default_axes_1by1
 
 def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
@@ -90,7 +90,7 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
     if not (logscale or symlog) and plotfield:
         if rbcz is None:
             maxabs = max(np.abs(minmax[0]), np.abs(minmax[1]))
-            exp = float(np.floor(np.log10(maxabs)))
+            exp = get_exp(maxabs)
             divisor = 10.**exp
             
             # Normalize field by divisor
@@ -99,8 +99,8 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
         else:
             maxabscz = max(np.abs(minmax[0]), np.abs(minmax[1]))
             maxabsrz = max(np.abs(minmaxrz[0]), np.abs(minmaxrz[1]))
-            exp = expcz = float(np.floor(np.log10(maxabscz)))
-            exprz = float(np.floor(np.log10(maxabsrz)))
+            exp = expcz = get_exp(maxabscz)
+            exprz = get_exp(maxabsrz)
             divisorcz = 10.**expcz
             divisorrz = 10.**exprz
             
@@ -552,7 +552,7 @@ def plot_azav_half(field, rr, cost, sym='even', fig=None, ax=None,\
     # and normalize the field by 10**exp
     if not logscale:
         maxabs = max(np.abs(minmax[0]), np.abs(minmax[1]))
-        exp = float(np.floor(np.log10(maxabs)))
+        exp = get_exp(maxabs)
         divisor = 10.**exp
         
         # Normalize field by divisor
