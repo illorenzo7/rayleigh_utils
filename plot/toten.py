@@ -58,6 +58,7 @@ forced = False
 rvals = None
 rbcz = None
 symlog = False
+magnetism = False
 
 args = sys.argv[2:]
 nargs = len(args)
@@ -97,12 +98,8 @@ for i in range(nargs):
         linscalerz = float(args[i+1])
     elif arg == '-nolats':
         plotlatlines = False
-
-# See if magnetism is "on"
-try:
-    magnetism = get_parameter(dirname, 'magnetism')
-except:
-    magnetism = False # if magnetism wasn't specified, it must be "off"
+    elif arg == '-mag':
+        magnetism = True
 
 # Get the data:
 print ('Getting total energy production terms from ' +\
@@ -173,6 +170,47 @@ work_dsdr = -rhoT_2d*dsdr_2d*vr
 cp = 3.5e8
 work_dsdr_negligible = rhoTvrS*dsdr_2d/cp
 
+if magnetism:
+    work_mag = vals[:, :, lut[1436]] + vals[:, :, lut[1916]] +\
+            1.0/(4.0*np.pi)*(vals[:, :, lut[2019]] + vals[:, :, lut[2043]])
+
+if forced:
+    force_tacho_energy = False # If False, this work will need to get 
+                # included in total
+                # If True, energy is conserved, so term in heat equation
+                # balances out the work term
+    try:
+        force_tacho_energy = get_parameter(dirname, 'force_tacho_energy')
+    except:
+        pass
+
+    # Compute the forcing work, regardless of including it in total
+    mean_vp = vals[:, :, lut[3]]
+    tacho_r = get_parameter(dirname, 'tacho_r')
+    tacho_dr = get_parameter(dirname, 'tacho_dr')
+    tacho_tau = get_parameter(dirname, 'tacho_tau')
+    forcing = np.zeros((nt, nr))
+    eq = get_eq(dirname)
+    rho = eq.rho
+
+    if os.path.exists(dirname + '/inner_vp'):
+        print ("inner_vp file exists, so I assume you have a forcing function which\n quartically matches on to a CZ differential rotation")
+        inner_vp = read_inner_vp(dirname + '/inner_vp')
+        for it in range(nt):
+            for ir in range(nr):
+                if rr[ir] <= tacho_r - tacho_dr*rr[0]:
+                    desired_vp = 0.0
+                elif rr[ir] <= tacho_r:
+                    desired_vp = inner_vp[it]*(1.0 - ( (rr[ir] - tacho_r)/(tacho_dr*rr[0]) )**2)**2
+                else:
+                    desired_vp = mean_vp[it, ir] # No forcing in CZ
+                forcing[it, ir] = -rho[ir]*(mean_vp[it, ir] - desired_vp)/tacho_tau
+    else:
+        forcing_coeff = -rho/tacho_tau*0.5*(1.0 - np.tanh((rr - tacho_r)/(tacho_dr*rr[0])))
+        forcing = forcing_coeff.reshape((1, nr))*mean_vp
+
+    work_forcing = mean_vp*forcing
+
 # Calculate the integrated work
 gi = GridInfo(dirname + '/grid_info')
 rw = gi.rweights
@@ -188,11 +226,25 @@ work_rad_r = np.sum(work_rad*tw_2d, axis=0)
 work_visc_r = np.sum(work_visc*tw_2d, axis=0)
 work_dsdr_r = np.sum(work_dsdr*tw_2d, axis=0)
 work_dsdr_negligible_r = np.sum(work_dsdr_negligible*tw_2d, axis=0)
+if magnetism:
+    work_mag_r = np.sum(work_mag*tw_2d, axis=0)
+if forced:
+    work_forcing_r = np.sum(work_forcing*tw_2d, axis=0)
 
 work_tot = work_KE + work_enth + work_cond + work_rad + work_visc +\
         work_dsdr + work_dsdr_negligible
 work_tot_r = work_KE_r + work_enth_r + work_cond_r + work_rad_r +\
         work_visc_r + work_dsdr_r + work_dsdr_negligible_r
+if magnetism:
+    work_tot += work_mag
+    work_tot_r += work_mag_r
+if forced:
+    if not force_tacho_energy:
+        print("force_tacho_energy = False so including forcing work in total")
+        work_tot += work_forcing
+        work_tot_r += work_forcing_r
+    else:
+        print("force_tacho_energy = True so not including forcing work in total")
 
 ri, ro = np.min(rr), np.max(rr)
 integrated_KE = fourpi/3*(ro**3 - ri**3)*np.sum(work_KE_r*rw)
@@ -203,6 +255,10 @@ integrated_visc = fourpi/3*(ro**3 - ri**3)*np.sum(work_visc_r*rw)
 integrated_dsdr = fourpi/3*(ro**3 - ri**3)*np.sum(work_dsdr_r*rw)
 integrated_dsdr_negligible = fourpi/3*(ro**3 - ri**3)*np.sum(work_dsdr_negligible_r*rw)
 integrated_total = fourpi/3*(ro**3 - ri**3)*np.sum(work_tot_r*rw)
+if magnetism:
+    integrated_mag = fourpi/3*(ro**3 - ri**3)*np.sum(work_mag_r*rw)
+if forced:
+    integrated_forcing = fourpi/3*(ro**3 - ri**3)*np.sum(work_forcing_r*rw)
 
 #max_sig = max(np.std(torque_rs), np.std(torque_mc), np.std(torque_visc))
 
@@ -215,7 +271,7 @@ margin_top_inches = 1 # wider top margin to accommodate subplot titles AND metad
 margin_bottom_inches = 0.75*(2 - (rbcz is None)) 
     # larger bottom margin to make room for colorbar(s)
 margin_subplot_top_inches = 1/4 # margin to accommodate just subplot titles
-nplots = 8 + magnetism
+nplots = 8 + magnetism + forced
 ncol = 3 # put three plots per row
 nrow = np.int(np.ceil(nplots/3)) + 1 # one more row for spherical avg plot
 
@@ -254,11 +310,13 @@ r'$\partial(\overline{\rho}w)/\partial t$']
 
 units = r'$\rm{erg}\ \rm{cm}^{-3}\ \rm{s}^{-1}$'
 
-#if magnetism:
-#    torques.insert(3, torque_Maxwell_mean)
-#    torques.insert(3, torque_Maxwell_rs)
-#    titles.insert(3, r'$\tau_{\rm{mm}}$')
-#    titles.insert(3, r'$\tau_{\rm{ms}}$')
+if forced:
+    work_terms.insert(7, work_forcing)
+    titles.insert(7, r'$\mathbf{v}\cdot\mathbf{f}$')
+
+if magnetism:
+    work_terms.insert(7, work_mag)
+    titles.insert(7, r'$-\nabla\cdot\mathbf{F}_{\rm{Poynting}}$')
 
 # Generate the actual figure of the correct dimensions
 fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
@@ -287,6 +345,11 @@ ax_r.plot(rr/rsun, work_rad_r, label='rad', linewidth=lw)
 ax_r.plot(rr/rsun, work_visc_r, label='visc', linewidth=lw)
 ax_r.plot(rr/rsun, work_dsdr_r, label='dsdr', linewidth=lw)
 ax_r.plot(rr/rsun, work_dsdr_negligible_r, label='dsdr\n(small)', linewidth=lw)
+if magnetism:
+    ax_r.plot(rr/rsun, work_mag_r, label='mag', linewidth=lw)
+if forced:
+    ax_r.plot(rr/rsun, work_forcing_r, label='forcing', linewidth=lw)
+
 ax_r.plot(rr/rsun, work_tot_r, label='tot', linewidth=lw)
 ax_r.set_xlabel(r'$r/R_\odot$')
 ax_r.set_ylabel("spherically avg'd terms")
@@ -298,7 +361,7 @@ leg = ax_r.legend(loc = (-0.4, 0), fontsize=7)
 
 # Output total rates of change of energy due to various terms
 fs = 6
-offset = 0.03
+offset = 1.0/4.0/fig_height_inches
 fig.text(0.75, margin_bottom + 0*offset, 'total dE/dt = %1.3e erg/s' %integrated_total, fontsize=fs)
 fig.text(0.75, margin_bottom + 1*offset, 'dsdr (small) dE/dt = %1.3e erg/s' %integrated_dsdr_negligible, fontsize=fs)
 fig.text(0.75, margin_bottom + 2*offset, 'dsdr dE/dt = %1.3e erg/s' %integrated_dsdr, fontsize=fs)
@@ -307,6 +370,13 @@ fig.text(0.75, margin_bottom + 4*offset, 'rad dE/dt = %1.3e erg/s' %integrated_r
 fig.text(0.75, margin_bottom + 5*offset, 'cond dE/dt = %1.3e erg/s' %integrated_cond, fontsize=fs)
 fig.text(0.75, margin_bottom + 6*offset, 'enth dE/dt = %1.3e erg/s' %integrated_enth, fontsize=fs)
 fig.text(0.75, margin_bottom + 7*offset, 'KE dE/dt = %1.3e erg/s' %integrated_KE, fontsize=fs)
+current_offset = 7*offset
+if magnetism:
+    current_offset += offset
+    fig.text(0.75, margin_bottom + current_offset, 'mag dE/dt = %1.3e erg/s' %integrated_mag, fontsize=fs)
+if forced:
+    current_offset += offset
+    fig.text(0.75, margin_bottom + current_offset, 'forcing dE/dt = %1.3e erg/s' %integrated_forcing, fontsize=fs)
 
 # Get ticks everywhere
 plt.sca(ax_r)
