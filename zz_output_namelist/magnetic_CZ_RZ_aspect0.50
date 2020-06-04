@@ -71,6 +71,8 @@ azavg_values =
     1935,1936,1937, 1938,1939,1940, 
     ! POYNTING FLUX (tot; ppp; mmm; ppm; pmp; mpp)
     2001,2002,2003, 2004,2005,2006, 2007,2008,2009, 2010,2011,2012, 2013,2014,2015, 2016,2017,2018,
+    ! MAGNETIC WORK TERMS IN TOTAL ENERGY EQUATION (Lorentz-force work,
+    1916,2019,2043, ! induction work, magnetic diffusion work)
     ! TORQUE (AMOM PRODUCTION TERMS): RS, mean advec., Coriolis, viscous, Maxwell_mean, Maxwell_fluc
 	1801,1802, 1803, 1804, 1805,1806,
     ! AMOM FLUX (r and theta: RS, MC_vphi, MC_om, Maxwell_fluc, Maxwell_mean)
@@ -131,6 +133,8 @@ shellavg_values =
     1935,1936,1937, 1938,1939,1940, 
     ! POYNTING FLUX (tot; ppp; mmm; ppm; pmp; mpp)
     2001,2002,2003, 2004,2005,2006, 2007,2008,2009, 2010,2011,2012, 2013,2014,2015, 2016,2017,2018,
+    ! MAGNETIC WORK TERMS IN TOTAL ENERGY EQUATION (Lorentz-force work,
+    1916,2019,2043, ! induction work, magnetic diffusion work)
     ! TORQUE (AMOM PRODUCTION TERMS): RS, mean advec., Coriolis, viscous, Maxwell_mean, Maxwell_fluc
 	1801,1802, 1803, 1804, 1805,1806,
     ! AMOM FLUX (r and theta: RS, MC_vphi, MC_om, Maxwell_fluc, Maxwell_mean)
@@ -198,6 +202,8 @@ globalavg_values =
     1935,1936,1937, 1938,1939,1940, 
     ! POYNTING FLUX (tot; ppp; mmm; ppm; pmp; mpp)
     2001,2002,2003, 2004,2005,2006, 2007,2008,2009, 2010,2011,2012, 2013,2014,2015, 2016,2017,2018,
+    ! MAGNETIC WORK TERMS IN TOTAL ENERGY EQUATION (Lorentz-force work,
+    1916,2019,2043, ! induction work, magnetic diffusion work)
     ! TORQUE (AMOM PRODUCTION TERMS): RS, mean advec., Coriolis, viscous, Maxwell_mean, Maxwell_fluc
 	1801,1802, 1803, 1804, 1805,1806,
     ! AMOM FLUX (r and theta: RS, MC_vphi, MC_om, Maxwell_fluc, Maxwell_mean)
