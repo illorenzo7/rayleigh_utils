@@ -46,6 +46,7 @@ nlevs = 20
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
 rbcz = None
 minmax = None
+rvals = None
 
 # Read in CLAs (if any) to change default variable ranges and other options
 args = sys.argv[2:]
@@ -61,6 +62,11 @@ for i in range(nargs):
     elif arg == '-usefile':
         AZ_Avgs_file = args[i+1]
         AZ_Avgs_file = AZ_Avgs_file.split('/')[-1]
+    elif arg == '-rvals':
+        rvals_str = args[i+1].split()
+        rvals = []
+        for rval_str in rvals_str:
+            rvals.append(float(rval_str))
         
 # Read in AZ_Avgs data
 print ('Getting data from ' + datadir + AZ_Avgs_file + ' ...')
@@ -128,7 +134,7 @@ subplot_height = subplot_height_inches/fig_height_inches
 fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
 ax = fig.add_axes((margin_x, margin_bottom, subplot_width, subplot_height))
 plot_azav (diffrot, rr, cost, fig=fig, ax=ax, units='nHz',\
-        nlevs=nlevs, minmax=minmax)
+        nlevs=nlevs, minmax=minmax, rvals=rvals)
 # Make title + label diff. rot. contrast and no. contours
 # Label averaging interval
 if rotation:

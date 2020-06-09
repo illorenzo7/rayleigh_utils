@@ -30,6 +30,13 @@ from translate_times import translate_times
 dirname = sys.argv[1]
 dirname_stripped = strip_dirname(dirname)
 
+# Split dirname_stripped into two lines if it is very long
+if len(dirname_stripped) > 25:
+    dirname_stripped_title = dirname_stripped[:25] + '\n' +\
+            dirname_stripped[25:]
+else:
+    dirname_stripped_title = dirname_stripped
+
 # Get density
 eq = get_eq(dirname)
 rho = eq.density
@@ -53,6 +60,7 @@ plotcontours = True
 rbcz = None
 symlog = False
 plotlatlines = False
+rvals = None
 
 # Read in CLAs (if any) to change default variable ranges and other options
 args = sys.argv[2:]
@@ -84,6 +92,11 @@ for i in range(nargs):
         linscalerz = float(args[i+1])
     elif arg == '-plotlats':
         plotlatlines = True
+    elif arg == '-rvals':
+        rvals_str = args[i+1].split()
+        rvals = []
+        for rval_str in rvals_str:
+            rvals.append(float(rval_str))
 
 # Read in AZ_Avgs data
 print ('Getting data from ' + datadir + AZ_Avgs_file + ' ...')
@@ -132,7 +145,7 @@ rhovm *= np.sign(psi)
 subplot_width_inches = 2.5
 subplot_height_inches = 5.
 margin_inches = 1./8.
-margin_top_inches = 1.25 # larger top margin to make room for titles
+margin_top_inches = 1.5 # larger top margin to make room for titles
 margin_bottom_inches = 0.75*(2 - (rbcz is None)) 
     # larger bottom margin to make room for colorbar(s)
 
@@ -156,7 +169,7 @@ plot_azav (rhovm, rr, cost, fig=fig, ax=ax,\
     units = r'$\rm{g}\ \rm{cm}^{-2}\ \rm{s}^{-1}$', plotcontours=False,\
     minmax=minmax, minmaxrz=minmaxrz, rbcz=rbcz, symlog=symlog,\
     linthresh=linthresh, linscale=linscale, linthreshrz=linthreshrz,\
-    linscalerz=linscalerz, plotlatlines=plotlatlines)
+    linscalerz=linscalerz, plotlatlines=plotlatlines, rvals=rvals)
 
 # Plot streamfunction contours, if desired
 if plotcontours:
@@ -179,7 +192,7 @@ else:
 
 # Make title
 fsize = 12
-fig.text(margin_x, 1 - 1/8*margin_top, dirname_stripped,\
+fig.text(margin_x, 1 - 1/8*margin_top, dirname_stripped_title,\
          ha='left', va='top', fontsize=fsize, **csfont)
 fig.text(margin_x, 1 - 3/8*margin_top,\
          r'$|\langle\overline{\rho}\mathbf{v}_m\rangle|$',\
