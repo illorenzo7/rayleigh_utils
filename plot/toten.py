@@ -55,6 +55,7 @@ linthreshrz = None
 linscalerz = None
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
 forced = False
+force_thermo = False
 rvals = None
 rbcz = None
 symlog = False
@@ -183,6 +184,13 @@ if forced:
         force_tacho_energy = get_parameter(dirname, 'force_tacho_energy')
     except:
         pass
+    # If force_thermo = False (default), do nothing
+    # If True, calculate the work done by the thermal forcing and add
+    # it to the total
+    try:
+        force_thermo = get_parameter(dirname, 'force_thermo')
+    except:
+        pass
 
     # Compute the forcing work, regardless of including it in total
     mean_vp = vals[:, :, lut[3]]
@@ -211,6 +219,23 @@ if forced:
 
     work_forcing = mean_vp*forcing
 
+# Calculate the thermal forcing work, if applicable
+if force_thermo:
+    mean_tvar = vals[:, :, lut[501]]
+    thermo_r = get_parameter(dirname, 'thermo_r')
+    thermo_dr = get_parameter(dirname, 'thermo_dr')
+    thermo_tau = get_parameter(dirname, 'thermo_tau')
+    thermo_amp = get_parameter(dirname, 'thermo_amp')
+    thermo_forcing_coeff = 1.0/thermo_tau/\
+            np.cosh((rr - thermo_r)/(thermo_dr*rr[0]))**2.0
+    thermo_forcing_coeff = thermo_forcing_coeff.reshape((1, nr))
+    theta_profile = 0.5*(3.0*cost**2.0 - 1.0)
+    theta_profile = theta_profile.reshape((nt, 1))
+
+    rhot = (eq.density*eq.temperature).reshape((1, nr))
+    work_thermal_forcing = -thermo_forcing_coeff*(mean_tvar -\
+            thermo_amp*theta_profile)*rhoT_2d
+
 # Calculate the integrated work
 gi = GridInfo(dirname + '/grid_info')
 rw = gi.rweights
@@ -230,6 +255,8 @@ if magnetism:
     work_mag_r = np.sum(work_mag*tw_2d, axis=0)
 if forced:
     work_forcing_r = np.sum(work_forcing*tw_2d, axis=0)
+if force_thermo:
+    work_thermal_forcing_r = np.sum(work_thermal_forcing*tw_2d, axis=0)
 
 work_tot = work_KE + work_enth + work_cond + work_rad + work_visc +\
         work_dsdr + work_dsdr_negligible
@@ -246,6 +273,11 @@ if forced:
     else:
         print("force_tacho_energy = True so not including forcing work in total")
 
+if force_thermo:
+    print("force_thermo = True, including thermal forcing work in total")
+    work_tot += work_thermal_forcing
+    work_tot_r += work_thermal_forcing_r
+
 ri, ro = np.min(rr), np.max(rr)
 integrated_KE = fourpi/3*(ro**3 - ri**3)*np.sum(work_KE_r*rw)
 integrated_enth = fourpi/3*(ro**3 - ri**3)*np.sum(work_enth_r*rw)
@@ -259,6 +291,9 @@ if magnetism:
     integrated_mag = fourpi/3*(ro**3 - ri**3)*np.sum(work_mag_r*rw)
 if forced:
     integrated_forcing = fourpi/3*(ro**3 - ri**3)*np.sum(work_forcing_r*rw)
+if force_thermo:
+    integrated_thermal_forcing = fourpi/3*(ro**3 - ri**3)*\
+            np.sum(work_thermal_forcing_r*rw)
 
 #max_sig = max(np.std(torque_rs), np.std(torque_mc), np.std(torque_visc))
 
@@ -271,7 +306,7 @@ margin_top_inches = 1 # wider top margin to accommodate subplot titles AND metad
 margin_bottom_inches = 0.75*(2 - (rbcz is None)) 
     # larger bottom margin to make room for colorbar(s)
 margin_subplot_top_inches = 1/4 # margin to accommodate just subplot titles
-nplots = 8 + magnetism + forced
+nplots = 8 + magnetism + forced + force_thermo
 ncol = 3 # put three plots per row
 nrow = np.int(np.ceil(nplots/3)) + 1 # one more row for spherical avg plot
 
@@ -309,6 +344,10 @@ r'$\overline{\rho}\overline{T}(S/c_{\rm{p}})\mathbf{v}\cdot\nabla\overline{S}$',
 r'$\partial(\overline{\rho}w)/\partial t$']
 
 units = r'$\rm{erg}\ \rm{cm}^{-3}\ \rm{s}^{-1}$'
+
+if force_thermo:
+    work_terms.insert(7, work_thermal_forcing)
+    titles.insert(7, 'thermal forcing')
 
 if forced:
     work_terms.insert(7, work_forcing)
