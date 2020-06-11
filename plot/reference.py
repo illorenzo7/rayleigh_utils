@@ -62,8 +62,7 @@ dsdr = eq.dsdr
 s = cumtrapz(dsdr, r, initial=0)
 d2lnrho = eq.d2lnrho
 gravity = eq.gravity
-heating = eq.heating
-Q = heating*rho*T
+Q = eq.Q
     
 fig, axs = plotref(r, T, rho, p, dlnT, dlnrho, s, dsdr,\
     d2lnrho, gravity, Q, color='k', xminmax=xminmax)
