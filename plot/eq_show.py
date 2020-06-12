@@ -44,6 +44,7 @@ varname = 'vr' # by default plot the radial velocity
 posdef = False
 plotcontours = True
 plotlonlines = True
+nlevs = None
 
 args = sys.argv[2:]
 nargs = len(args)
@@ -79,6 +80,8 @@ for i in range(nargs):
         di_trans = translate_times(time, dirname, translate_from='prot')
         desired_iter = di_trans['val_iter']
         iiter = np.argmin(np.abs(int_file_list - desired_iter))
+    elif arg == '-nlevs':
+        nlevs = int(args[i+1])
 
 # See if posdef should be true
 if 'sq' in varname:
@@ -131,9 +134,10 @@ texlabel = texlabels[varname]
 # create axes
 fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
 ax = fig.add_axes((margin_x, margin_bottom, subplot_width, subplot_height))
-plot_eqslice (field, eq.radius, eq.phi, fig=fig, ax=ax, units=units,\
+plot_eqslice(field, eq.radius, eq.phi, fig=fig, ax=ax, units=units,\
         minmax=minmax, plotlonlines=plotlonlines, posdef=posdef,\
-        symlog=symlog, logscale=logscale, plotcontours=plotcontours)
+        symlog=symlog, logscale=logscale, plotcontours=plotcontours,\
+        nlevs=nlevs)
 
 # Make title
 if rotation:

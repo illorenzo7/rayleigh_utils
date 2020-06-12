@@ -19,7 +19,7 @@ from plotcommon import axis_range, default_axes_1by2, default_axes_1by1
 
 def plot_eqslice(field, rr, phi, fig=None, ax=None, cmap='RdYlBu_r',\
     units='', minmax=None, posdef=False, logscale=False, symlog=False,\
-    plotcontours=True, plotfield=True, nlevs=10, levels=None,\
+    plotcontours=True, plotfield=True, nlevs=None, levels=None,\
 	plotlonlines=False, rvals=None, rvals_norm=None, cbar_fs=10,\
     showplot=False, plot_cbar=True, lw=1., linthresh=None, linscale=None,\
     plotboundary=True):
@@ -184,6 +184,8 @@ def plot_eqslice(field, rr, phi, fig=None, ax=None, cmap='RdYlBu_r',\
     if plotcontours:
         # Determine the contour levels
         if levels is None:
+            if nlevs is None:
+                nlevs = 11 # Default nlevs to 11
             if logscale:
                 min_log = np.log10(minmax[0])
                 max_log = np.log10(minmax[1])

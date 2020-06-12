@@ -37,6 +37,7 @@ posdef = False
 plotcontours = True
 plotlonlines = True
 varlist = None
+nlevs = None
 
 args = sys.argv[2:]
 nargs = len(args)
@@ -74,6 +75,8 @@ for i in range(nargs):
         iiter = np.argmin(np.abs(int_file_list - desired_iter))
     elif arg == '-vars':
         varlist = args[i+1].split()
+    elif arg == '-nlevs':
+        nlevs = int(args[i+1])
 
 # Get the baseline time unit
 rotation = get_parameter(dirname, 'rotation')
@@ -131,7 +134,7 @@ for varname in varlist:
     texlabel = texlabels[varname]
 
     # Name to save plot
-    savename = 'eq_iter' + fname + varname  + '.png'
+    savename = 'eq_iter' + fname + '_' + varname  + '.png'
 
     # See if posdef should be true
     if 'sq' in varname:
@@ -149,7 +152,8 @@ for varname in varlist:
             subplot_height))
     plot_eqslice (field, eq.radius, eq.phi, fig=fig, ax=ax, units=units,\
             minmax=minmax, plotlonlines=plotlonlines, posdef=posdef,\
-            symlog=symlog, logscale=logscale, plotcontours=plotcontours)
+            symlog=symlog, logscale=logscale, plotcontours=plotcontours,\
+            nlevs=nlevs)
 
     # Make title
     # Get the time label

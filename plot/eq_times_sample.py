@@ -36,6 +36,7 @@ varname = 'vr' # by default plot the radial velocity
 posdef = False
 plotcontours = True
 plotlonlines = True
+nlevs = None
 
 args = sys.argv[2:]
 nargs = len(args)
@@ -60,6 +61,8 @@ for i in range(nargs):
         plotcontours = False
     elif arg == '-nolon':
         plotlonlines = True
+    elif arg == '-nlevs':
+        nlevs = int(args[i+1])
 
 # See if posdef should be true
 if 'sq' in varname:
@@ -131,7 +134,8 @@ for i in range(index_first, index_last + 1):
         plot_eqslice (field, eq.radius, eq.phi, fig=fig, ax=ax,\
                 units=units,\
                 minmax=minmax, plotlonlines=plotlonlines, posdef=posdef,\
-                symlog=symlog, logscale=logscale, plotcontours=plotcontours)
+                symlog=symlog, logscale=logscale, plotcontours=plotcontours,\
+                nlevs=nlevs)
 
         # Make title
         if rotation:
