@@ -79,7 +79,7 @@ if not rvals is None:
 
 plt.tight_layout() 
     
-axs[0,0].set_title('          ' + dirname_stripped, **csfont)
+axs[0,0].set_title(dirname_stripped, ha='left', **csfont)
     
 plt.savefig(plotdir + dirname_stripped + '_reference_state.png', dpi=300)
 plt.show()

@@ -63,13 +63,15 @@ forced = False
 rvals = None
 rbcz = None
 symlog = False
+navg = 1 # by default average over 1 AZ_Avgs instance (no average)
+# for navg > 1, a "sliding average" will be used.
 
 args = sys.argv[2:]
 nargs = len(args)
 
 the_tuple = get_desired_range(int_file_list, args)
-if the_tuple is None: # By default average over the last 10 files
-    index_first, index_last = nfiles - 11, nfiles - 1  
+if the_tuple is None: # By default average over the first 50 files
+    index_first, index_last = 0, 49
 else:
     index_first, index_last = the_tuple
 
@@ -110,24 +112,22 @@ for i in range(nargs):
         linscalerz = float(args[i+1])
     elif arg == '-nolats':
         plotlatlines = False
+    elif arg == '-navg':
+        navg = int(args[i+1])
+        if navg % 2 == 0:
+            print ("Please don't enter even values for navg!")
+            print ("Replacing navg = %i with navg = %i" %(navg, navg + 1))
+            navg += 1
+
+# Check to make sure index_last didn't fall beyond the last possible index ...
+if index_last > nfiles - navg:
+    index_last = nfiles - navg
 
 # See if magnetism is "on"
 try:
     magnetism = get_parameter(dirname, 'magnetism')
 except:
     magnetism = False # if magnetism wasn't specified, it must be "off"
-
-# Get the torques:
-print ('Getting torques from ' + datadir + AZ_Avgs_file + ' ...')
-di = get_dict(datadir + AZ_Avgs_file)
-
-iter1, iter2 = di['iter1'], di['iter2']
-vals = di['vals']
-lut = di['lut']
-
-# Get the time range in sec
-t1 = translate_times(iter1, dirname, translate_from='iter')['val_sec']
-t2 = translate_times(iter2, dirname, translate_from='iter')['val_sec']
 
 # Get the baseline time unit
 rotation = get_parameter(dirname, 'rotation')
@@ -147,7 +147,18 @@ cost = az0.costheta
 sint = az0.sintheta
 nr = az0.nr
 nt = az0.ntheta
+nq = az0.nq
 xx = rr.reshape((1, nr))*sint.reshape((nt, 1))
+
+# Get indices for torques (hopefully you don't change quantity codes partway thru!
+lut = az0.lut
+
+# Get torque indices
+ind_pp = lut[1801]
+ind_mm = lut[1802]
+ind_cor = lut[1803]
+ind_visc = lut[1804]
+
 
 # Set up universal figure dimensions
 fig_width_inches = 7. # TOTAL figure width, in inches
@@ -188,114 +199,136 @@ subplot_height = subplot_height_inches/fig_height_inches
 print ('Plotting AZ_Avgs files %s through %s'\
        %(file_list[index_first], file_list[index_last]))
 print('Saving plots to '  + plotdir)
+
+# May have to do sliding average (for navg > 1)
+# Perform an average of the torques, then subtract the first AZ_Avg 
+# and add the last AZ_Avg with each iteration
+# This won't be great if you store multiple records in single AZ_Avg file...
+
+# First time can be initialized here from az0
+t1 = az0.time[0]
+iter1 = az0.iters[0]
+
+# Initialize the vals array with the average of first navg arrays
+print ("Performing initial average over navg = %i files" %navg)
+vals = np.zeros((nt, nr, nq))
+for i in range(index_first, index_first + navg):
+    az = AZ_Avgs(radatadir + file_list[i], '')
+
+    for j in range(az.niter):
+        vals += az.vals[:, :, :, j]/(navg*az.niter)
+# Second time can be initialized now
+t2 = az.time[-1]
+iter2 = az.iters[-1]
+
+# Now perform a sliding average
 for i in range(index_first, index_last + 1):
-    if i == index_first:
-        az = az0
-    else:   
-        az = AZ_Avgs(radatadir + file_list[i], '')
+    print ("Plot number %03i" %(i - index_first + 1))
+    if i > index_first: # only past the first point is it necessary to do anything
+        print ("Reading AZ_Avgs/", file_list[i])
+        print ("Reading AZ_Avgs/", file_list[i + navg - 1])
+        az1 = AZ_Avgs(radatadir + file_list[i], '')
+        az2 = AZ_Avgs(radatadir + file_list[i + navg - 1], '')
+        print ("Subtracting AZ_Avgs/", file_list[i])
+        for j in range(az1.niter):
+            vals -= az1.vals[:, :, :, j]/(navg*az1.niter)
+        print ("Adding AZ_Avgs/", file_list[i + navg - 1])
+        for j in range(az2.niter):
+            vals += az2.vals[:, :, :, j]/(navg*az2.niter)
 
-    local_ntimes = az.niter
-    vals = az.vals
-    lut = az.lut
+        t1 = az1.time[0]
+        t2 = az2.time[-1]
+        iter1 = az1.iters[0]
+        iter2 = az2.iters[-1]
 
-    # Get torque indices
-    ind_pp = lut[1801]
-    ind_mm = lut[1802]
-    ind_cor = lut[1803]
-    ind_visc = lut[1804]
+    # Make the savename like for Mollweide times sample
+    savename = 'torque_iter' + str(iter1).zfill(8) + '.png'
+    print('Plotting: ' + savename)
 
-    for j in range(local_ntimes):
-        iter_loc = az.iters[j]
-        t_loc = az.time[j]
+    # Get torques
+    torque_rs, torque_mc, torque_visc = -vals[:, :, ind_pp],\
+            -vals[:, :, ind_mm] + vals[:, :, ind_cor], vals[:, :, ind_visc]
+    torque_tot = torque_rs + torque_mc + torque_visc
 
-        # Make the savename like for Mollweide times sample
-        savename = 'torque_iter' + str(iter_loc).zfill(8) + '.png'
-        print('Plotting: ' + savename)
+    if magnetism:
+        ind_Maxwell_mean = lut[1805]
+        ind_Maxwell_rs = lut[1806]
+       
+        torque_Maxwell_mean = vals[:, :, ind_Maxwell_mean]
+        torque_Maxwell_rs = vals[:, :, ind_Maxwell_rs]
+        
+        torque_tot += torque_Maxwell_mean + torque_Maxwell_rs
 
-        # Get torques
-        torque_rs, torque_mc, torque_visc = -vals[:, :, ind_pp, j],\
-                -vals[:, :, ind_mm, j] + vals[:, :, ind_cor, j],\
-                vals[:, :, ind_visc, j]
-        torque_tot = torque_rs + torque_mc + torque_visc
+    if forced: # compute torque associated with forcing function
+        mean_vp = vals[:, :, lut[3]]
+        tacho_r = get_parameter(dirname, 'tacho_r')
+        tacho_dr = get_parameter(dirname, 'tacho_dr')
+        tacho_tau = get_parameter(dirname, 'tacho_tau')
+        forcing = np.zeros((nt, nr))
+        eq = get_eq(dirname)
+        rho = eq.rho
+        forcing_coeff = -rho/tacho_tau*0.5*(1.0 - np.tanh((rr - tacho_r)/(tacho_dr*rr[0])))
+        forcing = forcing_coeff.reshape((1, nr))*mean_vp
 
-        if magnetism:
-            ind_Maxwell_mean = lut[1805]
-            ind_Maxwell_rs = lut[1806]
-           
-            torque_Maxwell_mean = vals[:, :, ind_Maxwell_mean, j]
-            torque_Maxwell_rs = vals[:, :, ind_Maxwell_rs, j]
-            
-            torque_tot += torque_Maxwell_mean + torque_Maxwell_rs
+        # convert forcing function into a torque
+        torque_forcing = xx*forcing
+        torque_tot += torque_forcing
 
-        if forced: # compute torque associated with forcing function
-            mean_vp = vals[:, :, lut[3], j]
-            tacho_r = get_parameter(dirname, 'tacho_r')
-            tacho_dr = get_parameter(dirname, 'tacho_dr')
-            tacho_tau = get_parameter(dirname, 'tacho_tau')
-            forcing = np.zeros((nt, nr))
-            eq = get_eq(dirname)
-            rho = eq.rho
-            forcing_coeff = -rho/tacho_tau*0.5*(1.0 - np.tanh((rr - tacho_r)/(tacho_dr*rr[0])))
-            forcing = forcing_coeff.reshape((1, nr))*mean_vp
+    # Set up lists to generate plot
+    torques = [torque_rs, torque_mc, torque_visc, torque_tot]
+    titles = [r'$\tau_{\rm{rs}}$', r'$\tau_{\rm{mc}}$', r'$\tau_{\rm{v}}$',\
+              r'$\tau_{\rm{tot}}$']
+    units = r'$\rm{g}\ \rm{cm}^{-1}\ \rm{s}^{-2}$'
 
-            # convert forcing function into a torque
-            torque_forcing = xx*forcing
-            torque_tot += torque_forcing
+    if magnetism:
+        torques.insert(3, torque_Maxwell_mean)
+        torques.insert(4, torque_Maxwell_rs)
+        titles.insert(3, r'$\tau_{\rm{mm}}$')
+        titles.insert(4, r'$\tau_{\rm{ms}}$')
 
-        # Set up lists to generate plot
-        torques = [torque_rs, torque_mc, torque_visc, torque_tot]
-        titles = [r'$\tau_{\rm{rs}}$', r'$\tau_{\rm{mc}}$', r'$\tau_{\rm{v}}$',\
-                  r'$\tau_{\rm{tot}}$']
-        units = r'$\rm{g}\ \rm{cm}^{-1}\ \rm{s}^{-2}$'
+    if forced and magnetism:
+        torques.insert(5, torque_forcing)
+        titles.insert(5, r'$\tau_{\rm{forcing}}$')
+    elif forced:
+        torques.insert(3, torque_forcing)
+        titles.insert(3, r'$\tau_{\rm{forcing}}$')
 
-        if magnetism:
-            torques.insert(3, torque_Maxwell_mean)
-            torques.insert(4, torque_Maxwell_rs)
-            titles.insert(3, r'$\tau_{\rm{mm}}$')
-            titles.insert(4, r'$\tau_{\rm{ms}}$')
+    # Generate the actual figure of the correct dimensions
+    fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
 
-        if forced and magnetism:
-            torques.insert(5, torque_forcing)
-            titles.insert(5, r'$\tau_{\rm{forcing}}$')
-        elif forced:
-            torques.insert(3, torque_forcing)
-            titles.insert(3, r'$\tau_{\rm{forcing}}$')
+    for iplot in range(nplots):
+        ax_left = margin_x + (iplot%ncol)*(subplot_width + margin_x)
+        ax_bottom = 1 - margin_top - subplot_height - margin_subplot_top -\
+                (iplot//ncol)*(subplot_height + margin_subplot_top +\
+                margin_bottom)
+        ax = fig.add_axes((ax_left, ax_bottom, subplot_width, subplot_height))
+        plot_azav (torques[iplot], rr, cost, fig=fig, ax=ax, units=units,\
+               minmax=minmax, plotcontours=plotcontours, rvals=rvals,\
+               minmaxrz=minmaxrz, rbcz=rbcz, symlog=symlog,\
+        linthresh=linthresh, linscale=linscale, linthreshrz=linthreshrz,\
+        linscalerz=linscalerz, plotlatlines=plotlatlines)
 
-        # Generate the actual figure of the correct dimensions
-        fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
+        ax.set_title(titles[iplot], verticalalignment='bottom', **csfont)
+    # Make title
+    if rotation:
+        time_string = ('t = %.1f to %.1f ' %(t1/time_unit, t2/time_unit))\
+                + time_label + '\n' + (r'$\ (\Delta t = %.1f\ $'\
+                %((t2 - t1)/time_unit)) + time_label + ')'
+    else:
+        time_string = ('t = %.3f to %.3f ' %(t1/time_unit, t2/time_unit))\
+                + time_label + (r'$\ (\Delta t = %.3f\ $'\
+                %((t2 - t1)/time_unit)) + time_label + ')'
 
-        for iplot in range(nplots):
-            ax_left = margin_x + (iplot%ncol)*(subplot_width + margin_x)
-            ax_bottom = 1 - margin_top - subplot_height - margin_subplot_top -\
-                    (iplot//ncol)*(subplot_height + margin_subplot_top +\
-                    margin_bottom)
-            ax = fig.add_axes((ax_left, ax_bottom, subplot_width, subplot_height))
-            plot_azav (torques[iplot], rr, cost, fig=fig, ax=ax, units=units,\
-                   minmax=minmax, plotcontours=plotcontours, rvals=rvals,\
-                   minmaxrz=minmaxrz, rbcz=rbcz, symlog=symlog,\
-            linthresh=linthresh, linscale=linscale, linthreshrz=linthreshrz,\
-            linscalerz=linscalerz, plotlatlines=plotlatlines)
-
-            ax.set_title(titles[iplot], verticalalignment='bottom', **csfont)
-        # Make title
-        if rotation:
-            time_string = ('t = %.1f ' %(t_loc/time_unit)) + time_label +\
-                    ' (1 ' + time_label + (' = %.2f days)'\
-                    %(time_unit/86400.))
-        else:
-            time_string = ('t = %.3f ' %(t_loc/time_unit)) + time_label +\
-                    ' (1 ' + time_label + (' = %.1f days)'\
-                    %(time_unit/86400.))
-
-        # Put some metadata in upper left
-        fsize = 12
-        fig.text(margin_x, 1 - 0.1*margin_top, dirname_stripped,\
-                 ha='left', va='top', fontsize=fsize, **csfont)
-        fig.text(margin_x, 1 - 0.3*margin_top, 'Torque balance (zonally averaged)',\
-                 ha='left', va='top', fontsize=fsize, **csfont)
-        fig.text(margin_x, 1 - 0.5*margin_top, time_string,\
-                 ha='left', va='top', fontsize=fsize, **csfont)
-        # Save figure
-        savefile = plotdir + savename
-        plt.savefig(savefile, dpi=300)
-        plt.close()
+    # Put some metadata in upper left
+    fsize = 12
+    fig.text(margin_x, 1 - 0.1*margin_top, dirname_stripped,\
+             ha='left', va='top', fontsize=fsize, **csfont)
+    fig.text(margin_x, 1 - 0.3*margin_top, 'Torque balance (zonally averaged)',\
+             ha='left', va='top', fontsize=fsize, **csfont)
+    fig.text(margin_x, 1 - 0.5*margin_top, time_string,\
+             ha='left', va='top', fontsize=fsize, **csfont)
+    # Save figure
+    savefile = plotdir + savename
+    plt.savefig(savefile, dpi=300)
+    plt.close()
+    print('----------------------------------')
