@@ -56,10 +56,11 @@ minmaxrz = None
 linthreshrz = None
 linscalerz = None
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
-plotcontours = True
 rbcz = None
 symlog = False
-plotlatlines = False
+plotcontours = True
+plotlatlines = True
+plotboundary = True
 rvals = None
 
 # Read in CLAs (if any) to change default variable ranges and other options
@@ -78,6 +79,10 @@ for i in range(nargs):
         AZ_Avgs_file = AZ_Avgs_file.split('/')[-1]
     elif arg == '-nocontour':
         plotcontours = False
+    elif arg == '-nobound':
+        plotboundary = False
+    elif arg == '-nolat':
+        plotlatlines = False
     elif arg == '-rbcz':
         rbcz = float(args[i+1])
     elif arg == '-symlog':
@@ -90,8 +95,6 @@ for i in range(nargs):
         linthreshrz = float(args[i+1])
     elif arg == '-linscalerz':
         linscalerz = float(args[i+1])
-    elif arg == '-plotlats':
-        plotlatlines = True
     elif arg == '-rvals':
         rvals_str = args[i+1].split()
         rvals = []
@@ -169,7 +172,8 @@ plot_azav (rhovm, rr, cost, fig=fig, ax=ax,\
     units = r'$\rm{g}\ \rm{cm}^{-2}\ \rm{s}^{-1}$', plotcontours=False,\
     minmax=minmax, minmaxrz=minmaxrz, rbcz=rbcz, symlog=symlog,\
     linthresh=linthresh, linscale=linscale, linthreshrz=linthreshrz,\
-    linscalerz=linscalerz, plotlatlines=plotlatlines, rvals=rvals)
+    linscalerz=linscalerz, plotlatlines=plotlatlines, rvals=rvals,\
+    plotboundary=plotboundary)
 
 # Plot streamfunction contours, if desired
 if plotcontours:
@@ -178,7 +182,8 @@ if plotcontours:
     levels = (-maxabs/2., -maxabs/4., -lilbit*maxabs, 0., lilbit*maxabs,\
             maxabs/4., maxabs/2.)
     plot_azav (psi, rr, cost, fig=fig, ax=ax, plotfield=False,\
-        levels=levels, symlog=symlog)
+        levels=levels, symlog=symlog, plotlatlines=plotlatlines,\
+        plotboundary=plotboundary)
 
 # Label averaging interval
 if rotation:

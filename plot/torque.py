@@ -92,7 +92,7 @@ for i in range(nargs):
         linthreshrz = float(args[i+1])
     elif arg == '-linscalerz':
         linscalerz = float(args[i+1])
-    elif arg == '-nolats':
+    elif arg == '-nolat':
         plotlatlines = False
 
 # See if magnetism is "on"

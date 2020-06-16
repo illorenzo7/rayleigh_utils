@@ -43,6 +43,8 @@ radatadir = dirname + '/AZ_Avgs/'
 showplot = True
 saveplot = True
 plotcontours = True
+plotlatlines = True
+plotboundary = True
 
 minmaxvr = None
 minmaxvt = None
@@ -55,7 +57,6 @@ minmaxvprz = None
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
 rvals = None
 rbcz = None
-plotlatlines = False
 
 args = sys.argv[2:]
 nargs = len(args)
@@ -81,7 +82,11 @@ for i in range(nargs):
         saveplot = False
     elif arg == '-nocontour':
         plotcontours = False
-    elif (arg == '-usefile'):
+    elif arg == '-nobound':
+        plotboundary = False
+    elif arg == '-nolat':
+        plotlatlines = False
+    elif arg == '-usefile':
         AZ_Avgs_file = args[i+1]
         AZ_Avgs_file = AZ_Avgs_file.split('/')[-1]
     elif arg == '-rvals':
@@ -89,8 +94,6 @@ for i in range(nargs):
         rvals = []
         for rval_str in rvals_str:
             rvals.append(float(rval_str))
-    elif arg == '-plotlats':
-        plotlatlines = True
        
 # Read in AZ_Avgs data
 print ('Getting data from ' + datadir + AZ_Avgs_file + ' ...')
@@ -172,8 +175,9 @@ for iplot in range(3):
             margin_bottom)
     ax = fig.add_axes((ax_left, ax_bottom, subplot_width, subplot_height))
     plot_azav (field_components[iplot], rr, cost, fig=fig, ax=ax,\
-        units=units, minmax=minmax[iplot], plotlatlines=plotlatlines,\
-           plotcontours=plotcontours, rbcz=rbcz, minmaxrz=minmaxrz[iplot])
+        units=units, minmax=minmax[iplot], rbcz=rbcz,\
+        minmaxrz=minmaxrz[iplot], plotlatlines=plotlatlines,\
+           plotcontours=plotcontours, plotboundary=plotboundary)
     ax.set_title(titles[iplot], va='bottom', **csfont)
 
     # Mark radii if desired
