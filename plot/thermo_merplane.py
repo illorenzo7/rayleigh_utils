@@ -44,6 +44,7 @@ showplot = True
 saveplot = True
 plotcontours = True
 plotlatlines = True
+plotboundary = True
 minmax = None
 linthresh = None
 linscale = None
@@ -72,6 +73,10 @@ for i in range(nargs):
         saveplot = False
     elif arg == '-nocontour':
         plotcontours = False
+    elif arg == '-nobound':
+        plotboundary = False
+    elif arg == '-nolat':
+        plotlatlines = False
     elif arg == '-usefile':
         AZ_Avgs_file = args[i+1]
         AZ_Avgs_file = AZ_Avgs_file.split('/')[-1]
@@ -92,8 +97,6 @@ for i in range(nargs):
         linthreshrz = float(args[i+1])
     elif arg == '-linscalerz':
         linscalerz = float(args[i+1])
-    elif arg == '-nolats':
-        plotlatlines = False
 
 # Get AZ_Avgs file
 Shell_Avgs_file = get_widest_range_file(datadir, 'Shell_Avgs') 
@@ -220,7 +223,7 @@ for iplot in range(nplots):
            minmax=minmax, plotcontours=plotcontours, rvals=rvals,\
            minmaxrz=minmaxrz, rbcz=rbcz, symlog=symlog,\
     linthresh=linthresh, linscale=linscale, linthreshrz=linthreshrz,\
-    linscalerz=linscalerz, plotlatlines=plotlatlines)
+    linscalerz=linscalerz, plotlatlines=plotlatlines, plotboundary=plotboundary)
     ax.set_title(titles[iplot], va='bottom', **csfont)
 
 # Label averaging interval

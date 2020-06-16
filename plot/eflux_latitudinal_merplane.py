@@ -44,6 +44,7 @@ showplot = True
 saveplot = True
 plotcontours = True
 plotlatlines = True
+plotboundary = True
 minmax = None
 linthresh = None
 linscale = None
@@ -92,7 +93,11 @@ for i in range(nargs):
         linthreshrz = float(args[i+1])
     elif arg == '-linscalerz':
         linscalerz = float(args[i+1])
-    elif arg == '-nolats':
+    elif arg == '-nocontour':
+        plotcontours = False
+    elif arg == '-nobound':
+        plotboundary = False
+    elif arg == '-nolat':
         plotlatlines = False
 
 # See if magnetism is "on"
@@ -244,7 +249,7 @@ for iplot in range(nplots):
            minmax=minmax, plotcontours=plotcontours, rvals=rvals,\
            minmaxrz=minmaxrz, rbcz=rbcz, symlog=symlog,\
     linthresh=linthresh, linscale=linscale, linthreshrz=linthreshrz,\
-    linscalerz=linscalerz, plotlatlines=plotlatlines)
+    linscalerz=linscalerz, plotlatlines=plotlatlines, plotboundary=plotboundary)
     ax.set_title(titles[iplot], va='bottom', **csfont)
 
 # Label averaging interval
