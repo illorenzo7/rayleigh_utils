@@ -27,12 +27,13 @@ dirname_stripped = strip_dirname(dirname)
 # already exist    
 datadir = dirname + '/data/'
 plotdir = dirname + '/plots/'
-if (not os.path.isdir(plotdir)):
+if not os.path.isdir(plotdir):
     os.makedirs(plotdir)
 
 # Set defaults
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
 minmax = None
+depths = None
 
 # Read in CLAs (if any) to change default variable ranges and other options
 args = sys.argv[2:]
@@ -44,6 +45,12 @@ for i in range(nargs):
     elif arg == '-usefile':
         AZ_Avgs_file = args[i+1]
         AZ_Avgs_file = AZ_Avgs_file.split('/')[-1]
+    elif arg == '-depths':
+        depths_str = args[i+1].split()
+        depths = []
+        for depth_str in depths_str:
+            depths.append(float(depth_str))
+        depths = np.array(depths)
         
 # Read in AZ_Avgs data
 print ('Getting AZ_Avgs data from ' + datadir + AZ_Avgs_file + ' ...')
@@ -74,15 +81,15 @@ nr, nt = di['nr'], di['nt']
 S_prime = S_azav - S_shav.reshape((1, nr))
 
 # Plot the entropy deviation vs. latitude, at several depths: 
-# 0, 5, 10, 15, and 25 per cent down
-rvals_desired = np.array([1, 0.95, 0.9, 0.85, 0.75])
-nrvals = len(rvals_desired)
-ir_to_plot = np.zeros(nrvals, dtype=int)
-for i in range(nrvals):
-    rval_desired = rvals_desired[i]
-    ir_to_plot[i] = np.argmin(np.abs(rr_depth - rval_desired))
-    plt.plot(tt_lat, S_prime[:, ir_to_plot[i]],\
-            label=r'$r/r_o=%0.3f$' %(rr[ir_to_plot[i]]/ro))
+# 0, 5, 10, 15, and 25 per cent down, by default
+if depths is None:
+    depths = np.array([1, 0.95, 0.9, 0.85, 0.75])
+ndepths = len(depths)
+for i in range(ndepths):
+    depth = depths[i]
+    ir = np.argmin(np.abs(rr_depth - depth))
+    plt.plot(tt_lat, S_prime[:, ir],\
+            label=r'$r/r_o=%0.3f$' %(rr[ir]/ro))
 
 # Get the zero line
 plt.plot(tt_lat, np.zeros(nt), 'k', linewidth=0.7)
