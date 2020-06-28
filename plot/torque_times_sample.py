@@ -310,14 +310,16 @@ for i in range(index_first, index_last + 1):
 
         ax.set_title(titles[iplot], verticalalignment='bottom', **csfont)
     # Make title
+    t_c = (t1 + t2)/2.
+    Dt = t2 - t1
     if rotation:
-        time_string = ('t = %.1f to %.1f ' %(t1/time_unit, t2/time_unit))\
-                + time_label + '\n' + (r'$\ (\Delta t = %.1f\ $'\
-                %((t2 - t1)/time_unit)) + time_label + ')'
+        time_string = ('t = %.1f ' %(t_c/time_unit))\
+                + time_label + '\n' + (r'$\ (\Delta t = %.2f\ $'\
+                %(Dt/time_unit)) + time_label + ')'
     else:
-        time_string = ('t = %.3f to %.3f ' %(t1/time_unit, t2/time_unit))\
-                + time_label + (r'$\ (\Delta t = %.3f\ $'\
-                %((t2 - t1)/time_unit)) + time_label + ')'
+        time_string = ('t = %.3f' %(t_c/time_unit))\
+                + time_label + (r'$\ \Delta t = %.4f\ $'\
+                %(Dt/time_unit)) + time_label
 
     # Put some metadata in upper left
     fsize = 12
