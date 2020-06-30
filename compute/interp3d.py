@@ -23,18 +23,18 @@ if not os.path.isdir(savedir):
 
 file_list, int_file_list, nfiles = get_file_lists(radatadir)
 
-iiter = nfiles - 1 # by default plot the last iteration in Spherical_3D
+iiter = nfiles - 1 # Ay default plot the last iteration in Spherical_3D
 
 args = sys.argv[2:]
 nargs = len(args)
-ncart = 400 # By default make 3D data cube with 400 points per side
+ncart = 400 # Ay default make 3D data cube with 400 points per side
 
-# By default, interpolate all variables possible
+# Ay default, interpolate all variables possible
 interpgrid = True
 interpv = True
 interpB = True
 interpthermo = True
-interpvort = True
+interpom = True
 for i in range(nargs):
     arg = args[i]
     if arg == '-iter':
@@ -68,28 +68,28 @@ for i in range(nargs):
     elif arg == '-nothermo':
         interpthermo = False
     elif arg == '-novort':
-        intervport = False
+        interAport = False
 
 iter_val = int_file_list[iiter]
 fname = file_list[iiter]
 
 print ("Reading fluid variables for Spherical_3D/%08i" %iter_val)
 # Always read vr_3d, since we use it for grid info
-vr_3d = Spherical_3D(fname + '_0001', radatadir)
+Ar_3d = Spherical_3D(fname + '_0001', radatadir)
 
 # Get spherical grid info
-nr = vr_3d.nr
-nt = vr_3d.ntheta
-nphi = vr_3d.nphi
-print('Spherical dimensions (nphi,nth,nr)=({:d},{:d},{:d})'.format(nphi,nt,nr,))
-r = (vr_3d.r[::-1]/np.max(vr_3d.r)).reshape((1, 1, nr))
-theta = (vr_3d.theta[::-1]).reshape((1, nt, 1))
+nr = Ar_3d.nr
+nt = Ar_3d.ntheta
+nphi = Ar_3d.nphi
+print('Spherical dimensions (nphi, nth, nr) = ({:d}, {:d}, {:d})'.format(nphi,nt,nr,))
+r = (Ar_3d.r[::-1]/np.max(Ar_3d.r)).reshape((1, 1, nr))
+theta = (Ar_3d.theta[::-1]).reshape((1, nt, 1))
 phi = (np.linspace(0, 2*np.pi, nphi+1)).reshape((nphi+1, 1, 1))
 zero = np.zeros((nphi, nt, nr))
 
 n_x = n_y = n_z = ncart
 # Set up the new Cartesian grid to interpolate onto
-print("Interpolating onto Cartesian grid (nx,ny,nz)=({:d},{:d},{:d})".format(n_x,n_y,n_z,))
+print("Interpolating onto Cartesian grid (nx, ny, nz)=({:d}, {:d}, {:d})".format(n_x,n_y,n_z,))
 zero_cart = np.zeros((n_x, n_y, n_z))
 x_u = zero_cart + np.linspace(-1, 1, n_x)[:, None, None]
 y_u = zero_cart + np.linspace(-1, 1, n_y)[None, :, None]
@@ -116,112 +116,112 @@ points = np.array(new_coords_flat).T
 start_overall = time.time()
 # Start interpolating
 if interpv:
-    vt_3d = Spherical_3D(fname + '_0002', radatadir)
-    vp_3d = Spherical_3D(fname + '_0003', radatadir)
-    vr = vr_3d.vals
-    vt = vt_3d.vals
-    vp = vp_3d.vals
+    At_3d = Spherical_3D(fname + '_0002', radatadir)
+    Ap_3d = Spherical_3D(fname + '_0003', radatadir)
+    Ar = Ar_3d.vals
+    At = At_3d.vals
+    Ap = Ap_3d.vals
 
-    # vr
+    # Ar
     print ("Interpolating vr")
     start = time.time()
-    data = np.copy(vr[:, ::-1, ::-1])
+    data = np.copy(Ar[:, ::-1, ::-1])
     data = np.append(data[:,:,:],np.expand_dims(data[0,:,:], axis=0), axis=0)
     F_interp = RegularGridInterpolator(original_coords_flat, data,\
             bounds_error=False, fill_value=0.0)
-    vr_cart = F_interp(points).reshape((n_x, n_y, n_z))
+    Ar_cart = F_interp(points).reshape((n_x, n_y, n_z))
     end = time.time()
-    print ("Interpolating for vr took %.1f sec" %(end - start))
+    print ("Interpolation took %.1f sec" %(end - start))
 
-    # vt
+    # At
     print ("Interpolating vt")
     start = time.time()
-    data = np.copy(vt[:, ::-1, ::-1])
+    data = np.copy(At[:, ::-1, ::-1])
     data = np.append(data[:,:,:],np.expand_dims(data[0,:,:], axis=0), axis=0)
     F_interp = RegularGridInterpolator(original_coords_flat, data,\
             bounds_error=False, fill_value=0.0)
-    vt_cart = F_interp(points).reshape((n_x, n_y, n_z))
+    At_cart = F_interp(points).reshape((n_x, n_y, n_z))
     end = time.time()
-    print ("Interpolating for vt took %.1f sec" %(end - start))
+    print ("Interpolation took %.1f sec" %(end - start))
 
-    # vp
+    # Ap
     print ("Interpolating vp")
     start = time.time()
-    data = np.copy(vp[:, ::-1, ::-1])
+    data = np.copy(Ap[:, ::-1, ::-1])
     data = np.append(data[:,:,:],np.expand_dims(data[0,:,:], axis=0), axis=0)
     F_interp = RegularGridInterpolator(original_coords_flat, data,\
             bounds_error=False, fill_value=0.0)
-    vp_cart = F_interp(points).reshape((n_x, n_y, n_z))
+    Ap_cart = F_interp(points).reshape((n_x, n_y, n_z))
     end = time.time()
-    print ("Interpolating for vp took %.1f sec" %(end - start))
+    print ("Interpolation took %.1f sec" %(end - start))
 
-    # vr_prime
+    # Ar_prime
     print ("Interpolating vr_prime")
     start = time.time()
-    data = np.copy(vr[:, ::-1, ::-1])
+    data = np.copy(Ar[:, ::-1, ::-1])
     data = data - np.mean(data, axis=0).reshape((1, nt, nr))
     data = np.append(data[:,:,:],np.expand_dims(data[0,:,:], axis=0), axis=0)
     F_interp = RegularGridInterpolator(original_coords_flat, data,\
             bounds_error=False, fill_value=0.0)
-    vr_prime_cart = F_interp(points).reshape((n_x, n_y, n_z))
+    Ar_prime_cart = F_interp(points).reshape((n_x, n_y, n_z))
     end = time.time()
-    print ("Interpolating for vr_prime took %.1f sec" %(end - start))
+    print ("Interpolation took %.1f sec" %(end - start))
 
-    # vt
+    # At
     print ("Interpolating vt_prime")
     start = time.time()
-    data = np.copy(vt[:, ::-1, ::-1])
+    data = np.copy(At[:, ::-1, ::-1])
     data = data - np.mean(data, axis=0).reshape((1, nt, nr))
     data = np.append(data[:,:,:],np.expand_dims(data[0,:,:], axis=0), axis=0)
     F_interp = RegularGridInterpolator(original_coords_flat, data,\
             bounds_error=False, fill_value=0.0)
-    vt_prime_cart = F_interp(points).reshape((n_x, n_y, n_z))
+    At_prime_cart = F_interp(points).reshape((n_x, n_y, n_z))
     end = time.time()
-    print ("Interpolating for vt_prime took %.1f sec" %(end - start))
+    print ("Interpolation took %.1f sec" %(end - start))
 
-    # vp_prime
+    # Ap_prime
     print ("Interpolating vp_prime")
     start = time.time()
-    data = np.copy(vp[:, ::-1, ::-1])
+    data = np.copy(Ap[:, ::-1, ::-1])
     data = data - np.mean(data, axis=0).reshape((1, nt, nr))
     data = np.append(data[:,:,:],np.expand_dims(data[0,:,:], axis=0), axis=0)
     F_interp = RegularGridInterpolator(original_coords_flat, data,\
             bounds_error=False, fill_value=0.0)
-    vp_prime_cart = F_interp(points).reshape((n_x, n_y, n_z))
+    Ap_prime_cart = F_interp(points).reshape((n_x, n_y, n_z))
     end = time.time()
-    print ("Interpolating for vp_prime took %.1f sec" %(end - start))
+    print ("Interpolation took %.1f sec" %(end - start))
 
     # Write the grid info to dictionary and save it
     savefile = savedir + fname + '_v.pkl'
-    print ('Saving velocity data at ' + savefile)
+    print ('Saving Spherical velocity data at ' + savefile)
     f = open(savefile, 'wb')
-    pickle.dump({'vr': vr_cart, 'vt': vt_cart, 'vp': vp_cart,\
-            'vr_prime': vr_prime_cart, 'vt_prime': vt_prime_cart,\
-            'vp_prime': vp_prime_cart}, f, protocol=4)
+    pickle.dump({'vr': Ar_cart, 'vt': At_cart, 'vp': Ap_cart,\
+            'vr_prime': Ar_prime_cart, 'vt_prime': At_prime_cart,\
+            'vp_prime': Ap_prime_cart}, f, protocol=4)
     f.close()
 
     # Compute the Cartesian velocities
     print ("Computing Cartesian interpolated velocities, vx, vy, vz")
-    vx = -(vr_cart*np.sin(theta_u) + vt_cart*np.cos(theta_u))*np.cos(phi_u) +\
-            vp_cart*np.sin(phi_u)
-    vy = -(vr_cart*np.sin(theta_u) + vt_cart*np.cos(theta_u))*np.sin(phi_u) -\
-            vp_cart*np.cos(phi_u)
-    vz = vr_cart*np.cos(theta_u)  - vt_cart*np.sin(theta_u)
+    Ax = -(Ar_cart*np.sin(theta_u) + At_cart*np.cos(theta_u))*np.cos(phi_u) +\
+            Ap_cart*np.sin(phi_u)
+    Ay = -(Ar_cart*np.sin(theta_u) + At_cart*np.cos(theta_u))*np.sin(phi_u) -\
+            Ap_cart*np.cos(phi_u)
+    Az = Ar_cart*np.cos(theta_u)  - At_cart*np.sin(theta_u)
 
-    vx_prime = -(vr_prime_cart*np.sin(theta_u) +\
-            vt_prime_cart*np.cos(theta_u))*np.cos(phi_u) +\
-            vp_prime_cart*np.sin(phi_u)
-    vy_prime = -(vr_prime_cart*np.sin(theta_u) +\
-            vt_prime_cart*np.cos(theta_u))*np.sin(phi_u) -\
-            vp_prime_cart*np.cos(phi_u)
-    vz_prime = vr_prime_cart*np.cos(theta_u)  - vt_prime_cart*np.sin(theta_u)
+    Ax_prime = -(Ar_prime_cart*np.sin(theta_u) +\
+            At_prime_cart*np.cos(theta_u))*np.cos(phi_u) +\
+            Ap_prime_cart*np.sin(phi_u)
+    Ay_prime = -(Ar_prime_cart*np.sin(theta_u) +\
+            At_prime_cart*np.cos(theta_u))*np.sin(phi_u) -\
+            Ap_prime_cart*np.cos(phi_u)
+    Az_prime = Ar_prime_cart*np.cos(theta_u)  - At_prime_cart*np.sin(theta_u)
 
     # Write the Cartesian velocity data to dictionary and save it
     savefile = savedir + fname + '_vcart.pkl'
-    print ('Saving velocity data at ' + savefile)
+    print ('Saving Cartesian velocity data at ' + savefile)
     f = open(savefile, 'wb')
-    pickle.dump({'vx': vx, 'vy': vy, 'vz': vz,\
-        'vx_prime': vx_prime, 'vy_prime': vy_prime, 'vz_prime': vz_prime},\
+    pickle.dump({'vx': Ax, 'vy': Ay, 'vz': Az,\
+        'vx_prime': Ax_prime, 'vy_prime': Ay_prime, 'vz_prime': Az_prime},\
         f, protocol=4)
     f.close()
 
@@ -241,7 +241,7 @@ if interpthermo:
             bounds_error=False, fill_value=0.0)
     rhobar_cart = F_interp(points).reshape((n_x, n_y, n_z))
     end = time.time()
-    print ("Interpolating for rhobar took %.1f sec" %(end - start))
+    print ("Interpolation took %.1f sec" %(end - start))
 
     # pbar
     print ("Interpolating pbar")
@@ -252,7 +252,7 @@ if interpthermo:
             bounds_error=False, fill_value=0.0)
     pbar_cart = F_interp(points).reshape((n_x, n_y, n_z))
     end = time.time()
-    print ("Interpolating for rhobar took %.1f sec" %(end - start))
+    print ("Interpolation took %.1f sec" %(end - start))
 
     # tbar
     print ("Interpolating tbar")
@@ -263,7 +263,7 @@ if interpthermo:
             bounds_error=False, fill_value=0.0)
     tbar_cart = F_interp(points).reshape((n_x, n_y, n_z))
     end = time.time()
-    print ("Interpolating for tbar took %.1f sec" %(end - start))
+    print ("Interpolation took %.1f sec" %(end - start))
 
     # Now the actual thermal perturbations
     s_3d = Spherical_3D(fname + '_0501', radatadir)
@@ -281,7 +281,7 @@ if interpthermo:
             bounds_error=False, fill_value=0.0)
     p_cart = F_interp(points).reshape((n_x, n_y, n_z))
     end = time.time()
-    print ("Interpolating for p took %.1f sec" %(end - start))
+    print ("Interpolation took %.1f sec" %(end - start))
 
     # s
     print ("Interpolating s")
@@ -292,7 +292,7 @@ if interpthermo:
             bounds_error=False, fill_value=0.0)
     s_cart = F_interp(points).reshape((n_x, n_y, n_z))
     end = time.time()
-    print ("Interpolating for s took %.1f sec" %(end - start))
+    print ("Interpolation took %.1f sec" %(end - start))
 
     # p_prime
     print ("Interpolating p_prime")
@@ -304,7 +304,7 @@ if interpthermo:
             bounds_error=False, fill_value=0.0)
     p_prime_cart = F_interp(points).reshape((n_x, n_y, n_z))
     end = time.time()
-    print ("Interpolating for p_prime took %.1f sec" %(end - start))
+    print ("Interpolation took %.1f sec" %(end - start))
 
     # s_prime
     print ("Interpolating s_prime")
@@ -316,7 +316,7 @@ if interpthermo:
             bounds_error=False, fill_value=0.0)
     s_prime_cart = F_interp(points).reshape((n_x, n_y, n_z))
     end = time.time()
-    print ("Interpolating for s_prime took %.1f sec" %(end - start))
+    print ("Interpolation took %.1f sec" %(end - start))
 
     # Write the grid info to dictionary and save it
     savefile = savedir + fname + '_thermo.pkl'
@@ -324,237 +324,236 @@ if interpthermo:
     f = open(savefile, 'wb')
     pickle.dump({'rhobar': rhobar_cart, 'pbar': pbar_cart, 'tbar': tbar_cart,\
             's': s_cart, 'p': p_cart, 's_prime': s_prime_cart,\
-            'p_prime': p_prime_cart},\
-        f, protocol=4)
+            'p_prime': p_prime_cart}, f, protocol=4)
     f.close()
 
 if interpom:
-    omr_3d = Spherical_3D(fname + '_0301', radatadir)
-    omt_3d = Spherical_3D(fname + '_0302', radatadir)
-    omp_3d = Spherical_3D(fname + '_0303', radatadir)
-    omr = omr_3d.vals
-    omt = omt_3d.vals
-    omp = omp_3d.vals
+    Ar_3d = Spherical_3D(fname + '_0301', radatadir)
+    At_3d = Spherical_3D(fname + '_0302', radatadir)
+    Ap_3d = Spherical_3D(fname + '_0303', radatadir)
+    Ar = Ar_3d.vals
+    At = At_3d.vals
+    Ap = Ap_3d.vals
 
-    # omr
+    # Ar
     print ("Interpolating omr")
     start = time.time()
-    data = np.copy(omr[:, ::-1, ::-1])
+    data = np.copy(Ar[:, ::-1, ::-1])
     data = np.append(data[:,:,:],np.expand_dims(data[0,:,:], axis=0), axis=0)
     F_interp = RegularGridInterpolator(original_coords_flat, data,\
             bounds_error=False, fill_value=0.0)
-    omr_cart = F_interp(points).reshape((n_x, n_y, n_z))
+    Ar_cart = F_interp(points).reshape((n_x, n_y, n_z))
     end = time.time()
-    print ("Interpolating for omr took %.1f sec" %(end - start))
+    print ("Interpolation took %.1f sec" %(end - start))
 
-    # omt
+    # At
     print ("Interpolating omt")
     start = time.time()
-    data = np.copy(omt[:, ::-1, ::-1])
+    data = np.copy(At[:, ::-1, ::-1])
     data = np.append(data[:,:,:],np.expand_dims(data[0,:,:], axis=0), axis=0)
     F_interp = RegularGridInterpolator(original_coords_flat, data,\
             bounds_error=False, fill_value=0.0)
-    omt_cart = F_interp(points).reshape((n_x, n_y, n_z))
+    At_cart = F_interp(points).reshape((n_x, n_y, n_z))
     end = time.time()
-    print ("Interpolating for omt took %.1f sec" %(end - start))
+    print ("Interpolation took %.1f sec" %(end - start))
 
-    # omp
+    # Ap
     print ("Interpolating omp")
     start = time.time()
-    data = np.copy(omp[:, ::-1, ::-1])
+    data = np.copy(Ap[:, ::-1, ::-1])
     data = np.append(data[:,:,:],np.expand_dims(data[0,:,:], axis=0), axis=0)
     F_interp = RegularGridInterpolator(original_coords_flat, data,\
             bounds_error=False, fill_value=0.0)
-    omp_cart = F_interp(points).reshape((n_x, n_y, n_z))
+    Ap_cart = F_interp(points).reshape((n_x, n_y, n_z))
     end = time.time()
-    print ("Interpolating for omp took %.1f sec" %(end - start))
+    print ("Interpolation took %.1f sec" %(end - start))
 
-    # omr_prime
+    # Ar_prime
     print ("Interpolating omr_prime")
     start = time.time()
-    data = np.copy(omr[:, ::-1, ::-1])
+    data = np.copy(Ar[:, ::-1, ::-1])
     data = data - np.mean(data, axis=0).reshape((1, nt, nr))
     data = np.append(data[:,:,:],np.expand_dims(data[0,:,:], axis=0), axis=0)
     F_interp = RegularGridInterpolator(original_coords_flat, data,\
             bounds_error=False, fill_value=0.0)
-    omr_prime_cart = F_interp(points).reshape((n_x, n_y, n_z))
+    Ar_prime_cart = F_interp(points).reshape((n_x, n_y, n_z))
     end = time.time()
-    print ("Interpolating for vr_prime took %.1f sec" %(end - start))
+    print ("Interpolation took %.1f sec" %(end - start))
 
-    # vt
-    print ("Interpolating vt_prime")
+    # At
+    print ("Interpolating omt_prime")
     start = time.time()
-    data = np.copy(vt[:, ::-1, ::-1])
+    data = np.copy(At[:, ::-1, ::-1])
     data = data - np.mean(data, axis=0).reshape((1, nt, nr))
     data = np.append(data[:,:,:],np.expand_dims(data[0,:,:], axis=0), axis=0)
     F_interp = RegularGridInterpolator(original_coords_flat, data,\
             bounds_error=False, fill_value=0.0)
-    vt_prime_cart = F_interp(points).reshape((n_x, n_y, n_z))
+    At_prime_cart = F_interp(points).reshape((n_x, n_y, n_z))
     end = time.time()
-    print ("Interpolating for vt_prime took %.1f sec" %(end - start))
+    print ("Interpolation took %.1f sec" %(end - start))
 
-    # vp_prime
-    print ("Interpolating vp_prime")
+    # Ap_prime
+    print ("Interpolating omp_prime")
     start = time.time()
-    data = np.copy(vp[:, ::-1, ::-1])
+    data = np.copy(Ap[:, ::-1, ::-1])
     data = data - np.mean(data, axis=0).reshape((1, nt, nr))
     data = np.append(data[:,:,:],np.expand_dims(data[0,:,:], axis=0), axis=0)
     F_interp = RegularGridInterpolator(original_coords_flat, data,\
             bounds_error=False, fill_value=0.0)
-    vp_prime_cart = F_interp(points).reshape((n_x, n_y, n_z))
+    Ap_prime_cart = F_interp(points).reshape((n_x, n_y, n_z))
     end = time.time()
-    print ("Interpolating for vp_prime took %.1f sec" %(end - start))
+    print ("Interpolation took %.1f sec" %(end - start))
 
     # Write the grid info to dictionary and save it
-    savefile = savedir + fname + '_v.pkl'
-    print ('Saving velocity data at ' + savefile)
+    savefile = savedir + fname + '_om.pkl'
+    print ('Saving Spherical  vorticity data at ' + savefile)
     f = open(savefile, 'wb')
-    pickle.dump({'vr': vr_cart, 'vt': vt_cart, 'vp': vp_cart,\
-            'vr_prime': vr_prime_cart, 'vt_prime': vt_prime_cart,\
-            'vp_prime': vp_prime_cart}, f, protocol=4)
+    pickle.dump({'omr': Ar_cart, 'omt': At_cart, 'omp': Ap_cart,\
+            'omr_prime': Ar_prime_cart, 'omt_prime': At_prime_cart,\
+            'omp_prime': Ap_prime_cart}, f, protocol=4)
     f.close()
 
-    # Compute the Cartesian velocities
-    print ("Computing Cartesian interpolated velocities, vx, vy, vz")
-    vx = -(vr_cart*np.sin(theta_u) + vt_cart*np.cos(theta_u))*np.cos(phi_u) +\
-            vp_cart*np.sin(phi_u)
-    vy = -(vr_cart*np.sin(theta_u) + vt_cart*np.cos(theta_u))*np.sin(phi_u) -\
-            vp_cart*np.cos(phi_u)
-    vz = vr_cart*np.cos(theta_u)  - vt_cart*np.sin(theta_u)
+    # Compute the Cartesian vorticities
+    print ("Computing Cartesian interpolated vorticities, omx, omy, omz")
+    Ax = -(Ar_cart*np.sin(theta_u) + At_cart*np.cos(theta_u))*np.cos(phi_u) +\
+            Ap_cart*np.sin(phi_u)
+    Ay = -(Ar_cart*np.sin(theta_u) + At_cart*np.cos(theta_u))*np.sin(phi_u) -\
+            Ap_cart*np.cos(phi_u)
+    Az = Ar_cart*np.cos(theta_u)  - At_cart*np.sin(theta_u)
 
-    vx_prime = -(vr_prime_cart*np.sin(theta_u) +\
-            vt_prime_cart*np.cos(theta_u))*np.cos(phi_u) +\
-            vp_prime_cart*np.sin(phi_u)
-    vy_prime = -(vr_prime_cart*np.sin(theta_u) +\
-            vt_prime_cart*np.cos(theta_u))*np.sin(phi_u) -\
-            vp_prime_cart*np.cos(phi_u)
-    vz_prime = vr_prime_cart*np.cos(theta_u)  - vt_prime_cart*np.sin(theta_u)
+    Ax_prime = -(Ar_prime_cart*np.sin(theta_u) +\
+            At_prime_cart*np.cos(theta_u))*np.cos(phi_u) +\
+            Ap_prime_cart*np.sin(phi_u)
+    Ay_prime = -(Ar_prime_cart*np.sin(theta_u) +\
+            At_prime_cart*np.cos(theta_u))*np.sin(phi_u) -\
+            Ap_prime_cart*np.cos(phi_u)
+    Az_prime = Ar_prime_cart*np.cos(theta_u)  - At_prime_cart*np.sin(theta_u)
 
     # Write the Cartesian velocity data to dictionary and save it
-    savefile = savedir + fname + '_vcart.pkl'
-    print ('Saving velocity data at ' + savefile)
+    savefile = savedir + fname + '_omcart.pkl'
+    print ('Saving Cartesian vorticity data at ' + savefile)
     f = open(savefile, 'wb')
-    pickle.dump({'vx': vx, 'vy': vy, 'vz': vz,\
-        'vx_prime': vx_prime, 'vy_prime': vy_prime, 'vz_prime': vz_prime},\
+    pickle.dump({'omx': Ax, 'omy': Ay, 'omz': Az,\
+        'omx_prime': Ax_prime, 'omy_prime': Ay_prime, 'omz_prime': Az_prime},\
         f, protocol=4)
     f.close()
 
 mag = get_parameter(dirname, 'magnetism')
 if mag:
     if interpmag:
-        br_3d = Spherical_3D(fname + '_0001', radatadir)
-        bt_3d = Spherical_3D(fname + '_0002', radatadir)
-        bp_3d = Spherical_3D(fname + '_0003', radatadir)
-        br = br_3d.vals
-        bt = bt_3d.vals
-        bp = bp_3d.vals
+        Ar_3d = Spherical_3D(fname + '_0001', radatadir)
+        At_3d = Spherical_3D(fname + '_0002', radatadir)
+        Ap_3d = Spherical_3D(fname + '_0003', radatadir)
+        Ar = Ar_3d.vals
+        At = At_3d.vals
+        Ap = Ap_3d.vals
 
-        # br
+        # Ar
         print ("Interpolating br")
         start = time.time()
-        data = np.copy(br[:, ::-1, ::-1])
+        data = np.copy(Ar[:, ::-1, ::-1])
         data = np.append(data[:,:,:],np.expand_dims(data[0,:,:], axis=0),\
                 axis=0)
         F_interp = RegularGridInterpolator(original_coords_flat, data,\
                 bounds_error=False, fill_value=0.0)
-        br_cart = F_interp(points).reshape((n_x, n_y, n_z))
+        Ar_cart = F_interp(points).reshape((n_x, n_y, n_z))
         end = time.time()
-        print ("Interpolating for br took %.1f sec" %(end - start))
+        print ("Interpolation took %.1f sec" %(end - start))
 
-        # bt
+        # At
         print ("Interpolating bt")
         start = time.time()
-        data = np.copy(bt[:, ::-1, ::-1])
+        data = np.copy(At[:, ::-1, ::-1])
         data = np.append(data[:,:,:],np.expand_dims(data[0,:,:], axis=0),\
                 axis=0)
         F_interp = RegularGridInterpolator(original_coords_flat, data,\
                 bounds_error=False, fill_value=0.0)
-        bt_cart = F_interp(points).reshape((n_x, n_y, n_z))
+        At_cart = F_interp(points).reshape((n_x, n_y, n_z))
         end = time.time()
-        print ("Interpolating for bt took %.1f sec" %(end - start))
+        print ("Interpolation took %.1f sec" %(end - start))
 
-        # vp
+        # Ap
         print ("Interpolating bp")
         start = time.time()
-        data = np.copy(bp[:, ::-1, ::-1])
+        data = np.copy(Ap[:, ::-1, ::-1])
         data = np.append(data[:,:,:],np.expand_dims(data[0,:,:], axis=0),\
                 axis=0)
         F_interp = RegularGridInterpolator(original_coords_flat, data,\
                 bounds_error=False, fill_value=0.0)
-        bp_cart = F_interp(points).reshape((n_x, n_y, n_z))
+        Ap_cart = F_interp(points).reshape((n_x, n_y, n_z))
         end = time.time()
-        print ("Interpolating for bp took %.1f sec" %(end - start))
+        print ("Interpolation took %.1f sec" %(end - start))
 
-        # br_prime
+        # Ar_prime
         print ("Interpolating br_prime")
         start = time.time()
-        data = np.copy(br[:, ::-1, ::-1])
+        data = np.copy(Ar[:, ::-1, ::-1])
         data = data - np.mean(data, axis=0).reshape((1, nt, nr))
         data = np.append(data[:,:,:],np.expand_dims(data[0,:,:], axis=0),\
                 axis=0)
         F_interp = RegularGridInterpolator(original_coords_flat, data,\
                 bounds_error=False, fill_value=0.0)
-        br_prime_cart = F_interp(points).reshape((n_x, n_y, n_z))
+        Ar_prime_cart = F_interp(points).reshape((n_x, n_y, n_z))
         end = time.time()
-        print ("Interpolating for br_prime took %.1f sec" %(end - start))
+        print ("Interpolation took %.1f sec" %(end - start))
 
-        # bt_prime
-        print ("Interpolating vt_prime")
+        # At_prime
+        print ("Interpolating bt_prime")
         start = time.time()
-        data = np.copy(bt[:, ::-1, ::-1])
+        data = np.copy(At[:, ::-1, ::-1])
         data = data - np.mean(data, axis=0).reshape((1, nt, nr))
         data = np.append(data[:,:,:],np.expand_dims(data[0,:,:], axis=0),\
                 axis=0)
         F_interp = RegularGridInterpolator(original_coords_flat, data,\
                 bounds_error=False, fill_value=0.0)
-        bt_prime_cart = F_interp(points).reshape((n_x, n_y, n_z))
+        At_prime_cart = F_interp(points).reshape((n_x, n_y, n_z))
         end = time.time()
-        print ("Interpolating for bt_prime took %.1f sec" %(end - start))
+        print ("Interpolation took %.1f sec" %(end - start))
 
-        # bp_prime
+        # Ap_prime
         print ("Interpolating bp_prime")
         start = time.time()
-        data = np.copy(bp[:, ::-1, ::-1])
+        data = np.copy(Ap[:, ::-1, ::-1])
         data = data - np.mean(data, axis=0).reshape((1, nt, nr))
         data = np.append(data[:,:,:],np.expand_dims(data[0,:,:], axis=0),\
                 axis=0)
         F_interp = RegularGridInterpolator(original_coords_flat, data,\
                 bounds_error=False, fill_value=0.0)
-        bp_prime_cart = F_interp(points).reshape((n_x, n_y, n_z))
+        Ap_prime_cart = F_interp(points).reshape((n_x, n_y, n_z))
         end = time.time()
-        print ("Interpolating for bp_prime took %.1f sec" %(end - start))
+        print ("Interpolation took %.1f sec" %(end - start))
 
         # Write the magnetic fields to dictionary and save it
         savefile = savedir + fname + '_B.pkl'
         print ('Saving magnetic field data at ' + savefile)
         f = open(savefile, 'wb')
-        pickle.dump({'br': br_cart, 'bt': bt_cart, 'bp': bp_cart,\
-                'br_prime': br_prime_cart, 'bt_prime': bt_prime_cart,\
-                'bp_prime': bp_prime_cart}, f, protocol=4)
+        pickle.dump({'br': Ar_cart, 'bt': At_cart, 'bp': Ap_cart,\
+                'br_prime': Ar_prime_cart, 'bt_prime': At_prime_cart,\
+                'bp_prime': Ap_prime_cart}, f, protocol=4)
         f.close()
 
         # Compute the Cartesian velocities
-        print ("Computing Cartesian interpolated magnetic fields, bx, by, bz")
-        bx = -(br_cart*np.sin(theta_u) +\
-                bt_cart*np.cos(theta_u))*np.cos(phi_u) + bp_cart*np.sin(phi_u)
-        by = -(br_cart*np.sin(theta_u) +\
-                bt_cart*np.cos(theta_u))*np.sin(phi_u) - bp_cart*np.cos(phi_u)
-        bz = br_cart*np.cos(theta_u)  - bt_cart*np.sin(theta_u)
+        print ("Computing Cartesian interpolated magnetic fields, Ax, Ay, Az")
+        Ax = -(Ar_cart*np.sin(theta_u) +\
+                At_cart*np.cos(theta_u))*np.cos(phi_u) + Ap_cart*np.sin(phi_u)
+        Ay = -(Ar_cart*np.sin(theta_u) +\
+                At_cart*np.cos(theta_u))*np.sin(phi_u) - Ap_cart*np.cos(phi_u)
+        Az = Ar_cart*np.cos(theta_u)  - At_cart*np.sin(theta_u)
 
-        bx_prime = -(br_prime_cart*np.sin(theta_u) +\
-                bt_prime_cart*np.cos(theta_u))*np.cos(phi_u) +\
-                bp_prime_cart*np.sin(phi_u)
-        by_prime = -(br_prime_cart*np.sin(theta_u) +\
-                bt_prime_cart*np.cos(theta_u))*np.sin(phi_u) -\
-                bp_prime_cart*np.cos(phi_u)
-        bz_prime = br_prime_cart*np.cos(theta_u) - bt_prime_cart*np.sin(theta_u)
+        Ax_prime = -(Ar_prime_cart*np.sin(theta_u) +\
+                At_prime_cart*np.cos(theta_u))*np.cos(phi_u) +\
+                Ap_prime_cart*np.sin(phi_u)
+        Ay_prime = -(Ar_prime_cart*np.sin(theta_u) +\
+                At_prime_cart*np.cos(theta_u))*np.sin(phi_u) -\
+                Ap_prime_cart*np.cos(phi_u)
+        Az_prime = Ar_prime_cart*np.cos(theta_u) - At_prime_cart*np.sin(theta_u)
 
         # Write the Cartesian velocity data to dictionary and save it
         savefile = savedir + fname + '_Bcart.pkl'
         print ('Saving Cartesian B field data at ' + savefile)
         f = open(savefile, 'wb')
-        pickle.dump({'bx': bx, 'by': by, 'bz': bz,\
-            'bx_prime': bx_prime, 'by_prime': by_prime, 'bz_prime': bz_prime},\
+        pickle.dump({'bx': Ax, 'by': Ay, 'bz': Az,\
+            'bx_prime': Ax_prime, 'by_prime': Ay_prime, 'bz_prime': Az_prime},\
             f, protocol=4)
         f.close()
 
