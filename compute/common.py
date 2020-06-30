@@ -40,8 +40,16 @@ allthrees_start = 6387.05 # start time for all-threes dynamo cases
 
 def get_file_lists(radatadir):
     try:
-        file_list = os.listdir(radatadir)
-        file_list.sort()
+        if 'Spherical_3D' in strip_dirname(radatadir):
+            file_list_long = os.listdir(radatadir)
+            file_list_long.sort()
+            file_list = []
+            for fname in file_list_long:
+                if '_0001' in fname:
+                    file_list.append(fname[:-5])
+        else:
+            file_list = os.listdir(radatadir)
+            file_list.sort()
         nfiles = len(file_list)
         file_list = np.array(file_list)
     except: # if this fails, the directory must not have existed
