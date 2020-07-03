@@ -67,7 +67,7 @@ for i in range(nargs):
         rvals = []
         for rval_str in rvals_str:
             rvals.append(float(rval_str))
-        
+       
 # Read in AZ_Avgs data
 print ('Getting data from ' + datadir + AZ_Avgs_file + ' ...')
 di = get_dict(datadir + AZ_Avgs_file)
