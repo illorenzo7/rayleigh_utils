@@ -366,11 +366,11 @@ def get_exp(num):
     else:
         return 1
 
-def sci_format(num):
+def sci_format(num, ndec=1):
     exponent = get_exp(num)
     mantissa = num/10.**exponent
-    return (r'$%1.1f\times10^{%i}$' %(mantissa, exponent))
-
+    return ((r'$%1.' + (r'%i' %ndec) + r'f\times10^{%i}$')\
+            %(mantissa, exponent))
 
 def my_bool(x):
     x = x.lower()

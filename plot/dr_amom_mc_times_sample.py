@@ -306,7 +306,7 @@ for i in range(index_first, index_last + 1):
     fig.text(2*margin_x + subplot_width, 1 - margin_y - 2*line_height,\
             amom_label, ha='left', va='top', fontsize=fsize, **csfont)
     fig.text(2*margin_x + subplot_width, 1 - margin_y - 3*line_height,\
-             r'$\int|\mathcal{L}|dV = $' + sci_format(amom_tot),\
+             r'$\int|\mathcal{L}|dV = $' + sci_format(amom_tot, 3),\
              ha='left', va='top', fontsize=fsize, **csfont)
 
     # Plot mass flux

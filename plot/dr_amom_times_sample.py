@@ -39,7 +39,7 @@ file_list, int_file_list, nfiles = get_file_lists(radatadir)
 # Directory with data and plots, make the plotting directory if it doesn't
 # already exist    
 datadir = dirname + '/data/'
-plotdir = dirname + '/plots/diffrot_amom_times_sample/'
+plotdir = dirname + '/plots/dr_amom_times_sample/'
 if not os.path.isdir(plotdir):
     os.makedirs(plotdir)
 
@@ -268,7 +268,7 @@ for i in range(index_first, index_last + 1):
     fig.text(2*margin_x + subplot_width, 1 - margin_y - line_height,\
             amom_label, ha='left', va='top', fontsize=fsize, **csfont)
     fig.text(2*margin_x + subplot_width, 1 - margin_y - 2*line_height,\
-             r'$\int|\mathcal{L}|dV = $' + sci_format(amom_tot),\
+             r'$\int|\mathcal{L}|dV = $' + sci_format(amom_tot, 3),\
              ha='left', va='top', fontsize=fsize, **csfont)
 
     # Make time label over angular momentum plot
