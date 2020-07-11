@@ -43,7 +43,7 @@ f = open(outdir + '/' + fname, 'wb')
 sigpi = np.array(314, dtype=np.int32)
 
 f.write(sigpi.tobytes())
-for it in range(nt):
-    for ir in range(nr):
+for ir in range(nr):
+    for it in range(nt):
         f.write(mean_vp[it,ir].tobytes())
 f.close()
