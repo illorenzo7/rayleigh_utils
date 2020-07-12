@@ -103,13 +103,9 @@ xx = di['xx']
 Om = vp_av/xx
 diffrot = Om*1.0e9/2/np.pi # rad/s --> nHz
 
-# Maximum differential rotation over whole meridional plane
-it15, it75 = np.argmin(np.abs(tt_lat - 15)), np.argmin(np.abs(tt_lat - 75))
-     # ignore problematic poles 
-global_min, global_max = np.min(diffrot[it15:it75, :]),\
-     np.max(diffrot[it15:it75, :])
-Delta_Om = global_max - global_min
-maxabs = np.max((np.abs(global_min), np.abs(global_max)))
+# DR contrast between 0 and 60 degrees
+it0, it60 = np.argmin(np.abs(tt_lat)), np.argmin(np.abs(tt_lat - 60))
+Delta_Om = diffrot[it0, 0] - diffrot[it60, 0]
 
 # Create plot
 subplot_width_inches = 2.5
@@ -154,7 +150,7 @@ fig.text(margin_x, 1 - margin_y - 2*line_height, r'$\Omega - \Omega_0$',\
 fig.text(margin_x, 1 - margin_y - 3*line_height, time_string,\
          ha='left', va='top', fontsize=fsize, **csfont)
 fig.text(margin_x, 1 - margin_y - 5*line_height,\
-         r'$\Delta\Omega_{\rm{tot}} = %.1f\ nHz$' %Delta_Om,\
+         r'$\Delta\Omega_{\rm{60}} = %.1f\ nHz$' %Delta_Om,\
          ha='left', va='top', fontsize=fsize, **csfont)
 fig.text(margin_x, 1 - margin_y - 6*line_height,\
          'nlevs = %i' %nlevs,

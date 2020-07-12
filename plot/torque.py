@@ -24,6 +24,7 @@ from azav_util import plot_azav
 from common import get_widest_range_file, strip_dirname, get_dict
 from get_parameter import get_parameter
 from read_inner_vp import read_inner_vp
+from read_eq_vp import read_eq_vp
 from get_eq import get_eq
 from time_scales import compute_Prot, compute_tdt
 from translate_times import translate_times
@@ -160,6 +161,7 @@ if magnetism:
 if forced: # compute torque associated with forcing function
     mean_vp = vals[:, :, lut[3]]
     tacho_r = get_parameter(dirname, 'tacho_r')
+    print ("read tacho_r = %1.2e" %tacho_r)
     tacho_dr = get_parameter(dirname, 'tacho_dr')
     tacho_tau = get_parameter(dirname, 'tacho_tau')
     forcing = np.zeros((nt, nr))
@@ -175,6 +177,23 @@ if forced: # compute torque associated with forcing function
                     desired_vp = 0.0
                 elif rr[ir] <= tacho_r:
                     desired_vp = inner_vp[it]*(1.0 - ( (rr[ir] - tacho_r)/(tacho_dr*rr[0]) )**2)**2
+                else:
+                    desired_vp = mean_vp[it, ir] # No forcing in CZ
+                forcing[it, ir] = -rho[ir]*(mean_vp[it, ir] - desired_vp)/tacho_tau
+    elif os.path.exists(dirname + '/eq_vp'):
+        print ("eq_vp file exists, so I assume you have a forcing function which\n quartically matches on to a CZ differential rotation\n with viscous-torque-free buffer zone")
+        tacho_r2 = get_parameter(dirname, 'tacho_r2')
+        i_tacho_r = np.argmin(np.abs(rr - tacho_r))
+        print ("read tacho_r2 = %1.2e" %tacho_r2)
+        eq_vp = read_eq_vp(dirname + '/eq_vp', nt, nr)
+        for it in range(nt):
+            for ir in range(nr):
+                if rr[ir] <= tacho_r - tacho_dr*rr[0]:
+                    desired_vp = 0.0
+                elif rr[ir] <= tacho_r:
+                    desired_vp = eq_vp[it, i_tacho_r]*(1.0 - ( (rr[ir] - tacho_r)/(tacho_dr*rr[0]) )**2)**2
+                elif rr[ir] <= tacho_r2:
+                    desired_vp = eq_vp[it, ir]
                 else:
                     desired_vp = mean_vp[it, ir] # No forcing in CZ
                 forcing[it, ir] = -rho[ir]*(mean_vp[it, ir] - desired_vp)/tacho_tau

@@ -10,7 +10,8 @@ def get_parameter(dirname, parameter):
     try:
         for i in range(n):
             if (parameter in lines[i].lower() and '=' in lines[i] and \
-                    lines[i][0] != '!'):
+                    lines[i][0] != '!' and not (parameter == 'tacho_r' and\
+                    lines[i][:8] == 'tacho_r2')):
                 line = lines[i]
         line = line[:] # test if line was assigned
     except:
