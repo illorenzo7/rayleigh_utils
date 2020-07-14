@@ -116,7 +116,7 @@ tflux = hflux + eflux + cflux + kflux + vflux # compute the total flux
 if plot_enth_fluc:
     if lut[1458] < nq:
         eflux_fluc = vals[ :, lut[1458]]
-        eflux_mean = eflux_enth - eflux_fluc
+        eflux_mean = eflux - eflux_fluc
     else: # do the Reynolds decomposition "by hand"
         # Compute the enthalpy flux from mean flows (MER. CIRC.)
         eq = get_eq(dirname)
