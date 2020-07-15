@@ -124,8 +124,9 @@ delta_x = xmax - xmin
 plt.xlim(xmin, xmax)
 
 # Set the y-limits if desired
-if not minmax is None:
-    plt.ylim(minmax[0], minmax[1])
+if minmax is None:
+    minmax = plt.gca().get_ylim()
+plt.ylim(minmax[0], minmax[1])
 
 # Label the axes
 if rnorm is None:
