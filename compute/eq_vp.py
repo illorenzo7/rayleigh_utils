@@ -60,6 +60,7 @@ if ncheby_new is None:
         domain_bounds_new = (rmin, rmax)
         ncheby_new = (nr_new,)
     except:
+        nr_new = nr
         domain_bounds_new = tuple(get_parameter(dirname, 'domain_bounds'))
         ncheby_new = tuple(get_parameter(dirname, 'ncheby'))
     interpr = False
@@ -72,15 +73,13 @@ if nt_new is None:
 else:
     interpt = True
 
-# Compute the new grid if necessary
+# Compute the new grid if necessary and interpolate
 #    nr, nt, nphi, r, rw, tt, cost, sint, tw, phi, dphi =\
 if interpr or interpt:
     nr_new, nt_new, dummy, rr_new, dummy, tt_new, dummy, dummy, dummy,\
             dummy, dummy =\
         compute_grid_info(domain_bounds_new, ncheby_new, nt_new)
 
-# Interpolate eq_vp if necessary
-if interpr or interpt:
     # Always interpolate in both directions if either direction requested
     # if new grid = old grid in a particular direction, interpolation
     # in that direction will leave the data unchanged
