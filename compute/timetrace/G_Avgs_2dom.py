@@ -52,6 +52,7 @@ rw_rz = rw[ir_bcz + 1:]
 nr_rz = len(rw_rz)
 rw_cz /= np.sum(rw_cz)
 rw_rz /= np.sum(rw_rz)
+rw = rw.reshape((nr, 1))
 rw_cz = rw_cz.reshape((nr_cz, 1))
 rw_rz = rw_rz.reshape((nr_rz, 1))
 
@@ -80,6 +81,7 @@ print ('Considering Shell_Avgs files %s through %s for the trace ...'\
 count = 0
 iter1, iter2 = int_file_list[index_first], int_file_list[index_last]
 
+vals = []
 vals_cz = []
 vals_rz = []
 times = []
@@ -95,11 +97,14 @@ for i in range(index_first, index_last + 1):
     #local_ntimes = sh.niter
     local_ntimes = sh.niter
     for j in range(local_ntimes):
-        vals_cz_loc = sh.vals[:ir_bcz+1, 0, :, j]
-        vals_rz_loc = sh.vals[ir_bcz+1:, 0, :, j]
+        vals_loc = sh.vals[:, 0, :, j]
+        vals_cz_loc = sh.vals[:ir_bcz + 1, 0, :, j]
+        vals_rz_loc = sh.vals[ir_bcz + 1:, 0, :, j]
+        gav = np.sum(rw*vals_loc, axis=0)
         gav_cz = np.sum(rw_cz*vals_cz_loc, axis=0)
         gav_rz = np.sum(rw_rz*vals_rz_loc, axis=0)
 
+        vals.append(list(gav)) 
         vals_cz.append(list(gav_cz)) 
         vals_rz.append(list(gav_rz)) 
         times.append(sh.time[j])
@@ -116,6 +121,6 @@ print ('Traced over %i Shell_Avgs slice(s) ...' %count)
 # Save the avarage
 print ('Saving file at ' + savefile + ' ...')
 f = open(savefile, 'wb')
-pickle.dump({'vals_cz': vals_cz, 'vals_rz': vals_rz, 'times': times, 'iters': iters, 'lut': sh0.lut, 'ntimes': count, 'iter1': iter1, 'iter2': iter2, 'rr': sh0.radius, 'nr': sh0.nr, 'qv': sh0.qv, 'nq': sh0.nq},\
+pickle.dump({'vals': vals, 'vals_cz': vals_cz, 'vals_rz': vals_rz, 'times': times, 'iters': iters, 'lut': sh0.lut, 'ntimes': count, 'iter1': iter1, 'iter2': iter2, 'rr': sh0.radius, 'nr': sh0.nr, 'qv': sh0.qv, 'nq': sh0.nq},\
         f, protocol=4)
 f.close()
