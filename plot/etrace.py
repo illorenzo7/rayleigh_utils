@@ -123,37 +123,50 @@ t1 = times[ixmin]
 t2 = times[ix_max]
 
 xaxis = xaxis[ixmin:ix_max + 1]
-ke = vals[lut[401]][ixmin:ix_max + 1]
+#ke = vals[lut[401]][ixmin:ix_max + 1]
 rke = vals[lut[402]][ixmin:ix_max + 1]
 tke = vals[lut[403]][ixmin:ix_max + 1]
 pke = vals[lut[404]][ixmin:ix_max + 1]
+ke = rke + tke + pke
 
-mke = vals[lut[405]][ixmin:ix_max + 1]
-mrke = vals[lut[406]][ixmin:ix_max + 1]
-mtke = vals[lut[407]][ixmin:ix_max + 1]
-mpke = vals[lut[408]][ixmin:ix_max + 1]
-
-fke = vals[lut[409]][ixmin:ix_max + 1]
+#fke = vals[lut[409]][ixmin:ix_max + 1]
 frke = vals[lut[410]][ixmin:ix_max + 1]
 ftke = vals[lut[411]][ixmin:ix_max + 1]
 fpke = vals[lut[412]][ixmin:ix_max + 1]
+fke = frke + ftke + fpke
+
+#mke = vals[lut[405]][ixmin:ix_max + 1]
+#mrke = vals[lut[406]][ixmin:ix_max + 1]
+#mtke = vals[lut[407]][ixmin:ix_max + 1]
+#mpke = vals[lut[408]][ixmin:ix_max + 1]
+mrke = rke - frke
+mtke = tke - ftke
+mpke = pke - fpke
+mke = mrke + mtke + mpke
 
 # Get the magnetic energies if they are available
 if magnetism:
-    me = vals[lut[1101]][ixmin:ix_max + 1]
+    #me = vals[lut[1101]][ixmin:ix_max + 1]
     rme = vals[lut[1102]][ixmin:ix_max + 1]
     tme = vals[lut[1103]][ixmin:ix_max + 1]
     pme = vals[lut[1104]][ixmin:ix_max + 1]
+    me = rme + tme + pme
 
-    mme = vals[lut[1105]][ixmin:ix_max + 1]
+    #mme = vals[lut[1105]][ixmin:ix_max + 1]
     mrme = vals[lut[1106]][ixmin:ix_max + 1]
     mtme = vals[lut[1107]][ixmin:ix_max + 1]
     mpme = vals[lut[1108]][ixmin:ix_max + 1]
+    mme = mrme + mtme + mpme
 
-    fme = vals[lut[1109]][ixmin:ix_max + 1]
-    frme = vals[lut[1110]][ixmin:ix_max + 1]
-    ftme = vals[lut[1111]][ixmin:ix_max + 1]
-    fpme = vals[lut[1112]][ixmin:ix_max + 1]
+    #fme = vals[lut[1109]][ixmin:ix_max + 1]
+    #frme = vals[lut[1110]][ixmin:ix_max + 1]
+    #ftme = vals[lut[1111]][ixmin:ix_max + 1]
+    #fpme = vals[lut[1112]][ixmin:ix_max + 1]
+
+    mrme = rme - frme
+    mtme = tme - ftme
+    mpme = pme - fpme
+    mme = mrme + mtme + mpme
 
 if plot_inte or plot_tote:
     try: # get the internal energy if it is available

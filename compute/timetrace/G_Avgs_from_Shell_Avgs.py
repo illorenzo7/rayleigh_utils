@@ -97,6 +97,7 @@ for i in range(index_first, index_last + 1):
 
 times = np.array(times)
 iters = np.array(iters)
+vals = (np.array(vals)).T
 
 print ('Traced over %i Shell_Avgs slice(s) ...' %count)
 
