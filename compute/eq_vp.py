@@ -7,6 +7,7 @@ import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from compute_grid_info import compute_grid_info
+from get_domain_bounds import get_domain_bounds
 from get_parameter import get_parameter
 from common import get_widest_range_file, get_dict
 from scipy.interpolate import interp1d
@@ -46,7 +47,7 @@ vals = di['vals']
 lut = di['lut']
 mean_vp = vals[:, :, lut[3]]
 nr = di['nr']
-ncheby = tuple(get_parameter(dirname, 'ncheby'))
+ncheby, domain_bounds = get_domain_bounds(dirname)
 rr = di['rr']
 nt = di['nt']
 tt = di['tt']
@@ -57,11 +58,9 @@ if ncheby_new is None:
         rmin, rmax = get_parameter(dirname, 'rmin'),\
                 get_parameter(dirname, 'rmax')
         nr_new = nr
-        domain_bounds_new = (rmin, rmax)
         ncheby_new = (nr_new,)
     except:
         nr_new = nr
-        domain_bounds_new = tuple(get_parameter(dirname, 'domain_bounds'))
         ncheby_new = tuple(get_parameter(dirname, 'ncheby'))
     interpr = False
 else:
@@ -78,7 +77,7 @@ else:
 if interpr or interpt:
     nr_new, nt_new, dummy, rr_new, dummy, tt_new, dummy, dummy, dummy,\
             dummy, dummy =\
-        compute_grid_info(domain_bounds_new, ncheby_new, nt_new)
+        compute_grid_info(domain_bounds, ncheby_new, nt_new)
 
     # Always interpolate in both directions if either direction requested
     # if new grid = old grid in a particular direction, interpolation

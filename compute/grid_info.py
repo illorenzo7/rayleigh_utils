@@ -12,6 +12,7 @@ sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from compute_grid_info import compute_grid_info
 from get_parameter import get_parameter
+from get_domain_bounds import get_domain_bounds
 dirname = sys.argv[1]
 
 fname = 'grid_info'
@@ -26,16 +27,7 @@ for i in range(nargs):
 nt = get_parameter(dirname, 'n_theta')
 use_extrema = get_parameter(dirname, 'use_extrema')
 
-try:
-    rmin, rmax = get_parameter(dirname, 'rmin'),\
-            get_parameter(dirname, 'rmax')
-    nr = get_parameter(dirname, 'n_r')
-    domain_bounds = (rmin, rmax)
-    ncheby = (nr,)
-except:
-    domain_bounds = tuple(get_parameter(dirname, 'domain_bounds'))
-    ncheby = tuple(get_parameter(dirname, 'ncheby'))
-
+ncheby, domain_bounds = get_domain_bounds(dirname)
 nr, nt, nphi, r, rw, tt, cost, sint, tw, phi, dphi =\
         compute_grid_info(domain_bounds, ncheby, nt,\
         use_extrema=use_extrema)
