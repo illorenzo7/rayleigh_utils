@@ -153,15 +153,16 @@ if magnetism:
     me = rme + tme + pme
 
     #mme = vals[lut[1105]][ixmin:ix_max + 1]
-    mrme = vals[lut[1106]][ixmin:ix_max + 1]
-    mtme = vals[lut[1107]][ixmin:ix_max + 1]
-    mpme = vals[lut[1108]][ixmin:ix_max + 1]
-    mme = mrme + mtme + mpme
+    #mrme = vals[lut[1106]][ixmin:ix_max + 1]
+    #mtme = vals[lut[1107]][ixmin:ix_max + 1]
+    #mpme = vals[lut[1108]][ixmin:ix_max + 1]
+    #mme = mrme + mtme + mpme
 
     #fme = vals[lut[1109]][ixmin:ix_max + 1]
-    #frme = vals[lut[1110]][ixmin:ix_max + 1]
-    #ftme = vals[lut[1111]][ixmin:ix_max + 1]
-    #fpme = vals[lut[1112]][ixmin:ix_max + 1]
+    frme = vals[lut[1110]][ixmin:ix_max + 1]
+    ftme = vals[lut[1111]][ixmin:ix_max + 1]
+    fpme = vals[lut[1112]][ixmin:ix_max + 1]
+    fme = frme + ftme + fpme
 
     mrme = rme - frme
     mtme = tme - ftme
