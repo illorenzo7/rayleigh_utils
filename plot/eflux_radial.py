@@ -21,6 +21,9 @@ from compute_grid_info import compute_theta_grid
 from time_scales import compute_Prot, compute_tdt
 from translate_times import translate_times
 from get_eq import get_eq
+from read_inner_vp import read_inner_vp
+from read_eq_vp import read_eq_vp
+from rayleigh_diagnostics import GridInfo
 
 # Get the run directory on which to perform the analysis
 dirname = sys.argv[1]
@@ -36,6 +39,7 @@ if (not os.path.isdir(plotdir)):
 # Find the Shell_Avgs file(s) in the data directory. If there are multiple, by
 # default choose the one with widest range in the average
 Shell_Avgs_file = get_widest_range_file(datadir, 'Shell_Avgs')
+forced = False
 
 # Get command-line arguments to adjust the interval of averaging files
 minmax = None
@@ -62,6 +66,8 @@ for i in range(nargs):
         rvals = []
         for rval_str in rvals_str:
             rvals.append(float(rval_str))
+    elif arg == '-forced':
+        forced = True
     elif arg == '-bcz': # try to estimate the real BCZ (and mark it)
                         # from where the enthalpy flux first goes negative
         mark_bcz = True
@@ -79,6 +85,70 @@ nq = di['nq']
 iter1, iter2 = di['iter1'], di['iter2']
 rr = di['rr']
 nr = di['nr']
+
+if forced:
+    AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
+    print ('Getting forcing info from ' + datadir + AZ_Avgs_file + ' ...')
+    di_az = get_dict(datadir + AZ_Avgs_file)
+    vals_az = di_az['vals']
+    lut_az = di_az['lut']
+
+    gi = GridInfo(dirname + '/grid_info')
+    rw = gi.rweights
+    tw = gi.tweights
+    nt = gi.ntheta
+    ro = np.max(rr)
+
+    mean_vp = vals_az[:, :, lut_az[3]]
+    tacho_r = get_parameter(dirname, 'tacho_r')
+    print ("read tacho_r = %1.2e" %tacho_r)
+    tacho_dr = get_parameter(dirname, 'tacho_dr')
+    tacho_tau = get_parameter(dirname, 'tacho_tau')
+    forcing = np.zeros((nt, nr))
+    eq = get_eq(dirname)
+    rho = eq.rho
+
+    if os.path.exists(dirname + '/inner_vp'):
+        print ("inner_vp file exists, so I assume you have a forcing function which\n quartically matches on to a CZ differential rotation")
+        inner_vp = read_inner_vp(dirname + '/inner_vp')
+        for it in range(nt):
+            for ir in range(nr):
+                if rr[ir] <= tacho_r - tacho_dr*rr[0]:
+                    desired_vp = 0.0
+                elif rr[ir] <= tacho_r:
+                    desired_vp = inner_vp[it]*(1.0 - ( (rr[ir] - tacho_r)/(tacho_dr*rr[0]) )**2)**2
+                else:
+                    desired_vp = mean_vp[it, ir] # No forcing in CZ
+                forcing[it, ir] = -rho[ir]*(mean_vp[it, ir] - desired_vp)/tacho_tau
+    elif os.path.exists(dirname + '/eq_vp'):
+        print ("eq_vp file exists, so I assume you have a forcing function which\n quartically matches on to a CZ differential rotation\n with viscous-torque-free buffer zone")
+        tacho_r2 = get_parameter(dirname, 'tacho_r2')
+        i_tacho_r = np.argmin(np.abs(rr - tacho_r))
+        print ("read tacho_r2 = %1.2e" %tacho_r2)
+        eq_vp = read_eq_vp(dirname + '/eq_vp', nt, nr)
+        for it in range(nt):
+            for ir in range(nr):
+                if rr[ir] <= tacho_r - tacho_dr*rr[0]:
+                    desired_vp = 0.0
+                elif rr[ir] <= tacho_r:
+                    desired_vp = eq_vp[it, i_tacho_r]*(1.0 - ( (rr[ir] - tacho_r)/(tacho_dr*rr[0]) )**2)**2
+                elif rr[ir] <= tacho_r2:
+                    desired_vp = eq_vp[it, ir]
+                else:
+                    desired_vp = mean_vp[it, ir] # No forcing in CZ
+                forcing[it, ir] = -rho[ir]*(mean_vp[it, ir] - desired_vp)/tacho_tau
+    else:
+        forcing_coeff = -rho/tacho_tau*0.5*(1.0 - np.tanh((rr - tacho_r)/(tacho_dr*rr[0])))
+        forcing = forcing_coeff.reshape((1, nr))*mean_vp
+
+    work_forcing = forcing*mean_vp
+    work_forcing_shav = np.sum(work_forcing*tw.reshape((nt, 1)), axis=0)
+    forcing_flux_int = np.zeros(nr)
+    for ir in range(nr):
+        work_forcing_gav = np.sum((work_forcing_shav*rw)[:ir+1])/\
+                np.sum(rw[:ir+1])
+        volume = 4./3.*np.pi*(ro**3. - rr[ir]**3.)
+        forcing_flux_int[ir] = work_forcing_gav*volume
 
 # Get the time range in sec
 t1 = translate_times(iter1, dirname, translate_from='iter')['val_sec']
@@ -154,9 +224,12 @@ if magnetism:
                         # the correct Poynting flux
     mflux = -vals[:, qindex_mflux]/(4*np.pi)
     tflux += mflux
-    
-# Compute the integrated fluxes
+
 fpr = 4*np.pi*rr**2
+if forced:
+    tflux += forcing_flux_int/fpr
+
+# Compute the integrated fluxes
 hflux_int = hflux*fpr
 eflux_int = eflux*fpr
 if plot_enth_fluc:
@@ -201,6 +274,9 @@ if plot_enth_fluc:
             label=r'$\rm{F}_{enth,\ pp}$', linewidth=lw)
     plt.plot(rr_n, eflux_mean_int/lstar, 'm:',\
             label=r'$\rm{F}_{enth,\ mm}$', linewidth=lw)
+if forced:
+    plt.plot(rr_n, forcing_flux_int/lstar, 'g--',\
+            label=r'$\rm{F}_{forcing}$', linewidth=lw)
 
 # Mark zero line
 plt.plot(rr_n, np.zeros_like(rr_n), 'k--', linewidth=lw)
