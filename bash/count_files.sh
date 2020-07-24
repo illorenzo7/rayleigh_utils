@@ -11,13 +11,13 @@ subdirs=`find $maindir -maxdepth 1 -mindepth 1 -type d -printf '%f\n'`
 currentdir=`pwd`
 
 echo "==============================="
-echo "Scanning $maindir"
+echo "Scanning $fullpath/"
 echo "==============================="
 # Loop over subdirectories and count their contents with "tree"
 for subdir in $subdirs
 do
     cd $fullpath/$subdir
-    pwd
+    echo "In $subdir/:"
     tree -a . | tail -n 1
     echo "==============================="
 done
