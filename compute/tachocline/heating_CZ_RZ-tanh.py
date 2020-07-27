@@ -73,7 +73,7 @@ radial_shape = profile/int_profile
 print("---------------------------------")
 print("Computed radial shape of heating for RZ-CZ, joined with tanh")
 print("rt: %1.3e cm" %rt) 
-print("delta/rsun: %.3f"  %(delta/rsun))
+print("delta/rsun: %.3f"  %(delta/rt))
 print("c_10: %1.3e"  %lum)
 print("---------------------------------")
 
