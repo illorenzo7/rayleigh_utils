@@ -24,7 +24,7 @@
 # Stiffness k, default 2
 # 
 # -delta
-# Transition width delta as a fraction of rsun, default 0.005
+# Transition width delta as a fraction of rsun, default 0.010
 #
 # -gam
 # specific heat ratio gamma, default 5/3
@@ -78,8 +78,6 @@ for i in range(nargs):
         rm = float(args[i+1])
     elif arg == '-ro':
         ro = float(args[i+1])
-    elif arg == '-nr':
-        nr = int(args[i+1])
     elif arg == '-rhom':
         rhom = float(args[i+1])        
     elif arg == '-tm':
@@ -160,7 +158,11 @@ eq.set_function(d2lnrho, 9)
 eq.set_function(dlnT, 10)
 eq.set_function(dsdr, 14)
 
-print("Setting c_2 and c_3")
+print("Setting c_2, c_3, c_7, and c_8")
+eq.set_constant(1.0, 2) # multiplies buoyancy
+eq.set_constant(1.0, 3) # multiplies pressure grad.
+eq.set_constant(1.0, 8) # multiplies viscous heating
+
 if mag:
     print("magnetism = True, so setting c_4 = 1/(4*pi), c_7 = c_9 = 1")
     eq.set_constant(1.0/4.0/np.pi, 4) # multiplies Lorentz force
@@ -172,19 +174,9 @@ else:
     eq.set_constant(0.0, 7) # multiplies eta in induction-diffusion term
     eq.set_constant(0.0, 9) # multiplies Ohmic heating
 
-eq.set_constant(1.0, 2) # multiplies buoyancy
-eq.set_constant(1.0, 3) # multiplies pressure grad.
-eq.set_constant(1.0, 3) # multiplies pressure grad.
+# c_10 will be set in the "generate_heating" scripts
 
-eq.set_constant(1.0, 8) # multiplies viscous heating
-
-# Will need to figure out how to deal with c_1 (supposed to be 2 x angular velocity, i.e., the Coriolis coefficient. Hopefully we don't need c_1 in the
-# custom reference framework and will just specify angular_velocity
-# If this doesn't work, will need to use override_constants framework
-
-# c_10 will be set in the "generate heating" scripts
-
-# The "generate transport" scripts will set the transport
+# The "generate_transport" scripts will set the transport
 # "radial shapes", and the constants c_5, c_6, c_7
 
 the_file = dirname + '/' + fname

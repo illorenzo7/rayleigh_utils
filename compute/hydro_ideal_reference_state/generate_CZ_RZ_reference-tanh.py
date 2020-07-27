@@ -24,7 +24,7 @@
 # Stiffness k, default 2
 # 
 # -delta
-# Transition width delta as a fraction of rsun, default 0.005
+# Transition width delta as a fraction of r_BCZ, default 0.010
 #
 # -gam
 # specific heat ratio gamma, default 5/3
@@ -61,7 +61,7 @@ pm = bc.pm
 rhom = bc.rhom
 gam = bc.gamma
 k = 2.0
-delta = 0.005*rsun
+delta = 0.010
 mag = False
 
 # Get directory to save binary files for reference state and heating
@@ -78,8 +78,6 @@ for i in range(nargs):
         rm = float(args[i+1])
     elif arg == '-ro':
         ro = float(args[i+1])
-    elif arg == '-nr':
-        nr = int(args[i+1])
     elif arg == '-rhom':
         rhom = float(args[i+1])        
     elif arg == '-tm':
@@ -87,7 +85,7 @@ for i in range(nargs):
     elif arg == '-k':
         k = float(args[i+1])  
     elif arg == '-delta':
-        delta = float(args[i+1])*rsun
+        delta = float(args[i+1])
     elif arg == '-gam':
         gam = float(args[i+1]) 
     elif arg == '-cp':
@@ -98,7 +96,10 @@ for i in range(nargs):
         fname = args[i+1]
     elif arg == '-mag':
         mag = True
-        
+
+# Make delta physical length
+delta *= rm
+
 # First, compute reference state on super-fine grid to interpolate onto later    
 nr = 5000
 rr = np.linspace(ro, ri, nr)
@@ -117,8 +118,11 @@ T, rho, p, dlnT, dlnrho, dlnp, d2lnrho =\
 
 print("---------------------------------")
 print("Computed atmosphere for RZ-CZ, ds/dr joined with tanh")
+print("ri: %1.3e cm" %ri) 
 print("rm: %1.3e cm" %rm) 
-print("delta/rsun: %.3f"  %(delta/rsun))
+print("ro: %1.3e cm" %ro) 
+print("delta/rm: %.3f"  %(delta/rm))
+print("k [sets dsdr in RZ]: %1.3e"  %k)
 print("---------------------------------")
 
 # Now write to file using the equation_coefficients framework
@@ -138,28 +142,26 @@ eq.set_function(d2lnrho, 9)
 eq.set_function(dlnT, 10)
 eq.set_function(dsdr, 14)
 
-print("Setting c_2 and c_3")
-if mag:
-    print("magnetism = True, so setting c_4 = 1/(4*pi)")
-    eq.set_constant(1.0/4.0/np.pi, 4) # multiplies Lorentz force
-else:
-    print("magnetism = False, so setting c_4 = 0.0")
-    eq.set_constant(0.0, 4) # multiplies Lorentz force
-
+print("Setting c_2, c_3, and c_8")
 eq.set_constant(1.0, 2) # multiplies buoyancy
 eq.set_constant(1.0, 3) # multiplies pressure grad.
-
-eq.set_constant(1.0, 7) # multiplies viscous heating
 eq.set_constant(1.0, 8) # multiplies conductive heating
 
-# Will need to figure out how to deal with c_1 (supposed to be 2 x angular velocity, i.e., the Coriolis coefficient. Hopefully we don't need c_1 in the
-# custom reference framework and will just specify angular_velocity
-# If this doesn't work, will need to use override_constants framework
+if mag:
+    print("magnetism = True, so setting c_4 = 1/(4*pi), c_7 = c_9 = 1")
+    eq.set_constant(1.0/4.0/np.pi, 4) # multiplies Lorentz force
+    eq.set_constant(1.0, 7) # multiplies eta in induction-diffusion term
+    eq.set_constant(1.0, 9) # multiplies Joule heating
+else:
+    print("magnetism = False, so setting c_4, c_7, c_9 = 0.0")
+    eq.set_constant(0.0, 4) # multiplies Lorentz force
+    eq.set_constant(0.0, 7) # multiplies eta in induction-diffusion term
+    eq.set_constant(0.0, 9) # multiplies Ohmic heating
 
-# c_10 will be set in the "generate heating" scripts
+# c_10 will be set in the "generate_heating" scripts
 
-# The "generate transport" scripts will set the transport
-# "radial shapes", and the constants c_5, c_6, c_7, c_8, and c_9
+# The "generate_transport" scripts will set the transport
+# "radial shapes", and the constants c_5, c_6, c_7
 
 the_file = dirname + '/' + fname
 
