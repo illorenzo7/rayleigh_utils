@@ -14,7 +14,7 @@
 # transition radius for heating
 #
 # -delta
-# Transition width delta (as a fraction of rsun) default 0.005
+# Transition width delta (as a fraction of rm) default 0.010
 #
 # -lum
 # Luminosity to be driven through layer, default Lsun
@@ -33,7 +33,7 @@ from common import rsun, lsun
 
 # Set default constants
 rt = 5.0e10 # by default transition a bit below RZ-CZ transition
-delta = 0.005*rsun
+delta = 0.01
 lum = lsun
 
 # Get directory to save binary files for reference state and heating
@@ -47,12 +47,15 @@ for i in range(nargs):
     if arg == '-rt':
         rt = float(args[i+1])
     elif arg == '-delta':
-        delta = float(args[i+1])*rsun
+        delta = float(args[i+1])
     elif arg == '-fname':
         fname = args[i+1]
     elif arg == '-lum':
         lum = float(args[i+1])
-        
+
+# Made the delta "dimensional"
+delta *= rt
+
 # Open and read the hopefully already existing reference file!
 eq = equation_coefficients()
 the_file = dirname + '/' + fname
@@ -79,10 +82,6 @@ print("Setting f_6 and c_10")
 
 eq.set_function(radial_shape, 6)
 eq.set_constant(lum, 10) # Total luminosity normalizes heating function
-
-# Will need to figure out how to deal with c_1 (supposed to be 2 x angular velocity, i.e., the Coriolis coefficient. Hopefully we don't need c_1 in the
-# custom reference framework and will just specify angular_velocity
-# If this doesn't work, will need to use override_constants framework
 
 print("Writing the heating to %s" %the_file)
 print("---------------------------------")
