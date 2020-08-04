@@ -36,6 +36,8 @@ magnetism = False
 ylog = False
 minmax = None
 xminmax = None
+xmin = None
+xmax = None
 plot_inte = False
 plot_tote = False
 savename = None
@@ -60,6 +62,10 @@ for i in range(nargs):
         minmax = float(args[i+1]), float(args[i+2])
     elif arg == '-xminmax':
         xminmax = float(args[i+1]), float(args[i+2])
+    elif arg == '-xmin':
+        xmin = float(args[i+1])
+    elif arg == '-xmax':
+        xmax = float(args[i+1])
     elif arg == '-inte':
         plot_inte = True
     elif arg == '-tote':
@@ -116,6 +122,12 @@ else:
 
 if xminmax is None:
     xminmax = xmin, np.max(xaxis)
+
+# Change JUST xmin or xmax, if desired
+if not xmin is None:
+    xminmax = xmin, xminmax[1]
+if not xmax is None:
+    xminmax = xminmax[0], xmax
 
 ixmin = np.argmin(np.abs(xaxis - xminmax[0]))
 ix_max = np.argmin(np.abs(xaxis - xminmax[1]))
