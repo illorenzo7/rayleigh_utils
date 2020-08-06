@@ -37,7 +37,7 @@ for i in range(nargs):
         ncheby_str = args[i+1].split()
         ncheby = []
         for val_str in ncheby_str:
-            ncheby.append(float(val_str))
+            ncheby.append(int(val_str))
         ncheby = tuple(ncheby)
     elif arg == '-rminmax':
         domain_bounds = (float(args[i+1]), float(args[i+2]))
@@ -47,6 +47,8 @@ for i in range(nargs):
         for val_str in dombounds_str:
             domain_bounds.append(float(val_str))
         domain_bounds = tuple(domain_bounds)
+    elif arg == '-rnorm':
+        rnorm = float(args[i+1])
 
 # Get relevant info from main_input file
 #nt = get_parameter(dirname, 'n_theta')
@@ -55,12 +57,18 @@ nt = 96 # dummy variable
 use_extrema = False # also, dummy; may change this if I ever start using
     # the "correct" Chebyshev weights like Connor
 
-if ncheby is None or domain_bounds is None:
-    print("Getting ncheby and domain_bounds from main_input")
-    ncheby, domain_bounds = get_domain_bounds(dirname)
+if ncheby is None:
+    print("Getting ncheby from main_input")
+    ncheby, dummy = get_domain_bounds(dirname)
 else:
-    print("Using user-specified ncheby and domain_bounds")
+    print("Using user-specified ncheby")
 print_tuple(ncheby, "%i", prepend="ncheby = ")
+
+if domain_bounds is None:
+    print("Getting domain_bounds from main_input")
+    dummy, domain_bounds = get_domain_bounds(dirname)
+else:
+    print("Using user-specified domain_bounds")
 print_tuple(domain_bounds, "%1.3e", prepend="domain_bounds = ")
 
 nr, nt, nphi, rr, rw, tt, cost, sint, tw, phi, dphi =\
@@ -104,9 +112,11 @@ else:
 if rnorm is None:
     xmin /= rsun
     xmax /= rsun
+    plt.xlabel(r'$r/R_\odot$',fontsize=12, **csfont)
 else:
     xmin /= rnorm
     xmax /= rnorm
+    plt.xlabel(r'r/(%.1e cm)' %rnorm, fontsize=12, **csfont)
 plt.xlim(xmin, xmax)
 
 # Display the plot

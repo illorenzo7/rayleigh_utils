@@ -61,6 +61,11 @@ nr = di['nr']
 nr_spec = di['nr_spec']
 iter1, iter2 = di['iter1'], di['iter2']
 
+# Get grid spacing
+dr = np.zeros(nr)
+dr[:-1] = rr[:-1] - rr[1:]
+dr[-1] = dr[-2]
+
 # User can specify what to normalize the radius by
 # By default, normalize by the solar radius
 if rnorm is None:
@@ -95,6 +100,10 @@ for scale_name in scale_names:
         plt.scatter(rr_spec_n, length_scale/rsun,\
                 label=tex_names[count], s=10.)
     count += 1
+
+# Plot the grid resolution (will hopefully appear underneath everything
+# else!
+plt.plot(rr_n, dr/rsun, 'k', label=r'$\delta r$')
 
 # Get ticks everywhere
 plt.minorticks_on()
