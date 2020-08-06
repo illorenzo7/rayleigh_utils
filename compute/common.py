@@ -459,3 +459,12 @@ def read_log(fname):
         di = dict({'iters': np.array(iters), 'delta_t': np.array(delta_t)})
 
     return di
+
+def print_tuple(tup, format_str, prepend=''):
+    whole_str = prepend + '('
+    for i in range(len(tup)):
+        whole_str += (format_str %tup[i])
+        if i < len(tup) - 1:
+            whole_str += ', '
+    whole_str += ')'
+    print(whole_str)
