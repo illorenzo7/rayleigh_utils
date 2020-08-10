@@ -67,7 +67,7 @@ for i in range(nargs):
             ir_vals.append(int(my_str[j]))
     elif arg == '-usefile':
         the_file = args[i+1]
-        the_file = Shell_Spectra_file.split('/')[-1]
+        the_file = the_file.split('/')[-1]
     elif arg == '-minmax':
         minmax = float(args[i+1]), float(args[i+2])
     elif arg == '-show':
