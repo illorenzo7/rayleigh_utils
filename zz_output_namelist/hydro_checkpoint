@@ -1,0 +1,24 @@
+&output_namelist
+! First, the shell slices and spectra, equatorial and
+! meridional slices, and full-3d "slices" 
+! These contain only the basic fluid variables
+! to capture "snapshots" of the flow
+!
+! FLUID VARIABLES (8 vars, 11 with magnetism, 1 line)
+! velocities [r --> phi], vorticities [r --> phi], pressure, t-var, magnetic fields [r --> phi] !
+!
+! Shell slices/spectra and equatorial/meridional/3D cuts: velocities, vorticities, t-var, pressure, maybe B field
+shellslice_levels_nrm = 0.05, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 0.95
+shellslice_values    = 1,2,3, 301,302,303, 501,502
+shellslice_frequency = 1
+shellslice_nrec      = 1
+
+meridional_values    = 1,2,3, 301,302,303, 501,502
+meridional_frequency = 1
+meridional_nrec      = 1
+meridional_indices_nrm = 0.0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875
+
+equatorial_values    =  1,2,3, 301,302,303, 501,502
+equatorial_frequency = 1
+equatorial_nrec      = 1
+/
