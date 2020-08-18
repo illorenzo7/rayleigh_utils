@@ -94,10 +94,8 @@ plotdir = dirname + '/plots/specav_lm/rvals_sample' + tag + '/'
 if not os.path.isdir(plotdir):
     os.makedirs(plotdir)
 
-
 # Read in spec data
-print ('Reading Shell_Spectra data from ' + datadir + the_file +\
-        ' ...')
+print ('Reading Shell_Spectra data from ' + datadir + the_file)
 di = get_dict(datadir + the_file)
 rvals = di['rvals']/rsun
 qv = di['qv']
