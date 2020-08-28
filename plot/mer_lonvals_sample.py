@@ -37,15 +37,16 @@ radatadir = dirname + '/Meridional_Slices/'
 file_list, int_file_list, nfiles = get_file_lists(radatadir)
 
 minmax = None
+minmaxrz = None
 symlog = False
 logscale = False
 iiter = nfiles - 1 # by default plot the last iteration
 varname = 'vr' # by default plot the radial velocity
 plotcontours = True
-rbcz = None
 plotlatlines = True
 use_az = True
 use_sh = True
+rbcz = None
 
 args = sys.argv[2:]
 nargs = len(args)
@@ -53,6 +54,8 @@ for i in range(nargs):
     arg = args[i]
     if arg == '-minmax':
         minmax = float(args[i+1]), float(args[i+2])
+    elif arg == '-minmaxrz':
+        minmaxrz = float(args[i+1]), float(args[i+2])
     elif arg == '-rbcz':
         rbcz = float(args[i+1])
     elif arg == '-var':
@@ -176,8 +179,8 @@ for iphi in range(mer.nphi):
     ax = fig.add_axes((margin_x, margin_bottom, subplot_width,\
             subplot_height))
     plot_azav (field, mer.radius, mer.costheta, fig=fig, ax=ax,\
-            units=units, minmax=minmax, plotlatlines=plotlatlines,\
-            plotcontours=plotcontours)
+            units=units, minmax=minmax, minmaxrz=minmaxrz,\
+            plotlatlines=plotlatlines, plotcontours=plotcontours, rbcz=rbcz)
 
     # Make title
     if rotation:

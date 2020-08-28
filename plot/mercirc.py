@@ -138,12 +138,6 @@ psi = streamfunction(rho*vr_av, rho*vt_av, rr, cost)
 # Make CCW negative and CW positive
 rhovm *= np.sign(psi)
 
-#if minmax is None:
-#    trimmed_rhovm = trim_field(rhovm, rr, cost)
-#    std = np.std(trimmed_rhovm)
-#    nstd = 3.
-#    minmax = -nstd*std, nstd*std
-
 # Create plot
 subplot_width_inches = 2.5
 subplot_height_inches = 5.
