@@ -47,6 +47,8 @@ rnorm = None
 rvals = None
 plot_enth_fluc = False
 mark_bcz = False
+lw = 1.0 # regular width lines
+dpi = 300.
 
 args = sys.argv[2:]
 nargs = len(args)
@@ -71,10 +73,12 @@ for i in range(nargs):
     elif arg == '-bcz': # try to estimate the real BCZ (and mark it)
                         # from where the enthalpy flux first goes negative
         mark_bcz = True
+    elif arg == '-lw':
+        lw = float(args[i+1])
+    elif arg == '-dpi':
+        dpi = float(args[i+1])
 
 #Create the plot
-lw = 1. # regular lines
-#lw = 1.5 # Bit thicker lines
 
 # Read in the flux data
 print ('Getting radial fluxes from ' + datadir + Shell_Avgs_file + ' ...')
@@ -359,7 +363,7 @@ plt.tight_layout()
 
 # Save the plot
 print ('Saving the eflux plot at ' + plotdir + savename + ' ...')
-plt.savefig(plotdir + savename, dpi=300)
+plt.savefig(plotdir + savename, dpi=dpi)
 
 # Show the plot
 plt.show()
