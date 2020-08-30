@@ -130,27 +130,31 @@ if not xmax is None:
     xminmax = xminmax[0], xmax
 
 ixmin = np.argmin(np.abs(xaxis - xminmax[0]))
-ix_max = np.argmin(np.abs(xaxis - xminmax[1]))
-t1 = times[ixmin]
-t2 = times[ix_max]
+ixmax = np.argmin(np.abs(xaxis - xminmax[1]))
 
-xaxis = xaxis[ixmin:ix_max + 1]
-#ke = vals[lut[401]][ixmin:ix_max + 1]
-rke = vals[lut[402]][ixmin:ix_max + 1]
-tke = vals[lut[403]][ixmin:ix_max + 1]
-pke = vals[lut[404]][ixmin:ix_max + 1]
+# Now shorten all the "x" arrays
+xaxis = xaxis[ixmin:ixmax + 1]
+times = times[ixmin:ixmax + 1]
+iters = iters[ixmin:ixmax + 1]
+t1 = times[0]
+t2 = times[-1]
+
+#ke = vals[lut[401]][ixmin:ixmax + 1]
+rke = vals[lut[402]][ixmin:ixmax + 1]
+tke = vals[lut[403]][ixmin:ixmax + 1]
+pke = vals[lut[404]][ixmin:ixmax + 1]
 ke = rke + tke + pke
 
-#fke = vals[lut[409]][ixmin:ix_max + 1]
-frke = vals[lut[410]][ixmin:ix_max + 1]
-ftke = vals[lut[411]][ixmin:ix_max + 1]
-fpke = vals[lut[412]][ixmin:ix_max + 1]
+#fke = vals[lut[409]][ixmin:ixmax + 1]
+frke = vals[lut[410]][ixmin:ixmax + 1]
+ftke = vals[lut[411]][ixmin:ixmax + 1]
+fpke = vals[lut[412]][ixmin:ixmax + 1]
 fke = frke + ftke + fpke
 
-#mke = vals[lut[405]][ixmin:ix_max + 1]
-#mrke = vals[lut[406]][ixmin:ix_max + 1]
-#mtke = vals[lut[407]][ixmin:ix_max + 1]
-#mpke = vals[lut[408]][ixmin:ix_max + 1]
+#mke = vals[lut[405]][ixmin:ixmax + 1]
+#mrke = vals[lut[406]][ixmin:ixmax + 1]
+#mtke = vals[lut[407]][ixmin:ixmax + 1]
+#mpke = vals[lut[408]][ixmin:ixmax + 1]
 mrke = rke - frke
 mtke = tke - ftke
 mpke = pke - fpke
@@ -158,22 +162,22 @@ mke = mrke + mtke + mpke
 
 # Get the magnetic energies if they are available
 if magnetism:
-    #me = vals[lut[1101]][ixmin:ix_max + 1]
-    rme = vals[lut[1102]][ixmin:ix_max + 1]
-    tme = vals[lut[1103]][ixmin:ix_max + 1]
-    pme = vals[lut[1104]][ixmin:ix_max + 1]
+    #me = vals[lut[1101]][ixmin:ixmax + 1]
+    rme = vals[lut[1102]][ixmin:ixmax + 1]
+    tme = vals[lut[1103]][ixmin:ixmax + 1]
+    pme = vals[lut[1104]][ixmin:ixmax + 1]
     me = rme + tme + pme
 
-    #mme = vals[lut[1105]][ixmin:ix_max + 1]
-    #mrme = vals[lut[1106]][ixmin:ix_max + 1]
-    #mtme = vals[lut[1107]][ixmin:ix_max + 1]
-    #mpme = vals[lut[1108]][ixmin:ix_max + 1]
+    #mme = vals[lut[1105]][ixmin:ixmax + 1]
+    #mrme = vals[lut[1106]][ixmin:ixmax + 1]
+    #mtme = vals[lut[1107]][ixmin:ixmax + 1]
+    #mpme = vals[lut[1108]][ixmin:ixmax + 1]
     #mme = mrme + mtme + mpme
 
-    #fme = vals[lut[1109]][ixmin:ix_max + 1]
-    frme = vals[lut[1110]][ixmin:ix_max + 1]
-    ftme = vals[lut[1111]][ixmin:ix_max + 1]
-    fpme = vals[lut[1112]][ixmin:ix_max + 1]
+    #fme = vals[lut[1109]][ixmin:ixmax + 1]
+    frme = vals[lut[1110]][ixmin:ixmax + 1]
+    ftme = vals[lut[1111]][ixmin:ixmax + 1]
+    fpme = vals[lut[1112]][ixmin:ixmax + 1]
     fme = frme + ftme + fpme
 
     mrme = rme - frme
@@ -187,14 +191,14 @@ if plot_inte or plot_tote:
             the_file = get_widest_range_file(datadir,\
                     'inte_from_Shell_Avgs')
             di_inte = get_dict(datadir + the_file)
-            inte = di_inte['inte'][ixmin:ix_max + 1]
+            inte = di_inte['inte'][ixmin:ixmax + 1]
             print("Got internal energy from Shell_Avgs")
         except:
-            inte = vals[lut[701]][ixmin:ix_max + 1]
+            inte = vals[lut[701]][ixmin:ixmax + 1]
             print("Got internal energy from G_Avgs")
     except:
         print ("Internal energy not available; setting to 0")
-        int_e = np.zeros_like(times[ixmin:ix_max + 1])
+        int_e = np.zeros_like(times)
 
 if plot_tote:
     tote = ke + inte
@@ -260,19 +264,27 @@ title = dirname_stripped + '\n ' + time_string +\
           '\ntotal energy'
 if plot_inte:
     # Compute change in energy over time, to add to label
+    # Average over the last hundred rotations (1 diffusion time, if nonrotating)
+    # or all time, whichever is shorter
+    if rotation:
+        num = 100.
+    else:
+        num = 1.
+    it_first = np.argmin(np.abs(times/time_unit - (t2/time_unit - num)))
+
     gi = GridInfo(dirname + '/grid_info')
     ri, ro = np.min(gi.radius), np.max(gi.radius)
     shell_volume = 4/3*np.pi*(ro**3 - ri**3)
-    dE = (inte[-1] - inte[0])*shell_volume
-    dt = times[-1] - times[0]
+    dE = (inte[-1] - inte[it_first])*shell_volume
+    dt = times[-1] - times[it_first]
     title += (('\nINT E: ' + r'$\rm{\Delta E/\Delta t = %1.3e\ cgs}$')\
             %(dE/dt))
 if plot_tote:
     gi = GridInfo(dirname + '/grid_info')
     ri, ro = np.min(gi.radius), np.max(gi.radius)
     shell_volume = 4/3*np.pi*(ro**3 - ri**3)
-    dE = (tote[-1] - tote[0])*shell_volume
-    dt = times[-1] - times[0]
+    dE = (tote[-1] - tote[it_first])*shell_volume
+    dt = times[-1] - times[it_first]
     title += (('\nTOT E: ' + r'$\rm{\Delta E/\Delta t = %1.3e\ cgs}$')\
             %(dE/dt))
 
