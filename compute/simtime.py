@@ -109,9 +109,20 @@ simtime = t2 - t1
 rotation = get_parameter(dirname, 'rotation')
 if rotation:
     Prot = compute_Prot(dirname)
-    print ('t2 - t1 = %1.2e Prot' %(simtime/Prot))
+    print ('Delta_t = %1.2e Prot' %(simtime/Prot))
 # Get the diffusion time
 TDT = compute_tdt(dirname)
+
+# Get the basic time unit
+if rotation:
+    time_unit = Prot
+    time_label = "rotations"
+    fmt = "%.1f"
+else:
+    time_unit = TDT
+    time_label = "TDTs"
+    fmt = "%.3f"
+
 print ('Delta_t = %.2f TDTs' %(simtime/TDT))
 if verbose:
     print ('Delta_t = %1.2e sec' %simtime)
@@ -120,6 +131,10 @@ if verbose:
     print ('iter1 = ', iter1)
     print ('iter2 = ', iter2)
     print ('Delta_iter = %1.2e' %(iter2 - iter1))
+    print ('----------------------')
+    print (("t1 = " + fmt + " " + time_label) %(t1/time_unit))
+    print (("t2 = " + fmt + " " + time_label) %(t2/time_unit))
+    print ('----------------------')
     if rotation:
         print('1 Prot = %.1f days' %(Prot/86400.))
     print('1 TDT = %.1f days' %(TDT/86400))
