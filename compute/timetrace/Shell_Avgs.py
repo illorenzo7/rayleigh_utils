@@ -41,11 +41,14 @@ file_list, int_file_list, nfiles = get_file_lists(radatadir)
 args = sys.argv[2:]
 nargs = len(args)
 
-if nargs == 0:
-    index_first, index_last = 0, nfiles - 1  
-    # By default trace over all files
-else:
-    index_first, index_last = get_desired_range(int_file_list, args)
+index_first, index_last = get_desired_range(int_file_list, args)
+
+nrec = 1 # By default, only include 1 record per Shell_Avgs slice (otherwise
+        # there will be a LOT of data!
+for i in range(nargs):
+    arg = args[i]
+    if arg == '-nrec':
+        nrec = int(args[i+1])
 
 # Set the timetrace savename by the directory, what we are saving, and first and last
 # iteration files for the trace
@@ -73,9 +76,11 @@ for i in range(index_first, index_last + 1):
     else:   
         sh = Shell_Avgs(radatadir + file_list[i], '')
 
-    #local_ntimes = sh.niter
-    local_ntimes = 1 # just do the first one, or else there is too much data!
-    for j in range(local_ntimes):
+    nrec_tot = sh.niter
+    nstep = nrec_tot // nrec
+    if nstep == 0:
+        nstep = 1
+    for j in range(0, nrec_tot, nstep):
         vals.append(list(sh.vals[:, 0, :, j])) #  Each Shell_Avgs slice has shape (nr, nq)
                         # End "vals" array will have shape (ntimes, nr, nq)
         times.append(sh.time[j])
