@@ -75,3 +75,9 @@ if verbose:
             unit_name))
     print ("Simulation rate = %.1f %s/(5 days)" %(simtime_per_hour*12.*5.,\
             unit_name))
+    print ("===============================")
+    print ("Simulation rate = %1.2e iters/hour" %(mean_iters_per_sec*3600.))
+    print ("Simulation rate = %1.2e iters/day"\
+            %(mean_iters_per_sec*3600.*24.))
+    print ("Simulation rate = %1.2e iters/(5 days)"\
+            %(mean_iters_per_sec*3600.*24.*5.))
