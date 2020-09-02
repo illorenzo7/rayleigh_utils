@@ -170,7 +170,7 @@ work_dsdr = -rhoT_2d*dsdr_2d*vr
 
 cp = 3.5e8
 work_dsdr_negligible = rhoTvrS*dsdr_2d/cp
-
+print ("maxabs (small dsdr work) = ", np.max(np.abs(work_dsdr_negligible)))
 if magnetism:
     work_mag = vals[:, :, lut[1436]] + vals[:, :, lut[1916]] +\
             1.0/(4.0*np.pi)*(vals[:, :, lut[2019]] + vals[:, :, lut[2043]])
