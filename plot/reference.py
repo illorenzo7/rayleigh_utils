@@ -25,6 +25,7 @@ dirname_stripped = strip_dirname(dirname)
 # Get other arguments
 xminmax = None
 rvals = None
+ylog = True
 
 args = sys.argv[2:]
 nargs = len(args)
@@ -42,6 +43,8 @@ for i in range(nargs):
         fname = args[i+1]
     elif arg == '-crb':
         fname = 'custom_reference_binary'
+    elif arg == '-nolog':
+        ylog = False
 
 # Directory with data and plots, make the plotting directory if it doesn't
 # already exist    
@@ -65,7 +68,7 @@ gravity = eq.gravity
 Q = eq.Q
     
 fig, axs = plotref(r, T, rho, p, dlnT, dlnrho, s, dsdr,\
-    d2lnrho, gravity, Q, color='k', xminmax=xminmax)
+    d2lnrho, gravity, Q, color='k', xminmax=xminmax, ylog=ylog)
 
 # Mark radii if desired
 if not rvals is None:
