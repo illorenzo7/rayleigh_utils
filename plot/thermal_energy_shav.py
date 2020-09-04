@@ -98,10 +98,18 @@ int_heating = vals[:, lut[1434]]
 visc_heating = vals[:, lut[1435]]
 tot_heating = advec_tot + cond_heating + int_heating + visc_heating
 if magnetism:
-    joule_heating_tot = vals[:, lut[1436]]
-    joule_heating_fluc = vals[:, lut[1437]]
-    joule_heating_mean = joule_heating_tot - joule_heating_fluc
-    tot_heating += joule_heating_tot
+    joule_heating = vals[:, lut[1436]]
+    have_joule_fluc = False
+    try:
+        joule_heating_fluc = vals[:, lut[1437]]
+        joule_heating_mean = joule_heating - joule_heating_fluc
+        have_joule_fluc = True
+        print ("Joule heating fluc (1437) output, so plotting ")
+        print ("Reynolds decomposition of Joule heating.")
+    except:
+        print ("Joule heating fluc (1437) not output, ")
+        print ("only plotting total Joule heating.")
+    tot_heating += joule_heating
 
 # Compute the INTEGRATED total heating
 gi = GridInfo(dirname + '/grid_info')
@@ -119,9 +127,10 @@ if entropy_equation:
     visc_heating /= rhot
     tot_heating /= rhot
     if magnetism:
-        joule_heating_tot /= rhot
-        joule_heating_fluc /= rhot
-        joule_heating_mean /= rhot
+        joule_heating /= rhot
+        if have_joule_fluc:
+            joule_heating_fluc /= rhot
+            joule_heating_mean /= rhot
 
 # Create the plot
 
@@ -139,12 +148,13 @@ plt.plot(rr_n, cond_heating, 'r', label='conductive heating', linewidth=lw)
 plt.plot(rr_n, int_heating, 'g', label='internal heating', linewidth=lw)
 plt.plot(rr_n, visc_heating, 'c', label='viscous heating', linewidth=lw)
 if magnetism:
-    plt.plot(rr_n, joule_heating_tot, 'b', label='Joule heating tot',\
+    plt.plot(rr_n, joule_heating, 'b', label='Joule heating tot',\
             linewidth=lw)
-    plt.plot(rr_n, joule_heating_fluc, 'b--', label='Joule heating fluc',\
-            linewidth=lw)
-    plt.plot(rr_n, joule_heating_mean, 'b:', label='Joule heating mean',\
-            linewidth=lw)
+    if have_joule_fluc:
+        plt.plot(rr_n, joule_heating_fluc, 'b--',\
+                label='Joule heating fluc', linewidth=lw)
+        plt.plot(rr_n, joule_heating_mean, 'b:',\
+                label='Joule heating mean', linewidth=lw)
 plt.plot(rr_n, tot_heating, 'k', label='total heating')
 
 # Get the y-axis in scientific notation
@@ -169,11 +179,13 @@ if minmax is None:
             np.max(advec_mean), np.max(cond_heating), np.max(int_heating),\
             np.max(visc_heating), np.max(tot_heating))
     if magnetism:
-        ymin = min(ymin, np.min(joule_heating_tot),\
-                np.min(joule_heating_fluc), np.min(joule_heating_mean))
-        ymax = max(ymax, np.max(joule_heating_tot),\
-                np.max(joule_heating_fluc), np.max(joule_heating_mean))
-
+        ymin = min(ymin, np.min(joule_heating))
+        ymax = max(ymax, np.max(joule_heating))
+        if have_joule_fluc:
+            ymin = min(ymin, np.min(joule_heating_fluc),\
+                    np.min(joule_heating_mean))
+            ymax = max(ymax, np.max(joule_heating_fluc),\
+                    np.max(joule_heating_mean))
     delta_y = ymax - ymin
     ybuffer = 0.1*delta_y
     minmax = ymin - 3*ybuffer, ymax + ybuffer
@@ -197,8 +209,7 @@ if not rvals is None:
         plt.plot(rval_n + np.zeros(100), yvals, 'k--')
 
 if entropy_equation:
-    plt.ylabel(r'$\partial S/\partial t\ \rm{(erg\ g^{-1}\ K^{-1}\ s^{-1})}$',\
-            fontsize=12, **csfont)
+    plt.ylabel(r'$\partial S/\partial t\ \rm{(erg\ g^{-1}\ K^{-1}\ s^{-1})}$', fontsize=12, **csfont)
 else:
     plt.ylabel('heating (' + r'$\rm{erg\ cm^{-3}\ s^{-1}}$' + ')',\
             fontsize=12, **csfont)

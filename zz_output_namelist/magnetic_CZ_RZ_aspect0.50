@@ -54,8 +54,8 @@ azavg_values =
     701,704, !internal energy, enthalpy (density)
     ! THERMAL ENERGY EQUATION !, Conductive, Radiative, Viscous)
 	1401,1402,1406, ! (minus?) Advection (tot., fluc., ref.)
-    1421,1434,1435,1436, ! (vol. heating: conductive, internal, viscous,
-                         ! Joule)
+    1421,1434,1435,1436,1437,! (vol. heating: conductive, internal, viscous,
+                             ! Joule, Joule fluc)
     ! Terms for TOTAL ENERGY EQUATION
     1901,1907,1910,1440,
     ! Pressure work, viscous work on KE, minus advec. work, rhot*v_r*S
@@ -116,8 +116,8 @@ shellavg_values =
     701,704, !internal energy, enthalpy (density)
     ! THERMAL ENERGY EQUATION !, Conductive, Radiative, Viscous)
 	1401,1402,1406, ! (minus?) Advection (tot., fluc., ref.)
-    1421,1434,1435,1436, ! (vol. heating: conductive, internal, viscous,
-                        ! Joule)
+    1421,1434,1435,1436,1437,! (vol. heating: conductive, internal, viscous,
+                             ! Joule, Joule fluc)
     ! Terms for TOTAL ENERGY EQUATION
     1901,1907,1910,1440,
     ! Pressure work, viscous work on KE, minus advec. work, rhot*v_r*S
@@ -185,8 +185,8 @@ globalavg_values =
     701,704, !internal energy, enthalpy (density)
     ! THERMAL ENERGY EQUATION !, Conductive, Radiative, Viscous)
 	1401,1402,1406, ! (minus?) Advection (tot., fluc., ref.)
-    1421,1434,1435,1436, ! (vol. heating: conductive, internal, viscous,
-                         ! Joule)
+    1421,1434,1435,1436,1437,! (vol. heating: conductive, internal, viscous,
+                             ! Joule, Joule fluc)
     ! Terms for TOTAL ENERGY EQUATION
     1901,1907,1910,1440,
     ! Pressure work, viscous work on KE, minus advec. work, rhot*v_r*S
