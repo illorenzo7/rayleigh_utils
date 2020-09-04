@@ -105,27 +105,18 @@ if forced:
     ro = np.max(rr)
 
     mean_vp = vals_az[:, :, lut_az[3]]
+    vp2 = vals_az[:, :, lut_az[416]]
+    fluc_vp2 = vals_az[:, :, lut_az[424]]
+    mean_vp2 = vp2 - fluc_vp2
     tacho_r = get_parameter(dirname, 'tacho_r')
     print ("read tacho_r = %1.2e" %tacho_r)
     tacho_dr = get_parameter(dirname, 'tacho_dr')
     tacho_tau = get_parameter(dirname, 'tacho_tau')
-    forcing = np.zeros((nt, nr))
+    work_forcing = np.zeros((nt, nr))
     eq = get_eq(dirname)
     rho = eq.rho
 
-    if os.path.exists(dirname + '/inner_vp'):
-        print ("inner_vp file exists, so I assume you have a forcing function which\n quartically matches on to a CZ differential rotation")
-        inner_vp = read_inner_vp(dirname + '/inner_vp')
-        for it in range(nt):
-            for ir in range(nr):
-                if rr[ir] <= tacho_r - tacho_dr*rr[0]:
-                    desired_vp = 0.0
-                elif rr[ir] <= tacho_r:
-                    desired_vp = inner_vp[it]*(1.0 - ( (rr[ir] - tacho_r)/(tacho_dr*rr[0]) )**2)**2
-                else:
-                    desired_vp = mean_vp[it, ir] # No forcing in CZ
-                forcing[it, ir] = -rho[ir]*(mean_vp[it, ir] - desired_vp)/tacho_tau
-    elif os.path.exists(dirname + '/eq_vp'):
+    if os.path.exists(dirname + '/eq_vp'): 
         print ("eq_vp file exists, so I assume you have a forcing function which\n quartically matches on to a CZ differential rotation\n with viscous-torque-free buffer zone")
         tacho_r2 = get_parameter(dirname, 'tacho_r2')
         i_tacho_r = np.argmin(np.abs(rr - tacho_r))
@@ -133,20 +124,25 @@ if forced:
         eq_vp = read_eq_vp(dirname + '/eq_vp', nt, nr)
         for it in range(nt):
             for ir in range(nr):
-                if rr[ir] <= tacho_r - tacho_dr*rr[0]:
-                    desired_vp = 0.0
-                elif rr[ir] <= tacho_r:
-                    desired_vp = eq_vp[it, i_tacho_r]*(1.0 - ( (rr[ir] - tacho_r)/(tacho_dr*rr[0]) )**2)**2
-                elif rr[ir] <= tacho_r2:
-                    desired_vp = eq_vp[it, ir]
+                if rr[ir] <= tacho_r2:
+                    if rr[ir] > tacho_r:
+                        # Here is where the DR is forced differentially
+                        # (a "buffer zone" to reduce shear)
+                        desired_vp = eq_vp[it, ir]
+                    elif rr[ir] > tacho_r - tacho_dr*rr[0]:
+                        # Here is where the DR is forced to match 
+                        # quartically from differential to solid-body
+                        desired_vp = eq_vp[it, i_tacho_r]*(1.0 - ( (rr[ir] - tacho_r)/(tacho_dr*rr[0]) )**2)**2
+                    else:
+                        desired_vp = 0.0
+                    work_forcing[it, ir] = -rho[ir]*(mean_vp2[it, ir] -\
+                            desired_vp*mean_vp[it, ir])/tacho_tau
                 else:
-                    desired_vp = mean_vp[it, ir] # No forcing in CZ
-                forcing[it, ir] = -rho[ir]*(mean_vp[it, ir] - desired_vp)/tacho_tau
+                    work_forcing[it, ir] = 0.
     else:
         forcing_coeff = -rho/tacho_tau*0.5*(1.0 - np.tanh((rr - tacho_r)/(tacho_dr*rr[0])))
-        forcing = forcing_coeff.reshape((1, nr))*mean_vp
+        work_forcing = forcing_coeff.reshape((1, nr))*mean_vp2
 
-    work_forcing = forcing*mean_vp
     work_forcing_shav = np.sum(work_forcing*tw.reshape((nt, 1)), axis=0)
     forcing_flux_int = np.zeros(nr)
     for ir in range(nr):

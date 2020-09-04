@@ -19,6 +19,7 @@ from common import get_widest_range_file, strip_dirname,\
 from get_parameter import get_parameter
 from rayleigh_diagnostics import GridInfo
 from get_eq import get_eq
+from read_eq_vp import read_eq_vp
 
 # Get the run directory on which to perform the analysis
 dirname = sys.argv[1]
@@ -40,6 +41,7 @@ minmax = None
 rnorm = None
 rvals = None
 entropy_equation = False
+force_econs = False # By default, no tachocline econs term to worry about
 
 args = sys.argv[2:]
 nargs = len(args)
@@ -59,6 +61,8 @@ for i in range(nargs):
             rvals.append(float(rval_str))
     elif arg == '-s':
         entropy_equation = True
+    elif arg == '-econs':
+        force_econs = True
 
 lw = 1. # regular lines
 #lw = 1.5 # Bit thicker lines
@@ -111,6 +115,58 @@ if magnetism:
         print ("only plotting total Joule heating.")
     tot_heating += joule_heating
 
+if force_econs:
+    AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
+    print ('Getting forcing info from ' + datadir + AZ_Avgs_file)
+    di_az = get_dict(datadir + AZ_Avgs_file)
+    nt = di_az['nt']
+    vals_az = di_az['vals']
+    lut_az = di_az['lut']
+    mean_vp = vals_az[:, :, lut_az[3]]
+    vp2 = vals_az[:, :, lut_az[416]]
+    fluc_vp2 = vals_az[:, :, lut_az[424]]
+    mean_vp2 = vp2 - fluc_vp2
+    tacho_r = get_parameter(dirname, 'tacho_r')
+    print ("read tacho_r = %1.2e" %tacho_r)
+    tacho_dr = get_parameter(dirname, 'tacho_dr')
+    tacho_tau = get_parameter(dirname, 'tacho_tau')
+    force_heating_az = np.zeros((nt, nr))
+    eq = get_eq(dirname)
+    rho = eq.rho
+
+    if os.path.exists(dirname + '/eq_vp'): 
+        print ("eq_vp file exists, so I assume you have a forcing function which\n quartically matches on to a CZ differential rotation\n with viscous-torque-free buffer zone")
+        tacho_r2 = get_parameter(dirname, 'tacho_r2')
+        i_tacho_r = np.argmin(np.abs(rr - tacho_r))
+        print ("read tacho_r2 = %1.2e" %tacho_r2)
+        eq_vp = read_eq_vp(dirname + '/eq_vp', nt, nr)
+        for it in range(nt):
+            for ir in range(nr):
+                if rr[ir] <= tacho_r2:
+                    if rr[ir] > tacho_r:
+                        # Here is where the DR is forced differentially
+                        # (a "buffer zone" to reduce shear)
+                        desired_vp = eq_vp[it, ir]
+                    elif rr[ir] > tacho_r - tacho_dr*rr[0]:
+                        # Here is where the DR is forced to match 
+                        # quartically from differential to solid-body
+                        desired_vp = eq_vp[it, i_tacho_r]*(1.0 - ( (rr[ir] - tacho_r)/(tacho_dr*rr[0]) )**2)**2
+                    else:
+                        desired_vp = 0.0
+                    force_heating_az[it, ir] = rho[ir]*(mean_vp2[it, ir] -\
+                            desired_vp*mean_vp[it, ir])/tacho_tau
+                else:
+                    force_heating_az[it, ir] = 0.
+    else:
+        forcing_coeff = rho/tacho_tau*0.5*(1.0 - np.tanh((rr - tacho_r)/(tacho_dr*rr[0])))
+        force_heating_az = forcing_coeff.reshape((1, nr))*mean_vp2
+
+    # Calculate the latitudinally integrated forcing work
+    gi = GridInfo(dirname + '/grid_info')
+    tw = gi.tweights
+    force_heating = np.sum(force_heating_az*tw.reshape((nt, 1)), axis=0)
+    tot_heating += force_heating
+
 # Compute the INTEGRATED total heating
 gi = GridInfo(dirname + '/grid_info')
 rw = gi.rweights
@@ -131,6 +187,9 @@ if entropy_equation:
         if have_joule_fluc:
             joule_heating_fluc /= rhot
             joule_heating_mean /= rhot
+
+    if force_econs:
+        force_heating /= rhot
 
 # Create the plot
 
@@ -155,6 +214,9 @@ if magnetism:
                 label='Joule heating fluc', linewidth=lw)
         plt.plot(rr_n, joule_heating_mean, 'b:',\
                 label='Joule heating mean', linewidth=lw)
+if force_econs:
+    plt.plot(rr_n, force_heating, 'y',\
+        label='Heating from forcing (econs)', linewidth=lw)
 plt.plot(rr_n, tot_heating, 'k', label='total heating')
 
 # Get the y-axis in scientific notation

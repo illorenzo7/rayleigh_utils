@@ -29,6 +29,8 @@ from rayleigh_diagnostics import GridInfo
 from get_eq import get_eq
 from time_scales import compute_Prot, compute_tdt
 from translate_times import translate_times
+from read_inner_vp import read_inner_vp
+from read_eq_vp import read_eq_vp
 
 # Get directory name and stripped_dirname for plotting purposes
 dirname = sys.argv[1]
@@ -55,7 +57,6 @@ linthreshrz = None
 linscalerz = None
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
 forced = False
-force_thermo = False
 rvals = None
 rbcz = None
 symlog = False
@@ -174,67 +175,61 @@ print ("maxabs (small dsdr work) = ", np.max(np.abs(work_dsdr_negligible)))
 if magnetism:
     work_mag = vals[:, :, lut[1436]] + vals[:, :, lut[1916]] +\
             1.0/(4.0*np.pi)*(vals[:, :, lut[2019]] + vals[:, :, lut[2043]])
-
 if forced:
-    force_tacho_energy = False # If False, this work will need to get 
+    force_econs = False # If False, this work will need to get 
                 # included in total
                 # If True, energy is conserved, so term in heat equation
                 # balances out the work term
     try:
-        force_tacho_energy = get_parameter(dirname, 'force_tacho_energy')
+        force_econs = get_parameter(dirname, 'force_econs')
     except:
         pass
-    # If force_thermo = False (default), do nothing
-    # If True, calculate the work done by the thermal forcing and add
-    # it to the total
-    try:
-        force_thermo = get_parameter(dirname, 'force_thermo')
-    except:
-        pass
+    gi = GridInfo(dirname + '/grid_info')
+    rw = gi.rweights
+    tw = gi.tweights
+    nt = gi.ntheta
 
-    # Compute the forcing work, regardless of including it in total
     mean_vp = vals[:, :, lut[3]]
+    vp2 = vals[:, :, lut[416]]
+    fluc_vp2 = vals[:, :, lut[416]]
+    mean_vp2 = vp2 - fluc_vp2
     tacho_r = get_parameter(dirname, 'tacho_r')
+    print ("read tacho_r = %1.2e" %tacho_r)
     tacho_dr = get_parameter(dirname, 'tacho_dr')
     tacho_tau = get_parameter(dirname, 'tacho_tau')
-    forcing = np.zeros((nt, nr))
+    work_forcing = np.zeros((nt, nr))
     eq = get_eq(dirname)
     rho = eq.rho
 
-    if os.path.exists(dirname + '/inner_vp'):
-        print ("inner_vp file exists, so I assume you have a forcing function which\n quartically matches on to a CZ differential rotation")
-        inner_vp = read_inner_vp(dirname + '/inner_vp')
+    if os.path.exists(dirname + '/eq_vp'): 
+        print ("eq_vp file exists, so I assume you have a forcing function which\n quartically matches on to a CZ differential rotation\n with viscous-torque-free buffer zone")
+        tacho_r2 = get_parameter(dirname, 'tacho_r2')
+        i_tacho_r = np.argmin(np.abs(rr - tacho_r))
+        print ("read tacho_r2 = %1.2e" %tacho_r2)
+        eq_vp = read_eq_vp(dirname + '/eq_vp', nt, nr)
         for it in range(nt):
             for ir in range(nr):
-                if rr[ir] <= tacho_r - tacho_dr*rr[0]:
-                    desired_vp = 0.0
-                elif rr[ir] <= tacho_r:
-                    desired_vp = inner_vp[it]*(1.0 - ( (rr[ir] - tacho_r)/(tacho_dr*rr[0]) )**2)**2
+                if rr[ir] <= tacho_r2:
+                    if rr[ir] > tacho_r:
+                        # Here is where the DR is forced differentially
+                        # (a "buffer zone" to reduce shear)
+                        desired_vp = eq_vp[it, ir]
+                    elif rr[ir] > tacho_r - tacho_dr*rr[0]:
+                        # Here is where the DR is forced to match 
+                        # quartically from differential to solid-body
+                        desired_vp = eq_vp[it, i_tacho_r]*(1.0 - ( (rr[ir] - tacho_r)/(tacho_dr*rr[0]) )**2)**2
+                    else:
+                        desired_vp = 0.0
+                    work_forcing[it, ir] = -rho[ir]*(mean_vp2[it, ir] -\
+                            desired_vp*mean_vp[it, ir])/tacho_tau
                 else:
-                    desired_vp = mean_vp[it, ir] # No forcing in CZ
-                forcing[it, ir] = -rho[ir]*(mean_vp[it, ir] - desired_vp)/tacho_tau
+                    work_forcing[it, ir] = 0.
     else:
         forcing_coeff = -rho/tacho_tau*0.5*(1.0 - np.tanh((rr - tacho_r)/(tacho_dr*rr[0])))
-        forcing = forcing_coeff.reshape((1, nr))*mean_vp
+        work_forcing = forcing_coeff.reshape((1, nr))*mean_vp2
 
-    work_forcing = mean_vp*forcing
+    work_forcing_shav = np.sum(work_forcing*tw.reshape((nt, 1)), axis=0)
 
-# Calculate the thermal forcing work, if applicable
-if force_thermo:
-    mean_tvar = vals[:, :, lut[501]]
-    thermo_r = get_parameter(dirname, 'thermo_r')
-    thermo_dr = get_parameter(dirname, 'thermo_dr')
-    thermo_tau = get_parameter(dirname, 'thermo_tau')
-    thermo_amp = get_parameter(dirname, 'thermo_amp')
-    thermo_forcing_coeff = 1.0/thermo_tau/\
-            np.cosh((rr - thermo_r)/(thermo_dr*rr[0]))**2.0
-    thermo_forcing_coeff = thermo_forcing_coeff.reshape((1, nr))
-    theta_profile = 0.5*(3.0*cost**2.0 - 1.0)
-    theta_profile = theta_profile.reshape((nt, 1))
-
-    rhot = (eq.density*eq.temperature).reshape((1, nr))
-    work_thermal_forcing = -thermo_forcing_coeff*(mean_tvar -\
-            thermo_amp*theta_profile)*rhoT_2d
 
 # Calculate the integrated work
 gi = GridInfo(dirname + '/grid_info')
@@ -255,8 +250,6 @@ if magnetism:
     work_mag_r = np.sum(work_mag*tw_2d, axis=0)
 if forced:
     work_forcing_r = np.sum(work_forcing*tw_2d, axis=0)
-if force_thermo:
-    work_thermal_forcing_r = np.sum(work_thermal_forcing*tw_2d, axis=0)
 
 work_tot = work_KE + work_enth + work_cond + work_rad + work_visc +\
         work_dsdr + work_dsdr_negligible
@@ -266,17 +259,12 @@ if magnetism:
     work_tot += work_mag
     work_tot_r += work_mag_r
 if forced:
-    if not force_tacho_energy:
-        print("force_tacho_energy = False so including forcing work in total")
+    if not force_econs:
+        print("force_econs = False so including forcing work in total")
         work_tot += work_forcing
         work_tot_r += work_forcing_r
     else:
-        print("force_tacho_energy = True so not including forcing work in total")
-
-if force_thermo:
-    print("force_thermo = True, including thermal forcing work in total")
-    work_tot += work_thermal_forcing
-    work_tot_r += work_thermal_forcing_r
+        print("force_econs = True so not including forcing work in total")
 
 ri, ro = np.min(rr), np.max(rr)
 integrated_KE = fourpi/3*(ro**3 - ri**3)*np.sum(work_KE_r*rw)
@@ -291,9 +279,6 @@ if magnetism:
     integrated_mag = fourpi/3*(ro**3 - ri**3)*np.sum(work_mag_r*rw)
 if forced:
     integrated_forcing = fourpi/3*(ro**3 - ri**3)*np.sum(work_forcing_r*rw)
-if force_thermo:
-    integrated_thermal_forcing = fourpi/3*(ro**3 - ri**3)*\
-            np.sum(work_thermal_forcing_r*rw)
 
 #max_sig = max(np.std(torque_rs), np.std(torque_mc), np.std(torque_visc))
 
@@ -306,7 +291,7 @@ margin_top_inches = 1 # wider top margin to accommodate subplot titles AND metad
 margin_bottom_inches = 0.75*(2 - (rbcz is None)) 
     # larger bottom margin to make room for colorbar(s)
 margin_subplot_top_inches = 1/4 # margin to accommodate just subplot titles
-nplots = 8 + magnetism + forced + force_thermo
+nplots = 8 + magnetism + forced
 ncol = 3 # put three plots per row
 nrow = np.int(np.ceil(nplots/3)) + 1 # one more row for spherical avg plot
 
@@ -344,10 +329,6 @@ r'$\overline{\rho}\overline{T}(S/c_{\rm{p}})\mathbf{v}\cdot\nabla\overline{S}$',
 r'$\partial(\overline{\rho}w)/\partial t$']
 
 units = r'$\rm{erg}\ \rm{cm}^{-3}\ \rm{s}^{-1}$'
-
-if force_thermo:
-    work_terms.insert(7, work_thermal_forcing)
-    titles.insert(7, 'thermal forcing')
 
 if forced:
     work_terms.insert(7, work_forcing)
