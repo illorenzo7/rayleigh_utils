@@ -38,6 +38,8 @@ if not os.path.isdir(plotdir):
 # Set defaults
 rnorm = None
 minmax = None
+subtop = False  # if True, subtract the top value of the entropy before\
+        # computing the fluctuations
 rvals = None # user can specify radii to mark by vertical lines
 tag = ''
 use_hrho = False
@@ -64,6 +66,10 @@ for i in range(nargs):
         rvals = []
         for rval_str in rvals_str:
             rvals.append(float(rval_str))
+    elif arg == '-sub':
+        subtop = True
+        print ("subtop = True")
+        print ("subtracting top value of entropy from radial profile")
 
 # Read in vavg data
 print ('Reading Shell_Avgs data from ' + datadir + Shell_Avgs_file + ' ...')
@@ -88,6 +94,9 @@ ref_temp = eq.temperature
 
 # Read in entropy and pressure, nond
 entropy = vals[:, lut[501]]/prs_spec_heat
+if subtop:
+    entropy -= entropy[0]
+
 prs = vals[:, lut[502]]/ref_prs
 
 # Calculate temp. from EOS
@@ -141,8 +150,9 @@ if minmax is None:
             np.argmin(np.abs(rr_depth - maxdepth))
 
     mmin = min(np.min(entropy[ir1:ir2+1]), np.min(prs[ir1:ir2+1]),\
-            np.min(temp[ir1:ir2+1]))
-    mmax = np.max(rho[ir1:ir2+1])
+            np.min(temp[ir1:ir2+1]), np.min(rho[ir1:ir2+1]))
+    mmax = max(np.max(entropy[ir1:ir2+1]), np.max(prs[ir1:ir2+1]),\
+            np.max(temp[ir1:ir2+1]), np.max(rho[ir1:ir2+1]))
     difference = mmax - mmin
     ybuffer = 0.2*difference
     ymin, ymax = mmin - ybuffer, mmax + ybuffer

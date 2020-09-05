@@ -49,7 +49,8 @@ radatadir = dirname + '/Shell_Avgs/'
 rnorm = None
 minmax = None
 minmax_was_None = True
-logscale = False
+subtop = False  # if True, subtract the top value of the entropy before\
+        # computing the fluctuations
 rvals = None # user can specify radii to mark by vertical lines
 nrec = 1 # by default only plot 1 record from each Shell_Avgs file
 nskip = 1 # by default don't skip any Shell_Avgs files in the range
@@ -74,8 +75,6 @@ for i in range(nargs):
     elif arg == '-minmax':
         minmax = float(args[i+1]), float(args[i+2])
         minmax_was_None = False
-    elif arg == '-log':
-        logscale = True
     elif arg == '-rvals':
         rvals_str = args[i+1].split()
         rvals = []
@@ -87,6 +86,10 @@ for i in range(nargs):
         nskip = int(args[i+1])
     elif arg == '-ntot':
         ntot = int(args[i+1])
+    elif arg == '-sub':
+        subtop = True
+        print ("subtop = True")
+        print ("subtracting top value of entropy from radial profiles")
 
 if not ntot is None: # This overrides nskip even if user specified it
     nskip = (index_last - index_first)//ntot
@@ -140,6 +143,8 @@ for i in range(index_first, index_last + 1, nskip):
 
         # Thermal deviations
         entropy = vals[:, 0, lut[501], j]/prs_spec_heat
+        if subtop:
+            entropy -= entropy[0]
         prs = vals[:, 0, lut[502], j]/ref_prs
         # Calculate temp. from EOS
         poly_n = 1.5
@@ -183,8 +188,9 @@ for i in range(index_first, index_last + 1, nskip):
                     np.argmin(np.abs(rr_depth - maxdepth))
 
             mmin = min(np.min(entropy[ir1:ir2+1]), np.min(prs[ir1:ir2+1]),\
-                    np.min(temp[ir1:ir2+1]))
-            mmax = np.max(rho[ir1:ir2+1])
+                    np.min(temp[ir1:ir2+1]), np.min(rho[ir1:ir2+1]))
+            mmax = max(np.max(entropy[ir1:ir2+1]), np.max(prs[ir1:ir2+1]),\
+                    np.max(temp[ir1:ir2+1]), np.max(rho[ir1:ir2+1]))
             difference = mmax - mmin
             ybuffer = 0.2*difference
             ymin, ymax = mmin - ybuffer, mmax + ybuffer
