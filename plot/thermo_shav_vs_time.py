@@ -22,10 +22,21 @@ from common import strip_dirname, get_widest_range_file,\
         get_iters_from_file, get_dict, rsun, get_file_lists,\
         get_desired_range
 from get_eq import get_eq
+from get_parameter import get_parameter
+from time_scales import compute_Prot, compute_tdt
 
 # Get directory name and stripped_dirname for plotting purposes
 dirname = sys.argv[1]
 dirname_stripped = strip_dirname(dirname)
+
+# Get the baseline time unit
+rotation = get_parameter(dirname, 'rotation')
+if rotation:
+    time_unit = compute_Prot(dirname)
+    time_label = r'$\rm{P_{rot}}$'
+else:
+    time_unit = compute_tdt(dirname)
+    time_label = r'$\rm{TDT}$'
 
 # Directory with data and plots, make the plotting directory if it doesn't
 # already exist    
@@ -37,8 +48,14 @@ radatadir = dirname + '/Shell_Avgs/'
 # Set defaults
 rnorm = None
 minmax = None
+minmax_was_None = True
 logscale = False
 rvals = None # user can specify radii to mark by vertical lines
+nrec = 1 # by default only plot 1 record from each Shell_Avgs file
+nskip = 1 # by default don't skip any Shell_Avgs files in the range
+    # for nskip = 3, only read every third Shell_Avgs file, etc.
+ntot = None # user can specify a total number of plots they want to see
+    # in the desired range
 
 # Get all the file names in datadir and their integer counterparts
 file_list, int_file_list, nfiles = get_file_lists(radatadir)
@@ -47,11 +64,7 @@ file_list, int_file_list, nfiles = get_file_lists(radatadir)
 args = sys.argv[2:]
 nargs = len(args)
 
-if nargs == 0:
-    index_first, index_last = nfiles - 11, nfiles - 1  
-    # By default average over the last 10 files
-else:
-    index_first, index_last = get_desired_range(int_file_list, args)
+index_first, index_last = get_desired_range(int_file_list, args)
 
 # Change defaults
 for i in range(nargs):
@@ -60,6 +73,7 @@ for i in range(nargs):
         rnorm = float(args[i+1])
     elif arg == '-minmax':
         minmax = float(args[i+1]), float(args[i+2])
+        minmax_was_None = False
     elif arg == '-log':
         logscale = True
     elif arg == '-rvals':
@@ -67,6 +81,15 @@ for i in range(nargs):
         rvals = []
         for rval_str in rvals_str:
             rvals.append(float(rval_str))
+    elif arg == '-nrec':
+        nrec = int(args[i+1])
+    elif arg == '-nskip':
+        nskip = int(args[i+1])
+    elif arg == '-ntot':
+        ntot = int(args[i+1])
+
+if not ntot is None: # This overrides nskip even if user specified it
+    nskip = (index_last - index_first)//ntot
 
 # Read in vavg data from Shell_Avgs
 sh0 = Shell_Avgs(radatadir + file_list[index_first], '')
@@ -75,6 +98,7 @@ sh0 = Shell_Avgs(radatadir + file_list[index_first], '')
 rr = sh0.radius
 nr = sh0.nr
 ri, ro = np.min(rr), np.max(rr)
+shell_depth = ro - ri
 d = ro - ri
 rr_height = (rr - ri)/d
 rr_depth = (ro - rr)/d
@@ -97,17 +121,22 @@ else:
 print ('Plotting Shell_Avgs files %s through %s ...'\
        %(file_list[index_first], file_list[index_last]))
 
-for i in range(index_first, index_last + 1):
+for i in range(index_first, index_last + 1, nskip):
     if i == index_first:
         sh = sh0
     else:   
         sh = Shell_Avgs(radatadir + file_list[i], '')
 
-    local_ntimes = sh.niter
     vals = sh.vals
     lut = sh.lut
-    for j in range(local_ntimes):
+
+    nrec_tot = sh.niter
+    nstep = nrec_tot // nrec
+    if nstep == 0:
+        nstep = 1
+    for j in range(0, nrec_tot, nstep):
         iter_loc = sh.iters[j]
+        t_loc = sh.time[j]
 
         # Thermal deviations
         entropy = vals[:, 0, lut[501], j]/prs_spec_heat
@@ -145,32 +174,24 @@ for i in range(index_first, index_last + 1):
         # Set the axis limits
         xmin, xmax = np.min(rr_n), np.max(rr_n)
         plt.xlim((xmin, xmax))
+        if minmax_was_None:
+            # Compute maximum/minimum thermo. pert. (ignore the upper/lower 5%
+            # of the shell to avoid extreme values associated with boundary conditions
+            rr_depth = (ro - rr)/shell_depth
+            mindepth, maxdepth = 0.0, 1.0
+            ir1, ir2 = np.argmin(np.abs(rr_depth - mindepth)),\
+                    np.argmin(np.abs(rr_depth - maxdepth))
 
-        # Compute maximum/minimum Reynolds numbers (ignore the upper/lower 5%
-        # of the shell to avoid extreme values associated with boundaries
-#        ir1, ir2 = np.argmin(np.abs(rr_depth - 0.05)),\
-#                np.argmin(np.abs(rr_depth - 0.95))
-#        amp_min = min(np.min(amp_vr[ir1:ir2]), np.min(amp_vt[ir1:ir2]),\
-#                np.min(amp_vp[ir1:ir2]))
-#        amp_max = np.max(amp_v[ir1:ir2])
+            mmin = min(np.min(entropy[ir1:ir2+1]), np.min(prs[ir1:ir2+1]),\
+                    np.min(temp[ir1:ir2+1]))
+            mmax = np.max(rho[ir1:ir2+1])
+            difference = mmax - mmin
+            ybuffer = 0.2*difference
+            ymin, ymax = mmin - ybuffer, mmax + ybuffer
+        else:
+            ymin, ymax = minmax
 
-#        if minmax is None:
-#            if logscale:
-#                ratio = amp_max/amp_min
-#                ybuffer = 0.2*ratio
-#                ymin = amp_min/ybuffer
-#                ymax = amp_max*ybuffer
-#            else:
-#                difference = amp_max - amp_min
-#                ybuffer = 0.2*difference
-#                ymin, ymax = amp_min - ybuffer, amp_max + ybuffer
-#        else:
-#            ymin, ymax = minmax
-
-#        plt.ylim((ymin, ymax))
-#        if logscale:
-#            plt.yscale('log')
-        ymin, :
+        plt.ylim((ymin, ymax))
         xvals = np.linspace(xmin, xmax, 100)
         yvals = np.linspace(ymin, ymax, 100)
 
@@ -184,8 +205,16 @@ for i in range(index_first, index_last + 1):
                 plt.plot(rval_n + np.zeros(100), yvals, 'k--')
 
         # Create a title    
-        plt.title(dirname_stripped + '\n' +'Velocity Amplitudes, ' +\
-                  str(iter_loc).zfill(8))
+        if rotation:
+            time_string = ('t = %.1f ' %(t_loc/time_unit)) + time_label +\
+                    ' (1 ' + time_label + (' = %.2f days)'\
+                    %(time_unit/86400.))
+        else:
+            time_string = ('t = %.3f ' %(t_loc/time_unit)) + time_label +\
+                    ' (1 ' + time_label + (' = %.1f days)'\
+            %(time_unit/86400.))
+
+        plt.title(dirname_stripped + '\n' + time_string)
         plt.legend()
 
         # Get ticks everywhere
@@ -194,6 +223,6 @@ for i in range(index_first, index_last + 1):
         plt.tight_layout()
 
         savefile = plotdir + str(iter_loc).zfill(8) + '.png'
-        print('Saving plot at ' + savefile + ' ...')
+        print('Saving plot at ' + savefile)
         plt.savefig(savefile, dpi=300)
         plt.close()

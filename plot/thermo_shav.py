@@ -38,7 +38,6 @@ if not os.path.isdir(plotdir):
 # Set defaults
 rnorm = None
 minmax = None
-logscale = False
 rvals = None # user can specify radii to mark by vertical lines
 tag = ''
 use_hrho = False
@@ -56,8 +55,6 @@ for i in range(nargs):
         rnorm = float(args[i+1])
     elif arg == '-minmax':
         minmax = float(args[i+1]), float(args[i+2])
-    elif arg == '-log':
-        logscale = True
     elif arg == '-hrho':
         use_hrho = True
     elif arg == '-tag':
@@ -134,31 +131,25 @@ plt.ylabel('thermo. pert.',fontsize=12,\
 xmin, xmax = np.min(rr_n), np.max(rr_n)
 plt.xlim((xmin, xmax))
 
-# Compute maximum/minimum Reynolds numbers (ignore the upper/lower 5%
-# of the shell to avoid extreme values associated with boundary conditions
-rr_depth = (ro - rr)/shell_depth
-ir1, ir2 = np.argmin(np.abs(rr_depth - 0.05)),\
-        np.argmin(np.abs(rr_depth - 0.95))
-my_min = min(np.min(entropy[ir1:ir2]), np.min(prs[ir1:ir2]),\
-        np.min(temp[ir1:ir2]))
-my_max = np.max(rho[ir1:ir2])
-
 if minmax is None:
-    if logscale:
-        ratio = my_max/my_min
-        ybuffer = 0.2*ratio
-        ymin = my_min/ybuffer
-        ymax = my_max*ybuffer
-    else:
-        difference = my_max - my_min
-        ybuffer = 0.2*difference
-        ymin, ymax = my_min - ybuffer, my_max + ybuffer
+    # Compute maximum/minimum thermo. pert. (ignore the upper/lower 5%
+    # of the shell to avoid extreme values 
+    rr_depth = (ro - rr)/shell_depth
+    #mindepth, maxdepth = 0.05, 0.95
+    mindepth, maxdepth = 0.0, 1.0
+    ir1, ir2 = np.argmin(np.abs(rr_depth - mindepth)),\
+            np.argmin(np.abs(rr_depth - maxdepth))
+
+    mmin = min(np.min(entropy[ir1:ir2+1]), np.min(prs[ir1:ir2+1]),\
+            np.min(temp[ir1:ir2+1]))
+    mmax = np.max(rho[ir1:ir2+1])
+    difference = mmax - mmin
+    ybuffer = 0.2*difference
+    ymin, ymax = mmin - ybuffer, mmax + ybuffer
 else:
     ymin, ymax = minmax
 
 plt.ylim((ymin, ymax))
-if logscale:
-    plt.yscale('log')
 
 xvals = np.linspace(xmin, xmax, 100)
 yvals = np.linspace(ymin, ymax, 100)
@@ -184,6 +175,6 @@ plt.tight_layout()
 
 savefile = plotdir + dirname_stripped + '_thermo_shellav_' +\
     str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + tag + '.png'
-print('Saving plot at ' + savefile + ' ...')
+print('Saving plot at ' + savefile)
 plt.savefig(savefile, dpi=300)
 plt.show()
