@@ -44,6 +44,7 @@ forced = False
 
 # Get command-line arguments to adjust the interval of averaging files
 minmax = None
+xminmax = None
 rnorm = None
 rvals = None
 plot_enth_fluc = False
@@ -60,6 +61,8 @@ for i in range(nargs):
         Shell_Avgs_file = Shell_Avgs_file.split('/')[-1]
     elif arg == '-minmax':
         minmax = float(args[i+1]), float(args[i+2])
+    elif arg == '-xminmax':
+        xminmax = float(args[i+1]), float(args[i+2])
     elif arg == '-rnorm':
         rnorm = float(args[i+1])
     elif arg == '-fluc':
@@ -300,9 +303,9 @@ plt.minorticks_on()
 plt.tick_params(top=True, right=True, direction='in', which='both')
 
 # Set the x limits
-xmin, xmax = np.min(rr_n), np.max(rr_n)
-delta_x = xmax - xmin
-plt.xlim(xmin, xmax)
+if xminmax is None:
+    xminmax = np.min(rr_n), np.max(rr_n)
+plt.xlim(xminmax[0], xminmax[1])
 
 # Set the y-limits (the following values seem to "work well" for my models
 # so far...perhaps adjust this in the future. 

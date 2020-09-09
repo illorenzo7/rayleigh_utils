@@ -42,7 +42,9 @@ file_list, int_file_list, nfiles = get_file_lists(radatadir)
 
 # Get command-line arguments to adjust the interval of averaging files
 minmax = None
+xminmax = None
 minmax_was_None = True
+xminmax_was_None = True
 rnorm = None
 rvals = None
 plot_enth_fluc = False
@@ -71,6 +73,9 @@ for i in range(nargs):
     if arg == '-minmax':
         minmax = float(args[i+1]), float(args[i+2])
         minmax_was_None = False
+    elif arg == '-xminmax':
+        xminmax = float(args[i+1]), float(args[i+2])
+        xminmax_was_None = False
     elif arg == '-rnorm':
         rnorm = float(args[i+1])
     elif arg == '-fluc':
@@ -223,9 +228,9 @@ for i in range(index_first, index_last + 1, nskip):
         plt.tick_params(top=True, right=True, direction='in', which='both')
 
         # Set the x limits
-        xmin, xmax = np.min(rr_n), np.max(rr_n)
-        delta_x = xmax - xmin
-        plt.xlim(xmin, xmax)
+        if xminmax_was_None:
+            xminmax = np.min(rr_n), np.max(rr_n)
+        plt.xlim(xminmax[0], xminmax[1])
 
         # Set the y-limits (the following values seem to "work well" for my models
         # so far...perhaps adjust this in the future. 
