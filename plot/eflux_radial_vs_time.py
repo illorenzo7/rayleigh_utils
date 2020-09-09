@@ -51,6 +51,9 @@ plot_enth_fluc = False
 mark_bcz = False
 lw = 1.0 # regular width lines
 dpi = 300.
+rmaxwindow = None # If present, set the bounds to zoom in on the boundaries
+        # with a window of a particular size
+rminwindow = None
 
 args = sys.argv[2:]
 nargs = len(args)
@@ -92,6 +95,10 @@ for i in range(nargs):
         lw = float(args[i+1])
     elif arg == '-dpi':
         dpi = float(args[i+1])
+    elif arg == '-rminw':
+        rminwindow = float(args[i+1])
+    elif arg == '-rmaxw':
+        rmaxwindow = float(args[i+1])
     elif arg == '-nrec':
         nrec = int(args[i+1])
     elif arg == '-nskip':
@@ -230,6 +237,17 @@ for i in range(index_first, index_last + 1, nskip):
         # Set the x limits
         if xminmax_was_None:
             xminmax = np.min(rr_n), np.max(rr_n)
+        # If user set -rminwindow or -rmaxwindow, this trumps the bounds
+        if not rminwindow is None:
+            rmin = np.min(rr_n)
+            rmax = np.max(rr_n)
+            Delta_r = rmax - rmin
+            xminmax = rmin - rminwindow*Delta_r, rmin + rminwindow*Delta_r
+        if not rmaxwindow is None:
+            rmin = np.min(rr_n)
+            rmax = np.max(rr_n)
+            Delta_r = rmax - rmin
+            xminmax = rmax - rmaxwindow*Delta_r, rmax + rmaxwindow*Delta_r
         plt.xlim(xminmax[0], xminmax[1])
 
         # Set the y-limits (the following values seem to "work well" for my models
@@ -237,6 +255,10 @@ for i in range(index_first, index_last + 1, nskip):
 
         if minmax_was_None:
             minmax = -0.7, 1.3
+        if not rminwindow is None:
+            minmax = -rminwindow, rminwindow
+        if not rmaxwindow is None:
+            minmax = -rmaxwindow, rmaxwindow
         plt.ylim(minmax[0], minmax[1])
 
         # Label the axes
