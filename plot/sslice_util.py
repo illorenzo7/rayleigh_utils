@@ -85,7 +85,7 @@ def deal_with_nans(x, y):
 def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
         minmax=None, clon=0, clat=20, posdef=False, logscale=False,\
         varname='vr', lw_scaling=1., plot_cbar=True, cbar_fs=10,\
-        symlog=False, linscale=None, linthresh=None):
+        symlog=False, linscale=None, linthresh=None, cmap=None):
     
     if 'sq' in varname or logscale:
         posdef = True
@@ -175,17 +175,28 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
     ax.set_xlim((-1.01, 1.01)) # deal with annoying whitespace cutoff issue
     ax.set_ylim((-1.01, 1.01))
     ax.axis('off') # get rid of x/y axis coordinates
-        
+
+    # Set the colormap if unspecified
+    if cmap is None:
+        if logscale:
+            cmap = 'Greys'
+        elif posdef:
+            cmap = 'plasma'
+        elif symlog:
+            cmap = 'RdYlBu'
+        else:
+            cmap = 'RdYlBu'
+
     # Plot the orthographic projection
     if logscale:
         log_min, log_max = np.log10(minmax[0]), np.log10(minmax[1])
         levels = np.logspace(log_min, log_max, 150)
-        im = ax.contourf(x, y, field, cmap='Greys',\
+        im = ax.contourf(x, y, field, cmap=cmap,\
             norm=colors.LogNorm(vmin=minmax[0], vmax=minmax[1]),\
             levels=levels)  
     elif posdef:
         levels = np.linspace(minmax[0], minmax[1])
-        im = ax.contourf(x, y, field, cmap='plasma', levels=levels)
+        im = ax.contourf(x, y, field, cmap=cmap, levels=levels)
     elif symlog:
         linthresh_default, linscale_default =\
             get_symlog_params(field, field_max=minmax[1])
@@ -204,12 +215,12 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
         levels_pos = np.logspace(log_thresh, log_max,\
                 nlevs_per_interval)
         levels = np.hstack((levels_neg, levels_mid, levels_pos))
-        im = ax.contourf(x, y, field, cmap='RdYlBu_r',\
+        im = ax.contourf(x, y, field, cmap=cmap,\
             norm=colors.SymLogNorm(linthresh=linthresh,\
             linscale=linscale, vmin=minmax[0], vmax=minmax[1]),\
             levels=levels)
     else:
-        im = ax.contourf(x, y, field, cmap='RdYlBu_r',\
+        im = ax.contourf(x, y, field, cmap=cmap,\
                 levels=np.linspace(minmax[0], minmax[1], 150))        
        
     # Draw parallels and meridians, evenly spaced by 30 degrees
@@ -356,7 +367,7 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
 def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
         clon=0., posdef=False, logscale=False, symlog=False, varname='vr',\
         lw_scaling=1., plot_cbar=True, cbar_fs=10, linscale=None,\
-        linthresh=None, units=None): 
+        linthresh=None, units=None, cmap=None): 
     
     if 'sq' in varname or logscale:
         posdef = True
@@ -430,17 +441,27 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
     ax.set_xlim((-2.02, 2.02)) # deal with annoying whitespace cutoff issue
     ax.set_ylim((-1.01, 1.01))
     ax.axis('off') # get rid of x/y axis coordinates
-            
+
+    # Set the colormap if unspecified
+    if cmap is None:
+        if logscale:
+            cmap = 'Greys'
+        elif posdef:
+            cmap = 'plasma'
+        elif symlog:
+            cmap = 'RdYlBu'
+        else:
+            cmap = 'RdYlBu'
     # Make the Mollweide projection
     if logscale:
         log_min, log_max = np.log10(minmax[0]), np.log10(minmax[1])
         levels = np.logspace(log_min, log_max, 150)
-        im = ax.contourf(x, y, field, cmap='Greys',\
+        im = ax.contourf(x, y, field, cmap=cmap,\
             norm=colors.LogNorm(vmin=minmax[0], vmax=minmax[1]),\
             levels=levels)  
     elif posdef:
         levels = np.linspace(minmax[0], minmax[1])
-        im = ax.contourf(x, y, field, cmap='plasma', levels=levels)
+        im = ax.contourf(x, y, field, cmap=cmap, levels=levels)
     elif symlog:
         linthresh_default, linscale_default =\
             get_symlog_params(field, field_max=minmax[1])
@@ -459,12 +480,12 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
         levels_pos = np.logspace(log_thresh, log_max,\
                 nlevs_per_interval)
         levels = np.hstack((levels_neg, levels_mid, levels_pos))
-        im = ax.contourf(x, y, field, cmap='RdYlBu_r',\
+        im = ax.contourf(x, y, field, cmap=cmap,\
             norm=colors.SymLogNorm(linthresh=linthresh,\
             linscale=linscale, vmin=minmax[0], vmax=minmax[1]),\
             levels=levels)
     else:
-        im = ax.contourf(x, y, field, cmap='RdYlBu_r',\
+        im = ax.contourf(x, y, field, cmap=cmap,\
                 levels=np.linspace(minmax[0], minmax[1], 150))
       
     # Draw parallels and meridians, evenly spaced by 30 degrees
