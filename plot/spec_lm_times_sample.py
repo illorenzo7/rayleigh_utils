@@ -47,7 +47,6 @@ rval = None # can also find ir by finding the closest point
             # to a local radius divided by rsun
 iiter = nfiles - 1 # by default plot the last iteration
 varname = 'vr'
-desired_rvals = ['all']
 minmax = None
 lminmax = None
 mminmax = None
@@ -277,9 +276,6 @@ for i in range(index_first, index_last + 1):
         # Get ticks everywhere
         plt.minorticks_on()
         plt.tick_params(top=True, right=True, direction='in', which='both')
-
-        # Get colorbar
-    #    cbar = plt.colorbar()
 
         # Make title
         # Compute l_rms and m_rms

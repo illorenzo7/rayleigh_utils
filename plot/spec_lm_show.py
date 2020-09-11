@@ -29,10 +29,6 @@ from rayleigh_diagnostics import Shell_Spectra
 dirname = sys.argv[1]
 dirname_stripped = strip_dirname(dirname)
 
-# Directory with data and plots, make the plotting directory if it doesn't
-# already exist    
-datadir = dirname + '/data/'
-
 # Data with Shell_Slices
 radatadir = dirname + '/Shell_Spectra/'
 file_list, int_file_list, nfiles = get_file_lists(radatadir)
@@ -43,7 +39,6 @@ ir = 0 # by default plot just below the surface
 rval = None # can also find ir by finding the closest point
             # to a local radius divided by rsun
 varname = 'vr'
-desired_rvals = ['all']
 minmax = None
 lminmax = None
 mminmax = None
@@ -63,8 +58,6 @@ for i in range(nargs):
         rval = float(args[i+1])
     elif arg == '-minmax':
         minmax = float(args[i+1]), float(args[i+2])
-    elif arg == '-show':
-        showplot = True
     elif arg == '-lminmax':
         lminmax = float(args[i+1]), float(args[i+2])
     elif arg == '-mminmax':
@@ -117,8 +110,8 @@ t_loc = spec.time[0]
 
 # Find desired radius (by default ir=0--near outer surface)
 if not rval is None:
-    ir = np.argmin(np.abs(spec.radius/rsun - rval))
-rval = spec.radius[ir]/rsun # in any case, this is the actual rvalue we get
+    ir = np.argmin(np.abs(rvals - rval))
+rval = rvals[ir] # in any case, this is the actual rvalue we get
 
 if not lminmax is None:
     il1 = np.argmin(np.abs(lvals - lminmax[0]))
