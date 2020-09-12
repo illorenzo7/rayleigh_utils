@@ -22,7 +22,7 @@ sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
 from varprops import texunits, texlabels, var_indices
 from common import strip_dirname, get_file_lists,\
-        get_iters_from_file, get_dict, rsun, sci_format, get_satvals, rms
+        get_iters_from_file, rsun, sci_format, get_satvals, rms
 from plotcommon import axis_range, xy_grid
 from get_parameter import get_parameter
 from time_scales import compute_Prot, compute_tdt
@@ -63,11 +63,6 @@ for i in range(nargs):
         ir = int(args[i+1])
     elif arg == '-rval':
         rval = float(args[i+1])
-    elif arg == '-ir':
-        my_str = args[i+1].split()
-        ir_vals = []
-        for j in range(len(my_str)):
-            ir_vals.append(int(my_str[j]))
     elif arg == '-minmax':
         minmax = float(args[i+1]), float(args[i+2])
     elif arg == '-show':
