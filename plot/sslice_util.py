@@ -183,9 +183,9 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
         elif posdef:
             cmap = 'plasma'
         elif symlog:
-            cmap = 'RdYlBu'
+            cmap = 'RdYlBu_r'
         else:
-            cmap = 'RdYlBu'
+            cmap = 'RdYlBu_r'
 
     # Plot the orthographic projection
     if logscale:
@@ -449,9 +449,10 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
         elif posdef:
             cmap = 'plasma'
         elif symlog:
-            cmap = 'RdYlBu'
+            cmap = 'RdYlBu_r'
         else:
-            cmap = 'RdYlBu'
+            cmap = 'RdYlBu_r'
+
     # Make the Mollweide projection
     if logscale:
         log_min, log_max = np.log10(minmax[0]), np.log10(minmax[1])
