@@ -18,6 +18,7 @@ export MPI_BUFS_PER_PROC=256
 export OMP_NUM_THREADS=1
 
 export MPI_CHECK_ARGS=1
+export MPI_USE_UD=1
 
 cd $PBS_O_WORKDIR
 
