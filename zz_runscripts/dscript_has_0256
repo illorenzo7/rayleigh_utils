@@ -1,5 +1,4 @@
-#PBS -S /bin/bash 
-#PBS -N devel_example_256cores_has
+#PBS -S /bin/bash #PBS -N devel_example_256cores_has
 #PBS -l select=11:ncpus=24:model=has
 #PBS -q devel
 #PBS -l walltime=2:00:00
@@ -9,8 +8,7 @@
 #PBS -l site=needed=/home1+/nobackupp2
 
 module purge
-module use -a /nasa/modulefiles/testing
-module load mpi-hpe/mpt.2.23_24Mar2020
+module load mpi-hpe
 module load comp-intel
 
 export MPI_LAUNCH_TIMEOUT=40
