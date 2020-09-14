@@ -18,6 +18,8 @@ export PATH=$PATH:/u/scicon/tools/bin
 export MPI_BUFS_PER_PROC=256
 export OMP_NUM_THREADS=1
 
+export MPI_CHECK_ARGS=1
+
 cd $PBS_O_WORKDIR
 
 /u/scicon/tools/bin/several_tries mpiexec -np 2048 ./rayleigh.opt -nprow 64 -npcol 32 >> logfile2
