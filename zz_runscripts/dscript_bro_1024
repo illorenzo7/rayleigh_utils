@@ -20,4 +20,4 @@ export OMP_NUM_THREADS=1
 
 cd $PBS_O_WORKDIR
 
-mpiexec -np 1024 ./rayleigh.opt -nprow 32 -npcol 32 >> logfile1
+/u/scicon/tools/bin/several_tries mpiexec -np 1024 ./rayleigh.opt -nprow 32 -npcol 32 >> logfile1
