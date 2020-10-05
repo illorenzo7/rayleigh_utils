@@ -130,7 +130,7 @@ desired_rvals = rvals[ir_vals]
 
 # Get power associated with desired quantity (should really have a contigency
 # where the routine exits if the desired quantity isn't present
-if not (varname == 'vtot' or varname == 'btot'):
+if not (varname == 'vtot' or varname == 'btot' or varname == 'omtot'):
     desired_qv = var_indices[varname]
     iq = np.argmin(np.abs(qv - desired_qv))
     varlabel = texlabels[varname]
@@ -144,6 +144,10 @@ else:
         desired_qv_vals = [801, 802, 803]
         varlabel = r'$|\mathbf{B}|$'
         units = r'$\rm{G}$'
+    elif varname == 'omtot':
+        desired_qv_vals = [301, 302, 303]
+        varlabel = r'$|\mathbf{\omega}|$'
+        units = r'$\rm{s}^{-1}$'
     iq_vals = []
     for desired_qv in desired_qv_vals:
         iq_vals.append(np.argmin(np.abs(qv - desired_qv)))
@@ -157,7 +161,7 @@ for ir in range(len(ir_vals)):
 #          str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
     print('Plotting specav_l: ' + varname + (', r/rsun = %0.3f (ir = %02i)'\
             %(rval, ir_vals[ir])))
-    if varname == 'vtot' or varname == 'btot':
+    if varname == 'vtot' or varname == 'btot' or varname=='omtot':
         lpower_tot = lpower[:, ir, iq_vals[0], 0] +\
                 lpower[:, ir, iq_vals[1], 0] +\
                 lpower[:, ir, iq_vals[2], 0]
@@ -187,7 +191,7 @@ for ir in range(len(ir_vals)):
     # calculation
     if minmax_allr is None:
         # ignore the first and last l-values
-        if varname == 'vtot' or varname == 'btot':
+        if varname == 'vtot' or varname == 'btot' or varname == 'omtot':
             lpower_cut = lpower[1:-1, ir, iq_vals[0], :] +\
                 lpower[1:-1, ir, iq_vals[1], :] +\
                 lpower[1:-1, ir, iq_vals[2], :]
