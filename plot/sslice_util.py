@@ -85,7 +85,8 @@ def deal_with_nans(x, y):
 def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
         minmax=None, clon=0, clat=20, posdef=False, logscale=False,\
         varname='vr', lw_scaling=1., plot_cbar=True, cbar_fs=10,\
-        symlog=False, linscale=None, linthresh=None, cmap=None):
+        symlog=False, linscale=None, linthresh=None, cmap=None,\
+        bold_patch=None, thickcenter=True):
     
     if 'sq' in varname or logscale:
         posdef = True
@@ -235,8 +236,9 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
 
     npoints = 100
     for meridian in meridians:
-        if meridian == -difflon: 
+        if meridian == -difflon and thickcenter: 
             lw = 1.3*lw_scaling # make central longitude thicker
+
         else:
             lw = default_lw
             
@@ -262,8 +264,8 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
         ax.plot(linex, liney, 'k', linewidth=lw)
 
     for parallel in parallels:
-        if parallel == 0.: 
-            lw = 1.3*lw_scaling # make equator thicker
+        if parallel == 0. and thickcenter:
+                lw = 1.3*lw_scaling # make equator thicker
         else:
             lw = default_lw        
         lonvals = np.linspace(0., 360., npoints)
@@ -286,6 +288,53 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
 
         # Plot a thin black line
         ax.plot(linex, liney, 'k', linewidth=lw)   
+
+    # Possibly highlight a patch of the lat/lon grid
+    if not bold_patch is None:
+        lon0, lat0 = bold_patch # lower-left corner of that patch as l
+        lonvals = np.linspace(lon0, lon0 + 30., npoints)
+        latvals = np.linspace(lat0, lat0 + 30., npoints)
+        for parallel in [lat0, lat0 + 30.]:
+            linex_withnans, liney_withnans =\
+                np.zeros(npoints), np.zeros(npoints)
+            for i in range(npoints):
+                linex_withnans[i], liney_withnans[i] =\
+                    ortho.transform_point(lonvals[i], parallel, pc)
+            linex, liney =\
+                deal_with_nans(linex_withnans.reshape((npoints, 1)),\
+                liney_withnans.reshape((npoints, 1)))
+            # normalize by coord_radius ~ Earth radius:
+            linex = linex[:, 0]/coord_radius
+            liney = liney[:, 0]/coord_radius
+
+            # Apply the shrink factor to give depth perception
+            linex *= shrink_factor
+            liney *= shrink_factor
+
+            # Plot a thick black line
+            lw = 1.5*lw_scaling # make central longitude thicker
+            ax.plot(linex, liney, 'k', linewidth=lw)   
+
+        for lon in [lon0, lon0 + 30.]:
+            linex_withnans, liney_withnans =\
+                np.zeros(npoints), np.zeros(npoints)
+            for i in range(npoints):
+                linex_withnans[i], liney_withnans[i] =\
+                    ortho.transform_point(lon, latvals[i], pc)
+            linex, liney =\
+                deal_with_nans(linex_withnans.reshape((npoints, 1)),\
+                liney_withnans.reshape((npoints, 1)))
+            # normalize by coord_radius ~ Earth radius:
+            linex = linex[:, 0]/coord_radius
+            liney = liney[:, 0]/coord_radius
+
+            # Apply the shrink factor to give depth perception
+            linex *= shrink_factor
+            liney *= shrink_factor
+
+            # Plot a thick black line
+            lw = 1.5*lw_scaling # make central longitude thicker
+            ax.plot(linex, liney, 'k', linewidth=lw)   
 
     # Set up color bar
     if plot_cbar:

@@ -32,6 +32,8 @@ rval = None # can also find ir by finding the closest point
 varname = 'vr' # by default plot the radial velocity
 clon = 0
 clat = 20
+bold_patch = None
+thickcenter = True
 
 args = sys.argv[2:]
 nargs = len(args)
@@ -71,6 +73,10 @@ for i in range(nargs):
         logscale = True
     elif arg == '-symlog':
         symlog = True
+    elif arg == '-patch':
+        bold_patch = np.float(args[i+1]), np.float(args[i+2])
+    elif arg == '-nothick':
+        thickcenter = False
 
 iter_val = int_file_list[iiter]
 fname = file_list[iiter]
@@ -119,7 +125,8 @@ ax = fig.add_axes([margin_x, margin_bottom, subplot_width, subplot_height])
 
 plot_ortho(field, radius, a.costheta, fig=fig, ax=ax, ir=a.inds[ir],\
         minmax=minmax, clon=clon, clat=clat, varname=varname,\
-        logscale=logscale, symlog=symlog) 
+        logscale=logscale, symlog=symlog, bold_patch=bold_patch,\
+        thickcenter=thickcenter) 
 
 # Make title
 ax_xmin, ax_xmax, ax_ymin, ax_ymax = axis_range(ax)
