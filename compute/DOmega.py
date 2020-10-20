@@ -31,26 +31,23 @@ if (not os.path.isdir(plotdir)):
 # Set defaults
 my_boundstype = 'manual'
 user_specified_minmax = False 
-my_nlevs = 20
-AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
+the_file = get_widest_range_file(datadir, 'AZ_Avgs')
 
 # Read in CLAs (if any) to change default variable ranges and other options
 args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
-    if (arg == '-minmax'):
+    if arg == '-minmax':
         my_min, my_max = float(args[i+1]), float(args[i+2])
         user_specified_minmax = True
-    elif (arg == '-nlevs'):
-        my_nlevs = int(args[i+1])
-    elif (arg == '-usefile'):
-        AZ_Avgs_file = args[i+1]
-        AZ_Avgs_file = AZ_Avgs_file.split('/')[-1]
+    elif arg == '-usefile':
+        the_file = args[i+1]
+        the_file = the_file.split('/')[-1]
         
 # Read in AZ_Avgs data
-print ('Getting data from ' + datadir + AZ_Avgs_file + ' ...')
-di = get_dict(datadir + AZ_Avgs_file)
+print ('Getting data from ' + datadir + the_file)
+di = get_dict(datadir + the_file)
 
 iter1, iter2 = di['iter1'], di['iter2']
 vals = di['vals']
@@ -84,6 +81,8 @@ DOm = maxrot - minrot
 fraction = DOm/Om0
 
 # And print it
+print("The differential rotation is %.1f nHz" %DOm)
+print("The frame rate is %.1f nHz" %Om0)
 print("The differential rotation fraction is %.4f" %fraction)
 
 # Also write it as an empty file in [dirname]
