@@ -41,6 +41,9 @@ xmax = None
 plot_inte = False
 plot_tote = False
 savename = None
+tol = 0.05
+plot_equil_time = False
+chosen_eqtime = None # choose eq time a priori
 
 # Get command-line arguments
 args = sys.argv[2:]
@@ -72,6 +75,12 @@ for i in range(nargs):
         plot_tote = True
     elif arg == '-name':
         savename = args[i+1] + '.png'
+    elif arg == '-tol':
+        tol = float(args[i+1])
+    elif arg == '-equil':
+        plot_equil_time = True
+    elif arg == '-eqtime':
+        chosen_eqtime = float(args[i+1])
 
 # Tag the plot by whether or not the x axis is in "time" or "iteration"
 if (xiter):
@@ -301,6 +310,32 @@ if minmax is None:
 #  set axis limits
 ax1.set_xlim((xminmax[0], xminmax[1]))
 ax1.set_ylim((minmax[0], minmax[1]))
+
+# Calculate equilibration time if desired
+if plot_equil_time:
+    max_ke = np.max(ke)
+    foundit = False
+    i_equil = 0
+    if chosen_eqtime is None:
+        for i in range(len(ke)):
+            if ke[i] > (1.0 - tol)*max_ke and not foundit:
+                foundit = True
+                i_equil = np.copy(i)
+    else:
+        i_equil = np.argmin(np.abs(xaxis - chosen_eqtime))
+    x_equil = xaxis[i_equil]
+    ke_equil = np.mean(ke[i_equil:])
+    xvals = np.linspace(xminmax[0], xminmax[1], 100)
+    yvals = np.linspace(minmax[0], minmax[1], 100)
+    ax1.plot(x_equil + np.zeros(100), yvals, 'k--')
+    ax1.plot(xvals, ke_equil + np.zeros(100), 'k--')
+    ax1.text(x_equil + 0.05*(x_equil - xminmax[0]),\
+            0.25*ke_equil, ('t = %1.2e\ntol = %.03f' %(x_equil, tol)),\
+            ha='left', va='center')
+    ax1.text(0.05*(x_equil - xminmax[0]),\
+            0.95*ke_equil, ('KE = %1.2e' %ke_equil), ha='left', va='top')
+    print ("tol = %0.03f" %tol)
+    print ("to use a different value, type -tol [val]")
 
 # legend
 ax1.legend(ncol=2, fontsize=8)
