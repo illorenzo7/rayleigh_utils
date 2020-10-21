@@ -49,6 +49,9 @@ for i in range(nargs):
     arg = args[i]
     if arg == '-xiter': # plot w.r.t. iterations
         xiter = True
+    elif arg == '-gtr':
+        the_file = get_widest_range_file(datadir, 'trace_G_Avgs')
+        iterstart_desired = float(args[i+1])
     elif arg == '-usefile':
         the_file = args[i+1]
         the_file = the_file.split('/')[-1]
@@ -81,7 +84,7 @@ for i in range(nargs):
 
 
 # get density and grid info
-eq = get_eq('.')
+eq = get_eq(dirname)
 rho = eq.rho
 gi = GridInfo(dirname + '/grid_info', '')
 rr = gi.radius
@@ -98,12 +101,24 @@ w0 = Om0**2.0*np.sum(rho*rr**2.0*rw)/3.0
 
 # Compute the equilibrated DRKE
 # Read in the KE data (dictionary form)
-print ('Getting average KEs from ' + datadir + the_file)
+if 'trace' in the_file:
+    print ('Getting trace of KEs from ' + datadir + the_file)
+else:
+    print ('Getting average KEs from ' + datadir + the_file)
 di = get_dict(datadir + the_file)
 vals = di['vals']
 lut = di['lut']
-pke = vals[lut[404]]
-fpke = vals[lut[412]]
+if 'trace' in the_file:
+    iters = di['iters']
+    istart = np.argmin(np.abs(iters - iterstart_desired))
+    iterstart = iters[istart]
+    pke = np.mean(vals[lut[404]][istart:])
+    fpke = np.mean(vals[lut[412]][istart:])
+    print ("Averaging trace from iters")
+    print("%08i to %08i" %(iterstart, iters[-1]))
+else:
+    pke = vals[lut[404]]
+    fpke = vals[lut[412]]
 mpke = pke - fpke
 DRKE = mpke
 
