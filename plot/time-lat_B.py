@@ -14,25 +14,22 @@ from common import get_file_lists, get_widest_range_file, strip_dirname,\
 from plotcommon import axis_range
 from get_parameter import get_parameter
 
-# Get the run directory on which to perform the analysis
+# Get the run and data directories
 dirname = sys.argv[1]
-
-# Data and plot directories
-datadir = dirname + '/data/'
-plotdir = dirname + '/plots/time-lat/'
-if (not os.path.isdir(plotdir)):
-    os.makedirs(plotdir)
 dirname_stripped = strip_dirname(dirname)
+datadir = dirname + '/data/'
 
 # Find the time/latitude file(s) the data directory. If there are 
 # multiple, by default choose the one with widest range in the trace.
-time_latitude_file = get_widest_range_file(datadir, 'time-latitude')
+the_file = get_widest_range_file(datadir, 'time-latitude')
 
 # more defaults
 minmax = None
 xminmax = None
 saveplot = True
 showplot = True # will only show if plotting one figure
+labelbytime = False # by default label by first/last iteration number
+# not first/last time
 
 desired_rvals = [0.83] # by default, plot time-radius diagram for fields 
     # mid-CZ (units of solar radius)
@@ -51,8 +48,8 @@ for i in range(nargs):
         except:
             minmax = float(args[i+1]), float(args[i+2])
     elif arg == '-usefile':
-        time_latitude_file = args[i+1]
-        time_latitude_file = time_latitude_file.split('/')[-1]
+        the_file = args[i+1]
+        the_file = the_file.split('/')[-1]
     elif arg == '-rvals':
         string_desired_rvals = args[i+1].split()
         if string_desired_rvals == ['all']:
@@ -73,11 +70,19 @@ for i in range(nargs):
         saveplot = False
     elif arg == '-noshow':
         showplot = False
+    elif arg == '-tlabel':
+        labelbytime = True
+
+# Get plot directory and create if not already there
+plotdir = dirname + '/plots/time-lat/'
+if labelbytime:
+    plotdir = dirname + '/plots/time-lat_tlabel/'
+if (not os.path.isdir(plotdir)):
+    os.makedirs(plotdir)
 
 # Read in the time-latitude data (dictionary form)
-print ('Getting time-latitude trace from ' + datadir +\
-       time_latitude_file + ' ...')
-di = get_dict(datadir + time_latitude_file)
+print ('Getting time-latitude trace from ' + datadir + the_file)
+di = get_dict(datadir + the_file)
 
 vals = di['vals']
 
@@ -142,7 +147,7 @@ bp_trace_av /= navg
 times_trace = times[over2:niter - over2]/Prot # time_trace is in units of
     # Prot
 
-# Make meshgrid of time/radius
+# Make meshgrid of time/latitude
 # Take into account if user specified xmin, xmax
 if not xminmax is None:
     it1 = np.argmin(np.abs(times_trace - xminmax[0]))
@@ -164,9 +169,14 @@ for i in range(len(i_desiredrvals)):
     bp_trace = bp_trace_av[:, :, i_desiredrval]
     
     # Make appropriate file name to save
-    savename = dirname_stripped + '_time-lat_B_' +\
-            ('Prot%05.0f-to-%05.0f_' %(t1, t2)) +\
-        ('rval%0.3f' %rval_to_plot) + '.png'
+    if labelbytime:
+        savename = dirname_stripped + '_time-lat_B_' +\
+                ('Prot%05.0f-to-%05.0f_' %(t1, t2)) +\
+            ('rval%0.3f' %rval_to_plot) + '.png'
+    else:
+        savename = dirname_stripped + '_time-lat_B_' +\
+                ('%08i_%08i_' %(iter1, iter2)) +\
+            ('rval%0.3f' %rval_to_plot) + '.png'
 
     if minmax is None:
         std_br = np.std(br_trace)
@@ -288,8 +298,7 @@ for i in range(len(i_desiredrvals)):
 
     # Save the plot
     if saveplot:
-        print ('Saving the time-latitude plot at ' + plotdir +\
-                savename + ' ...')
+        print ('Saving the time-latitude plot at ' + plotdir + savename)
         plt.savefig(plotdir + savename, dpi=200)
 
     # Show the plot if only plotting at one latitude

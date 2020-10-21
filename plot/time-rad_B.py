@@ -23,24 +23,27 @@ def axis_range(ax): # gets subplot coordinates on a figure in "normalized"
     
     return xmin, xmax, ymin, ymax
 
-# Get the run directory on which to perform the analysis
+# Get the run and directories
 dirname = sys.argv[1]
-
-# Data and plot directories
-datadir = dirname + '/data/'
-plotdir = dirname + '/plots/'
-if (not os.path.isdir(plotdir)):
-    os.makedirs(plotdir)
 dirname_stripped = strip_dirname(dirname)
+datadir = dirname + '/data/'
+
+# defaults, then CLAs
 
 # Find the time/latitude file(s) the data directory. If there are 
 # multiple, by default choose the one with widest range in the trace.
-time_radius_file = get_widest_range_file(datadir, 'time-radius')
+the_file = get_widest_range_file(datadir, 'time-radius')
+minmax = None
+xminmax = None
+saveplot = True
+showplot = True # will only show if plotting one figure
+
+labelbytime = False # by default label by first/last iteration number
+# not first/last time
 
 # more defaults
 user_specified_minmax = False
 user_specified_xminmax = False
-tag = ''
 
 desired_lats = [0.] # by default, plot time-radius diagram for fields 
     # at the equator
@@ -51,14 +54,18 @@ args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
-    if (arg == '-minmax'):
-        user_specified_minmax = True
-        my_min = float(args[i+1])
-        my_max = float(args[i+2])
-    elif (arg == '-usefile'):
-        time_radius_file = args[i+1]
-        time_radius_file = time_radius_file.split('/')[-1]
-    elif (arg == '-lats'):
+    if arg == '-minmax':
+        try: # See if user wants to set ranges for B_r, B_theta, and B_phi
+            minmax = float(args[i+1]), float(args[i+2]), float(args[i+3]),\
+                    float(args[i+4]), float(args[i+5]), float(args[i+6])
+        except:
+            minmax = float(args[i+1]), float(args[i+2])
+    elif arg == '-xminmax':
+        xminmax = float(args[i+1]), float(args[i+2])
+    elif arg == '-usefile':
+        the_file = args[i+1]
+        the_file = the_file.split('/')[-1]
+    elif arg == '-lats':
         string_lats = args[i+1].split()
         if string_lats == ['all']:
             desired_lats = 'all'
@@ -66,23 +73,29 @@ for i in range(nargs):
             desired_lats = []
             for j in range(len(string_lats)):
                 desired_lats.append(float(string_lats[j]))
-    elif (arg == '-navg'):
+    elif arg == '-navg':
         navg = int(args[i+1])
-        if (navg % 2 == 0):
+        if navg % 2 == 0:
             print ("Please don't enter even values for navg!")
             print ("Replacing navg = %i with navg = %i" %(navg, navg + 1))
             navg += 1
-    elif (arg == '-xminmax'):
-        user_specified_xminmax = True
-        xmin = float(args[i+1])
-        xmax = float(args[i+2])
-    elif (arg == '-tag'):
-        tag = '_' + args[i+1]
+    elif arg == '-nosave':
+        saveplot = False
+    elif arg == '-noshow':
+        showplot = False
+    elif arg == '-tlabel':
+        labelbytime = True
+
+# Get plot directory and create if not already there
+plotdir = dirname + '/plots/time-rad/'
+if labelbytime:
+    plotdir = dirname + '/plots/time-rad_tlabel/'
+if not os.path.isdir(plotdir):
+    os.makedirs(plotdir)
 
 # Read in the time-latitude data (dictionary form)
-print ('Getting time-radius trace from ' + datadir +\
-       time_radius_file + ' ...')
-di = get_dict(datadir + time_radius_file)
+print ('Getting time-radius trace from ' + datadir + the_file)
+di = get_dict(datadir + the_file)
 
 vals = di['vals']
 
@@ -148,17 +161,24 @@ bp_trace_all /= navg
 times_trace = times[over2:niter - over2]/tnorm
 # Make meshgrid of time/radius
 # Take into account if user specified xmin, xmax
-if user_specified_xminmax:
-    it1 = np.argmin(np.abs(times_trace - xmin))
-    it2 = np.argmin(np.abs(times_trace - xmax))
+if not xminmax is None:
+    it1 = np.argmin(np.abs(times_trace - xminmax[0]))
+    it2 = np.argmin(np.abs(times_trace - xminmax[1]))
     times_trace = times_trace[it1:it2+1]
-    br_trace_all = br_trace_all[it1:it2+1]
-    bt_trace_all = bt_trace_all[it1:it2+1]
-    bp_trace_all = bp_trace_all[it1:it2+1]
-
+    br_trace_av = br_trace_av[it1:it2+1]
+    bt_trace_av = bt_trace_av[it1:it2+1]
+    bp_trace_av = bp_trace_av[it1:it2+1]
+t1, t2 = times_trace[0], times_trace[-1] # These begin times and end times
+        # will be used for labeling the plots
 times2, rr2 = np.meshgrid(times_trace, rr/rsun, indexing='ij')
 
 # Loop over the desired latitudes and save plots
+alphabet =\
+    ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',\
+     'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
+# tags for latitudes so they appear in order. Don't plot more than 26 
+# latitudes!
+
 for i in range(len(lats_to_plot)):
     i_desiredlat = i_desiredlats[i]
     lat_to_plot = lats_to_plot[i]
@@ -167,34 +187,51 @@ for i in range(len(lats_to_plot)):
     bp_trace = bp_trace_all[:, i_desiredlat, :]
     
     # Make appropriate file name to save
-    savename = dirname_stripped + '_time-radius_B_' +\
-        ('lat%+2.1f_' %lat_to_plot) + str(iter1).zfill(8) + '_' +\
-        str(iter2).zfill(8) + tag + '.png'
+    if lat_to_plot >= 0.0:
+        hemisphere = "N"
+    else:
+        hemisphere = "S"
 
-    if not user_specified_minmax:
+    if labelbytime:
+        savename = dirname_stripped + '_time-rad_B_' +\
+                ('Prot%05.0f-to-%05.0f_' %(t1, t2)) +\
+                '_latval' + alphabet[i] +\
+            ('%s%2.1f' %(hemisphere,np.abs(lat_to_plot))) + '.png'
+    else:
+        savename = dirname_stripped + '_time-rad_B_' +\
+                str(iter1).zfill(8) + '_' + str(iter2).zfill(8) +\
+                '_latval' + alphabet[i] + '_' +\
+                ('%s%2.1f' %(hemisphere,np.abs(lat_to_plot))) + '.png'
+
+    if minmax is None:
         std_br = np.std(br_trace)
         std_bt = np.std(bt_trace)
         std_bp = np.std(bp_trace)
-        my_min_br, my_max_br = -3.*std_br, 3.*std_br
-        my_min_bt, my_max_bt = -3.*std_bt, 3.*std_bt
-        my_min_bp, my_max_bp = -3.*std_bp, 3.*std_bp
+        minmax_br = -3.*std_br, 3.*std_br
+        minmax_bt = -3.*std_bt, 3.*std_bt
+        minmax_bp = -3.*std_bp, 3.*std_bp
     else:
-        my_min_br, my_max_br = my_min, my_max
-        my_min_bt, my_max_bt = my_min, my_max
-        my_min_bp, my_max_bp = my_min, my_max
+        if len(minmax) == 2:
+            minmax_br = minmax
+            minmax_bt = minmax
+            minmax_bp = minmax
+        elif len(minmax) == 6:
+            minmax_br = minmax[0], minmax[1]
+            minmax_bt = minmax[2], minmax[3]
+            minmax_bp = minmax[4], minmax[5]
             
-    # Create figure with  3 panels in a row (time-latitude plots of
+    # Create figure with  3 panels in a row (time-radius plots of
     #       br, btheta, and bphi)
     fig, axs = plt.subplots(3, 1, figsize=(12, 8), sharex=True, sharey=True)
     ax1 = axs[0]; ax2 = axs[1]; ax3 = axs[2]
 
     # first plot: evolution of B_r
     im1 = ax1.pcolormesh(times2, rr2, br_trace[:, :],\
-            vmin=my_min_br, vmax=my_max_br, cmap='RdYlBu_r')
+            vmin=minmax_br[0], vmax=minmax_br[1], cmap='RdYlBu_r')
     im2 = ax2.pcolormesh(times2, rr2, bt_trace[:, :],\
-            vmin=my_min_bt, vmax=my_max_bt, cmap='RdYlBu_r')
+            vmin=minmax_bt[0], vmax=minmax_bt[1], cmap='RdYlBu_r')
     im3 = ax3.pcolormesh(times2, rr2, bp_trace[:, :],\
-            vmin=my_min_bp, vmax=my_max_bp, cmap='RdYlBu_r')
+            vmin=minmax_bp[0], vmax=minmax_bp[1], cmap='RdYlBu_r')
 
     # Put colorbar next to all plots (possibly normalized separately)
     # First make room and then find location of subplots
@@ -290,11 +327,11 @@ for i in range(len(lats_to_plot)):
     plt.tick_params(top=True, right=True, direction='in', which='both')
 
     # Save the plot
-    print ('Saving the time-radius plot at ' + plotdir +\
-            savename + ' ...')
-    plt.savefig(plotdir + savename, dpi=200)
+    if saveplot:
+        print ('Saving the time-radius plot at ' + plotdir + savename)
+        plt.savefig(plotdir + savename, dpi=200)
 
     # Show the plot if only plotting at one latitude
-    if len(lats_to_plot) == 1:
+    if len(lats_to_plot) == 1 and showplot:
         plt.show()
     plt.close()
