@@ -17,6 +17,7 @@ from get_parameter import get_parameter
 from rayleigh_diagnostics import Shell_Avgs, GridInfo
 from common import get_widest_range_file, get_dict
 from time_scales import compute_Prot
+from get_length_scales import get_length_scales
 
 # Get directory name
 dirname = sys.argv[1]
@@ -25,32 +26,34 @@ dirname = sys.argv[1]
 datadir = dirname + '/data/'
 Shell_Avgs_file = get_widest_range_file(datadir, 'Shell_Avgs')
 print ('Getting velocity amplitudes from ' + datadir +\
-        Shell_Avgs_file + ' ...')
+        Shell_Avgs_file)
 di = get_dict(datadir + Shell_Avgs_file)
 vals = di['vals']
 lut = di['lut']
 rr = di['rr']
-H = np.max(rr) - np.min(rr)
+
+di_len = get_length_scales(dirname)
+L_om = di_len['L_om']
 
 # Read in grid info for radial weights and reference velocity
 gi = GridInfo(dirname + '/grid_info')
 rw = gi.rweights
-Om = 2.*np.pi/compute_Prot(dirname)
+Om0 = 2.*np.pi/compute_Prot(dirname)
 
 # Find the rms convective velocity
 vsq_r, vsq_t, vsq_p = vals[:, lut[422]], vals[:, lut[423]],\
     vals[:, lut[424]], 
 vsq = vsq_r + vsq_t + vsq_p
 
-# Compute volume-average of the velocity squared
-# using the radial integration weights
-vsq_av = np.sum(vsq*rw)
+# Compute the radially dependent Rossby number
+Ro_vs_r = np.sqrt(vsq)/(2.0*Om0*L_om)
 
-# Compute the Rossby number
-Ro = np.sqrt(vsq_av)/(2.0*Om*H)
+# Compute volume-average of the Rossby number
+# using the radial integration weights
+Ro = np.sum(Ro_vs_r*rw)
 
 # And print it
-print("The velocity Rossby number (length scale = shell depth) is %1.3e"\
+print("The vorticity Rossby number (length scale = v/om) is %1.3e"\
         %Ro)
 
 # Also write it as an empty file in [dirname]
@@ -58,8 +61,8 @@ print("The velocity Rossby number (length scale = shell depth) is %1.3e"\
 # (in case this definition of Ra is replaced
 names = os.listdir(dirname)
 for name in names:
-    if "Ro_vel_is_" in name:
+    if "Ro_vort_is_" in name:
         os.remove(dirname + '/' + name)
-fname = dirname + ("/00_Ro_vel_is_%1.3e" %Ro)
+fname = dirname + ("/00_Ro_vort_is_%1.3e" %Ro)
 f = open(fname, "w")
 f.close()

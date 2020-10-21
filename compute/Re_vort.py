@@ -1,8 +1,8 @@
 # Author: Loren Matilsky
-# Created: 05/18/2019
-# This script computes the volume-averaged Rossby number for a 
-# Rayleigh run in directory [dirname], using the (constant) shell depth
-# as the length scale. 
+# Created: 10/20/2020
+# This script computes the volume-averaged Reynolds number for a 
+# Rayleigh run in directory [dirname], using vorticity (v/om) i
+# to get the length scale. 
 # Takes data from Shell_Avgs file and the rotation rate from the 
 # main input file
 # Reads grid_info for the radial weights
@@ -16,7 +16,8 @@ sys.path.append(os.environ['raco'])
 from get_parameter import get_parameter
 from rayleigh_diagnostics import Shell_Avgs, GridInfo
 from common import get_widest_range_file, get_dict
-from time_scales import compute_Prot
+from get_length_scales import get_length_scales
+from get_eq import get_eq
 
 # Get directory name
 dirname = sys.argv[1]
@@ -25,41 +26,44 @@ dirname = sys.argv[1]
 datadir = dirname + '/data/'
 Shell_Avgs_file = get_widest_range_file(datadir, 'Shell_Avgs')
 print ('Getting velocity amplitudes from ' + datadir +\
-        Shell_Avgs_file + ' ...')
+        Shell_Avgs_file)
 di = get_dict(datadir + Shell_Avgs_file)
 vals = di['vals']
 lut = di['lut']
 rr = di['rr']
-H = np.max(rr) - np.min(rr)
+ri = np.min(rr)
+ro = np.max(rr)
+
+di_len = get_length_scales(dirname)
+L_om = di_len['L_om']
 
 # Read in grid info for radial weights and reference velocity
 gi = GridInfo(dirname + '/grid_info')
 rw = gi.rweights
-Om = 2.*np.pi/compute_Prot(dirname)
+
+# Read in transport coefficients for nu-profile
+eq = get_eq(dirname)
+nu = eq.nu
 
 # Find the rms convective velocity
 vsq_r, vsq_t, vsq_p = vals[:, lut[422]], vals[:, lut[423]],\
     vals[:, lut[424]], 
 vsq = vsq_r + vsq_t + vsq_p
+v_rms = np.sqrt(vsq)
 
-# Compute volume-average of the velocity squared
+# Compute the radially dependent Reynolds number
+Re_vs_r = v_rms*L_om/nu
+
+# Compute volume-average of the Reynolds number
 # using the radial integration weights
-vsq_av = np.sum(vsq*rw)
+Re = np.sum(Re_vs_r*rw)
 
-# Compute the Rossby number
-Ro = np.sqrt(vsq_av)/(2.0*Om*H)
+# Print the vorticity length scale (max/min/global avg) over the shell depth
+L_om_gav = np.sum(L_om*rw)
+print ("L_om_min/(r_o - r_i) = %1.3e" %(np.min(L_om)/(ro - ri)))
+print ("L_om_max/(r_o - r_i) = %1.3e" %(np.max(L_om)/(ro - ri)))
+print ("L_om_gav/(r_o - r_i) = %1.3e" %(L_om_gav/(ro - ri)))
 
-# And print it
-print("The velocity Rossby number (length scale = shell depth) is %1.3e"\
-        %Ro)
-
-# Also write it as an empty file in [dirname]
-# Remove all other "Ro_vel1_is_" that might be present
-# (in case this definition of Ra is replaced
-names = os.listdir(dirname)
-for name in names:
-    if "Ro_vel_is_" in name:
-        os.remove(dirname + '/' + name)
-fname = dirname + ("/00_Ro_vel_is_%1.3e" %Ro)
-f = open(fname, "w")
-f.close()
+# Print the volume averaged Reynolds number
+print("The vorticity Reynolds number (length scale = v/om) is %1.3e"\
+        %Re)
