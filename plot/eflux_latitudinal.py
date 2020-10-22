@@ -21,6 +21,8 @@ from common import get_widest_range_file, strip_dirname, get_dict
 from get_parameter import get_parameter
 from rayleigh_diagnostics import GridInfo
 from get_eq import get_eq
+from time_scales import compute_Prot, compute_tdt
+from translate_times import translate_times
 
 # Get the run directory on which to perform the analysis
 dirname = sys.argv[1]
@@ -52,6 +54,19 @@ for i in range(nargs):
 print ('Getting data from ', datadir + AZ_Avgs_file, ' ...')
 di = get_dict(datadir + AZ_Avgs_file)
 iter1, iter2 = di['iter1'], di['iter2']
+
+# Get the time range in sec
+t1 = translate_times(iter1, dirname, translate_from='iter')['val_sec']
+t2 = translate_times(iter2, dirname, translate_from='iter')['val_sec']
+
+# Get the baseline time unit
+rotation = get_parameter(dirname, 'rotation')
+if rotation:
+    time_unit = compute_Prot(dirname)
+    time_label = r'$\rm{P_{rot}}$'
+else:
+    time_unit = compute_tdt(dirname)
+    time_label = r'$\rm{TDT}$'
 
 # Make the plot name, labelling the first/last iterations we average over
 savename = dirname_stripped + '_eflux_latitudinal_' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
@@ -192,13 +207,24 @@ else:
     plt.ylim(ymin, ymax)
 
 # Label the axes
-plt.xlabel(r'$\rm{Latitude} \ (^\circ)$', fontsize=12)
+plt.xlabel(r'$\rm{Latitude\ (deg)}$', fontsize=12)
 plt.ylabel('(Integrated Energy Flux)' + r'$/L_\odot$',\
         fontsize=12)
 
+# Label trace interval
+if rotation:
+    time_string = ('t = %.1f to %.1f ' %(t1/time_unit, t2/time_unit))\
+            + time_label + (r'$\ (\Delta t = %.1f\ $'\
+            %((t2 - t1)/time_unit)) + time_label + ')'
+else:
+    time_string = ('t = %.3f to %.3f ' %(t1/time_unit, t2/time_unit))\
+            + time_label + (r'$\ (\Delta t = %.3f\ $'\
+            %((t2 - t1)/time_unit)) + time_label + ')'
+
 # Make title
-plt.title(dirname_stripped + '\n' + 'latitudinal energy flux, ' +\
-          str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8), **csfont)
+the_title = dirname_stripped + '\n' + 'latitudinal energy flux, ' +\
+        time_string
+plt.title(the_title, **csfont)
 
 # Create a see-through legend
 leg=plt.legend(loc='lower left',shadow=True, ncol=3,fontsize=10)
