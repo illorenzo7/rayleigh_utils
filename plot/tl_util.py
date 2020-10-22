@@ -1,6 +1,6 @@
 ########################################################################
-# This file contains utilities useful for plotting time-latitude traces
-# of the AZ_Avgs data in Rayleigh 
+# This file contains utilities useful for plotting time-yy traces
+# of the AZ_Avgs data in Rayleigh  (usually time-latitude or time-radius)
 # Author: Loren Matilsky
 # Created: 04/06/2020
 
@@ -17,15 +17,15 @@ from common import get_satvals, rsun, trim_field, saturate_array,\
     sci_format, get_symlog_params
 from plotcommon import axis_range, default_axes_tl
 
-def plot_tl(field, times, tt_lat, fig=None, ax=None, cmap='RdYlBu_r',\
+def plot_tl(field, times, yy, fig=None, ax=None, cmap='RdYlBu_r',\
     units='', minmax=None, xminmax=None, posdef=False, logscale=False,\
     symlog=False, plotcontours=False, plotfield=True, nlevs=10,\
     levels=None, plottimes=None, cbar_fs=10, navg=1,\
     lw_scaling=1., showplot=False, plot_cbar=True, linthresh=None,\
-    linscale=None):
+    linscale=None, plot_yvals=None, rbcz=None):
 
     ''' Takes (or creates) set of axes
-    and adds a plot of [field] in time-latitude space to the axes,
+    and adds a plot of [field] in time-yy space to the axes,
     with colorbar to the right.'''
 
     # Work with copy of field (not actual field)
@@ -34,11 +34,11 @@ def plot_tl(field, times, tt_lat, fig=None, ax=None, cmap='RdYlBu_r',\
 
     # Get dimensions of field
     ntimes = len(times)
-    ntheta = len(tt_lat)
+    ny = len(yy)
 
     # First, average field in time
     over2 = navg//2
-    field_timeavg = np.zeros((ntimes - navg + 1, ntheta))
+    field_timeavg = np.zeros((ntimes - navg + 1, ny))
 
     for i in range(navg):
         field_timeavg += field[i:ntimes - navg + 1 + i]
@@ -55,8 +55,19 @@ def plot_tl(field, times, tt_lat, fig=None, ax=None, cmap='RdYlBu_r',\
     times = times[it1:it2+1]
     field = field[it1:it2+1]
 
-    # Make 2D grids from times/lats
-    times_2d, tt_lat_2d = np.meshgrid(times, tt_lat, indexing='ij')
+    # Make 2D grids from times/yy
+    times_2d, yy_2d = np.meshgrid(times, yy, indexing='ij')
+
+    if not rbcz is None: # plotting two domains
+        irbcz = np.argmin(np.abs(yy - rbcz))
+        fieldcz = field[:, :irbcz+1]
+        fieldrz = field[:, irbcz+1:]
+        rrcz = rr[:irbcz+1]
+        rrrz = rr[irbcz+1:]
+        xxcz = (rr_2d*sint_2d)[:, :irbcz+1]/ro
+        zzcz = (rr_2d*cost_2d)[:, :irbcz+1]/ro
+        xxrz = (rr_2d*sint_2d)[:, irbcz+1:]/ro
+        zzrz = (rr_2d*cost_2d)[:, irbcz+1:]/ro
 
     # If using logscale, you better have positive values!
     if logscale:
@@ -101,12 +112,12 @@ def plot_tl(field, times, tt_lat, fig=None, ax=None, cmap='RdYlBu_r',\
         if logscale:
             log_min, log_max = np.log10(minmax[0]), np.log10(minmax[1])
             levs = np.logspace(log_min, log_max, 150)
-            im = ax.contourf(times_2d, tt_lat_2d, field, cmap='Greys',\
+            im = ax.contourf(times_2d, yy_2d, field, cmap='Greys',\
                 norm=colors.LogNorm(vmin=minmax[0], vmax=minmax[1]),\
                 levels=levs)  
         elif posdef:
             levs = np.linspace(minmax[0], minmax[1], 150)
-            im = ax.contourf(times_2d, tt_lat_2d, field, cmap='plasma',\
+            im = ax.contourf(times_2d, yy_2d, field, cmap='plasma',\
                     levels=levs)
         elif symlog:
             linthresh_default, linscale_default =\
@@ -126,12 +137,12 @@ def plot_tl(field, times, tt_lat, fig=None, ax=None, cmap='RdYlBu_r',\
             levels_pos = np.logspace(log_thresh, log_max,\
                     nlevs_per_interval)
             levs = np.hstack((levels_neg, levels_mid, levels_pos))
-            im = ax.contourf(times_2d, tt_lat_2d, field, cmap='RdYlBu_r',\
+            im = ax.contourf(times_2d, yy_2d, field, cmap='RdYlBu_r',\
                 norm=colors.SymLogNorm(linthresh=linthresh,\
                 linscale=linscale, vmin=minmax[0], vmax=minmax[1]),\
                 levels=levs)
         else:
-            im = ax.contourf(times_2d, tt_lat_2d, field, cmap='RdYlBu_r',\
+            im = ax.contourf(times_2d, yy_2d, field, cmap='RdYlBu_r',\
                     levels=np.linspace(minmax[0], minmax[1], 150))                
         if plot_cbar:
             # Get the position of the axes on the figure
@@ -200,7 +211,7 @@ def plot_tl(field, times, tt_lat, fig=None, ax=None, cmap='RdYlBu_r',\
                     cbar_label, ha='right', va='center', rotation=90,\
                     fontsize=cbar_fs)
 
-    # Plot contours in time-latitude space, if desired
+    # Plot contours in time-yy space, if desired
     if plotcontours:
         # Determine the contour levels
         if levels is None:
@@ -231,7 +242,7 @@ def plot_tl(field, times, tt_lat, fig=None, ax=None, cmap='RdYlBu_r',\
         else:
             contour_color = 'k'
         # plot the contours
-        ax.contour(times_2d, tt_lat_2d, field, colors=contour_color,\
+        ax.contour(times_2d, yy, field, colors=contour_color,\
                 levels=levels, linewidths=contour_lw)
 
     # Plot various times, if desired
@@ -239,7 +250,7 @@ def plot_tl(field, times, tt_lat, fig=None, ax=None, cmap='RdYlBu_r',\
         for time in plottimes: 
             plt.sca(ax)
             # "dimensional" rval (in dimensions of ro!)
-            plt.plot(time + np.zeros(ntheta), tt_lat, 'k--',\
+            plt.plot(time + np.zeros(ny), yy, 'k--',\
                     linewidth=0.7*lw_scaling)
 
     # Get ticks everywhere
