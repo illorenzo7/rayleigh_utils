@@ -319,8 +319,6 @@ def plot_tl(field, times, yy, fig=None, ax=None, cmap='RdYlBu_r',\
 
             if not rbcz is None: # Make a colorbar for the RZ
                 cbax_left = ax_right + 1.0/fig_width_inches + cbax_width
-                print ("cbax_left (second time) = ", cbax_left)
-                
                 cbaxes = fig.add_axes([cbax_left, cbax_bottom,\
                                cbax_width, cbax_height])
                 cbar = plt.colorbar(imrz, cax=cbaxes)
