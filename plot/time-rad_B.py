@@ -76,7 +76,7 @@ for i in range(nargs):
     elif arg == '-tlabel':
         labelbytime = True
     elif arg == '-rbcz':
-        rbcz = float(args[i+1])
+        rbcz = float(args[i+1])/rsun
 
 # Get plot directory and create if not already there
 plotdir = dirname + '/plots/time-rad/'
@@ -159,7 +159,8 @@ margin_inches = 1./4.
 margin_bottom_inches = 1./2. # space for x-axis label
 margin_top_inches = 1./2.
 margin_left_inches = 5./8. # space for latitude label
-margin_right_inches = 1.*(2 - (rbcz is None))
+margin_right_inches = 0.9*(2 - (rbcz is None))
+
 fig_width_inches = subplot_width_inches + margin_right_inches +\
         margin_left_inches
 subplot_height_inches = 2.0
@@ -241,11 +242,11 @@ for i in range(len(lats_to_plot)):
             subplot_width, subplot_height))
 
     plot_tl(br_loc, times, rr, fig=fig, ax=ax1, navg=navg,\
-            minmax=minmax_br, units=units, xminmax=xminmax)
+            minmax=minmax_br, units=units, xminmax=xminmax, rbcz=rbcz)
     plot_tl(bt_loc, times, rr, fig=fig, ax=ax2, navg=navg,\
-            minmax=minmax_bt, units=units, xminmax=xminmax)
+            minmax=minmax_bt, units=units, xminmax=xminmax, rbcz=rbcz)
     plot_tl(bp_loc, times, rr, fig=fig, ax=ax3, navg=navg,\
-            minmax=minmax_bp, units=units, xminmax=xminmax)
+            minmax=minmax_bp, units=units, xminmax=xminmax, rbcz=rbcz)
 
     # Label with the field components
     for irow in range(nrow):
