@@ -42,8 +42,11 @@ plot_inte = False
 plot_tote = False
 savename = None
 tol = 0.05
+mtol = 0.9 # for exponential growth need a HIGH tolerance
 plot_equil_time = False
+plot_mag_equil_time = False
 chosen_eqtime = None # choose eq time a priori
+leg_loc = 'best'
 
 # Get command-line arguments
 args = sys.argv[2:]
@@ -77,10 +80,16 @@ for i in range(nargs):
         savename = args[i+1] + '.png'
     elif arg == '-tol':
         tol = float(args[i+1])
+    elif arg == '-mtol':
+        mtol = float(args[i+1])
     elif arg == '-equil':
         plot_equil_time = True
+    elif arg == '-mequil':
+        plot_mag_equil_time = True
     elif arg == '-eqtime':
         chosen_eqtime = float(args[i+1])
+    elif arg == '-legloc':
+        leg_loc = args[i+1]
 
 # Tag the plot by whether or not the x axis is in "time" or "iteration"
 if (xiter):
@@ -89,7 +98,7 @@ else:
     tag = '_xtime'
 
 # Read in the KE data (dictionary form)
-print ('Getting energy trace from ' + datadir + the_file + ' ...')
+print ('Getting energy trace from ' + datadir + the_file)
 di = get_dict(datadir + the_file)
 
 vals = di['vals']
@@ -311,8 +320,12 @@ if minmax is None:
 ax1.set_xlim((xminmax[0], xminmax[1]))
 ax1.set_ylim((minmax[0], minmax[1]))
 
-# Calculate equilibration time if desired
+# Calculate equilibration time (for KE) if desired
 if plot_equil_time:
+    print ("=============================")
+    print ("calculating equil time for KE")
+    print ("tol = %0.03f" %tol)
+    print ("to use a different value, type -tol [val]")
     max_ke = np.max(ke)
     foundit = False
     i_equil = 0
@@ -334,11 +347,38 @@ if plot_equil_time:
             ha='left', va='center')
     ax1.text(0.05*(x_equil - xminmax[0]),\
             0.95*ke_equil, ('KE = %1.2e' %ke_equil), ha='left', va='top')
-    print ("tol = %0.03f" %tol)
+
+if plot_mag_equil_time:
+    print ("=============================")
+    print ("calculating equil time for mag. E")
+    print ("mtol = %0.03f" %mtol)
     print ("to use a different value, type -tol [val]")
+    max_me = np.max(me)
+    foundit = False
+    i_equil = 0
+    for i in range(len(me)):
+        if me[i] > (1.0 - mtol)*max_me and not foundit:
+            foundit = True
+            i_equil = np.copy(i)
+    x_equil = xaxis[i_equil]
+    me_equil = np.mean(me[i_equil:])
+    xvals = np.linspace(xminmax[0], xminmax[1], 100)
+    yvals = np.linspace(minmax[0], minmax[1], 100)
+    ax1.plot(x_equil + np.zeros(100), yvals, 'k--')
+    ax1.plot(xvals, me_equil + np.zeros(100), 'k--')
+    if ylog:
+        dynrange = me_equil/minmax[0]
+        ycoord = minmax[0]*dynrange**0.25
+    else:
+        ycoord = 0.25*me_equil
+    ax1.text(x_equil + 0.05*(x_equil - xminmax[0]),\
+            ycoord, ('t = %1.2e\nmtol = %.03f' %(x_equil, mtol)),\
+            ha='left', va='center')
+    ax1.text(0.05*(x_equil - xminmax[0]),\
+            0.95*me_equil, ('KE = %1.2e' %me_equil), ha='left', va='top')
 
 # legend
-ax1.legend(ncol=2, fontsize=8)
+ax1.legend(ncol=2, fontsize=8, loc=leg_loc)
 
 # Make axes use scientific notation
 # Only x-axis if on log scale
@@ -410,7 +450,7 @@ plt.tight_layout
 plt.subplots_adjust(left=0.15, bottom=0.08, top=0.85, wspace=0.4)
 
 # Save the plot
-print ('Saving the etrace plot at ' + plotdir + savename + ' ...')
+print ('Saving the etrace plot at ' + plotdir + savename)
 plt.savefig(plotdir + savename, dpi=300)
 
 # Show the plot
