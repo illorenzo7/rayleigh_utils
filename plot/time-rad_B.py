@@ -27,6 +27,8 @@ datadir = dirname + '/data/'
 the_file = get_widest_range_file(datadir, 'time-radius')
 minmax = None
 xminmax = None
+xmin = None
+xmax = None
 saveplot = True
 showplot = True # will only show if plotting one figure
 
@@ -38,6 +40,7 @@ desired_lats = [0.] # by default, plot time-radius diagram for fields
     # at the equator
 rbcz = None
 navg = 1 # by default don't average in time
+tag = '' # optional way to tag save directory
 
 # Get command-line arguments
 args = sys.argv[2:]
@@ -52,6 +55,10 @@ for i in range(nargs):
             minmax = float(args[i+1]), float(args[i+2])
     elif arg == '-xminmax':
         xminmax = float(args[i+1]), float(args[i+2])
+    elif arg == '-xmin':
+        xmin = float(args[i+1])
+    elif arg == '-xmax':
+        xmax = float(args[i+1])
     elif arg == '-usefile':
         the_file = args[i+1]
         the_file = the_file.split('/')[-1]
@@ -77,11 +84,13 @@ for i in range(nargs):
         labelbytime = True
     elif arg == '-rbcz':
         rbcz = float(args[i+1])/rsun
+    elif arg == '-tag':
+        tag = args[i+1]
 
 # Get plot directory and create if not already there
-plotdir = dirname + '/plots/time-rad/'
+plotdir = dirname + '/plots/time-rad' + '_' + tag + '/'
 if labelbytime:
-    plotdir = dirname + '/plots/time-rad_tlabel/'
+    plotdir = dirname + '/plots/time-rad_tlabel' + '_' + tag + '/'
 if not os.path.isdir(plotdir):
     os.makedirs(plotdir)
 
@@ -143,13 +152,20 @@ rr /= rsun
 
 # Make meshgrid of time/radius
 # Take into account if user specified xmin, xmax
-if not xminmax is None:
-    it1 = np.argmin(np.abs(times - xminmax[0]))
-    it2 = np.argmin(np.abs(times - xminmax[1]))
-    times = times[it1:it2+1]
-    br = br[it1:it2+1]
-    bt = bt[it1:it2+1]
-    bp = bp[it1:it2+1]
+if xminmax is None:
+    xminmax = np.min(times), np.max(times)
+# Change JUST xmin or xmax, if desired
+if not xmin is None:
+    xminmax = xmin, xminmax[1]
+if not xmax is None:
+    xminmax = xminmax[0], xmax
+
+it1 = np.argmin(np.abs(times - xminmax[0]))
+it2 = np.argmin(np.abs(times - xminmax[1]))
+times = times[it1:it2+1]
+br = br[it1:it2+1]
+bt = bt[it1:it2+1]
+bp = bp[it1:it2+1]
 t1, t2 = times[0], times[-1] # These begin times and end times
         # will be used for labeling the plots
 

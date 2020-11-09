@@ -26,6 +26,8 @@ the_file = get_widest_range_file(datadir, 'time-latitude')
 # more defaults
 minmax = None
 xminmax = None
+xmin = None
+xmax = None
 saveplot = True
 showplot = True # will only show if plotting one figure
 labelbytime = False # by default label by first/last iteration number
@@ -35,6 +37,7 @@ desired_rvals = [0.83] # by default, plot time-radius diagram for fields
     # mid-CZ (units of solar radius)
 navg = 1 # by default average over 1 AZ_Avgs instance (no average)
 # for navg > 1, a "sliding average" will be used.
+tag = '' # optional way to tag save directory
 
 # Get command-line arguments
 args = sys.argv[2:]
@@ -66,18 +69,24 @@ for i in range(nargs):
             navg += 1
     elif arg == '-xminmax':
         xminmax = float(args[i+1]), float(args[i+2])
+    elif arg == '-xmin':
+        xmin = float(args[i+1])
+    elif arg == '-xmax':
+        xmax = float(args[i+1])
     elif arg == '-nosave':
         saveplot = False
     elif arg == '-noshow':
         showplot = False
     elif arg == '-tlabel':
         labelbytime = True
+    elif arg == '-tag':
+        tag = args[i+1]
 
 # Get plot directory and create if not already there
-plotdir = dirname + '/plots/time-lat/'
+plotdir = dirname + '/plots/time-lat' + '_' + tag + '/'
 if labelbytime:
-    plotdir = dirname + '/plots/time-lat_tlabel/'
-if (not os.path.isdir(plotdir)):
+    plotdir = dirname + '/plots/time-lat_tlabel' + '_' + tag + '/'
+if not os.path.isdir(plotdir):
     os.makedirs(plotdir)
 
 # Read in the time-latitude data (dictionary form)
@@ -149,13 +158,21 @@ times_trace = times[over2:niter - over2]/Prot # time_trace is in units of
 
 # Make meshgrid of time/latitude
 # Take into account if user specified xmin, xmax
-if not xminmax is None:
-    it1 = np.argmin(np.abs(times_trace - xminmax[0]))
-    it2 = np.argmin(np.abs(times_trace - xminmax[1]))
-    times_trace = times_trace[it1:it2+1]
-    br_trace_av = br_trace_av[it1:it2+1]
-    bt_trace_av = bt_trace_av[it1:it2+1]
-    bp_trace_av = bp_trace_av[it1:it2+1]
+if xminmax is None:
+    xminmax = np.min(times_trace), np.max(times_trace)
+# Change JUST xmin or xmax, if desired
+if not xmin is None:
+    xminmax = xmin, xminmax[1]
+if not xmax is None:
+    xminmax = xminmax[0], xmax
+
+it1 = np.argmin(np.abs(times_trace - xminmax[0]))
+it2 = np.argmin(np.abs(times_trace - xminmax[1]))
+
+times_trace = times_trace[it1:it2+1]
+br_trace_av = br_trace_av[it1:it2+1]
+bt_trace_av = bt_trace_av[it1:it2+1]
+bp_trace_av = bp_trace_av[it1:it2+1]
 t1, t2 = times_trace[0], times_trace[-1] # These begin times and end times
         # will be used for labeling the plots
 times2, tt_lat2 = np.meshgrid(times_trace, tt_lat, indexing='ij')
