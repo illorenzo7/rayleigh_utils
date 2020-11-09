@@ -361,6 +361,7 @@ if plot_mag_equil_time:
             foundit = True
             i_equil = np.copy(i)
     x_equil = xaxis[i_equil]
+    Dx_equil = x_equil - xminmax[0]
     me_equil = np.mean(me[i_equil:])
     xvals = np.linspace(xminmax[0], xminmax[1], 100)
     yvals = np.linspace(minmax[0], minmax[1], 100)
@@ -372,8 +373,9 @@ if plot_mag_equil_time:
     else:
         ycoord = 0.25*me_equil
     ax1.text(x_equil + 0.05*(x_equil - xminmax[0]),\
-            ycoord, ('t = %1.2e\nmtol = %.03f' %(x_equil, mtol)),\
-            ha='left', va='center')
+            ycoord, ('t = %1.2e\n' + r'$\Delta t$' +\
+            ' = %1.2e\nmtol = %.03f')\
+            %(x_equil, Dx_equil, mtol), ha='left', va='center')
     ax1.text(0.05*(x_equil - xminmax[0]),\
             0.95*me_equil, ('KE = %1.2e' %me_equil), ha='left', va='top')
 
