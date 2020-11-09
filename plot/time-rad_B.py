@@ -85,10 +85,10 @@ for i in range(nargs):
     elif arg == '-rbcz':
         rbcz = float(args[i+1])/rsun
     elif arg == '-tag':
-        tag = args[i+1]
+        tag = '_' + args[i+1]
 
 # Get plot directory and create if not already there
-plotdir = dirname + '/plots/time-rad' + '_' + tag + '/'
+plotdir = dirname + '/plots/time-rad' + tag + '/'
 if labelbytime:
     plotdir = dirname + '/plots/time-rad_tlabel' + '_' + tag + '/'
 if not os.path.isdir(plotdir):
@@ -162,10 +162,6 @@ if not xmax is None:
 
 it1 = np.argmin(np.abs(times - xminmax[0]))
 it2 = np.argmin(np.abs(times - xminmax[1]))
-times = times[it1:it2+1]
-br = br[it1:it2+1]
-bt = bt[it1:it2+1]
-bp = bp[it1:it2+1]
 t1, t2 = times[0], times[-1] # These begin times and end times
         # will be used for labeling the plots
 
@@ -208,7 +204,7 @@ alphabet =\
 
 for i in range(len(lats_to_plot)):
     i_desiredlat = i_desiredlats[i]
-    lat_to_plot = lats_to_plot[i]
+    lat_to_plot = lats_to_plot[i] 
     br_loc = br[:, i_desiredlat, :]
     bt_loc = bt[:, i_desiredlat, :]
     bp_loc = bp[:, i_desiredlat, :]

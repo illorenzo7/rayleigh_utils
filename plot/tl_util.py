@@ -58,7 +58,7 @@ def plot_tl(field, times, yy, fig=None, ax=None, cmap='RdYlBu_r',\
 
     # Make 2D grids from times/yy
     times_2d, yy_2d = np.meshgrid(times, yy, indexing='ij')
-
+    
     if not rbcz is None: # plotting two domains
         irbcz = np.argmin(np.abs(yy - rbcz))
         fieldcz = field[:, :irbcz+1]
@@ -81,9 +81,6 @@ def plot_tl(field, times, yy, fig=None, ax=None, cmap='RdYlBu_r',\
         trimmed_fieldcz = fieldcz[:, 1:-1]
         minmax = get_satvals(trimmed_fieldcz, posdef=posdef,\
                 logscale=logscale, symlog=symlog)
-
-    # Get default bounds (for RZ) if not specified
-    if not rbcz is None:
         if minmaxrz is None:
             # Cut away the data near the domain boundaries
             trimmed_fieldrz = fieldrz[:, 1:-1]
