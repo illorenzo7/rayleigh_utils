@@ -276,12 +276,20 @@ for i in range(len(lats_to_plot)):
     ax1.set_xticklabels([])
     ax2.set_xticklabels([])
 
-
     # Label x (time) axis
     ax3.set_xlabel('time (' + time_label + ')', **csfont)
-
     # Label y-axis (radius in units of rsun)
     ax2.set_ylabel(r'$\rm{radius}\ (R_\odot)$', **csfont)
+
+    # Put some useful information on the title
+    averaging_time = (times[-1] - times[0])/niter*navg
+    title = dirname_stripped + '     ' +\
+            (r'${\rm{latitude}}\ =\ %0.1f\ {\rm{deg}}$' %lat_to_plot)
+    if navg > 1:
+        title += '     ' + (('t_avg = %.2f ' + time_label) %averaging_time)
+    else:
+        title += '     t_avg = none'
+    ax1.set_title(title, **csfont)
 
     # Save the plot
     if saveplot:

@@ -298,8 +298,8 @@ for i in range(len(i_desiredrvals)):
         title += '     ' + ('t_avg = %.1f Prot' %averaging_time)
     else:
         title += '     t_avg = none'
-
     ax1.set_title(title, **csfont)
+
     # Get ticks everywhere
     plt.sca(ax1)
     plt.minorticks_on()
