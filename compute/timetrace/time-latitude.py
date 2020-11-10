@@ -110,6 +110,14 @@ for i in range(nargs):
                 0.40714286, 0.45714286, 0.5, 0.57142857, 0.64285714,\
                 0.71428571, 0.78571429, 0.85714286, 0.92857143, 0.97142857])
         depths = depths.tolist()
+    elif arg == '-rz1': # 9 depths in RZ and CZ, with RZ depth
+        # equal to CZ depth
+        print("Taking 9 depths in CZ and RZ each")
+        print("assuming depth RZ = depth CZ")
+        depths = 1.0 - np.array([0.025, 0.0625, 0.125, 0.1875, 0.25,\
+                0.3125, 0.375, 0.4375, 0.475, 0.525, 0.5625, 0.625,\
+                0.6875, 0.75, 0.8125, 0.875, 0.9375, 0.975])
+        depths = depths.tolist()
     elif arg == '-torques':
         print("tracing over TORQUES")
         qvals = [3, 1801, 1802, 1803, 1804, 1819]
