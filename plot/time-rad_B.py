@@ -41,6 +41,7 @@ desired_lats = [0.] # by default, plot time-radius diagram for fields
 rbcz = None
 navg = 1 # by default don't average in time
 tag = '' # optional way to tag save directory
+rvals = None
 
 # Get command-line arguments
 args = sys.argv[2:]
@@ -86,6 +87,11 @@ for i in range(nargs):
         rbcz = float(args[i+1])/rsun
     elif arg == '-tag':
         tag = '_' + args[i+1]
+    elif arg == '-rvals':
+        rvals_str = args[i+1].split()
+        rvals = []
+        for rval_str in rvals_str:
+            rvals.append(float(rval_str)/rsun)
 
 # Get plot directory and create if not already there
 plotdir = dirname + '/plots/time-rad' + tag + '/'
@@ -218,12 +224,12 @@ for i in range(len(lats_to_plot)):
     if labelbytime:
         savename = dirname_stripped + '_time-rad_B_' +\
                 ('Prot%05.0f-to-%05.0f_' %(t1, t2)) +\
-                '_latval' + alphabet[i] +\
+                '_latval_' + alphabet[i] +\
                 ('%s%2.1f' %(hemisphere,np.abs(lat_to_plot))) + '.png'
     else:
         savename = dirname_stripped + '_time-rad_B_' +\
                 str(iter1).zfill(8) + '_' + str(iter2).zfill(8) +\
-                '_latval' + alphabet[i] + '_' +\
+                '_latval_' + alphabet[i] + '_' +\
                 ('%s%2.1f' %(hemisphere,np.abs(lat_to_plot))) + '.png'
 
     if minmax is None:
@@ -253,11 +259,11 @@ for i in range(len(lats_to_plot)):
             subplot_height - 2*(subplot_height + margin_y),\
             subplot_width, subplot_height))
 
-    plot_tl(br_loc, times, rr, fig=fig, ax=ax1, navg=navg,\
+    plot_tl(br_loc, times, rr, fig=fig, ax=ax1, navg=navg, yvals=rvals,\
             minmax=minmax_br, units=units, xminmax=xminmax, rbcz=rbcz)
-    plot_tl(bt_loc, times, rr, fig=fig, ax=ax2, navg=navg,\
+    plot_tl(bt_loc, times, rr, fig=fig, ax=ax2, navg=navg, yvals=rvals,\
             minmax=minmax_bt, units=units, xminmax=xminmax, rbcz=rbcz)
-    plot_tl(bp_loc, times, rr, fig=fig, ax=ax3, navg=navg,\
+    plot_tl(bp_loc, times, rr, fig=fig, ax=ax3, navg=navg, yvals=rvals,\
             minmax=minmax_bp, units=units, xminmax=xminmax, rbcz=rbcz)
 
     # Label with the field components

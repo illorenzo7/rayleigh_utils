@@ -40,6 +40,7 @@ desired_rvals = [0.83] # by default, plot time-radius diagram for fields
 navg = 1 # by default average over 1 AZ_Avgs instance (no average)
 # for navg > 1, a "sliding average" will be used.
 tag = '' # optional way to tag save directory
+lats = None
 
 # Get command-line arguments
 args = sys.argv[2:]
@@ -83,6 +84,11 @@ for i in range(nargs):
         labelbytime = True
     elif arg == '-tag':
         tag = '_' + args[i+1]
+    elif arg == '-lats':
+        lats_str = args[i+1].split()
+        lats = []
+        for lat_str in lats_str:
+            lats.append(float(lat_str))
 
 # Get plot directory and create if not already there
 plotdir = dirname + '/plots/time-lat' + tag + '/'
@@ -242,11 +248,11 @@ for i in range(len(i_desiredrvals)):
 
     # Plot evolution of each (zonally averaged) field component
     plot_tl(br_loc, times, tt_lat, fig=fig, ax=ax1, navg=navg,\
-            minmax=minmax_br, units=units, xminmax=xminmax)
+            minmax=minmax_br, units=units, xminmax=xminmax, yvals=lats)
     plot_tl(bt_loc, times, tt_lat, fig=fig, ax=ax2, navg=navg,\
-            minmax=minmax_bt, units=units, xminmax=xminmax)
+            minmax=minmax_bt, units=units, xminmax=xminmax, yvals=lats)
     plot_tl(bp_loc, times, tt_lat, fig=fig, ax=ax3, navg=navg,\
-            minmax=minmax_bp, units=units, xminmax=xminmax)
+            minmax=minmax_bp, units=units, xminmax=xminmax, yvals=lats)
 
     # Label with the field components
     for irow in range(nrow):
