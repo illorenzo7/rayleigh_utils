@@ -54,7 +54,7 @@ minmaxvrrz = None
 minmaxvtrz = None
 minmaxvprz = None
 
-AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
+the_file = get_widest_range_file(datadir, 'AZ_Avgs')
 rvals = None
 rbcz = None
 
@@ -87,8 +87,8 @@ for i in range(nargs):
     elif arg == '-nolat':
         plotlatlines = False
     elif arg == '-usefile':
-        AZ_Avgs_file = args[i+1]
-        AZ_Avgs_file = AZ_Avgs_file.split('/')[-1]
+        the_file = args[i+1]
+        the_file = the_file.split('/')[-1]
     elif arg == '-rvals':
         rvals_str = args[i+1].split()
         rvals = []
@@ -96,8 +96,8 @@ for i in range(nargs):
             rvals.append(float(rval_str))
        
 # Read in AZ_Avgs data
-print ('Getting data from ' + datadir + AZ_Avgs_file + ' ...')
-di = get_dict(datadir + AZ_Avgs_file)
+print ('Getting data from ' + datadir + the_file)
+di = get_dict(datadir + the_file)
 
 iter1, iter2 = di['iter1'], di['iter2']
 vals = di['vals']

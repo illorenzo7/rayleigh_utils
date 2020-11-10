@@ -19,12 +19,11 @@ import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from azav_util import plot_azav
-from common import get_widest_range_file, strip_dirname, get_file_lists,\
-        get_desired_range
+from common import get_widest_range_file, strip_dirname, get_desired_range,\
+        get_dict
 from get_parameter import get_parameter
 from time_scales import compute_Prot, compute_tdt
 from translate_times import translate_times
-from rayleigh_diagnostics import AZ_Avgs
 
 # Get directory name and stripped_dirname for plotting purposes
 dirname = sys.argv[1]
@@ -37,35 +36,73 @@ plotdir = dirname + '/plots/'
 if (not os.path.isdir(plotdir)):
     os.makedirs(plotdir)
 
-radatadir = dirname + '/AZ_Avgs/'
-
-# Get all the file names in datadir and their integer counterparts
-file_list, int_file_list, nfiles = get_file_lists(radatadir)
-
-# Set defaults
-mins = None
-maxes = None
-save = True
+# Read command-line arguments (CLAs)
+showplot = True
+saveplot = True
 plotcontours = True
+plotlatlines = True
+plotboundary = True
+
+minmaxbr = None
+minmaxbt = None
+minmaxbp = None
+
+minmaxbrrz = None
+minmaxbtrz = None
+minmaxbprz = None
+
+the_file = get_widest_range_file(datadir, 'AZ_Avgs')
+rvals = None
 rbcz = None
 
-# Read in CLAs (if any) to change default variable ranges and other options
 args = sys.argv[2:]
 nargs = len(args)
+for i in range(nargs):
+    arg = args[i]
+    if arg == '-minmaxbr':
+        minmaxvr = float(args[i+1]), float(args[i+2])
+    elif arg == '-minmaxbt':
+        minmaxvt = float(args[i+1]), float(args[i+2])
+    elif arg == '-minmaxbp':
+        minmaxvp = float(args[i+1]), float(args[i+2])
+    elif arg == '-minmaxbrrz':
+        minmaxvrrz = float(args[i+1]), float(args[i+2])
+    elif arg == '-minmaxbtrz':
+        minmaxvtrz = float(args[i+1]), float(args[i+2])
+    elif arg == '-minmaxbprz':
+        minmaxvprz = float(args[i+1]), float(args[i+2])
+    elif arg == '-rbcz':
+        rbcz = float(args[i+1])
+    elif arg == '-noshow':
+        showplot = False
+    elif arg == '-nosave':
+        saveplot = False
+    elif arg == '-nocontour':
+        plotcontours = False
+    elif arg == '-nobound':
+        plotboundary = False
+    elif arg == '-nolat':
+        plotlatlines = False
+    elif arg == '-usefile':
+        the_file = args[i+1]
+        the_file = the_file.split('/')[-1]
+    elif arg == '-rvals':
+        rvals_str = args[i+1].split()
+        rvals = []
+        for rval_str in rvals_str:
+            rvals.append(float(rval_str))
+       
+# Read in AZ_Avgs data
+print ('Getting data from ' + datadir + the_file)
+di = get_dict(datadir + the_file)
 
-if '-range' in args or '-n' in args or '-centerrange' in args or\
-        '-all' in args or '-iter' in args:
-    index_first, index_last = get_desired_range(int_file_list, args)
-else:
-    index_first, index_last = nfiles - 1, nfiles - 1  
-    # By default, don't average over any files;
-    # just plot the last file
+iter1, iter2 = di['iter1'], di['iter2']
+vals = di['vals']
+lut = di['lut']
 
 # Get the time range in sec
-t1 = translate_times(int_file_list[index_first], dirname,\
-        translate_from='iter')['val_sec']
-t2 = translate_times(int_file_list[index_last], dirname,\
-        translate_from='iter')['val_sec']
+t1 = translate_times(iter1, dirname, translate_from='iter')['val_sec']
+t2 = translate_times(iter2, dirname, translate_from='iter')['val_sec']
 
 # Get the baseline time unit
 rotation = get_parameter(dirname, 'rotation')
@@ -76,74 +113,14 @@ else:
     time_unit = compute_tdt(dirname)
     time_label = r'$\rm{TDT}$'
 
-# Change other defaults
-for i in range(nargs):
-    arg = args[i]
-    if arg == '-minmax':
-        mins = float(args[i+1]), float(args[i+3]), float(args[i+5])
-        maxes = float(args[i+2]), float(args[i+4]), float(args[i+6])
-    elif arg == '-nosave':
-        saveplot = False
-    elif arg == '-nocontour':
-        plotcontours = False
-    elif arg == '-rbcz':
-        rbcz = float(args[i+1])
+# Grid info
+rr = di['rr']
+cost = di['cost']
+sint = di['sint']
+ro = di['ro']
 
-# Initialize empty "vals" array for the time average
-az0 = AZ_Avgs(radatadir + file_list[index_first], '')
-rr = az0.radius
-ri, ro = np.min(rr), np.max(rr)
-d = ro - ri
-rr_depth = (ro - rr)/d
-rr_height = (rr - ri)/d
-sint = az0.sintheta
-cost = az0.costheta
-tt = np.arccos(cost)
-tt_lat = (np.pi/2 - tt)*180/np.pi
-nr = az0.nr
-nt = az0.ntheta
-
-# compute some derivative quantities for the grid
-tt_2d, rr_2d = np.meshgrid(tt, rr, indexing='ij')
-sint_2d = np.sin(tt_2d); cost_2d = np.cos(tt_2d)
-xx = rr_2d*sint_2d
-zz = rr_2d*cost_2d
-
-count = 0
-iter1, iter2 = int_file_list[index_first], int_file_list[index_last]
-
-vals = np.zeros_like(az0.vals[:, :, :, 0])
-
-# Average over the relevant data range, summing everything and then dividing
-#   by the number of "slices" added at the end
-print ('Considering AZ_Avgs files %s through %s for the average ...'\
-       %(file_list[index_first], file_list[index_last]))
-for i in range(index_first, index_last + 1):
-    print ('Adding AZ_Avgs/%s to the average ...' %file_list[i])
-    if i == index_first:
-        az = az0
-    else:   
-        az = AZ_Avgs(radatadir + file_list[i], '')
-
-    local_ntimes = az.niter
-    times_to_loop = np.arange(local_ntimes)
-    if index_last == index_first:
-        times_to_loop = np.array([-1])
-    for j in times_to_loop:
-        vals += az.vals[:, :, :, j]
-        count += 1
-
-vals /= count
-print ('Averaged over %i AZ_Avgs slice(s) ...' %count)
-
-br = vals[:, :, az0.lut[801]]
-bt = vals[:, :, az0.lut[802]]
-bp = vals[:, :, az0.lut[803]]
-
-if mins is None and maxes is None:
-    nstd = 5.
-    mins = -nstd*np.std(br), -nstd*np.std(bt), -nstd*np.std(bp)
-    maxes = nstd*np.std(br), nstd*np.std(bt), nstd*np.std(bp)
+br, bt, bp = vals[:, :, lut[801]], vals[:, :, lut[802]],\
+        vals[:, :, lut[803]]
 
 # Set up the actual figure from scratch
 fig_width_inches = 7. # TOTAL figure width, in inches
@@ -183,6 +160,8 @@ subplot_height = subplot_height_inches/fig_height_inches
 field_components = [br, bt, bp]
 titles = [r'$B_r$', r'$B_\theta$', r'$B_\phi$']
 units = r'$\rm{G}$'
+minmax = [minmaxbr, minmaxbt, minmaxbp]
+minmaxrz = [minmaxbrrz, minmaxbtrz, minmaxbprz]
 
 # Generate the actual figure of the correct dimensions
 fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
@@ -194,8 +173,9 @@ for iplot in range(3):
             margin_bottom)
     ax = fig.add_axes((ax_left, ax_bottom, subplot_width, subplot_height))
     plot_azav (field_components[iplot], rr, cost, fig=fig, ax=ax,\
-           units=units, minmax = (mins[iplot], maxes[iplot]),\
-           plotcontours=plotcontours, rbcz=rbcz)
+        units=units, minmax=minmax[iplot], rbcz=rbcz,\
+        minmaxrz=minmaxrz[iplot], plotlatlines=plotlatlines,\
+           plotcontours=plotcontours, plotboundary=plotboundary)
     ax.set_title(titles[iplot], verticalalignment='bottom', **csfont)
 
 # Label averaging interval
@@ -221,7 +201,9 @@ fig.text(margin_x, 1 - margin_y - 2*line_height, time_string,\
 
 savename = dirname_stripped + '_B_azav_' + str(iter1).zfill(8) + '_' +\
         str(iter2).zfill(8) + '.png'
-if save:
+if saveplot:
     plt.savefig(plotdir + savename, dpi=100)
-    print ("Saving azimuthal average of B field in " + plotdir + savename + ' ...')
-plt.show()
+    print ("Saving azimuthal average of B field in " + plotdir + savename)
+if showplot:
+    plt.show()
+plt.close()
