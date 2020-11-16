@@ -3,7 +3,7 @@
 # On: 11/08/2019
 ##################################################################
 # This routine computes the trace in time of inte directly by 
-# averaging the Shell_Avgs data in radius--currently there is a bug
+# averaging the Shell_Avgs data in radius--used to be  a bug
 # in quantity codes 701 (thermal_energy_full) and 707 (thermal_energy_sq)
 #
 # Assumes user has already created a trace_Shell_Avgs file for the sim
@@ -14,9 +14,9 @@ import pickle
 import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
-from rayleigh_diagnostics import GridInfo, ReferenceState
-from reference_tools import equation_coefficients
+from rayleigh_diagnostics import GridInfo
 from common import strip_dirname, get_widest_range_file, get_dict
+from get_eq import get_eq
 
 # Get the name of the run directory
 dirname = sys.argv[1]
@@ -38,13 +38,8 @@ entropy = vals[:, :, lut[501]]
 
 # Get density * temperature
 nr = di['nr']
-try:
-    ref = ReferenceState(dirname + '/reference')
-    rhot = (ref.density*ref.temperature).reshape((1, nr))
-except:
-    eq = equation_coefficients()
-    eq.read(dirname + '/equation_coefficients')
-    rhot = (eq.functions[0]*eq.functions[3]).reshape((1, nr))
+eq = get_eq(dirname)
+rhot = (eq.functions[0]*eq.functions[3]).reshape((1, nr))
 
 # Get the radial integration weights
 gi = GridInfo(dirname + '/grid_info')
@@ -60,7 +55,7 @@ savename = dirname_stripped + '_inte_from_Shell_Avgs_' +\
 savefile = datadir + savename    
 
 # Save the thermal energy
-print ('Saving file at ' + savefile + ' ...')
+print ('Saving file at ' + savefile)
 f = open(savefile, 'wb')
 pickle.dump({'inte': inte, 'times': di['times'], 'iters': di['iters'], 'ntimes': di['ntimes'], 'iter1': iter1, 'iter2': iter2}, f, protocol=4)
 f.close()
