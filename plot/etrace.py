@@ -85,15 +85,15 @@ for i in range(nargs):
         xmax = float(args[i+1])
     elif arg == '-inte':
         plot_inte = True
-    elif arg == '-integtr2':
+    elif arg == '-gtr2':
         plot_inte_gtr2 = True
     elif arg == '-tote':
         plot_tote = True
-    elif arg == '-intesubt':
+    elif arg == '-subt':
         plot_inte_subt = True
-    elif arg == '-intesubb':
+    elif arg == '-subb':
         plot_inte_subb = True
-    elif arg == '-inteczrz':
+    elif arg == '-czrz':
         plot_inte_czrz = True
     elif arg == '-name':
         savename = args[i+1] + '.png'
@@ -212,35 +212,38 @@ if magnetism:
     mpme = pme - fpme
     mme = mrme + mtme + mpme
 
-# Needed: inte with top or bot S subtracted 
-# must get trace_2dom_G_Avgs 
-if plot_inte_gtr2 or plot_inte_subt or plot_inte_subb or plot_inte_czrz:
-    if the_gtr2_file is None:
-        the_gtr2_file =\
-                get_widest_range_file(datadir, 'trace_2dom_G_Avgs')
-    print ('Getting 2dom trace from ' + datadir + the_gtr2_file)
-    di_gtr2 = get_dict(datadir + the_gtr2_file)
-    lut_gtr2 = di_gtr2['lut']
-    inte = di_gtr2['vals'][ixmin:ixmax+1, lut_gtr2[4000]]
-    inte_subt = di_gtr2['vals'][ixmin:ixmax+1, lut_gtr2[4001]]
-    inte_subb = di_gtr2['vals'][ixmin:ixmax+1, lut_gtr2[4002]]
+# needed: inte
+if plot_inte or plot_tote:
+    # Needed: inte with top or bot S subtracted 
+    # must get trace_2dom_G_Avgs 
+    if plot_inte_gtr2 or plot_inte_subt or plot_inte_subb or plot_inte_czrz:
+        if the_gtr2_file is None:
+            the_gtr2_file =\
+                    get_widest_range_file(datadir, 'trace_2dom_G_Avgs')
+        print ('Getting 2dom trace from ' + datadir + the_gtr2_file)
+        di_gtr2 = get_dict(datadir + the_gtr2_file)
+        lut_gtr2 = di_gtr2['lut']
+        inte = di_gtr2['vals'][ixmin:ixmax+1, lut_gtr2[4000]]
+        inte_subt = di_gtr2['vals'][ixmin:ixmax+1, lut_gtr2[4001]]
+        inte_subb = di_gtr2['vals'][ixmin:ixmax+1, lut_gtr2[4002]]
 
-    inte_rz = di_gtr2['vals_rz'][ixmin:ixmax+1, lut_gtr2[4000]]
-    inte_rz_subt = di_gtr2['vals_rz'][ixmin:ixmax+1, lut_gtr2[4001]]
-    inte_rz_subb = di_gtr2['vals_rz'][ixmin:ixmax+1, lut_gtr2[4002]]
+        inte_rz = di_gtr2['vals_rz'][ixmin:ixmax+1, lut_gtr2[4000]]
+        inte_rz_subt = di_gtr2['vals_rz'][ixmin:ixmax+1, lut_gtr2[4001]]
+        inte_rz_subb = di_gtr2['vals_rz'][ixmin:ixmax+1, lut_gtr2[4002]]
 
-    inte_cz = di_gtr2['vals_cz'][ixmin:ixmax+1, lut_gtr2[4000]]
-    inte_cz_subt = di_gtr2['vals_cz'][ixmin:ixmax+1, lut_gtr2[4001]]
-    inte_cz_subb = di_gtr2['vals_cz'][ixmin:ixmax+1, lut_gtr2[4002]]
-    print("Got internal energy trace(s) from trace_2dom_G_Avgs")
-if plot_inte or plot_tote: # inte needed
-    # try to get it from trace_G_Avgs
-    try:
-        inte = vals[lut[701]][ixmin:ixmax + 1]
-        print("Got internal energy trace from trace_G_Avgs")
-    except:
-        print ("Internal energy trace not available; setting to 0")
-        inte = np.zeros_like(times)
+        inte_cz = di_gtr2['vals_cz'][ixmin:ixmax+1, lut_gtr2[4000]]
+        inte_cz_subt = di_gtr2['vals_cz'][ixmin:ixmax+1, lut_gtr2[4001]]
+        inte_cz_subb = di_gtr2['vals_cz'][ixmin:ixmax+1, lut_gtr2[4002]]
+        print("Got internal energy trace(s) from trace_2dom_G_Avgs")
+    else:
+        # try to get inte from trace_G_Avgs
+        try:
+            inte = vals[lut[701]][ixmin:ixmax + 1]
+            print("Got internal energy trace from trace_G_Avgs")
+        except:
+            # if not available in trace_G_Avgs, set inte to zero 
+            print ("Internal energy trace not available; setting to 0")
+            inte = np.zeros_like(times)
 
 if plot_tote:
     tote = ke + inte
@@ -256,24 +259,28 @@ if magnetism:
     mmin = min(mmin, np.min(mrme), np.min(mtme), np.min(mpme),\
             np.min(frke), np.min(ftme), np.min(fpme))
 
-if plot_inte or plot_inte_gtr2:
-    mmax = max(mmax, np.max(inte))
-    mmin = min(mmin, np.min(inte))
+if plot_inte: 
+    if plot_inte_czrz:
+        if plot_inte_subt:
+            mmax = max(mmax, np.max(inte_subt), np.max(inte_cz_subt),\
+                    np.max(inte_rz_subt))
+            mmin = min(mmin, np.min(inte_subt), np.min(inte_cz_subt),\
+                    np.min(inte_rz_subt))
+        elif plot_inte_subb:
+            mmax = max(mmax, np.max(inte_subb), np.max(inte_cz_subb),\
+                    np.max(inte_rz_subb))
+            mmin = min(mmin, np.min(inte_subb), np.min(inte_cz_subb),\
+                    np.min(inte_rz_subb))
+        else:
+            mmax = max(mmax, np.max(inte), np.max(inte_cz), np.max(inte_rz))
+            mmin = min(mmin, np.min(inte), np.min(inte_cz), np.min(inte_rz))
+    else:
+        mmax = max(mmax, np.max(inte))
+        mmin = min(mmin, np.min(inte))
+
 if plot_tote:
     mmax = max(mmax, np.max(tote))
     mmin = min(mmin, np.min(tote))
-if plot_inte_subt:
-    mmax = max(mmax, np.max(inte_subt))
-    mmin = min(mmin, np.min(inte_subt))
-    if plot_inte_czrz:
-        mmax = max(mmax, np.max(inte_cz_subt), np.max(inte_rz_subt))
-        mmin = min(mmin, np.min(inte_cz_subt), np.min(inte_rz_subt))
-if plot_inte_subb:
-    mmax = max(np.max(inte_subb), mmax)
-    mmin = min(np.min(inte_subb), mmin)
-    if plot_inte_czrz:
-        mmax = max(mmax, np.max(inte_cz_subb), np.max(inte_rz_subb))
-        mmin = min(mmin, np.min(inte_cz_subb), np.min(inte_rz_subb))
 
 # create figure with  3 panels in a row (total, mean and fluctuating energy)
 fig, axs = plt.subplots(3, 1, figsize=(5, 10), sharex=True, sharey=True)
@@ -295,26 +302,35 @@ if magnetism:
     ax1.plot(xaxis, tme, 'g--', linewidth=lw, label=r'$\rm{ME}_\theta$')
     ax1.plot(xaxis, pme, 'b--', linewidth=lw, label=r'$\rm{ME}_\phi$')
 
-# See if various internal energies are wanted
-if plot_inte or plot_inte_gtr2:
-    label = 'INT E'
-    if plot_inte_gtr2:
-        label += ' (2dom)'
-    ax1.plot(xaxis, inte, 'm', linewidth=lw, label=label)
-if plot_inte_subb:
-    ax1.plot(xaxis, inte_subb, 'r', linewidth=2*lw, label='INT E SUBB')
+# See if various internal energies should be plotted
+if plot_inte:
     if plot_inte_czrz:
-        ax1.plot(xaxis, inte_cz_subb, 'g', linewidth=2*lw,\
-                label='INT E SUBB CZ')
-        ax1.plot(xaxis, inte_rz_subb, 'b', linewidth=2*lw,\
-                label='INT E SUBB RZ')
-if plot_inte_subt:
-    ax1.plot(xaxis, inte_subt, 'r', linewidth=2*lw, label='INT E SUBT')
-    if plot_inte_czrz:
-        ax1.plot(xaxis, inte_cz_subt, 'g', linewidth=2*lw,\
-                label='INT E SUBT CZ')
-        ax1.plot(xaxis, inte_rz_subt, 'b', linewidth=2*lw,\
-                label='INT E SUBT RZ')
+        if plot_inte_subt:
+            ax1.plot(xaxis, inte_subt, 'r', linewidth=2*lw,\
+                    label='INT E SUBT')
+            ax1.plot(xaxis, inte_cz_subt, 'g', linewidth=2*lw,\
+                    label='INT E CZ SUBT')
+            ax1.plot(xaxis, inte_rz_subt, 'b', linewidth=2*lw,\
+                    label='INT E RZ SUBT')
+        elif plot_inte_subb:
+            ax1.plot(xaxis, inte_subb, 'r', linewidth=2*lw,\
+                    label='INT E SUBB')
+            ax1.plot(xaxis, inte_cz_subb, 'g', linewidth=2*lw,\
+                    label='INT E CZ SUBB')
+            ax1.plot(xaxis, inte_rz_subb, 'b', linewidth=2*lw,\
+                    label='INT E CZ SUBB')
+        else:
+            ax1.plot(xaxis, inte, 'r', linewidth=2*lw,\
+                    label='INT E')
+            ax1.plot(xaxis, inte_cz, 'g', linewidth=2*lw,\
+                    label='INT E CZ')
+            ax1.plot(xaxis, inte_rz, 'b', linewidth=2*lw,\
+                    label='INT E RZ')
+    else:
+        label = 'INT E'
+        if plot_inte_gtr2:
+            label += ' (2dom)'
+        ax1.plot(xaxis, inte, 'm', linewidth=lw, label=label)
 if plot_tote:
     ax1.plot(xaxis, tote, 'c', linewidth=lw, label='TOT E')
 

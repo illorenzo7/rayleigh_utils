@@ -45,15 +45,15 @@ file_list, int_file_list, nfiles = get_file_lists(radatadir)
 
 # Get grid information
 gi = GridInfo(dirname + '/grid_info', '')
-ir_bcz = get_parameter(dirname, 'ncheby')[1] - 1
-
-# Get averaging weights for CZ and RZ separately
 rw = gi.rweights
 nr = gi.nr
-rw_cz = rw[:ir_bcz + 1]
-nr_cz = len(rw_cz)
-rw_rz = rw[ir_bcz + 1:]
-nr_rz = len(rw_rz)
+ir_bcz = get_parameter(dirname, 'ncheby')[1] - 1
+nr_cz = ir_bcz + 1
+nr_rz = nr - nr_cz
+
+# Get averaging weights for CZ and RZ separately
+rw_cz = np.copy(rw[:nr_cz])
+rw_rz = np.copy(rw[nr_cz:])
 rw_cz /= np.sum(rw_cz)
 rw_rz /= np.sum(rw_rz)
 rw = rw.reshape((nr, 1))
@@ -105,16 +105,16 @@ for i in range(index_first, index_last + 1):
     #local_ntimes = sh.niter
     local_ntimes = sh.niter
     for j in range(local_ntimes):
-        vals_loc = sh.vals[:, 0, :, j]
+        vals_loc = np.copy(sh.vals[:, 0, :, j])
 
         # add in internal energy
-        inte_loc = rhot*sh.vals[:, 0, sh.lut[501], j]
+        inte_loc = rhot*vals_loc[:, sh.lut[501]]
         # top S subtracted
-        inte_loc_subt = rhot*(sh.vals[:, 0, sh.lut[501], j] -\
-                sh.vals[0, 0, sh.lut[501], j])
+        inte_loc_subt = rhot*(vals_loc[:, sh.lut[501]] -\
+                vals_loc[0, sh.lut[501]])
         # bottom S subtracted
-        inte_loc_subb = rhot*(sh.vals[:, 0, sh.lut[501], j] -\
-                sh.vals[-1, 0, sh.lut[501], j])
+        inte_loc_subb = rhot*(vals_loc[:, sh.lut[501]] -\
+                vals_loc[-1, sh.lut[501]])
 
         # add in the three energies
         vals_loc = np.hstack((vals_loc, inte_loc.T, inte_loc_subt.T,\
@@ -151,6 +151,6 @@ print ('Traced over %i Shell_Avgs slice(s)' %count)
 # Save the avarage
 print ('Saving file at ' + savefile)
 f = open(savefile, 'wb')
-pickle.dump({'vals': vals, 'vals_cz': vals_cz, 'vals_rz': vals_rz, 'times': times, 'iters': iters, 'lut': lut, 'ntimes': count, 'iter1': iter1, 'iter2': iter2, 'rr': sh0.radius, 'nr': sh0.nr, 'qv': sh0.qv, 'nq': sh0.nq},\
+pickle.dump({'vals': vals, 'vals_cz': vals_cz, 'vals_rz': vals_rz, 'times': times, 'iters': iters, 'lut': lut, 'ntimes': count, 'iter1': iter1, 'iter2': iter2, 'rr': sh0.radius, 'nr': sh0.nr, 'qv': sh0.qv, 'nq': sh0.nq + 3},\
         f, protocol=4)
 f.close()
