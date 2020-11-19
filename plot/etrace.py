@@ -318,7 +318,7 @@ if plot_inte:
             ax1.plot(xaxis, inte_cz_subb, 'g', linewidth=2*lw,\
                     label='INT E CZ SUBB')
             ax1.plot(xaxis, inte_rz_subb, 'b', linewidth=2*lw,\
-                    label='INT E CZ SUBB')
+                    label='INT E RZ SUBB')
         else:
             ax1.plot(xaxis, inte, 'r', linewidth=2*lw,\
                     label='INT E')
