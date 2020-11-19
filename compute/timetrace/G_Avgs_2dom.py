@@ -5,6 +5,9 @@
 # This routine computes the trace in time of the values in the Shell_Avgs data 
 # for a particular simulation, averaging separately over the RZ and CZ
 # (So, essentially G_Avgs data over each domain)
+# Also computes the internal energy (rho*T*S), the full one, and one with
+# the top value of the entropy subtracted, since the dynamics should
+# be insensitive to absolute values of the entropy
 
 # By default, the routine traces all files of datadir, though
 # the user can specify a different range in sevaral ways, e.g.:
@@ -22,6 +25,7 @@ sys.path.append(os.environ['raco'])
 from rayleigh_diagnostics import Shell_Avgs, GridInfo
 from common import get_file_lists, get_desired_range, strip_dirname,\
         get_parameter
+from get_eq import get_eq
 
 # Get the name of the run directory
 dirname = sys.argv[1]
@@ -55,6 +59,10 @@ rw_rz /= np.sum(rw_rz)
 rw = rw.reshape((nr, 1))
 rw_cz = rw_cz.reshape((nr_cz, 1))
 rw_rz = rw_rz.reshape((nr_rz, 1))
+
+# Get rho*T
+eq = get_eq(dirname)
+rhot = (eq.density*eq.temperature).reshape((1, nr))
 
 # Read in CLAs
 args = sys.argv[2:]
@@ -98,8 +106,24 @@ for i in range(index_first, index_last + 1):
     local_ntimes = sh.niter
     for j in range(local_ntimes):
         vals_loc = sh.vals[:, 0, :, j]
-        vals_cz_loc = sh.vals[:ir_bcz + 1, 0, :, j]
-        vals_rz_loc = sh.vals[ir_bcz + 1:, 0, :, j]
+
+        # add in internal energy
+        inte_loc = rhot*sh.vals[:, 0, sh.lut[501], j]
+        # top S subtracted
+        inte_loc_subt = rhot*(sh.vals[:, 0, sh.lut[501], j] -\
+                sh.vals[0, 0, sh.lut[501], j])
+        # bottom S subtracted
+        inte_loc_subb = rhot*(sh.vals[:, 0, sh.lut[501], j] -\
+                sh.vals[-1, 0, sh.lut[501], j])
+
+        # add in the three energies
+        vals_loc = np.hstack((vals_loc, inte_loc.T, inte_loc_subt.T,\
+                inte_loc_subb.T))
+
+        # Get the values in the CZ/RZ separately
+        vals_cz_loc = vals_loc[:ir_bcz + 1]
+        vals_rz_loc = vals_loc[ir_bcz + 1:]
+
         gav = np.sum(rw*vals_loc, axis=0)
         gav_cz = np.sum(rw_cz*vals_cz_loc, axis=0)
         gav_rz = np.sum(rw_rz*vals_rz_loc, axis=0)
@@ -111,16 +135,22 @@ for i in range(index_first, index_last + 1):
         iters.append(sh.iters[j])
         count += 1
 
+vals = np.array(vals)
 vals_cz = np.array(vals_cz)
 vals_rz = np.array(vals_rz)
 times = np.array(times)
 iters = np.array(iters)
 
-print ('Traced over %i Shell_Avgs slice(s) ...' %count)
+# Also append the lut (making the inte, inte_subt, and inte_subb quantities
+# (4000, 4001, 4002)
+lut_app = np.array([sh0.nq, sh0.nq + 1, sh0.nq + 2])
+lut = np.hstack((sh0.lut, lut_app))
+
+print ('Traced over %i Shell_Avgs slice(s)' %count)
 
 # Save the avarage
-print ('Saving file at ' + savefile + ' ...')
+print ('Saving file at ' + savefile)
 f = open(savefile, 'wb')
-pickle.dump({'vals': vals, 'vals_cz': vals_cz, 'vals_rz': vals_rz, 'times': times, 'iters': iters, 'lut': sh0.lut, 'ntimes': count, 'iter1': iter1, 'iter2': iter2, 'rr': sh0.radius, 'nr': sh0.nr, 'qv': sh0.qv, 'nq': sh0.nq},\
+pickle.dump({'vals': vals, 'vals_cz': vals_cz, 'vals_rz': vals_rz, 'times': times, 'iters': iters, 'lut': lut, 'ntimes': count, 'iter1': iter1, 'iter2': iter2, 'rr': sh0.radius, 'nr': sh0.nr, 'qv': sh0.qv, 'nq': sh0.nq},\
         f, protocol=4)
 f.close()

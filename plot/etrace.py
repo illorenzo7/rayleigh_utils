@@ -39,6 +39,13 @@ xminmax = None
 xmin = None
 xmax = None
 plot_inte = False
+plot_inte_subt = False # subtracts top value of S for inte
+plot_inte_subb = False # subtracts bot value of S for inte
+plot_inte_czrz = False # plots the inte of CZ and RZ separately, along 
+    # with the full inte
+plot_inte_gtr2 = False # plots just the regular inte but using the 
+    # trace_2dom_G_Avgs file 
+    # (just to compare and make sure nothing's wonky)
 plot_tote = False
 savename = None
 tol = 0.05
@@ -47,6 +54,7 @@ plot_equil_time = False
 plot_mag_equil_time = False
 chosen_eqtime = None # choose eq time a priori
 leg_loc = 'best'
+the_gtr2_file = None
 
 # Get command-line arguments
 args = sys.argv[2:]
@@ -58,6 +66,9 @@ for i in range(nargs):
     elif arg == '-usefile':
         the_file = args[i+1]
         the_file = the_file.split('/')[-1]
+    elif arg == '-usefilegtr2':
+        the_gtr2_file = args[i+1]
+        the_gtr2_file = the_gtr2_file.split('/')[-1]
     elif arg == '-from0':
         from0 = True
     elif arg == '-mag':
@@ -74,8 +85,16 @@ for i in range(nargs):
         xmax = float(args[i+1])
     elif arg == '-inte':
         plot_inte = True
+    elif arg == '-integtr2':
+        plot_inte_gtr2 = True
     elif arg == '-tote':
         plot_tote = True
+    elif arg == '-intesubt':
+        plot_inte_subt = True
+    elif arg == '-intesubb':
+        plot_inte_subb = True
+    elif arg == '-inteczrz':
+        plot_inte_czrz = True
     elif arg == '-name':
         savename = args[i+1] + '.png'
     elif arg == '-tol':
@@ -92,7 +111,7 @@ for i in range(nargs):
         leg_loc = args[i+1]
 
 # Tag the plot by whether or not the x axis is in "time" or "iteration"
-if (xiter):
+if xiter:
     tag = '_xiter'
 else:
     tag = '_xtime'
@@ -116,16 +135,6 @@ if rotation:
 else:
     time_unit = compute_tdt(dirname)
     time_label = r'$\rm{TDT}$'
-
-# Make appropriate file name to save
-basename = '_etrace_'
-if plot_inte:
-    basename += 'inte_'
-if plot_tote:
-    basename += 'tote_'
-
-if savename is None:
-    savename = dirname_stripped + basename + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + tag + '.png'
 
 # Take slices based on what xminmax is
 if not xiter:
@@ -203,20 +212,35 @@ if magnetism:
     mpme = pme - fpme
     mme = mrme + mtme + mpme
 
-if plot_inte or plot_tote:
-    try: # get the internal energy if it is available
-        try: # First try to get it from Shell_Avgs data
-            the_file = get_widest_range_file(datadir,\
-                    'inte_from_Shell_Avgs')
-            di_inte = get_dict(datadir + the_file)
-            inte = di_inte['inte'][ixmin:ixmax + 1]
-            print("Got internal energy from Shell_Avgs")
-        except:
-            inte = vals[lut[701]][ixmin:ixmax + 1]
-            print("Got internal energy from G_Avgs")
+# Needed: inte with top or bot S subtracted 
+# must get trace_2dom_G_Avgs 
+if plot_inte_gtr2 or plot_inte_subt or plot_inte_subb or plot_inte_czrz:
+    if the_gtr2_file is None:
+        the_gtr2_file =\
+                get_widest_range_file(datadir, 'trace_2dom_G_Avgs')
+    print ('Getting 2dom trace from ' + datadir + the_gtr2_file)
+    di_gtr2 = get_dict(datadir + the_gtr2_file)
+    lut_gtr2 = di_gtr2['lut']
+    inte = di_gtr2['vals'][ixmin:ixmax+1, lut_gtr2[4000]]
+    inte_subt = di_gtr2['vals'][ixmin:ixmax+1, lut_gtr2[4001]]
+    inte_subb = di_gtr2['vals'][ixmin:ixmax+1, lut_gtr2[4002]]
+
+    inte_rz = di_gtr2['vals_rz'][ixmin:ixmax+1, lut_gtr2[4000]]
+    inte_rz_subt = di_gtr2['vals_rz'][ixmin:ixmax+1, lut_gtr2[4001]]
+    inte_rz_subb = di_gtr2['vals_rz'][ixmin:ixmax+1, lut_gtr2[4002]]
+
+    inte_cz = di_gtr2['vals_cz'][ixmin:ixmax+1, lut_gtr2[4000]]
+    inte_cz_subt = di_gtr2['vals_cz'][ixmin:ixmax+1, lut_gtr2[4001]]
+    inte_cz_subb = di_gtr2['vals_cz'][ixmin:ixmax+1, lut_gtr2[4002]]
+    print("Got internal energy trace(s) from trace_2dom_G_Avgs")
+if plot_inte or plot_tote: # inte needed
+    # try to get it from trace_G_Avgs
+    try:
+        inte = vals[lut[701]][ixmin:ixmax + 1]
+        print("Got internal energy trace from trace_G_Avgs")
     except:
-        print ("Internal energy not available; setting to 0")
-        int_e = np.zeros_like(times)
+        print ("Internal energy trace not available; setting to 0")
+        inte = np.zeros_like(times)
 
 if plot_tote:
     tote = ke + inte
@@ -224,21 +248,32 @@ if plot_tote:
         tote += me
 
 # Get global min/max vals
+mmax = np.max(ke)
+mmin = np.min((np.min(mrke), np.min(mtke), np.min(mpke), np.min(frke),\
+        np.min(ftke), np.min(fpke)))   
 if magnetism:
-    mmax = np.max((np.max(ke), np.max(me)))
-    mmin = np.min((np.min(mrke), np.min(mtke), np.min(mpke), np.min(frke), np.min(ftke), np.min(fpke),\
-     np.min(mrme), np.min(mtme), np.min(mpme), np.min(frke), np.min(ftme), np.min(fpme)))
-else:
-    mmax = np.max(ke)
-    mmin = np.min((np.min(mrke), np.min(mtke), np.min(mpke), np.min(frke), np.min(ftke), np.min(fpke)))   
+    mmax = max(mmax, np.max(me))
+    mmin = min(mmin, np.min(mrme), np.min(mtme), np.min(mpme),\
+            np.min(frke), np.min(ftme), np.min(fpme))
 
-if plot_inte:
-    mmax = max(np.max(inte), mmax)
-    mmin = min(np.min(inte), mmin)
-
+if plot_inte or plot_inte_gtr2:
+    mmax = max(mmax, np.max(inte))
+    mmin = min(mmin, np.min(inte))
 if plot_tote:
-    mmax = max(np.max(tote), mmax)
-    mmin = min(np.min(tote), mmin)
+    mmax = max(mmax, np.max(tote))
+    mmin = min(mmin, np.min(tote))
+if plot_inte_subt:
+    mmax = max(mmax, np.max(inte_subt))
+    mmin = min(mmin, np.min(inte_subt))
+    if plot_inte_czrz:
+        mmax = max(mmax, np.max(inte_cz_subt), np.max(inte_rz_subt))
+        mmin = min(mmin, np.min(inte_cz_subt), np.min(inte_rz_subt))
+if plot_inte_subb:
+    mmax = max(np.max(inte_subb), mmax)
+    mmin = min(np.min(inte_subb), mmin)
+    if plot_inte_czrz:
+        mmax = max(mmax, np.max(inte_cz_subb), np.max(inte_rz_subb))
+        mmin = min(mmin, np.min(inte_cz_subb), np.min(inte_rz_subb))
 
 # create figure with  3 panels in a row (total, mean and fluctuating energy)
 fig, axs = plt.subplots(3, 1, figsize=(5, 10), sharex=True, sharey=True)
@@ -260,10 +295,26 @@ if magnetism:
     ax1.plot(xaxis, tme, 'g--', linewidth=lw, label=r'$\rm{ME}_\theta$')
     ax1.plot(xaxis, pme, 'b--', linewidth=lw, label=r'$\rm{ME}_\phi$')
 
-
-if plot_inte:
-    ax1.plot(xaxis, inte, 'm', linewidth=lw, label='INT E')
-
+# See if various internal energies are wanted
+if plot_inte or plot_inte_gtr2:
+    label = 'INT E'
+    if plot_inte_gtr2:
+        label += ' (2dom)'
+    ax1.plot(xaxis, inte, 'm', linewidth=lw, label=label)
+if plot_inte_subb:
+    ax1.plot(xaxis, inte_subb, 'r', linewidth=2*lw, label='INT E SUBB')
+    if plot_inte_czrz:
+        ax1.plot(xaxis, inte_cz_subb, 'g', linewidth=2*lw,\
+                label='INT E SUBB CZ')
+        ax1.plot(xaxis, inte_rz_subb, 'b', linewidth=2*lw,\
+                label='INT E SUBB RZ')
+if plot_inte_subt:
+    ax1.plot(xaxis, inte_subt, 'r', linewidth=2*lw, label='INT E SUBT')
+    if plot_inte_czrz:
+        ax1.plot(xaxis, inte_cz_subt, 'g', linewidth=2*lw,\
+                label='INT E SUBT CZ')
+        ax1.plot(xaxis, inte_rz_subt, 'b', linewidth=2*lw,\
+                label='INT E SUBT RZ')
 if plot_tote:
     ax1.plot(xaxis, tote, 'c', linewidth=lw, label='TOT E')
 
@@ -450,6 +501,25 @@ plt.tick_params(top=True, right=True, direction='in', which='both')
 # Space the subplots to make them look pretty
 plt.tight_layout
 plt.subplots_adjust(left=0.15, bottom=0.08, top=0.85, wspace=0.4)
+
+# Make appropriate file name to save
+basename = '_etrace_'
+if plot_inte:
+    basename += 'inte_'
+if plot_inte_gtr2:
+    basename += 'inte_gtr2_'
+if plot_inte_subt:
+    basename += 'intesubt_'
+if plot_inte_subb:
+    basename += 'intesubb_'
+if plot_inte_czrz:
+    basename += 'inteczrz_'
+if plot_tote:
+    basename += 'tote_'
+
+if savename is None:
+    savename = dirname_stripped + basename + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + tag + '.png'
+
 
 # Save the plot
 print ('Saving the etrace plot at ' + plotdir + savename)
