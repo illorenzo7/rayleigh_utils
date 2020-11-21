@@ -468,3 +468,8 @@ def print_tuple(tup, format_str, prepend=''):
             whole_str += ', '
     whole_str += ')'
     print(whole_str)
+
+def fill_str(stri, lent, char):
+    len_loc = len(stri)
+    nfill = lent - len_loc
+    return stri + char*nfill
