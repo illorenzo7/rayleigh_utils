@@ -1,8 +1,9 @@
 # Routine to trace Rayleigh G_Avgs data in time
 # Created by: Loren Matilsky
-# On: 12/18/2018
+# Before: 11/25/2020
 ##################################################################
-# This routine computes the trace in time of the values in the G_Avgs data 
+# This routine computes the trace in time of the values in the Shell_Avgs
+# data integrated separately in two domains (2dom; CZ and RZ) 
 # for a particular simulation. 
 
 # By default, the routine traces over the last 100 files of datadir, though
@@ -20,13 +21,15 @@ sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from mpi_util import opt_workload
 from common import get_file_lists, get_desired_range, fill_str,\
-    strip_dirname
+    strip_dirname, get_parameter
+from get_eq import get_eq
 import time
 
 # Get data type and reading function
-from rayleigh_diagnostics import G_Avgs
-dataname = 'G_Avgs'
-reading_func = G_Avgs
+from rayleigh_diagnostics import Shell_Avgs, GridInfo
+
+dataname = 'Shell_Avgs'
+reading_func = Shell_Avgs
 
 # initialize communication
 comm = MPI.COMM_WORLD
@@ -48,6 +51,27 @@ dirname = sys.argv[1]
 
 # Get the Rayleigh data directory (all procs)
 radatadir = dirname + '/' + dataname + '/'
+
+# Each proc gets grid information
+gi = GridInfo(dirname + '/grid_info', '')
+rw = gi.rweights
+nr = gi.nr
+ir_bcz = get_parameter(dirname, 'ncheby')[1] - 1
+nr_cz = ir_bcz + 1
+nr_rz = nr - nr_cz
+
+# Each proc gets averaging weights for CZ and RZ separately
+rw_cz = np.copy(rw[:nr_cz])
+rw_rz = np.copy(rw[nr_cz:])
+rw_cz /= np.sum(rw_cz)
+rw_rz /= np.sum(rw_rz)
+rw = rw.reshape((nr, 1))
+rw_cz = rw_cz.reshape((nr_cz, 1))
+rw_rz = rw_rz.reshape((nr_rz, 1))
+
+# Get rho*T
+eq = get_eq(dirname)
+rhot = (eq.density*eq.temperature).reshape((1, nr))
 
 # Checkpoint and time
 if rank == 0:
@@ -96,7 +120,7 @@ if rank == 0:
     # Will need the first data file for a number of things
     a0 = reading_func(radatadir + file_list[0], '')
     nrec_full = a0.niter
-    nq = a0.nq
+    nq = a0.nq + 3 # will add the three internal energies after
 
     for k in range(1, nproc):
         # distribute the partial file list to other procs 
@@ -182,6 +206,8 @@ else:
 my_times = np.zeros(my_ntimes)
 my_iters = np.zeros(my_ntimes, dtype='int')
 my_vals = np.zeros((nq, my_ntimes))
+my_vals_cz = np.zeros((nq, my_ntimes))
+my_vals_rz = np.zeros((nq, my_ntimes))
 
 my_count = 0
 for i in range(my_nfiles):
@@ -195,10 +221,35 @@ for i in range(my_nfiles):
     else:   
         a = reading_func(radatadir + str(my_files[i]).zfill(8), '')
     for j in range(a.niter):
-        my_vals[:, my_count] = a.vals[j, :]
+        vals_loc = np.copy(a.vals[:, 0, :, j])
+        # add in internal energy
+        inte_loc = rhot*vals_loc[:, a.lut[501]]
+        # top S subtracted
+        inte_loc_subt = rhot*(vals_loc[:, a.lut[501]] -\
+                vals_loc[0, a.lut[501]])
+        # bottom S subtracted
+        inte_loc_subb = rhot*(vals_loc[:, a.lut[501]] -\
+                vals_loc[-1, a.lut[501]])
+
+        # add in the three energies
+        vals_loc = np.hstack((vals_loc, inte_loc.T, inte_loc_subt.T,\
+                inte_loc_subb.T))
+
+        # Get the values in the CZ/RZ separately
+        vals_cz_loc = vals_loc[:ir_bcz + 1]
+        vals_rz_loc = vals_loc[ir_bcz + 1:]
+
+        gav = np.sum(rw*vals_loc, axis=0)
+        gav_cz = np.sum(rw_cz*vals_cz_loc, axis=0)
+        gav_rz = np.sum(rw_rz*vals_rz_loc, axis=0)
+
+        my_vals[:, my_count] = gav
+        my_vals_cz[:, my_count] = gav_cz
+        my_vals_rz[:, my_count] = gav_rz
         my_times[my_count] = a.time[j] 
         my_iters[my_count] = a.iters[j]
         my_count += 1
+
 if rank == 0:
     print(fill_str('computing', lent, char) + 'rank 0 done      ', end='\r')
 
@@ -230,14 +281,18 @@ if rank == 0:
     ntimes = (nfiles - 1)*nrec_full + nrec_last
 
     # Initialize zero-filled 'vals/times/iters' arrays to store the data
-    vals = np.zeros((nq, ntimes))
     times = np.zeros(ntimes)
     iters = np.zeros(ntimes, dtype='int')
+    vals = np.zeros((nq, ntimes))
+    vals_cz = np.zeros((nq, ntimes))
+    vals_rz = np.zeros((nq, ntimes))
 
     # First, proc 0 already has some results
     times[:my_ntimes] = my_times
     iters[:my_ntimes] = my_iters
     vals[:, :my_ntimes] = my_vals
+    vals_cz[:, :my_ntimes] = my_vals_cz
+    vals_rz[:, :my_ntimes] = my_vals_rz
     # now get the results from the other processes
     istart = np.copy(my_ntimes)
     for j in range(1, nproc):
@@ -254,20 +309,28 @@ if rank == 0:
         my_times = np.zeros(my_ntimes)
         my_iters = np.zeros(my_ntimes, dtype='int')
         my_vals = np.zeros((nq, my_ntimes))
+        my_vals_cz = np.zeros((nq, my_ntimes))
+        my_vals_rz = np.zeros((nq, my_ntimes))
 
         comm.Recv(my_times, source=j)
         comm.Recv(my_iters, source=j)
         comm.Recv(my_vals, source=j)
+        comm.Recv(my_vals_cz, source=j)
+        comm.Recv(my_vals_rz, source=j)
 
         times[istart:istart+my_ntimes] = my_times
         iters[istart:istart+my_ntimes] = my_iters
         vals[:, istart:istart+my_ntimes] = my_vals
+        vals_cz[:, istart:istart+my_ntimes] = my_vals_cz
+        vals_rz[:, istart:istart+my_ntimes] = my_vals_rz
 
         istart += my_ntimes
 else: # other processes send their data
     comm.Send(my_times, dest=0)
     comm.Send(my_iters, dest=0)
     comm.Send(my_vals, dest=0)
+    comm.Send(my_vals_cz, dest=0)
+    comm.Send(my_vals_rz, dest=0)
 
 # proc 0 saves the data
 if rank == 0:
@@ -279,15 +342,21 @@ if rank == 0:
     # Set the timetrace savename by the directory, what we are saving,
     # and first and last iteration files for the trace
     dirname_stripped = strip_dirname(dirname)
-    savename = dirname_stripped + '_trace_' + dataname + '_' +\
+    savename = dirname_stripped + '_trace_2dom_G_Avgs_' +\
             file_list[0] + '_' + file_list[-1] + '.pkl'
     savefile = datadir + savename
 
     # save the data
-    f = open(savefile, 'wb')
-    # will also need first and last iteration files
+    # Get first and last iters of files
     iter1, iter2 = int_file_list[0], int_file_list[-1]
-    pickle.dump({'vals': vals, 'times': times, 'iters': iters, 'lut': a0.lut, 'count': ntimes, 'iter1': iter1, 'iter2': iter2, 'qv': a0.qv, 'nq': a0.nq}, f, protocol=4)
+    # append the lut (making the inte, inte_subt, and inte_subb quantities
+    # (4000, 4001, 4002)
+    lut_app = np.array([a0.nq, a0.nq + 1, a0.nq + 2])
+    lut = np.hstack((a0.lut, lut_app))
+    qv_app = np.array([4000, 4001, 4002])
+    qv = np.hstack((a0.qv, qv_app))
+    f = open(savefile, 'wb')
+    pickle.dump({'vals': vals.T, 'vals_cz': vals_cz.T, 'vals_rz': vals_rz.T, 'times': times, 'iters': iters, 'lut': lut, 'ntimes': ntimes, 'iter1': iter1, 'iter2': iter2, 'rr': a0.radius, 'nr': a0.nr, 'qv': qv, 'nq': nq}, f, protocol=4)
     f.close()
     t2 = time.time()
     print ('%8.2e s' %(t2 - t1))
