@@ -8,7 +8,7 @@
 # By default, the routine traces over the last 100 files of datadir, though
 # the user can specify a different range in sevaral ways:
 # -n 10 (last 10 files)
-# -range iter1 iter2 (names of start and stop data files; iter2 can be "last")
+# -range iter1 iter2 (names of start and stop data files; iter2 can be 'last')
 # -centerrange iter0 nfiles (trace about central file iter0 over nfiles)
 
 # Import relevant modules
@@ -19,10 +19,14 @@ import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from mpi_util import opt_workload
-from rayleigh_diagnostics import G_Avgs
 from common import get_file_lists, get_desired_range, fill_str,\
     strip_dirname
 import time
+
+# Get data type and reading function
+from rayleigh_diagnostics import G_Avgs
+dataname = 'G_Avgs'
+reading_func = G_Avgs
 
 # initialize communication
 comm = MPI.COMM_WORLD
@@ -31,9 +35,9 @@ nproc = comm.Get_size()
 
 if rank == 0:
     if nproc > 1:
-        print ("processing in parallel with %i ranks" %nproc)
+        print ('processing in parallel with %i ranks' %nproc)
     else:
-        print ("processing in serial with 1 rank")
+        print ('processing in serial with 1 rank')
 
 # info for future print messages
 lent = 50
@@ -43,7 +47,7 @@ char = '.'
 dirname = sys.argv[1]
 
 # Get the Rayleigh data directory (all procs)
-radatadir = dirname + '/G_Avgs/'
+radatadir = dirname + '/' + dataname + '/'
 
 # Checkpoint and time
 if rank == 0:
@@ -54,8 +58,8 @@ if rank == 0:
     # they're all at this block, start the clock
     t1_glob = time.time()
     t1 = np.copy(t1_glob)
-    print(fill_str("proc 0 distributing the file lists", lent, char),\
-            end="")
+    print(fill_str('proc 0 distributing the file lists', lent, char),\
+            end='')
     for k in range(1, nproc): # tell each process to continue
         comm.Send(np.array([pi_int]), dest=k)
 else:
@@ -89,10 +93,10 @@ if rank == 0:
     nproc_min, nproc_max, n_per_proc_min, n_per_proc_max =\
             opt_workload(nfiles, nproc)
 
-    # Will need the first G_Avgs file for a number of things
-    g0 = G_Avgs(radatadir + file_list[0], '')
-    nrec_full = g0.niter
-    nq = g0.nq
+    # Will need the first data file for a number of things
+    a0 = reading_func(radatadir + file_list[0], '')
+    nrec_full = a0.niter
+    nq = a0.nq
 
     for k in range(1, nproc):
         # distribute the partial file list to other procs 
@@ -114,19 +118,24 @@ if rank == 0:
         my_files = np.copy(int_file_list[istart:iend])
         comm.Send(my_files, dest=k)
 
-    # Make sure proc 0 also analyzes n_per_proc_min files
-    my_ntimes = n_per_proc_min*nrec_full
-    my_nfiles = n_per_proc_min
-    my_files = int_file_list[:my_nfiles]
-
-    # Will need nrec (last G_Avgs.niter) to get proper time axis size
+    # Will need nrec (last niter) to get proper time axis size
     nrec_last = np.array([0])
     if nproc > 1: # can't receive from myself!
         comm.Recv(nrec_last, source=nproc-1)
         nrec_last = nrec_last[0]
     else:
-        gf = G_Avgs(radatadir + file_list[-1], '')
-        nrec_last = gf.niter
+        af = reading_func(radatadir + file_list[-1], '')
+        nrec_last = af.niter
+        print ('nrec_last = ', nrec_last)
+
+    # Make sure proc 0 also analyzes n_per_proc_min files
+    if nproc > 1:
+        my_ntimes = n_per_proc_min*nrec_full
+    else:
+        my_ntimes = (n_per_proc_min - 1)*nrec_full + nrec_last
+    my_nfiles = n_per_proc_min
+    my_files = int_file_list[:my_nfiles]
+
 else: # other processes receive the data
     # all processes need parameters from proc 0
     arr = np.zeros(7, dtype='int') 
@@ -140,8 +149,8 @@ else: # other processes receive the data
 
     if rank == nproc - 1:
         # last process gets nrec_last
-        gf = G_Avgs(radatadir + str(my_files[-1]).zfill(8), '')
-        nrec_last = gf.niter
+        af = reading_func(radatadir + str(my_files[-1]).zfill(8), '')
+        nrec_last = af.niter
         comm.Send(np.array([nrec_last]), dest=0)
         my_ntimes = (my_nfiles - 1)*nrec_full + nrec_last
     else:
@@ -155,10 +164,10 @@ if rank == 0:
         pi_int = pi_int[0]
     # they're all at this block, restart the clock
     t2 = time.time()
-    print ("%8.2e s" %(t2 - t1))
-    print ('Considering %i G_Avgs files for the trace: %s through %s'\
-        %(nfiles, file_list[0], file_list[-1]))
-    print(fill_str("computing", lent, char), end="\r")
+    print ('%8.2e s' %(t2 - t1))
+    print ('Considering %i %s files for the trace: %s through %s'\
+        %(nfiles, dataname, file_list[0], file_list[-1]))
+    print(fill_str('computing', lent, char), end='\r')
     t1 = time.time()
     for k in range(1, nproc): # tell each process to continue
         comm.Send(np.array([pi_int]), dest=k)
@@ -177,21 +186,21 @@ my_vals = np.zeros((nq, my_ntimes))
 my_count = 0
 for i in range(my_nfiles):
     if rank == 0:
-        print(fill_str("computing", lent, char) + "rank 0 on G_Avgs/" +\
-                str(my_files[i]).zfill(8), end="\r")
+        print(fill_str('computing', lent, char) + 'rank 0 on ' + dataname +\
+                '/' + str(my_files[i]).zfill(8), end='\r')
     if rank == 0 and i == 0:
-        g = g0
+        a = a0
     elif rank == nproc - 1 and i == my_nfiles - 1:
-        g = gf
+        a = af
     else:   
-        g = G_Avgs(radatadir + str(my_files[i]).zfill(8), '')
-    for j in range(g.niter):
-        my_vals[:, my_count] = g.vals[j, :]
-        my_times[my_count] = g.time[j] 
-        my_iters[my_count] = g.iters[j]
+        a = reading_func(radatadir + str(my_files[i]).zfill(8), '')
+    for j in range(a.niter):
+        my_vals[:, my_count] = a.vals[j, :]
+        my_times[my_count] = a.time[j] 
+        my_iters[my_count] = a.iters[j]
         my_count += 1
 if rank == 0:
-    print(fill_str("computing", lent, char) + "rank 0 done      ", end="\r")
+    print(fill_str('computing', lent, char) + 'rank 0 done      ', end='\r')
 
 # Checkpoint and time
 if rank == 0:
@@ -201,10 +210,10 @@ if rank == 0:
         pi_int = pi_int[0]
     # they're all at this block, restart the clock
     t2 = time.time()
-    print(fill_str("computing", lent, char), end="")
-    print ("%8.2e s                                 " %(t2 - t1))
-    print(fill_str("rank 0 collecting and saving the results",\
-            lent, char), end="")
+    print(fill_str('computing', lent, char), end='')
+    print ('%8.2e s                                 ' %(t2 - t1))
+    print(fill_str('rank 0 collecting and saving the results',\
+            lent, char), end='')
     t1 = time.time()
     for k in range(1, nproc): # tell each process to continue
         comm.Send(np.array([pi_int]), dest=k)
@@ -220,7 +229,7 @@ if rank == 0:
     # Get dimensions of output
     ntimes = (nfiles - 1)*nrec_full + nrec_last
 
-    # Initialize zero-filled "vals/times/iters" arrays to store the data
+    # Initialize zero-filled 'vals/times/iters' arrays to store the data
     vals = np.zeros((nq, ntimes))
     times = np.zeros(ntimes)
     iters = np.zeros(ntimes, dtype='int')
@@ -270,18 +279,17 @@ if rank == 0:
     # Set the timetrace savename by the directory, what we are saving,
     # and first and last iteration files for the trace
     dirname_stripped = strip_dirname(dirname)
-    savename = dirname_stripped + '_trace_G_Avgs_' +\
+    savename = dirname_stripped + '_trace_' + dataname + '_' +\
             file_list[0] + '_' + file_list[-1] + '.pkl'
     savefile = datadir + savename
-    #print ('Traced over %i G_Avgs slice(s)' %ntimes)
 
     # save the data
     f = open(savefile, 'wb')
     # will also need first and last iteration files
     iter1, iter2 = int_file_list[0], int_file_list[-1]
-    pickle.dump({'vals': vals, 'times': times, 'iters': iters, 'lut': g0.lut, 'count': ntimes, 'iter1': iter1, 'iter2': iter2, 'qv': g0.qv, 'nq': g0.nq}, f, protocol=4)
+    pickle.dump({'vals': vals, 'times': times, 'iters': iters, 'lut': a0.lut, 'count': ntimes, 'iter1': iter1, 'iter2': iter2, 'qv': a0.qv, 'nq': a0.nq}, f, protocol=4)
     f.close()
     t2 = time.time()
-    print ("%8.2e s" %(t2 - t1))
-    print(fill_str("total time", lent, char), end="")
-    print ("%8.2e s" %(t2 - t1_glob))
+    print ('%8.2e s' %(t2 - t1))
+    print(fill_str('total time', lent, char), end='')
+    print ('%8.2e s' %(t2 - t1_glob))
