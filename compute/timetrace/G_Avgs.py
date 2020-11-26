@@ -181,7 +181,7 @@ else:
 # Now analyze the data
 my_times = np.zeros(my_ntimes)
 my_iters = np.zeros(my_ntimes, dtype='int')
-my_vals = np.zeros((nq, my_ntimes))
+my_vals = np.zeros((my_ntimes, nq))
 
 my_count = 0
 for i in range(my_nfiles):
@@ -195,7 +195,7 @@ for i in range(my_nfiles):
     else:   
         a = reading_func(radatadir + str(my_files[i]).zfill(8), '')
     for j in range(a.niter):
-        my_vals[:, my_count] = a.vals[j, :]
+        my_vals[my_count, :] = a.vals[j, :]
         my_times[my_count] = a.time[j] 
         my_iters[my_count] = a.iters[j]
         my_count += 1
@@ -230,14 +230,14 @@ if rank == 0:
     ntimes = (nfiles - 1)*nrec_full + nrec_last
 
     # Initialize zero-filled 'vals/times/iters' arrays to store the data
-    vals = np.zeros((nq, ntimes))
+    vals = np.zeros((ntimes, nq))
     times = np.zeros(ntimes)
     iters = np.zeros(ntimes, dtype='int')
 
     # First, proc 0 already has some results
     times[:my_ntimes] = my_times
     iters[:my_ntimes] = my_iters
-    vals[:, :my_ntimes] = my_vals
+    vals[:my_ntimes, :] = my_vals
     # now get the results from the other processes
     istart = np.copy(my_ntimes)
     for j in range(1, nproc):
@@ -253,7 +253,7 @@ if rank == 0:
             
         my_times = np.zeros(my_ntimes)
         my_iters = np.zeros(my_ntimes, dtype='int')
-        my_vals = np.zeros((nq, my_ntimes))
+        my_vals = np.zeros((my_ntimes, nq))
 
         comm.Recv(my_times, source=j)
         comm.Recv(my_iters, source=j)
@@ -261,7 +261,7 @@ if rank == 0:
 
         times[istart:istart+my_ntimes] = my_times
         iters[istart:istart+my_ntimes] = my_iters
-        vals[:, istart:istart+my_ntimes] = my_vals
+        vals[istart:istart+my_ntimes, :] = my_vals
 
         istart += my_ntimes
 else: # other processes send their data

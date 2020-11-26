@@ -34,8 +34,6 @@ def compute_tdt(dirname, mag=False, visc=False, tach=False):
         diff = eq.nu
     else:
         diff = eq.kappa
-    print ("compute_tdt(%s, mag=%s, visc=%s, tach=%s)" %(dirname,\
-            mag, visc, tach))
 
     # Compute and return the diffusion time
     if tach:
@@ -69,10 +67,8 @@ def compute_tdt(dirname, mag=False, visc=False, tach=False):
 def compute_Prot(dirname):
     try:
         Om0 = get_parameter(dirname, 'angular_velocity')
-        print ("compute_Prot(%s): Got Prot from 'main_input' file" %dirname)
     except:
         eq = equation_coefficients()
         eq.read(dirname + '/equation_coefficients')
         Om0 = eq.constants[0]/2.
-        print ("compute_Prot(%s): Got Prot from 'equation_coefficients' file" %dirname)
     return 2*np.pi/Om0

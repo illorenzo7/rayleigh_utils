@@ -113,7 +113,6 @@ def get_eq(dirname, fname='equation_coefficients'): # return an eq_human_readabl
         eq_hr.dlneta = eq.functions[12] # equation_coefficients as "zero"
         eq_hr.lum = eq.constants[9]
         # if magnetism = False
-        print ("get_eq(%s): got equation coefficients from '%s' file" %(dirname, fname))
     else:
         ref = ReferenceState(dirname + '/reference')
         eq_hr = eq_human_readable(ref.nr)
@@ -147,7 +146,5 @@ def get_eq(dirname, fname='equation_coefficients'): # return an eq_human_readabl
             except: # if it failed, just keep the arrays zero             
                 pass # (magnetism = False)
         else:
-            print("'transport' file not found; nu, dlnu, etc. will be zero")
         eq_hr.lum = get_parameter(dirname, 'luminosity')
-        print ("get_eq(%s): got equation coefficients from 'reference' and 'transport' files" %dirname)
     return eq_hr
