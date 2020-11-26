@@ -146,5 +146,7 @@ def get_eq(dirname, fname='equation_coefficients'): # return an eq_human_readabl
             except: # if it failed, just keep the arrays zero             
                 pass # (magnetism = False)
         else:
+            print ("get_eq(): neither 'equation_coefficients' nor 'transport' found")
+            print ("nu, dlnu, etc. will be zero")
         eq_hr.lum = get_parameter(dirname, 'luminosity')
     return eq_hr

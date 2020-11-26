@@ -185,9 +185,6 @@ my_vals = np.zeros((my_ntimes, nq))
 
 my_count = 0
 for i in range(my_nfiles):
-    if rank == 0:
-        print(fill_str('computing', lent, char) + 'rank 0 on ' + dataname +\
-                '/' + str(my_files[i]).zfill(8), end='\r')
     if rank == 0 and i == 0:
         a = a0
     elif rank == nproc - 1 and i == my_nfiles - 1:
@@ -199,8 +196,10 @@ for i in range(my_nfiles):
         my_times[my_count] = a.time[j] 
         my_iters[my_count] = a.iters[j]
         my_count += 1
-if rank == 0:
-    print(fill_str('computing', lent, char) + 'rank 0 done      ', end='\r')
+    if rank == 0:
+        pcnt_done = my_count/my_ntimes*100.
+        print(fill_str('computing', lent, char) +\
+                ('rank 0 %5.1f%% done' %pcnt_done), end='\r')
 
 # Checkpoint and time
 if rank == 0:
@@ -210,7 +209,7 @@ if rank == 0:
         pi_int = pi_int[0]
     # they're all at this block, restart the clock
     t2 = time.time()
-    print(fill_str('computing', lent, char), end='')
+    print(fill_str('\ncomputing time', lent, char), end='')
     print ('%8.2e s                                 ' %(t2 - t1))
     print(fill_str('rank 0 collecting and saving the results',\
             lent, char), end='')
