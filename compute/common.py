@@ -64,7 +64,7 @@ def get_file_lists(radatadir):
     return file_list, int_file_list, nfiles
 
 range_options = ['-range', '-centerrange', '-leftrange', '-rightrange',\
-        '-n', '-f', '-all', '-iter']
+        '-n', '-f', '-all', '-allb1', '-iter']
 n_options = len(range_options)
 
 def get_desired_range(int_file_list, args):
@@ -170,6 +170,9 @@ def get_desired_range(int_file_list, args):
             elif arg == '-all':
                 index_first = 0
                 index_last = nfiles - 1
+            elif arg == '-allb1':
+                index_first = 0
+                index_last = nfiles - 2
             elif arg == '-iter': # just get 1 iter
                 desired_iter = args[i+1]
                 if desired_iter == 'first':

@@ -67,7 +67,6 @@ if rank == 0:
 if rank == 0:
     # Get the name of the run directory
     dirname = sys.argv[1]
-    print ("rank 0: dirname = ", dirname)
 
     # Get the Rayleigh data directory
     radatadir = dirname + '/' + dataname + '/'
