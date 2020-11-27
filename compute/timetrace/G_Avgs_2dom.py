@@ -281,7 +281,7 @@ if rank == 0:
     qv_app = np.array([4000, 4001, 4002])
     qv = np.hstack((a0.qv, qv_app))
     f = open(savefile, 'wb')
-    pickle.dump({'vals': vals.T, 'vals_cz': vals_cz.T, 'vals_rz': vals_rz.T, 'times': times, 'iters': iters, 'lut': lut, 'ntimes': ntimes, 'iter1': iter1, 'iter2': iter2, 'rr': a0.radius, 'nr': a0.nr, 'qv': qv, 'nq': nq}, f, protocol=4)
+    pickle.dump({'vals': vals, 'vals_cz': vals_cz, 'vals_rz': vals_rz, 'times': times, 'iters': iters, 'lut': lut, 'ntimes': ntimes, 'iter1': iter1, 'iter2': iter2, 'rr': a0.radius, 'nr': a0.nr, 'qv': qv, 'nq': nq}, f, protocol=4)
     f.close()
     t2 = time.time()
     print ('%8.2e s' %(t2 - t1))

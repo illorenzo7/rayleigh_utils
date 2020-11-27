@@ -172,7 +172,7 @@ if inte_gtr2 or inte_subt or inte_subb or sep_czrz:
     if the_file is None:
         the_file = get_widest_range_file(datadir, 'trace_2dom_G_Avgs')
     print ('Using 2dom trace from ' + datadir + the_file)
-    di = get_dict(datadir + the_file)
+    di = get_dict(datadir + the_file) 
     vals = di['vals']
     vals_cz = di['vals_cz']
     vals_rz = di['vals_rz']
@@ -679,7 +679,7 @@ plt.tight_layout
 plt.subplots_adjust(left=0.15, bottom=0.08, top=0.85, wspace=0.4)
 
 if savename is None:
-    savename = dirname_stripped + 'etrace' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + tag + '.png'
+    savename = dirname_stripped + '_etrace_' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + tag + '.png'
 
 # Save the plot
 print ('Saving the etrace plot at ' + plotdir + savename)
