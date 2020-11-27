@@ -254,11 +254,6 @@ mtke = tke - ftke
 mpke = pke - fpke
 mke = mrke + mtke + mpke
 
-# Get global min/max vals
-#mmax = np.max(ke)
-#mmin = np.min((np.min(mrke), np.min(mtke), np.min(mpke), np.min(frke),\
-#        np.min(ftke), np.min(fpke)))   
-
 # Get the magnetic energies if they are available
 if magnetism:
     rme = vals[:, lut[1102]]
@@ -276,23 +271,18 @@ if magnetism:
     mpme = pme - fpme
     mme = mrme + mtme + mpme
 
-    # Update global min/max vals
-#    mmax = max(mmax, np.max(me))
-#    mmin = min(mmin, np.min(mrme), np.min(mtme), np.min(mpme),\
-#            np.min(frke), np.min(ftme), np.min(fpme))
-
 # Check what internal energies we might need (sometimes CZ/RZ separated ones
 # too just in case) these will always be available for some options)
 if inte_subt:
     inte = vals[:, lut[4001]]
     inte_cz = vals_cz[:, lut[4001]]
-    inte_rz = vals_rz[lut[4001]]
+    inte_rz = vals_rz[:, lut[4001]]
     print("Got SUBT internal energy trace from trace_2dom_G_Avgs")
     inte_label = "INTE SUBT"
 elif inte_subb:
     inte = vals[:, lut[4002]]
     inte_cz = vals_cz[:, lut[4002]]
-    inte_rz = vals_rz[lut[4002]]
+    inte_rz = vals_rz[:, lut[4002]]
     print("Got SUBB internal energy trace from trace_2dom_G_Avgs")
     inte_label = "INTE SUBB"
 elif inte_gtr2: # inte not from trace_G_Avgs
@@ -313,11 +303,6 @@ elif plot_inte or plot_tote:
         inte = np.zeros_like(times)
         inte_label = "INTE NOT FOUND"
 
-#if plot_inte:
-    # Update global min/max vals
-#    mmax = max(mmax, np.max(inte))
-#    mmin = min(mmin, np.min(inte))
-
 if plot_tote:
     tote = ke + inte
     ftote = np.copy(fke)
@@ -326,19 +311,17 @@ if plot_tote:
         tote += me
         mtote += mme
         ftote += fme
-    # Update global min/max vals
-#    mmax = max(mmax, np.max(tote))
 
 if sep_czrz:
     # Get energy densities (CZ and RZ separately)
-    rke_cz = vals_cz[lut_gtr2[402]][ixmin:ixmax + 1]
-    tke_cz = vals_cz[lut_gtr2[403]][ixmin:ixmax + 1]
-    pke_cz = vals_cz[lut_gtr2[404]][ixmin:ixmax + 1]
+    rke_cz = vals_cz[:, lut[402]]
+    tke_cz = vals_cz[:, lut[403]]
+    pke_cz = vals_cz[:, lut[404]]
     ke_cz = rke_cz + tke_cz + pke_cz
 
-    frke_cz = vals_cz[lut_gtr2[410]][ixmin:ixmax + 1]
-    ftke_cz = vals_cz[lut_gtr2[411]][ixmin:ixmax + 1]
-    fpke_cz = vals_cz[lut_gtr2[412]][ixmin:ixmax + 1]
+    frke_cz = vals_cz[:, lut[410]]
+    ftke_cz = vals_cz[:, lut[411]]
+    fpke_cz = vals_cz[:, lut[412]]
     fke_cz = frke_cz + ftke_cz + fpke_cz
 
     mrke_cz = rke_cz - frke_cz
@@ -346,19 +329,14 @@ if sep_czrz:
     mpke_cz = pke_cz - fpke_cz
     mke_cz = mrke_cz + mtke_cz + mpke_cz
 
-    # Get global min/max vals
-#    mmax_cz = np.max(ke_cz)
-#    mmin_cz = np.min((np.min(mrke_cz), np.min(mtke_cz), np.min(mpke_cz),\
-#            np.min(frke_cz), np.min(ftke_cz), np.min(fpke_cz)))
-
-    rke_rz = vals_rz[lut_gtr2[402]][ixmin:ixmax + 1]
-    tke_rz = vals_rz[lut_gtr2[403]][ixmin:ixmax + 1]
-    pke_rz = vals_rz[lut_gtr2[404]][ixmin:ixmax + 1]
+    rke_rz = vals_rz[:, lut[402]]
+    tke_rz = vals_rz[:, lut[403]]
+    pke_rz = vals_rz[:, lut[404]]
     ke_rz = rke_rz + tke_rz + pke_rz
 
-    frke_rz = vals_rz[lut_gtr2[410]][ixmin:ixmax + 1]
-    ftke_rz = vals_rz[lut_gtr2[411]][ixmin:ixmax + 1]
-    fpke_rz = vals_rz[lut_gtr2[412]][ixmin:ixmax + 1]
+    frke_rz = vals_rz[:, lut[410]]
+    ftke_rz = vals_rz[:, lut[411]]
+    fpke_rz = vals_rz[:, lut[412]]
     fke_rz = frke_rz + ftke_rz + fpke_rz
 
     mrke_rz = rke_rz - frke_rz
@@ -366,21 +344,16 @@ if sep_czrz:
     mpke_rz = pke_rz - fpke_rz
     mke_rz = mrke_rz + mtke_rz + mpke_rz
 
-    # Get global min/max vals
-#    mmax_rz = np.max(ke_rz)
-#    mmin_rz = np.min((np.min(mrke_rz), np.min(mtke_rz), np.min(mpke_rz),\
-#            np.min(frke_rz), np.min(ftke_rz), np.min(fpke_rz)))
-
     # Get the magnetic energies if they are available
     if magnetism:
-        rme_cz = vals_cz[lut_gtr2[1102]][ixmin:ixmax + 1]
-        tme_cz = vals_cz[lut_gtr2[1103]][ixmin:ixmax + 1]
-        pme_cz = vals_cz[lut_gtr2[1104]][ixmin:ixmax + 1]
+        rme_cz = vals_cz[:, lut[1102]]
+        tme_cz = vals_cz[:, lut[1103]]
+        pme_cz = vals_cz[:, lut[1104]]
         me_cz = rme_cz + tme_cz + pme_cz
 
-        frme_cz = vals_cz[lut_gtr2[1110]][ixmin:ixmax + 1]
-        ftme_cz = vals_cz[lut_gtr2[1111]][ixmin:ixmax + 1]
-        fpme_cz = vals_cz[lut_gtr2[1112]][ixmin:ixmax + 1]
+        frme_cz = vals_cz[:, lut[1110]]
+        ftme_cz = vals_cz[:, lut[1111]]
+        fpme_cz = vals_cz[:, lut[1112]]
         fme_cz = frme_cz + ftme_cz + fpme_cz
 
         mrme_cz = rme_cz - frme_cz
@@ -388,19 +361,14 @@ if sep_czrz:
         mpme_cz = pme_cz - fpme_cz
         mme_cz = mrme_cz + mtme_cz + mpme_cz
 
-        # Update global min/max vals
-#        mmax_cz = max(mmax_cz, np.max(me_cz))
-#        mmin_cz = min(mmin_cz, np.min(mrme_cz), np.min(mtme_cz),\
-#            np.min(mpme_cz), np.min(frke_cz), np.min(ftme), np.min(fpme))
-
-        rme_rz = vals_rz[lut_gtr2[1102]][ixmin:ixmax + 1]
-        tme_rz = vals_rz[lut_gtr2[1103]][ixmin:ixmax + 1]
-        pme_rz = vals_rz[lut_gtr2[1104]][ixmin:ixmax + 1]
+        rme_rz = vals_rz[:, lut[1102]]
+        tme_rz = vals_rz[:, lut[1103]]
+        pme_rz = vals_rz[:, lut[1104]]
         me_rz = rme_rz + tme_rz + pme_rz
 
-        frme_rz = vals_rz[lut_gtr2[1110]][ixmin:ixmax + 1]
-        ftme_rz = vals_rz[lut_gtr2[1111]][ixmin:ixmax + 1]
-        fpme_rz = vals_rz[lut_gtr2[1112]][ixmin:ixmax + 1]
+        frme_rz = vals_rz[:, lut[1110]]
+        ftme_rz = vals_rz[:, lut[1111]]
+        fpme_rz = vals_rz[:, lut[1112]]
         fme_rz = frme_rz + ftme_rz + fpme_rz
 
         mrme_rz = rme_rz - frme_rz
@@ -408,16 +376,7 @@ if sep_czrz:
         mpme_rz = pme_rz - fpme_rz
         mme_rz = mrme_rz + mtme_rz + mpme_rz
 
-        # Update global min/max vals
-#        mmax_rz = max(mmax_rz, np.max(me_rz))
-#        mmin_rz = min(mmin_rz, np.min(mrme_rz), np.min(mtme_rz),\
-#            np.min(mpme_rz), np.min(frke_rz), np.min(ftme), np.min(fpme))
-
     # Separated internal energies already taken care of
-    # But should update min/max vals
-    if plot_inte:
-        mmax_rz = max(mmax_rz, np.max(inte_rz))
-        mmax_cz = max(mmax_cz, np.max(inte_cz))
 
     # Get total energies if desired
     if plot_tote:
@@ -430,9 +389,6 @@ if sep_czrz:
 
         if magnetism:
             tote_cz += me_cz
-        # Update global min/max vals
-        mmax_cz = max(mmax_cz, np.max(tote_cz))
-        mmax_rz = max(mmax_rz, np.max(tote_rz))
 
 # create figure with 3-panel columns (total, mean and fluctuating energy)
 # 1 column if only full energies desired
@@ -502,14 +458,6 @@ if plot_tote:
             %(dE/dt))
 
 axs[0,0].set_title(title)
-
-#if minmax is None:
-#    if ylog:
-#        minmax = mmin/3.0, mmax*3.0
-#    else:
-#        ydiff = mmax - mmin
-#        ybuffer = 0.05*ydiff 
-#        minmax = mmin - ybuffer, mmax + ybuffer
 
 # See if y-axis should be on log scale
 # Make axes use scientific notation
