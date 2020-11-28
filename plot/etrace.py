@@ -551,7 +551,7 @@ else:
         ax.ticklabel_format(scilimits = (-3,4), useMathText=True)
 
 
-# FIRST, TOTAL ENERGIES (IN BOTH ZONES)
+# ===============TOTAL ENERGIES (IN BOTH ZONES)========================
 # plot total KE
 axs[0,0].plot(xaxis, ke, 'm', linewidth=lw, label=r'$\rm{E_{tot}}$')
 axs[0,0].plot(xaxis, rke, 'r', linewidth=lw, label=r'$\rm{E_r}$')
@@ -682,7 +682,7 @@ axs[2,0].set_ylim((fminmax[0], fminmax[1]))
 
 # NOW POSSIBLY, SEPARATE ENERGIES IN CZ AND RZ
 if sep_czrz:
-    # CZ
+    # =============CONVECTION ZONE=================
     # plot total KE
     axs[0,1].plot(xaxis, ke_cz, 'm', linewidth=lw)
     axs[0,1].plot(xaxis, rke_cz, 'r', linewidth=lw)
@@ -780,8 +780,105 @@ if sep_czrz:
         fminmax_cz = fminmax_cz[0], fymax_cz
     axs[2,1].set_ylim((fminmax_cz[0], fminmax_cz[1]))
 
-# Set some parameters defining all subplots
+    # ==================RADIATIVE ZONE=============
+    # plot total KE
+    axs[0,2].plot(xaxis, ke_rz, 'm', linewidth=lw)
+    axs[0,2].plot(xaxis, rke_rz, 'r', linewidth=lw)
+    axs[0,2].plot(xaxis, tke_rz, 'g', linewidth=lw)
+    axs[0,2].plot(xaxis, pke_rz, 'b', linewidth=lw)
 
+    # plot mean KE
+    axs[1,2].plot(xaxis, mke_rz, 'm', linewidth=lw)
+    axs[1,2].plot(xaxis, mrke_rz, 'r', linewidth=lw)
+    axs[1,2].plot(xaxis, mtke_rz, 'g', linewidth=lw)
+    axs[1,2].plot(xaxis, mpke_rz, 'b', linewidth=lw)
+
+    # plot fluc KE
+    axs[2,2].plot(xaxis, fke_rz, 'k', linewidth=lw)
+    axs[2,2].plot(xaxis, frke_rz, 'r', linewidth=lw)
+    axs[2,2].plot(xaxis, ftke_rz, 'g', linewidth=lw)
+    axs[2,2].plot(xaxis, fpke_rz, 'b', linewidth=lw)
+
+    # If magnetic, plot magnetic energies!
+    if magnetism:
+        # plot total ME
+        axs[0,2].plot(xaxis, me_rz, 'm--', linewidth=lw)
+        axs[0,2].plot(xaxis, rme_rz, 'r--', linewidth=lw)
+        axs[0,2].plot(xaxis, tme_rz, 'g--', linewidth=lw)
+        axs[0,2].plot(xaxis, pme_rz, 'b--', linewidth=lw)
+
+        # plot mean ME
+        axs[1,2].plot(xaxis, mme_rz, 'm--', linewidth=lw)
+        axs[1,2].plot(xaxis, mrme_rz, 'r--', linewidth=lw)
+        axs[1,2].plot(xaxis, mtme_rz, 'g--', linewidth=lw)
+        axs[1,2].plot(xaxis, mpme_rz, 'b--', linewidth=lw)
+
+        # plot fluc ME
+        axs[2,2].plot(xaxis, fme_rz, 'k--', linewidth=lw)
+        axs[2,2].plot(xaxis, frme_rz, 'r--', linewidth=lw)
+        axs[2,2].plot(xaxis, ftme_rz, 'g--', linewidth=lw)
+        axs[2,2].plot(xaxis, fpme_rz, 'b--', linewidth=lw)
+
+    # See if various internal/total energies should be plotted
+    if plot_inte:
+        axs[0,2].plot(xaxis, inte_rz, 'c', linewidth=lw)
+        axs[1,2].plot(xaxis, inte_rz, 'c', linewidth=lw)
+    if plot_tote:
+        axs[0,2].plot(xaxis, tote_rz, 'k', linewidth=lw)
+        axs[1,2].plot(xaxis, mtote_rz, 'k', linewidth=lw)
+        axs[2,2].plot(xaxis, ftote_rz, 'k', linewidth=lw)
+
+        # Label energy leaks with rate of leak and dashed line
+        # full
+        ax = axs[0,2]
+        ax.text(leak_label_x, leak_label_y, leak_label %dEdt_rz,\
+                va='bottom', ha='right', transform=ax.transAxes)
+        ax.plot(xaxis[it_leak:], m_leak_rz*times_leak + b_leak_rz, 'r--') 
+        # mean
+        ax = axs[1,2]
+        ax.text(leak_label_x, leak_label_y, leak_label %mdEdt_rz,\
+                va='bottom', ha='right', transform=ax.transAxes)
+        ax.plot(xaxis[it_leak:], mm_leak_rz*times_leak + mb_leak_rz, 'r--') 
+        # fluc
+        ax = axs[2,2]
+        ax.text(leak_label_x, leak_label_y, leak_label %fdEdt_rz,\
+                va='bottom', ha='right', transform=ax.transAxes)
+        ax.plot(xaxis[it_leak:], fm_leak_rz*times_leak + fb_leak_rz, 'r--') 
+
+    # set y-axis limits
+    # take into account buffer for legend and leak labels
+    # full flows
+    if minmax_rz is None:
+        if magnetism and not dyn: mes = rme_rz, tme_rz, pme_rz
+        minmax_rz = get_minmax(axs[0,2], ylog=ylog, withleg=True,\
+                dyn=dyn, mes=mes)
+    if not ymin_rz is None:
+        minmax_rz = ymin_rz, minmax_rz[1]
+    if not ymax_rz is None:
+        minmax_rz = minmax_rz[0], ymax_rz
+    axs[0,2].set_ylim((minmax_rz[0], minmax_rz[1]))
+    # mean flows
+    if mminmax_rz is None:
+        if magnetism and not dyn: mes = mrme_rz, mtme_rz, mpme_rz
+        mminmax_rz = get_minmax(axs[1,2], ylog=ylog, withleg=True,\
+                dyn=dyn, mes=mes)
+    if not mymin_rz is None:
+        mminmax_rz = mymin_rz, mminmax_rz[1]
+    if not mymax_rz is None:
+        mminmax_rz = mminmax_rz[0], mymax_rz
+    axs[1,2].set_ylim((mminmax_rz[0], mminmax_rz[1]))
+    # fluc flows
+    if fminmax_rz is None:
+        if magnetism and not dyn: mes = frme_rz, ftme_rz, fpme_rz
+        fminmax_rz = get_minmax(axs[2,2], ylog=ylog, withleg=True,\
+                dyn=dyn, mes=mes)
+    if not fymin_rz is None:
+        fminmax_rz = fymin_rz, fminmax_rz[1]
+    if not fymax_rz is None:
+        fminmax_rz = fminmax_rz[0], fymax_rz
+    axs[2,2].set_ylim((fminmax_rz[0], fminmax_rz[1]))
+
+# Set some parameters defining all subplots
 # x limits and label
 axs[0,0].set_xlim((xminmax[0], xminmax[1]))
 if xiter:
