@@ -10,7 +10,7 @@ sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
 from subprocess import call
 from common import get_file_lists, get_widest_range_file, strip_dirname,\
-        get_dict
+        get_dict, get_lum
 from get_parameter import get_parameter
 from rayleigh_diagnostics import GridInfo
 from time_scales import compute_Prot, compute_tdt
@@ -32,26 +32,38 @@ the_file = None
 # Set defaults
 xiter = False
 from0 = False
-magnetism = False
+magnetism = None
 ylog = False
 
 minmax = None
-fminmax = None
-mminmax = None
 ymin = None
 ymax = None
+mminmax = None
+mymin = None
+mymax = None
+fminmax = None
+fymin = None
+fymax = None
 
 minmax_cz = None
-fminmax_cz = None
-mminmax_cz = None
 ymin_cz = None
 ymax_cz = None
+mminmax_cz = None
+mymin_cz = None
+mymax_cz = None
+fminmax_cz = None
+fymin_cz = None
+fymax_cz = None
 
 minmax_rz = None
-fminmax_rz = None
-mminmax_rz = None
 ymin_rz = None
 ymax_rz = None
+mminmax_rz = None
+mymin_rz = None
+mymax_rz = None
+fminmax_rz = None
+fymin_rz = None
+fymax_rz = None
 
 xminmax = None
 xmin = None
@@ -72,7 +84,6 @@ mtol = 0.9 # for exponential growth need a HIGH tolerance
 plot_equil_time = False
 plot_mag_equil_time = False
 chosen_eqtime = None # choose eq time a priori
-leg_loc = 'best'
 tag = ''
 
 # Get command-line arguments
@@ -88,42 +99,66 @@ for i in range(nargs):
     elif arg == '-from0':
         from0 = True
     elif arg == '-mag':
-        magnetism = True
+        magnetism = bool(args[i+1])
     elif arg == '-log':
         ylog = True
 
     elif arg == '-minmax':
         minmax = float(args[i+1]), float(args[i+2])
-    elif arg == '-fminmax':
-        fminmax = float(args[i+1]), float(args[i+2])
-    elif arg == '-mminmax':
-        mminmax = float(args[i+1]), float(args[i+2])
     elif arg == '-min':
         ymin = float(args[i+1])
     elif arg == '-max':
         ymax = float(args[i+1])
+    elif arg == '-mminmax':
+        mminmax = float(args[i+1]), float(args[i+2])
+    elif arg == '-mmin':
+        mymin = float(args[i+1])
+    elif arg == '-mmax':
+        mymax = float(args[i+1])
+    elif arg == '-fminmax':
+        fminmax = float(args[i+1]), float(args[i+2])
+    elif arg == '-fmin':
+        fymin = float(args[i+1])
+    elif arg == '-fmax':
+        fymax = float(args[i+1])
 
     elif arg == '-minmaxcz':
         minmax_cz = float(args[i+1]), float(args[i+2])
-    elif arg == '-fminmaxcz':
-        fminmax_cz = float(args[i+1]), float(args[i+2])
-    elif arg == '-mminmaxcz':
-        mminmax_cz = float(args[i+1]), float(args[i+2])
     elif arg == '-mincz':
         ymin_cz = float(args[i+1])
     elif arg == '-maxcz':
         ymax_cz = float(args[i+1])
+    elif arg == '-mminmaxcz':
+        mminmax_cz = float(args[i+1]), float(args[i+2])
+    elif arg == '-mmincz':
+        mymin_cz = float(args[i+1])
+    elif arg == '-mmaxcz':
+        mymax_cz = float(args[i+1])
+    elif arg == '-fminmaxcz':
+        fminmax_cz = float(args[i+1]), float(args[i+2])
+    elif arg == '-fmincz':
+        fymin_cz = float(args[i+1])
+    elif arg == '-fmaxcz':
+        fymax_cz = float(args[i+1])
 
     elif arg == '-minmaxrz':
         minmax_rz = float(args[i+1]), float(args[i+2])
-    elif arg == '-fminmaxrz':
-        fminmax_rz = float(args[i+1]), float(args[i+2])
-    elif arg == '-mminmaxrz':
-        mminmax_rz = float(args[i+1]), float(args[i+2])
     elif arg == '-minrz':
         ymin_rz = float(args[i+1])
     elif arg == '-maxrz':
         ymax_rz = float(args[i+1])
+    elif arg == '-mminmaxrz':
+        mminmax_rz = float(args[i+1]), float(args[i+2])
+    elif arg == '-mminrz':
+        mymin_rz = float(args[i+1])
+    elif arg == '-mmaxrz':
+        mymax_rz = float(args[i+1])
+    elif arg == '-fminmaxrz':
+        fminmax_rz = float(args[i+1]), float(args[i+2])
+    elif arg == '-fminrz':
+        fymin_rz = float(args[i+1])
+    elif arg == '-fmaxrz':
+        fymax_rz = float(args[i+1])
 
     elif arg == '-xminmax':
         xminmax = float(args[i+1]), float(args[i+2])
@@ -158,10 +193,12 @@ for i in range(nargs):
         plot_mag_equil_time = True
     elif arg == '-eqtime':
         chosen_eqtime = float(args[i+1])
-    elif arg == '-legloc':
-        leg_loc = args[i+1]
     elif arg == '-tag':
         tag = '_' + args[i+1]
+
+# by default determine magnetism from main_input
+if magnetism is None:
+    magnetism = get_parameter(dirname, 'magnetism')
 
 # Tag the plot by whether or not the x axis is in "time" or "iteration"
 if xiter and tag == '':
@@ -278,31 +315,32 @@ if inte_subt:
     inte_cz = vals_cz[:, lut[4001]]
     inte_rz = vals_rz[:, lut[4001]]
     print("Got SUBT internal energy trace from trace_2dom_G_Avgs")
-    inte_label = "INTE SUBT"
+    inte_label = "IE SUBT"
 elif inte_subb:
     inte = vals[:, lut[4002]]
     inte_cz = vals_cz[:, lut[4002]]
     inte_rz = vals_rz[:, lut[4002]]
     print("Got SUBB internal energy trace from trace_2dom_G_Avgs")
-    inte_label = "INTE SUBB"
-elif inte_gtr2: # inte not from trace_G_Avgs
+    inte_label = "IE SUBB"
+elif inte_gtr2 or (plot_inte and sep_czrz): # inte not from trace_G_Avgs
     inte = vals[:, lut[4000]]
     inte_cz = vals_cz[:, lut[4000]]
     inte_rz = vals_rz[:, lut[4000]]
     print("Got internal energy trace from trace_2dom_G_Avgs")
-    inte_label = "INTE W/ DRIFT"
+    inte_label = "IE W/ DRIFT"
 elif plot_inte or plot_tote: 
     # try to get inte from trace_G_Avgs
     try:
         inte = vals[:, lut[701]][ixmin:ixmax + 1]
         print("Got internal energy trace from trace_G_Avgs")
-        inte_label = "INTE W/ DRIFT"
+        inte_label = "IE W/ DRIFT"
     except:
         # if not available in trace_G_Avgs, set inte to zero 
         print ("Internal energy trace not available; setting to 0")
         inte = np.zeros_like(times)
-        inte_label = "INTE NOT FOUND"
+        inte_label = "IE NOT FOUND"
 
+# Get total energy if desired
 if plot_tote:
     tote = ke + inte
     ftote = np.copy(fke)
@@ -311,6 +349,33 @@ if plot_tote:
         tote += me
         mtote += mme
         ftote += fme
+
+    # Will need to compute "energy leaks":
+    frac = 1./4. # compute leak averaged over last quarter of simulation
+    it_leak = np.argmin(np.abs((times - t1) - (1. - frac)*(t2 - t1)))
+
+    # get grid information
+    gi = GridInfo(dirname + '/grid_info', '')
+    ri, ro = np.min(gi.radius), np.max(gi.radius)
+    shell_volume = 4./3.*np.pi*(ro**3. - ri**3.)
+
+    # Compute leaks (full shell)
+    # best fit line to last part of trace:
+    times_leak = np.copy(times[it_leak:])
+    tote_leak = np.copy(tote[it_leak:])
+    mtote_leak = np.copy(mtote[it_leak:])
+    ftote_leak = np.copy(ftote[it_leak:])
+    
+    m_leak, b_leak = np.polyfit(times_leak, tote_leak, 1)
+    mm_leak, mb_leak = np.polyfit(times_leak, mtote_leak, 1)
+    fm_leak, fb_leak = np.polyfit(times_leak, ftote_leak, 1)
+
+    # use units of the stellar luminosity
+    lstar = get_lum(dirname)
+    dEdt = m_leak*shell_volume/lstar 
+    # m_leak represents leak in energy DENSITY
+    mdEdt = mm_leak*shell_volume/lstar
+    fdEdt = fm_leak*shell_volume/lstar
 
 if sep_czrz:
     # Get energy densities (CZ and RZ separately)
@@ -378,7 +443,7 @@ if sep_czrz:
 
     # Separated internal energies already taken care of
 
-    # Get total energies if desired
+    # see if we desire total energies
     if plot_tote:
         tote_cz = ke_cz + inte_cz
         tote_rz = ke_rz + inte_rz
@@ -390,6 +455,47 @@ if sep_czrz:
         if magnetism:
             tote_cz += me_cz
 
+        # radial integration weights for leaks
+        rw = gi.rweights
+        nr = gi.nr
+        nr_cz = get_parameter(dirname, 'ncheby')[1]
+        nr_rz = nr - nr_cz
+        rw_cz = np.copy(rw[:nr_cz])
+        rw_rz = np.copy(rw[nr_cz:])
+        rw_cz /= np.sum(rw_cz)
+        rw_rz /= np.sum(rw_rz)
+        
+        # zone volumes
+        rbcz = gi.radius[nr_cz - 1]
+        shell_volume_cz = 4./3.*np.pi*(ro**3. - rbcz**3.)
+        shell_volume_rz = 4./3.*np.pi*(rbcz**3. - ri**3.)
+
+        # Compute leaks (CZ)
+        tote_leak_cz = np.copy(tote_cz[it_leak:])
+        mtote_leak_cz = np.copy(mtote_cz[it_leak:])
+        ftote_leak_cz = np.copy(ftote_cz[it_leak:])
+        
+        m_leak_cz, b_leak_cz = np.polyfit(times_leak, tote_leak_cz, 1)
+        mm_leak_cz, mb_leak_cz = np.polyfit(times_leak, mtote_leak_cz, 1)
+        fm_leak_cz, fb_leak_cz = np.polyfit(times_leak, ftote_leak_cz, 1)
+
+        dEdt_cz = m_leak_cz*shell_volume_cz/lstar 
+        mdEdt_cz = mm_leak_cz*shell_volume_cz/lstar
+        fdEdt_cz = fm_leak_cz*shell_volume_cz/lstar
+
+        # Compute leaks (RZ)
+        tote_leak_rz = np.copy(tote_rz[it_leak:])
+        mtote_leak_rz = np.copy(mtote_rz[it_leak:])
+        ftote_leak_rz = np.copy(ftote_rz[it_leak:])
+        
+        m_leak_rz, b_leak_rz = np.polyfit(times_leak, tote_leak_rz, 1)
+        mm_leak_rz, mb_leak_rz = np.polyfit(times_leak, mtote_leak_rz, 1)
+        fm_leak_rz, fb_leak_rz = np.polyfit(times_leak, ftote_leak_rz, 1)
+
+        dEdt_rz = m_leak_rz*shell_volume_rz/lstar 
+        mdEdt_rz = mm_leak_rz*shell_volume_rz/lstar
+        fdEdt_rz = fm_leak_rz*shell_volume_rz/lstar
+  
 # create figure with 3-panel columns (total, mean and fluctuating energy)
 # 1 column if only full energies desired
 # 3 columns if CZ/RZ separation desired
@@ -405,80 +511,241 @@ if ncol == 1: # need the axis array to consistently be doubly indexed
 # Make thin lines to see structure of variation
 lw = 0.5
 
-# first plot: total kinetic energy trace      
-axs[0,0].plot(xaxis, ke, 'm', linewidth=lw, label=r'$\rm{KE_{tot}}$')
-axs[0,0].plot(xaxis, rke, 'r', linewidth=lw, label=r'$\rm{KE}_r$')
-axs[0,0].plot(xaxis, tke, 'g', linewidth=lw, label=r'$\rm{KE}_\theta$')
-axs[0,0].plot(xaxis, pke, 'b', linewidth=lw, label=r'$\rm{KE}_\phi$')
+# See if y-axis should be on log scale (must do this before setting limits)
+# Make all axes use scientific notation (except for y if ylog=True)
+if ylog:
+    for ax in axs.flatten():
+        ax.set_yscale('log')
+        ax.ticklabel_format(axis='x', scilimits=(-3,4), useMathText=True)
+else:
+    for ax in axs.flatten():
+        ax.ticklabel_format(scilimits = (-3,4), useMathText=True)
+
+
+# FIRST, TOTAL ENERGIES (IN BOTH ZONES)
+# plot total KE
+axs[0,0].plot(xaxis, ke, 'm', linewidth=lw, label=r'$\rm{K(M)E_{tot}}$')
+axs[0,0].plot(xaxis, rke, 'r', linewidth=lw, label=r'$\rm{K(M)E_r}$')
+axs[0,0].plot(xaxis, tke, 'g', linewidth=lw, label=r'$\rm{K(M)E_\theta}$')
+axs[0,0].plot(xaxis, pke, 'b', linewidth=lw, label=r'$\rm{K(M)E_\phi}$')
+
+# plot mean KE
+axs[1,0].plot(xaxis, mke, 'm', linewidth=lw)
+axs[1,0].plot(xaxis, mrke, 'r', linewidth=lw)
+axs[1,0].plot(xaxis, mtke, 'g', linewidth=lw)
+axs[1,0].plot(xaxis, mpke, 'b', linewidth=lw)
+
+# plot fluc KE
+axs[2,0].plot(xaxis, fke, 'm', linewidth=lw)
+axs[2,0].plot(xaxis, frke, 'r', linewidth=lw)
+axs[2,0].plot(xaxis, ftke, 'g', linewidth=lw)
+axs[2,0].plot(xaxis, fpke, 'b', linewidth=lw)
 
 # If magnetic, plot magnetic energies!
 if magnetism:
-    axs[0,0].plot(xaxis, me, 'm--', linewidth=lw, label=r'$\rm{ME_{tot}}$')
-    axs[0,0].plot(xaxis, rme, 'r--', linewidth=lw, label=r'$\rm{ME}_r$')
-    axs[0,0].plot(xaxis, tme, 'g--', linewidth=lw,\
-            label=r'$\rm{ME}_\theta$')
-    axs[0,0].plot(xaxis, pme, 'b--', linewidth=lw, label=r'$\rm{ME}_\phi$')
+    # plot total ME
+    axs[0,0].plot(xaxis, me, 'm--', linewidth=lw)
+    axs[0,0].plot(xaxis, rme, 'r--', linewidth=lw)
+    axs[0,0].plot(xaxis, tme, 'g--', linewidth=lw)
+    axs[0,0].plot(xaxis, pme, 'b--', linewidth=lw)
+    #axs[0,0].plot(xaxis, me, 'm--', linewidth=lw, label=r'$\rm{ME_{tot}}$')
+    #axs[0,0].plot(xaxis, rme, 'r--', linewidth=lw, label=r'$\rm{ME_r}$')
+    #axs[0,0].plot(xaxis, tme, 'g--', linewidth=lw,\
+    #        label=r'$\rm{ME_\theta}$')
+    #axs[0,0].plot(xaxis, pme, 'b--', linewidth=lw, label=r'$\rm{ME_\phi}$')
+
+    # plot mean ME
+    axs[1,0].plot(xaxis, mme, 'm--', linewidth=lw)
+    axs[1,0].plot(xaxis, mrme, 'r--', linewidth=lw)
+    axs[1,0].plot(xaxis, mtme, 'g--', linewidth=lw)
+    axs[1,0].plot(xaxis, mpme, 'b--', linewidth=lw)
+
+    # plot fluc ME
+    axs[2,0].plot(xaxis, fme, 'm--', linewidth=lw)
+    axs[2,0].plot(xaxis, frme, 'r--', linewidth=lw)
+    axs[2,0].plot(xaxis, ftme, 'g--', linewidth=lw)
+    axs[2,0].plot(xaxis, fpme, 'b--', linewidth=lw)
 
 # See if various internal/total energies should be plotted
 if plot_inte:
     axs[0,0].plot(xaxis, inte, 'c', linewidth=lw, label=inte_label)
+    axs[1,0].plot(xaxis, inte, 'c', linewidth=lw)
 if plot_tote:
-    axs[0,0].plot(xaxis, tote, 'k', linewidth=lw, label='TOT E')
+    axs[0,0].plot(xaxis, tote, 'k', linewidth=lw, label=r'$\rm{IE}$')
+    axs[1,0].plot(xaxis, mtote, 'k', linewidth=lw)
+    axs[2,0].plot(xaxis, ftote, 'k', linewidth=lw)
 
-# Label trace interval
-if rotation:
-    time_string = ('t = %.1f to %.1f ' %(t1/time_unit, t2/time_unit))\
-            + time_label + (r'$\ (\Delta t = %.1f\ $'\
-            %((t2 - t1)/time_unit)) + time_label + ')'
-else:
-    time_string = ('t = %.3f to %.3f ' %(t1/time_unit, t2/time_unit))\
-            + time_label + (r'$\ (\Delta t = %.3f\ $'\
-            %((t2 - t1)/time_unit)) + time_label + ')'
+    # Label energy leaks with rate of leak and dashed line
+    leak_label = r'$\rm{(\overline{dE/dt})/L_* = %05.3f}$'
+    leak_label_x = 0.99
+    leak_label_y = 0.01
+    ax = axs[0,0]
+    ax.text(leak_label_x, leak_label_y, leak_label %dEdt,\
+            va='bottom', ha='right', transform=ax.transAxes)
+    ax.plot(xaxis[it_leak:], m_leak*times_leak + b_leak, 'k--') 
 
-# Make title
-title = dirname_stripped + '\n ' + time_string +\
-          '\ntotal energy'
-if plot_tote:
-    # Compute change in energy over time, to add to label
-    # Average over the last hundred rotations 
-    # (1 diffusion time, if nonrotating)
-    # or all time, whichever is shorter
-    if rotation:
-        num = 100.
+# put a legend on the upper left axis
+axs[0,0].legend(loc='lower left', ncol=3, fontsize=8)
+
+# set y-axis limits
+# take into account buffer for legend and leak labels
+def get_minmax(ax, ylog=False, plot_tote=False, withleg=False):
+    if withleg: # extra room for legend
+        buff_frac = 0.3
     else:
-        num = 1.
-    it_first = np.argmin(np.abs(times/time_unit - (t2/time_unit - num)))
+        buff_frac = 0.1
+    ymin_current, ymax_current = ax.get_ylim()
+    if plot_tote: # only need buffer in this case
+        if ylog:
+            yratio = ymax_current/ymin_current
+            ymin_new = ymin_current/(yratio**buff_frac)
+        else:
+            ydiff = ymax_current - ymin_current
+            ymin_new = ymin_current - buff_frac*ydiff
+    else:
+        ymin_new = ymin_current
+    return ymin_new, ymax_current
 
-    gi = GridInfo(dirname + '/grid_info')
-    ri, ro = np.min(gi.radius), np.max(gi.radius)
-    shell_volume = 4/3*np.pi*(ro**3 - ri**3)
-    dE = (tote[-1] - tote[it_first])*shell_volume
-    dt = times[-1] - times[it_first]
-    title += (('\nTOT E: ' + r'$\rm{\Delta E/\Delta t = %1.3e\ cgs}$')\
-            %(dE/dt))
-
-axs[0,0].set_title(title)
-
-# See if y-axis should be on log scale
-# Make axes use scientific notation
-if ylog:
-    for ax in axs[:, 0]:
-        ax.set_yscale('log')
-        ax.ticklabel_format(axis='x', scilimits = (-3,4), useMathText=True)
-else:
-    for ax in axs[:, 0]:
-        ax.ticklabel_format(scilimits = (-3,4), useMathText=True)
-
-#  set axis limits
-axs[0,0].set_xlim((xminmax[0], xminmax[1]))
 if minmax is None:
-    minmax = axs[0, 0].get_ylim()
-# Change JUST ymin or ymax, if desired
+    minmax = get_minmax(axs[0,0], ylog=ylog, plot_tote=plot_tote,\
+            withleg=True)
 if not ymin is None:
     minmax = ymin, minmax[1]
 if not ymax is None:
     minmax = minmax[0], ymax
 axs[0,0].set_ylim((minmax[0], minmax[1]))
+
+# mean flows
+if mminmax is None:
+    mminmax = get_minmax(axs[1,0], ylog=ylog, plot_tote=plot_tote)
+if not mymin is None:
+    mminmax = mymin, mminmax[1]
+if not mymax is None:
+    mminmax = mminmax[0], mymax
+axs[1,0].set_ylim((minmax[0], mminmax[1]))
+
+# fluc flows
+if fminmax is None:
+    fminmax = get_minmax(axs[2,0], ylog=ylog, plot_tote=plot_tote)
+if not fymin is None:
+    fminmax = fymin, fminmax[1]
+if not fymax is None:
+    fminmax = fminmax[0], fymax
+axs[2,0].set_ylim((fminmax[0], fminmax[1]))
+
+# NOW POSSIBLY, SEPARATE ENERGIES IN CZ AND RZ
+if sep_czrz:
+    # CZ
+    # plot total KE
+    axs[0,1].plot(xaxis, ke_cz, 'm', linewidth=lw)
+    axs[0,1].plot(xaxis, rke_cz, 'r', linewidth=lw)
+    axs[0,1].plot(xaxis, tke_cz, 'g', linewidth=lw)
+    axs[0,1].plot(xaxis, pke_cz, 'b', linewidth=lw)
+
+    # plot mean KE
+    axs[1,1].plot(xaxis, mke_cz, 'm', linewidth=lw)
+    axs[1,1].plot(xaxis, mrke_cz, 'r', linewidth=lw)
+    axs[1,1].plot(xaxis, mtke_cz, 'g', linewidth=lw)
+    axs[1,1].plot(xaxis, mpke_cz, 'b', linewidth=lw)
+
+    # plot fluc KE
+    axs[2,1].plot(xaxis, fke_cz, 'k', linewidth=lw)
+    axs[2,1].plot(xaxis, frke_cz, 'r', linewidth=lw)
+    axs[2,1].plot(xaxis, ftke_cz, 'g', linewidth=lw)
+    axs[2,1].plot(xaxis, fpke_cz, 'b', linewidth=lw)
+
+    # If magnetic, plot magnetic energies!
+    if magnetism:
+        # plot total ME
+        axs[0,1].plot(xaxis, me_cz, 'm--', linewidth=lw)
+        axs[0,1].plot(xaxis, rme_cz, 'r--', linewidth=lw)
+        axs[0,1].plot(xaxis, tme_cz, 'g--', linewidth=lw)
+        axs[0,1].plot(xaxis, pme_cz, 'b--', linewidth=lw)
+
+        # plot mean ME
+        axs[1,1].plot(xaxis, mme_cz, 'm--', linewidth=lw)
+        axs[1,1].plot(xaxis, mrme_cz, 'r--', linewidth=lw)
+        axs[1,1].plot(xaxis, mtme_cz, 'g--', linewidth=lw)
+        axs[1,1].plot(xaxis, mpme_cz, 'b--', linewidth=lw)
+
+        # plot fluc ME
+        axs[2,1].plot(xaxis, fme_cz, 'k--', linewidth=lw)
+        axs[2,1].plot(xaxis, frme_cz, 'r--', linewidth=lw)
+        axs[2,1].plot(xaxis, ftme_cz, 'g--', linewidth=lw)
+        axs[2,1].plot(xaxis, fpme_cz, 'b--', linewidth=lw)
+
+    # See if various internal/total energies should be plotted
+    if plot_inte:
+        axs[0,1].plot(xaxis, inte_cz, 'c', linewidth=lw)
+        axs[1,1].plot(xaxis, inte_cz, 'c', linewidth=lw)
+    if plot_tote:
+        axs[0,1].plot(xaxis, tote_cz, 'k', linewidth=lw)
+        axs[1,1].plot(xaxis, mtote_cz, 'k', linewidth=lw)
+        axs[2,1].plot(xaxis, ftote_cz, 'k', linewidth=lw)
+
+        # Label energy leaks with rate of leak and dashed line
+        ax = axs[0,1]
+        ax.text(leak_label_x, leak_label_y, leak_label %dEdt_cz,\
+                va='bottom', ha='right', transform=ax.transAxes)
+        ax.plot(xaxis[it_leak:], m_leak_cz*times_leak + b_leak_cz, 'k--') 
+
+    # set y-axis limits
+    if minmax_cz is None:
+        minmax_cz = get_minmax(axs[0,1], ylog=ylog, plot_tote=plot_tote)
+    if not ymin_cz is None:
+        minmax_cz = ymin_cz, minmax_cz[1]
+    if not ymax_cz is None:
+        minmax_cz = minmax_cz[0], ymax_cz
+    axs[0,1].set_ylim((minmax_cz[0], minmax_cz[1]))
+
+    # mean flows
+    if mminmax_cz is None:
+        mminmax_cz = get_minmax(axs[1,1], ylog=ylog, plot_tote=plot_tote)
+    if not mymin_cz is None:
+        mminmax_cz = mymin_cz, mminmax_cz[1]
+    if not mymax_cz is None:
+        mminmax_cz = mminmax_cz[0], mymax_cz
+    axs[1,1].set_ylim((mminmax_cz[0], mminmax_cz[1]))
+
+    # fluc flows
+    if fminmax_cz is None:
+        fminmax_cz = get_minmax(axs[2,1], ylog=ylog, plot_tote=plot_tote)
+    if not fymin_cz is None:
+        fminmax_cz = fymin_cz, fminmax_cz[1]
+    if not fymax_cz is None:
+        fminmax_cz = fminmax_cz[0], fymax_cz
+    axs[2,1].set_ylim((fminmax_cz[0], fminmax_cz[1]))
+
+# Set some parameters defining all subplots
+
+# x limits and label
+axs[0,0].set_xlim((xminmax[0], xminmax[1]))
+if xiter:
+    axs[2,0].set_xlabel('iteration #')
+else:
+    if rotation:
+        axs[2,0].set_xlabel(r'$\rm{t\ (P_{rot})}$')
+    else:
+        axs[2,0].set_xlabel(r'$\rm{t\ (T_{diff})}$')
+
+# y labels
+fs = 14
+axs[0,0].set_ylabel('full energy', fontsize=fs)
+axs[1,0].set_ylabel('mean energy', fontsize=fs)
+axs[2,0].set_ylabel('fluc energy', fontsize=fs)
+
+# Make titles
+if ncol == 1:
+    icol_mid = 0
+elif ncol == 3:
+    icol_mid = 1
+titles = ["ALL ZONES", "CZ", "RZ"]
+for icol in range(ncol):
+    if icol == icol_mid:
+        title = dirname_stripped + '\n\n ' + titles[icol]
+    else:
+        title = titles[icol]
+    axs[0, icol].set_title(title)
 
 # Calculate equilibration time (for KE) if desired
 if plot_equil_time:
@@ -539,63 +806,6 @@ if plot_mag_equil_time:
     axs[0,0].text(0.05*(x_equil - xminmax[0]),\
             0.95*me_equil, ('KE = %1.2e' %me_equil), ha='left', va='top')
 
-# legend
-axs[0,0].legend(ncol=2, fontsize=8, loc=leg_loc)
-
-# Make the second plot (energy of the mean motions)
-axs[1,0].plot(xaxis, mke, 'm', linewidth=lw)
-axs[1,0].plot(xaxis, mrke, 'r', linewidth=lw)
-axs[1,0].plot(xaxis, mtke, 'g', linewidth=lw)
-axs[1,0].plot(xaxis, mpke, 'b', linewidth=lw)
-
-# If magnetic, plot magnetic energies!
-if magnetism:
-    axs[1,0].plot(xaxis, mme, 'm--', linewidth=lw)
-    axs[1,0].plot(xaxis, mrme, 'r--', linewidth=lw)
-    axs[1,0].plot(xaxis, mtme, 'g--', linewidth=lw)
-    axs[1,0].plot(xaxis, mpme, 'b--', linewidth=lw)
-
-# See if various internal/total energies should be plotted
-if plot_inte:
-    axs[1,0].plot(xaxis, inte, 'c', linewidth=lw, label=inte_label)
-if plot_tote:
-    axs[1,0].plot(xaxis, mtote, 'k', linewidth=lw, label='TOT E')
-
-#  set axis limits
-if mminmax is None:
-    mminmax = axs[1,0].get_ylim()
-# Change JUST ymin or ymax, if desired
-if not ymin is None:
-    mminmax = ymin, mminmax[1]
-if not ymax is None:
-    mminmax = mminmax[0], ymax
-axs[1,0].set_ylim((mminmax[0], mminmax[1]))
-
-# Title and axis label
-axs[1,0].set_title('mean energy')
-
-# Put the y-label on the middle plot
-axs[1,0].set_ylabel(r'$\rm{energy\ density\ (erg}\ cm^{-3})$')
-
-# Third plot: fluctuating energy
-axs[2,0].plot(xaxis, fke, 'k', linewidth=lw)
-axs[2,0].plot(xaxis, frke, 'r', linewidth=lw)
-axs[2,0].plot(xaxis, ftke, 'g', linewidth=lw)
-axs[2,0].plot(xaxis, fpke, 'b', linewidth=lw)
-
-# If magnetic, plot magnetic energies!
-if magnetism:
-    axs[2,0].plot(xaxis, fme, 'k--', linewidth=lw)
-    axs[2,0].plot(xaxis, frme, 'r--', linewidth=lw)
-    axs[2,0].plot(xaxis, ftme, 'g--', linewidth=lw)
-    axs[2,0].plot(xaxis, fpme, 'b--', linewidth=lw)
-
-# See if various internal/total energies should be plotted
-if plot_tote:
-    axs[2,0].plot(xaxis, ftote, 'k', linewidth=lw, label='TOT E')
-
-# title and x-axis label
-axs[2,0].set_title('fluctuating energy')
 
 #  set axis limits
 if fminmax is None:
@@ -607,15 +817,6 @@ if not ymax is None:
     fminmax = fminmax[0], ymax
 axs[2,0].set_ylim((fminmax[0], fminmax[1]))
 
-# Put the x-axis label on the bottom
-if (xiter):
-    axs[2,0].set_xlabel('iteration #')
-else:
-    if rotation:
-        axs[2,0].set_xlabel(r'$\rm{t\ (P_{rot})}$')
-    else:
-        axs[2,0].set_xlabel(r'$\rm{t\ (T_{diff})}$')
-
 # Get ticks everywhere
 for ax in axs.flatten():
     plt.sca(ax)
@@ -623,8 +824,8 @@ for ax in axs.flatten():
     plt.tick_params(top=True, right=True, direction='in', which='both')
 
 # Space the subplots to make them look pretty
-plt.tight_layout
-plt.subplots_adjust(left=0.15, bottom=0.08, top=0.85, wspace=0.4)
+plt.tight_layout()
+#plt.subplots_adjust(left=0.15, bottom=0.08, top=0.85, wspace=0.4)
 
 if savename is None:
     savename = dirname_stripped + '_etrace_' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + tag + '.png'

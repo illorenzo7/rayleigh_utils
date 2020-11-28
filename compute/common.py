@@ -476,3 +476,21 @@ def fill_str(stri, lent, char):
     len_loc = len(stri)
     nfill = lent - len_loc
     return stri + char*nfill
+
+def get_lum(dirname):
+    # Make lstar = lsun unless otherwise specified in main_input
+    try:
+        # First see if we can get c_10 from equation_coefficients:
+        try:
+            eq = equation_coefficients()
+            eq.read(dirname + '/equation_coefficients')
+            lstar = eq.constants[9]
+            print("Got luminosity from 'equation_coefficients' file")
+        except: # otherwise get "luminosity" from main_input
+            lstar = get_parameter(dirname, 'luminosity')
+            print ("Got luminosity from 'main_input' file")
+    except:
+        lstar = lsun
+        print ("Cannot find luminosity in either 'equation_coefficients'")
+        print("or 'main_input' files. Setting luminosity to lsun.")
+    return lstar

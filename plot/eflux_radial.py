@@ -15,7 +15,7 @@ import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from common import get_widest_range_file, strip_dirname,\
-        get_iters_from_file, get_dict, rsun, lsun
+        get_iters_from_file, get_dict, rsun, get_lum
 from get_parameter import get_parameter
 from compute_grid_info import compute_theta_grid
 from time_scales import compute_Prot, compute_tdt
@@ -263,21 +263,7 @@ if rnorm is None:
 else:
     rr_n = rr/rnorm                                           
 
-# Make lstar = lsun unless otherwise specified in main_input
-try:
-    # First see if we can get c_10 from equation_coefficients:
-    try:
-        eq = equation_coefficients()
-        eq.read(dirname + '/equation_coefficients')
-        lstar = eq.constants[9]
-        print("Got luminosity from 'equation_coefficients' file")
-    except: # otherwise get "luminosity" from main_input
-        lstar = get_parameter(dirname, 'luminosity')
-        print ("Got luminosity from 'main_input' file")
-except:
-    lstar = lsun
-    print ("Cannot find luminosity in either 'equation_coefficients'")
-    print("or 'main_input' files. Setting luminosity to lsun.")
+lstar = get_lum(dirname)
 
 plt.plot(rr_n, hflux_int/lstar, label=r'$\rm{F}_{heat}$', linewidth=lw)
 plt.plot(rr_n, eflux_int/lstar, 'm', label = r'$\rm{F}_{enth}$',\
