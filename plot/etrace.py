@@ -14,6 +14,7 @@ from common import get_file_lists, get_widest_range_file, strip_dirname,\
 from get_parameter import get_parameter
 from rayleigh_diagnostics import GridInfo
 from time_scales import compute_Prot, compute_tdt
+from get_eq import get_eq
 
 # Get the run directory on which to perform the analysis
 dirname = sys.argv[1]
@@ -34,7 +35,12 @@ xiter = False
 from0 = False
 magnetism = None
 ylog = False
-
+dyn = False # by default adjust the min val to ignore super small 
+    # magnetic energies during dynamo growth when ylog=True
+mes = None
+subinte = True # by default shift the internal energies by a constant
+    # so they aren't so huge
+leak_frac = 1./4. # compute leak averaged over last quarter of simulation
 minmax = None
 ymin = None
 ymax = None
@@ -102,7 +108,12 @@ for i in range(nargs):
         magnetism = bool(args[i+1])
     elif arg == '-log':
         ylog = True
-
+    elif arg == '-dyn':
+        dyn = True
+    elif arg == '-fullinte':
+        subinte = False
+    elif arg == '-frac':
+        leak_frac = float(args[i+1])
     elif arg == '-minmax':
         minmax = float(args[i+1]), float(args[i+2])
     elif arg == '-min':
@@ -340,6 +351,38 @@ elif plot_inte or plot_tote:
         inte = np.zeros_like(times)
         inte_label = "IE NOT FOUND"
 
+# Get reference state in case it's needed
+eq = get_eq(dirname)
+rhot = eq.density*eq.temperature
+# radial integration weights for integrals of rho * T
+gi = GridInfo(dirname + '/grid_info', '')
+nr = gi.nr
+if sep_czrz:
+    nr_cz = get_parameter(dirname, 'ncheby')[1]
+    nr_rz = nr - nr_cz
+    rw = gi.rweights
+    rw_cz = np.copy(rw[:nr_cz])
+    rw_rz = np.copy(rw[nr_cz:])
+    rw_cz /= np.sum(rw_cz)
+    rw_rz /= np.sum(rw_rz)
+
+# possibly shift inte values to lie just above max ke
+if plot_inte and subinte:
+    min_inte = np.min(inte)
+    max_ke = np.max(ke)
+    diff = min_inte - max_ke
+    buff = max_ke*0.05
+    sub = diff - buff
+    inte -= sub
+    if sep_czrz:
+        # integrate rho * T
+        integ = np.sum(rw*rhot)
+        S0 = sub/integ # entropy associated with subtraction
+        integ_cz = np.sum(rw_cz*rhot[:nr_cz])
+        integ_rz = np.sum(rw_rz*rhot[nr_cz:])
+        inte_cz -= (S0*integ_cz)
+        inte_rz -= (S0*integ_rz)
+ 
 # Get total energy if desired
 if plot_tote:
     tote = ke + inte
@@ -351,13 +394,7 @@ if plot_tote:
         ftote += fme
 
     # Will need to compute "energy leaks":
-    frac = 1./4. # compute leak averaged over last quarter of simulation
-    it_leak = np.argmin(np.abs((times - t1) - (1. - frac)*(t2 - t1)))
-
-    # get grid information
-    gi = GridInfo(dirname + '/grid_info', '')
-    ri, ro = np.min(gi.radius), np.max(gi.radius)
-    shell_volume = 4./3.*np.pi*(ro**3. - ri**3.)
+    it_leak = np.argmin(np.abs((times - t1) - (1. - leak_frac)*(t2 - t1)))
 
     # Compute leaks (full shell)
     # best fit line to last part of trace:
@@ -372,8 +409,10 @@ if plot_tote:
 
     # use units of the stellar luminosity
     lstar = get_lum(dirname)
+    # m_leak represents leak in energy DENSITY (multiply by volume)
+    ri, ro = np.min(gi.radius), np.max(gi.radius)
+    shell_volume = 4./3.*np.pi*(ro**3. - ri**3.)
     dEdt = m_leak*shell_volume/lstar 
-    # m_leak represents leak in energy DENSITY
     mdEdt = mm_leak*shell_volume/lstar
     fdEdt = fm_leak*shell_volume/lstar
 
@@ -455,16 +494,6 @@ if sep_czrz:
         if magnetism:
             tote_cz += me_cz
 
-        # radial integration weights for leaks
-        rw = gi.rweights
-        nr = gi.nr
-        nr_cz = get_parameter(dirname, 'ncheby')[1]
-        nr_rz = nr - nr_cz
-        rw_cz = np.copy(rw[:nr_cz])
-        rw_rz = np.copy(rw[nr_cz:])
-        rw_cz /= np.sum(rw_cz)
-        rw_rz /= np.sum(rw_rz)
-        
         # zone volumes
         rbcz = gi.radius[nr_cz - 1]
         shell_volume_cz = 4./3.*np.pi*(ro**3. - rbcz**3.)
@@ -495,7 +524,7 @@ if sep_czrz:
         dEdt_rz = m_leak_rz*shell_volume_rz/lstar 
         mdEdt_rz = mm_leak_rz*shell_volume_rz/lstar
         fdEdt_rz = fm_leak_rz*shell_volume_rz/lstar
-  
+
 # create figure with 3-panel columns (total, mean and fluctuating energy)
 # 1 column if only full energies desired
 # 3 columns if CZ/RZ separation desired
@@ -524,10 +553,10 @@ else:
 
 # FIRST, TOTAL ENERGIES (IN BOTH ZONES)
 # plot total KE
-axs[0,0].plot(xaxis, ke, 'm', linewidth=lw, label=r'$\rm{K(M)E_{tot}}$')
-axs[0,0].plot(xaxis, rke, 'r', linewidth=lw, label=r'$\rm{K(M)E_r}$')
-axs[0,0].plot(xaxis, tke, 'g', linewidth=lw, label=r'$\rm{K(M)E_\theta}$')
-axs[0,0].plot(xaxis, pke, 'b', linewidth=lw, label=r'$\rm{K(M)E_\phi}$')
+axs[0,0].plot(xaxis, ke, 'm', linewidth=lw, label=r'$\rm{E_{tot}}$')
+axs[0,0].plot(xaxis, rke, 'r', linewidth=lw, label=r'$\rm{E_r}$')
+axs[0,0].plot(xaxis, tke, 'g', linewidth=lw, label=r'$\rm{E_\theta}$')
+axs[0,0].plot(xaxis, pke, 'b', linewidth=lw, label=r'$\rm{E_\phi}$')
 
 # plot mean KE
 axs[1,0].plot(xaxis, mke, 'm', linewidth=lw)
@@ -548,11 +577,6 @@ if magnetism:
     axs[0,0].plot(xaxis, rme, 'r--', linewidth=lw)
     axs[0,0].plot(xaxis, tme, 'g--', linewidth=lw)
     axs[0,0].plot(xaxis, pme, 'b--', linewidth=lw)
-    #axs[0,0].plot(xaxis, me, 'm--', linewidth=lw, label=r'$\rm{ME_{tot}}$')
-    #axs[0,0].plot(xaxis, rme, 'r--', linewidth=lw, label=r'$\rm{ME_r}$')
-    #axs[0,0].plot(xaxis, tme, 'g--', linewidth=lw,\
-    #        label=r'$\rm{ME_\theta}$')
-    #axs[0,0].plot(xaxis, pme, 'b--', linewidth=lw, label=r'$\rm{ME_\phi}$')
 
     # plot mean ME
     axs[1,0].plot(xaxis, mme, 'm--', linewidth=lw)
@@ -571,44 +595,63 @@ if plot_inte:
     axs[0,0].plot(xaxis, inte, 'c', linewidth=lw, label=inte_label)
     axs[1,0].plot(xaxis, inte, 'c', linewidth=lw)
 if plot_tote:
-    axs[0,0].plot(xaxis, tote, 'k', linewidth=lw, label=r'$\rm{IE}$')
+    axs[0,0].plot(xaxis, tote, 'k', linewidth=lw, label=r'$\rm{TE}$')
     axs[1,0].plot(xaxis, mtote, 'k', linewidth=lw)
     axs[2,0].plot(xaxis, ftote, 'k', linewidth=lw)
 
-    # Label energy leaks with rate of leak and dashed line
-    leak_label = r'$\rm{(\overline{dE/dt})/L_* = %05.3f}$'
+    # Label energy leaks with rate of leak and dashed red line
+    # full
+    leak_label = r'$\rm{(\overline{dE/dt})/L_* = %09.3e}$'
     leak_label_x = 0.99
     leak_label_y = 0.01
     ax = axs[0,0]
     ax.text(leak_label_x, leak_label_y, leak_label %dEdt,\
             va='bottom', ha='right', transform=ax.transAxes)
-    ax.plot(xaxis[it_leak:], m_leak*times_leak + b_leak, 'k--') 
+    ax.plot(xaxis[it_leak:], m_leak*times_leak + b_leak, 'r--') 
+    # mean
+    ax = axs[1,0]
+    ax.text(leak_label_x, leak_label_y, leak_label %mdEdt,\
+            va='bottom', ha='right', transform=ax.transAxes)
+    ax.plot(xaxis[it_leak:], mm_leak*times_leak + mb_leak, 'r--') 
+    # fluc
+    ax = axs[2,0]
+    ax.text(leak_label_x, leak_label_y, leak_label %fdEdt,\
+            va='bottom', ha='right', transform=ax.transAxes)
+    ax.plot(xaxis[it_leak:], fm_leak*times_leak + fb_leak, 'r--') 
 
 # put a legend on the upper left axis
-axs[0,0].legend(loc='lower left', ncol=3, fontsize=8)
+axs[0,0].legend(loc='lower left', ncol=3, fontsize=8, columnspacing=1)
 
 # set y-axis limits
 # take into account buffer for legend and leak labels
-def get_minmax(ax, ylog=False, plot_tote=False, withleg=False):
+def get_minmax(ax, ylog=False, withleg=False,\
+        dyn=True, mes=None):
     if withleg: # extra room for legend
         buff_frac = 0.3
     else:
         buff_frac = 0.1
     ymin_current, ymax_current = ax.get_ylim()
-    if plot_tote: # only need buffer in this case
-        if ylog:
+    if ylog:
+        if dyn:
             yratio = ymax_current/ymin_current
             ymin_new = ymin_current/(yratio**buff_frac)
         else:
-            ydiff = ymax_current - ymin_current
-            ymin_new = ymin_current - buff_frac*ydiff
+            # Get minimum mag energy over last half of dynamo
+            rme_loc, tme_loc, pme_loc = mes
+            ntimes_loc = len(rme_loc)
+            it_half = ntimes_loc//2
+            minme = min(np.min(rme_loc[it_half]),\
+                    np.min(rme_loc[it_half]), np.min(rme_loc[it_half]))
+            yratio = ymax_current/minme
+            ymin_new = minme/(yratio**buff_frac)
     else:
-        ymin_new = ymin_current
+        ydiff = ymax_current - ymin_current
+        ymin_new = ymin_current - buff_frac*ydiff
     return ymin_new, ymax_current
 
 if minmax is None:
-    minmax = get_minmax(axs[0,0], ylog=ylog, plot_tote=plot_tote,\
-            withleg=True)
+    if magnetism and not dyn: mes = rme, tme, pme
+    minmax = get_minmax(axs[0,0], ylog=ylog, withleg=True, dyn=dyn, mes=mes)
 if not ymin is None:
     minmax = ymin, minmax[1]
 if not ymax is None:
@@ -617,16 +660,20 @@ axs[0,0].set_ylim((minmax[0], minmax[1]))
 
 # mean flows
 if mminmax is None:
-    mminmax = get_minmax(axs[1,0], ylog=ylog, plot_tote=plot_tote)
+    if magnetism and not dyn: mes = mrme, mtme, mpme
+    mminmax = get_minmax(axs[1,0], ylog=ylog, withleg=True,\
+            dyn=dyn, mes=mes)
 if not mymin is None:
     mminmax = mymin, mminmax[1]
 if not mymax is None:
     mminmax = mminmax[0], mymax
-axs[1,0].set_ylim((minmax[0], mminmax[1]))
+axs[1,0].set_ylim((mminmax[0], mminmax[1]))
 
 # fluc flows
 if fminmax is None:
-    fminmax = get_minmax(axs[2,0], ylog=ylog, plot_tote=plot_tote)
+    if magnetism and not dyn: mes = frme, ftme, fpme
+    fminmax = get_minmax(axs[2,0], ylog=ylog, withleg=True,\
+            dyn=dyn, mes=mes)
 if not fymin is None:
     fminmax = fymin, fminmax[1]
 if not fymax is None:
@@ -684,32 +731,49 @@ if sep_czrz:
         axs[2,1].plot(xaxis, ftote_cz, 'k', linewidth=lw)
 
         # Label energy leaks with rate of leak and dashed line
+        # full
         ax = axs[0,1]
         ax.text(leak_label_x, leak_label_y, leak_label %dEdt_cz,\
                 va='bottom', ha='right', transform=ax.transAxes)
-        ax.plot(xaxis[it_leak:], m_leak_cz*times_leak + b_leak_cz, 'k--') 
+        ax.plot(xaxis[it_leak:], m_leak_cz*times_leak + b_leak_cz, 'r--') 
+        # mean
+        ax = axs[1,1]
+        ax.text(leak_label_x, leak_label_y, leak_label %mdEdt_cz,\
+                va='bottom', ha='right', transform=ax.transAxes)
+        ax.plot(xaxis[it_leak:], mm_leak_cz*times_leak + mb_leak_cz, 'r--') 
+        # fluc
+        ax = axs[2,1]
+        ax.text(leak_label_x, leak_label_y, leak_label %fdEdt_cz,\
+                va='bottom', ha='right', transform=ax.transAxes)
+        ax.plot(xaxis[it_leak:], fm_leak_cz*times_leak + fb_leak_cz, 'r--') 
 
     # set y-axis limits
+    # take into account buffer for legend and leak labels
+    # full flows
     if minmax_cz is None:
-        minmax_cz = get_minmax(axs[0,1], ylog=ylog, plot_tote=plot_tote)
+        if magnetism and not dyn: mes = rme_cz, tme_cz, pme_cz
+        minmax_cz = get_minmax(axs[0,1], ylog=ylog, withleg=True,\
+                dyn=dyn, mes=mes)
     if not ymin_cz is None:
         minmax_cz = ymin_cz, minmax_cz[1]
     if not ymax_cz is None:
         minmax_cz = minmax_cz[0], ymax_cz
     axs[0,1].set_ylim((minmax_cz[0], minmax_cz[1]))
-
     # mean flows
     if mminmax_cz is None:
-        mminmax_cz = get_minmax(axs[1,1], ylog=ylog, plot_tote=plot_tote)
+        if magnetism and not dyn: mes = mrme_cz, mtme_cz, mpme_cz
+        mminmax_cz = get_minmax(axs[1,1], ylog=ylog, withleg=True,\
+                dyn=dyn, mes=mes)
     if not mymin_cz is None:
         mminmax_cz = mymin_cz, mminmax_cz[1]
     if not mymax_cz is None:
         mminmax_cz = mminmax_cz[0], mymax_cz
     axs[1,1].set_ylim((mminmax_cz[0], mminmax_cz[1]))
-
     # fluc flows
     if fminmax_cz is None:
-        fminmax_cz = get_minmax(axs[2,1], ylog=ylog, plot_tote=plot_tote)
+        if magnetism and not dyn: mes = frme_cz, ftme_cz, fpme_cz
+        fminmax_cz = get_minmax(axs[2,1], ylog=ylog, withleg=True,\
+                dyn=dyn, mes=mes)
     if not fymin_cz is None:
         fminmax_cz = fymin_cz, fminmax_cz[1]
     if not fymax_cz is None:
