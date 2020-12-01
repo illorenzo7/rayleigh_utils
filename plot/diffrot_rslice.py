@@ -98,6 +98,7 @@ time_label = r'$\rm{P_{rot}}$'
 Om0 = 2.*np.pi/time_unit
 Om = vp_av/xx + Om0
 Om *= 1.0e9/2/np.pi # convert from rad/s --> nHz
+Om0 *= 1.0e9/2/np.pi # convert from rad/s --> nHz
 
 # Create the plot
 fig = plt.figure()
@@ -122,9 +123,12 @@ for theta_val in theta_vals:
     index = np.argmin(diffs)
     latitude = 90 - theta_val*180/np.pi
     ax.plot(rr_n, Om[index,:],\
-            label = r'$\rm{%2.1f}$' %latitude + r'$^\circ$')
+            label=r'$\rm{%2.1f}$' %latitude + r'$^\circ$')
     maxes.append(np.max(Om[index,:]))
     mins.append(np.min(Om[index,:]))
+
+# show the frame rotation rate
+plt.plot(rr_n, Om0 + np.zeros_like(rr_n), 'k--', label=r'$\Omega_0=%.1f\ \rm{nHz}$' %Om0)
 
 # Global extrema
 mmax = np.max(maxes)
