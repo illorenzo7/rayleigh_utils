@@ -1,5 +1,6 @@
 # Plot location of Chebyshev collocation points along with various radial
 # locations (see how many grid points are inside different zones)
+# revised 11/30/2020
 import matplotlib as mpl
 mpl.use('TkAgg')
 import matplotlib.pyplot as plt
@@ -18,6 +19,7 @@ rnorm = None
 rvals = None
 ncheby = None
 domain_bounds = None
+xminmax = None
 
 fname = 'grid_info'
 args = sys.argv[2:]
@@ -39,8 +41,8 @@ for i in range(nargs):
         for val_str in ncheby_str:
             ncheby.append(int(val_str))
         ncheby = tuple(ncheby)
-    elif arg == '-rminmax':
-        domain_bounds = (float(args[i+1]), float(args[i+2]))
+    elif arg == '-xminmax':
+        xminmax = np.float(args[i+1]), np.float(args[i+2])
     elif arg == '-dombounds':
         dombounds_str = args[i+1].split()
         domain_bounds = []
@@ -86,6 +88,7 @@ else:
 zero = np.zeros(nr)
 plt.scatter(rr_n, zero, color='k', s=.3)
 
+
 # Set the y-limits (to arbitrary (-1,1))
 ymin, ymax = -1, 1
 plt.ylim(ymin, ymax)
@@ -117,7 +120,12 @@ else:
     xmin /= rnorm
     xmax /= rnorm
     plt.xlabel(r'r/(%.1e cm)' %rnorm, fontsize=12, **csfont)
-plt.xlim(xmin, xmax)
+
+# Set the x limits
+if xminmax is None:
+    plt.xlim(xmin, xmax)
+else:
+    plt.xlim(xminmax[0], xminmax[1])
 
 # Display the plot
 plt.show()
