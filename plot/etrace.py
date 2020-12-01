@@ -696,7 +696,7 @@ if sep_czrz:
     axs[1,1].plot(xaxis, mpke_cz, 'b', linewidth=lw)
 
     # plot fluc KE
-    axs[2,1].plot(xaxis, fke_cz, 'k', linewidth=lw)
+    axs[2,1].plot(xaxis, fke_cz, 'm', linewidth=lw)
     axs[2,1].plot(xaxis, frke_cz, 'r', linewidth=lw)
     axs[2,1].plot(xaxis, ftke_cz, 'g', linewidth=lw)
     axs[2,1].plot(xaxis, fpke_cz, 'b', linewidth=lw)
@@ -794,7 +794,7 @@ if sep_czrz:
     axs[1,2].plot(xaxis, mpke_rz, 'b', linewidth=lw)
 
     # plot fluc KE
-    axs[2,2].plot(xaxis, fke_rz, 'k', linewidth=lw)
+    axs[2,2].plot(xaxis, fke_rz, 'm', linewidth=lw)
     axs[2,2].plot(xaxis, frke_rz, 'r', linewidth=lw)
     axs[2,2].plot(xaxis, ftke_rz, 'g', linewidth=lw)
     axs[2,2].plot(xaxis, fpke_rz, 'b', linewidth=lw)
