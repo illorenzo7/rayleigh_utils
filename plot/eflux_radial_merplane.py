@@ -55,7 +55,7 @@ linscale = None
 minmaxrz = None
 linthreshrz = None
 linscalerz = None
-AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
+the_file = get_widest_range_file(datadir, 'AZ_Avgs')
 forced = False
 rvals = None
 rbcz = None
@@ -76,8 +76,8 @@ for i in range(nargs):
     elif arg == '-nosave':
         saveplot = False
     elif arg == '-usefile':
-        AZ_Avgs_file = args[i+1]
-        AZ_Avgs_file = AZ_Avgs_file.split('/')[-1]
+        the_file = args[i+1]
+        the_file = the_file.split('/')[-1]
     elif arg == '-forced':
         forced = True
     elif arg == '-rvals':
@@ -107,13 +107,13 @@ magnetism = get_parameter(dirname, 'magnetism')
 
 # Get AZ_Avgs file
 print ('Getting radial energy fluxes (zonally averaged) from ' +\
-        datadir + AZ_Avgs_file + ' ...')
-di = get_dict(datadir + AZ_Avgs_file)
+        datadir + the_file)
+di = get_dict(datadir + the_file)
 
 # Get Shell_Avgs file
 Shell_Avgs_file = get_widest_range_file(datadir, 'Shell_Avgs')
 print ('Getting spherical averages from ' +\
-        datadir + Shell_Avgs_file + ' ...')
+        datadir + Shell_Avgs_file)
 di_sph = get_dict(datadir + Shell_Avgs_file)
 
 # Zonal average data
@@ -313,7 +313,7 @@ savefile = plotdir + dirname_stripped + '_eflux_radial_merplane_' +\
 
 if saveplot:
     print ('Saving radial energy fluxes (in the meridional plane) at ' +\
-       savefile + ' ...')
+       savefile)
     plt.savefig(savefile, dpi=300)
 if showplot:
     plt.show()
