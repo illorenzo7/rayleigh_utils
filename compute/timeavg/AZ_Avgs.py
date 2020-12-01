@@ -44,9 +44,9 @@ import numpy as np
 # data type and reading function
 import sys, os
 sys.path.append(os.environ['rapp'])
-from rayleigh_diagnostics import Shell_Avgs
-reading_func = Shell_Avgs
-dataname = 'Shell_Avgs'
+from rayleigh_diagnostics import AZ_Avgs
+reading_func = AZ_Avgs
+dataname = 'AZ_Avgs'
 
 if rank == 0:
     # modules needed only by proc 0 
@@ -104,11 +104,22 @@ if rank == 0:
 
     # get grid information
     rr = a0.radius
-    nr = a0.nr
     ri, ro = np.min(rr), np.max(rr)
     d = ro - ri
-    rr_height = (rr - ri)/d
     rr_depth = (ro - rr)/d
+    rr_height = (rr - ri)/d
+    sint = a0.sintheta
+    cost = a0.costheta
+    tt = np.arccos(cost)
+    tt_lat = (np.pi/2 - tt)*180/np.pi
+    nr = a0.nr
+    nt = a0.ntheta
+
+    # compute some derivative quantities for the grid
+    tt_2d, rr_2d = np.meshgrid(tt, rr, indexing='ij')
+    sint_2d = np.sin(tt_2d); cost_2d = np.cos(tt_2d)
+    xx = rr_2d*sint_2d
+    zz = rr_2d*cost_2d
 
     # Distribute file_list and my_ntimes to each process
     for k in range(nproc - 1, -1, -1):
@@ -138,10 +149,10 @@ else: # recieve my_files, my_nfiles, my_ntimes
 
 # Broadcast dirname, radatadir, nq, etc.
 if rank == 0:
-    meta = [dirname, radatadir, nq, nr, ntimes]
+    meta = [dirname, radatadir, nq, nt, nr, ntimes]
 else:
     meta = None
-dirname, radatadir, nq, nr, ntimes = comm.bcast(meta, root=0)
+dirname, radatadir, nq, nt, nr, ntimes = comm.bcast(meta, root=0)
 
 # Checkpoint and time
 comm.Barrier()
@@ -155,7 +166,7 @@ if rank == 0:
     t1 = time.time()
 
 # Now analyze the data
-my_vals = np.zeros((nr, nq))
+my_vals = np.zeros((nt, nr, nq))
 # "my_vals will be a weighted sum"
 my_weight = my_ntimes/ntimes
 
@@ -166,7 +177,7 @@ for i in range(my_nfiles):
         a = reading_func(radatadir + str(my_files[i]).zfill(8), '')
     # take mean along the time axis;
     # get the spherical average (not rms/skew/kurt)
-    my_vals = np.mean(a.vals[:, 0, :, :], axis=2)*my_weight
+    my_vals = np.mean(a.vals, axis=3)*my_weight
     if rank == 0:
         pcnt_done = (i + 1)/my_nfiles*100.
         print(fill_str('computing', lent, char) +\
@@ -185,7 +196,7 @@ if rank == 0:
 # proc 0 now collects the results from each process
 if rank == 0:
     # Initialize zero-filled 'vals' array to store the data
-    vals = np.zeros((nr, nq))
+    vals = np.zeros((nt, nr, nq))
 
     # Gather the results into this "master" array
     for j in range(nproc):
@@ -211,7 +222,7 @@ if rank == 0:
     # Set the timetrace savename by the directory, what we are saving,
     # and first and last iteration files for the trace
     dirname_stripped = strip_dirname(dirname)
-    savename = dirname_stripped + '_Shell_Avgs_' +\
+    savename = dirname_stripped + '_AZ_Avgs_' +\
             file_list[0] + '_' + file_list[-1] + '.pkl'
     savefile = datadir + savename
 
@@ -219,7 +230,7 @@ if rank == 0:
     # Get first and last iters of files
     iter1, iter2 = int_file_list[0], int_file_list[-1]
     f = open(savefile, 'wb')
-    pickle.dump({'vals': vals, 'lut': a0.lut, 'count': ntimes, 'iter1': iter1, 'iter2': iter2, 'qv': a0.qv, 'nq': a0.nq, 'rr': rr, 'rr_depth': rr_depth, 'rr_height': rr_height, 'nr': nr, 'ri': ri, 'ro': ro, 'd': d}, f, protocol=4)
+    pickle.dump({'vals': vals, 'lut': a0.lut, 'count': ntimes, 'iter1': iter1, 'iter2': iter2, 'qv': a0.qv, 'nq': a0.nq,  'rr': rr, 'rr_depth': rr_depth, 'rr_height': rr_height, 'nr': nr, 'ri': ri, 'ro': ro, 'd': d, 'tt': tt, 'tt_lat': tt_lat, 'sint': sint, 'cost': cost,'nt': nt, 'rr_2d': rr_2d, 'tt_2d': tt_2d, 'sint_2d': sint_2d, 'cost_2d': cost_2d, 'xx': xx, 'zz': zz}, f, protocol=4)
     f.close()
     t2 = time.time()
     print ('%8.2e s' %(t2 - t1))
