@@ -281,10 +281,10 @@ iters = iters[ixmin:ixmax+1]
 t1 = times[0]
 t2 = times[-1]
 
-vals = vals[:, ixmin:ixmax+1]
+vals = vals[ixmin:ixmax+1, :]
 if sep_czrz:
-    vals_cz = vals_cz[:, ixmin:ixmax+1]
-    vals_cz = vals_cz[:, ixmin:ixmax+1]
+    vals_cz = vals_cz[ixmin:ixmax+1, :]
+    vals_rz = vals_rz[ixmin:ixmax+1, :]
 
 # Get energy densities (averaged over whole shell)
 rke = vals[:, lut[402]]
@@ -342,7 +342,7 @@ elif inte_gtr2 or (plot_inte and sep_czrz): # inte not from trace_G_Avgs
 elif plot_inte or plot_tote: 
     # try to get inte from trace_G_Avgs
     try:
-        inte = vals[:, lut[701]][ixmin:ixmax + 1]
+        inte = vals[:, lut[701]]
         print("Got internal energy trace from trace_G_Avgs")
         inte_label = "IE W/ DRIFT"
     except:
@@ -402,7 +402,7 @@ if plot_tote:
     tote_leak = np.copy(tote[it_leak:])
     mtote_leak = np.copy(mtote[it_leak:])
     ftote_leak = np.copy(ftote[it_leak:])
-    
+   
     m_leak, b_leak = np.polyfit(times_leak, tote_leak, 1)
     mm_leak, mb_leak = np.polyfit(times_leak, mtote_leak, 1)
     fm_leak, fb_leak = np.polyfit(times_leak, ftote_leak, 1)
