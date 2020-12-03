@@ -37,6 +37,7 @@ if (not os.path.isdir(plotdir)):
 Shell_Avgs_file = get_widest_range_file(datadir, 'Shell_Avgs')
 
 # Get command-line arguments to adjust the interval of averaging files
+xminmax = None
 minmax = None
 rnorm = None
 rvals = None
@@ -52,6 +53,8 @@ for i in range(nargs):
         Shell_Avgs_file = Shell_Avgs_file.split('/')[-1]
     elif arg == '-minmax':
         minmax = float(args[i+1]), float(args[i+2])
+    elif arg == '-xminmax':
+        xminmax = float(args[i+1]), float(args[i+2])
     elif arg == '-rnorm':
         rnorm = float(args[i+1])
     elif arg == '-rvals':
@@ -227,9 +230,10 @@ plt.minorticks_on()
 plt.tick_params(top=True, right=True, direction='in', which='both')
 
 # Set the x limits
-xmin, xmax = np.min(rr_n), np.max(rr_n)
-delta_x = xmax - xmin
-plt.xlim(xmin, xmax)
+if xminmax is None:
+    xminmax = np.min(rr_n), np.max(rr_n)
+delta_x = xminmax[1] - xminmax[0]
+plt.xlim(xminmax[0], xminmax[1])
 
 # Set the y-limits
 
