@@ -181,12 +181,6 @@ magnetism = get_parameter(dirname, 'magnetism')
 savename = dirname_stripped + '_eflux_radial_' +\
     str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
 
-qindex_hflux = lut[1433]
-qindex_cflux = lut[1470]
-qindex_kflux = lut[1923]
-qindex_vflux = lut[1935]
-qindex_eflux = lut[1455]
-
 hflux = vals[:, lut[1433]]
 eflux = vals[:, lut[1455]]
 cflux = vals[:, lut[1470]]
@@ -231,9 +225,8 @@ if plot_enth_fluc:
         eflux_fluc = eflux - eflux_mean
 
 if magnetism:
-    qindex_mflux = lut[2001] # this is actually (-4*pi) TIMES 
-                        # the correct Poynting flux
-    mflux = -vals[:, qindex_mflux]/(4*np.pi)
+    # A Space Oddysey is actually (-4*pi) TIMES the correct Poynting flux
+    mflux = -vals[:, lut[2001]]/(4*np.pi)
     tflux += mflux
 
 fpr = 4*np.pi*rr**2
