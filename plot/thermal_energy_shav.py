@@ -29,7 +29,7 @@ dirname_stripped = strip_dirname(dirname)
 # already exist    
 datadir = dirname + '/data/'
 plotdir = dirname + '/plots/'
-if (not os.path.isdir(plotdir)):
+if not os.path.isdir(plotdir):
     os.makedirs(plotdir)
 
 # Find the Shell_Avgs file(s) in the data directory. If there are multiple, by
@@ -43,6 +43,8 @@ rnorm = None
 rvals = None
 entropy_equation = False
 force_econs = False # By default, no tachocline econs term to worry about
+sep_czrz = False # plots boundary line in between cz/rz and computes
+        # heating separately in both domains
 
 args = sys.argv[2:]
 nargs = len(args)
@@ -62,10 +64,13 @@ for i in range(nargs):
         rvals = []
         for rval_str in rvals_str:
             rvals.append(float(rval_str))
+        rvals = np.array(rvals)
     elif arg == '-s':
         entropy_equation = True
     elif arg == '-econs':
         force_econs = True
+    elif arg == '-czrz':
+        sep_czrz = True
 
 lw = 1. # regular lines
 #lw = 1.5 # Bit thicker lines
@@ -78,6 +83,8 @@ lut = di['lut']
 nq = di['nq']
 iter1, iter2 = di['iter1'], di['iter2']
 rr = di['rr']
+ro = di['ro']
+ri = di['ri']
 nr = di['nr']
 
 # Get the rho*T
@@ -171,10 +178,29 @@ if force_econs:
     tot_heating += force_heating
 
 # Compute the INTEGRATED total heating
-gi = GridInfo(dirname + '/grid_info')
+gi = GridInfo(dirname + '/grid_info', '')
 rw = gi.rweights
-shell_volume = 4.0*np.pi/3.0*(np.max(rr)**3.0 - np.min(rr)**3.0)
+shell_volume = 4.0*np.pi/3.0*(ro**3.0 - ri**3.0)
 tot_heating_integrated = shell_volume*np.sum(tot_heating*rw)
+
+if sep_czrz:
+    nr_cz = get_parameter(dirname, 'ncheby')[1]
+    nr_rz = nr - nr_cz
+    rbcz = rr[nr_cz-1]
+
+    # get averaging weights for CZ and RZ separately
+    rw_cz = np.copy(rw[:nr_cz])
+    rw_rz = np.copy(rw[nr_cz:])
+    rw_cz /= np.sum(rw_cz)
+    rw_rz /= np.sum(rw_rz)
+
+    shell_volume_cz = 4.0*np.pi/3.0*(ro**3.0 - rbcz**3.0)
+    shell_volume_rz = 4.0*np.pi/3.0*(rbcz**3.0 - ri**3.0)
+    tot_heating_integrated_cz =\
+            shell_volume*np.sum(tot_heating[:nr_cz]*rw_cz)
+    tot_heating_integrated_rz =\
+            shell_volume*np.sum(tot_heating[nr_cz:]*rw_rz)
+
 
 if entropy_equation:
     advec_tot /= rhot
@@ -264,6 +290,12 @@ else:
     plt.xlabel(r'r/(%.1e cm)' %rnorm, fontsize=12, **csfont)
 
 # Mark radii if desired
+if sep_czrz:
+    if rvals is None:
+        rvals = np.array([rbcz])
+    else:
+        rvals = np.hstack((rvals, np.array([rbcz])))
+
 if not rvals is None:
     yvals = np.linspace(minmax[0], minmax[1], 100)
     for rval in rvals:
@@ -290,8 +322,13 @@ lum = 3.846e33
 
 title = dirname_stripped + '\n' + basetitle +\
           str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8) +\
-          '\nintegrated total heating: %1.3e erg/cm^3/s\n = %1.3e lsun'\
-          %(tot_heating_integrated/shell_volume, tot_heating_integrated/lum)
+          ('\nInteg. Tot. Heating = %9.3e lsun'\
+          %(tot_heating_integrated/lum))
+if sep_czrz:
+    title += ('\nInteg. Tot. Heating (CZ) = %9.3e lsun'\
+            %(tot_heating_integrated_cz/lum)) +\
+        ('\nInteg. Tot. Heating (RZ) = %9.3e lsun'\
+        %(tot_heating_integrated_rz/lum))
 plt.title(title, **csfont)
 
 # Create a see-through legend
@@ -301,7 +338,7 @@ plt.legend(loc='lower left', shadow=True, ncol=2, fontsize=8)
 plt.tight_layout()
 
 # Save the plot
-print ('Saving the energy eqn. plot at ' + plotdir + savename + ' ...')
+print ('Saving the energy eqn. plot at ' + plotdir + savename)
 plt.savefig(plotdir + savename, dpi=300)
 
 # Show the plot
