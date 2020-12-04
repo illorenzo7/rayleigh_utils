@@ -632,7 +632,7 @@ def get_minmax(ax, ylog=False, withleg=False,\
         buff_frac = 0.1
     ymin_current, ymax_current = ax.get_ylim()
     if ylog:
-        if dyn:
+        if dyn or mes is None:
             yratio = ymax_current/ymin_current
             ymin_new = ymin_current/(yratio**buff_frac)
         else:
