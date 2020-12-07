@@ -40,10 +40,11 @@ dirname_stripped = strip_dirname(dirname)
 # already exist    
 datadir = dirname + '/data/'
 plotdir = dirname + '/plots/'
-if (not os.path.isdir(plotdir)):
+if not os.path.isdir(plotdir):
     os.makedirs(plotdir)
 
 # Read command-line arguments (CLAs)
+magnetism = None
 showplot = True
 saveplot = True
 plotcontours = True
@@ -60,7 +61,10 @@ forced = False
 rvals = None
 rbcz = None
 symlog = False
-magnetism = False
+novisc = True # don't include viscosity in total by default 
+crudeint = False # by default use exact latitudinal weights and instead 
+# if crudeint = True, use a "crude weight"
+tag = ''
 
 args = sys.argv[2:]
 nargs = len(args)
@@ -101,11 +105,21 @@ for i in range(nargs):
     elif arg == '-nolats':
         plotlatlines = False
     elif arg == '-mag':
-        magnetism = True
+        magnetism = bool(args[i+1])
+    elif arg == '-visc':
+        novisc = False
+    elif arg == '-crudeint':
+        crudeint = True
+    elif arg == '-tag':
+        tag = '_' + args[i+1]
+
+# by default determine magnetism from main_input
+if magnetism is None:
+    magnetism = get_parameter(dirname, 'magnetism')
 
 # Get the data:
 print ('Getting total energy production terms from ' +\
-        datadir + AZ_Avgs_file + ' ...')
+        datadir + AZ_Avgs_file)
 di = get_dict(datadir + AZ_Avgs_file)
 
 iter1, iter2 = di['iter1'], di['iter2']
@@ -147,7 +161,7 @@ dsdr_2d = dsdr.reshape((1, nr))
 dlnT_2d = dlnT.reshape((1, nr))
 rhoT_2d = rhoT.reshape((1, nr))
 
-# Calculate the negative divergences...
+# Calculate the negative divergences
 work_KE = -vals[:, :, lut[1910]]
 
 rhoTvrS = vals[:, :, lut[1440]]
@@ -186,7 +200,15 @@ if forced:
         pass
     gi = GridInfo(dirname + '/grid_info')
     rw = gi.rweights
-    tw = gi.tweights
+    if crudeint:
+        tt = gi.theta
+        tw = np.zeros_like(tt)
+        tw[1:-1] = 0.5*(tt[:-1] - tt[1:])
+        tw[0] = tw[1]
+        tw[-1] = tw[-2]
+        tw /= np.sum(tw)
+    else:
+        tw = gi.tweights
     nt = gi.ntheta
 
     mean_vp = vals[:, :, lut[3]]
@@ -234,7 +256,18 @@ if forced:
 # Calculate the integrated work
 gi = GridInfo(dirname + '/grid_info')
 rw = gi.rweights
-tw = gi.tweights
+if crudeint:
+    tt = gi.theta
+    tw = np.zeros_like(tt)
+    tw[1:-1] = 0.5*(tt[:-2] - tt[2:])
+    tw[0] = tw[1]
+    tw[-1] = tw[-2]
+    tw /= np.sum(tw)
+    print ("crudeint = True, using sloppily defined lat. weights")
+else:
+    tw = gi.tweights
+    print ("crudeint = False, using exact lat. weights")
+    print ("To use crude weights, specify -crudeint")
 rw_2d = rw.reshape((1, nr))
 tw_2d = tw.reshape((nt, 1))
 fourpi = 4.0*np.pi
@@ -251,10 +284,17 @@ if magnetism:
 if forced:
     work_forcing_r = np.sum(work_forcing*tw_2d, axis=0)
 
-work_tot = work_KE + work_enth + work_cond + work_rad + work_visc +\
-        work_dsdr + work_dsdr_negligible
+work_tot = work_KE + work_enth + work_cond + work_rad + work_dsdr +\
+        work_dsdr_negligible
 work_tot_r = work_KE_r + work_enth_r + work_cond_r + work_rad_r +\
-        work_visc_r + work_dsdr_r + work_dsdr_negligible_r
+        work_dsdr_r + work_dsdr_negligible_r
+if novisc:
+    print ("not including visc. work in total")
+    print ("to include it, specify -visc")
+else:
+    work_tot += work_visc
+    work_tot_r += work_visc_r
+
 if magnetism:
     work_tot += work_mag
     work_tot_r += work_mag_r
@@ -423,10 +463,10 @@ fig.text(margin_x, 1 - 0.5*margin_top, time_string,\
          ha='left', va='top', fontsize=fsize, **csfont)
 
 savefile = plotdir + dirname_stripped + '_toten_' + str(iter1).zfill(8) +\
-    '_' + str(iter2).zfill(8) + '.png'
+    '_' + str(iter2).zfill(8) + tag + '.png'
 
 if saveplot:
-    print ('Saving plot at ' + savefile + ' ...')
+    print ('Saving plot at ' + savefile)
     plt.savefig(savefile, dpi=300)
 if showplot:
     plt.show()
