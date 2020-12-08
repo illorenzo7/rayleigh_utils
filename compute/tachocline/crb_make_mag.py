@@ -38,9 +38,9 @@ eq = equation_coefficients()
 eq.read(dirname + '/' + fname)
 
 # Set the magnetic constants in the original file
-print('setting c_4 = 1/(4*pi), c_7 = c_9 = 1 in %s' %fname)
+print('setting c_4 = c_9 = 1/(4*pi), c_7  = 1 in %s' %fname)
 eq.set_constant(1.0/4.0/np.pi, 4) # multiplies Lorentz force
 eq.set_constant(1.0, 7) # multiplies eta in induction-diffusion term
-eq.set_constant(1.0, 9) # multiplies Joule heating
+eq.set_constant(1.0/4.0/np.pi, 9) # multiplies Joule heating
 print('writing %s' %fname)
 eq.write(dirname + '/' + fname)

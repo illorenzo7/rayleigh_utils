@@ -148,10 +148,10 @@ eq.set_constant(1.0, 3) # multiplies pressure grad.
 eq.set_constant(1.0, 8) # multiplies conductive heating
 
 if mag:
-    print("magnetism = True, so setting c_4 = 1/(4*pi), c_7 = c_9 = 1")
+    print("magnetism = True, so setting c_4 = c_9 = 1/(4*pi), c_7 = 1")
     eq.set_constant(1.0/4.0/np.pi, 4) # multiplies Lorentz force
     eq.set_constant(1.0, 7) # multiplies eta in induction-diffusion term
-    eq.set_constant(1.0, 9) # multiplies Joule heating
+    eq.set_constant(1.0/4.0/np.pi, 9) # multiplies Joule heating
 else:
     print("magnetism = False, so setting c_4, c_7, c_9 = 0.0")
     eq.set_constant(0.0, 4) # multiplies Lorentz force
