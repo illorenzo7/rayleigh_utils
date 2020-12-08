@@ -109,14 +109,13 @@ advec_mean = advec_tot - advec_fluc
 advec_vr = -vals[:, lut[1406]]
 cond_heating = vals[:, lut[1421]]
 int_heating = vals[:, lut[1434]]
-visc_heating = vals[:, lut[1435]]
+visc_heating = vals[:, lut[1435]]*rhot
 tot_heating = advec_tot + cond_heating + int_heating + visc_heating
 if magnetism:
-    fact = 1./4./np.pi
-    joule_heating = vals[:, lut[1436]]*fact
+    joule_heating = vals[:, lut[1436]]*rhot
     have_joule_fluc = False
     try:
-        joule_heating_fluc = vals[:, lut[1437]]
+        joule_heating_fluc = vals[:, lut[1437]]*rhot
         joule_heating_mean = joule_heating - joule_heating_fluc
         have_joule_fluc = True
         print ("Joule heating fluc (1437) output, so plotting ")
