@@ -23,7 +23,7 @@ sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapl'])
 from azav_util import plot_azav
-from common import get_widest_range_file, strip_dirname, get_dict, rsun
+from common import get_widest_range_file, strip_dirname, get_dict, rsun, c_P
 from get_parameter import get_parameter
 from rayleigh_diagnostics import GridInfo
 from get_eq import get_eq
@@ -172,47 +172,76 @@ eq = get_eq(dirname)
 rho = eq.density
 T = eq.temperature
 dsdr = eq.dsdr
-dlnT = eq.dlnT
 rhoT = rho*T
+grav = eq.gravity
 
 rho_2d = rho.reshape((1, nr))
 T_2d = T.reshape((1, nr))
 dsdr_2d = dsdr.reshape((1, nr))
-dlnT_2d = dlnT.reshape((1, nr))
 rhoT_2d = rhoT.reshape((1, nr))
 
 # Calculate the negative divergences
-work_KE = -vals[:, :, lut[1910]]
 
-rhoTvrS = vals[:, :, lut[1440]]
-# Must subtract off the work due to the l = 0 part of the buoyancy force 
-# for this to make sense:
-rhoTvrS_00 = rhoT*np.sum(vals[:, :, lut[501]]*tw_2d, axis=0)
-rhoTvrS = rhoTvrS - rhoTvrS_00.reshape((1, nr))
+#========================
+# KINETIC ENERGY EQUATION
+#========================
 
-work_thermal_advec = -vals[:, :, lut[1401]] - rhoTvrS*dlnT_2d
+# Advection work on KE
+work_KE_advec = vals[:, :, lut[1910]] #
+
+# Pressure work on KE
 work_pressure = vals[:, :, lut[1901]]
+
+# Buoynacy work on KE (in future calculate 1904)
+rhoTvrS = vals[:, :, lut[1440]]
+vrS = rhoTvrS/rhoT
+S_00 = np.sum(vals[:, :, lut[501]]*tw_2d, axis=0)
+vr = vals[:, :, lut[1]]
+vrS_00 = vr*S_00.reshape((1, nr))
+work_buoy = (rho*grav/c_P).rshape((1, nr))*(vrS - vrS_00)
+
+# Viscous work on kinetic energy
+work_visc_on_KE = vals[:, :, lut[1907]]
+
+# J X B work on KE, if available
+if magnetism:
+    work_jcrossb = vals[:, :, lut[1916]]
+
+#========================
+# HEAT (ENTROPY) EQUATION
+#========================
+
+# Advection of entropy
+work_thermal_advec = -vals[:, :, lut[1401]] # 1401 = + rho*T*v dot grad S
+
+# Stable gradient (advection of reference entropy)
+work_thermal_advec_ref = -rhoT_2d*vr*dsdr_2d
+
+# heat by conduction
+work_cond = vals[:, :, lut[1421]]
+
+# heat from heating function (representing radiation)
+work_rad = vals[:, :, lut[1434]] # Q(r)
+
+# Irreversible (viscous) heating
+work_visc_on_intE = rhoT_2d*vals[:, :, lut[1435]] 
+# (irreversible) viscous heating
+# THIS IS OFF BY rho*T compared to what it's supposed to be (i.e., it's 
+# the viscous heating as in the energy equation
+
+# If magnetism get Joule heating
 
 work_enth = work_thermal_advec + work_pressure
 
-work_cond = vals[:, :, lut[1421]]
-
-work_rad = vals[:, :, lut[1434]] # Q(r)
-
-work_visc_on_KE = vals[:, :, lut[1907]]
-work_visc_on_intE = vals[:, :, lut[1435]] # (irreversible) viscous heating
 print ("std (visc work on KE): ", np.std(work_visc_on_KE))
 print ("std (visc_heating: visc work on intE): ", np.std(work_visc_on_intE))
 work_visc = work_visc_on_KE + work_visc_on_intE
 
-vr = vals[:, :, lut[1]]
-work_dsdr = -rhoT_2d*dsdr_2d*vr
 
-cp = 3.5e8
-work_dsdr_negligible = rhoTvrS*dsdr_2d/cp
+work_dsdr_negligible = rhoTvrS*dsdr_2d/c_P
 print ("maxabs (small dsdr work) = ", np.max(np.abs(work_dsdr_negligible)))
 if magnetism:
-    work_mag = vals[:, :, lut[1436]] + vals[:, :, lut[1916]] +\
+    work_mag = vals[:, :, lut[1436]]  +\
             1.0/(4.0*np.pi)*(vals[:, :, lut[2019]] + vals[:, :, lut[2043]])
 if forced:
     force_econs = False # If False, this work will need to get 
