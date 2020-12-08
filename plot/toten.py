@@ -122,6 +122,27 @@ print ('Getting total energy production terms from ' +\
         datadir + AZ_Avgs_file)
 di = get_dict(datadir + AZ_Avgs_file)
 
+# Will need integration weights for a few things
+gi = GridInfo(dirname + '/grid_info')
+rw = gi.rweights
+nr = gi.nr
+nt = gi.ntheta
+if crudeint:
+    tt = gi.theta
+    tw = np.zeros_like(tt)
+    tw[1:-1] = 0.5*(tt[:-2] - tt[2:])
+    tw[0] = tw[1]
+    tw[-1] = tw[-2]
+    tw /= np.sum(tw)
+    print ("crudeint = True, using sloppily defined lat. weights")
+else:
+    tw = gi.tweights
+    print ("crudeint = False, using exact lat. weights")
+    print ("To use crude weights, specify -crudeint")
+
+rw_2d = rw.reshape((1, nr))
+tw_2d = tw.reshape((nt, 1))
+
 iter1, iter2 = di['iter1'], di['iter2']
 vals = di['vals']
 lut = di['lut']
@@ -145,7 +166,6 @@ cost = di['cost']
 sint = di['sint']
 tt_lat = di['tt_lat']
 xx = di['xx']
-nt, nr = di['nt'], di['nr']
 
 # Get reference state stuff 
 eq = get_eq(dirname)
@@ -165,6 +185,11 @@ rhoT_2d = rhoT.reshape((1, nr))
 work_KE = -vals[:, :, lut[1910]]
 
 rhoTvrS = vals[:, :, lut[1440]]
+# Must subtract off the work due to the l = 0 part of the buoyancy force 
+# for this to make sense:
+rhoTvrS_00 = rhoT*np.sum(vals[:, :, lut[501]]*tw_2d, axis=0)
+rhoTvrS = rhoTvrS - rhoTvrS_00.reshape((1, nr))
+
 work_thermal_advec = -vals[:, :, lut[1401]] - rhoTvrS*dlnT_2d
 work_pressure = vals[:, :, lut[1901]]
 
@@ -198,19 +223,6 @@ if forced:
         force_econs = get_parameter(dirname, 'force_econs')
     except:
         pass
-    gi = GridInfo(dirname + '/grid_info')
-    rw = gi.rweights
-    if crudeint:
-        tt = gi.theta
-        tw = np.zeros_like(tt)
-        tw[1:-1] = 0.5*(tt[:-1] - tt[1:])
-        tw[0] = tw[1]
-        tw[-1] = tw[-2]
-        tw /= np.sum(tw)
-    else:
-        tw = gi.tweights
-    nt = gi.ntheta
-
     mean_vp = vals[:, :, lut[3]]
     vp2 = vals[:, :, lut[416]]
     fluc_vp2 = vals[:, :, lut[416]]
@@ -252,24 +264,7 @@ if forced:
 
     work_forcing_shav = np.sum(work_forcing*tw.reshape((nt, 1)), axis=0)
 
-
 # Calculate the integrated work
-gi = GridInfo(dirname + '/grid_info')
-rw = gi.rweights
-if crudeint:
-    tt = gi.theta
-    tw = np.zeros_like(tt)
-    tw[1:-1] = 0.5*(tt[:-2] - tt[2:])
-    tw[0] = tw[1]
-    tw[-1] = tw[-2]
-    tw /= np.sum(tw)
-    print ("crudeint = True, using sloppily defined lat. weights")
-else:
-    tw = gi.tweights
-    print ("crudeint = False, using exact lat. weights")
-    print ("To use crude weights, specify -crudeint")
-rw_2d = rw.reshape((1, nr))
-tw_2d = tw.reshape((nt, 1))
 fourpi = 4.0*np.pi
 
 work_KE_r = np.sum(work_KE*tw_2d, axis=0)
