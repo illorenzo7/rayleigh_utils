@@ -112,7 +112,8 @@ int_heating = vals[:, lut[1434]]
 visc_heating = vals[:, lut[1435]]
 tot_heating = advec_tot + cond_heating + int_heating + visc_heating
 if magnetism:
-    joule_heating = vals[:, lut[1436]]
+    fact = 1./4./np.pi
+    joule_heating = vals[:, lut[1436]]*fact
     have_joule_fluc = False
     try:
         joule_heating_fluc = vals[:, lut[1437]]
