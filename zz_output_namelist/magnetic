@@ -4,30 +4,32 @@
 ! These contain only the basic fluid variables
 ! to capture "snapshots" of the flow
 !
-! FLUID VARIABLES (8 vars, 11 with magnetism, 1 line)
-! velocities [r --> phi], vorticities [r --> phi], pressure, t-var, magnetic fields [r --> phi] !
-!
-! Shell slices/spectra and equatorial/meridional/3D cuts: velocities, vorticities, t-var, pressure, maybe B field
+
 shellslice_levels_nrm = 0.05, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 0.95
-shellslice_values    = 1,2,3, 301,302,303, 501,502, 801,802,803
+! 9 levels: start/end 5% from shell top and bottom, otherwise equally spaced by 12.5%
+shellslice_values    = 1,2,3, 301,302,303, 501,502, 801,802,803, 1001,1002,1003
+! "FLUID VARIABLES" (8 vars, 14 with magnetism)
+! velocities/vorticities, [r --> phi], pressure, t-var, B-fields/Del X B [r --> phi]
 shellslice_frequency = 10000
+! slow to keep data small
 shellslice_nrec      = 1
 
 shellspectra_levels_nrm  = 0.05, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 0.95
-shellspectra_values    = 1,2,3, 301,302,303, 501,502, 801,802,803
+shellspectra_values    = 1,2,3, 301,302,303, 501,502, 801,802,803, 1001,1002,1003
 shellspectra_frequency = 10000
 shellspectra_nrec      = 1
 
-meridional_values    = 1,2,3, 301,302,303, 501,502, 801,802,803
+meridional_values    = 1,2,3, 301,302,303, 501,502, 801,802,803, 1001,1002,1003
 meridional_frequency = 2500
 meridional_nrec      = 1
 meridional_indices_nrm = 0.0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875
+! 8 equally spaced longitudes
 
-equatorial_values    =  1,2,3, 301,302,303, 501,502, 801,802,803 
+equatorial_values    = 1,2,3, 301,302,303, 501,502, 801,802,803, 1001,1002,1003
 equatorial_frequency = 2500
 equatorial_nrec      = 1
 
-full3d_values = 1,2,3, 301,302,303, 501,502, 801,802,803
+full3d_values = 1,2,3, 301,302,303, 501,502, 801,802,803, 1001,1002,1003
 full3d_frequency = 250000
 
 ! Now the average/timetraces, containing many variables
@@ -35,173 +37,181 @@ full3d_frequency = 250000
 
 azavg_values = 
     ! FLUID VARIABLES
-    1,2,3, 301,302,303, 501,502, 801,802,803,
-    ! PLUS RADIAL/THETA DERIVS of S, P
+    1,2,3, 301,302,303, 501,502, 801,802,803, 1001,1002,1003
+    ! RADIAL/THETA DERIVS of S, P
     507,508, 513,514,
-    ! DIAGONAL PARTS OF GRAD V: for an explicit divergence and other tensors
-!    10,20, ! dvr/dr, dvtheta/dtheta (dvphi/dphi=0 in AZ_Avgs)
-    ! OFF-DIAGONAL PARTS OF GRAD V: if we want rates-of-strain, and we don't
-                                    ! don't want to use the vorticity
-!    11,12, 19,21, ! dvtdr,dvpdr, dvrdt,dvpdt; ddp terms are all zero in AZ_Avgs 
     ! ENSTROPHY    
     314,315,316, 317,318,319, !vort_{r,t,p}_sq, vortfluc{r,tp}_sq
+    ! CURRENT DENSITY SQUARED
+    1014,1017,1020, 1015,1018,1021, !(delXB)_{r,t,p}_sq, (delXBfluc)_{r,t,p}
     ! KINETIC ENERGY
-	402,403,404, 410,411,412,
-	414,415,416, 422,423,424,
+	402,403,404, 410,411,412, !KE = 1/2*rhobar*v^2: r,t,p: full, fluc
+    ! THERMAL ENERGY
+    701,704, !internal energy (rhobar*Tbar*S), enthalpy (c_P*rhobar*T)
     ! MAGNETIC ENERGY
- 	1102,1103,1104,  1110,1111,1112,
-    ! VOL. HEATING TERMS (Radiative, Viscous, Joule, Joule fluc)
-	1434,1435,1436,1437,
-    ! ENTHALPY FLUX (r,theta,phi: tot, pp)
+ 	1102,1103,1104,  1110,1111,1112, !ME = 1/(8*pi)*B^2: r,t,p: full, fluc
+    ! KINETIC ENERGY EQUATION
+    1901,1904,1907,1910,1916,
+    ! Pressure work, buoyancy work, viscous work on KE,\
+    ! minus advec. work, Lorentz work
+    ! THERMAL ENERGY EQUATION
+	1401,1402,1406, ! (minus) Advection (tot., fluc., vr_dsdr piece)
+    1421,1434,1435,1436, ! vol. heating: conductive, internal, viscous/(rho*T), Ohmic/(rho*T)
+    ! MAGNETIC ENERGY EQUATION (all terms must be / (4*pi))
+    2019,2020,2024, !induct_work (tot, ppp, mmm)
+    2025,2026,2027, 2034,2035,2036, 2040,2041,2042,
+    ! ishear_work, iadvec_work, icomp_work: tot, mmm, ppp)
+    2043,2044,2045, ! idiff_work: tot, pp, mm
+    ! ENTHALPY FLUX r,t,p: tot, pp
 	1455,1456,1457, 1458,1459,1460, 
     ! CONDUCTIVE FLUX (r,theta,phi=0: tot; fluc=0)
     1470,1471,
     ! VOL. HEAT FLUX
     1433, 
-    ! KE FLUX (total: r,theta,phi; mke_mflux; pke_mflux; pke_pflux)
+    ! POYNTING FLUX (tot; ppp; mmm; ppm; pmp; mpp)
+    2001,2002,2003, 2004,2005,2006, 2007,2008,2009, 2010,2011,2012, 2013,2014,2015, 2016,2017,2018,
+    ! KE FLUX (r,t,p: total, mke_mflux; pke_mflux; pke_pflux)
     1923,1924,1925, 1926,1927,1928, 1929,1930,1931, 1932,1933,1934,
     ! VISCOUS FLUX
     1935,1936,1937, 1938,1939,1940, 
-    ! POYNTING FLUX (tot; ppp; mmm; ppm; pmp; mpp)
-    2001,2002,2003, 2004,2005,2006, 2007,2008,2009, 2010,2011,2012, 2013,2014,2015, 2016,2017,2018,
-    ! MAGNETIC WORK TERMS IN TOTAL ENERGY EQUATION (Lorentz-force work,
-    1916,2019,2043, ! induction work, magnetic diffusion work)
-    ! TORQUE (AMOM PRODUCTION TERMS): RS, mean advec., Coriolis, viscous, Maxwell_mean, Maxwell_fluc
+    ! TORQUE (AMOM PRODUCTION TERMS): minus RS, minus advec., Coriolis, viscous, Maxwell: mm, pp
 	1801,1802, 1803, 1804, 1805,1806,
-    ! AMOM FLUX (r and theta: RS, MC_vphi, MC_om, Maxwell_fluc, Maxwell_mean)
+    ! AMOM FLUX (r and theta: RS, MC, visc, Maxwell: pp, mm
 	1807,1808, 1809,1810, 1811,1812, 1813,1814, 1815,1816, 1817,1818,
-    ! AMOM DENSITY
-    1819,1820,1821, 1822,1823,1824, 1825,1826,1827,
-    ! MOMENTUM: 
-	1201,1202,1203, 1211,1212, 1214,1215, ! ADV: (r,theta,phi: pp,mm) (Something wrong with radial
-                                           ! bit (adv_pp = adv_mm) so keep the total adv_r for now)
+    ! AMOM DENSITY (z,x,y: tot, fluc
+    1819,1820,1821, 1822,1823,1824,
+    ! MOMENTUM EQUATION: 
+	1201,1202,1203, 1210,1211,1212, 1213,1214,1215,
+    ! ADV: r,theta,phi: tot pp,mm (radial mm currently wrong in Diagnostics_Mean_Correction
     1216, 1219,1220,1221, ! BUOYANCY (r), CORIOLIS (r, theta, phi)
     1228,1229,1230, ! VISCOUS (r, theta, phi)
     1237,1238,1239, ! PRESSURE (r, theta, phi)
-    1248,1249,1250, 1257,1258,1259, 1260,1261,1262, ! J x B
-    1246, 1247,  ! ELL0: Buoyancy, Pressure (These exactly balance one another, but shouldn't)
+    1248,1249,1250, 1260,1261,1262, ! J x B, r,t,p: mm, pp
     ! INDUCTION
-    1604,1605, 1609,1610, 1614,1615, !total: transport term,diff. term (r, theta, phi)
-    1619,1620, 1624,1625, 1629,1630, !mean-mean (trans.),mean (diff.): " " "
-    1601,1602,1603, 1606,1607,1608, 1611,1612,1613, !total: shear,comp.,adv. (r, theta, phi)
-    1616,1617,1618, 1621,1622,1623, 1626,1627,1628  !mean-mean: " " " 
+    1604,1605, 1609,1610, 1614,1615, !total: transport, diffusion: r,t,p
+    1619,1620, 1624,1625, 1629,1630, !mean-mean: transport, diffusion: r,t,p
+    1601,1602,1603, 1606,1607,1608, 1611,1612,1613, !total: shear,comp,adv: r,t,p
+    1616,1617,1618, 1621,1622,1623, 1626,1627,1628  !mean-mean: shear,comp,adv: r,t,p
 azavg_frequency = 2500
 azavg_nrec = 1
 
 shellavg_values =
     ! FLUID VARIABLES
-    1,2,3, 301,302,303, 501,502, 801,802,803,
-    ! PLUS RADIAL/THETA DERIVS of S, P
+    1,2,3, 301,302,303, 501,502, 801,802,803, 1001,1002,1003
+    ! RADIAL/THETA DERIVS of S, P
     507,508, 513,514,
-    ! DIAGONAL PARTS OF GRAD V: for an explicit divergence and other tensors
-!    10,20, ! dvr/dr, dvtheta/dtheta (dvphi/dphi=0 in AZ_Avgs)
-    ! OFF-DIAGONAL PARTS OF GRAD V: if we want rates-of-strain, and we don't
-                                    ! don't want to use the vorticity
-!    11,12, 19,21, ! dvtdr,dvpdr, dvrdt,dvpdt; ddp terms are all zero in AZ_Avgs 
     ! ENSTROPHY    
     314,315,316, 317,318,319, !vort_{r,t,p}_sq, vortfluc{r,tp}_sq
+    ! CURRENT DENSITY SQUARED
+    1014,1017,1020, 1015,1018,1021, !(delXB)_{r,t,p}_sq, (delXBfluc)_{r,t,p}
     ! KINETIC ENERGY
-	402,403,404, 410,411,412,
-	414,415,416, 422,423,424,
+	402,403,404, 410,411,412, !KE = 1/2*rhobar*v^2: r,t,p: full, fluc
+    ! THERMAL ENERGY
+    701,704, !internal energy (rhobar*Tbar*S), enthalpy (c_P*rhobar*T)
     ! MAGNETIC ENERGY
- 	1102,1103,1104,  1110,1111,1112,
-    ! VOL. HEATING TERMS (Radiative, Viscous, Joule, Joule fluc)
-	1434,1435,1436,1437,
-    ! ENTHALPY FLUX (r,theta,phi: tot, pp)
+ 	1102,1103,1104,  1110,1111,1112, !ME = 1/(8*pi)*B^2: r,t,p: full, fluc
+    ! KINETIC ENERGY EQUATION
+    1901,1904,1907,1910,1916,
+    ! Pressure work, buoyancy work, viscous work on KE,\
+    ! minus advec. work, Lorentz work
+    ! THERMAL ENERGY EQUATION
+	1401,1402,1406, ! (minus) Advection (tot., fluc., vr_dsdr piece)
+    1421,1434,1435,1436, ! vol. heating: conductive, internal, viscous/(rho*T), Ohmic/(rho*T)
+    ! MAGNETIC ENERGY EQUATION (all terms must be / (4*pi))
+    2019,2020,2024, !induct_work (tot, ppp, mmm)
+    2025,2026,2027, 2034,2035,2036, 2040,2041,2042,
+    ! ishear_work, iadvec_work, icomp_work: tot, mmm, ppp)
+    2043,2044,2045, ! idiff_work: tot, pp, mm
+    ! ENTHALPY FLUX r,t,p: tot, pp
 	1455,1456,1457, 1458,1459,1460, 
     ! CONDUCTIVE FLUX (r,theta,phi=0: tot; fluc=0)
     1470,1471,
     ! VOL. HEAT FLUX
     1433, 
-    ! KE FLUX (total: r,theta,phi; mke_mflux; pke_mflux; pke_pflux)
+    ! POYNTING FLUX (tot; ppp; mmm; ppm; pmp; mpp)
+    2001,2002,2003, 2004,2005,2006, 2007,2008,2009, 2010,2011,2012, 2013,2014,2015, 2016,2017,2018,
+    ! KE FLUX (r,t,p: total, mke_mflux; pke_mflux; pke_pflux)
     1923,1924,1925, 1926,1927,1928, 1929,1930,1931, 1932,1933,1934,
     ! VISCOUS FLUX
     1935,1936,1937, 1938,1939,1940, 
-    ! POYNTING FLUX (tot; ppp; mmm; ppm; pmp; mpp)
-    2001,2002,2003, 2004,2005,2006, 2007,2008,2009, 2010,2011,2012, 2013,2014,2015, 2016,2017,2018,
-    ! MAGNETIC WORK TERMS IN TOTAL ENERGY EQUATION (Lorentz-force work,
-    1916,2019,2043, ! induction work, magnetic diffusion work)
-    ! TORQUE (AMOM PRODUCTION TERMS): RS, mean advec., Coriolis, viscous, Maxwell_mean, Maxwell_fluc
+    ! TORQUE (AMOM PRODUCTION TERMS): minus RS, minus advec., Coriolis, viscous, Maxwell: mm, pp
 	1801,1802, 1803, 1804, 1805,1806,
-    ! AMOM FLUX (r and theta: RS, MC_vphi, MC_om, Maxwell_fluc, Maxwell_mean)
+    ! AMOM FLUX (r and theta: RS, MC, visc, Maxwell: pp, mm
 	1807,1808, 1809,1810, 1811,1812, 1813,1814, 1815,1816, 1817,1818,
-    ! AMOM DENSITY
-    1819,1820,1821, 1822,1823,1824, 1825,1826,1827,
-    ! MOMENTUM: 
-	1201,1202,1203, 1211,1212, 1214,1215, ! ADV: (r,theta,phi: pp,mm) (Something wrong with radial
-                                           ! bit (adv_pp = adv_mm) so keep the total adv_r for now)
+    ! AMOM DENSITY (z,x,y: tot, fluc
+    1819,1820,1821, 1822,1823,1824,
+    ! MOMENTUM EQUATION: 
+	1201,1202,1203, 1210,1211,1212, 1213,1214,1215,
+    ! ADV: r,theta,phi: tot pp,mm (radial mm currently wrong in Diagnostics_Mean_Correction
     1216, 1219,1220,1221, ! BUOYANCY (r), CORIOLIS (r, theta, phi)
     1228,1229,1230, ! VISCOUS (r, theta, phi)
     1237,1238,1239, ! PRESSURE (r, theta, phi)
-    1248,1249,1250, 1257,1258,1259, 1260,1261,1262, ! J x B
-    1246, 1247,  ! ELL0: Buoyancy, Pressure (These exactly balance one another, but shouldn't)    
+    1248,1249,1250, 1260,1261,1262, ! J x B, r,t,p: mm, pp
     ! INDUCTION
-    1604,1605, 1609,1610, 1614,1615, !total: transport term,diff. term (r, theta, phi)
-    1619,1620, 1624,1625, 1629,1630, !mean-mean (trans.),mean (diff.): " " "
-    1601,1602,1603, 1606,1607,1608, 1611,1612,1613, !total: shear,comp.,adv. (r, theta, phi)
-    1616,1617,1618, 1621,1622,1623, 1626,1627,1628  !mean-mean: " " " 
+    1604,1605, 1609,1610, 1614,1615, !total: transport, diffusion: r,t,p
+    1619,1620, 1624,1625, 1629,1630, !mean-mean: transport, diffusion: r,t,p
+    1601,1602,1603, 1606,1607,1608, 1611,1612,1613, !total: shear,comp,adv: r,t,p
+    1616,1617,1618, 1621,1622,1623, 1626,1627,1628  !mean-mean: shear,comp,adv: r,t,p
 shellavg_frequency = 50
 shellavg_nrec = 50
 
-! G_Avgs: same az AZ_ and Shell_ Avgs but with additionally kinetic energy terms, i.e.,
-! KE: tot, r --> phi for each of tot, mm, and pp
-! similarly for magnetic energy
-! additional terms for vsq [mm, pp, r-->phi-->tot]
- 
 globalavg_values = 
     ! FLUID VARIABLES
-    1,2,3, 301,302,303, 501,502, !801,802,803,
-    ! PLUS RADIAL/THETA DERIVS of S, P
+    1,2,3, 301,302,303, 501,502, 801,802,803, 1001,1002,1003
+    ! RADIAL/THETA DERIVS of S, P
     507,508, 513,514,
-    ! DIAGONAL PARTS OF GRAD V: for an explicit divergence and other tensors
-!    10,20, ! dvr/dr, dvtheta/dtheta (dvphi/dphi=0 in AZ_Avgs)
-    ! OFF-DIAGONAL PARTS OF GRAD V: if we want rates-of-strain, and we don't
-                                    ! don't want to use the vorticity
-!    11,12, 19,21, ! dvtdr,dvpdr, dvrdt,dvpdt; ddp terms are all zero in AZ_Avgs 
     ! ENSTROPHY    
-    310,312,313, 314,315,316, 317,318,319, 320,321,322, 
-    !enstrophy,enstrophy_mean,enstrophy_fluc,
-    ! vort_{r,t,p}_sq, vortfluc{r,tp}_sq, vortmean{r,tp}_sq
+    314,315,316, 317,318,319, !vort_{r,t,p}_sq, vortfluc{r,tp}_sq
+    ! CURRENT DENSITY SQUARED
+    1014,1017,1020, 1015,1018,1021, !(delXB)_{r,t,p}_sq, (delXBfluc)_{r,t,p}
     ! KINETIC ENERGY
-	401,402,403,404, 405,406,407,408, 409,410,411,412,
-	413,414,415,416, 417,418,419,420, 421,422,423,424,
+	402,403,404, 410,411,412, !KE = 1/2*rhobar*v^2: r,t,p: full, fluc
+    ! THERMAL ENERGY
+    701,704, !internal energy (rhobar*Tbar*S), enthalpy (c_P*rhobar*T)
     ! MAGNETIC ENERGY
-	1101,1102,1103,1104, 1105,1106,1107,1108,  1109,1110,1111,1112,
-    ! VOL. HEATING TERMS (Radiative, Viscous, Joule, Joule fluc)
-	1434,1435,1436,1437,
-    ! ENTHALPY FLUX (r,theta,phi: tot, pp)
+ 	1102,1103,1104,  1110,1111,1112, !ME = 1/(8*pi)*B^2: r,t,p: full, fluc
+    ! KINETIC ENERGY EQUATION
+    1901,1904,1907,1910,1916,
+    ! Pressure work, buoyancy work, viscous work on KE,\
+    ! minus advec. work, Lorentz work
+    ! THERMAL ENERGY EQUATION
+	1401,1402,1406, ! (minus) Advection (tot., fluc., vr_dsdr piece)
+    1421,1434,1435,1436, ! vol. heating: conductive, internal, viscous/(rho*T), Ohmic/(rho*T)
+    ! MAGNETIC ENERGY EQUATION (all terms must be / (4*pi))
+    2019,2020,2024, !induct_work (tot, ppp, mmm)
+    2025,2026,2027, 2034,2035,2036, 2040,2041,2042,
+    ! ishear_work, iadvec_work, icomp_work: tot, mmm, ppp)
+    2043,2044,2045, ! idiff_work: tot, pp, mm
+    ! ENTHALPY FLUX r,t,p: tot, pp
 	1455,1456,1457, 1458,1459,1460, 
     ! CONDUCTIVE FLUX (r,theta,phi=0: tot; fluc=0)
     1470,1471,
     ! VOL. HEAT FLUX
     1433, 
-    ! KE FLUX (total: r,theta,phi; mke_mflux; pke_mflux; pke_pflux)
+    ! POYNTING FLUX (tot; ppp; mmm; ppm; pmp; mpp)
+    2001,2002,2003, 2004,2005,2006, 2007,2008,2009, 2010,2011,2012, 2013,2014,2015, 2016,2017,2018,
+    ! KE FLUX (r,t,p: total, mke_mflux; pke_mflux; pke_pflux)
     1923,1924,1925, 1926,1927,1928, 1929,1930,1931, 1932,1933,1934,
     ! VISCOUS FLUX
     1935,1936,1937, 1938,1939,1940, 
-    ! POYNTING FLUX (tot; ppp; mmm; ppm; pmp; mpp)
-    2001,2002,2003, 2004,2005,2006, 2007,2008,2009, 2010,2011,2012, 2013,2014,2015, 2016,2017,2018,
-    ! MAGNETIC WORK TERMS IN TOTAL ENERGY EQUATION (Lorentz-force work,
-    1916,2019,2043, ! induction work, magnetic diffusion work)
-    ! TORQUE (AMOM PRODUCTION TERMS): RS, mean advec., Coriolis, viscous, Maxwell_mean, Maxwell_fluc
+    ! TORQUE (AMOM PRODUCTION TERMS): minus RS, minus advec., Coriolis, viscous, Maxwell: mm, pp
 	1801,1802, 1803, 1804, 1805,1806,
-    ! AMOM FLUX (r and theta: RS, MC_vphi, MC_om, Maxwell_fluc, Maxwell_mean)
+    ! AMOM FLUX (r and theta: RS, MC, visc, Maxwell: pp, mm
 	1807,1808, 1809,1810, 1811,1812, 1813,1814, 1815,1816, 1817,1818,
-    ! AMOM DENSITY
-    1819,1820,1821, 1822,1823,1824, 1825,1826,1827,
-    ! MOMENTUM: 
-	1201,1202,1203, 1211,1212, 1214,1215, ! ADV: (r,theta,phi: pp,mm) (Something wrong with radial
-                                           ! bit (adv_pp = adv_mm) so keep the total adv_r for now)
+    ! AMOM DENSITY (z,x,y: tot, fluc
+    1819,1820,1821, 1822,1823,1824,
+    ! MOMENTUM EQUATION: 
+	1201,1202,1203, 1210,1211,1212, 1213,1214,1215,
+    ! ADV: r,theta,phi: tot pp,mm (radial mm currently wrong in Diagnostics_Mean_Correction
     1216, 1219,1220,1221, ! BUOYANCY (r), CORIOLIS (r, theta, phi)
     1228,1229,1230, ! VISCOUS (r, theta, phi)
     1237,1238,1239, ! PRESSURE (r, theta, phi)
-    1248,1249,1250, 1257,1258,1259, 1260,1261,1262, ! J x B
-    1246, 1247,  ! ELL0: Buoyancy, Pressure (These exactly balance one another, but shouldn't)    
+    1248,1249,1250, 1260,1261,1262, ! J x B, r,t,p: mm, pp
     ! INDUCTION
-    1604,1605, 1609,1610, 1614,1615, !total: transport term,diff. term (r, theta, phi)
-    1619,1620, 1624,1625, 1629,1630, !mean-mean (trans.),mean (diff.): " " "
-    1601,1602,1603, 1606,1607,1608, 1611,1612,1613, !total: shear,comp.,adv. (r, theta, phi)
-    1616,1617,1618, 1621,1622,1623, 1626,1627,1628  !mean-mean: " " " 
+    1604,1605, 1609,1610, 1614,1615, !total: transport, diffusion: r,t,p
+    1619,1620, 1624,1625, 1629,1630, !mean-mean: transport, diffusion: r,t,p
+    1601,1602,1603, 1606,1607,1608, 1611,1612,1613, !total: shear,comp,adv: r,t,p
+    1616,1617,1618, 1621,1622,1623, 1626,1627,1628  !mean-mean: shear,comp,adv: r,t,p    
 globalavg_frequency = 50
 globalavg_nrec = 50
 /
