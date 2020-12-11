@@ -64,7 +64,7 @@ def get_file_lists(radatadir):
     return file_list, int_file_list, nfiles
 
 range_options = ['-range', '-centerrange', '-leftrange', '-rightrange',\
-        '-n', '-f', '-all', '-allb1', '-iter']
+        '-n', '-f', '-all', '-iter']
 n_options = len(range_options)
 
 def get_desired_range(int_file_list, args):
@@ -81,108 +81,60 @@ def get_desired_range(int_file_list, args):
     if user_specified_range:
         for i in range(nargs):
             arg = args[i]
-            if arg == '-range':   
-                # Give user option to specify range of iterations to
-                # average over. 'first' means first available file.
+            if arg in ['-range', '-centerrange', '-leftrange',\
+                    '-rightrange', '-iter']: # first arg will be iter no.
+                # 'first' means first available file.
                 # 'last' means last available file.
-                desired_first_iter = args[i+1]
-                if desired_first_iter == 'first':
-                    desired_first_iter = int_file_list[0]
-                elif desired_first_iter == 'last':
-                    # The only consistent option here would be
-                    # -range last last (to average over ONLY the last file)
-                    desired_first_iter = int_file_list[-1]
-                else:
-                    desired_first_iter = int(desired_first_iter) 
-                    
-                desired_last_iter = args[i+2]
-                if desired_last_iter == 'last':
-                    desired_last_iter = int_file_list[-1]
-                elif desired_last_iter == 'first':
-                    # only consistent option -range first first
-                    desired_last_iter = int_file_list[0]
-                else:
-                    desired_last_iter = int(desired_last_iter)
-
-                # Find the index in the int_file_list closest 
-                # to the user's preferences
-                index_first = np.argmin(np.abs(desired_first_iter -\
-                        int_file_list))
-                index_last = np.argmin(np.abs(desired_last_iter -\
-                        int_file_list))
-            elif arg == '-centerrange':
-                desired_central_iter = args[i+1]
-                if desired_central_iter == 'first':
-                    desired_central_iter = int_file_list[0]
-                elif desired_central_iter == 'last':
-                    desired_central_iter = int_file_list[-1]
-                else:
-                    desired_central_iter = int(desired_central_iter)
-                central_index = np.argmin(np.abs(desired_central_iter -\
-                        int_file_list))
-                ndatafiles = int(args[i+2])
-                if ndatafiles % 2 == 0: #ndatafiles is even
-                    index_first = central_index - ndatafiles//2 + 1
-                    index_last = central_index + ndatafiles//2
-                else:  #ndatafiles is odd
-                    index_first = central_index - ndatafiles//2
-                    index_last = central_index + ndatafiles//2
-            elif arg == '-leftrange':
-                desired_left_iter = args[i+1]
-                if desired_left_iter == 'first':
-                    desired_left_iter = int_file_list[0]
-                elif desired_left_iter == 'last':
-                    # Only viable option here is if ndatafiles is 1
-                    desired_left_iter = int_file_list[-1]
-                else:
-                    desired_left_iter = int(desired_left_iter)
-                left_index = np.argmin(np.abs(desired_left_iter -\
-                        int_file_list))
-                ndatafiles = int(args[i+2])
-                index_first = left_index
-                index_last = left_index + ndatafiles - 1
-            elif arg == '-rightrange':
-                desired_right_iter = args[i+1]
-                if desired_right_iter == 'first':
-                    desired_right_iter = int_file_list[0]
-                elif desired_right_iter == 'last':
-                    # Only viable option here is if ndatafiles is 1
-                    desired_right_iter = int_file_list[-1]
-                else:
-                    desired_right_iter = int(desired_right_iter)
-                right_index = np.argmin(np.abs(desired_right_iter -\
-                        int_file_list))
-                ndatafiles = int(args[i+2])
-                index_first = right_index - ndatafiles + 1
-                index_last = right_index
-            elif arg == '-n': 
-                # allow the user to specify a desired number of iterations
-                # to average over, ending with the last data file
-                index_last = nfiles - 1
-                number_to_average = int(args[i+1])
-                index_first = nfiles - number_to_average
-            elif arg == '-f': 
-                # allow the user to specify a desired number of iterations
-                # to average over, starting with the first data file
-                index_first = 0
-                number_to_average = int(args[i+1])
-                index_last = number_to_average - 1
-            elif arg == '-all':
-                index_first = 0
-                index_last = nfiles - 1
-            elif arg == '-allb1':
-                index_first = 0
-                index_last = nfiles - 2
-            elif arg == '-iter': # just get 1 iter
                 desired_iter = args[i+1]
+                if desired_iter == 'first':
+                    desired_iter = int_file_list[0]
+                elif desired_iter == 'last':
+                    desired__iter = int_file_list[-1]
+                else:
+                    desired_iter = int(desired_iter)
+                index = np.argmin(np.abs(int_file_list - desired_iter))
+            if arg in ['-centerrange', '-rightrange', '-leftrange']:
+                # many options include an "ndatafiles" argument
+                ndatafiles = int(args[i+2])
+            elif arg in ['-n', '-f']:
+                ndatafiles = int(args[i+1])
+            if arg == '-range': # average between two specific files
+                index_first = index # first arg is first desired iter
+                # also need last iter
+                desired_iter = args[i+2]
                 if desired_iter == 'first':
                     desired_iter = int_file_list[0]
                 elif desired_iter == 'last':
                     desired_iter = int_file_list[-1]
                 else:
                     desired_iter = int(desired_iter)
-                index_first = np.argmin(np.abs(desired_iter - int_file_list))
-                index_last = index_first
+                index_last = np.argmin(np.abs(int_file_list - desired_iter))
+            elif arg == '-centerrange': #range centered around specific file
+                if ndatafiles % 2 == 0: #ndatafiles is even
+                    index_first = index - ndatafiles//2 + 1
+                    index_last = index + ndatafiles//2
+                else:  #ndatafiles is odd
+                    index_first = index - ndatafiles//2
+                    index_last = index + ndatafiles//2
+            elif arg == '-leftrange': # range with specific file first
+                index_first = index
+                index_last = index + ndatafiles - 1
+            elif arg == '-rightrange': # range with specific file last
+                index_last = index
+                index_first = index - ndatafiles + 1
+            elif arg == '-n': 
+                # range with certain no. files ending with the last
+                index_last = nfiles - 1
+                index_first = nfiles - ndatafiles
+            elif arg == '-f': 
+                # range with certain no. files starting with the first
+                index_first = 0
+                index_last = ndatafiles - 1
+            elif arg == '-all': # all files
+                index_first = 0
+                index_last = nfiles - 1
+            elif arg == '-iter': # just get 1 iter
+                index_first = index_last = index
         # Check to see if either of the indices fall "out of bounds"
         # and if they do replace them with the first or last index
         if index_first < 0: 
@@ -190,7 +142,7 @@ def get_desired_range(int_file_list, args):
         if index_last > nfiles - 1: 
             index_last = nfiles - 1
         the_tuple = index_first, index_last
-    else:
+    else: # user screwed up specifying the range; return nothing
         the_tuple = None
 
     # Return the desired indices
