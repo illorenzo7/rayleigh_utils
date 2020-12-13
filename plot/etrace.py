@@ -266,10 +266,12 @@ if not xiter:
 else:
     xaxis = iters
 
-if from0:
-    xmin = 0.
-else:
-    xmin = np.min(xaxis)
+# set xmin
+if xmin is None:
+    if from0:
+        xmin = 0.
+    else:
+        xmin = np.min(xaxis)
 
 if xminmax is None:
     xminmax = xmin, np.max(xaxis)
