@@ -186,33 +186,35 @@ for i in range(my_nfiles):
     else:   
         a = reading_func(radatadir + str(my_files[i]).zfill(8), '')
     for j in range(a.niter):
-        vals_loc = np.copy(a.vals[:, 0, :, j])
-        # add in internal energy
-        inte_loc = rhot*vals_loc[:, a.lut[501]]
-        # top S subtracted
-        inte_loc_subt = rhot*(vals_loc[:, a.lut[501]] -\
-                vals_loc[0, a.lut[501]])
-        # bottom S subtracted
-        inte_loc_subb = rhot*(vals_loc[:, a.lut[501]] -\
-                vals_loc[-1, a.lut[501]])
+        if my_count < my_ntimes: # make sure we don't go over the allotted
+            # space in the arrays
+            vals_loc = np.copy(a.vals[:, 0, :, j])
+            # add in internal energy
+            inte_loc = rhot*vals_loc[:, a.lut[501]]
+            # top S subtracted
+            inte_loc_subt = rhot*(vals_loc[:, a.lut[501]] -\
+                    vals_loc[0, a.lut[501]])
+            # bottom S subtracted
+            inte_loc_subb = rhot*(vals_loc[:, a.lut[501]] -\
+                    vals_loc[-1, a.lut[501]])
 
-        # add in the three energies
-        vals_loc = np.hstack((vals_loc, inte_loc.T, inte_loc_subt.T,\
-                inte_loc_subb.T))
+            # add in the three energies
+            vals_loc = np.hstack((vals_loc, inte_loc.T, inte_loc_subt.T,\
+                    inte_loc_subb.T))
 
-        # Get the values in the CZ/RZ separately
-        vals_cz_loc = vals_loc[:ir_bcz + 1]
-        vals_rz_loc = vals_loc[ir_bcz + 1:]
+            # Get the values in the CZ/RZ separately
+            vals_cz_loc = vals_loc[:ir_bcz + 1]
+            vals_rz_loc = vals_loc[ir_bcz + 1:]
 
-        gav = np.sum(rw*vals_loc, axis=0)
-        gav_cz = np.sum(rw_cz*vals_cz_loc, axis=0)
-        gav_rz = np.sum(rw_rz*vals_rz_loc, axis=0)
+            gav = np.sum(rw*vals_loc, axis=0)
+            gav_cz = np.sum(rw_cz*vals_cz_loc, axis=0)
+            gav_rz = np.sum(rw_rz*vals_rz_loc, axis=0)
 
-        my_vals[my_count, :] = gav
-        my_vals_cz[my_count, :] = gav_cz
-        my_vals_rz[my_count, :] = gav_rz
-        my_times[my_count] = a.time[j] 
-        my_iters[my_count] = a.iters[j]
+            my_vals[my_count, :] = gav
+            my_vals_cz[my_count, :] = gav_cz
+            my_vals_rz[my_count, :] = gav_rz
+            my_times[my_count] = a.time[j] 
+            my_iters[my_count] = a.iters[j]
         my_count += 1
         if rank == 0:
             pcnt_done = my_count/my_ntimes*100.

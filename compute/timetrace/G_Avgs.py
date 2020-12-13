@@ -158,9 +158,11 @@ for i in range(my_nfiles):
     else:   
         a = reading_func(radatadir + str(my_files[i]).zfill(8), '')
     for j in range(a.niter):
-        my_vals[my_count, :] = a.vals[j, :]
-        my_times[my_count] = a.time[j] 
-        my_iters[my_count] = a.iters[j]
+        if my_count < my_ntimes: # make sure we don't go over the allotted
+            # space in the arrays
+            my_vals[my_count, :] = a.vals[j, :]
+            my_times[my_count] = a.time[j] 
+            my_iters[my_count] = a.iters[j]
         my_count += 1
     if rank == 0:
         pcnt_done = my_count/my_ntimes*100.
