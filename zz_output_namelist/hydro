@@ -71,8 +71,8 @@ azavg_values =
     ! AMOM DENSITY (z,x,y: tot, fluc
     1819,1820,1821, 1822,1823,1824,
     ! MOMENTUM EQUATION: 
-	1201,1202,1203, 1210,1211,1212, 1213,1214,1215,
-    ! ADV: r,theta,phi: tot pp,mm (radial mm currently wrong in Diagnostics_Mean_Correction
+	1201,1202,1203, 1210,1211,1212,
+    ! ADV: r,theta,phi: tot, pp (radial mm currently wrong in Diagnostics_Mean_Correction
     1216, 1219,1220,1221, ! BUOYANCY (r), CORIOLIS (r, theta, phi)
     1228,1229,1230, ! VISCOUS (r, theta, phi)
     1237,1238,1239 ! PRESSURE (r, theta, phi)
@@ -114,8 +114,8 @@ shellavg_values =
     ! AMOM DENSITY (z,x,y: tot, fluc
     1819,1820,1821, 1822,1823,1824,
     ! MOMENTUM EQUATION: 
-	1201,1202,1203, 1210,1211,1212, 1213,1214,1215,
-    ! ADV: r,theta,phi: tot pp,mm (radial mm currently wrong in Diagnostics_Mean_Correction
+	1201,1202,1203, 1210,1211,1212,
+    ! ADV: r,theta,phi: tot, pp (radial mm currently wrong in Diagnostics_Mean_Correction
     1216, 1219,1220,1221, ! BUOYANCY (r), CORIOLIS (r, theta, phi)
     1228,1229,1230, ! VISCOUS (r, theta, phi)
     1237,1238,1239 ! PRESSURE (r, theta, phi)
@@ -157,8 +157,8 @@ globalavg_values =
     ! AMOM DENSITY (z,x,y: tot, fluc
     1819,1820,1821, 1822,1823,1824,
     ! MOMENTUM EQUATION: 
-	1201,1202,1203, 1210,1211,1212, 1213,1214,1215,
-    ! ADV: r,theta,phi: tot pp,mm (radial mm currently wrong in Diagnostics_Mean_Correction
+	1201,1202,1203, 1210,1211,1212,
+    ! ADV: r,theta,phi: tot, pp (radial mm currently wrong in Diagnostics_Mean_Correction
     1216, 1219,1220,1221, ! BUOYANCY (r), CORIOLIS (r, theta, phi)
     1228,1229,1230, ! VISCOUS (r, theta, phi)
     1237,1238,1239 ! PRESSURE (r, theta, phi)
