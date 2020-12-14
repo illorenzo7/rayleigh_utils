@@ -304,6 +304,8 @@ def thin_data(vals, ntot):
     nskip = nx//ntot
     if not nskip in [0, 1]: #for ntot < 2*nx, do nothing
         vals_new = vals[::nskip]
+    else:
+        vals_new = vals
     return vals_new
 print ("ntot = %i" %ntot)
 print ("before thin_data: len(xaxis) = %i" %len(xaxis))
