@@ -72,7 +72,7 @@ for i in range(nfiles - 1):
         q_inds2[iq] = np.argmin(np.abs(di2['qv'] - qv[iq]))
 
     # Now join the dictionary to append
-    vals = np.hstack((vals, di2['vals'][q_inds2, -niters2:]))
+    vals = np.vstack((vals, di2['vals'][-niters2:, q_inds2]))
     times = np.hstack((times, di2['times'][-niters2:]))
     iters = np.hstack((iters, di2['iters'][-niters2:]))
     if i == nfiles - 2:
