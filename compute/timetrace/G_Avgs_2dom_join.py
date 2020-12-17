@@ -52,11 +52,13 @@ lut = np.zeros_like(di_all['lut']) + 4000
 lut[qv] = np.arange(nq)
 di_all['lut'] = lut
 
-# Rearrange first axis in vals to correspond to qv
+# Rearrange second axis in vals to correspond to qv
 q_inds0 = np.zeros(nq, dtype=int)
 for iq in range(nq):
     q_inds0[iq] = np.argmin(np.abs(qv0 - qv[iq]))
-vals = vals[q_inds0, :]
+vals = vals[:, q_inds0]
+vals_cz = vals_cz[:, q_inds0]
+vals_rz = vals_rz[:, q_inds0]
 
 # Now append vals, times, and iters with data from joining data files
 for i in range(nfiles - 1):
@@ -74,19 +76,23 @@ for i in range(nfiles - 1):
         q_inds2[iq] = np.argmin(np.abs(di2['qv'] - qv[iq]))
 
     # Now join the dictionary to append
-    vals = np.hstack((vals, di2['vals'][q_inds2, -niters2:]))
+    vals = np.vstack((vals, di2['vals'][-niters2:, q_inds2]))
+    vals_cz = np.vstack((vals_cz, di2['vals_cz'][-niters2:, q_inds2]))
+    vals_rz = np.vstack((vals_rz, di2['vals_rz'][-niters2:, q_inds2]))
     times = np.hstack((times, di2['times'][-niters2:]))
     iters = np.hstack((iters, di2['iters'][-niters2:]))
     if i == nfiles - 2:
         iter2 = di2['iter2']
 
 di_all['vals'] = vals
+di_all['vals_cz'] = vals_cz
+di_all['vals_rz'] = vals_rz
 di_all['times'] = times
 di_all['iters'] = iters
 di_all['iter1'] = iter1
 di_all['iter2'] = iter2
 
-savename = dirname_stripped + '_trace_G_Avgs_' + str(iter1).zfill(8) +\
+savename = dirname_stripped + '_trace_2dom_G_Avgs_' + str(iter1).zfill(8) +\
         '_' + str(iter2).zfill(8) + '.pkl'
 savefile = datadir + savename
 f = open(savefile, 'wb')
