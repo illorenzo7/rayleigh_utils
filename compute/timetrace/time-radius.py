@@ -169,9 +169,6 @@ if rank == 0:
     nrec_full = a0.niter
     nq = len(qvals)
 
-    # Get quantity indices associated with qvals
-    qinds = a0.lut[qvals]
-
     # Get bunch of grid info
     rr = a0.radius
     nr = a0.nr
@@ -228,12 +225,12 @@ if rank == 0:
 else: # recieve my_files, my_nfiles, my_ntimes
     my_files, my_nfiles, my_ntimes = comm.recv(source=0)
 
-# Broadcast dirname, radatadir, qinds, nq, theta_inds, nlats, nr
+# Broadcast dirname, radatadir, qvals, nq, theta_inds, nlats, nr
 if rank == 0:
-    meta = [dirname, radatadir, qinds, nq, theta_inds, nlats, nr]
+    meta = [dirname, radatadir, qvals, nq, theta_inds, nlats, nr]
 else:
     meta = None
-dirname, radatadir, qinds, nq, theta_inds, nlats, nr =\
+dirname, radatadir, qvals, nq, theta_inds, nlats, nr =\
         comm.bcast(meta, root=0)
 
 # Checkpoint and time
@@ -262,7 +259,7 @@ for i in range(my_nfiles):
         if my_count < my_ntimes: # make sure we don't go over the allotted
             # space in the arrays
             my_vals[my_count, :, :, :] =\
-                    a.vals[:, :, :, j][theta_inds, :, :][:, :, qinds]
+                    a.vals[:, :, :, j][theta_inds, :, :][:, :, a.lut[qvals]]
             my_times[my_count] = a.time[j] 
             my_iters[my_count] = a.iters[j]
         my_count += 1
@@ -324,7 +321,7 @@ if rank == 0:
     iter1, iter2 = int_file_list[0], int_file_list[-1]
     pickle.dump({'vals': vals, 'times': times, 'iters': iters,\
     'lats': lats, 'qvals': qvals, 'theta_inds': theta_inds,\
-    'qinds': qinds, 'niter': ntimes, 'nlats': nlats, 'nq': nq,\
+    'niter': ntimes, 'nlats': nlats, 'nq': nq,\
     'iter1': iter1, 'iter2': iter2, 'rr': rr, 'rr_depth': rr_depth,\
     'rr_height': rr_height,\
     'nr': nr, 'ri': ri, 'ro': ro, 'd': d, 'tt': tt, 'tt_lat': tt_lat,\
