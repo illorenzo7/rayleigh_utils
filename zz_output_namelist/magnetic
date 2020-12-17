@@ -37,7 +37,7 @@ full3d_frequency = 250000
 
 azavg_values = 
     ! FLUID VARIABLES
-    1,2,3, 301,302,303, 501,502, 801,802,803, 1001,1002,1003
+    1,2,3, 301,302,303, 501,502, 801,802,803, 1001,1002,1003,
     ! RADIAL/THETA DERIVS of S, P
     507,508, 513,514,
     ! ENSTROPHY    
@@ -97,7 +97,7 @@ azavg_nrec = 1
 
 shellavg_values =
     ! FLUID VARIABLES
-    1,2,3, 301,302,303, 501,502, 801,802,803, 1001,1002,1003
+    1,2,3, 301,302,303, 501,502, 801,802,803, 1001,1002,1003,
     ! RADIAL/THETA DERIVS of S, P
     507,508, 513,514,
     ! ENSTROPHY    
@@ -157,7 +157,7 @@ shellavg_nrec = 50
 
 globalavg_values = 
     ! FLUID VARIABLES
-    1,2,3, 301,302,303, 501,502, 801,802,803, 1001,1002,1003
+    1,2,3, 301,302,303, 501,502, 801,802,803, 1001,1002,1003,
     ! RADIAL/THETA DERIVS of S, P
     507,508, 513,514,
     ! ENSTROPHY    
