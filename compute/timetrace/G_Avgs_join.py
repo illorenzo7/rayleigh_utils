@@ -54,7 +54,7 @@ di_all['lut'] = lut
 q_inds0 = np.zeros(nq, dtype=int)
 for iq in range(nq):
     q_inds0[iq] = np.argmin(np.abs(qv0 - qv[iq]))
-vals = vals[q_inds0, :]
+vals = vals[:, q_inds0]
 
 # Now append vals, times, and iters with data from joining data files
 for i in range(nfiles - 1):
