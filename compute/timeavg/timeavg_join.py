@@ -1,9 +1,9 @@
 # Created by: Loren Matilsky
 # On: 09/13/2019
 # Routine to average Rayleigh time-averaged data subsets.
-# Weights each average in proportion to "count" (i.e., time-averaging interval).
-# Averages only the intersection of the different qv's, updating "nq" and "lut"
-# appropriately in the output dictionary.
+# Weights each average in proportion to "count" (time-averaging interval).
+# Averages only the intersection of the different qv's updating 
+# "nq" and "lut" appropriately in the output dictionary.
 # Usage: python timeavg_join.py dir1/data/[...]_iter1_iter2.pkl  
 # dir2/data/[...]_iter2_iter3.pkl dir3/data/[...]_iter3_iter4.pkl
 # dirname/ -->  
@@ -14,7 +14,6 @@
 # shav: Shell_Avgs
 # gav: G_Avgs
 # merav: Meridional_Slices
-# enstr: enstrophy_from_mer
 
 # Import relevant modules
 import numpy as np
