@@ -41,6 +41,9 @@ if not os.path.isdir(plotdir):
     os.makedirs(plotdir)
 
 # Read command-line arguments (CLAs)
+nadd = 0
+nsubset = []
+torques_to_add = []
 showplot = True
 saveplot = True
 plotcontours = True
@@ -57,6 +60,7 @@ forced = False
 rvals = None
 rbcz = None
 symlog = False
+tag = ''
 
 args = sys.argv[2:]
 nargs = len(args)
@@ -98,6 +102,15 @@ for i in range(nargs):
         plotboundary = False
     elif arg == '-nolat':
         plotlatlines = False
+    elif arg == '-add':
+        loc_list = args[i+1].split()
+        nadd += 1
+        for j in range(len(loc_list)):
+            loc_list[j] = int(loc_list[j])
+        torques_to_add += loc_list
+        nsubset.append(len(loc_list))
+    elif arg == '-tag':
+        tag = '_' + args[i+1]
 
 # See if magnetism is "on"
 try:
@@ -106,7 +119,7 @@ except:
     magnetism = False # if magnetism wasn't specified, it must be "off"
 
 # Get the torques:
-print ('Getting torques from ' + datadir + AZ_Avgs_file + ' ...')
+print ('Getting torques from ' + datadir + AZ_Avgs_file)
 di = get_dict(datadir + AZ_Avgs_file)
 
 iter1, iter2 = di['iter1'], di['iter2']
@@ -216,7 +229,7 @@ margin_bottom_inches = 0.75*(2 - (rbcz is None))
     # larger bottom margin to make room for colorbar(s)
 margin_top_inches = 1 # wider top margin to accommodate subplot titles AND metadata
 margin_subplot_top_inches = 1/4 # margin to accommodate just subplot titles
-nplots = 4 + 2*magnetism + 1*forced
+nplots = 4 + 2*magnetism + 1*forced + nadd
 ncol = 3 # put three plots per row
 nrow = np.int(np.ceil(nplots/3))
 
@@ -247,18 +260,33 @@ titles = [r'$\tau_{\rm{rs}}$', r'$\tau_{\rm{mc}}$', r'$\tau_{\rm{v}}$',\
           r'$\tau_{\rm{tot}}$']
 units = r'$\rm{g}\ \rm{cm}^{-1}\ \rm{s}^{-2}$'
 
+ind_insert = 3
 if magnetism:
-    torques.insert(3, torque_Maxwell_mean)
-    torques.insert(4, torque_Maxwell_rs)
-    titles.insert(3, r'$\tau_{\rm{mm}}$')
-    titles.insert(4, r'$\tau_{\rm{ms}}$')
+    torques.insert(ind_insert, torque_Maxwell_mean)
+    torques.insert(ind_insert + 1, torque_Maxwell_rs)
+    titles.insert(ind_insert, r'$\tau_{\rm{mm}}$') 
+    titles.insert(ind_insert + 1, r'$\tau_{\rm{ms}}$')
+    ind_insert += 2
+if forced:
+    torques.insert(ind_insert, torque_forcing)
+    titles.insert(ind_insert, r'$\tau_{\rm{forcing}}$')
+    ind_insert =+ 1
+    
+if nadd > 0:
+    jstart = 0
+    for i in range(nadd):
+        ind = torques_to_add[jstart]
+        torque_sum = np.copy(torques[ind])
+        title_sum = titles[ind]
+        for j in range(jstart + 1, jstart + nsubset[i]):
+            ind = torques_to_add[j]
+            torque_sum += torques[ind]
+            title_sum += r'$\ +\ $' + titles[ind]
+        jstart += nsubset[i]
 
-if forced and magnetism:
-    torques.insert(5, torque_forcing)
-    titles.insert(5, r'$\tau_{\rm{forcing}}$')
-elif forced:
-    torques.insert(3, torque_forcing)
-    titles.insert(3, r'$\tau_{\rm{forcing}}$')
+        torques.insert(ind_insert, torque_sum)
+        titles.insert(ind_insert, title_sum)
+        ind_insert += 1
 
 # Generate the actual figure of the correct dimensions
 fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
@@ -297,10 +325,10 @@ fig.text(margin_x, 1 - 0.5*margin_top, time_string,\
          ha='left', va='top', fontsize=fsize, **csfont)
 
 savefile = plotdir + dirname_stripped + '_torque_' + str(iter1).zfill(8) +\
-    '_' + str(iter2).zfill(8) + '.png'
+    '_' + str(iter2).zfill(8) + tag + '.png'
 
 if saveplot:
-    print ('Saving torques at ' + savefile + ' ...')
+    print ('Saving torques at ' + savefile)
     plt.savefig(savefile, dpi=300)
 if showplot:
     plt.show()
