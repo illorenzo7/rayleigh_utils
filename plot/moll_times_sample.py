@@ -35,6 +35,8 @@ if the_tuple is None: # By default plot the last 10 Shell_Slices
     index_first, index_last = nfiles - 11, nfiles - 1  
 else:
     index_first, index_last = the_tuple
+nfiles = index_last - index_first + 1 # this is the number of files we 
+# will plot (modulo the nskip or ntot filters)
 
 # Other defaults
 ir = 0 # by default plot just below the surface
@@ -43,6 +45,7 @@ rval = None # can also find ir by finding the closest point
 varname = 'vr' # by default plot the radial velocity
 clon = 0.
 minmax = None
+nskip = 1 # by default don't skip any slices in the range
 
 # Change the defaults using the CLAs
 for i in range(nargs):
@@ -57,6 +60,11 @@ for i in range(nargs):
         varname = args[i+1]
     elif arg == '-minmax':
         minmax = float(args[i+1]), float(args[i+2])
+    elif arg == '-nskip':
+        nskip = int(args[i+1])
+    elif arg == '-ntot':
+        ntot = int(args[i+1])
+        nskip = nfiles//ntot
 
 # Get the baseline time unit
 rotation = get_parameter(dirname, 'rotation')
@@ -100,7 +108,7 @@ if not os.path.isdir(plotdir):
     os.makedirs(plotdir)
 
 # Loop over each desired iteration and make plots
-for i in range(index_first, index_last + 1):
+for i in range(index_first, index_last + 1, nskip):
     # Read in desired shell slice
     fname = file_list[i]
     a = Shell_Slices(radatadir + fname, '')
