@@ -388,31 +388,49 @@ if magnetism:
     integrated_tot += integrated_me
 
 # collect the terms to plot
-work_terms = [work_ke_advec, work_pressure, work_buoy, work_visc_on_ke,\
+
+# kinetic energy
+ke_terms = [work_ke_advec, work_pressure, work_buoy, work_visc_on_ke,\
         work_ke]
-shav_work_terms = [work_ke_advec_r, work_pressure_r, work_buoy_r,\
+ke_shav_terms = [work_ke_advec_r, work_pressure_r, work_buoy_r,\
         work_visc_on_ke_r, work_ke_r]
-integrated_terms = [integrated_ke_advec, integrated_pressure,\
+ke_integrated_terms = [integrated_ke_advec, integrated_pressure,\
         integrated_buoy, integrated_visc_on_ke, integrated_ke]
 
-titles = [r'$\left\langle-\overline{\rho}\mathbf{u}\cdot\nabla\frac{u^2}{2}\right\rangle$', r'$-\nabla\cdot\langle P\mathbf{u}\rangle$', r'$\overline{\rho}g\left\langle u_r\frac{S}{c_p}\right\rangle$', r'$\langle\mathbf{u}\cdot(\nabla\cdot\mathbf{D})\rangle$', r'$\frac{\partial}{\partial t}\left\langle\frac{1}{2}\overline{\rho}u^2\right\rangle$']
-simple_labels = ['ke_advec', 'pressure', 'buoy', 'visc_on_ke', 'tot ke']
+ke_titles = [r'$\left\langle-\overline{\rho}\mathbf{u}\cdot\nabla\frac{u^2}{2}\right\rangle$', r'$-\nabla\cdot\langle P\mathbf{u}\rangle$', r'$\overline{\rho}g\left\langle u_r\frac{S}{c_p}\right\rangle$', r'$\langle\mathbf{u}\cdot(\nabla\cdot\mathbf{D})\rangle$', r'$\frac{\partial}{\partial t}\left\langle\frac{1}{2}\overline{\rho}u^2\right\rangle$']
+ke_simple_labels = ['ke_advec', 'pressure', 'buoy', 'visc_on_ke', 'tot ke']
 
 units = r'$\rm{erg}\ \rm{cm}^{-3}\ \rm{s}^{-1}$'
 
 if forced:
-    work_terms.insert(4, work_forcing)
-    shav_work_terms.insert(4, work_forcing_r)
-    integrated_terms.insert(4, integrated_forcing_r)
-    titles.insert(4, r'$\mathbf{v}\cdot\mathbf{f}$')
-    simple_labels.insert(4, 'forcing')
+    ke_terms.insert(4, work_forcing)
+    ke_shav_terms.insert(4, work_forcing_r)
+    ke_integrated_terms.insert(4, integrated_forcing)
+    ke_titles.insert(4, r'$\mathbf{v}\cdot\mathbf{f}$')
+    ke_simple_labels.insert(4, 'forcing')
 
 if magnetism:
-    work_terms.insert(4, work_jcrossb)
-    shav_work_terms.insert(4, work_jcrossb_r)
-    integrated_terms.insert(4, integrated_jcrossb)
+    ke_terms.insert(4, work_jcrossb)
+    ke_shav_terms.insert(4, work_jcrossb_r)
+    ke_integrated_terms.insert(4, integrated_jcrossb)
     titles.insert(4, r'$\frac{1}{4\pi}\langle\mathbf{u}\cdot[(\nabla\times\mathbf{B})\times\mathbf{B}]\rangle$')
     simple_labels.insert(4, 'u dot jcrossb')
+
+# internal energy
+inte_terms = [work_thermal_advec, work_thermal_advec_ref, work_cond,\
+        work_rad, work_visc_on_inte, work_inte]
+inte_shav_terms = [work_thermal_advec_r, work_thermal_advec_ref_r,\
+        work_cond_r, work_rad_r, work_visc_on_inte_r, work_inte_r]
+inte_integrated_terms = [integrated_thermal_advec,\
+        integrated_thermal_advec_ref, integrated_cond, integrated_rad,\
+        integrated_visc_on_inte, integrated_inte]
+if magnetism:
+    inte_terms.insert(5, work_joule)
+    inte_shav_terms.insert(5, work_joule_r)
+    inte_integrated_terms.insert(5, integrated_joule)
+
+# magnetic energy
+if magnetism:
 
 # Set up figure from scratch
 fig_width_inches = 11.5 # sideways paper
