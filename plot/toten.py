@@ -46,7 +46,7 @@ if not os.path.isdir(plotdir):
 
 # Read command-line arguments (CLAs)
 magnetism = None
-showplot = True
+showplot = False
 saveplot = True
 plotcontours = True
 plotlatlines = True
@@ -65,6 +65,12 @@ crudeint = False # by default use exact latitudinal weights and instead
 # if crudeint = True, use a "crude weight"
 tag = ''
 
+# determine magnetism from main_input
+magnetism = get_parameter(dirname, 'magnetism')
+keys = ['toten_ke', 'toten_inte']
+if magnetism:
+    keys.append('toten_me')
+
 # need stellar luminosity
 lstar = get_lum(dirname)
 
@@ -78,10 +84,8 @@ for i in range(nargs):
         minmaxrz = float(args[i+1]), float(args[i+2])
     elif arg == '-rbcz':
         rbcz = float(args[i+1])
-    elif arg == '-noshow':
-        showplot = False
-    elif arg == '-nosave':
-        saveplot = False
+    elif arg == '-show':
+        showplot = True
     elif arg == '-nocontour':
         plotcontours = False
     elif arg == '-usefile':
@@ -106,16 +110,19 @@ for i in range(nargs):
         linscalerz = float(args[i+1])
     elif arg == '-nolats':
         plotlatlines = False
-    elif arg == '-mag':
-        magnetism = bool(args[i+1])
     elif arg == '-crudeint':
         crudeint = True
     elif arg == '-tag':
         tag = '_' + args[i+1]
-
-# by default determine magnetism from main_input
-if magnetism is None:
-    magnetism = get_parameter(dirname, 'magnetism')
+    elif arg == '-ke': # just KE equation
+        keys = ['toten_ke']
+        showplot = True
+    elif arg == '-inte': # just heat equation
+        keys = ['toten_inte']
+        showplot = True
+    elif arg == '-me': # just ME equation
+        keys = ['toten_me']
+        showplot = True
 
 # Get the data:
 print ('Getting total energy production terms from ' +\
@@ -398,7 +405,7 @@ ke_integrated_terms = [integrated_ke_advec, integrated_pressure,\
         integrated_buoy, integrated_visc_on_ke, integrated_ke]
 
 ke_titles = [r'$\left\langle-\overline{\rho}\mathbf{u}\cdot\nabla\frac{u^2}{2}\right\rangle$', r'$-\nabla\cdot\langle P\mathbf{u}\rangle$', r'$\overline{\rho}g\left\langle u_r\frac{S}{c_p}\right\rangle$', r'$\langle\mathbf{u}\cdot(\nabla\cdot\mathbf{D})\rangle$', r'$\frac{\partial}{\partial t}\left\langle\frac{1}{2}\overline{\rho}u^2\right\rangle$']
-ke_labels = ['ke_advec', 'pressure', 'buoy', 'visc_on_ke', 'd(ke)/dt']
+ke_labels = ['ke adv', 'press', 'buoy', 'visc work', 'd(ke)/dt']
 
 units = r'$\rm{erg}\ \rm{cm}^{-3}\ \rm{s}^{-1}$'
 
@@ -414,7 +421,7 @@ if magnetism:
     ke_shav_terms.insert(4, work_jcrossb_r)
     ke_integrated_terms.insert(4, integrated_jcrossb)
     ke_titles.insert(4, r'$\frac{1}{4\pi}\langle\mathbf{u}\cdot[(\nabla\times\mathbf{B})\times\mathbf{B}]\rangle$')
-    ke_labels.insert(4, 'u dot jcrossb')
+    ke_labels.insert(4, 'mag work')
 
 # internal energy
 inte_terms = [work_thermal_advec, work_thermal_advec_ref, work_cond,\
@@ -425,13 +432,13 @@ inte_integrated_terms = [integrated_thermal_advec,\
         integrated_thermal_advec_ref, integrated_cond, integrated_rad,\
         integrated_visc_on_inte, integrated_inte]
 inte_titles = [r'$\left\langle-\overline{\rho}\overline{T}\mathbf{u}\cdot\nabla S\right\rangle$', r'$-\overline{\rho}\overline{T}\frac{dS}{dr}\langle u_r\rangle$', r'$\nabla\cdot[\kappa\overline{\rho}\overline{T}\nabla\langle\ S\rangle]$', r'$Q(r)$', r'$\langle\mathbf{D}:\nabla\mathbf{u}\rangle$', r'$\overline{\rho}\overline{T}\frac{\partial\langle S\rangle}{\partial t}$']
-inte_labels = ['thermal_advec', 'thermal_advec_ref', 'cond', 'rad', 'visc_on_inte', 'd(inte)/dt']
+inte_labels = ['S adv', 'ref adv', 'cond', 'rad', 'visc heat', 'd(inte)/dt']
 if magnetism:
     inte_terms.insert(5, work_joule)
     inte_shav_terms.insert(5, work_joule_r)
     inte_integrated_terms.insert(5, integrated_joule)
     inte_titles.insert(5, r'$\frac{\eta}{4\pi}\langle(\nabla\times\mathbf{B})^2\rangle$')
-    inte_labels.insert(5, 'joule')
+    inte_labels.insert(5, 'mag heat')
 
 # magnetic energy
 if magnetism:
@@ -446,20 +453,15 @@ all_shav_terms = {'toten_ke': ke_shav_terms, 'toten_inte': inte_shav_terms, 'tot
 all_integrated_terms = {'toten_ke': ke_integrated_terms, 'toten_inte': inte_integrated_terms, 'toten_me': me_integrated_terms}
 all_titles = {'toten_ke': ke_titles, 'toten_inte': inte_titles, 'toten_me': me_titles}
 all_labels = {'toten_ke': ke_labels, 'toten_inte': inte_labels, 'toten_me': me_labels}
+plot_labels = {'toten_ke': 'kinetic energy equation', 'toten_inte': 'heat equation', 'toten_me': 'magnetic energy equation'}
 
 # make three plots (toten_[ke, inte, me])
 all_nplots = {'toten_ke': 5 + magnetism + forced, 'toten_inte': 6 + magnetism, 'toten_me': 3}
 
-# general figure dimensions
-fig_width_inches = 11.5 # sideways paper
-margin_inches = 1./8. # margin width in inches (for both x and y) and 
-    # horizontally in between figures
-margin_top_inches = 1 # wider top margin to accommodate subplot titles AND metadata
-margin_bottom_inches = 0.75*(2 - (rbcz is None)) 
-    # larger bottom margin to make room for colorbar(s)
-margin_subplot_top_inches = 1/4 # margin to accommodate just subplot titles
+# fontsizes for the labels
+fsize = 12
 
-for key in ['toten_ke', 'toten_inte', 'toten_me']:
+for key in keys:
     print ("plotting ", key)
     nplots = all_nplots[key]
     terms = all_terms[key]
@@ -468,19 +470,34 @@ for key in ['toten_ke', 'toten_inte', 'toten_me']:
     titles = all_titles[key]
     labels = all_labels[key]
 
-    nrow = 2
+    #nrow = 2
+    ncol = 4
     #ncol = np.int(np.ceil((nplots + 3)/nrow)) # +3 for room for line plot
     #ncol = 4 # put three plots per row
-    #nrow = np.int(np.ceil(nplots/3)) + 1 # one more row for spherical avg plot
+    nrow = np.int(np.ceil(nplots/ncol))
 
-    #subplot_width_inches = (fig_width_inches - (ncol + 1)*margin_inches)/ncol
-    subplot_width_inches = (fig_width_inches - (nplots + 1)*margin_inches)/nplots
+    # set up figure dimensions
+    fig_width_inches = 8.5 # 8.5 x 11 paper
+    margin_inches = 1./8. # margin width in inches (for both x and y) and 
+        # horizontally in between figures
+    margin_top_inches = 1 # wider top margin to accommodate subplot titles AND metadata
+    margin_subplot_bottom_inches = 0.75*(2 - (rbcz is None)) 
+        # larger bottom margin to make room for colorbar(s)
+    margin_subplot_top_inches = 1/4 # margin to accommodate just subplot titles
+
+
+    subplot_width_inches = (fig_width_inches - (ncol + 1)*margin_inches)/ncol
+    #subplot_width_inches = (fig_width_inches - (nplots + 1)*margin_inches)/nplots
         # Make the subplot width so that ncol subplots fit together side-by-side
         # with margins in between them and at the left and right.
     subplot_height_inches = 2*subplot_width_inches # Each subplot should have an
+    ax_r_height_inches = 0.75*subplot_height_inches
+    margin_bottom_inches = 0.5
         # aspect ratio of y/x = 2/1 to accommodate meridional planes. 
     fig_height_inches = margin_top_inches + nrow*(subplot_height_inches +\
-            margin_subplot_top_inches + margin_bottom_inches)
+            margin_subplot_top_inches + margin_subplot_bottom_inches) +\
+            ax_r_height_inches + margin_bottom_inches
+            
     fig_aspect = fig_height_inches/fig_width_inches
 
     # "Margin" in "figure units"; figure units extend from 0 to 1 in BOTH 
@@ -489,8 +506,10 @@ for key in ['toten_ke', 'toten_inte', 'toten_me']:
     margin_x = margin_inches/fig_width_inches
     margin_y = margin_inches/fig_height_inches
     margin_top = margin_top_inches/fig_height_inches
+    margin_subplot_bottom = margin_subplot_bottom_inches/fig_height_inches
     margin_bottom = margin_bottom_inches/fig_height_inches
     margin_subplot_top = margin_subplot_top_inches/fig_height_inches
+
 
     # Subplot dimensions in figure units
     subplot_width = subplot_width_inches/fig_width_inches
@@ -499,16 +518,20 @@ for key in ['toten_ke', 'toten_inte', 'toten_me']:
     # Generate figure of the correct dimensions
     fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
 
+    # axis for spherically averaged line plots
     # axes to hold spherically averaged line plot
     #n_on_second_row = nplots - ncol
     #ax_r_width = 2.*subplot_width # space for left label + make pretty
-    ax_r_width= 3*subplot_width
-    ax_r_left = 0.15
+    ax_r_height = ax_r_height_inches/fig_height_inches
+    ax_r_width= 2*subplot_width
+    ax_r_left_inches = 1. # axis half inch from left
+    ax_r_left = ax_r_left_inches/fig_width_inches
+    #ax_r_width = 4*margin_x + 3*subplot_width - ax_r_left
     #ax_r_center = 0.5*(1. + margin_x +\
     #        n_on_second_row*(subplot_width + margin_x))
     #ax_r_left = ax_r_center - 0.5*ax_r_width
     ax_r = fig.add_axes((ax_r_left, margin_bottom,\
-            ax_r_width, subplot_height))
+            ax_r_width, ax_r_height))
     # linewidth for line plot
     lw = 1.
     # stuff for labels showing total rates of change
@@ -516,15 +539,15 @@ for key in ['toten_ke', 'toten_inte', 'toten_me']:
     #offset = 1.0/4.0/fig_height_inches
 
     for iplot in range(nplots):
-        #ax_left = margin_x + (iplot%ncol)*(subplot_width + margin_x)
-        ax_left = margin_x + iplot*(subplot_width + margin_x)
-        #ax_bottom = 1 - margin_top - subplot_height - margin_subplot_top -\
-                #margin_bottom)
-        ax_bottom = 1. - margin_top - subplot_height - margin_subplot_top 
+        ax_left = margin_x + (iplot%ncol)*(subplot_width + margin_x)
+        #ax_left = margin_x + iplot*(subplot_width + margin_x)
+        ax_bottom = 1 - margin_top - margin_subplot_top - subplot_height -\
+                (iplot//ncol)*(margin_subplot_top + subplot_height +\
+                margin_subplot_bottom)
+        #ax_bottom = 1. - margin_top - subplot_height - margin_subplot_top 
         # plot work in meridional plane
         ax = fig.add_axes((ax_left, ax_bottom, subplot_width, subplot_height))
-        plot_azav (terms[iplot], rr, cost, fig=fig, ax=ax,\
-                units=units,\
+        plot_azav (terms[iplot], rr, cost, fig=fig, ax=ax, units=units,\
                minmax=minmax, plotcontours=plotcontours, rvals=rvals,\
                minmaxrz=minmaxrz, rbcz=rbcz, symlog=symlog,\
         linthresh=linthresh, linscale=linscale, linthreshrz=linthreshrz,\
@@ -541,16 +564,16 @@ for key in ['toten_ke', 'toten_inte', 'toten_me']:
         #        fontsize=fs)
 
     # fix up some stuff for the shav work terms
-    ax_r.set_xlabel(r'$r/R_\odot$')
-    ax_r.set_ylabel("spherically avg'd terms")
+    ax_r.set_xlabel(r'$r/R_\odot$', fontsize=fsize, **csfont)
+    ax_r.set_ylabel("spherical average (cgs)", fontsize=fsize, **csfont )
     ax_r.set_xlim((ri/rsun, ro/rsun))
-    # make room for legend
-    ymin, ymax = ax_r.get_ylim()
-    buff_frac = 0.3
-    buff = buff_frac*(ymax - ymin)
-    ymin -= buff
-    ax_r.set_ylim((ymin, ymax))
-    leg = ax_r.legend(loc = 'lower left', fontsize=7, ncol=1)
+    ## make room for legend
+    #ymin, ymax = ax_r.get_ylim()
+    #buff_frac = 0.3
+    #buff = buff_frac*(ymax - ymin)
+    #ymin -= buff
+    #ax_r.set_ylim((ymin, ymax))
+    leg = ax_r.legend(bbox_to_anchor=(1.05, 1), loc=2, fontsize=fsize)
     # ticks everywhere
     plt.sca(ax_r)
     plt.minorticks_on()
@@ -567,11 +590,11 @@ for key in ['toten_ke', 'toten_inte', 'toten_me']:
                 %((t2 - t1)/time_unit)) + time_label + ')'
 
     # Put some metadata in upper left
-    fsize = 12
     fig.text(margin_x, 1 - 0.1*margin_top, dirname_stripped,\
              ha='left', va='top', fontsize=fsize, **csfont)
-    fig.text(margin_x, 1 - 0.3*margin_top, 'Kinetic energy production terms (zonally averaged)',\
-             ha='left', va='top', fontsize=fsize, **csfont)
+    fig.text(margin_x, 1 - 0.3*margin_top, plot_labels[key] +\
+            ' (zonally averaged)', ha='left', va='top',\
+            fontsize=fsize, **csfont)
     fig.text(margin_x, 1 - 0.5*margin_top, time_string,\
              ha='left', va='top', fontsize=fsize, **csfont)
 
@@ -580,4 +603,6 @@ for key in ['toten_ke', 'toten_inte', 'toten_me']:
 
     print ('Saving plot at ' + savefile)
     plt.savefig(savefile, dpi=300)
+    if showplot:
+        plt.show()
     plt.close()
