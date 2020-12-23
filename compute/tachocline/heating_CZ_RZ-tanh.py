@@ -14,7 +14,7 @@
 # transition radius for heating
 #
 # -delta
-# Transition width delta (as a fraction of rm) default 0.010
+# Transition width delta (as a fraction of rm) default 0.030
 #
 # -lum
 # Luminosity to be driven through layer, default Lsun
@@ -33,7 +33,7 @@ from common import rsun, lsun
 
 # Set default constants
 rt = 5.0e10 # by default transition a bit below RZ-CZ transition
-delta = 0.01
+delta = 0.03
 lum = lsun
 
 # Get directory to save binary files for reference state and heating
