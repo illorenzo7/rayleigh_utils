@@ -24,7 +24,7 @@
 # Stiffness k, default 2
 # 
 # -delta
-# Transition width delta as a fraction of rsun, default 0.010
+# Transition width delta as a fraction of rsun, default 0.030
 #
 # -gam
 # specific heat ratio gamma, default 5/3
@@ -61,7 +61,7 @@ pm = bc.pm
 rhom = bc.rhom
 gam = bc.gamma
 k = 2.0
-delta = 0.010*rsun
+delta = 0.030*rsun
 mag = False
 
 # Get directory to save binary files for reference
