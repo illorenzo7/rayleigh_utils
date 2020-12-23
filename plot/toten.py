@@ -70,7 +70,7 @@ tag = ''
 
 # determine magnetism from main_input
 magnetism = get_parameter(dirname, 'magnetism')
-keys = ['toten_ke', 'toten_inte']
+keys = ['toten_tote', 'toten_ke', 'toten_inte']
 if magnetism:
     keys.append('toten_me')
 
@@ -134,6 +134,9 @@ for i in range(nargs):
     elif arg == '-me': # just ME equation
         keys = ['toten_me']
         showplot = True
+    elif arg == '-tote':
+        keys = ['toten_tote']
+        showplot = True
 
 # Get the data:
 print ('Getting energy production terms from ' +\
@@ -189,6 +192,7 @@ xx = di['xx']
 eq = get_eq(dirname)
 rho = eq.density
 T = eq.temperature
+dlnT = eq.dlnT
 dsdr = eq.dsdr
 rhoT = rho*T
 grav = eq.gravity
@@ -197,6 +201,7 @@ rho_2d = rho.reshape((1, nr))
 T_2d = T.reshape((1, nr))
 dsdr_2d = dsdr.reshape((1, nr))
 rhoT_2d = rhoT.reshape((1, nr))
+dlnT_2d = dlnT.reshape((1, nr))
 
 #========================
 # KINETIC ENERGY EQUATION
@@ -310,9 +315,6 @@ if magnetism:
     # joule heating also off by rho*T
     work_inte += work_joule
 
-# Negligible work (probably second-order but still worried about it)
-work_dsdr_negligible = rhoTvrS*dsdr_2d/c_P
-
 #=========================
 # MAGNETIC ENERGY EQUATION
 #=========================
@@ -404,20 +406,58 @@ if magnetism:
         me_shav_terms.append(shav_term)
         me_integrated_terms.append(integrated_term)
 
-#======================
-# TOTAL ENERGY EQUATION
-#======================
+#====================================================
+# TOTAL ENERGY EQUATION (negative divergences mostly)
+#====================================================
+work_visc = work_visc_on_inte + work_visc_on_ke
+work_enth = work_pressure + work_thermal_advec
+# Negligible work (probably second-order but still worried about it)
+work_negligible = rhoTvrS*dsdr_2d/c_P
+# "extra" term for T_ref togoes inside convective derivative
+work_extra_advec = -rhoTvrS*dlnT_2d 
+work_inte_advec = work_thermal_advec + work_extra_advec
 work_tot = work_ke + work_inte
+
+tote_terms = [work_ke_advec, work_enth, work_cond, work_rad, work_visc,\
+        work_thermal_advec_ref, work_buoy, work_extra_advec,\
+        work_negligible, work_tot]
+tote_titles =\
+[r'$-\nabla\cdot\left\langle\frac{1}{2}\overline{\rho}u^2\right\rangle$',\
+r'$-\nabla\cdot\langle (\overline{\rho}\overline{T}S + P)\mathbf{u}\rangle$',\
+r'$\nabla\cdot[\kappa\overline{\rho}\overline{T}\nabla\langle\ S \rangle]$',\
+r'$Q(r)$',\
+r'$\nabla\cdot\langle\mathbf{D}\cdot\mathbf{u}\rangle$',\
+r'$-\overline{\rho}\overline{T}\frac{d\overline{S}}{dr}\langle u_r\rangle$',\
+r'$\overline{\rho}g\left\langle u_r\frac{S}{c_p}\right\rangle$',\
+r'$-\overline{\rho}\frac{d\overline{T}}{dr}\langle u_r S \rangle$',\
+r'$\overline{\rho}\overline{T}\frac{d\overline{S}}{dr}\left\langle u_r\frac{S}{c_p}\right\rangle$',\
+r'$\frac{\partial}{\partial t}\left\langle TOTE\right\rangle$']
+tote_labels = ['ke adv', 'enth', 'cond', 'rad', 'visc', 'ref adv', 'buoy',\
+        'extra', 'small', 'tot']
+
 if magnetism:
-    work_tot += work_me
+    work_Poyn = work_mag + work_induct
+    tote_terms[-1] += work_me
+    tote_terms.insert(9, work_Poyn)
+    tote_titles.insert(9, r'$-\frac{1}{4\pi}\nabla\cdot\left\langle[\eta\nabla\times\mathbf{B}-\mathbf{u}\times\mathbf{B}]\times\mathbf{B}\right\rangle$')
+    tote_labels.insert(9, 'Poyn')
+
+# spherically and volume averaged terms
+tote_shav_terms = []
+tote_integrated_terms = []
+for term in tote_terms:
+    shav_term = np.sum(term*tw_2d, axis=0)
+    integrated_term = volume*np.sum(shav_term*rw)
+    tote_shav_terms.append(shav_term)
+    tote_integrated_terms.append(integrated_term)
 
 # now collect all terms for plotting
-all_terms = {'toten_ke': ke_terms, 'toten_inte': inte_terms}
-all_shav_terms = {'toten_ke': ke_shav_terms, 'toten_inte': inte_shav_terms}
-all_integrated_terms = {'toten_ke': ke_integrated_terms, 'toten_inte': inte_integrated_terms}
-all_titles = {'toten_ke': ke_titles, 'toten_inte': inte_titles}
-all_labels = {'toten_ke': ke_labels, 'toten_inte': inte_labels}
-plot_labels = {'toten_ke': 'kinetic energy equation', 'toten_inte': 'heat equation'}
+all_terms = {'toten_tote': tote_terms, 'toten_ke': ke_terms, 'toten_inte': inte_terms}
+all_shav_terms = {'toten_tote': tote_shav_terms, 'toten_ke': ke_shav_terms, 'toten_inte': inte_shav_terms}
+all_integrated_terms = {'toten_tote': tote_integrated_terms, 'toten_ke': ke_integrated_terms, 'toten_inte': inte_integrated_terms}
+all_titles = {'toten_tote': tote_titles, 'toten_ke': ke_titles, 'toten_inte': inte_titles}
+all_labels = {'toten_tote': tote_labels, 'toten_ke': ke_labels, 'toten_inte': inte_labels}
+plot_labels = {'toten_tote': 'total energy equation', 'toten_ke': 'kinetic energy equation', 'toten_inte': 'heat equation'}
 
 if magnetism:
     all_terms['toten_me'] = me_terms
