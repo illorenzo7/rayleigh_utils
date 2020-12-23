@@ -48,7 +48,7 @@ azavg_values =
     ! THERMAL ENERGY
     701,704, !internal energy (rhobar*Tbar*S), enthalpy (c_P*rhobar*T)
     ! KINETIC ENERGY EQUATION
-    1901,1904,190,1910,
+    1901,1904,1907,1910,
     ! Pressure work, buoyancy work, viscous work on KE,\
     ! minus advec. work, Lorentz work
     ! THERMAL ENERGY EQUATION
