@@ -365,7 +365,8 @@ elif inte_subb:
     inte_rz = vals_rz[:, lut[4002]]
     print("Got SUBB internal energy trace from trace_2dom_G_Avgs")
     inte_label = "IE SUBB"
-elif inte_gtr2 or (plot_inte and sep_czrz): # inte not from trace_G_Avgs
+elif inte_gtr2 or ((plot_inte or plot_tote) and sep_czrz): 
+    # inte not from trace_G_Avgs
     inte = vals[:, lut[4000]]
     inte_cz = vals_cz[:, lut[4000]]
     inte_rz = vals_rz[:, lut[4000]]
