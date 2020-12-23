@@ -8,7 +8,7 @@
 shellslice_levels_nrm = 0.05, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 0.95
 ! 9 levels: start/end 5% from shell top and b-ottom, otherwise equally spaced by 12.5%
 ! 9 levels in each zone if two zones
-shellslice_values    = 1,2,3, 301,302,303, 501,502, 801,802,803, 1001,1002,1003
+shellslice_values    = 1,2,3, 301,302,303, 501,502
 ! "FLUID VARIABLES" (8 vars, 14 with magnetism)
 ! velocities/vorticities, [r --> phi], pressure, t-var, B-fields/Del X B [r --> phi]
 shellslice_frequency = 10000
