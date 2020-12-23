@@ -202,6 +202,7 @@ T_2d = T.reshape((1, nr))
 dsdr_2d = dsdr.reshape((1, nr))
 rhoT_2d = rhoT.reshape((1, nr))
 dlnT_2d = dlnT.reshape((1, nr))
+grav_2d = grav.reshape((1, nr))
 
 #========================
 # KINETIC ENERGY EQUATION
@@ -213,18 +214,20 @@ work_ke_advec = vals[:, :, lut[1910]]
 # Pressure work on KE
 work_pressure = vals[:, :, lut[1901]]
 
-# Will need this for "negligible work" and possibly buoyancy work
-rhoTvrS = vals[:, :, lut[1440]]
-
-# Buoyancy work on KE (in future calculate 1904)
+# Buoyancy work on KE 
+# need this first
+S_00 = np.sum(vals[:, :, lut[501]]*tw_2d, axis=0)
+vr = vals[:, :, lut[1]]
+vrS_00 = vr*S_00.reshape((1, nr))
 try:
     work_buoy = vals[:, :, lut[1904]]
     print ("buoy_work = 1904 output in AZ_Avgs")
-except:
+    # Will need this for "negligible work" and possibly buoyancy work
+    vrS_lnot0 = c_P*work_buoy/(rho_2d*grav_2d)
+    rhoTvrS = rhoT_2d*(vrS_lnot0 + vrS_00)
+except: # hopefully they output 1440
+    rhoTvrS = vals[:, :, lut[1440]]
     vrS = rhoTvrS/rhoT
-    S_00 = np.sum(vals[:, :, lut[501]]*tw_2d, axis=0)
-    vr = vals[:, :, lut[1]]
-    vrS_00 = vr*S_00.reshape((1, nr))
     work_buoy = (rho*grav/c_P).rshape((1, nr))*(vrS - vrS_00)
     print ("buoy_work = 1904 not output in AZ_Avgs")
     print ("getting buoyancy work from 1440 = rhoTvrS")
@@ -527,7 +530,10 @@ for key in keys:
     shav_left_inches = 1. # axis half inch from left
     shav_left = shav_left_inches/fig_width_inches
     ax_shav = fig.add_axes((shav_left, margin_bottom, shav_width,\
-            shav_height))
+            shav_height - margin_y))
+    if not rbcz is None:
+        ax_shav_rz = ax_shav.twinx()
+        irbcz = np.argmin(np.abs(rr - rbcz))
 
     for iplot in range(nplots):
         ax_left = margin_x + (iplot%ncol)*(subplot_width + margin_x)
@@ -546,19 +552,52 @@ for key in keys:
         # plot spherically averaged work
         shav_label = labels[iplot] + ': ' +\
                 sci_format(integrated_terms[iplot]/lstar, 3) + r'$L_*$'
-        ax_shav.plot(rr/rsun, shav_terms[iplot], label=shav_label,\
+        if rbcz is None:
+            ax_shav.plot(rr/rsun, shav_terms[iplot], label=shav_label,\
                 linewidth=lw)
+        else:
+            ax_shav.plot(rr[:irbcz]/rsun, shav_terms[iplot][:irbcz],\
+                    label=shav_label, linewidth=lw)
+            ax_shav_rz.plot(rr[irbcz:]/rsun, shav_terms[iplot][irbcz:],\
+                    label=shav_label, linewidth=lw)
 
     # fix up some stuff for the shav work line plot
     ax_shav.set_xlabel(r'$r/R_\odot$', fontsize=fs, **csfont)
-    ax_shav.set_ylabel("spherical average (cgs)", fontsize=fs, **csfont )
-    ax_shav.set_xlim((ri/rsun, ro/rsun))
+    #ax_shav.set_xlim((ri/rsun, ro/rsun))
     ax_shav.legend(bbox_to_anchor=(1.05, 1), loc=2, fontsize=small_fs,\
             labelspacing=0.5)
-    # ticks everywhere
-    plt.sca(ax_shav)
-    plt.minorticks_on()
-    plt.tick_params(top=True, right=True, direction='in', which='both')
+    ax_shav.set_title("spherical averages (cgs)", fontsize=fs,\
+            **csfont )
+    # mark zero line
+    ax_shav.plot(rr/rsun, np.zeros_like(rr), 'k--', linewidth=0.5*lw)
+    # ticks (mostly) everywhere
+    if rbcz is None:
+        plt.sca(ax_shav)
+        plt.minorticks_on()
+        plt.tick_params(top=True, right=True, direction='in', which='both')
+    else:
+        plt.sca(ax_shav)
+        plt.minorticks_on()
+        plt.tick_params(top=True, left=False, right=True, direction='in',\
+                which='both')
+        #ax_shav.yaxis.set_label_position('right')
+        ax_shav.yaxis.tick_right()
+        plt.sca(ax_shav_rz)
+        plt.minorticks_on()
+        plt.tick_params(top=True, left=True, right=False, direction='in',\
+                which='both')
+        ax_shav_rz.yaxis.tick_left()
+        #ax_shav_rz.set_xlim((ri/rsun, ro/rsun))
+        # centralize the zero point
+        for ax in [ax_shav, ax_shav_rz]:
+            ymin, ymax = ax.get_ylim()
+            ymaxabs = max(np.abs(ymin), np.abs(ymax))
+            ax.set_ylim(-ymaxabs, ymaxabs)
+        # mark the chosen rbcz
+        ax_shav_rz.plot(np.zeros(100) + rr[irbcz]/rsun,\
+                np.linspace(-ymaxabs, ymaxabs, 100), 'k--',\
+                linewidth=0.5*lw)
+        ax_shav_rz.plot(rr/rsun, np.zeros_like(rr), 'k--', linewidth=0.5*lw)
 
     # Label averaging interval
     if rotation:
