@@ -3,7 +3,10 @@
 # This script plots each term in the total energy equation in the 
 # meridional plane,
 # each term's latitudinally (spherically) integrated profile vs. radius,
-# and the total integrated rate of change of the energy
+# and the total integrated rate of change of the energy.
+# Plots the total energy equation, KE eq., ME eq., and heat eq. separately
+# to choose only one plot, specify
+# -tot, -ke, -inte, -me
 # Analyzes Rayleigh run directory indicated by [dirname]. To use an
 # AZ_Avgs file different than the one associated with the longest 
 # averaging range, use
@@ -93,6 +96,14 @@ for i in range(nargs):
         AZ_Avgs_file = AZ_Avgs_file.split('/')[-1]
     elif arg == '-forced':
         forced = True
+        # check if force_econs is True
+        # If False, this work will need to get included in total energy eq
+        # If True, energy is conserved, so term in heat equation
+        # balances out the work term
+        try:
+            force_econs = get_parameter(dirname, 'force_econs')
+        except:
+            force_econs = False
     elif arg == '-rvals':
         rvals_str = args[i+1].split()
         rvals = []
@@ -125,7 +136,7 @@ for i in range(nargs):
         showplot = True
 
 # Get the data:
-print ('Getting total energy production terms from ' +\
+print ('Getting energy production terms from ' +\
         datadir + AZ_Avgs_file)
 di = get_dict(datadir + AZ_Avgs_file)
 
@@ -187,14 +198,12 @@ T_2d = T.reshape((1, nr))
 dsdr_2d = dsdr.reshape((1, nr))
 rhoT_2d = rhoT.reshape((1, nr))
 
-# Calculate the negative divergences
-
 #========================
 # KINETIC ENERGY EQUATION
 #========================
 
 # Advection work on KE
-work_ke_advec = vals[:, :, lut[1910]] #
+work_ke_advec = vals[:, :, lut[1910]]
 
 # Pressure work on KE
 work_pressure = vals[:, :, lut[1901]]
@@ -216,7 +225,7 @@ except:
     print ("getting buoyancy work from 1440 = rhoTvrS")
     print ("subtracting l = 0 part using sum (tw * (501 = S))")
 
-# Viscous work on kinetic energy
+# viscous work on kinetic energy
 work_visc_on_ke = vals[:, :, lut[1907]]
 
 # total ke work
@@ -224,19 +233,11 @@ work_ke = work_ke_advec + work_pressure + work_buoy + work_visc_on_ke
 
 # J X B work on KE, if magnetic
 if magnetism:
-    work_jcrossb = vals[:, :, lut[1916]]
-    work_ke += work_jcrossb
+    work_mag = vals[:, :, lut[1916]]
+    work_ke += work_mag
 
 # Possibly work from forcing function
 if forced:
-    force_econs = False # If False, this work will need to get 
-                # included in total
-                # If True, energy is conserved, so term in heat equation
-                # balances out the work term
-    try:
-        force_econs = get_parameter(dirname, 'force_econs')
-    except:
-        pass
     mean_vp = vals[:, :, lut[3]]
     vp2 = vals[:, :, lut[416]]
     fluc_vp2 = vals[:, :, lut[416]]
@@ -286,7 +287,7 @@ work_thermal_advec = -vals[:, :, lut[1401]] # 1401 = + rho*T*v dot grad S
 
 # Stable gradient (advection of reference entropy)
 vr = vals[:, :, lut[1]]
-work_thermal_advec_ref = -rhoT_2d*vr*dsdr_2d
+work_thermal_advec_ref = -rhoT_2d*dsdr_2d*vr
 
 # heat by conduction
 work_cond = vals[:, :, lut[1421]]
@@ -294,10 +295,9 @@ work_cond = vals[:, :, lut[1421]]
 # heat from heating function (representing radiation)
 work_rad = vals[:, :, lut[1434]] # Q(r)
 
-# Irreversible (viscous) heating
-work_visc_on_inte = rhoT_2d*vals[:, :, lut[1435]] 
 # (irreversible) viscous heating
-# 1435 THIS IS OFF BY rho*T compared to what it's supposed to be
+work_visc_on_inte = rhoT_2d*vals[:, :, lut[1435]] 
+# 1435 is off by rho*T compared to what it's supposed to be
 # (i.e., it's the viscous heating as in the entropy equation, not energy eq)
 
 # total work on internal energy
@@ -310,243 +310,192 @@ if magnetism:
     # joule heating also off by rho*T
     work_inte += work_joule
 
-# total work
-work_tot = work_ke + work_inte
-
-# Not sure actually if I should plot this now...
+# Negligible work (probably second-order but still worried about it)
 work_dsdr_negligible = rhoTvrS*dsdr_2d/c_P
-#print ("maxabs (small dsdr work) = ", np.max(np.abs(work_dsdr_negligible)))
 
-# magnetic energy equation
+#=========================
+# MAGNETIC ENERGY EQUATION
+#=========================
 if magnetism:
     work_induct = 1.0/(4.0*np.pi)*(vals[:, :, lut[2019]]) 
     work_idiff = 1.0/(4.0*np.pi)*vals[:, :, lut[2043]]
     # total magnetic energy work
     work_me = work_induct + work_idiff
-    # total work
-    work_tot += work_me
 
-# get spherically averaged work
+#======================================
+# SPHERICALLY/VOLUME AVERAGED EQUATIONS
+#======================================
 
-# kinetic energy equation
-work_ke_advec_r = np.sum(work_ke_advec*tw_2d, axis=0)
-work_pressure_r = np.sum(work_pressure*tw_2d, axis=0)
-work_buoy_r = np.sum(work_buoy*tw_2d, axis=0)
-work_visc_on_ke_r = np.sum(work_visc_on_ke*tw_2d, axis=0)
-if magnetism:
-    work_jcrossb_r = np.sum(work_jcrossb*tw_2d, axis=0)
-work_ke_r = np.sum(work_ke*tw_2d, axis=0)
-
-# heat equation
-work_thermal_advec_r = np.sum(work_thermal_advec*tw_2d, axis=0)
-work_thermal_advec_ref_r = np.sum(work_thermal_advec_ref*tw_2d, axis=0)
-work_cond_r = np.sum(work_cond*tw_2d, axis=0)
-work_rad_r = np.sum(work_rad*tw_2d, axis=0)
-work_visc_on_inte_r = np.sum(work_visc_on_inte*tw_2d, axis=0)
-if magnetism:
-    work_joule_r = np.sum(work_joule*tw_2d, axis=0)
-if forced:
-    work_forcing_r = np.sum(work_forcing*tw_2d, axis=0)
-# not sure where this should go...
-work_dsdr_negligible_r = np.sum(work_dsdr_negligible*tw_2d, axis=0)
-work_inte_r = np.sum(work_inte*tw_2d, axis=0)
-
-# total spherically averaged work
-work_tot_r = work_ke_r + work_inte_r
-
-# magnetic energy equation
-if magnetism:
-    work_induct_r = np.sum(work_induct*tw_2d, axis=0)
-    work_idiff_r = np.sum(work_idiff*tw_2d, axis=0)
-    work_me_r = np.sum(work_me*tw_2d, axis=0)
-    work_tot_r += work_me_r
-
-# get volume-integrated work (erg/s)
-ri, ro = np.min(rr), np.max(rr)
-volume = 4./3.*np.pi*(ro**3. - ri**3.)
-
-# kinetic energy 
-integrated_ke_advec = volume*np.sum(work_ke_advec_r*rw)
-integrated_pressure = volume*np.sum(work_pressure_r*rw)
-integrated_buoy = volume*np.sum(work_buoy_r*rw)
-integrated_visc_on_ke = volume*np.sum(work_visc_on_ke_r*rw)
-if magnetism:
-    integrated_jcrossb = volume*np.sum(work_jcrossb_r*rw)
-integrated_ke = volume*np.sum(work_ke_r*rw)
-
-# internal energy
-integrated_thermal_advec = volume*np.sum(work_thermal_advec_r*rw)
-integrated_thermal_advec_ref = volume*np.sum(work_thermal_advec_ref_r*rw)
-integrated_cond = volume*np.sum(work_cond_r*rw)
-integrated_rad = volume*np.sum(work_rad_r*rw)
-integrated_visc_on_inte = volume*np.sum(work_visc_on_inte_r*rw)
-if magnetism:
-    integrated_joule = volume*np.sum(work_joule_r*rw)
-integrated_inte = volume*np.sum(work_inte_r*rw)
-
-# total volume-integrated work
-integrated_tot = integrated_ke + integrated_inte
-
-# magnetic energy
-if magnetism:
-    integrated_induct = volume*np.sum(work_induct_r*rw)
-    integrated_idiff = volume*np.sum(work_idiff_r*rw)
-    integrated_me = volume*np.sum(work_me_r*rw)
-    integrated_tot += integrated_me
-
-# collect the terms to plot
+# first collect all terms by category, making Latex titles 
+# and plain-text labels along the way
 
 # kinetic energy
 ke_terms = [work_ke_advec, work_pressure, work_buoy, work_visc_on_ke,\
         work_ke]
-ke_shav_terms = [work_ke_advec_r, work_pressure_r, work_buoy_r,\
-        work_visc_on_ke_r, work_ke_r]
-ke_integrated_terms = [integrated_ke_advec, integrated_pressure,\
-        integrated_buoy, integrated_visc_on_ke, integrated_ke]
-
 ke_titles = [r'$\left\langle-\overline{\rho}\mathbf{u}\cdot\nabla\frac{u^2}{2}\right\rangle$', r'$-\nabla\cdot\langle P\mathbf{u}\rangle$', r'$\overline{\rho}g\left\langle u_r\frac{S}{c_p}\right\rangle$', r'$\langle\mathbf{u}\cdot(\nabla\cdot\mathbf{D})\rangle$', r'$\frac{\partial}{\partial t}\left\langle\frac{1}{2}\overline{\rho}u^2\right\rangle$']
 ke_labels = ['ke adv', 'press', 'buoy', 'visc work', 'd(ke)/dt']
-
-units = r'$\rm{erg}\ \rm{cm}^{-3}\ \rm{s}^{-1}$'
-
-if forced:
-    ke_terms.insert(4, work_forcing)
-    ke_shav_terms.insert(4, work_forcing_r)
-    ke_integrated_terms.insert(4, integrated_forcing)
-    ke_titles.insert(4, r'$\mathbf{v}\cdot\mathbf{f}$')
-    ke_labels.insert(4, 'forcing')
-
-if magnetism:
-    ke_terms.insert(4, work_jcrossb)
-    ke_shav_terms.insert(4, work_jcrossb_r)
-    ke_integrated_terms.insert(4, integrated_jcrossb)
-    ke_titles.insert(4, r'$\frac{1}{4\pi}\langle\mathbf{u}\cdot[(\nabla\times\mathbf{B})\times\mathbf{B}]\rangle$')
-    ke_labels.insert(4, 'mag work')
 
 # internal energy
 inte_terms = [work_thermal_advec, work_thermal_advec_ref, work_cond,\
         work_rad, work_visc_on_inte, work_inte]
-inte_shav_terms = [work_thermal_advec_r, work_thermal_advec_ref_r,\
-        work_cond_r, work_rad_r, work_visc_on_inte_r, work_inte_r]
-inte_integrated_terms = [integrated_thermal_advec,\
-        integrated_thermal_advec_ref, integrated_cond, integrated_rad,\
-        integrated_visc_on_inte, integrated_inte]
 inte_titles = [r'$\left\langle-\overline{\rho}\overline{T}\mathbf{u}\cdot\nabla S\right\rangle$', r'$-\overline{\rho}\overline{T}\frac{dS}{dr}\langle u_r\rangle$', r'$\nabla\cdot[\kappa\overline{\rho}\overline{T}\nabla\langle\ S\rangle]$', r'$Q(r)$', r'$\langle\mathbf{D}:\nabla\mathbf{u}\rangle$', r'$\overline{\rho}\overline{T}\frac{\partial\langle S\rangle}{\partial t}$']
 inte_labels = ['S adv', 'ref adv', 'cond', 'rad', 'visc heat', 'd(inte)/dt']
+
+# add more terms in case of forcing/magnetism
+if forced:
+    # kinetic energy
+    ke_terms.insert(4, work_forcing)
+    ke_titles.insert(4, r'$\langle\mathbf{v}\cdot\mathbf{f}\rangle$')
+    ke_labels.insert(4, 'forcing')
+
+    # internal energy
+    if force_econs:
+        inte_terms(5, -work_forcing)
+        ke_titles.insert(5, r'$-\langle\mathbf{v}\cdot\mathbf{f}\rangle$')
+        ke_labels.insert(5, 'forcing')
+
 if magnetism:
+    # kinetic energy
+    ke_terms.insert(4, work_mag)
+    ke_titles.insert(4, r'$\frac{1}{4\pi}\langle\mathbf{u}\cdot[(\nabla\times\mathbf{B})\times\mathbf{B}]\rangle$')
+    ke_labels.insert(4, 'mag work')
+
+    # internal energy
     inte_terms.insert(5, work_joule)
-    inte_shav_terms.insert(5, work_joule_r)
-    inte_integrated_terms.insert(5, integrated_joule)
     inte_titles.insert(5, r'$\frac{\eta}{4\pi}\langle(\nabla\times\mathbf{B})^2\rangle$')
     inte_labels.insert(5, 'mag heat')
 
-# magnetic energy
-if magnetism:
+    # magnetic energy
     me_terms = [work_induct, work_idiff, work_me]
-    me_shav_terms = [work_induct_r, work_idiff_r, work_me_r]
-    me_integrated_terms = [integrated_induct, integrated_idiff, integrated_me]
     me_titles = [r'$\frac{1}{4\pi}\langle\mathbf{B}\cdot\nabla\times(\mathbf{v}\times\mathbf{B})\rangle$', r'$\frac{1}{4\pi}\langle\mathbf{B}\cdot\nabla\times(\eta(r)\nabla\times\mathbf{B})\rangle$', r'$\frac{\partial}{\partial t}\left\langle\frac{B^2}{8\pi}\right\rangle$']
     me_labels = ['induct', 'idiff', 'd(me)/dt']
 
-all_terms = {'toten_ke': ke_terms, 'toten_inte': inte_terms, 'toten_me': me_terms}
-all_shav_terms = {'toten_ke': ke_shav_terms, 'toten_inte': inte_shav_terms, 'toten_me': me_shav_terms}
-all_integrated_terms = {'toten_ke': ke_integrated_terms, 'toten_inte': inte_integrated_terms, 'toten_me': me_integrated_terms}
-all_titles = {'toten_ke': ke_titles, 'toten_inte': inte_titles, 'toten_me': me_titles}
-all_labels = {'toten_ke': ke_labels, 'toten_inte': inte_labels, 'toten_me': me_labels}
-plot_labels = {'toten_ke': 'kinetic energy equation', 'toten_inte': 'heat equation', 'toten_me': 'magnetic energy equation'}
+# compute the spherical averages and integrated terms
 
-# make three plots (toten_[ke, inte, me])
-all_nplots = {'toten_ke': 5 + magnetism + forced, 'toten_inte': 6 + magnetism, 'toten_me': 3}
+# shell volume
+ri, ro = np.min(rr), np.max(rr)
+volume = 4./3.*np.pi*(ro**3. - ri**3.)
 
-# fontsizes for the labels
-fsize = 12
+# kinetic energy
+ke_shav_terms = []
+ke_integrated_terms = []
+for term in ke_terms:
+    shav_term = np.sum(term*tw_2d, axis=0)
+    integrated_term = volume*np.sum(shav_term*rw)
+    ke_shav_terms.append(shav_term)
+    ke_integrated_terms.append(integrated_term)
 
+# internal energy
+inte_shav_terms = []
+inte_integrated_terms = []
+for term in inte_terms:
+    shav_term = np.sum(term*tw_2d, axis=0)
+    integrated_term = volume*np.sum(shav_term*rw)
+    inte_shav_terms.append(shav_term)
+    inte_integrated_terms.append(integrated_term)
+
+# magnetic energy
+if magnetism:
+    me_shav_terms = []
+    me_integrated_terms = []
+    for term in inte_terms:
+        shav_term = np.sum(term*tw_2d, axis=0)
+        integrated_term = volume*np.sum(shav_term*rw)
+        me_shav_terms.append(shav_term)
+        me_integrated_terms.append(integrated_term)
+
+#======================
+# TOTAL ENERGY EQUATION
+#======================
+work_tot = work_ke + work_inte
+if magnetism:
+    work_tot += work_me
+
+# now collect all terms for plotting
+all_terms = {'toten_ke': ke_terms, 'toten_inte': inte_terms}
+all_shav_terms = {'toten_ke': ke_shav_terms, 'toten_inte': inte_shav_terms}
+all_integrated_terms = {'toten_ke': ke_integrated_terms, 'toten_inte': inte_integrated_terms}
+all_titles = {'toten_ke': ke_titles, 'toten_inte': inte_titles}
+all_labels = {'toten_ke': ke_labels, 'toten_inte': inte_labels}
+plot_labels = {'toten_ke': 'kinetic energy equation', 'toten_inte': 'heat equation'}
+
+if magnetism:
+    all_terms['toten_me'] = me_terms
+    all_shav_terms['toten_me'] = me_shav_terms
+    all_integrated_terms['toten_me'] = me_integrated_terms
+    all_titles['toten_me'] = me_titles
+    all_labels['toten_me'] = me_labels
+    plot_labels['toten_me'] = 'magnetic energy equation'
+
+# general figure parameters
+fs = 12.
+small_fs = 9.
+lw = 1.
+units = r'$\rm{erg}\ \rm{cm}^{-3}\ \rm{s}^{-1}$'
+
+# loop through keys and make plots
 for key in keys:
+    # terms to plot
     print ("plotting ", key)
-    nplots = all_nplots[key]
     terms = all_terms[key]
+    nplots = len(terms)
     shav_terms = all_shav_terms[key]
     integrated_terms = all_integrated_terms[key]
     titles = all_titles[key]
     labels = all_labels[key]
 
-    #nrow = 2
-    ncol = 4
-    #ncol = np.int(np.ceil((nplots + 3)/nrow)) # +3 for room for line plot
-    #ncol = 4 # put three plots per row
-    nrow = np.int(np.ceil(nplots/ncol))
-
     # set up figure dimensions
+    ncol = 4
+    nrow = np.int(np.ceil(nplots/ncol))
     fig_width_inches = 8.5 # 8.5 x 11 paper
-    margin_inches = 1./8. # margin width in inches (for both x and y) and 
-        # horizontally in between figures
-    margin_top_inches = 1 # wider top margin to accommodate subplot titles AND metadata
-    margin_subplot_bottom_inches = 0.75*(2 - (rbcz is None)) 
-        # larger bottom margin to make room for colorbar(s)
-    margin_subplot_top_inches = 1/4 # margin to accommodate just subplot titles
-
-
-    subplot_width_inches = (fig_width_inches - (ncol + 1)*margin_inches)/ncol
-    #subplot_width_inches = (fig_width_inches - (nplots + 1)*margin_inches)/nplots
-        # Make the subplot width so that ncol subplots fit together side-by-side
-        # with margins in between them and at the left and right.
-    subplot_height_inches = 2*subplot_width_inches # Each subplot should have an
-    ax_r_height_inches = 0.75*subplot_height_inches
+    # default margin
+    margin_inches = 1./8.
+     # wider top margin to accommodate metadata   
+    margin_top_inches = 1.
+    # margin to accommodate the spherically avg'd axis label
     margin_bottom_inches = 0.5
-        # aspect ratio of y/x = 2/1 to accommodate meridional planes. 
+    # margin to accommodate just subplot titles   
+    margin_subplot_top_inches = 1./4.
+    # larger subplot bottom margin to make room for colorbar(s)
+    margin_subplot_bottom_inches = 0.75*(2 - (rbcz is None)) 
+
+    subplot_width_inches = (fig_width_inches - (ncol+1)*margin_inches)/ncol
+    # aspect ratio for azavg plot = 2 x 1
+    subplot_height_inches = 2*subplot_width_inches
+    # spherically avg'd line plot axis height
+    shav_height_inches = 0.75*subplot_height_inches
     fig_height_inches = margin_top_inches + nrow*(subplot_height_inches +\
             margin_subplot_top_inches + margin_subplot_bottom_inches) +\
-            ax_r_height_inches + margin_bottom_inches
-            
-    fig_aspect = fig_height_inches/fig_width_inches
+            shav_height_inches + margin_bottom_inches
 
-    # "Margin" in "figure units"; figure units extend from 0 to 1 in BOTH 
-    # directions, so unitless dimensions of margin will be different in x and y
-    # to force an equal physical margin
+    # unitless dimensions
     margin_x = margin_inches/fig_width_inches
     margin_y = margin_inches/fig_height_inches
     margin_top = margin_top_inches/fig_height_inches
-    margin_subplot_bottom = margin_subplot_bottom_inches/fig_height_inches
     margin_bottom = margin_bottom_inches/fig_height_inches
     margin_subplot_top = margin_subplot_top_inches/fig_height_inches
-
-
-    # Subplot dimensions in figure units
+    margin_subplot_bottom = margin_subplot_bottom_inches/fig_height_inches
     subplot_width = subplot_width_inches/fig_width_inches
     subplot_height = subplot_height_inches/fig_height_inches
+    shav_height = shav_height_inches/fig_height_inches
 
     # Generate figure of the correct dimensions
     fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
 
     # axis for spherically averaged line plots
-    # axes to hold spherically averaged line plot
-    #n_on_second_row = nplots - ncol
-    #ax_r_width = 2.*subplot_width # space for left label + make pretty
-    ax_r_height = ax_r_height_inches/fig_height_inches
-    ax_r_width= 2*subplot_width
-    ax_r_left_inches = 1. # axis half inch from left
-    ax_r_left = ax_r_left_inches/fig_width_inches
-    #ax_r_width = 4*margin_x + 3*subplot_width - ax_r_left
-    #ax_r_center = 0.5*(1. + margin_x +\
-    #        n_on_second_row*(subplot_width + margin_x))
-    #ax_r_left = ax_r_center - 0.5*ax_r_width
-    ax_r = fig.add_axes((ax_r_left, margin_bottom,\
-            ax_r_width, ax_r_height))
-    # linewidth for line plot
-    lw = 1.
-    # stuff for labels showing total rates of change
-    #fs = 6
-    #offset = 1.0/4.0/fig_height_inches
+    shav_width= 2.*subplot_width
+    shav_left_inches = 1. # axis half inch from left
+    shav_left = shav_left_inches/fig_width_inches
+    ax_shav = fig.add_axes((shav_left, margin_bottom, shav_width,\
+            shav_height))
 
     for iplot in range(nplots):
         ax_left = margin_x + (iplot%ncol)*(subplot_width + margin_x)
-        #ax_left = margin_x + iplot*(subplot_width + margin_x)
         ax_bottom = 1 - margin_top - margin_subplot_top - subplot_height -\
                 (iplot//ncol)*(margin_subplot_top + subplot_height +\
                 margin_subplot_bottom)
-        #ax_bottom = 1. - margin_top - subplot_height - margin_subplot_top 
-        # plot work in meridional plane
-        ax = fig.add_axes((ax_left, ax_bottom, subplot_width, subplot_height))
+        ax = fig.add_axes((ax_left, ax_bottom, subplot_width,\
+                subplot_height))
         plot_azav (terms[iplot], rr, cost, fig=fig, ax=ax, units=units,\
                minmax=minmax, plotcontours=plotcontours, rvals=rvals,\
                minmaxrz=minmaxrz, rbcz=rbcz, symlog=symlog,\
@@ -555,27 +504,19 @@ for key in keys:
         ax.set_title(titles[iplot], verticalalignment='bottom', **csfont)
 
         # plot spherically averaged work
-        ax_r.plot(rr/rsun, shav_terms[iplot],\
-                label=labels[iplot] + ': ' + sci_format(integrated_terms[iplot]/lstar, 3) + r'$L_*$', linewidth=lw)
+        shav_label = labels[iplot] + ': ' +\
+                sci_format(integrated_terms[iplot]/lstar, 3) + r'$L_*$'
+        ax_shav.plot(rr/rsun, shav_terms[iplot], label=shav_label,\
+                linewidth=lw)
 
-        # print total rates of change for the works
-        #fig.text(0.75, margin_bottom + iplot*offset, simple_labels[iplot] +\
-        #        ' total dE/dt = %1.3e erg/s' %integrated_terms[iplot],\
-        #        fontsize=fs)
-
-    # fix up some stuff for the shav work terms
-    ax_r.set_xlabel(r'$r/R_\odot$', fontsize=fsize, **csfont)
-    ax_r.set_ylabel("spherical average (cgs)", fontsize=fsize, **csfont )
-    ax_r.set_xlim((ri/rsun, ro/rsun))
-    ## make room for legend
-    #ymin, ymax = ax_r.get_ylim()
-    #buff_frac = 0.3
-    #buff = buff_frac*(ymax - ymin)
-    #ymin -= buff
-    #ax_r.set_ylim((ymin, ymax))
-    leg = ax_r.legend(bbox_to_anchor=(1.05, 1), loc=2, fontsize=fsize)
+    # fix up some stuff for the shav work line plot
+    ax_shav.set_xlabel(r'$r/R_\odot$', fontsize=fs, **csfont)
+    ax_shav.set_ylabel("spherical average (cgs)", fontsize=fs, **csfont )
+    ax_shav.set_xlim((ri/rsun, ro/rsun))
+    ax_shav.legend(bbox_to_anchor=(1.05, 1), loc=2, fontsize=small_fs,\
+            labelspacing=0.5)
     # ticks everywhere
-    plt.sca(ax_r)
+    plt.sca(ax_shav)
     plt.minorticks_on()
     plt.tick_params(top=True, right=True, direction='in', which='both')
 
@@ -591,15 +532,15 @@ for key in keys:
 
     # Put some metadata in upper left
     fig.text(margin_x, 1 - 0.1*margin_top, dirname_stripped,\
-             ha='left', va='top', fontsize=fsize, **csfont)
+             ha='left', va='top', fontsize=fs, **csfont)
     fig.text(margin_x, 1 - 0.3*margin_top, plot_labels[key] +\
             ' (zonally averaged)', ha='left', va='top',\
-            fontsize=fsize, **csfont)
+            fontsize=fs, **csfont)
     fig.text(margin_x, 1 - 0.5*margin_top, time_string,\
-             ha='left', va='top', fontsize=fsize, **csfont)
+             ha='left', va='top', fontsize=fs, **csfont)
 
-    savefile = plotdir + dirname_stripped + '_' + key + '_' + str(iter1).zfill(8) +\
-        '_' + str(iter2).zfill(8) + tag + '.png'
+    savefile = plotdir + dirname_stripped + '_' + key + '_' +\
+            str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + tag + '.png'
 
     print ('Saving plot at ' + savefile)
     plt.savefig(savefile, dpi=300)
