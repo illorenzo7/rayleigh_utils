@@ -640,8 +640,8 @@ for key in keys:
     plt.close(fig)
 
     savefile_shav = plotdir + dirname_stripped + '_' + key + '_shav_' +\
-            str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + tag + '.png'
+            str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + tag + '.pdf'
 
     print ('Saving spherically averaged plot at ' + savefile_shav)
-    fig_shav.savefig(savefile_shav, dpi=300)
+    fig_shav.savefig(savefile_shav)
     plt.close(fig_shav)
