@@ -470,7 +470,7 @@ if magnetism:
     all_labels['toten_me'] = me_labels
     plot_labels['toten_me'] = 'magnetic energy equation'
 
-# general figure parameters
+# general figure parameters for AZ plot
 fs = 12.
 small_fs = 9.
 lw = 1.
@@ -487,7 +487,7 @@ for key in keys:
     titles = all_titles[key]
     labels = all_labels[key]
 
-    # set up figure dimensions
+    # set up AZ_Avg figure axes
     ncol = 4
     nrow = np.int(np.ceil(nplots/ncol))
     fig_width_inches = 8.5 # 8.5 x 11 paper
@@ -495,8 +495,6 @@ for key in keys:
     margin_inches = 1./8.
      # wider top margin to accommodate metadata   
     margin_top_inches = 1.
-    # margin to accommodate the spherically avg'd axis label
-    margin_bottom_inches = 0.5
     # margin to accommodate just subplot titles   
     margin_subplot_top_inches = 1./4.
     # larger subplot bottom margin to make room for colorbar(s)
@@ -505,32 +503,39 @@ for key in keys:
     subplot_width_inches = (fig_width_inches - (ncol+1)*margin_inches)/ncol
     # aspect ratio for azavg plot = 2 x 1
     subplot_height_inches = 2*subplot_width_inches
-    # spherically avg'd line plot axis height
-    shav_height_inches = 0.75*subplot_height_inches
     fig_height_inches = margin_top_inches + nrow*(subplot_height_inches +\
-            margin_subplot_top_inches + margin_subplot_bottom_inches) +\
-            shav_height_inches + margin_bottom_inches
+            margin_subplot_top_inches + margin_subplot_bottom_inches)
 
     # unitless dimensions
     margin_x = margin_inches/fig_width_inches
     margin_y = margin_inches/fig_height_inches
     margin_top = margin_top_inches/fig_height_inches
-    margin_bottom = margin_bottom_inches/fig_height_inches
     margin_subplot_top = margin_subplot_top_inches/fig_height_inches
     margin_subplot_bottom = margin_subplot_bottom_inches/fig_height_inches
     subplot_width = subplot_width_inches/fig_width_inches
     subplot_height = subplot_height_inches/fig_height_inches
-    shav_height = shav_height_inches/fig_height_inches
 
-    # Generate figure of the correct dimensions
+    # Generate figure for AZ Avgs plot
     fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
 
-    # axis for spherically averaged line plots
-    shav_width= 2.*subplot_width
-    shav_left_inches = 1. # axis half inch from left
-    shav_left = shav_left_inches/fig_width_inches
-    ax_shav = fig.add_axes((shav_left, margin_bottom, shav_width,\
-            shav_height - margin_y))
+    # spherical average figure
+    shav_nrow = 1
+    shav_fig_width_inches = 8.5 
+    shav_width_inches = 5.
+    shav_height_inches = 3.5
+    shav_margin_inches = 0.6
+    shav_margin_top_inches = 1.
+    shav_fig_height_inches = shav_margin_top_inches +\
+            shav_nrow*(shav_height_inches + shav_margin_inches)
+    shav_width = shav_width_inches/shav_fig_width_inches
+    shav_height = shav_height_inches/shav_fig_height_inches
+    shav_margin_x = shav_margin_inches/shav_fig_width_inches
+    shav_margin_y = shav_margin_inches/shav_fig_height_inches
+    shav_margin_top = shav_margin_top_inches/shav_fig_height_inches
+    fig_shav = plt.figure(figsize=(shav_fig_width_inches,\
+            shav_fig_height_inches))
+    ax_shav = fig_shav.add_axes((shav_margin_x, shav_margin_y, shav_width,\
+            shav_height))
     if not rbcz is None:
         ax_shav_rz = ax_shav.twinx()
         irbcz = np.argmin(np.abs(rr - rbcz))
@@ -565,8 +570,8 @@ for key in keys:
     ax_shav.set_xlabel(r'$r/R_\odot$', fontsize=fs, **csfont)
     #ax_shav.set_xlim((ri/rsun, ro/rsun))
     ax_shav.legend(bbox_to_anchor=(1.05, 1), loc=2, fontsize=small_fs,\
-            labelspacing=0.5)
-    ax_shav.set_title("spherical averages (cgs)", fontsize=fs,\
+            labelspacing=0.5, title='volume integral')
+    ax_shav.set_title("cgs units: erg/cm^3", fontsize=fs,\
             **csfont )
     # mark zero line
     ax_shav.plot(rr/rsun, np.zeros_like(rr), 'k--', linewidth=0.5*lw)
@@ -609,20 +614,34 @@ for key in keys:
                 + time_label + (r'$\ (\Delta t = %.3f\ $'\
                 %((t2 - t1)/time_unit)) + time_label + ')'
 
-    # Put some metadata in upper left
+    # Put some metadata in upper left of AZ_Avgs plot
     fig.text(margin_x, 1 - 0.1*margin_top, dirname_stripped,\
              ha='left', va='top', fontsize=fs, **csfont)
     fig.text(margin_x, 1 - 0.3*margin_top, plot_labels[key] +\
-            ' (zonally averaged)', ha='left', va='top',\
+            ' (zonal average)', ha='left', va='top',\
             fontsize=fs, **csfont)
     fig.text(margin_x, 1 - 0.5*margin_top, time_string,\
+             ha='left', va='top', fontsize=fs, **csfont)
+
+    # ...and Sph Avgs plot
+    fig_shav.text(shav_margin_x, 1 - 0.1*shav_margin_top, dirname_stripped,\
+             ha='left', va='top', fontsize=fs, **csfont)
+    fig_shav.text(shav_margin_x, 1 - 0.3*shav_margin_top,\
+            plot_labels[key] + ' (spherical average)', ha='left', va='top',\
+            fontsize=fs, **csfont)
+    fig_shav.text(shav_margin_x, 1 - 0.5*shav_margin_top, time_string,\
              ha='left', va='top', fontsize=fs, **csfont)
 
     savefile = plotdir + dirname_stripped + '_' + key + '_' +\
             str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + tag + '.png'
 
-    print ('Saving plot at ' + savefile)
-    plt.savefig(savefile, dpi=300)
-    if showplot:
-        plt.show()
-    plt.close()
+    print ('Saving AZ_Avgs plot at ' + savefile)
+    fig.savefig(savefile, dpi=300)
+    plt.close(fig)
+
+    savefile_shav = plotdir + dirname_stripped + '_' + key + '_shav_' +\
+            str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + tag + '.png'
+
+    print ('Saving spherically averaged plot at ' + savefile_shav)
+    fig_shav.savefig(savefile_shav, dpi=300)
+    plt.close(fig_shav)
