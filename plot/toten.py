@@ -375,39 +375,9 @@ if magnetism:
     me_titles = [r'$\frac{1}{4\pi}\langle\mathbf{B}\cdot\nabla\times(\mathbf{v}\times\mathbf{B})\rangle$', r'$\frac{1}{4\pi}\langle\mathbf{B}\cdot\nabla\times(\eta(r)\nabla\times\mathbf{B})\rangle$', r'$\frac{\partial}{\partial t}\left\langle\frac{B^2}{8\pi}\right\rangle$']
     me_labels = ['induct', 'idiff', 'd(me)/dt']
 
-# compute the spherical averages and integrated terms
-
-# shell volume
+# will need shell volume for integrated terms
 ri, ro = np.min(rr), np.max(rr)
 volume = 4./3.*np.pi*(ro**3. - ri**3.)
-
-# kinetic energy
-ke_shav_terms = []
-ke_integrated_terms = []
-for term in ke_terms:
-    shav_term = np.sum(term*tw_2d, axis=0)
-    integrated_term = volume*np.sum(shav_term*rw)
-    ke_shav_terms.append(shav_term)
-    ke_integrated_terms.append(integrated_term)
-
-# internal energy
-inte_shav_terms = []
-inte_integrated_terms = []
-for term in inte_terms:
-    shav_term = np.sum(term*tw_2d, axis=0)
-    integrated_term = volume*np.sum(shav_term*rw)
-    inte_shav_terms.append(shav_term)
-    inte_integrated_terms.append(integrated_term)
-
-# magnetic energy
-if magnetism:
-    me_shav_terms = []
-    me_integrated_terms = []
-    for term in inte_terms:
-        shav_term = np.sum(term*tw_2d, axis=0)
-        integrated_term = volume*np.sum(shav_term*rw)
-        me_shav_terms.append(shav_term)
-        me_integrated_terms.append(integrated_term)
 
 #====================================================
 # TOTAL ENERGY EQUATION (negative divergences mostly)
@@ -445,27 +415,14 @@ if magnetism:
     tote_titles.insert(9, r'$-\frac{1}{4\pi}\nabla\cdot\left\langle[\eta\nabla\times\mathbf{B}-\mathbf{u}\times\mathbf{B}]\times\mathbf{B}\right\rangle$')
     tote_labels.insert(9, 'Poyn')
 
-# spherically and volume averaged terms
-tote_shav_terms = []
-tote_integrated_terms = []
-for term in tote_terms:
-    shav_term = np.sum(term*tw_2d, axis=0)
-    integrated_term = volume*np.sum(shav_term*rw)
-    tote_shav_terms.append(shav_term)
-    tote_integrated_terms.append(integrated_term)
-
 # now collect all terms for plotting
 all_terms = {'toten_tote': tote_terms, 'toten_ke': ke_terms, 'toten_inte': inte_terms}
-all_shav_terms = {'toten_tote': tote_shav_terms, 'toten_ke': ke_shav_terms, 'toten_inte': inte_shav_terms}
-all_integrated_terms = {'toten_tote': tote_integrated_terms, 'toten_ke': ke_integrated_terms, 'toten_inte': inte_integrated_terms}
 all_titles = {'toten_tote': tote_titles, 'toten_ke': ke_titles, 'toten_inte': inte_titles}
 all_labels = {'toten_tote': tote_labels, 'toten_ke': ke_labels, 'toten_inte': inte_labels}
 plot_labels = {'toten_tote': 'total energy equation', 'toten_ke': 'kinetic energy equation', 'toten_inte': 'heat equation'}
 
 if magnetism:
     all_terms['toten_me'] = me_terms
-    all_shav_terms['toten_me'] = me_shav_terms
-    all_integrated_terms['toten_me'] = me_integrated_terms
     all_titles['toten_me'] = me_titles
     all_labels['toten_me'] = me_labels
     plot_labels['toten_me'] = 'magnetic energy equation'
@@ -482,8 +439,6 @@ for key in keys:
     print ("plotting ", key)
     terms = all_terms[key]
     nplots = len(terms)
-    shav_terms = all_shav_terms[key]
-    integrated_terms = all_integrated_terms[key]
     titles = all_titles[key]
     labels = all_labels[key]
 
@@ -555,15 +510,17 @@ for key in keys:
         ax.set_title(titles[iplot], verticalalignment='bottom', **csfont)
 
         # plot spherically averaged work
+        shav_term = np.sum(terms[iplot]*tw_2d, axis=0)
+        integrated_term = volume*np.sum(shav_term*rw)
+    
         shav_label = labels[iplot] + ': ' +\
-                sci_format(integrated_terms[iplot]/lstar, 3) + r'$L_*$'
+                sci_format(integrated_term/lstar, 3) + r'$L_*$'
         if rbcz is None:
-            ax_shav.plot(rr/rsun, shav_terms[iplot], label=shav_label,\
-                linewidth=lw)
+            ax_shav.plot(rr/rsun, shav_term, label=shav_label, linewidth=lw)
         else:
-            ax_shav.plot(rr[:irbcz]/rsun, shav_terms[iplot][:irbcz],\
+            ax_shav.plot(rr[:irbcz]/rsun, shav_term[:irbcz],\
                     label=shav_label, linewidth=lw)
-            ax_shav_rz.plot(rr[irbcz:]/rsun, shav_terms[iplot][irbcz:],\
+            ax_shav_rz.plot(rr[irbcz:]/rsun, shav_term[irbcz:],\
                     label=shav_label, linewidth=lw)
 
     # fix up some stuff for the shav work line plot
