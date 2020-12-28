@@ -145,6 +145,7 @@ di = get_dict(datadir + AZ_Avgs_file)
 
 # Will need integration weights for a few things
 gi = GridInfo(dirname + '/grid_info')
+rr = gi.radius
 rw = gi.rweights
 nr = gi.nr
 nt = gi.ntheta
@@ -161,8 +162,24 @@ else:
     print ("crudeint = False, using exact lat. weights")
     print ("To use crude weights, specify -crudeint")
 
+# will need shell volume for integrated terms
+ri, ro = np.min(rr), np.max(rr)
+volume = 4./3.*np.pi*(ro**3. - ri**3.)
+
+# get integration weights
 rw_2d = rw.reshape((1, nr))
 tw_2d = tw.reshape((nt, 1))
+if not rbcz is None:
+    irbcz = np.argmin(np.abs(rr - rbcz))
+    rbcz_real = rr[irbcz]
+    volume_cz = 4./3.*np.pi*(ro**3. - rbcz_real**3.)
+    volume_cz = 4./3.*np.pi*(rbcz_real**3. - ri**3.)
+    rw_cz = np.copy(rw[:irbcz])
+    rw_rz = np.copy(rw[irbcz:])
+    rw_cz /= np.sum(rw_cz)
+    rw_rz /= np.sum(rw_rz)
+    rw_cz_2d = rw_cz.reshape((1, len(rw_cz)))
+    rw_rz_2d = rw_rz.reshape((1, len(rw_rz)))
 
 iter1, iter2 = di['iter1'], di['iter2']
 vals = di['vals']
@@ -182,7 +199,7 @@ else:
     time_label = r'$\rm{TDT}$'
 
 # Get necessary grid info
-rr = di['rr']
+#rr = di['rr']
 cost = di['cost']
 sint = di['sint']
 tt_lat = di['tt_lat']
@@ -375,10 +392,6 @@ if magnetism:
     me_titles = [r'$\frac{1}{4\pi}\langle\mathbf{B}\cdot\nabla\times(\mathbf{v}\times\mathbf{B})\rangle$', r'$\frac{1}{4\pi}\langle\mathbf{B}\cdot\nabla\times(\eta(r)\nabla\times\mathbf{B})\rangle$', r'$\frac{\partial}{\partial t}\left\langle\frac{B^2}{8\pi}\right\rangle$']
     me_labels = ['induct', 'idiff', 'd(me)/dt']
 
-# will need shell volume for integrated terms
-ri, ro = np.min(rr), np.max(rr)
-volume = 4./3.*np.pi*(ro**3. - ri**3.)
-
 #====================================================
 # TOTAL ENERGY EQUATION (negative divergences mostly)
 #====================================================
@@ -474,69 +487,96 @@ for key in keys:
     fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
 
     # spherical average figure
-    shav_nrow = 1
-    shav_fig_width_inches = 8.5 
-    shav_width_inches = 5.
-    shav_height_inches = 3.5
-    shav_margin_inches = 0.6
-    shav_margin_top_inches = 1.
-    shav_fig_height_inches = shav_margin_top_inches +\
-            shav_nrow*(shav_height_inches + shav_margin_inches)
-    shav_width = shav_width_inches/shav_fig_width_inches
-    shav_height = shav_height_inches/shav_fig_height_inches
-    shav_margin_x = shav_margin_inches/shav_fig_width_inches
-    shav_margin_y = shav_margin_inches/shav_fig_height_inches
-    shav_margin_top = shav_margin_top_inches/shav_fig_height_inches
-    fig_shav = plt.figure(figsize=(shav_fig_width_inches,\
-            shav_fig_height_inches))
-    ax_shav = fig_shav.add_axes((shav_margin_x, shav_margin_y, shav_width,\
-            shav_height))
+    av_nrow = 2 + 2*(not rbcz is None)
+    av_fig_width_inches = 8.5 
+    av_width_inches = 5.
+    av_height_inches = 3.5
+    av_margin_inches = 0.6
+    av_margin_top_inches = 1.
+    av_fig_height_inches = av_margin_top_inches +\
+            av_nrow*(av_height_inches + av_margin_inches)
+    av_width = av_width_inches/av_fig_width_inches
+    av_height = av_height_inches/av_fig_height_inches
+    av_margin_x = av_margin_inches/av_fig_width_inches
+    av_margin_y = av_margin_inches/av_fig_height_inches
+    av_margin_top = av_margin_top_inches/av_fig_height_inches
+    fig_av = plt.figure(figsize=(av_fig_width_inches,\
+            av_fig_height_inches))
+    ax_shav = fig_av.add_axes((av_margin_x, 1. - av_margin_top -\
+            1.*(av_height + av_margin_y), av_width, av_height))
+    ax_rav = fig_av.add_axes((av_margin_x, 1. - av_margin_top -\
+            2.*(av_height + av_margin_y), av_width, av_height))
     if not rbcz is None:
         ax_shav_rz = ax_shav.twinx()
-        irbcz = np.argmin(np.abs(rr - rbcz))
+        ax_rav_cz = fig_av.add_axes((av_margin_x, 1. - av_margin_top -\
+                3.*(av_height + av_margin_y), av_width, av_height))
+        ax_rav_rz = fig_av.add_axes((av_margin_x, 1. - av_margin_top -\
+                4.*(av_height + av_margin_y), av_width, av_height))
 
     for iplot in range(nplots):
+        # compute relevant terms
+        term = terms[iplot]
+        shav_term = np.sum(term*tw_2d, axis=0)
+        integrated_term = volume*np.sum(av_term*rw)
+        rav_term = np.sum(term*rw_2d, axis=1)
+        if not rbcz is None:
+            rav_term_cz = np.sum(term[:irbcz]*rw_cz_2d, axis=1)
+            rav_term_rz = np.sum(term[irbcz:]*rw_rz_2d, axis=1)
+            integrated_term_cz = volume_cz*np.sum(shav_term[:irbcz]*rw_cz)
+            integrated_term_rz = volume_rz*np.sum(shav_term[irbcz:]*rw_rz)
+
+        # plot AZ Avgs
         ax_left = margin_x + (iplot%ncol)*(subplot_width + margin_x)
         ax_bottom = 1 - margin_top - margin_subplot_top - subplot_height -\
                 (iplot//ncol)*(margin_subplot_top + subplot_height +\
                 margin_subplot_bottom)
         ax = fig.add_axes((ax_left, ax_bottom, subplot_width,\
                 subplot_height))
-        plot_azav (terms[iplot], rr, cost, fig=fig, ax=ax, units=units,\
+        plot_azav (term, rr, cost, fig=fig, ax=ax, units=units,\
                minmax=minmax, plotcontours=plotcontours, rvals=rvals,\
                minmaxrz=minmaxrz, rbcz=rbcz, symlog=symlog,\
         linthresh=linthresh, linscale=linscale, linthreshrz=linthreshrz,\
         linscalerz=linscalerz, plotlatlines=plotlatlines)
         ax.set_title(titles[iplot], verticalalignment='bottom', **csfont)
 
-        # plot spherically averaged work
-        shav_term = np.sum(terms[iplot]*tw_2d, axis=0)
-        integrated_term = volume*np.sum(shav_term*rw)
-    
+        # plot averaged work
         shav_label = labels[iplot] + ': ' +\
                 sci_format(integrated_term/lstar, 3) + r'$L_*$'
         if rbcz is None:
             ax_shav.plot(rr/rsun, shav_term, label=shav_label, linewidth=lw)
+            ax_rav.plot(tt_lat, rav_term, linewidth=lw)
         else:
-            ax_shav.plot(rr[:irbcz]/rsun, shav_term[:irbcz],\
-                    label=shav_label, linewidth=lw)
-            ax_shav_rz.plot(rr[irbcz:]/rsun, shav_term[irbcz:],\
-                    label=shav_label, linewidth=lw)
+            ax_shav.plot(rr[:irbcz]/rsun, av_term[:irbcz],\
+                    label=av_label, linewidth=lw)
+            ax_shav_rz.plot(rr[irbcz:]/rsun, av_term[irbcz:],\
+                    label=av_label, linewidth=lw)
+            ax_rav.plot(tt_lat, rav_term, linewidth=lw)
+            rav_cz_label = labels[iplot] + ': ' +\
+                    sci_format(integrated_term_cz/lstar, 3) + r'$L_*$'
+            rav_rz_label = labels[iplot] + ': ' +\
+                    sci_format(integrated_term_rz/lstar, 3) + r'$L_*$'
+            ax_rav_cz.plot(tt_lat, rav_term_cz, label=rav_cz_label,\
+                    linewidth=lw)
+            ax_rav_rz.plot(tt_lat, rav_term_rz, label=rav_rz_label,\
+                    linewidth=lw)
 
-    # fix up some stuff for the shav work line plot
+    # fix up some stuff for the av work line plots
     ax_shav.set_xlabel(r'$r/R_\odot$', fontsize=fs, **csfont)
+    ax_rav.set_xlabel('latitude (deg)', fontsize=fs, **csfont)
     #ax_shav.set_xlim((ri/rsun, ro/rsun))
     ax_shav.legend(bbox_to_anchor=(1.05, 1), loc=2, fontsize=small_fs,\
             labelspacing=0.5, title='volume integral')
-    ax_shav.set_title("cgs units: erg/cm^3", fontsize=fs,\
+    ax_shav.set_title("spherical average", fontsize=fs,\
             **csfont )
-    # mark zero line
-    ax_shav.plot(rr/rsun, np.zeros_like(rr), 'k--', linewidth=0.5*lw)
+    ax_rav.set_title("radial average", fontsize=fs,\
+            **csfont )
     # ticks (mostly) everywhere
     if rbcz is None:
-        plt.sca(ax_shav)
-        plt.minorticks_on()
-        plt.tick_params(top=True, right=True, direction='in', which='both')
+        for ax in [ax_shav, ax_rav]:
+            plt.sca(ax)
+            plt.minorticks_on()
+            plt.tick_params(top=True, right=True,\
+                    direction='in', which='both')
     else:
         plt.sca(ax_shav)
         plt.minorticks_on()
@@ -560,6 +600,9 @@ for key in keys:
                 np.linspace(-ymaxabs, ymaxabs, 100), 'k--',\
                 linewidth=0.5*lw)
         ax_shav_rz.plot(rr/rsun, np.zeros_like(rr), 'k--', linewidth=0.5*lw)
+        # set labels for r-averaged plots
+        ax_rav_cz.set_xlabel('latitude (deg)', fontsize=fs, **csfont)
+        ax_rav_rz.set_xlabel('latitude (deg)', fontsize=fs, **csfont)
 
     # Label averaging interval
     if rotation:
@@ -581,12 +624,12 @@ for key in keys:
              ha='left', va='top', fontsize=fs, **csfont)
 
     # ...and Sph Avgs plot
-    fig_shav.text(shav_margin_x, 1 - 0.1*shav_margin_top, dirname_stripped,\
+    fig_av.text(av_margin_x, 1 - 0.1*av_margin_top, dirname_stripped,\
              ha='left', va='top', fontsize=fs, **csfont)
-    fig_shav.text(shav_margin_x, 1 - 0.3*shav_margin_top,\
-            plot_labels[key] + ' (spherical average)', ha='left', va='top',\
+    fig_av.text(av_margin_x, 1 - 0.3*av_margin_top,\
+            plot_labels[key] + ' (1D average)', ha='left', va='top',\
             fontsize=fs, **csfont)
-    fig_shav.text(shav_margin_x, 1 - 0.5*shav_margin_top, time_string,\
+    fig_av.text(av_margin_x, 1 - 0.5*av_margin_top, time_string,\
              ha='left', va='top', fontsize=fs, **csfont)
 
     savefile = plotdir + dirname_stripped + '_' + key + '_' +\
@@ -596,9 +639,9 @@ for key in keys:
     fig.savefig(savefile, dpi=300)
     plt.close(fig)
 
-    savefile_shav = plotdir + dirname_stripped + '_' + key + '_shav_' +\
+    savefile_av = plotdir + dirname_stripped + '_' + key + '_av_' +\
             str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + tag + '.pdf'
 
-    print ('Saving spherically averaged plot at ' + savefile_shav)
-    fig_shav.savefig(savefile_shav)
-    plt.close(fig_shav)
+    print ('Saving spherically averaged plot at ' + savefile_av)
+    fig_av.savefig(savefile_av)
+    plt.close(fig_av)
