@@ -1,6 +1,6 @@
 &output_namelist
 ! First, the shell slices and spectra, equatorial and
-! meridional slices, and full-3d "slices" 
+! meridional slices
 ! These contain only the basic fluid variables
 ! to capture "snapshots" of the flow
 !
@@ -29,9 +29,6 @@ meridional_indices_nrm = 0.0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875
 equatorial_values    = 1,2,3, 301,302,303, 501,502
 equatorial_frequency = 2500
 equatorial_nrec      = 1
-
-full3d_values = 1,2,3, 301,302,303, 501,502
-full3d_frequency = 250000
 
 ! Now the average/timetraces, containing many variables
 ! concerning the dynamics
