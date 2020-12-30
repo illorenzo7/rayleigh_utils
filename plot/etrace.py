@@ -266,21 +266,18 @@ if not xiter:
 else:
     xaxis = iters
 
-# set xmin
-if xmin is None:
-    if from0:
-        xmin = 0.
-    else:
-        xmin = np.min(xaxis)
-
+# only need to do stuff here of xminmax was not set by user
 if xminmax is None:
-    xminmax = xmin, np.max(xaxis)
-
-# Change JUST xmin or xmax, if desired
-if not xmin is None:
-    xminmax = xmin, xminmax[1]
-if not xmax is None:
-    xminmax = xminmax[0], xmax
+    # set xmin possibly
+    if xmin is None:
+        if from0:
+            xmin = 0.
+        else:
+            xmin = np.min(xaxis)
+    # set xmax possibly
+    if xmax is None:
+        xmax = np.max(xaxis)
+    xminmax = xmin, xmax
 
 ixmin = np.argmin(np.abs(xaxis - xminmax[0]))
 ixmax = np.argmin(np.abs(xaxis - xminmax[1]))
