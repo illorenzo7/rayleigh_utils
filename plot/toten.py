@@ -422,9 +422,9 @@ work_visc = work_visc_on_inte + work_visc_on_ke
 work_enth = work_pressure + work_thermal_advec
 # Negligible work (probably second-order but still worried about it)
 work_negligible = rhoTvrS*dsdr_2d/c_P
-# "extra" term for T_ref togoes inside convective derivative
-work_extra_advec = -rhoTvrS*dlnT_2d 
-work_inte_advec = work_thermal_advec + work_extra_advec
+# "extra" term for T_ref to go inside convective derivative
+work_extra_advec = rhoTvrS*dlnT_2d 
+work_inte_advec = work_thermal_advec - work_extra_advec
 work_tot = work_ke + work_inte
 
 tote_terms = [work_ke_advec, work_enth, work_cond, work_rad, work_visc,\
@@ -438,7 +438,7 @@ r'$Q(r)$',\
 r'$\nabla\cdot\langle\mathbf{D}\cdot\mathbf{u}\rangle$',\
 r'$-\overline{\rho}\overline{T}\frac{d\overline{S}}{dr}\langle u_r\rangle$',\
 r'$\overline{\rho}g\left\langle u_r\frac{S}{c_p}\right\rangle$',\
-r'$-\overline{\rho}\frac{d\overline{T}}{dr}\langle u_r S \rangle$',\
+r'$\overline{\rho}\frac{d\overline{T}}{dr}\langle u_r S \rangle$',\
 r'$\overline{\rho}\overline{T}\frac{d\overline{S}}{dr}\left\langle u_r\frac{S}{c_p}\right\rangle$',\
 r'$\frac{\partial}{\partial t}\left\langle TOTE\right\rangle$']
 tote_labels = ['ke adv', 'enth', 'cond', 'rad', 'visc', 'ref adv', 'buoy',\
