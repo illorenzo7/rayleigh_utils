@@ -10,7 +10,7 @@ sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
 from subprocess import call
 from common import get_file_lists, get_widest_range_file, strip_dirname,\
-        get_dict, get_lum
+        get_dict, get_lum, sci_format
 from get_parameter import get_parameter
 from rayleigh_diagnostics import GridInfo
 from time_scales import compute_Prot, compute_tdt
@@ -389,9 +389,11 @@ eq = get_eq(dirname)
 rhot = eq.density*eq.temperature
 # radial integration weights for integrals of rho * T
 gi = GridInfo(dirname + '/grid_info', '')
+rr = gi.radius
 nr = gi.nr
 if sep_czrz:
     nr_cz = get_parameter(dirname, 'ncheby')[1]
+    rbcz = rr[nr_cz - 1]
     nr_rz = nr - nr_cz
     rw = gi.rweights
     rw_cz = np.copy(rw[:nr_cz])
@@ -443,7 +445,7 @@ if plot_tote:
     # use units of the stellar luminosity
     lstar = get_lum(dirname)
     # m_leak represents leak in energy DENSITY (multiply by volume)
-    ri, ro = np.min(gi.radius), np.max(gi.radius)
+    ri, ro = np.min(rr), np.max(rr)
     shell_volume = 4./3.*np.pi*(ro**3. - ri**3.)
     dEdt = m_leak*shell_volume/lstar 
     mdEdt = mm_leak*shell_volume/lstar
@@ -528,7 +530,6 @@ if sep_czrz:
             tote_cz += me_cz
 
         # zone volumes
-        rbcz = gi.radius[nr_cz - 1]
         shell_volume_cz = 4./3.*np.pi*(ro**3. - rbcz**3.)
         shell_volume_rz = 4./3.*np.pi*(rbcz**3. - ri**3.)
 
@@ -955,7 +956,11 @@ elif ncol == 3:
 titles = ["ALL ZONES", "CZ", "RZ"]
 for icol in range(ncol):
     if icol == icol_mid:
-        title = dirname_stripped + '\n\n ' + titles[icol]
+        if sep_czrz:
+            title = dirname_stripped + '\n' r'$r_{bcz} =\ $' +\
+                sci_format(rbcz, 2) + ' cm\n' + titles[icol]
+        else:
+            title = dirname_stripped + '\n\n' + titles[icol]
     else:
         title = titles[icol]
     axs[0, icol].set_title(title)
