@@ -41,7 +41,7 @@ desired_lats = [0.] # by default, plot time-radius diagram for fields
 rbcz = None
 navg = 1 # by default don't average in time
 tag = '' # optional way to tag save directory
-rvals = None
+rvals = []
 
 # Get command-line arguments
 args = sys.argv[2:]

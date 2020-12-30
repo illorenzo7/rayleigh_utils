@@ -32,7 +32,7 @@ if not os.path.isdir(plotdir):
 rnorm = None
 minmax = None
 logscale = False
-rvals = None # user can specify radii to mark by vertical lines
+rvals = [] # user can specify radii to mark by vertical lines
 tag = ''
 
 # Read command-line arguments (CLAs)

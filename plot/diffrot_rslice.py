@@ -39,7 +39,7 @@ rnorm = None
 minmax = None
 lats = [0., 15., 30., 45., 60., 75.]
 the_file = get_widest_range_file(datadir, 'AZ_Avgs')
-rvals = None
+rvals = []
 
 # Read command-line arguments (CLAs)
 args = sys.argv[2:]

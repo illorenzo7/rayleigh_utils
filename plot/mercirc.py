@@ -61,7 +61,7 @@ symlog = False
 plotcontours = True
 plotlatlines = True
 plotboundary = True
-rvals = None
+rvals = []
 
 # Read in CLAs (if any) to change default variable ranges and other options
 args = sys.argv[2:]

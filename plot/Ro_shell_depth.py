@@ -30,7 +30,7 @@ dirname_stripped = strip_dirname(dirname)
 # Get command-line arguments to adjust the interval of averaging files
 minmax = None
 rnorm = None
-rvals = None
+rvals = []
 log = False
 
 args = sys.argv[2:]

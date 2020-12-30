@@ -16,7 +16,7 @@ from get_domain_bounds import get_domain_bounds
 from common import print_tuple, rsun
 dirname = sys.argv[1]
 rnorm = None
-rvals = None
+rvals = []
 ncheby = None
 domain_bounds = None
 xminmax = None

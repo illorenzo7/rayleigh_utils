@@ -42,8 +42,8 @@ if not os.path.isdir(plotdir):
 rnorm = None
 minmax = None
 logscale = False
-rvals = None # user can specify radii to mark by vertical lines
-rvals = None
+rvals = [] # user can specify radii to mark by vertical lines
+rvals = []
 tag = ''
 latrange = 0., 60. # By default compute average shear between 
     # equator and 60 deg

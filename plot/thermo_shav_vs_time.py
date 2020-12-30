@@ -51,7 +51,7 @@ minmax = None
 minmax_was_None = True
 subtop = False  # if True, subtract the top value of the entropy before\
         # computing the fluctuations
-rvals = None # user can specify radii to mark by vertical lines
+rvals = [] # user can specify radii to mark by vertical lines
 nrec = 1 # by default only plot 1 record from each Shell_Avgs file
 nskip = 1 # by default don't skip any Shell_Avgs files in the range
     # for nskip = 3, only read every third Shell_Avgs file, etc.

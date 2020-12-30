@@ -39,7 +39,7 @@ AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
 # Get command-line arguments to adjust the interval of averaging files
 minmax = None
 rnorm = None
-rvals = None # user can specify radii to mark by vertical lines
+rvals = [] # user can specify radii to mark by vertical lines
 
 args = sys.argv[2:]
 nargs = len(args)

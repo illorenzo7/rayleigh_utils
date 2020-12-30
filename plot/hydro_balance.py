@@ -39,7 +39,7 @@ the_file = get_widest_range_file(datadir, 'Shell_Avgs')
 xminmax = None
 minmax = None
 rnorm = None
-rvals = None
+rvals = []
 
 args = sys.argv[2:]
 nargs = len(args)

@@ -46,7 +46,7 @@ nlevs = 20
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
 rbcz = None
 minmax = None
-rvals = None
+rvals = []
 
 # Read in CLAs (if any) to change default variable ranges and other options
 args = sys.argv[2:]

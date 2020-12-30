@@ -24,7 +24,7 @@ dirname_stripped = strip_dirname(dirname)
 
 # Get other arguments
 xminmax = None
-rvals = None
+rvals = []
 ylog = True
 
 args = sys.argv[2:]

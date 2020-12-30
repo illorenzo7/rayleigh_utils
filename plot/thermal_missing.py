@@ -47,7 +47,7 @@ shell_volume = 4.0*np.pi/3.0*(np.max(rr)**3.0 - np.min(rr)**3.0)
 # Get command-line arguments to adjust the interval of averaging files
 minmax = None
 rnorm = None
-rvals = None
+rvals = []
 
 # Get rho*T ds dr
 eq = get_eq(dirname)

@@ -40,7 +40,7 @@ rnorm = None
 minmax = None
 subtop = False  # if True, subtract the top value of the entropy before\
         # computing the fluctuations
-rvals = None # user can specify radii to mark by vertical lines
+rvals = [] # user can specify radii to mark by vertical lines
 tag = ''
 use_hrho = False
 Shell_Avgs_file = get_widest_range_file(datadir, 'Shell_Avgs')

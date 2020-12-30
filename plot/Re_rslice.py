@@ -41,9 +41,9 @@ if not os.path.isdir(plotdir):
 rnorm = None
 minmax = None
 logscale = False
-rvals = None # user can specify radii to mark by vertical lines
+rvals = [] # user can specify radii to mark by vertical lines
 just_vr = False
-rvals = None
+rvals = []
 tag = ''
 lats = [0., 15., 30., 45., 60., 75.]
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')

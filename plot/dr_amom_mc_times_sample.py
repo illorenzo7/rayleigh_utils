@@ -49,7 +49,7 @@ minmaxdr = None
 minmaxamom = None
 minmaxmc = None
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
-rvals = None
+rvals = []
 navg = 1 # by default average over 1 AZ_Avgs instance (no average)
 # for navg > 1, a "sliding average" will be used.
 nlevs = 20

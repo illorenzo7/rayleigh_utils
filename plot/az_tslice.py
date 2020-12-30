@@ -27,7 +27,7 @@ dirname = sys.argv[1]
 dirname_stripped = strip_dirname(dirname)
 
 # Set defaults
-rvals = None
+rvals = []
 qvals = [1, 2, 3]
 datadir = dirname + '/data/'
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')

@@ -52,7 +52,7 @@ linthreshrz = None
 linscalerz = None
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
 forced = False
-rvals = None
+rvals = []
 rbcz = None
 symlog = False
 

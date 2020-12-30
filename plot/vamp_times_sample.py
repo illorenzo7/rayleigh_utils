@@ -35,7 +35,7 @@ radatadir = dirname + '/Shell_Avgs/'
 rnorm = None
 minmax = None
 logscale = False
-rvals = None # user can specify radii to mark by vertical lines
+rvals = [] # user can specify radii to mark by vertical lines
 
 # Get all the file names in datadir and their integer counterparts
 file_list, int_file_list, nfiles = get_file_lists(radatadir)

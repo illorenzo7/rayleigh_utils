@@ -52,7 +52,7 @@ minmaxbtrz = None
 minmaxbprz = None
 
 the_file = get_widest_range_file(datadir, 'AZ_Avgs')
-rvals = None
+rvals = []
 rbcz = None
 
 args = sys.argv[2:]
