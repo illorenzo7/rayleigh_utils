@@ -20,7 +20,7 @@ from plotcommon import axis_range, default_axes_1by2, default_axes_1by1
 def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
     units='', minmax=None, posdef=False, logscale=False, symlog=False,\
     plotcontours=True, plotfield=True, nlevs=10, levels=None,\
-	plotlatlines=False, rvals=None, cbar_fs=10,\
+	plotlatlines=False, rvals=[], cbar_fs=10,\
     showplot=False, plot_cbar=True, lw_scaling=1.,\
     linthresh=None, linscale=None, plotboundary=True, rbcz=None,\
     minmaxrz=None, linthreshrz=None, linscalerz=None):
@@ -475,18 +475,19 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
 
     # Plot various radii, if desired
     # If rbcz has been provided, it should be one of the radii plotted
+    # crude way to ensure "rvals" is passed by value, not reference
+    tmp = list(rvals)
+    del rvals
+    rvals = tmp
     if not rbcz is None:
-        if rvals is None:
-            rvals = []
         rvals.append(rbcz)
     
-    if not rvals is None:
-        for rval in rvals: 
-            plt.sca(ax)
-            rval /= ro
-            # "dimensional" rval (in dimensions of ro!)
-            plt.plot(rval*sint, rval*cost, 'k--',\
-                    linewidth=.7*lw_scaling)
+    for rval in rvals: 
+        plt.sca(ax)
+        rval /= ro
+        # "dimensional" rval (in dimensions of ro!)
+        plt.plot(rval*sint, rval*cost, 'k--',\
+                linewidth=.7*lw_scaling)
 
     # Set ax ranges to be just outside the boundary lines
     lilbit = 0.01
@@ -502,7 +503,7 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
 def plot_azav_half(field, rr, cost, sym='even', fig=None, ax=None,\
         cmap='RdYlBu_r', units='', minmax=None, posdef=False, logscale=False,\
         symlog=False, linthresh=None, linscale=None, plotcontours=True,\
-        plotfield=True, nlevs=10, levels=None, plotlatlines=False, rvals=None,\
+        plotfield=True, nlevs=10, levels=None, plotlatlines=False, rvals=[],\
         norm=None, cbar_fs=10, showplot=False, plot_cbar=True):
 	
     '''Takes a figure with a subplot (axis) of aspect ratio 1x1 (or
@@ -687,7 +688,7 @@ def plot_azav_half(field, rr, cost, sym='even', fig=None, ax=None,\
         plt.show()
 
 def plot_quiver(vr, vt, rr, cost, fig=None, ax=None, minmax=None,\
-        plotlatlines=False, rvals=None, cbar_fs=10,\
+        plotlatlines=False, rvals=[], cbar_fs=10,\
         showplot=False, scale=None, plot_poles=False, nsample_t=20,\
         nsample_r=10, scale_by_mag=True, plotboundary=True):
 
@@ -783,11 +784,10 @@ def plot_quiver(vr, vt, rr, cost, fig=None, ax=None, minmax=None,\
 
     # Plot various radii, if desired
     # rvals must be given normalized to outer rr
-    if not rvals is None:
-        for rval in rvals: 
-            plt.sca(ax)
-            rval /= ro
-            plt.plot(rval*sint, rval*cost, 'k--', linewidth=.7)
+    for rval in rvals: 
+        plt.sca(ax)
+        rval /= ro
+        plt.plot(rval*sint, rval*cost, 'k--', linewidth=.7)
 
     # Set ax ranges to be just outside the boundary lines
     lilbit = 0.01

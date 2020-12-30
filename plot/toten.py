@@ -49,7 +49,6 @@ if not os.path.isdir(plotdir):
 
 # Read command-line arguments (CLAs)
 magnetism = None
-showplot = False
 saveplot = True
 plotcontours = True
 plotlatlines = True
@@ -61,7 +60,7 @@ linthreshrz = None
 linscalerz = None
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
 forced = False
-rvals = None
+rvals = []
 rbcz = None
 symlog = False
 crudeint = False # by default use exact latitudinal weights and instead 
@@ -87,8 +86,7 @@ for i in range(nargs):
         minmaxrz = float(args[i+1]), float(args[i+2])
     elif arg == '-rbcz':
         rbcz = float(args[i+1])
-    elif arg == '-show':
-        showplot = True
+        rvals.append(rbcz)
     elif arg == '-nocontour':
         plotcontours = False
     elif arg == '-usefile':
@@ -106,7 +104,6 @@ for i in range(nargs):
             force_econs = False
     elif arg == '-rvals':
         rvals_str = args[i+1].split()
-        rvals = []
         for rval_str in rvals_str:
             rvals.append(float(rval_str))
     elif arg == '-symlog':
@@ -127,16 +124,12 @@ for i in range(nargs):
         tag = '_' + args[i+1]
     elif arg == '-ke': # just KE equation
         keys = ['toten_ke']
-        showplot = True
     elif arg == '-inte': # just heat equation
         keys = ['toten_inte']
-        showplot = True
     elif arg == '-me': # just ME equation
         keys = ['toten_me']
-        showplot = True
     elif arg == '-tote':
         keys = ['toten_tote']
-        showplot = True
 
 # Get the data:
 print ('Getting energy production terms from ' +\
@@ -173,7 +166,7 @@ if not rbcz is None:
     irbcz = np.argmin(np.abs(rr - rbcz))
     rbcz_real = rr[irbcz]
     volume_cz = 4./3.*np.pi*(ro**3. - rbcz_real**3.)
-    volume_cz = 4./3.*np.pi*(rbcz_real**3. - ri**3.)
+    volume_rz = 4./3.*np.pi*(rbcz_real**3. - ri**3.)
     rw_cz = np.copy(rw[:irbcz])
     rw_rz = np.copy(rw[irbcz:])
     rw_cz /= np.sum(rw_cz)
@@ -449,7 +442,7 @@ units = r'$\rm{erg}\ \rm{cm}^{-3}\ \rm{s}^{-1}$'
 # loop through keys and make plots
 for key in keys:
     # terms to plot
-    print ("plotting ", key)
+    print ("plotting ", key, " terms")
     terms = all_terms[key]
     nplots = len(terms)
     titles = all_titles[key]
@@ -486,13 +479,14 @@ for key in keys:
     # Generate figure for AZ Avgs plot
     fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
 
-    # spherical average figure
+    # 1D averages figure
     av_nrow = 2 + 2*(not rbcz is None)
     av_fig_width_inches = 8.5 
     av_width_inches = 5.
     av_height_inches = 3.5
-    av_margin_inches = 0.6
+    av_margin_inches = 3./4.
     av_margin_top_inches = 1.
+    #av_margin_subplot_top_inches = 3./4.
     av_fig_height_inches = av_margin_top_inches +\
             av_nrow*(av_height_inches + av_margin_inches)
     av_width = av_width_inches/av_fig_width_inches
@@ -503,29 +497,38 @@ for key in keys:
     fig_av = plt.figure(figsize=(av_fig_width_inches,\
             av_fig_height_inches))
     ax_shav = fig_av.add_axes((av_margin_x, 1. - av_margin_top -\
-            1.*(av_height + av_margin_y), av_width, av_height))
+            av_height, av_width, av_height))
     ax_rav = fig_av.add_axes((av_margin_x, 1. - av_margin_top -\
-            2.*(av_height + av_margin_y), av_width, av_height))
+            av_height - 1.*(av_height + av_margin_y), av_width, av_height))
+    # collect all av axes
+    axes_shav = [ax_shav]
+    axes_rav = [ax_rav]
     if not rbcz is None:
         ax_shav_rz = ax_shav.twinx()
+        axes_shav.append(ax_shav_rz)
         ax_rav_cz = fig_av.add_axes((av_margin_x, 1. - av_margin_top -\
-                3.*(av_height + av_margin_y), av_width, av_height))
+                av_height - 2.*(av_height + av_margin_y), av_width,\
+                av_height))
+        axes_rav.append(ax_rav_cz)
         ax_rav_rz = fig_av.add_axes((av_margin_x, 1. - av_margin_top -\
-                4.*(av_height + av_margin_y), av_width, av_height))
+                av_height - 3.*(av_height + av_margin_y), av_width,\
+                av_height))
+        axes_rav.append(ax_rav_rz)
 
+    # loop over terms and add associated plot to axes
     for iplot in range(nplots):
         # compute relevant terms
         term = terms[iplot]
         shav_term = np.sum(term*tw_2d, axis=0)
-        integrated_term = volume*np.sum(av_term*rw)
+        integrated_term = volume*np.sum(shav_term*rw)
         rav_term = np.sum(term*rw_2d, axis=1)
         if not rbcz is None:
-            rav_term_cz = np.sum(term[:irbcz]*rw_cz_2d, axis=1)
-            rav_term_rz = np.sum(term[irbcz:]*rw_rz_2d, axis=1)
+            rav_term_cz = np.sum(term[:, :irbcz]*rw_cz_2d, axis=1)
+            rav_term_rz = np.sum(term[:, irbcz:]*rw_rz_2d, axis=1)
             integrated_term_cz = volume_cz*np.sum(shav_term[:irbcz]*rw_cz)
             integrated_term_rz = volume_rz*np.sum(shav_term[irbcz:]*rw_rz)
 
-        # plot AZ Avgs
+        # plot azav
         ax_left = margin_x + (iplot%ncol)*(subplot_width + margin_x)
         ax_bottom = 1 - margin_top - margin_subplot_top - subplot_height -\
                 (iplot//ncol)*(margin_subplot_top + subplot_height +\
@@ -539,72 +542,91 @@ for key in keys:
         linscalerz=linscalerz, plotlatlines=plotlatlines)
         ax.set_title(titles[iplot], verticalalignment='bottom', **csfont)
 
-        # plot averaged work
+        # plot shav
         shav_label = labels[iplot] + ': ' +\
                 sci_format(integrated_term/lstar, 3) + r'$L_*$'
         if rbcz is None:
             ax_shav.plot(rr/rsun, shav_term, label=shav_label, linewidth=lw)
             ax_rav.plot(tt_lat, rav_term, linewidth=lw)
         else:
-            ax_shav.plot(rr[:irbcz]/rsun, av_term[:irbcz],\
-                    label=av_label, linewidth=lw)
-            ax_shav_rz.plot(rr[irbcz:]/rsun, av_term[irbcz:],\
-                    label=av_label, linewidth=lw)
+            ax_shav.plot(rr[:irbcz]/rsun, shav_term[:irbcz],\
+                    label=shav_label, linewidth=lw)
+            ax_shav_rz.plot(rr[irbcz:]/rsun, shav_term[irbcz:],\
+                    label=shav_label, linewidth=lw)
             ax_rav.plot(tt_lat, rav_term, linewidth=lw)
             rav_cz_label = labels[iplot] + ': ' +\
-                    sci_format(integrated_term_cz/lstar, 3) + r'$L_*$'
+                    sci_format(integrated_term_cz/lstar, 3)
             rav_rz_label = labels[iplot] + ': ' +\
-                    sci_format(integrated_term_rz/lstar, 3) + r'$L_*$'
+                    sci_format(integrated_term_rz/lstar, 3)
             ax_rav_cz.plot(tt_lat, rav_term_cz, label=rav_cz_label,\
                     linewidth=lw)
             ax_rav_rz.plot(tt_lat, rav_term_rz, label=rav_rz_label,\
                     linewidth=lw)
 
-    # fix up some stuff for the av work line plots
+    # label av plot x axes
     ax_shav.set_xlabel(r'$r/R_\odot$', fontsize=fs, **csfont)
-    ax_rav.set_xlabel('latitude (deg)', fontsize=fs, **csfont)
-    #ax_shav.set_xlim((ri/rsun, ro/rsun))
+    for ax in axes_rav:
+        ax.set_xlabel('latitude (deg)', fontsize=fs, **csfont)
+    # make av plot legends
     ax_shav.legend(bbox_to_anchor=(1.05, 1), loc=2, fontsize=small_fs,\
-            labelspacing=0.5, title='volume integral')
-    ax_shav.set_title("spherical average", fontsize=fs,\
-            **csfont )
-    ax_rav.set_title("radial average", fontsize=fs,\
-            **csfont )
-    # ticks (mostly) everywhere
+            labelspacing=0.5, title='(volume integral)/L')
+    if not rbcz is None:
+        ax_rav_cz.legend(bbox_to_anchor=(1.05, 1), loc=2, fontsize=small_fs,            labelspacing=0.5, title='(vol. integral CZ)/L')
+        ax_rav_rz.legend(bbox_to_anchor=(1.05, 1), loc=2, fontsize=small_fs,            labelspacing=0.5, title='(vol. integral RZ)/L')
+    # make av plot titles
+    ax_shav.set_title("spherical average", fontsize=fs, **csfont )
+    ax_rav.set_title("radial average", fontsize=fs, **csfont )
+    if not rbcz is None:
+        ax_rav_cz.set_title("radial avg. CZ", fontsize=fs, **csfont)
+        ax_rav_rz.set_title("radial avg. RZ", fontsize=fs, **csfont)
+    # if rbcz is desired centralize the zero point of the y axis
+        for ax in [ax_shav, ax_shav_rz]:
+            ymin, ymax = ax.get_ylim()
+            ymaxabs = max(np.abs(ymin), np.abs(ymax))
+            ax.set_ylim(-ymaxabs, ymaxabs)
+    # mark desired radii on shav plot
+    for rval in rvals:
+        if rbcz is None:
+            ax = ax_shav
+        else:
+            if rval <= rbcz:
+                ax = ax_shav_rz
+            else:
+                ax = ax_shav
+        ymin, ymax = ax.get_ylim()
+        yvals = np.linspace(ymin, ymax, 100)
+        ax.plot(np.zeros(100) + rval/rsun, yvals, 'k--', linewidth=0.5*lw)
+    # mark zero points on all plots
+    for ax in axes_shav + axes_rav:
+        xmin, xmax = ax.get_xlim()
+        xvals = np.linspace(xmin, xmax, 100)
+        ax.plot(xvals, np.zeros(100), 'k--', linewidth=0.5*lw)
+
+    # shav ticks (mostly everywhere, deal with split axes)
     if rbcz is None:
-        for ax in [ax_shav, ax_rav]:
-            plt.sca(ax)
-            plt.minorticks_on()
-            plt.tick_params(top=True, right=True,\
-                    direction='in', which='both')
+        plt.sca(ax_shav)
+        plt.minorticks_on()
+        plt.tick_params(top=True, right=True, direction='in',\
+                which='both')
     else:
         plt.sca(ax_shav)
         plt.minorticks_on()
         plt.tick_params(top=True, left=False, right=True, direction='in',\
                 which='both')
-        #ax_shav.yaxis.set_label_position('right')
         ax_shav.yaxis.tick_right()
         plt.sca(ax_shav_rz)
         plt.minorticks_on()
         plt.tick_params(top=True, left=True, right=False, direction='in',\
                 which='both')
         ax_shav_rz.yaxis.tick_left()
-        #ax_shav_rz.set_xlim((ri/rsun, ro/rsun))
-        # centralize the zero point
-        for ax in [ax_shav, ax_shav_rz]:
-            ymin, ymax = ax.get_ylim()
-            ymaxabs = max(np.abs(ymin), np.abs(ymax))
-            ax.set_ylim(-ymaxabs, ymaxabs)
-        # mark the chosen rbcz
-        ax_shav_rz.plot(np.zeros(100) + rr[irbcz]/rsun,\
-                np.linspace(-ymaxabs, ymaxabs, 100), 'k--',\
-                linewidth=0.5*lw)
-        ax_shav_rz.plot(rr/rsun, np.zeros_like(rr), 'k--', linewidth=0.5*lw)
-        # set labels for r-averaged plots
-        ax_rav_cz.set_xlabel('latitude (deg)', fontsize=fs, **csfont)
-        ax_rav_rz.set_xlabel('latitude (deg)', fontsize=fs, **csfont)
+    # rav ticks (everywhere)
+    for ax in axes_rav:
+        plt.sca(ax)
+        ax.set_xlabel('latitude (deg)', fontsize=fs, **csfont)
+        plt.minorticks_on()
+        plt.tick_params(top=True, right=True, direction='in', which='both')
 
-    # Label averaging interval
+    # put averaging interval in metadata
     if rotation:
         time_string = ('t = %.1f to %.1f ' %(t1/time_unit, t2/time_unit))\
                 + time_label + (r'$\ (\Delta t = %.1f\ $'\
@@ -614,7 +636,7 @@ for key in keys:
                 + time_label + (r'$\ (\Delta t = %.3f\ $'\
                 %((t2 - t1)/time_unit)) + time_label + ')'
 
-    # Put some metadata in upper left of AZ_Avgs plot
+    # metadata for azav
     fig.text(margin_x, 1 - 0.1*margin_top, dirname_stripped,\
              ha='left', va='top', fontsize=fs, **csfont)
     fig.text(margin_x, 1 - 0.3*margin_top, plot_labels[key] +\
@@ -623,7 +645,7 @@ for key in keys:
     fig.text(margin_x, 1 - 0.5*margin_top, time_string,\
              ha='left', va='top', fontsize=fs, **csfont)
 
-    # ...and Sph Avgs plot
+    # same metadata for av plot
     fig_av.text(av_margin_x, 1 - 0.1*av_margin_top, dirname_stripped,\
              ha='left', va='top', fontsize=fs, **csfont)
     fig_av.text(av_margin_x, 1 - 0.3*av_margin_top,\
@@ -632,16 +654,16 @@ for key in keys:
     fig_av.text(av_margin_x, 1 - 0.5*av_margin_top, time_string,\
              ha='left', va='top', fontsize=fs, **csfont)
 
+    # save both plots
+    # azav
     savefile = plotdir + dirname_stripped + '_' + key + '_' +\
             str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + tag + '.png'
-
-    print ('Saving AZ_Avgs plot at ' + savefile)
+    print ('Saving azav plot at\n' + savefile)
     fig.savefig(savefile, dpi=300)
     plt.close(fig)
-
+    # av
     savefile_av = plotdir + dirname_stripped + '_' + key + '_av_' +\
             str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + tag + '.pdf'
-
-    print ('Saving spherically averaged plot at ' + savefile_av)
+    print ('Saving 1D av line plot at\n' + savefile_av)
     fig_av.savefig(savefile_av)
     plt.close(fig_av)
