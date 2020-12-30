@@ -10,7 +10,7 @@ sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
 from subprocess import call
 from common import get_file_lists, get_widest_range_file, strip_dirname,\
-        get_dict, get_lum, sci_format
+        get_dict, get_lum
 from get_parameter import get_parameter
 from rayleigh_diagnostics import GridInfo
 from time_scales import compute_Prot, compute_tdt
@@ -85,7 +85,6 @@ inte_subt = False # subtracts top value of S for inte
 inte_subb = False # subtracts bot value of S for inte
 sep_czrz = False # plots two more columns with energies in CZ and RZ 
     # separately 
-rbcz = None # user can change rbcz if desired
 inte_gtr2 = False # plots just the regular inte but using the 
     # trace_2dom_G_Avgs file 
     # (just to compare and make sure nothing's wonky)
@@ -202,8 +201,6 @@ for i in range(nargs):
         plot_tote = True
     elif arg == '-czrz':
         sep_czrz = True
-    elif arg == '-rbcz':
-        rbcz = float(args[i+1])
     elif arg == '-name':
         savename = args[i+1] + '.png'
     elif arg == '-tol':
@@ -392,17 +389,13 @@ eq = get_eq(dirname)
 rhot = eq.density*eq.temperature
 # radial integration weights for integrals of rho * T
 gi = GridInfo(dirname + '/grid_info', '')
-rr = gi.radius
 nr = gi.nr
 if sep_czrz:
-    if rbcz is None:
-        irbcz = get_parameter(dirname, 'ncheby')[1]
-        rbcz = rr[irbcz]
-    else:
-        irbcz = np.argmin(np.abs(rr - rbcz))
+    nr_cz = get_parameter(dirname, 'ncheby')[1]
+    nr_rz = nr - nr_cz
     rw = gi.rweights
-    rw_cz = np.copy(rw[:irbcz])
-    rw_rz = np.copy(rw[irbcz:])
+    rw_cz = np.copy(rw[:nr_cz])
+    rw_rz = np.copy(rw[nr_cz:])
     rw_cz /= np.sum(rw_cz)
     rw_rz /= np.sum(rw_rz)
 
@@ -418,8 +411,8 @@ if plot_inte and subinte:
         # integrate rho * T
         integ = np.sum(rw*rhot)
         S0 = sub/integ # entropy associated with subtraction
-        integ_cz = np.sum(rw_cz*rhot[:irbcz])
-        integ_rz = np.sum(rw_rz*rhot[irbcz:])
+        integ_cz = np.sum(rw_cz*rhot[:nr_cz])
+        integ_rz = np.sum(rw_rz*rhot[nr_cz:])
         inte_cz -= (S0*integ_cz)
         inte_rz -= (S0*integ_rz)
  
@@ -450,7 +443,7 @@ if plot_tote:
     # use units of the stellar luminosity
     lstar = get_lum(dirname)
     # m_leak represents leak in energy DENSITY (multiply by volume)
-    ri, ro = np.min(rr), np.max(rr)
+    ri, ro = np.min(gi.radius), np.max(gi.radius)
     shell_volume = 4./3.*np.pi*(ro**3. - ri**3.)
     dEdt = m_leak*shell_volume/lstar 
     mdEdt = mm_leak*shell_volume/lstar
@@ -535,6 +528,7 @@ if sep_czrz:
             tote_cz += me_cz
 
         # zone volumes
+        rbcz = gi.radius[nr_cz - 1]
         shell_volume_cz = 4./3.*np.pi*(ro**3. - rbcz**3.)
         shell_volume_rz = 4./3.*np.pi*(rbcz**3. - ri**3.)
 
@@ -961,11 +955,7 @@ elif ncol == 3:
 titles = ["ALL ZONES", "CZ", "RZ"]
 for icol in range(ncol):
     if icol == icol_mid:
-        if sep_czrz:
-            title = dirname_stripped + '\n' r'$r_{bcz} =\ $' +\
-                    sci_format(rbcz, 2) + ' cm\n' + titles[icol]
-        else:
-            title = dirname_stripped + '\n\n' + titles[icol]
+        title = dirname_stripped + '\n\n ' + titles[icol]
     else:
         title = titles[icol]
     axs[0, icol].set_title(title)
