@@ -336,6 +336,20 @@ if magnetism:
     work_idiff = 1.0/(4.0*np.pi)*vals[:, :, lut[2043]]
     # total magnetic energy work
     work_me = work_induct + work_idiff
+    try: # decompose induction work further if possible if possible
+        work_ishear = 1.0/(4.0*np.pi)*vals[:, :, lut[2025]]
+        work_ishear_mmm = 1.0/(4.0*np.pi)*vals[:, :, lut[2034]]
+        work_ishear_ppp = 1.0/(4.0*np.pi)*vals[:, :, lut[2040]]
+        work_iadvec = 1.0/(4.0*np.pi)*vals[:, :, lut[2026]]
+        work_icomp = 1.0/(4.0*np.pi)*vals[:, :, lut[2027]]
+        have_all_induct_terms = True
+        print ("I have all the magnetic induction work terms:")
+        print ("shear (tot, mmm, ppp), advec., and comp.")
+    except:
+        have_all_induct_terms = False
+        print ("Missing one or more induction work terms; include")
+        print ("2025,2034,2040,2026,2027:")
+        print ("[shear (tot, mmm, ppp), advec., and comp.] next time")
 
 #======================================
 # SPHERICALLY/VOLUME AVERAGED EQUATIONS
@@ -384,6 +398,22 @@ if magnetism:
     me_terms = [work_induct, work_idiff, work_me]
     me_titles = [r'$\frac{1}{4\pi}\langle\mathbf{B}\cdot\nabla\times(\mathbf{v}\times\mathbf{B})\rangle$', r'$\frac{1}{4\pi}\langle\mathbf{B}\cdot\nabla\times(\eta(r)\nabla\times\mathbf{B})\rangle$', r'$\frac{\partial}{\partial t}\left\langle\frac{B^2}{8\pi}\right\rangle$']
     me_labels = ['induct', 'idiff', 'd(me)/dt']
+    if have_all_induct_terms:
+        me_terms.insert(1, work_ishear)
+        me_terms.insert(2, work_ishear_mmm)
+        me_terms.insert(3, work_ishear_ppp)
+        me_terms.insert(4, work_iadvec)
+        me_terms.insert(5, work_icomp)
+        me_titles.insert(1, r'$\frac{1}{4\pi}\langle\mathbf{B}\cdot[\mathbf{B}\cdot\nabla\mathbf{v}]\rangle$')
+        me_titles.insert(2, r'$\frac{1}{4\pi}\langle\mathbf{B}\rangle\cdot[\langle mathbf{B}\rangle\cdot\nabla\langle\mathbf{v}\rangle]$')
+        me_titles.insert(3, r'$\frac{1}{4\pi}\langle\mathbf{B}^\prime\cdot[\mathbf{B}^\prime\cdot\nabla\mathbf{v}^\prime]\rangle$')
+        me_titles.insert(4, r'$-\frac{1}{4\pi}\langle\mathbf{B}\cdot[\mathbf{v}\cdot\nabla\mathbf{B}]\rangle$')
+        me_titles.insert(5, r'$-\frac{1}{4\pi}\langle(\nabla\cdot\mathbf{v})B^2\rangle$')
+        me_labels.insert(1, 'ishear')
+        me_labels.insert(2, 'ishear (mmm)')
+        me_labels.insert(3, 'ishear (ppp)')
+        me_labels.insert(4, 'iadvec')
+        me_labels.insert(5, 'icomp')
 
 #====================================================
 # TOTAL ENERGY EQUATION (negative divergences mostly)
@@ -544,7 +574,7 @@ for key in keys:
 
         # plot shav
         shav_label = labels[iplot] + ': ' +\
-                sci_format(integrated_term/lstar, 3) + r'$L_*$'
+                sci_format(integrated_term/lstar, 3)
         if rbcz is None:
             ax_shav.plot(rr/rsun, shav_term, label=shav_label, linewidth=lw)
             ax_rav.plot(tt_lat, rav_term, linewidth=lw)
