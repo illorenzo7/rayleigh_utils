@@ -238,10 +238,10 @@ try:
 except: # hopefully they output 1440
     rhoTvrS = vals[:, :, lut[1440]]
     vrS = rhoTvrS/rhoT
-    work_buoy = (rho*grav/c_P).rshape((1, nr))*(vrS - vrS_00)
+    work_buoy = (rho*grav/c_P).reshape((1, nr))*(vrS - vrS_00)
     print ("buoy_work = 1904 not output in AZ_Avgs")
     print ("getting buoyancy work from 1440 = rhoTvrS")
-    print ("subtracting l = 0 part using sum (tw * (501 = S))")
+    print ("subtracting l = 0 part using sum(tw*(501=S))")
 
 # viscous work on kinetic energy
 work_visc_on_ke = vals[:, :, lut[1907]]
