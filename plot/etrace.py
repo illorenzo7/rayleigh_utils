@@ -46,6 +46,31 @@ mes = None
 subinte = True # by default shift the internal energies by a constant
     # so they aren't so huge
 leak_frac = 1./4. # compute leak averaged over last quarter of simulation
+
+# bunch of minmax options
+# use -minmax [val1] [val2] to set both minmax values (combined zones)
+# use -min [val] or -max [val] to set just the min or max (combined zones)
+# append cz or rz for values in cz or rz
+# prepend a, m, f, to set all min/max vals (full, mean, fluc), m for mean,
+# f for fluc, 
+# or aa for full, mean, and fluc for each zone (combined, RZ, CZ)
+# example:
+# aminmaxcz 0 5e6 sets the full, mean, fluc bounds in the CZ to 0, 5e6
+# aaminmax 0 5e6 does the same for combined zones, CZ, and RZ
+
+aminmax = None
+amin = None
+amax = None
+aminmax_cz = None
+amin_cz = None
+amax_cz = None
+aminmax_rz = None
+amin_rz = None
+amax_rz = None
+aaminmax = None
+aamin = None
+aamax = None
+
 minmax = None
 ymin = None
 ymax = None
@@ -123,6 +148,32 @@ for i in range(nargs):
         subinte = False
     elif arg == '-frac':
         leak_frac = float(args[i+1])
+
+    elif arg == '-aminmax':
+        aminmax = float(args[i+1]), float(args[i+2])
+    elif arg == '-amin':
+        amin = float(args[i+1])
+    elif arg == '-amax':
+        amax = float(args[i+1])
+    elif arg == '-aminmaxcz':
+        aminmax_cz = float(args[i+1]), float(args[i+2])
+    elif arg == '-amincz':
+        amin_cz = float(args[i+1])
+    elif arg == '-amaxcz':
+        amax_cz = float(args[i+1])
+    elif arg == '-aminmaxrz':
+        aminmax_rz = float(args[i+1]), float(args[i+2])
+    elif arg == '-aminrz':
+        amin_rz = float(args[i+1])
+    elif arg == '-amaxrz':
+        amax_rz = float(args[i+1])
+    elif arg == '-aaminmax':
+        aaminmax = float(args[i+1]), float(args[i+2])
+    elif arg == '-aamin':
+        aamin = float(args[i+1])
+    elif arg == '-aamax':
+        aamax = float(args[i+1])
+
     elif arg == '-minmax':
         minmax = float(args[i+1]), float(args[i+2])
     elif arg == '-min':
@@ -655,7 +706,7 @@ if plot_tote:
 # put a legend on the upper left axis
 axs[0,0].legend(loc='lower left', ncol=3, fontsize=8, columnspacing=1)
 
-# set y-axis limits
+# long logic to set y-axis limits
 # take into account buffer for legend and leak labels
 def get_minmax(ax, ylog=False, withleg=False, nodyn=False, mes=None):
     if withleg: # extra room for legend
@@ -685,6 +736,78 @@ def get_minmax(ax, ylog=False, withleg=False, nodyn=False, mes=None):
             ydiff = ymax - ymin
             ymin = ymin - buff*ydiff
     return ymin, ymax
+
+# aminmax/aaminmax stuff overrides everything
+# combined zones
+if not aminmax is None:
+    minmax = aminmax
+    mminmax = aminmax
+    fminmax = aminmax
+if not amin is None:
+    ymin = amin
+    mymin = amin
+    fymin = amin
+if not amax is None:
+    ymax = amax
+    mymax = amax
+    fymax = amax
+# CZ
+if not aminmax_cz is None:
+    minmax_cz = aminmax_cz
+    mminmax_cz = aminmax_cz
+    fminmax_cz = aminmax_cz
+if not amin_cz is None:
+    ymin_cz = amin_cz
+    mymin_cz = amin_cz
+    fymin_cz = amin_cz
+if not amax_cz is None:
+    ymax_cz = amax_cz
+    mymax_cz = amax_cz
+    fymax_cz = amax_cz
+# RZ
+if not aminmax_rz is None:
+    minmax_rz = aminmax_rz
+    mminmax_rz = aminmax_rz
+    fminmax_rz = aminmax_rz
+if not amin_rz is None:
+    ymin_rz = amin_rz
+    mymin_rz = amin_rz
+    fymin_rz = amin_rz
+if not amax_rz is None:
+    ymax_rz = amax_rz
+    mymax_rz = amax_rz
+    fymax_rz = amax_rz
+# ALL ZONES
+if not aaminmax is None:
+    minmax = aaminmax
+    mminmax = aaminmax
+    fminmax = aaminmax
+    minmax_cz = aaminmax
+    mminmax_cz = aaminmax
+    fminmax_cz = aaminmax
+    minmax_rz = aaminmax
+    mminmax_rz = aaminmax
+    fminmax_rz = aaminmax
+if not aamin is None:
+    ymin = aamin
+    mymin = aamin
+    fymin = aamin
+    ymin_cz = aamin
+    mymin_cz = aamin
+    fymin_cz = aamin
+    ymin_rz = aamin
+    mymin_rz = aamin
+    fymin_rz = aamin
+if not aamax is None:
+    ymax = aamax
+    mymax = aamax
+    fymax = aamax
+    ymax_cz = aamax
+    mymax_cz = aamax
+    fymax_cz = aamax
+    ymax_rz = aamax
+    mymax_rz = aamax
+    fymax_rz = aamax
 
 if minmax is None:
     if nodyn: 
