@@ -1,11 +1,41 @@
 # Author: Loren Matilsky
 # Created: 07/02/2020
+# Modified + Parallelized: 01/02/2021
 # This script plots the DR and angular momentum in the meridional plane
 # for many different times (to make up the frames of a movie)
 # Saves plots in subdirectory
 # plots/diffrot_amom_times_sample/
+
+# initialize communication
+from mpi4py import MPI
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
+
+# Start timing immediately
+comm.Barrier()
+if rank == 0:
+    # timing module
+    import time
+    # info for print messages
+    import sys, os
+    sys.path.append(os.environ['raco'])
+    from common import fill_str
+    from mpi_util import opt_workload
+    lent = 50
+    char = '.'
+    nproc = comm.Get_size()
+    t1_glob = time.time()
+    t1 = t1_glob + 0.0
+    if nproc > 1:
+        print ('processing in parallel with %i ranks' %nproc)
+        print ('communication initialized')
+    else:
+        print ('processing in serial with 1 rank')
+    print(fill_str('processes importing necessary modules', lent, char),\
+            end='')
+
+# modules needed by everyone
 import numpy as np
-import pickle
 import matplotlib as mpl
 mpl.use('TkAgg')
 import matplotlib.pyplot as plt
@@ -15,145 +45,214 @@ import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapl'])
-from rayleigh_diagnostics import AZ_Avgs, GridInfo
+from rayleigh_diagnostics import AZ_Avgs
 from azav_util import plot_azav, streamfunction
-from common import get_widest_range_file, strip_dirname, get_dict,\
-        get_file_lists, get_desired_range, sci_format
+from common import sci_format
+from rayleigh_diagnostics import AZ_Avgs
+reading_func = AZ_Avgs
+dataname = 'AZ_Avgs'
 
-from get_parameter import get_parameter
-from get_eq import get_eq
-from time_scales import compute_Prot, compute_tdt
-from translate_times import translate_times
+if rank == 0:
+    # modules needed only by proc 0 
+    from common import strip_dirname, get_file_lists, get_desired_range
+    from get_parameter import get_parameter
+    from get_eq import get_eq
+    from time_scales import compute_Prot, compute_tdt
+    from rayleigh_diagnostics import AZ_Avgs, GridInfo
 
-# Get directory name and stripped_dirname for plotting purposes
-dirname = sys.argv[1]
-dirname_stripped = strip_dirname(dirname)
+# Checkpoint and time
+comm.Barrier()
+if rank == 0:
+    t2 = time.time()
+    print ('%8.2e s' %(t2 - t1))
+    print(fill_str('proc 0 distributing the file lists', lent, char),\
+            end='')
+    t1 = time.time()
 
-# Directory with AZ_Avgs
-radatadir = dirname + '/AZ_Avgs/'
+if rank == 0:
+    # Get directory name and stripped_dirname for plotting purposes
+    dirname = sys.argv[1]
+    dirname_stripped = strip_dirname(dirname)
 
-# Get all the file names in datadir and their integer counterparts
-file_list, int_file_list, nfiles = get_file_lists(radatadir)
+    # Directory with AZ_Avgs
+    radatadir = dirname + '/' + dataname + '/'
 
-# Read command-line arguments (CLAs)
-plotcontours = True
-plotlatlines = False
-minmaxdr = None
-minmaxamom = None
-minmaxmc = None
-rvals = []
-rbcz = None
-minmaxrz = None
-navg = 1 # by default average over 1 AZ_Avgs instance (no average)
-# for navg > 1, a "sliding average" will be used.
-tag = '' # optional way to tag save directory
-nlevs = 20
-plotboundary = True
-nskip = 1 # by default don't skip anything
-ntot = None 
+    # Get all the file names in datadir and their integer counterparts
+    file_list, int_file_list, nfiles = get_file_lists(radatadir)
 
-args = sys.argv[2:]
-nargs = len(args)
+    # read command-line arguments
+    # defaults
+    args = sys.argv[2:]
+    nargs = len(args)
+    plotcontours = True
+    plotlatlines = False
+    minmaxdr = None
+    minmaxamom = None
+    minmaxmc = None
+    rvals = []
+    rbcz = None
+    minmaxrz = None
+    navg = 1 # by default average over 1 AZ_Avgs instance (no average)
+    # for navg > 1, a "sliding average" will be used.
+    tag = '' # optional way to tag save directory
+    nlevs = 20
+    plotboundary = True
+    nskip = 1 # by default don't skip anything
+    ntot = None 
 
-the_tuple = get_desired_range(int_file_list, args)
-if the_tuple is None: # By default average over the first 50 files
-    index_first, index_last = 0, 49
+    # Change defaults
+    for i in range(nargs):
+        arg = args[i]
+        if arg == '-minmaxdr' or arg == '-minmax':
+            minmaxdr = float(args[i+1]), float(args[i+2])
+        elif arg == '-minmaxamom':
+            minmaxamom = float(args[i+1]), float(args[i+2])
+        elif arg == '-minmaxmc':
+            minmaxmc = float(args[i+1]), float(args[i+2])
+        elif arg == '-rbcz':
+            rbcz = float(args[i+1])
+        elif arg == '-minmaxrz':
+            minmaxrz = float(args[i+1]), float(args[i+2])
+        elif arg == '-nocontour':
+            plotcontours = False
+        elif arg == '-rvals':
+            rvals_str = args[i+1].split()
+            rvals = []
+            for rval_str in rvals_str:
+                rvals.append(float(rval_str))
+        elif arg == '-lats':
+            plotlatlines = True
+        elif arg == '-nlevs':
+            nlevs = int(args[i+1])
+        elif arg == '-nobound':
+            plotboundary = False
+        elif arg == '-navg':
+            navg = int(args[i+1])
+            if navg % 2 == 0:
+                print ("Please don't enter even values for navg!")
+                print ("Replacing navg = %i with navg = %i" %(navg, navg + 1))
+                navg += 1
+        elif arg == '-nskip':
+            nskip = int(args[i+1])
+        elif arg == '-ntot':
+            ntot = int(args[i+1])
+        elif arg == '-tag':
+            tag = '_' + args[i+1]
+
+    # Get files we want
+    the_tuple = get_desired_range(int_file_list, args)
+    if the_tuple is None: # By default average over the first 50 files
+        index_first, index_last = 0, 49
+    else:
+        index_first, index_last = the_tuple
+    # Check to make sure index_last didn't fall beyond the last possible
+    # index
+    if index_last > nfiles - navg:
+        index_last = nfiles - navg
+
+    # Remove parts of file lists we don't need
+    #file_list = file_list[index_first:index_last + 1]
+    file_list = file_list[index_first:index_last + navg]
+    #int_file_list = int_file_list[index_first:index_last + 1]
+    int_file_list = int_file_list[index_first:index_last + navg]
+    nfiles = index_last - index_first + 1
+
+    # Get the problem size
+    nproc_min, nproc_max, n_per_proc_min, n_per_proc_max =\
+            opt_workload(nfiles, nproc)
+
+    # Create plotdir if doesn't already exist
+    plotdir = dirname +  '/plots/dr_amom_mc_times_sample' + tag + '/'
+    if not os.path.isdir(plotdir):
+        os.makedirs(plotdir)
+
+    # Distribute file_list to each process
+    for k in range(nproc - 1, -1, -1):
+        # distribute the partial file list to other procs 
+        if k >= nproc_min: # last processes analyzes more files
+            my_nfiles = np.copy(n_per_proc_max)
+            istart = nproc_min*n_per_proc_min + (k - nproc_min)*my_nfiles
+            iend = istart + my_nfiles + navg - 1
+        else: # first processes analyze fewer files
+            my_nfiles = np.copy(n_per_proc_min)
+            istart = k*my_nfiles
+            iend = istart + my_nfiles + navg - 1
+
+        # Get the file list portion for rank k
+        my_files = np.copy(int_file_list[istart:iend])
+        
+        # remainder of the start index (for nskip)
+        first_rem = (istart - index_first) % nskip
+
+        # send  my_files, my_nfiles, first_rem if nproc > 1
+        if k >= 1:
+            comm.send([my_files, my_nfiles, first_rem], dest=k)
+else: # recieve my_files, my_nfiles
+    my_files, my_nfiles, first_rem = comm.recv(source=0)
+
+# collect and broadcast metadata
+if rank == 0:
+    # compute number files in range
+    n_analyze = index_last - index_first + 1
+    # then set nskip if user specified ntot
+    if not ntot is None:
+        nskip = n_analyze//ntot
+
+    # Get the baseline time unit
+    rotation = get_parameter(dirname, 'rotation')
+    if rotation:
+        time_unit = compute_Prot(dirname)
+        time_label = r'$\rm{P_{rot}}$'
+    else:
+        time_unit = compute_tdt(dirname)
+        time_label = r'$\rm{TDT}$'
+
+    # Will need the first data file for a number of things
+    a0 = reading_func(radatadir + file_list[0], '')
+
+    # Get necessary grid info
+    rr = a0.radius
+    ri, ro = np.min(rr), np.max(rr)
+    shell_volume = 4./3.*np.pi*(ro**3. - ri**3.)
+    cost = a0.costheta
+    sint = a0.sintheta
+    nr = a0.nr
+    nt = a0.ntheta
+    nq = a0.nq
+    xx = rr.reshape((1, nr))*sint.reshape((nt, 1))
+    tt_lat = (np.pi/2. - np.arccos(cost))*180./np.pi
+
+    # Get the density
+    eq = get_eq(dirname)
+    rho = (eq.density).reshape((1, nr))
+
+    # Get the radial/horizontal integration weights 
+    gi = GridInfo(dirname + '/grid_info', '')
+    rw = gi.rweights
+    tw = (gi.tweights).reshape((nt, 1))
+    meta = [dirname, radatadir, plotdir, nt, nr, nq, first_rem, nskip, xx,\
+            rr, rbcz, cost, rho, shell_volume, rw, tw, tt_lat, time_unit,\
+            time_label, navg, plotcontours, plotlatlines, plotboundary,\
+            rvals, nlevs, minmaxrz, minmaxmc, minmaxdr, minmaxamom,\
+            dirname_stripped, rotation]
 else:
-    index_first, index_last = the_tuple
+    meta = None
+dirname, radatadir, plotdir, nt, nr, nq, first_rem, nskip, xx,\
+        rr, rbcz, cost, rho, shell_volume, rw, tw, tt_lat, time_unit,\
+        time_label, navg, plotcontours, plotlatlines, plotboundary,\
+        rvals, nlevs, minmaxrz, minmaxmc, minmaxdr, minmaxamom,\
+        dirname_stripped, rotation = comm.bcast(meta, root=0)
 
-# Change defaults
-for i in range(nargs):
-    arg = args[i]
-    if arg == '-minmaxdr' or arg == '-minmax':
-        minmaxdr = float(args[i+1]), float(args[i+2])
-    elif arg == '-minmaxamom':
-        minmaxamom = float(args[i+1]), float(args[i+2])
-    elif arg == '-minmaxmc':
-        minmaxmc = float(args[i+1]), float(args[i+2])
-    elif arg == '-rbcz':
-        rbcz = float(args[i+1])
-    elif arg == '-minmaxrz':
-        minmaxrz = float(args[i+1]), float(args[i+2])
-    elif arg == '-nocontour':
-        plotcontours = False
-    elif arg == '-rvals':
-        rvals_str = args[i+1].split()
-        rvals = []
-        for rval_str in rvals_str:
-            rvals.append(float(rval_str))
-    elif arg == '-lats':
-        plotlatlines = True
-    elif arg == '-nlevs':
-        nlevs = int(args[i+1])
-    elif arg == '-nobound':
-        plotboundary = False
-    elif arg == '-navg':
-        navg = int(args[i+1])
-        if navg % 2 == 0:
-            print ("Please don't enter even values for navg!")
-            print ("Replacing navg = %i with navg = %i" %(navg, navg + 1))
-            navg += 1
-    elif arg == '-nskip':
-        nskip = int(args[i+1])
-    elif arg == '-ntot':
-        ntot = int(args[i+1])
-    elif arg == '-tag':
-        tag = '_' + args[i+1]
+# Checkpoint and time
+comm.Barrier()
+if rank == 0:
+    t2 = time.time()
+    print ('%8.2e s' %(t2 - t1))
+    print(fill_str('plotting', lent, char), end='\r')
+    t1 = time.time()
 
-# Create plotdir if doesn't already exist
-plotdir = dirname +  '/plots/dr_amom_mc_times_sample' + tag + '/'
-if not os.path.isdir(plotdir):
-    os.makedirs(plotdir)
-
-# Check to make sure index_last didn't fall beyond the last possible index ...
-if index_last > nfiles - navg:
-    index_last = nfiles - navg
-# compute number files in range
-n_analyze = index_last - index_first + 1
-# then set nskip if user specified ntot
-if not ntot is None:
-    nskip = n_analyze//ntot
-
-# Get the baseline time unit
-rotation = get_parameter(dirname, 'rotation')
-if rotation:
-    time_unit = compute_Prot(dirname)
-    time_label = r'$\rm{P_{rot}}$'
-else:
-    time_unit = compute_tdt(dirname)
-    time_label = r'$\rm{TDT}$'
-
-# Read in first AZ_Avgs file
-az0 = AZ_Avgs(radatadir + file_list[index_first], '')
-
-# Get necessary grid info
-rr = az0.radius
-ri, ro = np.min(rr), np.max(rr)
-cost = az0.costheta
-sint = az0.sintheta
-nr = az0.nr
-nt = az0.ntheta
-nq = az0.nq
-xx = rr.reshape((1, nr))*sint.reshape((nt, 1))
-tt_lat = (np.pi/2. - np.arccos(cost))*180./np.pi
-
-# Get the density
-eq = get_eq(dirname)
-rho = (eq.density).reshape((1, nr))
-
-# Get the radial/horizontal integration weights 
-gi = GridInfo(dirname + '/grid_info', '')
-rw = gi.rweights
-tw = (gi.tweights).reshape((nt, 1))
-
-# Get index for v_phi (hopefully you don't change quantity codes partway
-# through!
-lut = az0.lut
-ind_vr = lut[1]
-ind_vt = lut[2]
-ind_vp = lut[3]
-
-# Set up universal figure dimensions
+# make plots
+# Set up figure dimensions
 fig_width_inches = 7. # TOTAL figure width, in inches
     # (i.e., 8x11.5 paper with 1/2-inch margins)
 margin_inches = 1./8. # margin width in inches (for both x and y) and 
@@ -189,61 +288,48 @@ margin_subplot_top = margin_subplot_top_inches/fig_height_inches
 subplot_width = subplot_width_inches/fig_width_inches
 subplot_height = subplot_height_inches/fig_height_inches
 
-# Plotting loop
-print ('Plotting AZ_Avgs files %s through %s'\
-       %(file_list[index_first], file_list[index_last]))
-print('Saving plots to '  + plotdir)
-
 # May have to do sliding average (for navg > 1)
-# Perform an average of v_phi, then subtract the first AZ_Avg 
-# and add the last AZ_Avg with each iteration
-# This won't be great if you store multiple records in single AZ_Avg file...
-
-# First time can be initialized here from az0
-t1 = az0.time[0]
-iter1 = az0.iters[0]
+# Perform an average then subtract the first AZ_Avg 
+# and add the next AZ_Avg with each iteration
+# This won't be great if you store multiple records in single AZ_Avg file
+# (the average will slide more)
 
 # Initialize the vals array with the average of first navg arrays
-print ("Performing initial average over navg = %i files" %navg)
 vals = np.zeros((nt, nr, nq))
-for i in range(index_first, index_first + navg):
-    print ("adding AZ_Avgs/" + file_list[i])
-    az = AZ_Avgs(radatadir + file_list[i], '')
-
-    for j in range(az.niter):
-        vals += az.vals[:, :, :, j]/(navg*az.niter)
-# Second time can be initialized now
-t2 = az.time[-1]
-iter2 = az.iters[-1]
+for i in range(navg):
+    a = reading_func(radatadir + str(my_files[i]).zfill(8), '')
+    # initialize first time
+    if i == 0:
+        t1 = a.time[0]
+        iter1 = a.iters[0]
+    for j in range(a.niter):
+        vals += a.vals[:, :, :, j]/(navg*a.niter)
+# initialize second time here
+t2 = a.time[-1]
+iter2 = a.iters[-1]
 
 # Now perform a sliding average
-count = 1 # count measures the plot number
-for i in range(index_first, index_last + 1):
-    if i > index_first: # only past the first point is it necessary to do anything
-        az1 = AZ_Avgs(radatadir + file_list[i-1], '')
-        az2 = AZ_Avgs(radatadir + file_list[i+navg-1], '')
-        print ("subtracting AZ_Avgs/" + file_list[i-1])
-        for j in range(az1.niter):
-            vals -= az1.vals[:, :, :, j]/(navg*az1.niter)
-        print ("adding AZ_Avgs/" + file_list[i+navg-1])
-        for j in range(az2.niter):
-            vals += az2.vals[:, :, :, j]/(navg*az2.niter)
+for i in range(my_nfiles):
+    if i > 0: # only past the first point is it necessary to do anything
+        a = reading_func(radatadir + str(my_files[i-1]).zfill(8), '')
+        a2 = reading_func(radatadir + str(my_files[i+navg-1]).zfill(8), '')
+        for j in range(a.niter):
+            vals -= a.vals[:, :, :, j]/(navg*a.niter)
+        for j in range(a2.niter):
+            vals += a2.vals[:, :, :, j]/(navg*a2.niter)
 
-        t1 = az1.time[0]
-        t2 = az2.time[-1]
-        iter1 = az1.iters[0]
-        iter2 = az2.iters[-1]
-    if (i - index_first) % nskip == 0:
-        print ("Plot number %03i" %count)
-        count += 1
+        t1 = a.time[0]
+        t2 = a2.time[-1]
+        iter1 = a.iters[0]
+        iter2 = a2.iters[-1]
+    if (i - first_rem) % nskip == 0:
         # Make the savename like for Mollweide times sample
-        savename = 'dr_amom_mc_iter' + file_list[i] + '.png'
-        print('Plotting: ' + savename)
+        savename = 'dr_amom_mc_iter' + str(my_files[i]).zfill(8) + '.png'
 
         # Get average velocity
-        vr_av = vals[:, :, ind_vr]
-        vt_av = vals[:, :, ind_vt]
-        vp_av = vals[:, :, ind_vp]
+        vr_av = vals[:, :, a.lut[1]]
+        vt_av = vals[:, :, a.lut[2]]
+        vp_av = vals[:, :, a.lut[3]]
 
         # Get differential rotation in the rotating frame. 
         Om = vp_av/xx
@@ -268,7 +354,6 @@ for i in range(index_first, index_last + 1):
         # Get the total integrated absolute amom
         amom_tot = np.sum(np.abs(amom)*tw, axis=0)
         amom_tot = np.sum(amom_tot*rw)
-        shell_volume = 4./3.*np.pi*(ro**3. - ri**3.)
         amom_tot *= shell_volume
 
         # Generate the actual figure of the correct dimensions
@@ -358,4 +443,18 @@ for i in range(index_first, index_last + 1):
         savefile = plotdir + savename
         plt.savefig(savefile, dpi=300)
         plt.close()
-        print('----------------------------------')
+    if rank == 0:
+        pcnt_done = i/my_nfiles*100.
+        print(fill_str('computing', lent, char) +\
+            ('rank 0 %5.1f%% done' %pcnt_done), end='\r')
+
+# Checkpoint and time
+comm.Barrier()
+if rank == 0:
+    t2 = time.time()
+    print(fill_str('\nplotting time', lent, char), end='')
+    print ('%8.2e s                                 ' %(t2 - t1))
+    print(fill_str('total time', lent, char), end='')
+    print ('%8.2e s' %(t2 - t1_glob))
+    print ('view frames using ')
+    print ('eog ' + plotdir)
