@@ -236,3 +236,5 @@ if rank == 0:
     print ('%8.2e s' %(t2 - t1))
     print(fill_str('total time', lent, char), end='')
     print ('%8.2e s' %(t2 - t1_glob))
+    print ('data saved at ')
+    print (savefile)

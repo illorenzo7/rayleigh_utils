@@ -54,6 +54,8 @@ navg = 1 # by default average over 1 AZ_Avgs instance (no average)
 # for navg > 1, a "sliding average" will be used.
 nlevs = 20
 plotboundary = True
+nskip = 1 # by default don't skip anything
+ntot = None 
 
 args = sys.argv[2:]
 nargs = len(args)
@@ -92,10 +94,19 @@ for i in range(nargs):
             print ("Please don't enter even values for navg!")
             print ("Replacing navg = %i with navg = %i" %(navg, navg + 1))
             navg += 1
+    elif arg == '-nskip':
+        nskip = int(args[i+1])
+    elif arg == '-ntot':
+        ntot = int(args[i+1])
 
 # Check to make sure index_last didn't fall beyond the last possible index ...
 if index_last > nfiles - navg:
     index_last = nfiles - navg
+# compute number files in range
+n_analyze = index_last - index_first + 1
+# then set nskip if user specified ntot
+if not ntot is None:
+    nskip = n_analyze//ntot
 
 # Get the baseline time unit
 rotation = get_parameter(dirname, 'rotation')
@@ -199,8 +210,8 @@ t2 = az.time[-1]
 iter2 = az.iters[-1]
 
 # Now perform a sliding average
+count = 1
 for i in range(index_first, index_last + 1):
-    print ("Plot number %03i" %(i - index_first + 1))
     if i > index_first: # only past the first point is it necessary to do anything
         print ("Reading AZ_Avgs/", file_list[i])
         print ("Reading AZ_Avgs/", file_list[i + navg - 1])
@@ -217,121 +228,123 @@ for i in range(index_first, index_last + 1):
         t2 = az2.time[-1]
         iter1 = az1.iters[0]
         iter2 = az2.iters[-1]
+    if i % nskip == 0:
+        print ("Plot number %03i" %count)
+        count += 1
+        # Make the savename like for Mollweide times sample
+        savename = 'dr_amom_mc_iter' + str(iter1).zfill(8) + '.png'
+        print('Plotting: ' + savename)
 
-    # Make the savename like for Mollweide times sample
-    savename = 'dr_amom_mc_iter' + str(iter1).zfill(8) + '.png'
-    print('Plotting: ' + savename)
+        # Get average velocity
+        vr_av = vals[:, :, ind_vr]
+        vt_av = vals[:, :, ind_vt]
+        vp_av = vals[:, :, ind_vp]
 
-    # Get average velocity
-    vr_av = vals[:, :, ind_vr]
-    vt_av = vals[:, :, ind_vt]
-    vp_av = vals[:, :, ind_vp]
+        # Get differential rotation in the rotating frame. 
+        Om = vp_av/xx
+        diffrot = Om*1.0e9/2/np.pi # rad/s --> nHz
 
-    # Get differential rotation in the rotating frame. 
-    Om = vp_av/xx
-    diffrot = Om*1.0e9/2/np.pi # rad/s --> nHz
+        # Get angular momentum in the rotating frame. 
+        amom = rho*xx*vp_av
 
-    # Get angular momentum in the rotating frame. 
-    amom = rho*xx*vp_av
+        #  Get DR contrast from 0 to 60 deg lat
+        it0, it60 = np.argmin(np.abs(tt_lat)), np.argmin(np.abs(tt_lat - 60))
+        Delta_Om = diffrot[it0, 0] - diffrot[it60, 0]
 
-    #  Get DR contrast from 0 to 60 deg lat
-    it0, it60 = np.argmin(np.abs(tt_lat)), np.argmin(np.abs(tt_lat - 60))
-    Delta_Om = diffrot[it0, 0] - diffrot[it60, 0]
+        # Compute the mass flux
+        rhovm = rho*np.sqrt(vr_av**2 + vt_av**2)
 
-    # Compute the mass flux
-    rhovm = rho*np.sqrt(vr_av**2 + vt_av**2)
+        # Compute the streamfunction
+        psi = streamfunction(rho*vr_av, rho*vt_av, rr, cost)
 
-    # Compute the streamfunction
-    psi = streamfunction(rho*vr_av, rho*vt_av, rr, cost)
+        # Make CCW negative and CW positive
+        rhovm *= np.sign(psi)
 
-    # Make CCW negative and CW positive
-    rhovm *= np.sign(psi)
+        # Get the total integrated absolute amom
+        amom_tot = np.sum(np.abs(amom)*tw, axis=0)
+        amom_tot = np.sum(amom_tot*rw)
+        shell_volume = 4./3.*np.pi*(ro**3. - ri**3.)
+        amom_tot *= shell_volume
 
-    # Get the total integrated absolute amom
-    amom_tot = np.sum(np.abs(amom)*tw, axis=0)
-    amom_tot = np.sum(amom_tot*rw)
-    shell_volume = 4./3.*np.pi*(ro**3. - ri**3.)
-    amom_tot *= shell_volume
+        # Generate the actual figure of the correct dimensions
+        fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
 
-    # Generate the actual figure of the correct dimensions
-    fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
+        # Make 3 subplot axes
+        ax1 = fig.add_axes((margin_x, margin_bottom,\
+                subplot_width, subplot_height))
+        ax2 = fig.add_axes((2*margin_x + subplot_width, margin_bottom,\
+                subplot_width, subplot_height))
+        ax3 = fig.add_axes((3*margin_x + 2*subplot_width, margin_bottom,\
+                subplot_width, subplot_height))
 
-    # Make 3 subplot axes
-    ax1 = fig.add_axes((margin_x, margin_bottom,\
-            subplot_width, subplot_height))
-    ax2 = fig.add_axes((2*margin_x + subplot_width, margin_bottom,\
-            subplot_width, subplot_height))
-    ax3 = fig.add_axes((3*margin_x + 2*subplot_width, margin_bottom,\
-            subplot_width, subplot_height))
+        # Plot the DR with metadata at the top
+        plot_azav (diffrot, rr, cost, fig=fig, ax=ax1, units='nHz',\
+                nlevs=nlevs, minmax=minmaxdr, rvals=rvals,\
+                plotlatlines=plotlatlines, plotboundary=plotboundary)
 
-    # Plot the DR with metadata at the top
-    plot_azav (diffrot, rr, cost, fig=fig, ax=ax1, units='nHz',\
-            nlevs=nlevs, minmax=minmaxdr, rvals=rvals,\
-            plotlatlines=plotlatlines, plotboundary=plotboundary)
+        # Put directory name in center
+        fsize = 12.
+        line_height = 1./4./fig_height_inches
+        fig.text(margin_x + 0.5*(1 - 2*margin_x), 1 - margin_y, dirname_stripped,\
+                 ha='center', va='top', fontsize=fsize, **csfont)
 
-    # Put directory name in center
-    fsize = 12.
-    line_height = 1./4./fig_height_inches
-    fig.text(margin_x + 0.5*(1 - 2*margin_x), 1 - margin_y, dirname_stripped,\
-             ha='center', va='top', fontsize=fsize, **csfont)
+        # Make time label in center
+        t_c = (t1 + t2)/2.
+        Dt = t2 - t1
+        if rotation:
+            time_string = ('t = %.1f ' %(t_c/time_unit))\
+                    + time_label + (r'$\ (\Delta t = %.2f\ $'\
+                    %(Dt/time_unit)) + time_label + ')'
+        else:
+            time_string = ('t = %.3f' %(t_c/time_unit))\
+                    + time_label + (r'$\ \Delta t = %.4f\ $'\
+                    %(Dt/time_unit)) + time_label
 
-    # Make time label in center
-    t_c = (t1 + t2)/2.
-    Dt = t2 - t1
-    if rotation:
-        time_string = ('t = %.1f ' %(t_c/time_unit))\
-                + time_label + (r'$\ (\Delta t = %.2f\ $'\
-                %(Dt/time_unit)) + time_label + ')'
-    else:
-        time_string = ('t = %.3f' %(t_c/time_unit))\
-                + time_label + (r'$\ \Delta t = %.4f\ $'\
-                %(Dt/time_unit)) + time_label
+        fig.text(margin_x + 0.5*(1 - 2*margin_x), 1 - margin_y - line_height,\
+                time_string, ha='center', va='top', fontsize=fsize, **csfont)
 
-    fig.text(margin_x + 0.5*(1 - 2*margin_x), 1 - margin_y - line_height,\
-            time_string, ha='center', va='top', fontsize=fsize, **csfont)
+        # Label DR stuff
+        fig.text(margin_x, 1 - margin_y - 2*line_height, r'$\Omega - \Omega_0$',\
+                 ha='left', va='top', fontsize=fsize, **csfont)
+        fig.text(margin_x, 1 - margin_y - 3*line_height,\
+                 r'$\Delta\Omega_{\rm{tot}} = %.1f\ nHz$' %Delta_Om,\
+                 ha='left', va='top', fontsize=fsize, **csfont)
 
-    # Label DR stuff
-    fig.text(margin_x, 1 - margin_y - 2*line_height, r'$\Omega - \Omega_0$',\
-             ha='left', va='top', fontsize=fsize, **csfont)
-    fig.text(margin_x, 1 - margin_y - 3*line_height,\
-             r'$\Delta\Omega_{\rm{tot}} = %.1f\ nHz$' %Delta_Om,\
-             ha='left', va='top', fontsize=fsize, **csfont)
+        # Make the angular momentum plot
+        plot_azav (amom, rr, cost, fig=fig, ax=ax2,\
+                units=r'$\rm{g\ cm^{-1}\ s^{-1}}$', nlevs=nlevs, minmax=minmaxamom,\
+                rvals=rvals, plotlatlines=plotlatlines, plotboundary=plotboundary)
+        # Label amom stuff
+        amom_label = r'$\mathcal{L}\equiv \overline{\rho}r\sin\theta\langle v_\phi\rangle$'
+        fig.text(2*margin_x + subplot_width, 1 - margin_y - 2*line_height,\
+                amom_label, ha='left', va='top', fontsize=fsize, **csfont)
+        fig.text(2*margin_x + subplot_width, 1 - margin_y - 3*line_height,\
+                 r'$\int|\mathcal{L}|dV = $' + sci_format(amom_tot, 3),\
+                 ha='left', va='top', fontsize=fsize, **csfont)
 
-    # Make the angular momentum plot
-    plot_azav (amom, rr, cost, fig=fig, ax=ax2,\
-            units=r'$\rm{g\ cm^{-1}\ s^{-1}}$', nlevs=nlevs, minmax=minmaxamom,\
-            rvals=rvals, plotlatlines=plotlatlines, plotboundary=plotboundary)
-    # Label amom stuff
-    amom_label = r'$\mathcal{L}\equiv \overline{\rho}r\sin\theta\langle v_\phi\rangle$'
-    fig.text(2*margin_x + subplot_width, 1 - margin_y - 2*line_height,\
-            amom_label, ha='left', va='top', fontsize=fsize, **csfont)
-    fig.text(2*margin_x + subplot_width, 1 - margin_y - 3*line_height,\
-             r'$\int|\mathcal{L}|dV = $' + sci_format(amom_tot, 3),\
-             ha='left', va='top', fontsize=fsize, **csfont)
-
-    # Plot mass flux
-    plot_azav (rhovm, rr, cost, fig=fig, ax=ax3,\
-        units=r'$\rm{g}\ \rm{cm}^{-2}\ \rm{s}^{-1}$', plotcontours=False,\
-        minmax=minmaxmc, plotlatlines=plotlatlines, rvals=rvals,\
-        plotboundary=plotboundary)
-
-    # Plot streamfunction contours, if desired
-    if plotcontours:
-        lilbit = 0.01
-        maxabs = np.max(np.abs(psi))
-        levels = (-maxabs/2., -maxabs/4., -lilbit*maxabs, 0., lilbit*maxabs,\
-                maxabs/4., maxabs/2.)
-        plot_azav (psi, rr, cost, fig=fig, ax=ax3, plotfield=False,\
-            levels=levels, plotlatlines=plotlatlines,\
+        # Plot mass flux
+        plot_azav (rhovm, rr, cost, fig=fig, ax=ax3,\
+            units=r'$\rm{g}\ \rm{cm}^{-2}\ \rm{s}^{-1}$', plotcontours=False,\
+            minmax=minmaxmc, plotlatlines=plotlatlines, rvals=rvals,\
             plotboundary=plotboundary)
 
-    # Label MC stuff
-    fig.text(3*margin_x + 2*subplot_width, 1 - margin_y - 2*line_height,\
-            r'$|\langle\overline{\rho}\mathbf{v}_m\rangle|$',\
-             ha='left', va='top', fontsize=fsize, **csfont)
+        # Plot streamfunction contours, if desired
+        if plotcontours:
+            lilbit = 0.01
+            maxabs = np.max(np.abs(psi))
+            levels = (-maxabs/2., -maxabs/4., -lilbit*maxabs, 0., lilbit*maxabs,\
+                    maxabs/4., maxabs/2.)
+            plot_azav (psi, rr, cost, fig=fig, ax=ax3, plotfield=False,\
+                levels=levels, plotlatlines=plotlatlines,\
+                plotboundary=plotboundary)
 
-    # Save figure
-    savefile = plotdir + savename
-    plt.savefig(savefile, dpi=300)
-    plt.close()
-    print('----------------------------------')
+        # Label MC stuff
+        fig.text(3*margin_x + 2*subplot_width, 1 - margin_y - 2*line_height,\
+                r'$|\langle\overline{\rho}\mathbf{v}_m\rangle|$',\
+                 ha='left', va='top', fontsize=fsize, **csfont)
+
+        # Save figure
+        savefile = plotdir + savename
+        plt.savefig(savefile, dpi=300)
+        plt.close()
+        print('----------------------------------')
