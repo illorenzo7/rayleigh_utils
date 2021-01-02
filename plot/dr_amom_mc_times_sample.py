@@ -50,6 +50,8 @@ minmaxamom = None
 minmaxmc = None
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
 rvals = []
+rbcz = None
+minmaxrz = None
 navg = 1 # by default average over 1 AZ_Avgs instance (no average)
 # for navg > 1, a "sliding average" will be used.
 nlevs = 20
@@ -75,6 +77,10 @@ for i in range(nargs):
         minmaxamom = float(args[i+1]), float(args[i+2])
     elif arg == '-minmaxmc':
         minmaxmc = float(args[i+1]), float(args[i+2])
+    elif arg == '-rbcz':
+        rbcz = float(args[i+1])
+    elif arg == '-minmaxrz':
+        minmaxrz = float(args[i+1]), float(args[i+2])
     elif arg == '-nocontour':
         plotcontours = False
     elif arg == '-rvals':
@@ -152,7 +158,7 @@ fig_width_inches = 7. # TOTAL figure width, in inches
     # (i.e., 8x11.5 paper with 1/2-inch margins)
 margin_inches = 1./8. # margin width in inches (for both x and y) and 
     # horizontally in between figures
-margin_bottom_inches = 0.75
+margin_bottom_inches = 0.75*(2 - (rbcz is None)) 
     # larger bottom margin to make room for colorbar(s)
 margin_top_inches = 1 # wider top margin to accommodate subplot titles AND metadata
 margin_subplot_top_inches = 1/4 # margin to accommodate just subplot titles
@@ -324,7 +330,8 @@ for i in range(index_first, index_last + 1):
 
         # Plot mass flux
         plot_azav (rhovm, rr, cost, fig=fig, ax=ax3,\
-            units=r'$\rm{g}\ \rm{cm}^{-2}\ \rm{s}^{-1}$', plotcontours=False,\
+            units=r'$\rm{g}\ \rm{cm}^{-2}\ \rm{s}^{-1}$',\
+            plotcontours=False, minmaxrz=minmaxrz, rbcz=rbcz,\
             minmax=minmaxmc, plotlatlines=plotlatlines, rvals=rvals,\
             plotboundary=plotboundary)
 
@@ -332,14 +339,15 @@ for i in range(index_first, index_last + 1):
         if plotcontours:
             lilbit = 0.01
             maxabs = np.max(np.abs(psi))
-            levels = (-maxabs/2., -maxabs/4., -lilbit*maxabs, 0., lilbit*maxabs,\
-                    maxabs/4., maxabs/2.)
+            levels = (-maxabs/2., -maxabs/4., -lilbit*maxabs, 0.,\
+                    lilbit*maxabs, maxabs/4., maxabs/2.)
             plot_azav (psi, rr, cost, fig=fig, ax=ax3, plotfield=False,\
                 levels=levels, plotlatlines=plotlatlines,\
                 plotboundary=plotboundary)
 
         # Label MC stuff
-        fig.text(3*margin_x + 2*subplot_width, 1 - margin_y - 2*line_height,\
+        fig.text(3*margin_x + 2*subplot_width,\
+                1 - margin_y - 2*line_height,\
                 r'$|\langle\overline{\rho}\mathbf{v}_m\rangle|$',\
                  ha='left', va='top', fontsize=fsize, **csfont)
 
