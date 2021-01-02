@@ -217,7 +217,7 @@ t2 = az.time[-1]
 iter2 = az.iters[-1]
 
 # Now perform a sliding average
-count = 1
+count = 1 # count measures the plot number
 for i in range(index_first, index_last + 1):
     if i > index_first: # only past the first point is it necessary to do anything
         az1 = AZ_Avgs(radatadir + file_list[i-1], '')
@@ -237,7 +237,7 @@ for i in range(index_first, index_last + 1):
         print ("Plot number %03i" %count)
         count += 1
         # Make the savename like for Mollweide times sample
-        savename = 'dr_amom_mc_iter' + str(iter1).zfill(8) + '.png'
+        savename = 'dr_amom_mc_iter' + file_list[i] + '.png'
         print('Plotting: ' + savename)
 
         # Get average velocity
@@ -290,8 +290,9 @@ for i in range(index_first, index_last + 1):
         # Put directory name in center
         fsize = 12.
         line_height = 1./4./fig_height_inches
-        fig.text(margin_x + 0.5*(1 - 2*margin_x), 1 - margin_y, dirname_stripped,\
-                 ha='center', va='top', fontsize=fsize, **csfont)
+        fig.text(margin_x + 0.5*(1 - 2*margin_x), 1 - margin_y,\
+                dirname_stripped, ha='center', va='top', fontsize=fsize,\
+                **csfont)
 
         # Make time label in center
         t_c = (t1 + t2)/2.
@@ -305,20 +306,23 @@ for i in range(index_first, index_last + 1):
                     + time_label + (r'$\ \Delta t = %.4f\ $'\
                     %(Dt/time_unit)) + time_label
 
-        fig.text(margin_x + 0.5*(1 - 2*margin_x), 1 - margin_y - line_height,\
-                time_string, ha='center', va='top', fontsize=fsize, **csfont)
+        fig.text(margin_x + 0.5*(1 - 2*margin_x), 1 - margin_y -\
+                line_height, time_string, ha='center', va='top',\
+                fontsize=fsize, **csfont)
 
         # Label DR stuff
-        fig.text(margin_x, 1 - margin_y - 2*line_height, r'$\Omega - \Omega_0$',\
-                 ha='left', va='top', fontsize=fsize, **csfont)
+        fig.text(margin_x, 1 - margin_y - 2*line_height,\
+                r'$\Omega - \Omega_0$', ha='left', va='top',\
+                fontsize=fsize, **csfont)
         fig.text(margin_x, 1 - margin_y - 3*line_height,\
                  r'$\Delta\Omega_{\rm{tot}} = %.1f\ nHz$' %Delta_Om,\
                  ha='left', va='top', fontsize=fsize, **csfont)
 
         # Make the angular momentum plot
         plot_azav (amom, rr, cost, fig=fig, ax=ax2,\
-                units=r'$\rm{g\ cm^{-1}\ s^{-1}}$', nlevs=nlevs, minmax=minmaxamom,\
-                rvals=rvals, plotlatlines=plotlatlines, plotboundary=plotboundary)
+            units=r'$\rm{g\ cm^{-1}\ s^{-1}}$', nlevs=nlevs,\
+            minmax=minmaxamom, rvals=rvals, plotlatlines=plotlatlines,\
+            plotboundary=plotboundary)
         # Label amom stuff
         amom_label = r'$\mathcal{L}\equiv \overline{\rho}r\sin\theta\langle v_\phi\rangle$'
         fig.text(2*margin_x + subplot_width, 1 - margin_y - 2*line_height,\

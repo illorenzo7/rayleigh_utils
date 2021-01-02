@@ -40,13 +40,6 @@ radatadir = dirname + '/AZ_Avgs/'
 # Get all the file names in datadir and their integer counterparts
 file_list, int_file_list, nfiles = get_file_lists(radatadir)
 
-# Directory with data and plots, make the plotting directory if it doesn't
-# already exist    
-datadir = dirname + '/data/'
-plotdir = dirname + '/plots/torque_times_sample/'
-if not os.path.isdir(plotdir):
-    os.makedirs(plotdir)
-
 # Read command-line arguments (CLAs)
 showplot = True
 saveplot = True
@@ -58,13 +51,15 @@ linscale = None
 minmaxrz = None
 linthreshrz = None
 linscalerz = None
-AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
 forced = False
 rvals = []
 rbcz = None
 symlog = False
 navg = 1 # by default average over 1 AZ_Avgs instance (no average)
 # for navg > 1, a "sliding average" will be used.
+nskip = 1 # by default don't skip anything
+ntot = None 
+tag = ''
 
 args = sys.argv[2:]
 nargs = len(args)
@@ -90,9 +85,6 @@ for i in range(nargs):
         saveplot = False
     elif arg == '-nocontour':
         plotcontours = False
-    elif arg == '-usefile':
-        AZ_Avgs_file = args[i+1]
-        AZ_Avgs_file = AZ_Avgs_file.split('/')[-1]
     elif arg == '-forced':
         forced = True
     elif arg == '-rvals':
@@ -118,10 +110,26 @@ for i in range(nargs):
             print ("Please don't enter even values for navg!")
             print ("Replacing navg = %i with navg = %i" %(navg, navg + 1))
             navg += 1
+    elif arg == '-nskip':
+        nskip = int(args[i+1])
+    elif arg == '-ntot':
+        ntot = int(args[i+1])
+    elif arg == '-tag':
+        tag = '_' + args[i+1]
+
+# make the plotting directory if it doesn't already exist    
+plotdir = dirname + '/plots/torque_times_sample'+ tag + '/'
+if not os.path.isdir(plotdir):
+    os.makedirs(plotdir)
 
 # Check to make sure index_last didn't fall beyond the last possible index ...
 if index_last > nfiles - navg:
     index_last = nfiles - navg
+# compute number files in range
+n_analyze = index_last - index_first + 1
+# then set nskip if user specified ntot
+if not ntot is None:
+    nskip = n_analyze//ntot
 
 # See if magnetism is "on"
 try:
@@ -213,8 +221,8 @@ iter1 = az0.iters[0]
 print ("Performing initial average over navg = %i files" %navg)
 vals = np.zeros((nt, nr, nq))
 for i in range(index_first, index_first + navg):
+    print ("adding AZ_Avgs/" + file_list[i])
     az = AZ_Avgs(radatadir + file_list[i], '')
-
     for j in range(az.niter):
         vals += az.vals[:, :, :, j]/(navg*az.niter)
 # Second time can be initialized now
@@ -222,115 +230,117 @@ t2 = az.time[-1]
 iter2 = az.iters[-1]
 
 # Now perform a sliding average
+count = 1 # count measures the plot number
 for i in range(index_first, index_last + 1):
     print ("Plot number %03i" %(i - index_first + 1))
     if i > index_first: # only past the first point is it necessary to do anything
-        print ("Reading AZ_Avgs/", file_list[i])
-        print ("Reading AZ_Avgs/", file_list[i + navg - 1])
-        az1 = AZ_Avgs(radatadir + file_list[i], '')
-        az2 = AZ_Avgs(radatadir + file_list[i + navg - 1], '')
-        print ("Subtracting AZ_Avgs/", file_list[i])
+        az1 = AZ_Avgs(radatadir + file_list[i-1], '')
+        az2 = AZ_Avgs(radatadir + file_list[i+navg-1], '')
+        print ("subtracting AZ_Avgs/" + file_list[i-1])
         for j in range(az1.niter):
             vals -= az1.vals[:, :, :, j]/(navg*az1.niter)
-        print ("Adding AZ_Avgs/", file_list[i + navg - 1])
+        print ("adding AZ_Avgs/" + file_list[i+navg-1])
         for j in range(az2.niter):
             vals += az2.vals[:, :, :, j]/(navg*az2.niter)
-
         t1 = az1.time[0]
         t2 = az2.time[-1]
         iter1 = az1.iters[0]
         iter2 = az2.iters[-1]
 
-    # Make the savename like for Mollweide times sample
-    savename = 'torque_iter' + str(iter1).zfill(8) + '.png'
-    print('Plotting: ' + savename)
+    if (i - index_first) % nskip == 0:
+        print ("Plot number %03i" %count)
+        count += 1
 
-    # Get torques
-    torque_rs, torque_mc, torque_visc = -vals[:, :, ind_pp],\
-            -vals[:, :, ind_mm] + vals[:, :, ind_cor], vals[:, :, ind_visc]
-    torque_tot = torque_rs + torque_mc + torque_visc
+        # Make the savename like for Mollweide times sample
+        savename = 'torque_iter' + file_list[i] + '.png'
+        print('Plotting: ' + savename)
 
-    if magnetism:
-        ind_Maxwell_mean = lut[1805]
-        ind_Maxwell_rs = lut[1806]
-       
-        torque_Maxwell_mean = vals[:, :, ind_Maxwell_mean]
-        torque_Maxwell_rs = vals[:, :, ind_Maxwell_rs]
-        
-        torque_tot += torque_Maxwell_mean + torque_Maxwell_rs
+        # Get torques
+        torque_rs, torque_mc, torque_visc = -vals[:, :, ind_pp],\
+                -vals[:, :, ind_mm] + vals[:, :, ind_cor], vals[:, :, ind_visc]
+        torque_tot = torque_rs + torque_mc + torque_visc
 
-    if forced: # compute torque associated with forcing function
-        mean_vp = vals[:, :, lut[3]]
-        tacho_r = get_parameter(dirname, 'tacho_r')
-        tacho_dr = get_parameter(dirname, 'tacho_dr')
-        tacho_tau = get_parameter(dirname, 'tacho_tau')
-        forcing = np.zeros((nt, nr))
-        eq = get_eq(dirname)
-        rho = eq.rho
-        forcing_coeff = -rho/tacho_tau*0.5*(1.0 - np.tanh((rr - tacho_r)/(tacho_dr*rr[0])))
-        forcing = forcing_coeff.reshape((1, nr))*mean_vp
+        if magnetism:
+            ind_Maxwell_mean = lut[1805]
+            ind_Maxwell_rs = lut[1806]
+           
+            torque_Maxwell_mean = vals[:, :, ind_Maxwell_mean]
+            torque_Maxwell_rs = vals[:, :, ind_Maxwell_rs]
+            
+            torque_tot += torque_Maxwell_mean + torque_Maxwell_rs
 
-        # convert forcing function into a torque
-        torque_forcing = xx*forcing
-        torque_tot += torque_forcing
+        if forced: # compute torque associated with forcing function
+            mean_vp = vals[:, :, lut[3]]
+            tacho_r = get_parameter(dirname, 'tacho_r')
+            tacho_dr = get_parameter(dirname, 'tacho_dr')
+            tacho_tau = get_parameter(dirname, 'tacho_tau')
+            forcing = np.zeros((nt, nr))
+            eq = get_eq(dirname)
+            rho = eq.rho
+            forcing_coeff = -rho/tacho_tau*0.5*(1.0 - np.tanh((rr - tacho_r)/(tacho_dr*rr[0])))
+            forcing = forcing_coeff.reshape((1, nr))*mean_vp
 
-    # Set up lists to generate plot
-    torques = [torque_rs, torque_mc, torque_visc, torque_tot]
-    titles = [r'$\tau_{\rm{rs}}$', r'$\tau_{\rm{mc}}$', r'$\tau_{\rm{v}}$',\
-              r'$\tau_{\rm{tot}}$']
-    units = r'$\rm{g}\ \rm{cm}^{-1}\ \rm{s}^{-2}$'
+            # convert forcing function into a torque
+            torque_forcing = xx*forcing
+            torque_tot += torque_forcing
 
-    if magnetism:
-        torques.insert(3, torque_Maxwell_mean)
-        torques.insert(4, torque_Maxwell_rs)
-        titles.insert(3, r'$\tau_{\rm{mm}}$')
-        titles.insert(4, r'$\tau_{\rm{ms}}$')
+        # Set up lists to generate plot
+        torques = [torque_rs, torque_mc, torque_visc, torque_tot]
+        titles = [r'$\tau_{\rm{rs}}$', r'$\tau_{\rm{mc}}$', r'$\tau_{\rm{v}}$',\
+                  r'$\tau_{\rm{tot}}$']
+        units = r'$\rm{g}\ \rm{cm}^{-1}\ \rm{s}^{-2}$'
 
-    if forced and magnetism:
-        torques.insert(5, torque_forcing)
-        titles.insert(5, r'$\tau_{\rm{forcing}}$')
-    elif forced:
-        torques.insert(3, torque_forcing)
-        titles.insert(3, r'$\tau_{\rm{forcing}}$')
+        if magnetism:
+            torques.insert(3, torque_Maxwell_mean)
+            torques.insert(4, torque_Maxwell_rs)
+            titles.insert(3, r'$\tau_{\rm{mm}}$')
+            titles.insert(4, r'$\tau_{\rm{ms}}$')
 
-    # Generate the actual figure of the correct dimensions
-    fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
+        if forced and magnetism:
+            torques.insert(5, torque_forcing)
+            titles.insert(5, r'$\tau_{\rm{forcing}}$')
+        elif forced:
+            torques.insert(3, torque_forcing)
+            titles.insert(3, r'$\tau_{\rm{forcing}}$')
 
-    for iplot in range(nplots):
-        ax_left = margin_x + (iplot%ncol)*(subplot_width + margin_x)
-        ax_bottom = 1 - margin_top - subplot_height - margin_subplot_top -\
-                (iplot//ncol)*(subplot_height + margin_subplot_top +\
-                margin_bottom)
-        ax = fig.add_axes((ax_left, ax_bottom, subplot_width, subplot_height))
-        plot_azav (torques[iplot], rr, cost, fig=fig, ax=ax, units=units,\
-               minmax=minmax, plotcontours=plotcontours, rvals=rvals,\
-               minmaxrz=minmaxrz, rbcz=rbcz, symlog=symlog,\
-        linthresh=linthresh, linscale=linscale, linthreshrz=linthreshrz,\
-        linscalerz=linscalerz, plotlatlines=plotlatlines)
+        # Generate the actual figure of the correct dimensions
+        fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
 
-        ax.set_title(titles[iplot], verticalalignment='bottom', **csfont)
-    # Make title
-    t_c = (t1 + t2)/2.
-    Dt = t2 - t1
-    if rotation:
-        time_string = ('t = %.1f ' %(t_c/time_unit))\
-                + time_label + '\n' + (r'$\ (\Delta t = %.2f\ $'\
-                %(Dt/time_unit)) + time_label + ')'
-    else:
-        time_string = ('t = %.3f' %(t_c/time_unit))\
-                + time_label + (r'$\ \Delta t = %.4f\ $'\
-                %(Dt/time_unit)) + time_label
+        for iplot in range(nplots):
+            ax_left = margin_x + (iplot%ncol)*(subplot_width + margin_x)
+            ax_bottom = 1 - margin_top - subplot_height - margin_subplot_top -\
+                    (iplot//ncol)*(subplot_height + margin_subplot_top +\
+                    margin_bottom)
+            ax = fig.add_axes((ax_left, ax_bottom, subplot_width, subplot_height))
+            plot_azav (torques[iplot], rr, cost, fig=fig, ax=ax, units=units,\
+                   minmax=minmax, plotcontours=plotcontours, rvals=rvals,\
+                   minmaxrz=minmaxrz, rbcz=rbcz, symlog=symlog,\
+            linthresh=linthresh, linscale=linscale, linthreshrz=linthreshrz,\
+            linscalerz=linscalerz, plotlatlines=plotlatlines)
 
-    # Put some metadata in upper left
-    fsize = 12
-    fig.text(margin_x, 1 - 0.1*margin_top, dirname_stripped,\
-             ha='left', va='top', fontsize=fsize, **csfont)
-    fig.text(margin_x, 1 - 0.3*margin_top, 'Torque balance (zonally averaged)',\
-             ha='left', va='top', fontsize=fsize, **csfont)
-    fig.text(margin_x, 1 - 0.5*margin_top, time_string,\
-             ha='left', va='top', fontsize=fsize, **csfont)
-    # Save figure
-    savefile = plotdir + savename
-    plt.savefig(savefile, dpi=300)
-    plt.close()
-    print('----------------------------------')
+            ax.set_title(titles[iplot], verticalalignment='bottom', **csfont)
+        # Make title
+        t_c = (t1 + t2)/2.
+        Dt = t2 - t1
+        if rotation:
+            time_string = ('t = %.1f ' %(t_c/time_unit))\
+                    + time_label + '\n' + (r'$\ (\Delta t = %.2f\ $'\
+                    %(Dt/time_unit)) + time_label + ')'
+        else:
+            time_string = ('t = %.3f' %(t_c/time_unit))\
+                    + time_label + (r'$\ \Delta t = %.4f\ $'\
+                    %(Dt/time_unit)) + time_label
+
+        # Put some metadata in upper left
+        fsize = 12
+        fig.text(margin_x, 1 - 0.1*margin_top, dirname_stripped,\
+                 ha='left', va='top', fontsize=fsize, **csfont)
+        fig.text(margin_x, 1 - 0.3*margin_top, 'Torque balance (zonal average)',
+                 ha='left', va='top', fontsize=fsize, **csfont)
+        fig.text(margin_x, 1 - 0.5*margin_top, time_string,\
+                 ha='left', va='top', fontsize=fsize, **csfont)
+        # Save figure
+        savefile = plotdir + savename
+        plt.savefig(savefile, dpi=300)
+        plt.close()
+        print('----------------------------------')
