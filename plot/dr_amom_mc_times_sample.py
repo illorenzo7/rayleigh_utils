@@ -207,6 +207,7 @@ iter1 = az0.iters[0]
 print ("Performing initial average over navg = %i files" %navg)
 vals = np.zeros((nt, nr, nq))
 for i in range(index_first, index_first + navg):
+    print ("adding AZ_Avgs/" + file_list[i])
     az = AZ_Avgs(radatadir + file_list[i], '')
 
     for j in range(az.niter):
@@ -219,12 +220,12 @@ iter2 = az.iters[-1]
 count = 1
 for i in range(index_first, index_last + 1):
     if i > index_first: # only past the first point is it necessary to do anything
-        az1 = AZ_Avgs(radatadir + file_list[i], '')
-        az2 = AZ_Avgs(radatadir + file_list[i + navg - 1], '')
-        print ("Subtracting AZ_Avgs/", file_list[i])
+        az1 = AZ_Avgs(radatadir + file_list[i-1], '')
+        az2 = AZ_Avgs(radatadir + file_list[i+navg-1], '')
+        print ("subtracting AZ_Avgs/" + file_list[i-1])
         for j in range(az1.niter):
             vals -= az1.vals[:, :, :, j]/(navg*az1.niter)
-        print ("Adding AZ_Avgs/", file_list[i + navg - 1])
+        print ("adding AZ_Avgs/" + file_list[i+navg-1])
         for j in range(az2.niter):
             vals += az2.vals[:, :, :, j]/(navg*az2.niter)
 
