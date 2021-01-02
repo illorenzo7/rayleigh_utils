@@ -30,13 +30,16 @@ minmax = None
 xminmax = None
 xmin = None
 xmax = None
-saveplot = True
-showplot = True # will only show if plotting one figure
+saveplot = None # turned off by default if saving one figure, can change
+# with -save option
+showplot = False # only show if plotting one figure
 labelbytime = False # by default label by first/last iteration number
 # not first/last time
 
-desired_rvals = [0.83] # by default, plot time-radius diagram for fields 
-    # mid-CZ (units of solar radius)
+rvals = 'all'  # by default, plot all available time-lat levels
+    # user specifies another choice via -rvals '[val1] [val2] ... [valn]'
+    # where 'vals' have dimensional units in cm: 4.8e10, 5e10, etc.
+irvals = None # user can also specify -irvals '2 3 9', etc.
 navg = 1 # by default average over 1 AZ_Avgs instance (no average)
 # for navg > 1, a "sliding average" will be used.
 tag = '' # optional way to tag save directory
@@ -57,13 +60,15 @@ for i in range(nargs):
         the_file = args[i+1]
         the_file = the_file.split('/')[-1]
     elif arg == '-rvals':
-        string_desired_rvals = args[i+1].split()
-        if string_desired_rvals == ['all']:
-            desired_rvals = 'all'
-        else:
-            desired_rvals = []
-            for j in range(len(string_desired_rvals)):
-                desired_rvals.append(float(string_desired_rvals[j]))
+        strings = args[i+1].split()
+        rvals = []
+        for j in range(len(strings)):
+            rvals.append(float(strings[j]))
+    elif arg == '-irvals':
+        irvals = []
+        strings = args[i+1].split()
+        for j in range(len(strings)):
+            irvals.append(int(strings[j]))
     elif arg == '-navg':
         navg = int(args[i+1])
         if navg % 2 == 0:
@@ -76,10 +81,8 @@ for i in range(nargs):
         xmin = float(args[i+1])
     elif arg == '-xmax':
         xmax = float(args[i+1])
-    elif arg == '-nosave':
-        saveplot = False
-    elif arg == '-noshow':
-        showplot = False
+    elif arg == '-save':
+        saveplot = True
     elif arg == '-tlabel':
         labelbytime = True
     elif arg == '-tag':
@@ -100,23 +103,20 @@ if not os.path.isdir(plotdir):
 # Read in the time-latitude data (dictionary form)
 print ('Getting time-latitude trace from ' + datadir + the_file)
 di = get_dict(datadir + the_file)
-
 vals = di['vals']
-
 times = di['times']
 iters = di['iters']
 rr = di['rr']
+irvals_avail = di['rinds']
+rvals_avail = rr[irvals_avail]
 ri = di['ri']; ro = di['ro']; shell_depth = ro - ri
 tt_lat = di['tt_lat']
-rinds = di['rinds'] # radial locations sampled for the trace
 ntheta = di['ntheta']
-rvals_sampled = rr[rinds]/rsun
 
 qvals = np.array(di['qvals'])
 
 niter = di['niter']
 nr = di['nr']
-nrvals = di['ndepths']
 nq = di['nq']
 
 iter1 = di['iter1']
@@ -135,18 +135,22 @@ br_index = np.argmin(np.abs(qvals - 801))
 bt_index = np.argmin(np.abs(qvals - 802))
 bp_index = np.argmin(np.abs(qvals - 803))
 
-i_desiredrvals = []
-rvals_to_plot = []
-if desired_rvals == 'all':
-    i_desiredrvals = np.arange(len(rinds))
-    rvals_to_plot = rvals_sampled
-else:
-    i_desiredrvals = []
-    rvals_to_plot = []
-    for desired_rval in desired_rvals:
-        i_desiredrval = np.argmin(np.abs(rvals_sampled - desired_rval))
-        i_desiredrvals.append(i_desiredrval)
-        rvals_to_plot.append(rvals_sampled[i_desiredrval])
+# determine desired levels to plot
+if irvals is None:
+    if rvals == 'all':
+        irvals = np.arange(len(irvals_avail))
+    else:
+        irvals = []
+        for rval in rvals:
+            ir = np.argmin(np.abs(rvals_avail - rval))
+            irvals.append(ir)
+if saveplot is None:
+    if len(irvals) == 1:
+        saveplot = False
+    else:
+        saveplot = True
+if len(irvals) == 1:
+    showplot = True
 
 # Get raw traces of br, btheta, bphi
 br = vals[:, :, :, br_index]
@@ -202,22 +206,23 @@ labels = [r'$\langle B_r\rangle$', r'$\langle B_\theta\rangle$',\
         r'$\langle B_\phi\rangle$']
 
 # Loop over the desired radii and save plots
-for i in range(len(i_desiredrvals)):
-    i_desiredrval = i_desiredrvals[i]
-    rval_to_plot = rvals_to_plot[i]
-    br_loc = br[:, :, i_desiredrval]
-    bt_loc = bt[:, :, i_desiredrval]
-    bp_loc = bp[:, :, i_desiredrval]
+for i in range(len(irvals)):
+    ir = irvals[i]
+    rval = rvals_avail[ir]/rsun 
+    print('plotting r/rsun = %0.3f (ir = %02i)' %(rval, ir))
+    br_loc = br[:, :, ir]
+    bt_loc = bt[:, :, ir]
+    bp_loc = bp[:, :, ir]
     
     # Make appropriate file name to save
     if labelbytime:
         savename = dirname_stripped + '_time-lat_B_' +\
                 ('Prot%05.0f-to-%05.0f_' %(t1, t2)) +\
-            ('rval%0.3f' %rval_to_plot) + '.png'
+            ('rval%0.3f' %rval) + '.png'
     else:
         savename = dirname_stripped + '_time-lat_B_' +\
                 ('%08i_%08i_' %(iter1, iter2)) +\
-            ('rval%0.3f' %rval_to_plot) + '.png'
+            ('rval%0.3f' %rval) + '.png'
 
     if minmax is None:
         minmax_br = None
@@ -273,8 +278,7 @@ for i in range(len(i_desiredrvals)):
 
     # Put some useful information on the title
     averaging_time = (times[-1] - times[0])/niter*navg
-    title = dirname_stripped + '     ' +\
-            (r'$r/R_\odot\ =\ %0.3f$' %rval_to_plot)
+    title = dirname_stripped + '     ' + (r'$r/R_\odot\ =\ %0.3f$' %rval)
     if navg > 1:
         title += '     ' + ('t_avg = %.1f Prot' %averaging_time)
     else:
@@ -283,10 +287,12 @@ for i in range(len(i_desiredrvals)):
 
     # Save the plot
     if saveplot:
-        print ('Saving the time-latitude plot at ' + plotdir + savename)
+        print ('Saving the time-latitude plot at ')
+        print (plotdir + savename)
+        print ("=======================================")
         plt.savefig(plotdir + savename, dpi=200)
 
     # Show the plot if only plotting at one latitude
-    if len(rvals_to_plot) == 1 and showplot:
+    if showplot:
         plt.show()
     plt.close()

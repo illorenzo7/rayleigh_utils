@@ -74,13 +74,15 @@ def plot_tl(field, times, yy, fig=None, ax=None, cmap='RdYlBu_r',\
 	
     # Get default bounds if not specified
     if rbcz is None:
-        trimmed_field = field[:, 1:-1]
-        minmax = get_satvals(trimmed_field, posdef=posdef,\
+        if minmax is None:
+            trimmed_field = field[:, 1:-1]
+            minmax = get_satvals(trimmed_field, posdef=posdef,\
                 logscale=logscale, symlog=symlog)
     else:
-        trimmed_fieldcz = fieldcz[:, 1:-1]
-        minmax = get_satvals(trimmed_fieldcz, posdef=posdef,\
-                logscale=logscale, symlog=symlog)
+        if minmax is None:
+            trimmed_fieldcz = fieldcz[:, 1:-1]
+            minmax = get_satvals(trimmed_fieldcz, posdef=posdef,\
+                    logscale=logscale, symlog=symlog)
         if minmaxrz is None:
             # Cut away the data near the domain boundaries
             trimmed_fieldrz = fieldrz[:, 1:-1]
