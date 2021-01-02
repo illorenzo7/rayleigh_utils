@@ -35,25 +35,18 @@ radatadir = dirname + '/AZ_Avgs/'
 # Get all the file names in datadir and their integer counterparts
 file_list, int_file_list, nfiles = get_file_lists(radatadir)
 
-# Directory with data and plots, make the plotting directory if it doesn't
-# already exist    
-datadir = dirname + '/data/'
-plotdir = dirname + '/plots/dr_amom_mc_times_sample/'
-if not os.path.isdir(plotdir):
-    os.makedirs(plotdir)
-
 # Read command-line arguments (CLAs)
 plotcontours = True
 plotlatlines = False
 minmaxdr = None
 minmaxamom = None
 minmaxmc = None
-AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
 rvals = []
 rbcz = None
 minmaxrz = None
 navg = 1 # by default average over 1 AZ_Avgs instance (no average)
 # for navg > 1, a "sliding average" will be used.
+tag = '' # optional way to tag save directory
 nlevs = 20
 plotboundary = True
 nskip = 1 # by default don't skip anything
@@ -104,6 +97,13 @@ for i in range(nargs):
         nskip = int(args[i+1])
     elif arg == '-ntot':
         ntot = int(args[i+1])
+    elif arg == '-tag':
+        tag = '_' + args[i+1]
+
+# Create plotdir if doesn't already exist
+plotdir = dirname +  '/plots/dr_amom_mc_times_sample' + tag + '/'
+if not os.path.isdir(plotdir):
+    os.makedirs(plotdir)
 
 # Check to make sure index_last didn't fall beyond the last possible index ...
 if index_last > nfiles - navg:
@@ -219,8 +219,6 @@ iter2 = az.iters[-1]
 count = 1
 for i in range(index_first, index_last + 1):
     if i > index_first: # only past the first point is it necessary to do anything
-        print ("Reading AZ_Avgs/", file_list[i])
-        print ("Reading AZ_Avgs/", file_list[i + navg - 1])
         az1 = AZ_Avgs(radatadir + file_list[i], '')
         az2 = AZ_Avgs(radatadir + file_list[i + navg - 1], '')
         print ("Subtracting AZ_Avgs/", file_list[i])
@@ -234,7 +232,7 @@ for i in range(index_first, index_last + 1):
         t2 = az2.time[-1]
         iter1 = az1.iters[0]
         iter2 = az2.iters[-1]
-    if i % nskip == 0:
+    if (i - index_first) % nskip == 0:
         print ("Plot number %03i" %count)
         count += 1
         # Make the savename like for Mollweide times sample
