@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 plt.rcParams['mathtext.fontset'] = 'dejavuserif'
 csfont = {'fontname':'DejaVu Serif'}
 import numpy as np
-import pickle
 import sys, os
 sys.path.append(os.environ['raco'])
 from common import get_widest_range_file, strip_dirname, rsun, get_dict

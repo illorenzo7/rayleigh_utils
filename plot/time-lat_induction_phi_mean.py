@@ -7,13 +7,14 @@ import matplotlib.pyplot as plt
 plt.rcParams['mathtext.fontset'] = 'dejavuserif'
 csfont = {'fontname':'DejaVu Serif'}
 import numpy as np
-import pickle
 import sys, os
 sys.path.append(os.environ['raco'])
 from common import get_file_lists, get_widest_range_file, strip_dirname,\
         rsun, get_dict
 from plotcommon import axis_range
 from get_parameter import get_parameter
+from time_scales import compute_Prot, compute_tdt
+from tl_util import plot_tl
 
 # Get the run directory on which to perform the analysis
 dirname = sys.argv[1]
@@ -102,7 +103,7 @@ for i in range(nargs):
             lats.append(float(lat_str))
 
 # Get plot directory and create if not already there
-plotdir = dirname + '/plots/time-lat_ind_phi_mean_' + tag + '/'
+plotdir = dirname + '/plots/time-lat_ind_phi_mean' + tag + '/'
 if labelbytime:
     plotdir = dirname + '/plots/time-lat_ind_phi_mean_tlabel' + '_' +\
             tag + '/'
@@ -125,7 +126,8 @@ vals_ind = di_ind['vals']
 times = di['times']
 iters = di['iters']
 rr = di['rr']
-ri = di['ri']; ro = di['ro']; shell_depth = ro - ri
+irvals_avail = di['rinds']
+rvals_avail = rr[irvals_avail]
 tt_lat = di['tt_lat']
 rinds = di['rinds'] # radial locations sampled for the trace
 ntheta = di['ntheta']
@@ -136,7 +138,6 @@ qvals_ind = np.array(di_ind['qvals'])
 
 niter = di['niter']
 nr = di['nr']
-nrvals = di['ndepths']
 
 iter1 = di['iter1']
 iter2 = di['iter2']
@@ -174,14 +175,14 @@ indices.append(np.argmin(np.abs(qvals_ind - 1627))) # compression
 indices.append(np.argmin(np.abs(qvals_ind - 1628))) # advection
 indices.append(np.argmin(np.abs(qvals_ind - 1629))) # total induction
 
-terms = [vals[:, :, :, indices[0]]
+terms = [vals[:, :, :, indices[0]]]
 for index in indices[1:]:
-    terms.append(vals[:, :, :, index]
+    terms.append(vals_ind[:, :, :, index])
 
 # field units and labels
 units = r'$\rm{G}$'
 units_ind = r'$\rm{G\ s^{-1}}$'
-labels = r'$[\left\langle\mathbf{B}\right\rangle\cdot\nabla\left\langle\mathbf{v}\right\rangle]_\phi',\
+labels = [r'$[\left\langle\mathbf{B}\right\rangle\cdot\nabla\left\langle\mathbf{v}\right\rangle]_\phi$',\
     r'$-\left\langleB_\phi\right\rangle(\nabla\cdot\left\langle\mathbf{v}\right\rangle)$',\
     r'$-[\left\langle\mathbf{v}\right\rangle\cdot\nabla\left\langle\mathbf{B}\right\rangle]_\phi$',\
     r'$[\nabla\times(\left\langle\mathbf{v}\right\rangle\times\left\langle\mathbf{B}\right\rangle)]_\phi$',\
@@ -268,8 +269,12 @@ for i in range(len(irvals)):
                 subplot_width, subplot_height)))
 
         # Plot evolution of each (zonally averaged) field component
+        if j == 0:
+            units_loc = units
+        else:
+            units_loc = units_ind
         plot_tl(terms_loc[j], times, tt_lat, fig=fig, ax=axs[j], navg=navg,\
-                minmax=mins_and_maxes[j], units=units, xminmax=xminmax,\
+                minmax=mins_and_maxes[j], units=units_loc, xminmax=xminmax,\
                 yvals=lats)
 
         # Label each subplot
