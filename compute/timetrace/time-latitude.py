@@ -118,7 +118,6 @@ if rank == 0:
             for depth_str in depths_str:
                 depths.append(float(depth_str))
         elif arg == '-tag':
-            tag_already_provided = True
             tag = args[i+1] + '_'
         elif arg == '-rzquarter': # 9 depths in RZ and CZ, with RZ depth
             # 0.25 of CZ depth
@@ -158,7 +157,6 @@ if rank == 0:
             if magnetism:
                 qvals.append(1805)
                 qvals.append(1806)
-            tag_already_provided = True
             tag = 'torques' + '_'
         elif arg == '-induction':
             print("tracing over INDUCTION QUANTITIES")
@@ -166,7 +164,6 @@ if rank == 0:
                     1624, 1629, 1630, 1601, 1602, 1603, 1606, 1607, 1608,\
                     1611, 1612, 1613, 1616, 1617, 1618, 1621, 1622, 1623,\
                     1626, 1627, 1628]
-            tag_already_provided = True
             tag = 'induction' + '_'
         elif arg == '-tag':
             tag = args[i+1] + '_'
@@ -335,7 +332,7 @@ if rank == 0:
     # Set the timetrace savename by the directory, what we are saving,
     # and first and last iteration files for the trace
     dirname_stripped = strip_dirname(dirname)
-    savename = dirname_stripped + '_time-latitude_' +\
+    savename = dirname_stripped + '_time-latitude_' + tag +\
             file_list[0] + '_' + file_list[-1] + '.pkl'
     savefile = datadir + savename
 

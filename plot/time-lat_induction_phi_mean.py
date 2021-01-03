@@ -1,6 +1,7 @@
 # Author: Loren Matilsky
 # Date created: 03/02/2019
 import matplotlib as mpl
+from matplotlib import ticker
 mpl.use('TkAgg')
 import matplotlib.pyplot as plt
 plt.rcParams['mathtext.fontset'] = 'dejavuserif'
@@ -9,20 +10,28 @@ import numpy as np
 import pickle
 import sys, os
 sys.path.append(os.environ['raco'])
-from common import get_widest_range_file, strip_dirname, rsun, get_dict
+from common import get_file_lists, get_widest_range_file, strip_dirname,\
+        rsun, get_dict
 from plotcommon import axis_range
 from get_parameter import get_parameter
-from time_scales import compute_Prot, compute_tdt
-from tl_util import plot_tl
 
-# Get the run and data directories
+# Get the run directory on which to perform the analysis
 dirname = sys.argv[1]
-dirname_stripped = strip_dirname(dirname)
+
+# Data and plot directories
 datadir = dirname + '/data/'
+plotdir = dirname + '/plots/'
+nosave = False
+if not os.path.isdir(plotdir):
+    os.makedirs(plotdir)
+dirname_stripped = strip_dirname(dirname)
 
 # Find the time/latitude file(s) the data directory. If there are 
 # multiple, by default choose the one with widest range in the trace.
+# We need both time-latitude regular (for the B field)
+# and time-latitude induction (for the induction terms)
 the_file = get_widest_range_file(datadir, 'time-latitude')
+the_ind_file = get_widest_range_file(datadir, 'time-latitude_induction')
 
 # more defaults
 minmax = None
@@ -34,7 +43,6 @@ saveplot = None # turned off by default if saving one figure, can change
 showplot = False # only show if plotting one figure
 labelbytime = False # by default label by first/last iteration number
 # not first/last time
-
 rvals = 'all'  # by default, plot all available time-lat levels
     # user specifies another choice via -rvals '[val1] [val2] ... [valn]'
     # where 'vals' have dimensional units in cm: 4.8e10, 5e10, etc.
@@ -50,14 +58,15 @@ nargs = len(args)
 for i in range(nargs):
     arg = args[i]
     if arg == '-minmax':
-        try: # See if user wants to set ranges for B_r, B_theta, and B_phi
-            minmax = float(args[i+1]), float(args[i+2]), float(args[i+3]),\
-                    float(args[i+4]), float(args[i+5]), float(args[i+6])
-        except:
-            minmax = float(args[i+1]), float(args[i+2])
-    elif arg == '-usefile':
+        strings = args[i+1].split()
+        minmax = []
+        for st in strings:
+            minmax.append(float(st))
+    elif arg == '-usefiles':
         the_file = args[i+1]
         the_file = the_file.split('/')[-1]
+        the_ind_file = args[i+2]
+        the_ind_file = the_ind_file.split('/')[-1]
     elif arg == '-rvals':
         strings = args[i+1].split()
         rvals = []
@@ -93,30 +102,41 @@ for i in range(nargs):
             lats.append(float(lat_str))
 
 # Get plot directory and create if not already there
-plotdir = dirname + '/plots/time-lat_B_' + tag + '/'
+plotdir = dirname + '/plots/time-lat_ind_phi_mean_' + tag + '/'
 if labelbytime:
-    plotdir = dirname + '/plots/time-lat_B_tlabel' + '_' + tag + '/'
+    plotdir = dirname + '/plots/time-lat_ind_phi_mean_tlabel' + '_' +\
+            tag + '/'
 if not os.path.isdir(plotdir):
     os.makedirs(plotdir)
 
 # Read in the time-latitude data (dictionary form)
+# In this part, we really must assume that the user saved
+# the separate time-latitude (induction) files wisely, so they all
+# have the same values for "times" and "lats", depths, etc.
 print ('Getting time-latitude trace from ' + datadir + the_file)
 di = get_dict(datadir + the_file)
+print ('Getting time-latitude induction trace from ' + datadir +\
+       the_ind_file)
+di_ind = get_dict(datadir + the_ind_file)
+
 vals = di['vals']
+vals_ind = di_ind['vals']
+
 times = di['times']
 iters = di['iters']
 rr = di['rr']
-irvals_avail = di['rinds']
-rvals_avail = rr[irvals_avail]
 ri = di['ri']; ro = di['ro']; shell_depth = ro - ri
 tt_lat = di['tt_lat']
+rinds = di['rinds'] # radial locations sampled for the trace
 ntheta = di['ntheta']
+rvals_sampled = rr[rinds]/rsun
 
 qvals = np.array(di['qvals'])
+qvals_ind = np.array(di_ind['qvals'])
 
 niter = di['niter']
 nr = di['nr']
-nq = di['nq']
+nrvals = di['ndepths']
 
 iter1 = di['iter1']
 iter2 = di['iter2']
@@ -129,11 +149,6 @@ if rotation:
 else:
     time_unit = compute_tdt(dirname)
     time_label = r'$\rm{TDT}$'
-
-br_index = np.argmin(np.abs(qvals - 801))
-bt_index = np.argmin(np.abs(qvals - 802))
-bp_index = np.argmin(np.abs(qvals - 803))
-
 # determine desired levels to plot
 if irvals is None:
     if rvals == 'all':
@@ -151,10 +166,26 @@ if saveplot is None:
 if len(irvals) == 1:
     showplot = True
 
-# Get raw traces of br, btheta, bphi
-br = vals[:, :, :, br_index]
-bt = vals[:, :, :, bt_index]
-bp = vals[:, :, :, bp_index]
+# Get raw traces of B and induction terms (phi comp.)
+indices = []
+indices.append(np.argmin(np.abs(qvals - 803))) # B field
+indices.append(np.argmin(np.abs(qvals_ind - 1626))) # shear 
+indices.append(np.argmin(np.abs(qvals_ind - 1627))) # compression
+indices.append(np.argmin(np.abs(qvals_ind - 1628))) # advection
+indices.append(np.argmin(np.abs(qvals_ind - 1629))) # total induction
+
+terms = [vals[:, :, :, indices[0]]
+for index in indices[1:]:
+    terms.append(vals[:, :, :, index]
+
+# field units and labels
+units = r'$\rm{G}$'
+units_ind = r'$\rm{G\ s^{-1}}$'
+labels = r'$[\left\langle\mathbf{B}\right\rangle\cdot\nabla\left\langle\mathbf{v}\right\rangle]_\phi',\
+    r'$-\left\langleB_\phi\right\rangle(\nabla\cdot\left\langle\mathbf{v}\right\rangle)$',\
+    r'$-[\left\langle\mathbf{v}\right\rangle\cdot\nabla\left\langle\mathbf{B}\right\rangle]_\phi$',\
+    r'$[\nabla\times(\left\langle\mathbf{v}\right\rangle\times\left\langle\mathbf{B}\right\rangle)]_\phi$',\
+    r'$\left\langleB_\phi\right\rangle$']
 
 # Normalize the time 
 times /= time_unit
@@ -186,7 +217,7 @@ fig_width_inches = subplot_width_inches + margin_right_inches +\
         margin_left_inches
 subplot_height_inches = 2.0
 
-nrow = 3
+nrow = len(terms)
 fig_height_inches = nrow*subplot_height_inches +\
         (nrow - 1)*margin_inches + margin_bottom_inches +\
         margin_top_inches
@@ -199,81 +230,62 @@ margin_left = margin_left_inches/fig_width_inches
 margin_bottom = margin_bottom_inches/fig_height_inches
 margin_top = margin_top_inches/fig_height_inches
 
-# field units and labels
-units = r'$\rm{G}$'
-labels = [r'$\langle B_r\rangle$', r'$\langle B_\theta\rangle$',\
-        r'$\langle B_\phi\rangle$']
-
 # Loop over the desired radii and save plots
 for i in range(len(irvals)):
     ir = irvals[i]
     rval = rvals_avail[ir]/rsun 
     print('plotting r/rsun = %0.3f (ir = %02i)' %(rval, ir))
-    br_loc = br[:, :, ir]
-    bt_loc = bt[:, :, ir]
-    bp_loc = bp[:, :, ir]
-    
+    terms_loc = []
+    for j in range(nrow):
+        terms_loc.append(terms[j][:, :, ir])
+   
     # Make appropriate file name to save
     if labelbytime:
-        savename = dirname_stripped + '_time-lat_B_' +\
+        savename = dirname_stripped + '_time-lat_ind_phi_mean_' +\
                 ('Prot%05.0f-to-%05.0f_' %(t1, t2)) +\
             ('rval%0.3f' %rval) + '.png'
     else:
-        savename = dirname_stripped + '_time-lat_B_' +\
+        savename = dirname_stripped + '_time-lat_ind_phi_mean_' +\
                 ('%08i_%08i_' %(iter1, iter2)) +\
             ('rval%0.3f' %rval) + '.png'
 
+    mins_and_maxes = []
     if minmax is None:
-        minmax_br = None
-        minmax_bt = None
-        minmax_bp = None
+        for j in range(nrow):
+            mins_and_maxes.append(None)
     else:
-        if len(minmax) == 2:
-            minmax_br = minmax
-            minmax_bt = minmax
-            minmax_bp = minmax
-        elif len(minmax) == 6:
-            minmax_br = minmax[0], minmax[1]
-            minmax_bt = minmax[2], minmax[3]
-            minmax_bp = minmax[4], minmax[5]
+        for j in range(nrow):
+            mins_and_maxes.append((minmax[2*j], minmax[2*j + 1]))
 
-    # Create figure with  3 panels in a row (time-radius plots of
-    #       br, btheta, and bphi)
+    # make plots subplot by subplot
     fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
-    ax1 = fig.add_axes((margin_left, 1. - margin_top -\
-            subplot_height - 0*(subplot_height + margin_y),\
-            subplot_width, subplot_height))
-    ax2 = fig.add_axes((margin_left, 1. - margin_top -\
-            subplot_height - 1*(subplot_height + margin_y),\
-            subplot_width, subplot_height))
-    ax3 = fig.add_axes((margin_left, 1. - margin_top -\
-            subplot_height - 2*(subplot_height + margin_y),\
-            subplot_width, subplot_height))
+    axs = []
+    for j in range(nrow):
+        # Create figure with  3 panels in a row (time-radius plots of
+        #       br, btheta, and bphi)
+        axs.append(fig.add_axes((margin_left, 1. - margin_top -\
+                subplot_height - j*(subplot_height + margin_y),\
+                subplot_width, subplot_height)))
 
-    # Plot evolution of each (zonally averaged) field component
-    plot_tl(br_loc, times, tt_lat, fig=fig, ax=ax1, navg=navg,\
-            minmax=minmax_br, units=units, xminmax=xminmax, yvals=lats)
-    plot_tl(bt_loc, times, tt_lat, fig=fig, ax=ax2, navg=navg,\
-            minmax=minmax_bt, units=units, xminmax=xminmax, yvals=lats)
-    plot_tl(bp_loc, times, tt_lat, fig=fig, ax=ax3, navg=navg,\
-            minmax=minmax_bp, units=units, xminmax=xminmax, yvals=lats)
+        # Plot evolution of each (zonally averaged) field component
+        plot_tl(terms_loc[j], times, tt_lat, fig=fig, ax=axs[j], navg=navg,\
+                minmax=mins_and_maxes[j], units=units, xminmax=xminmax,\
+                yvals=lats)
 
-    # Label with the field components
-    for irow in range(nrow):
-        label = labels[irow]
+        # Label each subplot
         fig.text(margin_left + 0.5*margin_x, 1. - margin_top - \
-                0.5*margin_y - irow*(subplot_height + margin_y), label,\
+                0.5*margin_y - j*(subplot_height + margin_y), labels[j],\
                 va='top', ha='left', fontsize=14,\
                 bbox=dict(facecolor='white'))
 
-    # Turn the x tick labels off for the top two strips
-    ax1.set_xticklabels([])
-    ax2.set_xticklabels([])
+    # Turn the x tick labels off for the top strips
+    for ax in axs[:-1]:
+        ax.set_xticklabels([])
 
     # Label x (time) axis
-    ax3.set_xlabel('time (' + time_label + ')', **csfont)
+    axs[-1].set_xlabel('time (' + time_label + ')', **csfont)
     # Label y-axis (latitude in degrees)
-    ax2.set_ylabel('latitude (deg)', **csfont)
+    axs[nrow//2].set_ylabel('latitude (deg)', **csfont)
 
     # Put some useful information on the title
     averaging_time = (times[-1] - times[0])/niter*navg
@@ -282,7 +294,7 @@ for i in range(len(irvals)):
         title += '     ' + ('t_avg = %.1f Prot' %averaging_time)
     else:
         title += '     t_avg = none'
-    ax1.set_title(title, **csfont)
+    axs[0].set_title(title, **csfont)
 
     # Save the plot
     if saveplot:
