@@ -148,3 +148,7 @@ def default_axes_tl(width=7.):
             subplot_height))
     return fig, ax
 
+def testtex(label):
+    plt.plot(range(10))
+    plt.title(label)
+    plt.show()

@@ -191,10 +191,9 @@ subplot_height = subplot_height_inches/fig_height_inches
 torques = [tau_mm_r, tau_mm_r_1, tau_mm_r_2, tau_mm_r_3,\
         tau_mm_t, tau_mm_t_1, tau_mm_t_2, tau_mm_t_3]
 
-titles = [r'$\tau_{\rm{mm,r}}$', r'$\tau_{\rm{mm,r,1}}$',\
-        r'$\tau_{\rm{mm,r,2}}$', r'$\tau_{\rm{mm,r,3}}$',\
-        r'$\tau_{\rm{mm,\theta}}$', r'$\tau_{\rm{mm,\theta,1}}$',\
-        r'$\tau_{\rm{mm,\theta,2}}$', r'$\tau_{\rm{mm,\theta,2}}$']
+titles = [r'$\tau_{\rm{mm,r}}$', r'$\frac{r\sin\theta}{4\pi}\left\langle B_r\right\rangle\left\langle\frac{\partial B_\phi}{\partial r}\right\rangle$', r'$\frac{r\sin\theta}{4\pi}\left\langle B_\phi\right\rangle\left\langle\frac{\partial B_r}{\partial r}\right\rangle$', r'$\frac{3\sin\theta}{4\pi}\langle B_r\rangle\langle B_\phi\rangle$',\
+        r'$\tau_{\rm{mm,\theta}}$', r'$\frac{\sin\theta}{4\pi}\left\langle B_\theta\right\rangle \left\langle\frac{\partial B_\phi}{\partial \theta}\right\rangle$', r'$\frac{\sin\theta}{4\pi}\left\langle B_\phi\right\rangle\left\langle\frac{\partial B_\theta}{\partial \theta}\right\rangle$', r'$\frac{2\cos\theta}{4\pi}\langle B_\theta\rangle\langle B_\phi\rangle$']
+
 units = r'$\rm{g}\ \rm{cm}^{-1}\ \rm{s}^{-2}$'
 
 # Generate figure of the correct dimensions
