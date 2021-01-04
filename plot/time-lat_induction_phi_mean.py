@@ -36,6 +36,7 @@ the_ind_file = get_widest_range_file(datadir, 'time-latitude_induction')
 
 # more defaults
 minmax = None
+minmaxb = None
 xminmax = None
 xmin = None
 xmax = None
@@ -51,7 +52,8 @@ irvals = None # user can also specify -irvals '2 3 9', etc.
 navg = 1 # by default average over 1 AZ_Avgs instance (no average)
 # for navg > 1, a "sliding average" will be used.
 tag = '' # optional way to tag save directory
-lats = None
+lats = [0.]
+plottimes = None
 
 # Get command-line arguments
 args = sys.argv[2:]
@@ -63,6 +65,11 @@ for i in range(nargs):
         minmax = []
         for st in strings:
             minmax.append(float(st))
+    elif arg == '-minmaxb':
+        strings = args[i+1].split()
+        minmaxb = []
+        for st in strings:
+            minmaxb.append(float(st))
     elif arg == '-usefiles':
         the_file = args[i+1]
         the_file = the_file.split('/')[-1]
@@ -97,10 +104,14 @@ for i in range(nargs):
     elif arg == '-tag':
         tag = '_' + args[i+1]
     elif arg == '-lats':
-        lats_str = args[i+1].split()
-        lats = []
-        for lat_str in lats_str:
-            lats.append(float(lat_str))
+        strings = args[i+1].split()
+        for string in strings:
+            lats.append(float(string))
+    elif arg == '-times':
+        strings = args[i+1].split()
+        plottimes = []
+        for string in strings:
+            plottimes.append(float(string))
 
 # Get plot directory and create if not already there
 plotdir = dirname + '/plots/time-lat_ind_phi_mean' + tag + '/'
@@ -181,7 +192,7 @@ terms = []
 for index in indices[:-1]:
     terms.append(vals_ind[:, :, :, index])
 terms.append(terms[-2] + terms[-1]) # total rate of change 
-terms.append(vals[:, :, :, indices[-1]])
+terms.append(vals[:, :, :, indices[-1]]) # B field
 
 # field units and labels
 units = r'$\rm{G}$'
@@ -258,11 +269,23 @@ for i in range(len(irvals)):
 
     mins_and_maxes = []
     if minmax is None:
-        for j in range(nrow):
+        for j in range(nrow - 1):
             mins_and_maxes.append(None)
     else:
-        for j in range(nrow):
-            mins_and_maxes.append((minmax[2*j], minmax[2*j + 1]))
+        if len(minmax) == 2:
+            for j in range(nrow - 1):
+                mins_and_maxes.append(minmax)
+        elif len(minmax) == 2*(nrow - 1):
+            for j in range(nrow - 1):
+                mins_and_maxes.append((minmax[2*j], minmax[2*j + 1]))
+        else:
+            print ("error: minmax must have length 2 or %i, as in"\
+                    %(2*(nrow - 1)))
+            print ("-minmax '-5e-2 5e-2'")
+            print ("your minmax has length %i" %(len(minmax)))
+            print ("exiting")
+            sys.exit()
+    mins_and_maxes.append(minmaxb)
 
     # make plots subplot by subplot
     fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
@@ -275,13 +298,13 @@ for i in range(len(irvals)):
                 subplot_width, subplot_height)))
 
         # Plot evolution of each (zonally averaged) field component
-        if j == 0:
+        if j == nrow - 1:
             units_loc = units
         else:
             units_loc = units_ind
         plot_tl(terms_loc[j], times, tt_lat, fig=fig, ax=axs[j], navg=navg,\
                 minmax=mins_and_maxes[j], units=units_loc, xminmax=xminmax,\
-                yvals=lats)
+                yvals=lats, plottimes=plottimes)
 
         # Label each subplot
         fig.text(margin_left + 0.5*margin_x, 1. - margin_top - \

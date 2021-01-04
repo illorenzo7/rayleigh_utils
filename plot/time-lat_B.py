@@ -41,7 +41,8 @@ irvals = None # user can also specify -irvals '2 3 9', etc.
 navg = 1 # by default average over 1 AZ_Avgs instance (no average)
 # for navg > 1, a "sliding average" will be used.
 tag = '' # optional way to tag save directory
-lats = None
+lats = [0.]
+plottimes = None
 
 # Get command-line arguments
 args = sys.argv[2:]
@@ -49,11 +50,10 @@ nargs = len(args)
 for i in range(nargs):
     arg = args[i]
     if arg == '-minmax':
-        try: # See if user wants to set ranges for B_r, B_theta, and B_phi
-            minmax = float(args[i+1]), float(args[i+2]), float(args[i+3]),\
-                    float(args[i+4]), float(args[i+5]), float(args[i+6])
-        except:
-            minmax = float(args[i+1]), float(args[i+2])
+        strings = args[i+1].split()
+        minmax = []
+        for st in strings:
+            minmax.append(float(st))
     elif arg == '-usefile':
         the_file = args[i+1]
         the_file = the_file.split('/')[-1]
@@ -86,10 +86,14 @@ for i in range(nargs):
     elif arg == '-tag':
         tag = '_' + args[i+1]
     elif arg == '-lats':
-        lats_str = args[i+1].split()
-        lats = []
-        for lat_str in lats_str:
-            lats.append(float(lat_str))
+        strings = args[i+1].split()
+        for string in strings:
+            lats.append(float(string))
+    elif arg == '-times':
+        strings = args[i+1].split()
+        plottimes = []
+        for string in strings:
+            plottimes.append(float(string))
 
 # Get plot directory and create if not already there
 plotdir = dirname + '/plots/time-lat_B' + tag + '/'
@@ -235,6 +239,11 @@ for i in range(len(irvals)):
             minmax_br = minmax[0], minmax[1]
             minmax_bt = minmax[2], minmax[3]
             minmax_bp = minmax[4], minmax[5]
+        else:
+            print ("error: minmax must have length 2 or 6, as in")
+            print ("-minmax '-5e3 5e3 -1e4 1e4 -5e4 5e4'")
+            print ("exiting")
+            sys.exit()
 
     # Create figure with  3 panels in a row (time-radius plots of
     #       br, btheta, and bphi)
@@ -251,11 +260,14 @@ for i in range(len(irvals)):
 
     # Plot evolution of each (zonally averaged) field component
     plot_tl(br_loc, times, tt_lat, fig=fig, ax=ax1, navg=navg,\
-            minmax=minmax_br, units=units, xminmax=xminmax, yvals=lats)
+            minmax=minmax_br, units=units, xminmax=xminmax, yvals=lats,\
+            plottimes=plottimes)
     plot_tl(bt_loc, times, tt_lat, fig=fig, ax=ax2, navg=navg,\
-            minmax=minmax_bt, units=units, xminmax=xminmax, yvals=lats)
+            minmax=minmax_bt, units=units, xminmax=xminmax, yvals=lats,\
+            plottimes=plottimes)
     plot_tl(bp_loc, times, tt_lat, fig=fig, ax=ax3, navg=navg,\
-            minmax=minmax_bp, units=units, xminmax=xminmax, yvals=lats)
+            minmax=minmax_bp, units=units, xminmax=xminmax, yvals=lats,\
+            plottimes=plottimes)
 
     # Label with the field components
     for irow in range(nrow):
