@@ -92,9 +92,9 @@ for i in range(nargs):
             lats.append(float(lat_str))
 
 # Get plot directory and create if not already there
-plotdir = dirname + '/plots/time-lat_B_' + tag + '/'
+plotdir = dirname + '/plots/time-lat_B' + tag + '/'
 if labelbytime:
-    plotdir = dirname + '/plots/time-lat_B_tlabel' + '_' + tag + '/'
+    plotdir = dirname + '/plots/time-lat_B_tlabel' + tag + '/'
 if not os.path.isdir(plotdir):
     os.makedirs(plotdir)
 
