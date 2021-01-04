@@ -21,10 +21,7 @@ dirname = sys.argv[1]
 
 # Data and plot directories
 datadir = dirname + '/data/'
-plotdir = dirname + '/plots/'
 nosave = False
-if not os.path.isdir(plotdir):
-    os.makedirs(plotdir)
 dirname_stripped = strip_dirname(dirname)
 
 # Find the time/latitude file(s) the data directory. If there are 

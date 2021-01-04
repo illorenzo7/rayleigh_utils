@@ -21,10 +21,7 @@ dirname = sys.argv[1]
 
 # Data and plot directories
 datadir = dirname + '/data/'
-plotdir = dirname + '/plots/'
 nosave = False
-if not os.path.isdir(plotdir):
-    os.makedirs(plotdir)
 dirname_stripped = strip_dirname(dirname)
 
 # Find the time/latitude file(s) the data directory. If there are 
@@ -105,9 +102,9 @@ for i in range(nargs):
             plottimes.append(float(string))
 
 # Get plot directory and create if not already there
-plotdir = dirname + '/plots/time-lat_phi_mean' + tag + '/'
+plotdir = dirname + '/plots/time-lat_phi_fluc' + tag + '/'
 if labelbytime:
-    plotdir = dirname + '/plots/time-lat_phi_mean_tlabel' + '_' +\
+    plotdir = dirname + '/plots/time-lat_phi_fluc_tlabel' + '_' +\
             tag + '/'
 if not os.path.isdir(plotdir):
     os.makedirs(plotdir)
@@ -192,7 +189,7 @@ for index in indices_mean:
 # field units and labels
 units = r'$\rm{G\ s^{-1}}$'
 labels = [r'$[\left\langle\mathbf{B}^\prime\cdot\nabla\mathbf{v}^\prime\right\rangle]_\phi$',\
-    r'$-\left\langle B_\phi^\prime(\nabla\cdot\mathbf{v}^\prime)\right\rangle)$',\
+    r'$-\left\langle B_\phi^\prime(\nabla\cdot\mathbf{v}^\prime)\right\rangle$',\
     r'$-[\left\langle\mathbf{v}^\prime\cdot\nabla\mathbf{B}^\prime\right\rangle]_\phi$',\
     r'$[\nabla\times(\left\langle\mathbf{v}^\prime\times\mathbf{B}^\prime\right\rangle)]_\phi$']
 
