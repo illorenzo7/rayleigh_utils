@@ -94,9 +94,9 @@ for i in range(nargs):
             rvals.append(float(rval_str)/rsun)
 
 # Get plot directory and create if not already there
-plotdir = dirname + '/plots/time-rad' + tag + '/'
+plotdir = dirname + '/plots/time-rad' + tag + '_B/'
 if labelbytime:
-    plotdir = dirname + '/plots/time-rad_tlabel' + '_' + tag + '/'
+    plotdir = dirname + '/plots/time-rad' + tag + '_B_tlabel/'
 if not os.path.isdir(plotdir):
     os.makedirs(plotdir)
 

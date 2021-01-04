@@ -111,10 +111,9 @@ for i in range(nargs):
             plottimes.append(float(string))
 
 # Get plot directory and create if not already there
-plotdir = dirname + '/plots/time-lat_ind_phi' + tag + '/'
+plotdir = dirname + '/plots/time-lat' + tag + '_ind_phi/'
 if labelbytime:
-    plotdir = dirname + '/plots/time-lat_ind_phi_tlabel' + '_' +\
-            tag + '/'
+    plotdir = dirname + '/plots/time-lat' + tag + '_ind_phi_tlabel/'
 if not os.path.isdir(plotdir):
     os.makedirs(plotdir)
 
