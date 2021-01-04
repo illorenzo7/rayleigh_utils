@@ -111,9 +111,9 @@ for i in range(nargs):
             plottimes.append(float(string))
 
 # Get plot directory and create if not already there
-plotdir = dirname + '/plots/time-lat' + tag + '_ind_r/'
+plotdir = dirname + '/plots/time-lat' + tag + '_ind_theta_mean/'
 if labelbytime:
-    plotdir = dirname + '/plots/time-lat' + tag + '_ind_r_tlabel/'
+    plotdir = dirname + '/plots/time-lat' + tag + '_ind_theta_mean_tlabel/'
 if not os.path.isdir(plotdir):
     os.makedirs(plotdir)
 
@@ -175,31 +175,29 @@ if saveplot is None:
 if len(irvals) == 1:
     showplot = True
 
-# Get raw traces of B and induction terms (r comp., mean)
+# Get raw traces of B and induction terms (theta comp., mean)
 indices = []
-indices.append(np.argmin(np.abs(qvals_ind - 1601))) # shear 
-indices.append(np.argmin(np.abs(qvals_ind - 1602))) # compression
-indices.append(np.argmin(np.abs(qvals_ind - 1603))) # advection
-indices.append(np.argmin(np.abs(qvals_ind - 1604))) # total induction 
-indices.append(np.argmin(np.abs(qvals_ind - 1605))) # diffusion
-indices.append(np.argmin(np.abs(qvals - 801))) # B field
+indices.append(np.argmin(np.abs(qvals_ind - 1621))) # shear 
+indices.append(np.argmin(np.abs(qvals_ind - 1622))) # compression
+indices.append(np.argmin(np.abs(qvals_ind - 1623))) # advection
+indices.append(np.argmin(np.abs(qvals_ind - 1624))) # total induction 
+indices.append(np.argmin(np.abs(qvals_ind - 1625))) # diffusion
+indices.append(np.argmin(np.abs(qvals - 802))) # B field
 
 terms = []
 for index in indices[:-1]:
     terms.append(vals_ind[:, :, :, index])
-terms.append(terms[-2] + terms[-1]) # total rate of change 
 terms.append(vals[:, :, :, indices[-1]]) # B field
 
 # field units and labels
 units = r'$\rm{G}$'
 units_ind = r'$\rm{G\ s^{-1}}$'
-labels = [r'$[\left\langle\mathbf{B}\cdot\nabla\mathbf{v}\right\rangle]_r$',\
-    r'$-\left\langleB_r(\nabla\cdot\mathbf{v})\right\rangle$',\
-    r'$-[\left\langle\mathbf{v}\cdot\nabla\mathbf{B}\right\rangle]_r$',\
-    r'$[\nabla\times(\left\langle\mathbf{v}\times\mathbf{B}\right\rangle)]_r$',\
-    r'$-[\nabla\times(\eta\nabla\times\langle\mathbf{B}\rangle)]_r$',\
-    r'$\frac{\partial\langle B_r\rangle}{\partial t}$',\
-    r'$\left\langle B_r\right\rangle$']
+labels = [r'$[\left\langle\mathbf{B}\right\rangle\cdot\nabla\left\langle\mathbf{v}\right\rangle]_\theta$',\
+    r'$-\left\langleB_\theta\right\rangle(\nabla\cdot\left\langle\mathbf{v}\right\rangle)$',\
+    r'$-[\left\langle\mathbf{v}\right\rangle\cdot\nabla\left\langle\mathbf{B}\right\rangle]_\theta$',\
+    r'$[\nabla\times(\left\langle\mathbf{v}\right\rangle\times\left\langle\mathbf{B}\right\rangle)]_\theta$',\
+    r'$-[\nabla\times(\eta\nabla\times\langle\mathbf{B}\rangle)]_\theta$',\
+    r'$\left\langleB_\theta\right\rangle$']
 
 # Normalize the time 
 times /= time_unit
@@ -255,11 +253,11 @@ for i in range(len(irvals)):
    
     # Make appropriate file name to save
     if labelbytime:
-        savename = dirname_stripped + '_time-lat_ind_r_' +\
+        savename = dirname_stripped + '_time-lat_ind_theta_mean_' +\
                 ('Prot%05.0f-to-%05.0f_' %(t1, t2)) +\
             ('rval%0.3f' %rval) + '.png'
     else:
-        savename = dirname_stripped + '_time-lat_ind_r_' +\
+        savename = dirname_stripped + '_time-lat_ind_theta_mean_' +\
                 ('%08i_%08i_' %(iter1, iter2)) +\
             ('rval%0.3f' %rval) + '.png'
 
@@ -287,8 +285,6 @@ for i in range(len(irvals)):
     fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
     axs = []
     for j in range(nrow):
-        # Create figure with  3 panels in a row (time-radius plots of
-        #       br, btheta, and br)
         axs.append(fig.add_axes((margin_left, 1. - margin_top -\
                 subplot_height - j*(subplot_height + margin_y),\
                 subplot_width, subplot_height)))

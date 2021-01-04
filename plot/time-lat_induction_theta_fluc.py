@@ -28,12 +28,10 @@ dirname_stripped = strip_dirname(dirname)
 # multiple, by default choose the one with widest range in the trace.
 # We need both time-latitude regular (for the B field)
 # and time-latitude induction (for the induction terms)
-the_file = get_widest_range_file(datadir, 'time-latitude')
-the_ind_file = get_widest_range_file(datadir, 'time-latitude_induction')
+the_file = get_widest_range_file(datadir, 'time-latitude_induction')
 
 # more defaults
 minmax = None
-minmaxb = None
 xminmax = None
 xmin = None
 xmax = None
@@ -62,16 +60,9 @@ for i in range(nargs):
         minmax = []
         for st in strings:
             minmax.append(float(st))
-    elif arg == '-minmaxb':
-        strings = args[i+1].split()
-        minmaxb = []
-        for st in strings:
-            minmaxb.append(float(st))
-    elif arg == '-usefiles':
+    elif arg == '-usefile':
         the_file = args[i+1]
         the_file = the_file.split('/')[-1]
-        the_ind_file = args[i+2]
-        the_ind_file = the_ind_file.split('/')[-1]
     elif arg == '-rvals':
         strings = args[i+1].split()
         rvals = []
@@ -111,9 +102,9 @@ for i in range(nargs):
             plottimes.append(float(string))
 
 # Get plot directory and create if not already there
-plotdir = dirname + '/plots/time-lat' + tag + '_ind_r/'
+plotdir = dirname + '/plots/time-lat' + tag + '_ind_theta_fluc/'
 if labelbytime:
-    plotdir = dirname + '/plots/time-lat' + tag + '_ind_r_tlabel/'
+    plotdir = dirname + '/plots/time-lat' + tag + '_ind_theta_fluc_tlabel/'
 if not os.path.isdir(plotdir):
     os.makedirs(plotdir)
 
@@ -121,14 +112,12 @@ if not os.path.isdir(plotdir):
 # In this part, we really must assume that the user saved
 # the separate time-latitude (induction) files wisely, so they all
 # have the same values for "times" and "lats", depths, etc.
-print ('Getting time-latitude trace from ' + datadir + the_file)
-di = get_dict(datadir + the_file)
 print ('Getting time-latitude induction trace from ' + datadir +\
-       the_ind_file)
-di_ind = get_dict(datadir + the_ind_file)
+       the_file)
+di = get_dict(datadir + the_file)
 
 vals = di['vals']
-vals_ind = di_ind['vals']
+vals = di['vals']
 
 times = di['times']
 iters = di['iters']
@@ -141,7 +130,6 @@ ntheta = di['ntheta']
 rvals_sampled = rr[rinds]/rsun
 
 qvals = np.array(di['qvals'])
-qvals_ind = np.array(di_ind['qvals'])
 
 niter = di['niter']
 nr = di['nr']
@@ -175,31 +163,34 @@ if saveplot is None:
 if len(irvals) == 1:
     showplot = True
 
-# Get raw traces of B and induction terms (r comp., mean)
+# induction terms (theta comp., tot)
 indices = []
-indices.append(np.argmin(np.abs(qvals_ind - 1601))) # shear 
-indices.append(np.argmin(np.abs(qvals_ind - 1602))) # compression
-indices.append(np.argmin(np.abs(qvals_ind - 1603))) # advection
-indices.append(np.argmin(np.abs(qvals_ind - 1604))) # total induction 
-indices.append(np.argmin(np.abs(qvals_ind - 1605))) # diffusion
-indices.append(np.argmin(np.abs(qvals - 801))) # B field
-
+indices.append(np.argmin(np.abs(qvals - 1606))) # shear 
+indices.append(np.argmin(np.abs(qvals - 1607))) # compression
+indices.append(np.argmin(np.abs(qvals - 1608))) # advection
+indices.append(np.argmin(np.abs(qvals - 1609))) # total induction 
+# fluc diffusion vanishes under zonal average
+# B' field vanishes under zonal average
 terms = []
-for index in indices[:-1]:
-    terms.append(vals_ind[:, :, :, index])
-terms.append(terms[-2] + terms[-1]) # total rate of change 
-terms.append(vals[:, :, :, indices[-1]]) # B field
+for index in indices:
+    terms.append(vals[:, :, :, index])
+
+# induction terms (theta comp., mean)
+indices_mean = []
+indices_mean.append(np.argmin(np.abs(qvals - 1621))) # shear 
+indices_mean.append(np.argmin(np.abs(qvals - 1622))) # compression
+indices_mean.append(np.argmin(np.abs(qvals - 1623))) # advection
+indices_mean.append(np.argmin(np.abs(qvals - 1624))) # total induction 
+terms_mean = []
+for index in indices_mean:
+    terms_mean.append(vals[:, :, :, index])
 
 # field units and labels
-units = r'$\rm{G}$'
-units_ind = r'$\rm{G\ s^{-1}}$'
-labels = [r'$[\left\langle\mathbf{B}\cdot\nabla\mathbf{v}\right\rangle]_r$',\
-    r'$-\left\langleB_r(\nabla\cdot\mathbf{v})\right\rangle$',\
-    r'$-[\left\langle\mathbf{v}\cdot\nabla\mathbf{B}\right\rangle]_r$',\
-    r'$[\nabla\times(\left\langle\mathbf{v}\times\mathbf{B}\right\rangle)]_r$',\
-    r'$-[\nabla\times(\eta\nabla\times\langle\mathbf{B}\rangle)]_r$',\
-    r'$\frac{\partial\langle B_r\rangle}{\partial t}$',\
-    r'$\left\langle B_r\right\rangle$']
+units = r'$\rm{G\ s^{-1}}$'
+labels = [r'$[\left\langle\mathbf{B}^\prime\cdot\nabla\mathbf{v}^\prime\right\rangle]_\theta$',\
+    r'$-\left\langle B_\theta^\prime(\nabla\cdot\mathbf{v}^\prime)\right\rangle$',\
+    r'$-[\left\langle\mathbf{v}^\prime\cdot\nabla\mathbf{B}^\prime\right\rangle]_\theta$',\
+    r'$[\nabla\times(\left\langle\mathbf{v}^\prime\times\mathbf{B}^\prime\right\rangle)]_\theta$']
 
 # Normalize the time 
 times /= time_unit
@@ -251,55 +242,49 @@ for i in range(len(irvals)):
     print('plotting r/rsun = %0.3f (ir = %02i)' %(rval, ir))
     terms_loc = []
     for j in range(nrow):
-        terms_loc.append(terms[j][:, :, ir])
+        terms_loc.append(terms[j][:, :, ir] - terms_mean[j][:, :, ir])
    
     # Make appropriate file name to save
     if labelbytime:
-        savename = dirname_stripped + '_time-lat_ind_r_' +\
+        savename = dirname_stripped + '_time-lat_ind_theta_fluc_' +\
                 ('Prot%05.0f-to-%05.0f_' %(t1, t2)) +\
             ('rval%0.3f' %rval) + '.png'
     else:
-        savename = dirname_stripped + '_time-lat_ind_r_' +\
+        savename = dirname_stripped + '_time-lat_ind_theta_fluc_' +\
                 ('%08i_%08i_' %(iter1, iter2)) +\
             ('rval%0.3f' %rval) + '.png'
 
     mins_and_maxes = []
     if minmax is None:
-        for j in range(nrow - 1):
+        for j in range(nrow):
             mins_and_maxes.append(None)
     else:
         if len(minmax) == 2:
-            for j in range(nrow - 1):
+            for j in range(nrow):
                 mins_and_maxes.append(minmax)
-        elif len(minmax) == 2*(nrow - 1):
-            for j in range(nrow - 1):
+        elif len(minmax) == 2*nrow:
+            for j in range(nrow):
                 mins_and_maxes.append((minmax[2*j], minmax[2*j + 1]))
         else:
-            print ("error: minmax must have length 2 or %i, as in"\
-                    %(2*(nrow - 1)))
+            print ("error: minmax must have length 2 or %i, as in"%(2*nrow))
             print ("-minmax '-5e-2 5e-2'")
             print ("your minmax has length %i" %(len(minmax)))
             print ("exiting")
             sys.exit()
-    mins_and_maxes.append(minmaxb)
 
     # make plots subplot by subplot
     fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
     axs = []
     for j in range(nrow):
         # Create figure with  3 panels in a row (time-radius plots of
-        #       br, btheta, and br)
+        #       br, btheta, and btheta)
         axs.append(fig.add_axes((margin_left, 1. - margin_top -\
                 subplot_height - j*(subplot_height + margin_y),\
                 subplot_width, subplot_height)))
 
         # Plot evolution of each (zonally averaged) field component
-        if j == nrow - 1:
-            units_loc = units
-        else:
-            units_loc = units_ind
         plot_tl(terms_loc[j], times, tt_lat, fig=fig, ax=axs[j], navg=navg,\
-                minmax=mins_and_maxes[j], units=units_loc, xminmax=xminmax,\
+                minmax=mins_and_maxes[j], units=units, xminmax=xminmax,\
                 yvals=lats, plottimes=plottimes)
 
         # Label each subplot
