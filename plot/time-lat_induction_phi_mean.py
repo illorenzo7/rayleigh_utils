@@ -188,7 +188,6 @@ indices.append(np.argmin(np.abs(qvals - 803))) # B field
 terms = []
 for index in indices[:-1]:
     terms.append(vals_ind[:, :, :, index])
-terms.append(terms[-2] + terms[-1]) # total rate of change 
 terms.append(vals[:, :, :, indices[-1]]) # B field
 
 # field units and labels
@@ -199,7 +198,6 @@ labels = [r'$[\left\langle\mathbf{B}\right\rangle\cdot\nabla\left\langle\mathbf{
     r'$-[\left\langle\mathbf{v}\right\rangle\cdot\nabla\left\langle\mathbf{B}\right\rangle]_\phi$',\
     r'$[\nabla\times(\left\langle\mathbf{v}\right\rangle\times\left\langle\mathbf{B}\right\rangle)]_\phi$',\
     r'$-[\nabla\times(\eta\nabla\times\langle\mathbf{B}\rangle)]_\phi$',\
-    r'$\frac{\partial\langle B_\phi\rangle}{\partial t}$',\
     r'$\left\langleB_\phi\right\rangle$']
 
 # Normalize the time 
