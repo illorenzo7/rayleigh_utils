@@ -138,6 +138,7 @@ qvals_ind = np.array(di_ind['qvals'])
 
 niter = di['niter']
 nr = di['nr']
+ntimes = di['niter']
 
 iter1 = di['iter1']
 iter2 = di['iter2']
@@ -167,17 +168,20 @@ if saveplot is None:
 if len(irvals) == 1:
     showplot = True
 
-# Get raw traces of B and induction terms (phi comp.)
+# Get raw traces of B and induction terms (phi comp., mean)
 indices = []
-indices.append(np.argmin(np.abs(qvals - 803))) # B field
 indices.append(np.argmin(np.abs(qvals_ind - 1626))) # shear 
 indices.append(np.argmin(np.abs(qvals_ind - 1627))) # compression
 indices.append(np.argmin(np.abs(qvals_ind - 1628))) # advection
-indices.append(np.argmin(np.abs(qvals_ind - 1629))) # total induction
+indices.append(np.argmin(np.abs(qvals_ind - 1629))) # total induction 
+indices.append(np.argmin(np.abs(qvals_ind - 1630))) # diffusion
+indices.append(np.argmin(np.abs(qvals - 803))) # B field
 
-terms = [vals[:, :, :, indices[0]]]
-for index in indices[1:]:
+terms = []
+for index in indices[:-1]:
     terms.append(vals_ind[:, :, :, index])
+terms.append(terms[-2] + terms[-1]) # total rate of change 
+terms.append(vals[:, :, :, indices[-1]])
 
 # field units and labels
 units = r'$\rm{G}$'
@@ -186,6 +190,8 @@ labels = [r'$[\left\langle\mathbf{B}\right\rangle\cdot\nabla\left\langle\mathbf{
     r'$-\left\langleB_\phi\right\rangle(\nabla\cdot\left\langle\mathbf{v}\right\rangle)$',\
     r'$-[\left\langle\mathbf{v}\right\rangle\cdot\nabla\left\langle\mathbf{B}\right\rangle]_\phi$',\
     r'$[\nabla\times(\left\langle\mathbf{v}\right\rangle\times\left\langle\mathbf{B}\right\rangle)]_\phi$',\
+    r'$-[\nabla\times(\eta\nabla\times\langle\mathbf{B}\rangle)]_\phi$',\
+    r'$\frac{\partial\langle B_\phi\rangle}{\partial t}$',\
     r'$\left\langleB_\phi\right\rangle$']
 
 # Normalize the time 
