@@ -117,8 +117,6 @@ if rank == 0:
             depths_str = args[i+1].split()
             for depth_str in depths_str:
                 depths.append(float(depth_str))
-        elif arg == '-tag':
-            tag = args[i+1] + '_'
         elif arg == '-rzquarter': # 9 depths in RZ and CZ, with RZ depth
             # 0.25 of CZ depth
             print("Taking 9 depths in CZ and RZ each")
@@ -157,14 +155,18 @@ if rank == 0:
             if magnetism:
                 qvals.append(1805)
                 qvals.append(1806)
-            tag = 'torques' + '_'
+            # only change tag if it wasn't specified already:
+            if tag == '':
+                tag = 'torques' + '_'
         elif arg == '-induction':
             print("tracing over INDUCTION QUANTITIES")
             qvals = [1604,1605, 1609,1610, 1614,1615,\
                     1619,1620, 1624,1625, 1629,1630,\
             1601,1602,1603, 1606,1607,1608, 1611,1612,1613,\
             1616,1617,1618, 1621,1622,1623, 1626,1627,1628]
-            tag = 'induction' + '_'
+            # only change tag if it wasn't specified already:
+            if tag == '':
+                tag = 'induction' + '_'
         elif arg == '-tag':
             tag = args[i+1] + '_'
 
