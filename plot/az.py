@@ -47,6 +47,7 @@ posdef = None # 1 for each quantity
 logscale = None # 1 for each quantity
 symlog = None # 1 for each quantity
 qv = [1, 2, 3] # by default plot the velocity components
+qv_sub = []
 ncol = 3 # in the figure, put three plots per row
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
 
@@ -56,10 +57,14 @@ for i in range(nargs):
     arg = args[i]
     if arg == '-qv':
         qv_str = args[i+1].split()
-        print(qv_str)
         qv = []
         for qv_str_elem in qv_str:
             qv.append(int(qv_str_elem))
+    elif arg == '-sub':
+        strings = args[i+1].split()
+        qv_sub = []
+        for st in strings:
+            qv_sub.append(int(st))
     elif arg == '-rbcz':
         rbcz = float(args[i+1])
     elif arg == '-minmax':
@@ -146,7 +151,7 @@ margin_top_inches = 1 # wider top margin to accommodate subplot titles AND metad
 margin_bottom_inches = 0.75*(2 - (rbcz is None)) 
     # larger bottom margin to make room for colorbar(s)
 margin_subplot_top_inches = 1/4 # margin to accommodate just subplot titles
-nplots = len(qv)
+nplots = len(qv) + len(qv_sub)//2
 nrow = np.int(np.ceil(nplots/ncol))
 
 subplot_width_inches = (fig_width_inches - (ncol + 1)*margin_inches)/ncol
@@ -180,8 +185,15 @@ for iplot in range(nplots):
             subplot_height - (iplot//ncol)*(subplot_height +\
             margin_subplot_top + margin_bottom)
     ax = fig.add_axes((ax_left, ax_bottom, subplot_width, subplot_height))
-    iq = qv[iplot]
-    field = vals[:, :, lut[iq]]
+    if iplot < len(qv):
+        iq = qv[iplot]
+        field = vals[:, :, lut[iq]]
+        title = 'iq = %i' %iq
+    else:
+        iq1 = qv_sub[0]
+        iq2 = qv_sub[1]
+        field = vals[:, :, lut[iq1]] - vals[:, :, lut[iq2]]
+        title = 'iq = %i - %i' %(iq1, iq2)
     if not minmax is None:
         this_minmax = minmax[2*iplot], minmax[2*iplot + 1]
     else:
@@ -211,8 +223,8 @@ for iplot in range(nplots):
     plot_azav (field, rr, cost, fig=fig, ax=ax, minmax=this_minmax,\
             plotcontours=plotcontours, plotlatlines=plotlatlines,\
             rvals=rvals, posdef=this_posdef, logscale=this_logscale,\
-            symlog=this_symlog)
-    ax.set_title('iq = %i' %iq, verticalalignment='bottom', **csfont)
+            symlog=this_symlog, rbcz=rbcz)
+    ax.set_title(title, verticalalignment='bottom', **csfont)
 
 # Label averaging interval
 if rotation:
