@@ -118,6 +118,7 @@ if rank == 0:
 
     # Set other defaults
     depths = [0.05, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 0.95]
+    phi_deriv = False
     tag = ''
     for i in range(nargs):
         arg = args[i]
@@ -160,6 +161,8 @@ if rank == 0:
                     0.3125, 0.375, 0.4375, 0.475, 0.525, 0.5625, 0.625,\
                     0.6875, 0.75, 0.8125, 0.875, 0.9375, 0.975])
             depths = depths.tolist()
+        elif arg == '-dp': # include terms related to phi-derivatives
+            phi_deriv = True
 
     # Get desired file list from command-line arguments
     args = sys.argv[2:]
@@ -200,7 +203,7 @@ if rank == 0:
 
     # compute some derivative quantities for the grid
     tt_2d, rr2 = np.meshgrid(tt, rr, indexing='ij') 
-    # these will be replaced later
+    # rr_2d will be set (for another purpose) later
     sint_2d = np.sin(tt_2d); cost_2d = np.cos(tt_2d)
     xx = rr2*sint_2d
     zz = rr2*cost_2d
@@ -243,11 +246,12 @@ else: # recieve my_files, my_nfiles, my_ntimes
 
 # Broadcast meta data
 if rank == 0:
-    meta = [dirname, radatadir1, radatadir2, tt, rr, nt, nr, rinds, ndepths]
+    meta = [dirname, radatadir1, radatadir2, tt, rr, nt, nr, rinds,\
+        ndepths, phi_deriv]
 else:
     meta = None
-dirname, radatadir1, radatadir2, tt, rr, nt, nr, rinds, ndepths =\
-    comm.bcast(meta, root=0)
+dirname, radatadir1, radatadir2, tt, rr, nt, nr, rinds, ndepths,\
+    phi_deriv = comm.bcast(meta, root=0)
 
 # Checkpoint and time
 comm.Barrier()
@@ -264,6 +268,8 @@ if rank == 0:
 my_times = np.zeros(my_ntimes)
 my_iters = np.zeros(my_ntimes, dtype='int')
 nq = 33
+if phi_deriv:
+    nq += 3
 my_vals = np.zeros((my_ntimes, nt, ndepths, nq))
 
 my_count = 0
@@ -280,7 +286,6 @@ for i in range(my_nfiles):
     rr_3d = rr.reshape((1, 1, nr))
 
     for j in range(a.niter):
-
         # mean B
         br_m = a.vals[:, rinds, a.lut[801], j].reshape((1, nt, ndepths))
         bt_m = a.vals[:, rinds, a.lut[802], j].reshape((1, nt, ndepths))
@@ -343,6 +348,10 @@ for i in range(my_nfiles):
         dvtdt = drad(vt, tt)/rr_3d
         dvpdr = drad(vp, rr)
         dvpdt = drad(vp, tt)/rr_3d
+        if phi_deriv:
+            dvrdp = mer.vals[:, :, mer.lut[28], j]/rr_2d/sint_2d
+            dvtdp = mer.vals[:, :, mer.lut[29], j]/rr_2d/sint_2d
+            dvpdp = mer.vals[:, :, mer.lut[30], j]/rr_2d/sint_2d
 
         # now get only the radial indices we need
         vr = vr[:, :, rinds]
@@ -384,9 +393,11 @@ for i in range(my_nfiles):
         shear_pp_r_2 = np.mean(bt_p*dvrdt_p, axis=0)
         shear_pp_r_4 = -np.mean(bt_p*vt_p, axis=0)/rr_2d
         shear_pp_r_5 = -np.mean(bp_p*vp_p, axis=0)/rr_2d
-        shear_pp_r_3 = shear_r -\
-            (shear_pp_r_1 + shear_pp_r_2 + shear_pp_r_4 + shear_pp_r_5) -\
-            (shear_mm_r_1 + shear_mm_r_2 + shear_mm_r_3 + shear_mm_r_4)
+        shear_pp_r_3 = shear_pp_r -\
+            (shear_pp_r_1 + shear_pp_r_2 + shear_pp_r_4 + shear_pp_r_5)
+#        shear_pp_r_3 = shear_r -\
+#            (shear_pp_r_1 + shear_pp_r_2 + shear_pp_r_4 + shear_pp_r_5) -\
+#            (shear_mm_r_1 + shear_mm_r_2 + shear_mm_r_3 + shear_mm_r_4)
 
         shear_mm_t_1 = np.mean(br_m*dvtdr_m, axis=0)
         shear_mm_t_2 = np.mean(bt_m*dvtdt_m, axis=0)
@@ -397,9 +408,11 @@ for i in range(my_nfiles):
         shear_pp_t_2 = np.mean(bt_p*dvtdt_p, axis=0)
         shear_pp_t_4 = np.mean(bt_p*vr_p, axis=0)/rr_2d
         shear_pp_t_5 = -np.mean(bp_p*vp_p, axis=0)*cost_2d/rr_2d/sint_2d
-        shear_pp_t_3 = shear_t -\
-            (shear_pp_t_1 + shear_pp_t_2 + shear_pp_t_4 + shear_pp_t_5) -\
-            (shear_mm_t_1 + shear_mm_t_2 + shear_mm_t_3 + shear_mm_t_4)
+        shear_pp_t_3 = shear_pp_t -\
+            (shear_pp_t_1 + shear_pp_t_2 + shear_pp_t_4 + shear_pp_t_5)
+#        shear_pp_t_3 = shear_t -\
+#            (shear_pp_t_1 + shear_pp_t_2 + shear_pp_t_4 + shear_pp_t_5) -\
+#            (shear_mm_t_1 + shear_mm_t_2 + shear_mm_t_3 + shear_mm_t_4)
 
         shear_mm_p_1 = np.mean(br_m*dvpdr_m, axis=0)
         shear_mm_p_2 = np.mean(bt_m*dvpdt_m, axis=0)
@@ -410,9 +423,16 @@ for i in range(my_nfiles):
         shear_pp_p_2 = np.mean(bt_p*dvpdt_p, axis=0)
         shear_pp_p_4 = np.mean(bp_p*vr_p, axis=0)/rr_2d
         shear_pp_p_5 = np.mean(bp_p*vt_p, axis=0)*cost_2d/rr_2d/sint_2d
-        shear_pp_p_3 = shear_p -\
-            (shear_pp_p_1 + shear_pp_p_2 + shear_pp_p_4 + shear_pp_p_5) -\
-            (shear_mm_p_1 + shear_mm_p_2 + shear_mm_p_3 + shear_mm_p_4)
+        shear_pp_p_3 = shear_pp_p -\
+            (shear_pp_p_1 + shear_pp_p_2 + shear_pp_p_4 + shear_pp_p_5)
+#        shear_pp_p_3 = shear_p -\
+#            (shear_pp_p_1 + shear_pp_p_2 + shear_pp_p_4 + shear_pp_p_5) -\
+#            (shear_mm_p_1 + shear_mm_p_2 + shear_mm_p_3 + shear_mm_p_4)
+
+        if phi_deriv:
+            shear_pp_r_6 = np.mean(bp_p*dvrdp, axis=0)
+            shear_pp_t_6 = np.mean(bp_p*dvtdp, axis=0)
+            shear_pp_p_6 = np.mean(bp_p*dvpdp, axis=0)
 
         if my_count < my_ntimes: # make sure we don't go over the allotted
             # space in the arrays
@@ -434,6 +454,9 @@ for i in range(my_nfiles):
             my_vals[my_count, :, :, ind_off + 3] = shear_pp_r_3
             my_vals[my_count, :, :, ind_off + 4] = shear_pp_r_4
             my_vals[my_count, :, :, ind_off + 5] = shear_pp_r_5
+            if phi_deriv:
+                my_vals[my_count, :, :, ind_off + 6] = shear_pp_r_6
+                ind_off += 1
             ind_off += 6
 
             my_vals[my_count, :, :, ind_off + 0] = shear_mm_t
@@ -449,6 +472,11 @@ for i in range(my_nfiles):
             my_vals[my_count, :, :, ind_off + 3] = shear_pp_t_3
             my_vals[my_count, :, :, ind_off + 4] = shear_pp_t_4
             my_vals[my_count, :, :, ind_off + 5] = shear_pp_t_5
+            if phi_deriv:
+                my_vals[my_count, :, :, ind_off + 6] = shear_pp_t_6
+                ind_off += 1
+                print ("std shear_pp_t_3 = %8.3e" %np.std(shear_pp_t_3))
+                print ("std shear_pp_t_6 = %8.3e" %np.std(shear_pp_t_6))
             ind_off += 6
 
             my_vals[my_count, :, :, ind_off + 0] = shear_mm_p
@@ -464,6 +492,8 @@ for i in range(my_nfiles):
             my_vals[my_count, :, :, ind_off + 3] = shear_pp_p_3
             my_vals[my_count, :, :, ind_off + 4] = shear_pp_p_4
             my_vals[my_count, :, :, ind_off + 5] = shear_pp_p_5
+            if phi_deriv:
+                my_vals[my_count, :, :, ind_off + 6] = shear_pp_p_6
         my_count += 1
 
     if rank == 0:

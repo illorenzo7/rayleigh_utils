@@ -48,6 +48,7 @@ navg = 1 # by default average over 1 AZ_Avgs instance (no average)
 tag = '' # optional way to tag save directory
 lats = [0.]
 plottimes = None
+phi_deriv = False
 
 # Get command-line arguments
 args = sys.argv[2:]
@@ -99,6 +100,8 @@ for i in range(nargs):
         plottimes = []
         for string in strings:
             plottimes.append(float(string))
+    elif arg == '-dp':
+        phi_deriv = True
 
 # Get plot directory and create if not already there
 plotdir = dirname + '/plots/time-lat' + tag + '_ishear_theta_fluc/'
@@ -161,10 +164,14 @@ if len(irvals) == 1:
     showplot = True
 
 # shear terms: total, B_r*dv/dr, B_t*dv/dt, B_p*dv/dp, 2 curvature terms
-ind_off = 5 + 6 + 5
+npp = 6
+if phi_deriv:
+    npp += 1
+ind_off = 5 + npp + 5
 terms = []
 for i in range(6):
     terms.append(vals[:, :, :, ind_off + i])
+terms.insert(4, vals[:, :, :, ind_off + 6])
 
 # field units and labels
 units = r'$\rm{G\ s^{-1}}$'
@@ -174,6 +181,8 @@ r'$\frac{1}{r}\left\langle B_\theta^\prime\frac{\partial v_\theta^\prime}{\parti
 r'$\frac{1}{r\sin\theta}\left\langle B_\phi^\prime\frac{\partial v_\theta^\prime}{\partial\phi}\right\rangle$',\
 r'$\frac{1}{r}\langle B_\phi^\prime v_r^\prime\rangle$',\
 r'$\frac{\cot\theta}{r}\langle B_\phi^\prime v_r^\prime\rangle}$']
+if phi_deriv:
+    labels.insert(4, r'$\frac{1}{r\sin\theta}\left\langle B_\phi^\prime\frac{\partial v_\theta^\prime}{\partial\phi}\right\rangle$' + ' exact')
 
 # Normalize the time 
 times /= time_unit
