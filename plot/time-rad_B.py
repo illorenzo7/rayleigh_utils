@@ -29,8 +29,9 @@ minmax = None
 xminmax = None
 xmin = None
 xmax = None
-saveplot = True
-showplot = True # will only show if plotting one figure
+saveplot = None # turned off by default if saving one figure, can change
+# with -save option
+showplot = False # only show if plotting one figure
 
 labelbytime = False # by default label by first/last iteration number
 # not first/last time
@@ -42,6 +43,7 @@ rbcz = None
 navg = 1 # by default don't average in time
 tag = '' # optional way to tag save directory
 rvals = []
+plottimes = None
 
 # Get command-line arguments
 args = sys.argv[2:]
@@ -77,10 +79,8 @@ for i in range(nargs):
             print ("Please don't enter even values for navg!")
             print ("Replacing navg = %i with navg = %i" %(navg, navg + 1))
             navg += 1
-    elif arg == '-nosave':
-        saveplot = False
-    elif arg == '-noshow':
-        showplot = False
+    elif arg == '-save':
+        saveplot = True
     elif arg == '-tlabel':
         labelbytime = True
     elif arg == '-rbcz':
@@ -92,6 +92,11 @@ for i in range(nargs):
         rvals = []
         for rval_str in rvals_str:
             rvals.append(float(rval_str)/rsun)
+    elif arg == '-times':
+        strings = args[i+1].split()
+        plottimes = []
+        for string in strings:
+            plottimes.append(float(string))
 
 # Get plot directory and create if not already there
 plotdir = dirname + '/plots/time-rad' + tag + '_B/'
@@ -146,6 +151,14 @@ else:
         i_desiredlat = np.argmin(np.abs(lats_sampled - desired_lat))
         i_desiredlats.append(i_desiredlat)
         lats_to_plot.append(lats_sampled[i_desiredlat])
+
+if saveplot is None:
+    if len(i_desiredlats) == 1:
+        saveplot = False
+    else:
+        saveplot = True
+if len(i_desiredlats) == 1:
+    showplot = True
 
 # Get raw traces of br, btheta, bphi
 br = vals[:, :, :, br_index]
@@ -260,11 +273,14 @@ for i in range(len(lats_to_plot)):
             subplot_width, subplot_height))
 
     plot_tl(br_loc, times, rr, fig=fig, ax=ax1, navg=navg, yvals=rvals,\
-            minmax=minmax_br, units=units, xminmax=xminmax, rbcz=rbcz)
+            minmax=minmax_br, units=units, xminmax=xminmax, rbcz=rbcz,\
+            plottimes=plottimes)
     plot_tl(bt_loc, times, rr, fig=fig, ax=ax2, navg=navg, yvals=rvals,\
-            minmax=minmax_bt, units=units, xminmax=xminmax, rbcz=rbcz)
+            minmax=minmax_bt, units=units, xminmax=xminmax, rbcz=rbcz,\
+            plottimes=plottimes)
     plot_tl(bp_loc, times, rr, fig=fig, ax=ax3, navg=navg, yvals=rvals,\
-            minmax=minmax_bp, units=units, xminmax=xminmax, rbcz=rbcz)
+            minmax=minmax_bp, units=units, xminmax=xminmax, rbcz=rbcz,\
+            plottimes=plottimes)
 
     # Label with the field components
     for irow in range(nrow):
