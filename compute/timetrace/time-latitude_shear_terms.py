@@ -67,6 +67,13 @@ def dth(arr, theta):
     deriv[:, nt-1, :] = deriv[:, nt-2, :]
     return deriv
 
+def dph(arr):
+    nphi, nt, nr = np.shape(arr)
+    dphi = 2.*np.pi/nphi
+    arr2 = np.roll(arr, -1, axis=0)
+    arr1 = np.roll(arr, 1, axis=0)
+    deriv = (arr2 - arr1)/2./dphi
+    return deriv
 
 # modules needed by everyone
 import numpy as np
@@ -201,17 +208,18 @@ if rank == 0:
     ndepths = len(depths)
     nt = a0.ntheta
 
-    # compute some derivative quantities for the grid
-    tt_2d, rr2 = np.meshgrid(tt, rr, indexing='ij') 
-    # rr_2d will be set (for another purpose) later
-    sint_2d = np.sin(tt_2d); cost_2d = np.cos(tt_2d)
-    xx = rr2*sint_2d
-    zz = rr2*cost_2d
-
     # get r-indices associated with depths
     rinds = []
     for depth in depths:
         rinds.append(np.argmin(np.abs(rr_depth - depth)))
+
+    # compute some derivative quantities for the grid
+    cost_2d = cost.reshape((nt, 1))
+    sint_2d = sint.reshape((nt, 1))
+    rr_2d = rr.reshape((1, nr))
+    rvals_2d = rr_2d[:, rinds]
+    xx = rr_2d*sint_2d
+    zz = rr_2d*cost_2d
 
     # Will need nrec (last niter) to get proper time axis size
     af = reading_func1(radatadir1 + file_list[-1], '')
@@ -246,12 +254,12 @@ else: # recieve my_files, my_nfiles, my_ntimes
 
 # Broadcast meta data
 if rank == 0:
-    meta = [dirname, radatadir1, radatadir2, tt, rr, nt, nr, rinds,\
-        ndepths, phi_deriv]
+    meta = [dirname, radatadir1, radatadir2, tt, rr, nt, nr, rvals_2d,\
+        cost_2d, sint_2d, rinds, ndepths, phi_deriv]
 else:
     meta = None
-dirname, radatadir1, radatadir2, tt, rr, nt, nr, rinds, ndepths,\
-    phi_deriv = comm.bcast(meta, root=0)
+dirname, radatadir1, radatadir2, tt, rr, nt, nr, rvals_2d,\
+    cost_2d, sint_2d, rinds, ndepths, phi_deriv = comm.bcast(meta, root=0)
 
 # Checkpoint and time
 comm.Barrier()
@@ -272,18 +280,15 @@ if phi_deriv:
     nq += 3
 my_vals = np.zeros((my_ntimes, nt, ndepths, nq))
 
+# need some further grid quantities (that won't be saved in the final dict)
+rr_3d = rr.reshape((1, 1, nr))
+sint = np.sin(tt)
+sint_3d = sint.reshape((1, nt, 1))
+
 my_count = 0
 for i in range(my_nfiles):
     a = reading_func1(radatadir1 + str(my_files[i]).zfill(8), '')
     mer = reading_func2(radatadir2 + str(my_files[i]).zfill(8), '')
-
-    # need some grid quantities
-    cost = np.cos(tt)
-    sint = np.sin(tt)
-    cost_2d = cost.reshape((nt, 1))
-    sint_2d = sint.reshape((nt, 1))
-    rr_2d = rr[rinds].reshape((1, ndepths))
-    rr_3d = rr.reshape((1, 1, nr))
 
     for j in range(a.niter):
         # mean B
@@ -298,11 +303,11 @@ for i in range(my_nfiles):
 
         # mean v derivs
         dvrdr_m = drad(vr_m, rr)
-        dvrdt_m = drad(vr_m, tt)/rr_3d
+        dvrdt_m = dth(vr_m, tt)/rr_3d
         dvtdr_m = drad(vt_m, rr)
-        dvtdt_m = drad(vt_m, tt)/rr_3d
+        dvtdt_m = dth(vt_m, tt)/rr_3d
         dvpdr_m = drad(vp_m, rr)
-        dvpdt_m = drad(vp_m, tt)/rr_3d
+        dvpdt_m = dth(vp_m, tt)/rr_3d
 
         # now get only the radial indices we need
         vr_m = vr_m[:, :, rinds]
@@ -343,15 +348,15 @@ for i in range(my_nfiles):
 
         # full v derivs
         dvrdr = drad(vr, rr)
-        dvrdt = drad(vr, tt)/rr_3d
+        dvrdt = dth(vr, tt)/rr_3d
         dvtdr = drad(vt, rr)
-        dvtdt = drad(vt, tt)/rr_3d
+        dvtdt = dth(vt, tt)/rr_3d
         dvpdr = drad(vp, rr)
-        dvpdt = drad(vp, tt)/rr_3d
+        dvpdt = dth(vp, tt)/rr_3d
         if phi_deriv:
-            dvrdp = mer.vals[:, :, mer.lut[28], j]/rr_2d/sint_2d
-            dvtdp = mer.vals[:, :, mer.lut[29], j]/rr_2d/sint_2d
-            dvpdp = mer.vals[:, :, mer.lut[30], j]/rr_2d/sint_2d
+            dvrdp = mer.vals[:, :, :, mer.lut[28], j]/rr_3d/sint_3d
+            dvtdp = mer.vals[:, :, :, mer.lut[29], j]/rr_3d/sint_3d
+            dvpdp = mer.vals[:, :, :, mer.lut[30], j]/rr_3d/sint_3d
 
         # now get only the radial indices we need
         vr = vr[:, :, rinds]
@@ -364,6 +369,10 @@ for i in range(my_nfiles):
         dvtdt = dvtdt[:, :, rinds]
         dvpdr = dvpdr[:, :, rinds]
         dvpdt = dvpdt[:, :, rinds]
+        if phi_deriv:
+            dvrdp = dvrdp[:, :, rinds]
+            dvtdp = dvtdp[:, :, rinds]
+            dvpdp = dvpdp[:, :, rinds]
 
         # fluc B
         br_p = br - br_m
@@ -386,13 +395,13 @@ for i in range(my_nfiles):
         # compute 33 terms!
         shear_mm_r_1 = np.mean(br_m*dvrdr_m, axis=0)
         shear_mm_r_2 = np.mean(bt_m*dvrdt_m, axis=0)
-        shear_mm_r_3 = -np.mean(bt_m*vt_m, axis=0)/rr_2d
-        shear_mm_r_4 = -np.mean(bp_m*vp_m, axis=0)/rr_2d
+        shear_mm_r_3 = -np.mean(bt_m*vt_m, axis=0)/rvals_2d
+        shear_mm_r_4 = -np.mean(bp_m*vp_m, axis=0)/rvals_2d
 
         shear_pp_r_1 = np.mean(br_p*dvrdr_p, axis=0)
         shear_pp_r_2 = np.mean(bt_p*dvrdt_p, axis=0)
-        shear_pp_r_4 = -np.mean(bt_p*vt_p, axis=0)/rr_2d
-        shear_pp_r_5 = -np.mean(bp_p*vp_p, axis=0)/rr_2d
+        shear_pp_r_4 = -np.mean(bt_p*vt_p, axis=0)/rvals_2d
+        shear_pp_r_5 = -np.mean(bp_p*vp_p, axis=0)/rvals_2d
         shear_pp_r_3 = shear_pp_r -\
             (shear_pp_r_1 + shear_pp_r_2 + shear_pp_r_4 + shear_pp_r_5)
 #        shear_pp_r_3 = shear_r -\
@@ -401,13 +410,13 @@ for i in range(my_nfiles):
 
         shear_mm_t_1 = np.mean(br_m*dvtdr_m, axis=0)
         shear_mm_t_2 = np.mean(bt_m*dvtdt_m, axis=0)
-        shear_mm_t_3 = np.mean(bt_m*vr_m, axis=0)/rr_2d
-        shear_mm_t_4 = -np.mean(bp_m*vp_m, axis=0)*cost_2d/rr_2d/sint_2d
+        shear_mm_t_3 = np.mean(bt_m*vr_m, axis=0)/rvals_2d
+        shear_mm_t_4 = -np.mean(bp_m*vp_m, axis=0)*cost_2d/rvals_2d/sint_2d
 
         shear_pp_t_1 = np.mean(br_p*dvtdr_p, axis=0)
         shear_pp_t_2 = np.mean(bt_p*dvtdt_p, axis=0)
-        shear_pp_t_4 = np.mean(bt_p*vr_p, axis=0)/rr_2d
-        shear_pp_t_5 = -np.mean(bp_p*vp_p, axis=0)*cost_2d/rr_2d/sint_2d
+        shear_pp_t_4 = np.mean(bt_p*vr_p, axis=0)/rvals_2d
+        shear_pp_t_5 = -np.mean(bp_p*vp_p, axis=0)*cost_2d/rvals_2d/sint_2d
         shear_pp_t_3 = shear_pp_t -\
             (shear_pp_t_1 + shear_pp_t_2 + shear_pp_t_4 + shear_pp_t_5)
 #        shear_pp_t_3 = shear_t -\
@@ -416,13 +425,13 @@ for i in range(my_nfiles):
 
         shear_mm_p_1 = np.mean(br_m*dvpdr_m, axis=0)
         shear_mm_p_2 = np.mean(bt_m*dvpdt_m, axis=0)
-        shear_mm_p_3 = np.mean(bp_m*vr_m, axis=0)/rr_2d
-        shear_mm_p_4 = np.mean(bp_m*vt_m, axis=0)*cost_2d/rr_2d/sint_2d
+        shear_mm_p_3 = np.mean(bp_m*vr_m, axis=0)/rvals_2d
+        shear_mm_p_4 = np.mean(bp_m*vt_m, axis=0)*cost_2d/rvals_2d/sint_2d
 
         shear_pp_p_1 = np.mean(br_p*dvpdr_p, axis=0)
         shear_pp_p_2 = np.mean(bt_p*dvpdt_p, axis=0)
-        shear_pp_p_4 = np.mean(bp_p*vr_p, axis=0)/rr_2d
-        shear_pp_p_5 = np.mean(bp_p*vt_p, axis=0)*cost_2d/rr_2d/sint_2d
+        shear_pp_p_4 = np.mean(bp_p*vr_p, axis=0)/rvals_2d
+        shear_pp_p_5 = np.mean(bp_p*vt_p, axis=0)*cost_2d/rvals_2d/sint_2d
         shear_pp_p_3 = shear_pp_p -\
             (shear_pp_p_1 + shear_pp_p_2 + shear_pp_p_4 + shear_pp_p_5)
 #        shear_pp_p_3 = shear_p -\
@@ -475,8 +484,6 @@ for i in range(my_nfiles):
             if phi_deriv:
                 my_vals[my_count, :, :, ind_off + 6] = shear_pp_t_6
                 ind_off += 1
-                print ("std shear_pp_t_3 = %8.3e" %np.std(shear_pp_t_3))
-                print ("std shear_pp_t_6 = %8.3e" %np.std(shear_pp_t_6))
             ind_off += 6
 
             my_vals[my_count, :, :, ind_off + 0] = shear_mm_p
@@ -558,7 +565,7 @@ if rank == 0:
     'rr_depth': rr_depth, 'rr_height': rr_height, 'nr': nr, 'ri': ri,\
     'ro': ro, 'd': d, 'tt': tt, 'tt_lat': tt_lat,\
     'sint': sint, 'cost': cost, 'ntheta': nt,\
-    'rr_2d': rr2, 'tt_2d': tt_2d, 'sint_2d': sint_2d,\
+    'rr_2d': rr_2d, 'sint_2d': sint_2d,\
     'cost_2d': cost_2d, 'xx': xx, 'zz': zz}, f, protocol=4)
     f.close()
     t2 = time.time()

@@ -171,7 +171,8 @@ ind_off = 5 + npp + 5
 terms = []
 for i in range(6):
     terms.append(vals[:, :, :, ind_off + i])
-terms.insert(4, vals[:, :, :, ind_off + 6])
+if phi_deriv:
+    terms.insert(4, vals[:, :, :, ind_off + 6])
 
 # field units and labels
 units = r'$\rm{G\ s^{-1}}$'
@@ -179,8 +180,8 @@ labels = [r'$[\left\langle \mathbf{B}^\prime\cdot\nabla\mathbf{v}^\prime\right\r
 r'$\left\langle B_r^\prime\frac{\partial v_\theta^\prime}{\partial r}\right\rangle$',\
 r'$\frac{1}{r}\left\langle B_\theta^\prime\frac{\partial v_\theta^\prime}{\partial\theta}\right\rangle$',\
 r'$\frac{1}{r\sin\theta}\left\langle B_\phi^\prime\frac{\partial v_\theta^\prime}{\partial\phi}\right\rangle$',\
-r'$\frac{1}{r}\langle B_\phi^\prime v_r^\prime\rangle$',\
-r'$\frac{\cot\theta}{r}\langle B_\phi^\prime v_r^\prime\rangle}$']
+r'$\frac{1}{r}\langle B_\theta^\prime v_r^\prime\rangle$',\
+r'$\frac{\cot\theta}{r}\langle B_\phi^\prime v_\phi^\prime\rangle}$']
 if phi_deriv:
     labels.insert(4, r'$\frac{1}{r\sin\theta}\left\langle B_\phi^\prime\frac{\partial v_\theta^\prime}{\partial\phi}\right\rangle$' + ' exact')
 
