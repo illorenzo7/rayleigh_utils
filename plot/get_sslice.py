@@ -582,6 +582,13 @@ def get_sslice(a, varname, dirname=None, old=False, j=0):
         t_prime_slice = ref_T*(p_prime_slice/ref_P*(1. - 1./thermo_gamma)\
                 + s_prime_slice/c_P)          
         sslice = vt_prime_slice*t_prime_slice          
+    elif varname == 'dvtdr':
+        ind = a.lut[var_indices[varname]]
+        sslice = prime(vals[:, :, :, ind])
+    elif varname == 'brdvtdr':
+        slice_br = vals[:, :, :, a.lut[var_indices['br']]]
+        slice_dv = vals[:, :, :, a.lut[var_indices['dvtdr']]]
+        sslice = prime(slice_br)*prime(slice_dv)
     else:
         print("get_sslice(): unknown variable name %s" %varname)
         print("exiting")

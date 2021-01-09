@@ -94,7 +94,10 @@ texlabels = {\
     'btbp'      :       r'$(1/4\pi)B_\theta^\prime B_\phi^\prime$',
     'blbp'      :       r'$(1/4\pi)B_\lambda^\prime B_\phi^\prime$',
     'bpbz'      :       r'$(1/4\pi)B_\phi^\prime B_z^\prime$',
-    'blbz'      :       r'$(1/4\pi)B_\lambda^\prime B_z^\prime$' }
+    'blbz'      :       r'$(1/4\pi)B_\lambda^\prime B_z^\prime$',
+    'dvtdr'     :       r'$\partial v_\theta^\prime/\partial r$',
+    'brdvtdr'   :       r'$B_r^\prime \partial v_\theta^\prime/\partial r$'
+    }
 
 texunits = {\
     'vr'        :       r'$\rm{m}\ \rm{s}^{-1}$',
@@ -186,7 +189,9 @@ texunits = {\
     
     'blbp'      :       r'$\rm{dyn}\ \rm{cm}^{-2}$', 
     'bpbz'      :       r'$\rm{dyn}\ \rm{cm}^{-2}$', 
-    'blbz'      :       r'$\rm{dyn}\ \rm{cm}^{-2}$' }
+    'blbz'      :       r'$\rm{dyn}\ \rm{cm}^{-2}$',
+    'brdvtdr'   :       r'$\rm{G\ cm^{-1}}$',
+    'dvtdr'     :       r'$\rm{cm^{-1}}$' }
 
 var_indices = {\
     'vr'    :       1, 
@@ -199,7 +204,8 @@ var_indices = {\
     'p'     :       502,
     'br'    :       801,
     'bt'    :       802,
-    'bp'    :       803}
+    'bp'    :       803,
+    'dvtdr' :       11}
 
 var_indices_old = {\
     'vr'    :       1, 
