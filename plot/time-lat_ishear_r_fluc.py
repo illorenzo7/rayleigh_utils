@@ -104,9 +104,9 @@ for i in range(nargs):
         phi_deriv = True
 
 # Get plot directory and create if not already there
-plotdir = dirname + '/plots/time-lat' + tag + '_ishear_phi_mean/'
+plotdir = dirname + '/plots/time-lat' + tag + '_ishear_r_fluc/'
 if labelbytime:
-    plotdir = dirname + '/plots/time-lat' + tag + '_ishear_phi_mean_tlabel/'
+    plotdir = dirname + '/plots/time-lat' + tag + '_ishear_r_fluc_tlabel/'
 if not os.path.isdir(plotdir):
     os.makedirs(plotdir)
 
@@ -164,10 +164,7 @@ if len(irvals) == 1:
     showplot = True
 
 # shear terms: total, B_r*dv/dr, B_t*dv/dt, B_p*dv/dp, 2 curvature terms
-npp = 6
-if phi_deriv:
-    npp += 1
-ind_off = 2*(5 + npp)
+ind_off =  5
 terms = []
 for i in range(6):
     terms.append(vals[:, :, :, ind_off + i])
@@ -176,14 +173,14 @@ if phi_deriv:
 
 # field units and labels
 units = r'$\rm{G\ s^{-1}}$'
-labels = [r'$[\left\langle \mathbf{B}\right\rangle\cdot\nabla\left\langle\mathbf{v}\right\rangle]_\phi$',\
-r'$\left\langle B_r\right\rangle\left\langle\frac{\partial v_\phi}{\partial r}\right\rangle$',\
-r'$\frac{1}{r}\left\langle B_\theta\right\rangle\left\langle\frac{\partial v_\phi}{\partial\theta}\right\rangle$',\
-r'$\frac{1}{r\sin\theta}\left\langle B_\phi\right\rangle\left\langle\frac{\partial v_\phi}{\partial\phi}\right\rangle$',\
-r'$\frac{1}{r}\langle B_\phi\rangle \langle v_r\rangle$',\
-r'$\frac{\cot\theta}{r}\langle B_\phi\rangle \langle v_\theta\rangle}$']
+labels = [r'$[\left\langle \mathbf{B}^\prime\cdot\nabla\mathbf{v}^\prime\right\rangle]_r$',\
+r'$\left\langle B_r^\prime\frac{\partial v_r^\prime}{\partial r}\right\rangle$',\
+r'$\frac{1}{r}\left\langle B_\theta^\prime\frac{\partial v_r^\prime}{\partial\theta}\right\rangle$',\
+r'$\frac{1}{r\sin\theta}\left\langle B_\phi^\prime\frac{\partial v_r^\prime}{\partial\phi}\right\rangle$',\
+r'$-\frac{1}{r}\langle B_\theta^\prime v_\theta^\prime\rangle$',\
+r'$-\frac{1}{r}\langle B_\phi^\prime v_\phi^\prime\rangle$']
 if phi_deriv:
-    labels.insert(4, r'$\frac{1}{r\sin\theta}\left\langle B_\phi\right\rangle\left\langle\frac{\partial v_\phi}{\partial\phi}\right\rangle$' + ' exact')
+    labels.insert(4, r'$\frac{1}{r\sin\theta}\left\langle B_\phi^\prime\frac{\partial v_r^\prime}{\partial\phi}\right\rangle$' + ' exact')
 
 # Normalize the time 
 times /= time_unit
@@ -239,11 +236,11 @@ for i in range(len(irvals)):
    
     # Make appropriate file name to save
     if labelbytime:
-        savename = dirname_stripped + '_time-lat_ishear_phi_mean_' +\
+        savename = dirname_stripped + '_time-lat_ishear_r_fluc_' +\
                 ('Prot%05.0f-to-%05.0f_' %(t1, t2)) +\
             ('rval%0.3f' %rval) + '.png'
     else:
-        savename = dirname_stripped + '_time-lat_ishear_phi_mean_' +\
+        savename = dirname_stripped + '_time-lat_ishear_r_fluc_' +\
                 ('%08i_%08i_' %(iter1, iter2)) +\
             ('rval%0.3f' %rval) + '.png'
 
