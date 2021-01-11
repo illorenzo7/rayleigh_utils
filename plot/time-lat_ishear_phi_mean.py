@@ -167,7 +167,7 @@ if len(irvals) == 1:
 npp = 6
 if phi_deriv:
     npp += 1
-ind_off = 5 + npp + 5
+ind_off = 2*(5 + npp)
 terms = []
 for i in range(6):
     terms.append(vals[:, :, :, ind_off + i])
@@ -176,14 +176,14 @@ if phi_deriv:
 
 # field units and labels
 units = r'$\rm{G\ s^{-1}}$'
-labels = [r'$[\left\langle \mathbf{B}^\prime\cdot\nabla\mathbf{v}^\prime\right\rangle]_\theta$',\
-r'$\left\langle B_r^\prime\frac{\partial v_\theta^\prime}{\partial r}\right\rangle$',\
-r'$\frac{1}{r}\left\langle B_\theta^\prime\frac{\partial v_\theta^\prime}{\partial\theta}\right\rangle$',\
-r'$\frac{1}{r\sin\theta}\left\langle B_\phi^\prime\frac{\partial v_\theta^\prime}{\partial\phi}\right\rangle$',\
-r'$\frac{1}{r}\langle B_\theta^\prime v_r^\prime\rangle$',\
-r'$-\frac{\cot\theta}{r}\langle B_\phi^\prime v_\phi^\prime\rangle}$']
+labels = [r'$[\left\langle \mathbf{B}\right\rangle\cdot\nabla\left\langle\mathbf{v}\right\rangle]_\phi$',\
+r'$\left\langle B_r\right\rangle\left\langle\frac{\partial v_\phi}{\partial r}\right\rangle$',\
+r'$\frac{1}{r}\left\langle B_\theta\right\rangle\left\langle\frac{\partial v_\phi}{\partial\theta}\right\rangle$',\
+r'$\frac{1}{r\sin\theta}\left\langle B_\phi\right\rangle\left\langle\frac{\partial v_\phi}{\partial\phi}\right\rangle$',\
+r'$\frac{1}{r}\langle B_\phi\rangle \langle v_r\rangle$',\
+r'$\frac{\cot\theta}{r}\langle B_\phi\rangle \langle v_\theta\rangle}$']
 if phi_deriv:
-    labels.insert(4, r'$\frac{1}{r\sin\theta}\left\langle B_\phi^\prime\frac{\partial v_\theta^\prime}{\partial\phi}\right\rangle$' + ' exact')
+    labels.insert(4, r'$\frac{1}{r\sin\theta}\left\langle B_\phi\right\rangle\left\langle\frac{\partial v_\phi}{\partial\phi}\right\rangle$' + ' exact')
 
 # Normalize the time 
 times /= time_unit
@@ -239,11 +239,11 @@ for i in range(len(irvals)):
    
     # Make appropriate file name to save
     if labelbytime:
-        savename = dirname_stripped + '_time-lat_ishear_theta_fluc_' +\
+        savename = dirname_stripped + '_time-lat_ishear_phi_mean_' +\
                 ('Prot%05.0f-to-%05.0f_' %(t1, t2)) +\
             ('rval%0.3f' %rval) + '.png'
     else:
-        savename = dirname_stripped + '_time-lat_ishear_theta_fluc_' +\
+        savename = dirname_stripped + '_time-lat_ishear_phi_mean_' +\
                 ('%08i_%08i_' %(iter1, iter2)) +\
             ('rval%0.3f' %rval) + '.png'
 
