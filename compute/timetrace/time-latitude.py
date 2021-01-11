@@ -149,7 +149,7 @@ if rank == 0:
                     0.3125, 0.375, 0.4375, 0.475, 0.525, 0.5625, 0.625,\
                     0.6875, 0.75, 0.8125, 0.875, 0.9375, 0.975])
             depths = depths.tolist()
-        elif arg == '-torques':
+        elif arg == '-torque':
             print("tracing over TORQUES")
             qvals = [3, 1801, 1802, 1803, 1804, 1819]
             if magnetism:
@@ -157,7 +157,7 @@ if rank == 0:
                 qvals.append(1806)
             # only change tag if it wasn't specified already:
             if tag == '':
-                tag = 'torques' + '_'
+                tag = 'torque' + '_'
         elif arg == '-induction':
             print("tracing over INDUCTION QUANTITIES")
             qvals = [1604,1605, 1609,1610, 1614,1615,\
