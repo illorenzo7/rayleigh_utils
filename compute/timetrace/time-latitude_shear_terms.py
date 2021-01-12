@@ -106,28 +106,22 @@ if rank == 0:
     # Get the name of the run directory
     dirname = sys.argv[1]
 
-    # Get the Rayleigh data directory
-    radatadir1 = dirname + '/' + dataname1 + '/'
-    radatadir2 = dirname + '/' + dataname2 + '/'
-
-    # Get all the file names in datadir and their integer counterparts
-    file_list, int_file_list, nfiles = get_file_lists(radatadir2)
-
     # Read in CLAs
     args = sys.argv[2:]
     nargs = len(args)
-
-    the_tuple = get_desired_range(int_file_list, args)
-    if the_tuple is None:
-        index_first, index_last = nfiles - 101, nfiles - 1  
-        # By default trace over the last 100 files
-    else:
-        index_first, index_last = the_tuple
 
     # Set other defaults
     depths = [0.05, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 0.95]
     phi_deriv = False
     tag = ''
+
+    # get some grid info
+    ncheby, domain_bounds = get_domain_bounds(dirname)
+    ri = np.min(domain_bounds)
+    ro = np.max(domain_bounds)
+    d = ro - ri
+
+    # get some grid info
     for i in range(nargs):
         arg = args[i]
         if arg == '-depths':
@@ -135,8 +129,24 @@ if rank == 0:
             depths_str = args[i+1].split()
             for depth_str in depths_str:
                 depths.append(float(depth_str))
-        elif arg == '-tag':
-            tag = args[i+1] + '_'
+        elif arg == '-rvals':
+            depths = []
+            strings = args[i+1].split()
+            for st in strings:
+                rvalcm = float(st)*rsun
+                depths.append((ro - rvalcm)/d)
+        elif arg == '-rvalscm':
+            depths = []
+            strings = args[i+1].split()
+            for st in strings:
+                rvalcm = float(st)
+                depths.append((ro - rvalcm)/d)
+        elif arg == '-rrange':
+            r1 = float(args[i+1])
+            r2 = float(args[i+2])
+            n = int(args[i+3])
+            rvalscm = np.linspace(r1, r2, n)*rsun
+            depths = (ro - rvalscm)/d
         elif arg == '-rzquarter': # 9 depths in RZ and CZ, with RZ depth
             # 0.25 of CZ depth
             print("Taking 9 depths in CZ and RZ each")
@@ -160,7 +170,6 @@ if rank == 0:
                     0.40714286, 0.45714286, 0.5, 0.57142857, 0.64285714,\
                     0.71428571, 0.78571429, 0.85714286, 0.92857143,\
                     0.97142857])
-            depths = depths.tolist()
         elif arg == '-rz1': # 9 depths in RZ and CZ, with RZ depth
             # equal to CZ depth
             print("Taking 9 depths in CZ and RZ each")
@@ -168,26 +177,22 @@ if rank == 0:
             depths = 1.0 - np.array([0.025, 0.0625, 0.125, 0.1875, 0.25,\
                     0.3125, 0.375, 0.4375, 0.475, 0.525, 0.5625, 0.625,\
                     0.6875, 0.75, 0.8125, 0.875, 0.9375, 0.975])
-            depths = depths.tolist()
         elif arg == '-dp': # include terms related to phi-derivatives
             phi_deriv = True
-        elif arg == '-rrange':
-            r1 = float(args[i+1])
-            r2 = float(args[i+2])
-            n = int(args[i+3])
-            rvals = np.linspace(r1, r2, n)*rsun
-            ncheby, domain_bounds = get_domain_bounds(dirname)
-            ri = np.min(domain_bounds)
-            ro = np.max(domain_bounds)
-            d = ro - ri
-            depths = (ro - rvals)/d
-            depths = depths.tolist()
-            print ("rvals = ", rvals)
-            print ("depths = ", depths)
+        elif arg == '-tag':
+            tag = args[i+1] + '_'
 
-    # Get desired file list from command-line arguments
-    args = sys.argv[2:]
-    nargs = len(args)
+    # convert things to arrays
+    depths = np.array(depths)
+
+    # Get the Rayleigh data directory
+    radatadir1 = dirname + '/' + dataname1 + '/'
+    radatadir2 = dirname + '/' + dataname2 + '/'
+
+    # Get all the file names in datadir and their integer counterparts
+    file_list, int_file_list, nfiles = get_file_lists(radatadir2)
+
+    # get desired analysis range
     the_tuple = get_desired_range(int_file_list, args)
     if the_tuple is None:
         index_first, index_last = nfiles - 101, nfiles - 1  
@@ -226,6 +231,7 @@ if rank == 0:
     rinds = []
     for depth in depths:
         rinds.append(np.argmin(np.abs(rr_depth - depth)))
+    rinds = np.array(rinds)
 
     # compute some derivative quantities for the grid
     cost_2d = cost.reshape((nt, 1))
@@ -234,6 +240,16 @@ if rank == 0:
     rvals_2d = rr_2d[:, rinds]
     xx = rr_2d*sint_2d
     zz = rr_2d*cost_2d
+
+    # recompute the actual depths we get
+    depths = rr_depth[rinds]
+    rvalscm = ro - d*depths
+    rvals = rvalscm/rsun
+    print ("taking radii at ")
+    print ("rinds = ", rinds)
+    print ("rvals = ", rvals)
+    print ("rvalscm = ", rvalscm)
+    print ("depths = ", depths)
 
     # Will need nrec (last niter) to get proper time axis size
     af = reading_func1(radatadir1 + file_list[-1], '')
@@ -574,6 +590,7 @@ if rank == 0:
     # will also need first and last iteration files
     iter1, iter2 = int_file_list[0], int_file_list[-1]
     pickle.dump({'vals': vals, 'times': times, 'iters': iters,\
+    'rvals': rvals, 'rvalscm': rvalscm,\
     'depths': depths,'rinds': rinds, 'niter': len(iters),\
     'ndepths': ndepths, 'nq': nq, 'iter1': iter1, 'iter2': iter2, 'rr': rr,\
     'rr_depth': rr_depth, 'rr_height': rr_height, 'nr': nr, 'ri': ri,\
