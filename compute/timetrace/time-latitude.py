@@ -19,6 +19,7 @@
 # (assuming rm = 5.0 x 10^10 cm, ro = 6.5860209 x 10^10 cm)
 # also can be changed with -rvals '.719 .863' [radii units of rsun]
 # or -rvalscm '5e10 5.8e10' [radii units of cm]
+#
 # By default, the routine traces over the last 100 files of datadir, though
 # the user can specify a different range in sevaral ways:
 # -n 10 (last 10 files)
@@ -83,22 +84,9 @@ if rank == 0:
     # Get the name of the run directory
     dirname = sys.argv[1]
 
-    # Get the Rayleigh data directory
-    radatadir = dirname + '/' + dataname + '/'
-
-    # Get all the file names in datadir and their integer counterparts
-    file_list, int_file_list, nfiles = get_file_lists(radatadir)
-
     # Read in CLAs
     args = sys.argv[2:]
     nargs = len(args)
-
-    the_tuple = get_desired_range(int_file_list, args)
-    if the_tuple is None:
-        index_first, index_last = nfiles - 101, nfiles - 1  
-        # By default trace over the last 100 files
-    else:
-        index_first, index_last = the_tuple
 
     # Set other defaults
     qvals = [1, 2, 3, 301, 302]
@@ -203,12 +191,19 @@ if rank == 0:
     depths = np.array(depths)
     qvals = np.array(qvals)
 
-    # Get desired file list from command-line arguments
-    if nargs == 0:
+    # Get the Rayleigh data directory
+    radatadir = dirname + '/' + dataname + '/'
+
+    # Get all the file names in datadir and their integer counterparts
+    file_list, int_file_list, nfiles = get_file_lists(radatadir)
+
+    # get desired analysis range
+    the_tuple = get_desired_range(int_file_list, args)
+    if the_tuple is None:
         index_first, index_last = nfiles - 101, nfiles - 1  
         # By default trace over the last 100 files
     else:
-        index_first, index_last = get_desired_range(int_file_list, args)
+        index_first, index_last = the_tuple
 
     # Remove parts of file lists we don't need
     file_list = file_list[index_first:index_last + 1]
