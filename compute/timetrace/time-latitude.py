@@ -16,6 +16,9 @@
 # This may be changed via the '-depths' CLA, e.g., -depths '0 0.4 0.75 0.95'
 # or -rzquarter, -rzhalf, -rz75, -rz1 (depth RZ = 1/4 depth CZ, 1/2, 3/4, 1)
 # will generate 9 depths in each zone
+# (assuming rm = 5.0 x 10^10 cm, ro = 6.5860209 x 10^10 cm)
+# also can be changed with -rvals '.719 .863' [radii units of rsun]
+# or -rvalscm '5e10 5.8e10' [radii units of cm]
 # By default, the routine traces over the last 100 files of datadir, though
 # the user can specify a different range in sevaral ways:
 # -n 10 (last 10 files)
@@ -104,8 +107,17 @@ if rank == 0:
         qvals.append(801)
         qvals.append(802)
         qvals.append(803)
-    depths = [0.05, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 0.95]
+    depths = np.array([0.05, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875,\
+        0.95])
     tag = ''
+
+    # get some grid info
+    ncheby, domain_bounds = get_domain_bounds(dirname)
+    ri = np.min(domain_bounds)
+    ro = np.max(domain_bounds)
+    d = ro - ri
+
+    # reset parameters with CLAs
     for i in range(nargs):
         arg = args[i]
         if arg == '-vars':
@@ -118,6 +130,24 @@ if rank == 0:
             depths_str = args[i+1].split()
             for depth_str in depths_str:
                 depths.append(float(depth_str))
+        elif arg == '-rvals':
+            depths = []
+            strings = args[i+1].split()
+            for st in strings:
+                rvalcm = float(st)*rsun
+                depths.append((ro - rvalcm)/d)
+        elif arg == '-rvalscm':
+            depths = []
+            strings = args[i+1].split()
+            for st in strings:
+                rvalcm = float(st)
+                depths.append((ro - rvalcm)/d)
+        elif arg == '-rrange':
+            r1 = float(args[i+1])
+            r2 = float(args[i+2])
+            n = int(args[i+3])
+            rvalscm = np.linspace(r1, r2, n)*rsun
+            depths = (ro - rvalscm)/d
         elif arg == '-rzquarter': # 9 depths in RZ and CZ, with RZ depth
             # 0.25 of CZ depth
             print("Taking 9 depths in CZ and RZ each")
@@ -128,7 +158,7 @@ if rank == 0:
             # 0.5 of CZ depth
             print("Taking 9 depths in CZ and RZ each")
             print("assuming depth RZ = (1/2) depth CZ")
-            depths =[0.03333333, 0.08333333, 0.16666667, 0.25, 0.33333333,\
+            depths = [0.03333333, 0.08333333, 0.16666667, 0.25, 0.33333333,\
                 0.41666667, 0.5, 0.58333333, 0.63333333, 0.68333333,\
                 0.70833333, 0.75, 0.79166667, 0.83333333, 0.875,\
                 0.91666667, 0.95833333, 0.9833333]
@@ -141,7 +171,6 @@ if rank == 0:
                     0.40714286, 0.45714286, 0.5, 0.57142857, 0.64285714,\
                     0.71428571, 0.78571429, 0.85714286, 0.92857143,\
                     0.97142857])
-            depths = depths.tolist()
         elif arg == '-rz1': # 9 depths in RZ and CZ, with RZ depth
             # equal to CZ depth
             print("Taking 9 depths in CZ and RZ each")
@@ -149,7 +178,6 @@ if rank == 0:
             depths = 1.0 - np.array([0.025, 0.0625, 0.125, 0.1875, 0.25,\
                     0.3125, 0.375, 0.4375, 0.475, 0.525, 0.5625, 0.625,\
                     0.6875, 0.75, 0.8125, 0.875, 0.9375, 0.975])
-            depths = depths.tolist()
         elif arg == '-torque':
             print("tracing over TORQUE QUANTITIES")
             qvals = [3, 1801, 1802, 1803, 1804, 1819]
@@ -170,23 +198,12 @@ if rank == 0:
                 tag = 'induction' + '_'
         elif arg == '-tag':
             tag = args[i+1] + '_'
-        elif arg == '-rrange':
-            r1 = float(args[i+1])
-            r2 = float(args[i+2])
-            n = int(args[i+3])
-            rvals = np.linspace(r1, r2, n)*rsun
-            ncheby, domain_bounds = get_domain_bounds(dirname)
-            ri = np.min(domain_bounds)
-            ro = np.max(domain_bounds)
-            d = ro - ri
-            depths = (ro - rvals)/d
-            depths = depths.tolist()
-            print ("rvals = ", rvals)
-            print ("depths = ", depths)
+        
+    # convert things to arrays
+    depths = np.array(depths)
+    qvals = np.array(qvals)
 
     # Get desired file list from command-line arguments
-    args = sys.argv[2:]
-    nargs = len(args)
     if nargs == 0:
         index_first, index_last = nfiles - 101, nfiles - 1  
         # By default trace over the last 100 files
@@ -231,6 +248,17 @@ if rank == 0:
     rinds = []
     for depth in depths:
         rinds.append(np.argmin(np.abs(rr_depth - depth)))
+    rinds = np.array(rinds)
+
+    # recompute the actual depths we get
+    depths = rr_depth[rinds]
+    rvalscm = ro - d*depths
+    rvals = rvalscm/rsun
+    print ("taking radii at ")
+    print ("rinds = ", rinds)
+    print ("rvals = ", rvals)
+    print ("rvalscm = ", rvalscm)
+    print ("depths = ", depths)
 
     # Will need nrec (last niter) to get proper time axis size
     af = reading_func(radatadir + file_list[-1], '')
@@ -357,6 +385,7 @@ if rank == 0:
     # will also need first and last iteration files
     iter1, iter2 = int_file_list[0], int_file_list[-1]
     pickle.dump({'vals': vals, 'times': times, 'iters': iters,\
+    'rvals': rvals, 'rvalscm': rvalscm,\
     'depths': depths,'qvals': qvals, 'rinds': rinds, 'niter': len(iters),\
     'ndepths': ndepths, 'nq': nq, 'iter1': iter1, 'iter2': iter2, 'rr': rr,\
     'rr_depth': rr_depth, 'rr_height': rr_height, 'nr': nr, 'ri': ri,\
