@@ -32,7 +32,8 @@ if rank == 0:
     import sys, os
     sys.path.append(os.environ['raco'])
     from get_parameter import get_parameter
-    from common import fill_str
+    from get_domain_bounds import get_domain_bounds
+    from common import fill_str, rsun
     lent = 50
     char = '.'
     nproc = comm.Get_size()
@@ -170,6 +171,19 @@ if rank == 0:
             depths = depths.tolist()
         elif arg == '-dp': # include terms related to phi-derivatives
             phi_deriv = True
+        elif arg == '-rrange':
+            r1 = float(args[i+1])
+            r2 = float(args[i+2])
+            n = int(args[i+3])
+            rvals = np.linspace(r1, r2, n)*rsun
+            ncheby, domain_bounds = get_domain_bounds(dirname)
+            ri = np.min(domain_bounds)
+            ro = np.max(domain_bounds)
+            d = ro - ri
+            depths = (ro - rvals)/d
+            depths = depths.tolist()
+            print ("rvals = ", rvals)
+            print ("depths = ", depths)
 
     # Get desired file list from command-line arguments
     args = sys.argv[2:]
