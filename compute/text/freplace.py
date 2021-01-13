@@ -56,16 +56,17 @@ for fname in fnames:
                 the_truth *= block1[j][:-1] ==\
                     lines_to_compare[j][:len(block1[j]) - 1]
 
-            if the_truth and lines_to_compare != block1:
-                # replace the correponding block
-                fnames_changed.append(fname)
+            if the_truth:
+                # replace the correponding block if block 2 is different
                 block_we_compared = ''
                 for j in range(nlines1):
                     block_we_compared += lines_to_compare[j]
-                stnew = st.replace(block_we_compared, block2)
-                f = open(fname, "w")
-                f.write(stnew)
-                f.close()
+                if block2 != block_we_compared:
+                    fnames_changed.append(fname)
+                    stnew = st.replace(block_we_compared, block2)
+                    f = open(fname, "w")
+                    f.write(stnew)
+                    f.close()
     except:
         print (fname)
 
