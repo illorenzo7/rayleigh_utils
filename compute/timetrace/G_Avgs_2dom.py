@@ -51,7 +51,6 @@ dataname = 'Shell_Avgs'
 if rank == 0:
     # modules needed only by proc 0 
     import pickle
-    from get_parameter import get_parameter
     from get_eq import get_eq
 
 # Checkpoint and time
