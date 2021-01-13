@@ -7,7 +7,6 @@ import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from compute_grid_info import compute_grid_info
-from get_domain_bounds import get_domain_bounds
 from common import *
 from scipy.interpolate import interp1d
 dirname = sys.argv[1]
