@@ -17,7 +17,6 @@ from translate_times import translate_times
 from eqslice_util import plot_eqslice
 from rayleigh_diagnostics import Equatorial_Slices
 from get_eqslice import get_eqslice
-from get_parameter import get_parameter
 from varprops import texlabels, texunits
 from time_scales import compute_Prot, compute_tdt
 

@@ -13,7 +13,6 @@ from translate_times import translate_times
 from sslice_util import plot_moll
 from rayleigh_diagnostics import Shell_Slices
 from get_sslice import get_sslice
-from get_parameter import get_parameter
 from varprops import texlabels
 from time_scales import compute_Prot, compute_tdt
 

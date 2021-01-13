@@ -18,7 +18,6 @@ import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from common import *
-from get_parameter import get_parameter
 
 # Get directory name and stripped_dirname for plotting purposes
 dirname = sys.argv[1]

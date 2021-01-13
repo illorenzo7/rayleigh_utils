@@ -25,7 +25,6 @@ from sslice_util import plot_moll, get_satvals
 from get_sslice import get_sslice
 from azav_util import plot_azav
 from rayleigh_diagnostics import Shell_Slices, AZ_Avgs
-from get_parameter import get_parameter
 from varprops import texlabels, var_indices, texunits
 
 # Get command line arguments, mainly the directory on which to perform the

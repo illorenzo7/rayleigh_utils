@@ -22,7 +22,6 @@ from rayleigh_diagnostics import TransportCoeffs
 from reference_tools import equation_coefficients
 from common import *
         get_iters_from_file, get_dict, rsun
-from get_parameter import get_parameter
 from time_scales import compute_Prot, compute_tdt
 from translate_times import translate_times
 

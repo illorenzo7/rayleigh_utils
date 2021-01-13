@@ -10,7 +10,6 @@ sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
 from subprocess import call
 from common import *
-from get_parameter import get_parameter
 from time_scales import compute_Prot, compute_tdt
 
 # Get the run directory on which to perform the analysis

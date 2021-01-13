@@ -18,7 +18,6 @@ import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from common import *
-from get_parameter import get_parameter
 from get_eq import get_eq
 from time_scales import compute_Prot, compute_tdt
 from translate_times import translate_times

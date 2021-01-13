@@ -10,8 +10,6 @@ import pickle
 import sys, os
 sys.path.append(os.environ['raco'])
 from common import *
-        rsun, get_dict
-from get_parameter import get_parameter
 from time_scales import compute_Prot, compute_tdt
 from tl_util import plot_tl
 

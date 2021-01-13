@@ -25,7 +25,6 @@ from common import *
         get_dict, rsun, sci_format, get_satvals, rms
 
 from plotcommon import default_axes_1by1, axis_range, xy_grid
-from get_parameter import get_parameter
 from time_scales import compute_Prot, compute_tdt
 from translate_times import translate_times
 

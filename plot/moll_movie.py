@@ -14,7 +14,6 @@ from sslice_util import plot_moll
 from get_sslice import get_sslice
 from rayleigh_diagnostics import Shell_Slices
 from varprops import texlabels
-from get_parameter import get_parameter
 
 # Get command line arguments
 dirname = sys.argv[1]

@@ -13,7 +13,6 @@ sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from varprops import var_indices, var_indices_old
 from common import *
-from get_parameter import get_parameter
 
 def get_eqslice(eq, varname, dirname=None, az=None, old=False, j=0):
     # Given an Equatorial_Slices object (nphi, ntheta, nr, nq, niter), 

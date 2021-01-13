@@ -21,7 +21,6 @@ sys.path.append(os.environ['raco'])
 from azav_util import plot_azav, streamfunction
 from common import *
         get_dict
-from get_parameter import get_parameter
 from time_scales import compute_Prot, compute_tdt
 from translate_times import translate_times
 from rayleigh_diagnostics import AZ_Avgs

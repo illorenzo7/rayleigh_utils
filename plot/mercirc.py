@@ -22,7 +22,6 @@ from azav_util import plot_azav, streamfunction
 from common import *
         trim_field
 from get_eq import get_eq
-from get_parameter import get_parameter
 from time_scales import compute_Prot, compute_tdt
 from translate_times import translate_times
 

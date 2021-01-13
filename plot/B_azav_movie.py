@@ -22,7 +22,6 @@ from azav_util import plot_azav
 from common import *
         get_desired_range
 from rayleigh_diagnostics import AZ_Avgs
-from get_parameter import get_parameter
 from time_scales import compute_Prot, compute_tdt
 from translate_times import translate_times
 

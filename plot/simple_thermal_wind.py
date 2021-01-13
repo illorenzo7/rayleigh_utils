@@ -22,7 +22,6 @@ from azav_util import plot_azav
 from common import *
         get_desired_range, get_dict
 from get_eq import get_eq
-from get_parameter import get_parameter
 from derivs import drad, dth
 
 # Get directory name and stripped_dirname for plotting purposes

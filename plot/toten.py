@@ -27,8 +27,6 @@ sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapl'])
 from azav_util import plot_azav
 from common import *
-        c_P, get_lum, sci_format
-from get_parameter import get_parameter
 from rayleigh_diagnostics import GridInfo
 from get_eq import get_eq
 from time_scales import compute_Prot, compute_tdt

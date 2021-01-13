@@ -14,7 +14,6 @@ plt.rcParams['mathtext.fontset'] = 'dejavuserif'
 csfont = {'fontname':'DejaVu Serif'}
 plt.rcParams['contour.negative_linestyle'] = 'solid'
 from common import *
-    sci_format, get_symlog_params, get_exp
 from plotcommon import axis_range, default_axes_tl
 
 def plot_tl(field, times, yy, fig=None, ax=None, cmap='RdYlBu_r',\

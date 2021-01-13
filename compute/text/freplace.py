@@ -18,13 +18,8 @@ ext = args[1]
 blockfile1 = args[2]
 blockfile2 = args[3]
 
-linebyline = False
-for i in range(nargs):
-    arg = args[i]
-    if arg == '-l':
-        linebyline = True
-
-block1 = open(blockfile1).read()
+block1 = open(blockfile1).readlines()
+nlines1 = len(block1)
 block2 = open(blockfile2).read()
 
 fnames_all = os.listdir(dirname)
@@ -38,34 +33,35 @@ print ("scanning %s files in %s" %(ext, dirname))
 print ("=========================================")
 print ("replacing")
 print ("=========================================")
-print (block1)
+for line in block1:
+    print (line, end='')
 print ("with")
 print ("=========================================")
-print (block2)
+for line in block2:
+    print (line, end='')
 print ("=========================================")
 
 print ("cannot open:")
 print ("-----------------------------------------")
+
 fnames_changed = []
 for fname in fnames:
     try:
-        if linebyline:
-            block1 = block1.replace('\n','')
-            st = open(dirname + '/' + fname).read()
-            lines = open(dirname + '/' + fname).readlines()
-            for line in lines:
-                if block1 in line:
-                    fnames_changed.append(dirname + '/' + fname)
-                    stnew = st.replace(line, block2)
-                    f = open(dirname + '/' + fname, "w")
-                    f.write(stnew)
-                    f.close()
-                    
-        else:
-            st = open(dirname + '/' + fname).read()
-            if block1 in st:
+        st = open(dirname + '/' + fname).read()
+        lines = open(dirname + '/' + fname).readlines()
+        nlines = len(lines)
+        for i in range(len(lines) - nlines1 + 1):
+            lines_to_compare = lines[i:i+nlines]
+            the_truth = True
+            for j in range(nlines1):
+                the_truth *= block1[j][:-1] in lines_to_compare[j]
+            if the_truth:
+                # replace the correponding block
                 fnames_changed.append(dirname + '/' + fname)
-                stnew = st.replace(block1, block2)
+                block_we_compared = ''
+                for j in range(nlines1):
+                    block_we_compared += lines_to_compare[j]
+                stnew = st.replace(block_we_compared, block2)
                 f = open(dirname + '/' + fname, "w")
                 f.write(stnew)
                 f.close()

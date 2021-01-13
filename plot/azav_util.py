@@ -14,7 +14,6 @@ plt.rcParams['mathtext.fontset'] = 'dejavuserif'
 csfont = {'fontname':'DejaVu Serif'}
 plt.rcParams['contour.negative_linestyle'] = 'solid'
 from common import *
-    sci_format, get_symlog_params, get_exp
 from plotcommon import axis_range, default_axes_1by2, default_axes_1by1
 
 def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\

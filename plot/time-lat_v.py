@@ -10,9 +10,7 @@ import pickle
 import sys, os
 sys.path.append(os.environ['raco'])
 from common import *
-        rsun, get_dict
 from plotcommon import axis_range
-from get_parameter import get_parameter
 
 # Get the run directory on which to perform the analysis
 dirname = sys.argv[1]
