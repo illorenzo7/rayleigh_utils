@@ -15,7 +15,6 @@ import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from common import *
-        get_desired_range
 from rayleigh_diagnostics import GridInfo, Meridional_Slices
 
 # Get the run directory on which to perform the analysis

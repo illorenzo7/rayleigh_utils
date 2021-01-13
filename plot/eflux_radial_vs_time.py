@@ -16,8 +16,6 @@ sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from rayleigh_diagnostics import Shell_Avgs
 from common import *
-        get_desired_range
-
 from compute_grid_info import compute_theta_grid
 
 # Get the run directory on which to perform the analysis
