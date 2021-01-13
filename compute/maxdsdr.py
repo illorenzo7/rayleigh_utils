@@ -5,7 +5,6 @@ import numpy as np
 import os, sys
 sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
-from get_parameter import get_parameter
 from rayleigh_diagnostics import GridInfo, ReferenceState
 from reference_tools import equation_coefficients
 from get_eq import get_eq

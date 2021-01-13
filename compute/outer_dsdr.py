@@ -14,7 +14,6 @@ from common import lsun, rhom, rm, ro
 sys.path.append(os.environ['rapp'])
 from rayleigh_diagnostics import ReferenceState, TransportCoeffs
 from reference_tools import equation_coefficients
-from get_parameter import get_parameter
 
 # Set default to compute necessary dsdr to carry out a solar luminosity,
 # for kappa_top = 3e12, cp = 3.5x10^8, ri, ro = 5, 6.5860209 x 10^10,

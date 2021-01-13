@@ -1,6 +1,5 @@
 import sys, os
 sys.path.append(os.environ['raco'])
-from get_parameter import get_parameter
 
 def get_domain_bounds(dirname):
     try:

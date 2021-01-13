@@ -16,7 +16,6 @@ import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from common import get_widest_range_file, strip_dirname, get_dict
-from get_parameter import get_parameter
 
 # Get directory name
 dirname = sys.argv[1]

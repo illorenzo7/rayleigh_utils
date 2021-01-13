@@ -16,7 +16,6 @@ import numpy as np
 import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
-from get_parameter import get_parameter
 from rayleigh_diagnostics import Shell_Avgs
 from common import get_widest_range_file, get_dict, get_iters_from_file
 from get_eq import get_eq

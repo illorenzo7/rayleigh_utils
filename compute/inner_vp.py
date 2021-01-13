@@ -8,7 +8,6 @@ import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from compute_grid_info import compute_grid_info
-from get_parameter import get_parameter
 from common import get_widest_range_file, get_dict
 dirname = sys.argv[1]
 

@@ -10,7 +10,6 @@
 import numpy as np
 import sys, os
 sys.path.append(os.environ['raco'])
-from get_parameter import get_parameter
 
 # Get directory name
 dirname = sys.argv[1]
