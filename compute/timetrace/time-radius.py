@@ -42,7 +42,7 @@ if rank == 0:
     import sys, os
     sys.path.append(os.environ['raco'])
     from get_parameter import get_parameter
-from common import *
+    from common import *
     char = '.'
     nproc = comm.Get_size()
     t1_glob = time.time()
@@ -67,7 +67,6 @@ dataname = 'AZ_Avgs'
 if rank == 0:
     # modules needed only by proc 0 
     import pickle
-from common import *
 
 # Checkpoint and time
 comm.Barrier()

@@ -29,7 +29,7 @@ dirname_stripped = strip_dirname(dirname)
 # Find the relevant place to store the data, and create the directory if it
 # doesn't already exist
 datadir = dirname + '/data/'
-if (not os.path.isdir(datadir)):
+if not os.path.isdir(datadir):
     os.makedirs(datadir)
 
 radatadir = dirname + '/Shell_Avgs/'

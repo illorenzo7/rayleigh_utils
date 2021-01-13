@@ -31,7 +31,7 @@ if rank == 0:
     # info for print messages
     import sys, os
     sys.path.append(os.environ['raco'])
-    from common import fill_str
+    from common import *
     lent = 50
     char = '.'
     nproc = comm.Get_size()
@@ -57,7 +57,6 @@ dataname = 'Shell_Spectra'
 if rank == 0:
     # modules needed only by proc 0 
     import pickle
-from common import *
 
 # Checkpoint and time
 comm.Barrier()

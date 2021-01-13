@@ -19,7 +19,7 @@ if rank == 0:
     # info for print messages
     import sys, os
     sys.path.append(os.environ['raco'])
-    from common import fill_str
+    from common import *
     from mpi_util import opt_workload
     lent = 50
     char = '.'
@@ -54,7 +54,6 @@ dataname = 'AZ_Avgs'
 
 if rank == 0:
     # modules needed only by proc 0 
-from common import *
     from rayleigh_diagnostics import AZ_Avgs, GridInfo
 
 # Checkpoint and time
