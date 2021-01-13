@@ -4,7 +4,7 @@
 
 import numpy as np
 import os, pickle
-from get_parameter import get_parameter
+from string_to_num import string_to_number_or_array
 
 # Solar radius, luminosity, and mass (as we have been assuming in Rayleigh)
 rsun = 6.957e10  # value taken from IAU recommendation: arxiv, 1510.07674
@@ -417,6 +417,45 @@ def fill_str(stri, lent, char):
     len_loc = len(stri)
     nfill = lent - len_loc
     return stri + char*nfill
+
+def get_parameter(dirname, parameter):
+    f = open(dirname + '/main_input')
+    lines = f.readlines()
+    n = len(lines)
+    try:
+        for i in range(n):
+            if (parameter in lines[i].lower() and '=' in lines[i] and \
+                    lines[i][0] != '!' and not (parameter == 'tacho_r' and\
+                    lines[i][:8] == 'tacho_r2')):
+                line = lines[i]
+        line = line[:] # test if line was assigned
+    except:
+        if parameter == 'magnetism' or parameter == 'use_extrema':
+            return False # if magnetism wasn't specified, it is "False"
+        else:
+            raise Exception('The parameter ' + parameter + ' was not\n' +\
+                            'specified in run: ' + dirname + '. \n' +\
+                            'exiting ....\n')
+    
+    # Make line lowercase
+    line = line.lower()
+
+    # Remove spaces and newline character (at the end of each line)
+    line = line.replace(' ', '')
+    line = line.replace('\n', '')
+
+    # Remove possible trailing comma from line
+    if line[-1] == ',':
+        line = line[:-1]
+ 
+    equals_index = line.index('=') # find where the actual number
+        # or array starts (should be after the equals sign)
+    num_string = line[equals_index + 1:]
+    if '!' in num_string: # there was a comment after the equals statement
+                        # throw it away!
+        excl_index = num_string.index('!')
+        num_string = num_string[:excl_index]
+    return (string_to_number_or_array(num_string))
 
 def get_lum(dirname):
     # Make lstar = lsun unless otherwise specified in main_input
