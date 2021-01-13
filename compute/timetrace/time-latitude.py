@@ -63,7 +63,6 @@ dataname = 'AZ_Avgs'
 if rank == 0:
     # modules needed only by proc 0 
     import pickle
-    from common import *
 
 # Checkpoint and time
 comm.Barrier()

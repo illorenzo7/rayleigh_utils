@@ -41,7 +41,6 @@ if rank == 0:
     # info for print messages
     import sys, os
     sys.path.append(os.environ['raco'])
-    from common import *
     char = '.'
     nproc = comm.Get_size()
     t1_glob = time.time()
