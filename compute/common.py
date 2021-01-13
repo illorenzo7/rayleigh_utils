@@ -359,17 +359,6 @@ def append_logfile(logfile, message):
     f.write(message)
     f.close()
     
-def rbounds(dirname):
-    # Get min/max radius even if there are multiple Chebyshev domains
-    try:
-        rmin = get_parameter(dirname, 'rmin')
-        rmax = get_parameter(dirname, 'rmax')
-#    if rmin == 100 or rmax == 100: # get_parameter must have failed
-    except:
-        dom_bounds = get_parameter(dirname, 'domain_bounds')
-        rmin, rmax = dom_bounds[0], dom_bounds[-1]
-    return rmin, rmax
-
 def is_positive(arr):
     how_many_positive_points = np.sum(arr >= 0.)
     how_many_overall_points = np.size(arr)
