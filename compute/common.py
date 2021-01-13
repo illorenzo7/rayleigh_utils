@@ -3,8 +3,11 @@
 # Common routines for routines for post-processing Rayleigh data 
 
 import numpy as np
-import os, pickle
+import sys, os, pickle
 from string_to_num import string_to_number_or_array
+sys.path.append(os.environ['rapp'])
+from reference_tools import equation_coefficients
+from rayleigh_diagnostics import G_Avgs, Shell_Slices
 
 # Solar radius, luminosity, and mass (as we have been assuming in Rayleigh)
 rsun = 6.957e10  # value taken from IAU recommendation: arxiv, 1510.07674
@@ -474,3 +477,265 @@ def get_lum(dirname):
         print ("Cannot find luminosity in either 'equation_coefficients'")
         print("or 'main_input' files. Setting luminosity to lsun.")
     return lstar
+
+class eq_human_readable:
+    """Rayleigh Universal Equation Coefficients Structure
+    ----------------------------------
+    self.nr          : number of radial points
+    self.radius      : radial coordinates
+    self.density     : density
+    self.rho         : density
+    self.dlnrho      : logarithmic derivative of density
+    self.d2lnrho     : d_by_dr of dlnrho
+    self.temperature : temperature
+    self.T           : temperature
+    self.dlnT        : logarithmic derivative of temperature
+    self.pressure    : pressure (rho*R*T)
+    self.P           : pressure (rho*R*T)
+    self.dsdr        : radial entropy gradient
+    self.gravity     : gravity 
+    self.heating     : volumetric heating (Q) 
+    self.nu          : momentum diffusivity (kinematic viscosity)
+    self.dlnu        : logarithmic derivative of the viscosity
+    self.kappa       : temperature diffusivity (thermometric conductivity)
+    self.dlkappa     : logarithmic derivative of the temp. diffusivity
+    self.eta :       : magnetic diffusivity 
+    self.dlneta      : logarithmic derivative of magnetic diffusivity
+    self.lum         : (scalar) stellar luminosity
+    """
+    def __init__(self, nr):
+        self.nr = nr
+        self.density = np.zeros(nr)
+        self.rho = np.zeros(nr) # same as density
+        self.dlnrho = np.zeros(nr)
+        self.d2lnrho = np.zeros(nr)
+        self.temperature = np.zeros(nr)
+        self.T = np.zeros(nr) # same as temperature
+        self.dlnT = np.zeros(nr)
+        self.pressure = np.zeros(nr)
+        self.P = np.zeros(nr)
+        self.gravity = np.zeros(nr) 
+        self.g = np.zeros(nr) # same as gravity
+        self.dsdr = np.zeros(nr)
+        self.heating = np.zeros(nr)
+        self.Q = np.zeros(nr) # same as heating
+        self.nu = np.zeros(nr)
+        self.dlnu = np.zeros(nr)
+        self.kappa = np.zeros(nr)
+        self.dlnkappa = np.zeros(nr)
+        self.eta = np.zeros(nr) # these should stay zero 
+        self.dlneta = np.zeros(nr) # if magnetism = False
+        self.lum = 0.0 # luminosity
+
+def get_eq(dirname, fname='equation_coefficients'): # return an eq_human_readable class associated with
+    # [dirname], either using equation_coefficients or 
+    # transport/reference files
+    if os.path.exists(dirname + '/' + fname):
+        # by default, get info from equation_coefficients (if file exists)
+        eq = equation_coefficients()
+        eq.read(dirname + '/' + fname)
+        eq_hr = eq_human_readable(eq.nr)
+
+        eq_hr.radius = eq.radius
+        eq_hr.density = eq.functions[0]
+        eq_hr.rho = eq_hr.density
+        eq_hr.dlnrho = eq.functions[7]
+        eq_hr.d2lnrho = eq.functions[8]
+        eq_hr.temperature = eq.functions[3]
+        eq_hr.T = eq_hr.temperature
+        eq_hr.pressure = thermo_R*eq_hr.rho*eq_hr.T
+        eq_hr.P = eq_hr.pressure
+        eq_hr.dlnT = eq.functions[9]
+        eq_hr.gravity = eq.functions[1]/eq_hr.rho*c_P
+        eq_hr.g = eq_hr.gravity
+        eq_hr.dsdr = eq.functions[13]
+        eq_hr.heating = eq.constants[9]*eq.functions[5]
+        eq_hr.Q = eq_hr.heating
+        eq_hr.nu = eq.constants[4]*eq.functions[2]
+        eq_hr.dlnu = eq.functions[10]
+        eq_hr.kappa = eq.constants[5]*eq.functions[4]
+        eq_hr.dlnkappa = eq.functions[11]
+        eq_hr.eta = eq.constants[6]*eq.functions[6] # these are built-in to
+        eq_hr.dlneta = eq.functions[12] # equation_coefficients as "zero"
+        eq_hr.lum = eq.constants[9]
+        # if magnetism = False
+    else:
+        ref = ReferenceState(dirname + '/reference')
+        eq_hr = eq_human_readable(ref.nr)
+
+        eq_hr.radius = ref.radius
+        eq_hr.density = ref.density
+        eq_hr.rho = eq_hr.density
+        eq_hr.dlnrho = ref.dlnrho
+        eq_hr.d2lnrho = ref.d2lnrho
+        eq_hr.temperature = ref.temperature
+        eq_hr.T = eq_hr.temperature
+        eq_hr.dlnT = ref.dlnt
+        eq_hr.pressure = thermo_R*eq_hr.rho*eq_hr.T
+        eq_hr.P = eq_hr.pressure
+        eq_hr.gravity = ref.gravity
+        eq_hr.g = eq_hr.gravity
+        eq_hr.dsdr = ref.dsdr
+        eq_hr.heating = eq_hr.rho*eq_hr.T*ref.heating
+        eq_hr.Q = eq_hr.heating
+        # 'transport' didn't always used to exist, so only read it if possible
+        if os.path.exists(dirname + '/transport'):
+            trans = TransportCoeffs(dirname + '/transport')
+            eq_hr.nu = trans.nu
+            eq_hr.dlnu = trans.dlnu
+            eq_hr.kappa = trans.kappa
+            eq_hr.dlnkappa = trans.dlnkappa
+            try:
+                eq_hr.eta = trans.eta
+                eq_hr.dlneta = dlneta # this will fail for hydro cases
+                # "trans" will not have attributes eta, dlneta
+            except: # if it failed, just keep the arrays zero             
+                pass # (magnetism = False)
+        else:
+            print ("get_eq(): neither 'equation_coefficients' nor 'transport' found")
+            print ("nu, dlnu, etc. will be zero")
+        eq_hr.lum = get_parameter(dirname, 'luminosity')
+    return eq_hr
+
+def compute_tdt(dirname, mag=False, visc=False, tach=False):
+    # Returns computed diffusion time (in sec) across whole layer
+    # If tach=True, return diffusion time across whole layer,
+    # across CZ and across RZ (tuple of 3)
+    # Read in the diffusion profile
+    eq = get_eq(dirname)
+    rr = eq.radius
+    if mag:
+        diff = eq.eta
+    elif visc:
+        diff = eq.nu
+    else:
+        diff = eq.kappa
+
+    # Compute and return the diffusion time
+    if tach:
+        domain_bounds = get_parameter(dirname, 'domain_bounds')
+        ri, rm, ro = domain_bounds
+        rmid = 0.5*(ri + ro)
+        rmidrz = 0.5*(ri + rm)
+        rmidcz = 0.5*(rm + ro)
+
+        irmidrz = np.argmin(np.abs(rr - rmidrz))
+        irmidcz = np.argmin(np.abs(rr - rmidcz))
+        irmid = np.argmin(np.abs(rr - rmid))
+
+        diff_midrz = diff[irmidrz]
+        diff_midcz = diff[irmidcz]
+        diff_mid = diff[irmid]
+
+        Hrz = rm - ri
+        Hcz = ro - rm
+        H = ro - ri
+
+        return Hrz**2.0/diff_midrz, Hcz**2.0/diff_midcz, H**2.0/diff_mid
+    else:
+        ri, ro = np.min(rr), np.max(rr)
+        rmid = 0.5*(ri + ro)
+        irmid = np.argmin(np.abs(rr - rmid))
+        diff_mid = diff[irmid]
+        H = ro - ri
+        return H**2.0/diff_mid
+
+def compute_Prot(dirname):
+    try:
+        Om0 = get_parameter(dirname, 'angular_velocity')
+    except:
+        eq = equation_coefficients()
+        eq.read(dirname + '/equation_coefficients')
+        Om0 = eq.constants[0]/2.
+    return 2*np.pi/Om0
+
+def translate_times(time, dirname, translate_from='iter'):
+    # Get the baseline time unit
+    rotation = get_parameter(dirname, 'rotation')
+    if rotation:
+        time_unit = compute_Prot(dirname)
+        time_label = 'prot'
+    else:
+        time_unit = compute_tdt(dirname)
+        time_label = 'tdt'
+
+    # First, if translating from an iter, just use an individual data file
+    if translate_from == 'iter': # just read in individual G_Avgs file
+        file_list, int_file_list, nfiles = get_file_lists(dirname + '/G_Avgs')
+        if nfiles > 0: # first see if we can use the G_Avgs data
+            #print ("translate_times(): translating using G_Avgs data")
+            funct = G_Avgs
+            radatadir = dirname + '/G_Avgs'
+            iiter = np.argmin(np.abs(int_file_list - time))
+            a = funct(radatadir + '/' + file_list[iiter], '')
+            jiter = np.argmin(np.abs(a.iters - time))
+            val_sec = a.time[jiter]
+            val_iter = a.iters[jiter]
+            val_day = val_sec/86400.
+            val_unit = val_sec/time_unit
+        else:
+            file_list, int_file_list, nfiles = get_file_lists(dirname +\
+                    '/Shell_Slices')
+            if nfiles > 0: # next see if we can use Shell_Slices data
+                #print ("translate_times(): translating using Shell_Slices data")
+                funct = Shell_Slices
+                radatadir = dirname + '/Shell_Slices'
+                iiter = np.argmin(np.abs(int_file_list - time))
+                a = funct(radatadir + '/' + file_list[iiter], '')
+                jiter = np.argmin(np.abs(a.iters - time))
+                val_sec = a.time[jiter]
+                val_iter = a.iters[jiter]
+                val_day = val_sec/86400.
+                val_unit = val_sec/time_unit
+            else: # Finally use trace_G_Avgs or time-latitude data
+                datadir = dirname + '/data/'
+                try:        
+                    the_file = get_widest_range_file(datadir, 'trace_G_Avgs')
+                    di = get_dict(datadir + the_file)
+                    #print ("translate_times(): translating using trace_G_Avgs file")
+                except:
+                    the_file = get_widest_range_file(datadir, 'time-latitude')
+                    di = get_dict(datadir + the_file)
+                    print ("translate_times(): translating using time-latitude file")
+
+                # Get times and iters from trace file
+                times = di['times']
+                iters = di['iters']
+                ind = np.argmin(np.abs(iters - time))
+                val_sec = times[ind]
+                val_iter = iters[ind]
+                val_day = times[ind]/86400.
+                val_unit = times[ind]/time_unit
+
+    else: # otherwise, hopefully you computed some time traces beforehand!
+        # Get the data directory
+        datadir = dirname + '/data/'
+     
+        try:        
+            the_file = get_widest_range_file(datadir, 'trace_G_Avgs')
+            di = get_dict(datadir + the_file)
+            #print ("translate_times(): translating using trace_G_Avgs file")
+        except:
+            the_file = get_widest_range_file(datadir, 'time-latitude')
+            di = get_dict(datadir + the_file)
+            #print ("translate_times(): translating using time-latitude file")
+
+        # Get times and iters from trace file
+        times = di['times']
+        iters = di['iters']
+
+        if translate_from in ['prot', 'tdt', 'unit']:
+            ind = np.argmin(np.abs(times/time_unit - time))
+        elif translate_from == 'day':
+            ind = np.argmin(np.abs(times/86400. - time))
+        elif translate_from == 'sec':
+            ind = np.argmin(np.abs(times - time))
+
+        val_sec = times[ind]
+        val_iter = iters[ind]
+        val_day = times[ind]/86400.
+        val_unit = times[ind]/time_unit
+
+    return dict({'val_sec': val_sec,'val_iter': val_iter,\
+            'val_day': val_day, 'val_unit': val_unit,\
+            'time_unit': time_unit, 'time_label': time_label})
