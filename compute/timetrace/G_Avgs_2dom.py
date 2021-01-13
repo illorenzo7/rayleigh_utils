@@ -52,7 +52,6 @@ if rank == 0:
     # modules needed only by proc 0 
     import pickle
 from common import *
-    from rayleigh_diagnostics import GridInfo
     from get_parameter import get_parameter
     from get_eq import get_eq
 

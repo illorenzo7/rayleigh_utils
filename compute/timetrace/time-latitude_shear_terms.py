@@ -33,8 +33,7 @@ if rank == 0:
     sys.path.append(os.environ['raco'])
     from get_parameter import get_parameter
     from get_domain_bounds import get_domain_bounds
-    from common import fill_str, rsun
-    lent = 50
+from common import *
     char = '.'
     nproc = comm.Get_size()
     t1_glob = time.time()
