@@ -51,13 +51,14 @@ for fname in fnames:
         lines = open(dirname + '/' + fname).readlines()
         nlines = len(lines)
         for i in range(len(lines) - nlines1 + 1):
-            lines_to_compare = lines[i:i+nlines]
+            lines_to_compare = lines[i:i+nlines1]
             the_truth = True
             for j in range(nlines1):
                 the_truth *= block1[j][:-1] in lines_to_compare[j]
-            #if the_truth and lines_to_compare != block1:
-            if the_truth:
+            if the_truth and lines_to_compare != block1:
                 # replace the correponding block
+                print ("lines_to_compare = ", lines_to_compare)
+                print ("block1 = ", block1)
                 fnames_changed.append(dirname + '/' + fname)
                 block_we_compared = ''
                 for j in range(nlines1):
