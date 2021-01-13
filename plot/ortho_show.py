@@ -9,7 +9,6 @@ sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
 from common import *
 from plotcommon import axis_range
-from translate_times import translate_times
 from sslice_util import plot_ortho
 from get_sslice import get_sslice
 from rayleigh_diagnostics import Shell_Slices

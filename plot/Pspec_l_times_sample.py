@@ -19,7 +19,6 @@ sys.path.append(os.environ['rapp'])
 from varprops import texunits, texlabels, var_indices
 from common import *
 from rayleigh_diagnostics import Shell_Spectra
-from translate_times import translate_times
 
 # Get directory name and stripped_dirname for plotting purposes
 dirname = sys.argv[1]

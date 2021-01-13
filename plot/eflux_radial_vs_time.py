@@ -19,7 +19,6 @@ from common import *
         get_desired_range
 
 from compute_grid_info import compute_theta_grid
-from translate_times import translate_times
 from get_eq import get_eq
 
 # Get the run directory on which to perform the analysis

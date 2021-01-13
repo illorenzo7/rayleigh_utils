@@ -19,7 +19,6 @@ sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from common import *
 from get_eq import get_eq
-from translate_times import translate_times
 
 # Get directory name and stripped_dirname for plotting purposes
 dirname = sys.argv[1]

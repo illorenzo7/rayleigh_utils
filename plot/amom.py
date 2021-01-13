@@ -22,7 +22,6 @@ sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from azav_util import plot_azav
 from common import *
-from translate_times import translate_times
 from get_eq import get_eq
 
 # Get directory name and stripped_dirname for plotting purposes

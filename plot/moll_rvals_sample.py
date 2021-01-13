@@ -12,7 +12,6 @@ from plotcommon import axis_range
 from sslice_util import plot_moll
 from get_sslice import get_sslice
 from rayleigh_diagnostics import Shell_Slices
-from translate_times import translate_times
 from varprops import texlabels
 
 # Get command line arguments

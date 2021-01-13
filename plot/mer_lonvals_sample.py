@@ -13,7 +13,6 @@ sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
 from common import *
 from plotcommon import axis_range
-from translate_times import translate_times
 from azav_util import plot_azav
 from rayleigh_diagnostics import Meridional_Slices, AZ_Avgs, Shell_Avgs
 from get_merslice import get_merslice

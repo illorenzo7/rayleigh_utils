@@ -5,7 +5,6 @@
 # rotation period, etc.
 
 import sys
-from translate_times import translate_times
 import numpy as np
 
 # Get the run directory on which to perform the analysis

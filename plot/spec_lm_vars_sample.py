@@ -23,7 +23,6 @@ sys.path.append(os.environ['rapp'])
 from varprops import texunits, texlabels, var_indices
 from common import *
 from plotcommon import axis_range, xy_grid
-from translate_times import translate_times
 from rayleigh_diagnostics import Shell_Spectra
 
 # Get directory name and stripped_dirname for plotting purposes
