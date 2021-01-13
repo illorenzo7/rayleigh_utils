@@ -22,6 +22,12 @@ from compute_grid_info import compute_theta_grid
 dirname = sys.argv[1]
 dirname_stripped = strip_dirname(dirname)
 
+# domain bounds
+ncheby, domain_bounds = get_domain_bounds(dirname)
+ri = np.min(domain_bounds)
+ro = np.max(domain_bounds)
+d = ro - ri
+
 # Directory with data and plots, make the plotting directory if it doesn't
 # already exist    
 datadir = dirname + '/data/'

@@ -22,6 +22,12 @@ if (not os.path.isdir(plotdir)):
     os.makedirs(plotdir)
 dirname_stripped = strip_dirname(dirname)
 
+# domain bounds
+ncheby, domain_bounds = get_domain_bounds(dirname)
+ri = np.min(domain_bounds)
+ro = np.max(domain_bounds)
+d = ro - ri
+
 # Get global rotation rate; this script fails for non-rotating models
 angular_velocity = get_parameter(dirname, 'angular_velocity')
 Prot = 2*np.pi/angular_velocity

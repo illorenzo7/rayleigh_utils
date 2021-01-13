@@ -21,6 +21,12 @@ if (not os.path.isdir(plotdir)):
     os.makedirs(plotdir)
 dirname_stripped = strip_dirname(dirname)
 
+# domain bounds
+ncheby, domain_bounds = get_domain_bounds(dirname)
+ri = np.min(domain_bounds)
+ro = np.max(domain_bounds)
+d = ro - ri
+
 # Find the etrace file(s) in the data directory. If there are multiple, by
 # default choose the one with widest range in the trace.
 trace_G_Avgs_file = get_widest_range_file(datadir, 'trace_G_Avgs')

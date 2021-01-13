@@ -20,6 +20,12 @@ from common import *
 dirname = sys.argv[1]
 dirname_stripped = strip_dirname(dirname)
 
+# domain bounds
+ncheby, domain_bounds = get_domain_bounds(dirname)
+ri = np.min(domain_bounds)
+ro = np.max(domain_bounds)
+d = ro - ri
+
 # Get command-line arguments to adjust the interval of averaging files
 minmax = None
 rnorm = None

@@ -26,6 +26,12 @@ from rayleigh_diagnostics import AZ_Avgs
 dirname = sys.argv[1]
 dirname_stripped = strip_dirname(dirname)
 
+# domain bounds
+ncheby, domain_bounds = get_domain_bounds(dirname)
+ri = np.min(domain_bounds)
+ro = np.max(domain_bounds)
+d = ro - ri
+
 radatadir = dirname + '/AZ_Avgs/'
 
 # Get all the file names in datadir and their integer counterparts
