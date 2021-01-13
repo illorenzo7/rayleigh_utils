@@ -31,6 +31,8 @@ if rank == 0:
     # info for print messages
     import sys, os
     sys.path.append(os.environ['raco'])
+    # import common here
+    from common import *
     lent = 50
     char = '.'
     nproc = comm.Get_size()
