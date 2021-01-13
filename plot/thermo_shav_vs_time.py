@@ -20,7 +20,6 @@ sys.path.append(os.environ['raco'])
 from rayleigh_diagnostics import Shell_Avgs
 from common import *
         get_desired_range
-from get_eq import get_eq
 
 # Get directory name and stripped_dirname for plotting purposes
 dirname = sys.argv[1]

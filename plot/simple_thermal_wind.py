@@ -20,7 +20,6 @@ sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from azav_util import plot_azav
 from common import *
-from get_eq import get_eq
 from derivs import drad, dth
 
 # Get directory name and stripped_dirname for plotting purposes

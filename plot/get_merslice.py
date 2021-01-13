@@ -14,7 +14,6 @@ sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from varprops import var_indices, var_indices_old
 from common import *
-from get_eq import get_eq
 from rayleigh_diagnostics import GridInfo
 
 def get_merslice(mer, varname, dirname=None, az=None, sh=None, old=False,\

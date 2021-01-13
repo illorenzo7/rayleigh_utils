@@ -18,7 +18,6 @@ sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from rayleigh_diagnostics import Shell_Avgs
 from common import get_widest_range_file, get_dict, get_iters_from_file
-from get_eq import get_eq
 
 def get_length_scales(dirname):
     # Make empty dictionary for length_scale arrays

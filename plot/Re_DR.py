@@ -20,7 +20,6 @@ csfont = {'fontname':'DejaVu Serif'}
 import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
-from get_eq import get_eq
 from common import *
 
 # Get directory name and stripped_dirname for plotting purposes

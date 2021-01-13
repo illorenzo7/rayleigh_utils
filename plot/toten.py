@@ -28,7 +28,6 @@ sys.path.append(os.environ['rapl'])
 from azav_util import plot_azav
 from common import *
 from rayleigh_diagnostics import GridInfo
-from get_eq import get_eq
 from read_inner_vp import read_inner_vp
 from read_eq_vp import read_eq_vp
 

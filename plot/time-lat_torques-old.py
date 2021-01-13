@@ -12,7 +12,6 @@ import sys, os
 sys.path.append(os.environ['raco'])
 from common import *
 from plotcommon import axis_range
-from get_eq import get_eq
 from tl_util import plot_tl
 from read_inner_vp import read_inner_vp
 

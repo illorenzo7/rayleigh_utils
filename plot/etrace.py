@@ -11,7 +11,6 @@ sys.path.append(os.environ['rapp'])
 from subprocess import call
 from common import *
 from rayleigh_diagnostics import GridInfo
-from get_eq import get_eq
 
 # Get the run directory on which to perform the analysis
 dirname = sys.argv[1]

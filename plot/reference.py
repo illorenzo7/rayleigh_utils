@@ -16,7 +16,6 @@ sys.path.append(os.environ['idref'])
 
 from common import *
 from plotref import plotref
-from get_eq import get_eq
 
 # Get the run directory on which to perform the analysis
 dirname = sys.argv[1]

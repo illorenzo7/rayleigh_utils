@@ -13,7 +13,6 @@ from sslice_util import plot_ortho
 from get_sslice import get_sslice
 from rayleigh_diagnostics import Shell_Slices
 from varprops import texlabels
-from get_eq import get_eq
 
 # Get command line arguments
 dirname = sys.argv[1]

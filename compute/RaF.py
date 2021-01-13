@@ -12,7 +12,6 @@ import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from rayleigh_diagnostics import Shell_Avgs, GridInfo
-from get_eq import get_eq
 
 # Get directory name
 dirname = sys.argv[1]
