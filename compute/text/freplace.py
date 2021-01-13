@@ -59,8 +59,6 @@ for fname in fnames:
 
             if the_truth and lines_to_compare != block1:
                 # replace the correponding block
-                print ("lines_to_compare = ", lines_to_compare)
-                print ("block1 = ", block1)
                 fnames_changed.append(dirname + '/' + fname)
                 block_we_compared = ''
                 for j in range(nlines1):
