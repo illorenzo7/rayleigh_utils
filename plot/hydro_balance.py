@@ -51,11 +51,24 @@ for i in range(nargs):
         xminmax = float(args[i+1]), float(args[i+2])
     elif arg == '-rnorm':
         rnorm = float(args[i+1])
-    elif arg == '-rvals':
-        rvals_str = args[i+1].split()
+    elif arg == '-depths':
         rvals = []
-        for rval_str in rvals_str:
-            rvals.append(float(rval_str))
+        strings = args[i+1].split()
+        for st in strings:
+            rval = ro - float(st)*d
+            rvals.append(rval)
+    elif arg == '-rvals':
+        rvals = []
+        strings = args[i+1].split()
+        for st in strings:
+            rval = float(st)*rsun
+            rvals.append(rval)
+    elif arg == '-rvalscm':
+        rvals = []
+        strings = args[i+1].split()
+        for st in strings:
+            rval = float(st)
+            rvals.append(rval)
 
 lw = 1. # regular lines
 #lw = 1.5 # Bit thicker lines

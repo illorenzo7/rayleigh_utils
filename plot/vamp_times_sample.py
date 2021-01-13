@@ -55,11 +55,24 @@ for i in range(nargs):
         minmax = float(args[i+1]), float(args[i+2])
     elif arg == '-log':
         logscale = True
-    elif arg == '-rvals':
-        rvals_str = args[i+1].split()
+    elif arg == '-depths':
         rvals = []
-        for rval_str in rvals_str:
-            rvals.append(float(rval_str))
+        strings = args[i+1].split()
+        for st in strings:
+            rval = ro - float(st)*d
+            rvals.append(rval)
+    elif arg == '-rvals':
+        rvals = []
+        strings = args[i+1].split()
+        for st in strings:
+            rval = float(st)*rsun
+            rvals.append(rval)
+    elif arg == '-rvalscm':
+        rvals = []
+        strings = args[i+1].split()
+        for st in strings:
+            rval = float(st)
+            rvals.append(rval)
 
 # Get the baseline time unit
 rotation = get_parameter(dirname, 'rotation')
