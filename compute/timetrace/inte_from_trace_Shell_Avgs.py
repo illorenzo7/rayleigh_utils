@@ -15,7 +15,7 @@ import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from rayleigh_diagnostics import GridInfo
-from common import strip_dirname, get_widest_range_file, get_dict
+from common import *
 from get_eq import get_eq
 
 # Get the name of the run directory

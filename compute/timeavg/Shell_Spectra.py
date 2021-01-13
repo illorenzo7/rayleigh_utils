@@ -57,8 +57,7 @@ dataname = 'Shell_Spectra'
 if rank == 0:
     # modules needed only by proc 0 
     import pickle
-    from common import get_file_lists, get_desired_range, strip_dirname
-    from mpi_util import opt_workload
+from common import *
 
 # Checkpoint and time
 comm.Barrier()

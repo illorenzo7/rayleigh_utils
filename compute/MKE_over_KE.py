@@ -8,7 +8,7 @@ import numpy as np
 import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
-from common import get_widest_range_file, get_dict
+from common import *
 
 # Get directory name
 dirname = sys.argv[1]

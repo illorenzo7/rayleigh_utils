@@ -9,8 +9,7 @@ import os, sys
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from rayleigh_diagnostics import G_Avgs, Shell_Slices
-from common import get_file_lists, get_desired_range, strip_dirname,\
-        get_widest_range_file, get_dict
+from common import *
 
 dirname = sys.argv[1]
 

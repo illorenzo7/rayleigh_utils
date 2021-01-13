@@ -8,7 +8,7 @@ sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['idref'])
 
-from common import strip_dirname
+from common import *
 from reference_tools import equation_coefficients
 
 # Get the run directory on which to perform the analysis

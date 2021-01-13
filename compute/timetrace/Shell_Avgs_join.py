@@ -14,8 +14,7 @@ import pickle
 import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
-from common import get_file_lists, get_desired_range, strip_dirname,\
-        strip_filename, get_dict
+from common import *
 
 # Find the relevant place to store the data, and create the directory if it
 # doesn't already exist

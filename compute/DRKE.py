@@ -8,8 +8,7 @@ import os, sys
 sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
 from rayleigh_diagnostics import GridInfo
-from common import get_file_lists, get_widest_range_file, strip_dirname,\
-        get_dict
+from common import *
 
 # Main directory and data directory
 dirname = sys.argv[1]

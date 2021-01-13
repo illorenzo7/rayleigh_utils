@@ -9,7 +9,7 @@ import numpy as np
 import os, sys
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
-from common import read_log
+from common import *
 
 # Get the run directory on which to perform the analysis
 dirname = sys.argv[1]

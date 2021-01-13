@@ -47,7 +47,7 @@ sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['raco'] + '/tachocline')
 
 from reference_tools import equation_coefficients
-from common import rsun
+from common import *
 import basic_constants as bc
 
 # Set default constants

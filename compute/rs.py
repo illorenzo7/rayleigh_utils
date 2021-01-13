@@ -20,8 +20,7 @@
 import numpy as np
 import os, sys
 from diagnostic_reading import Meridional_Slice
-from common import get_file_lists, get_desired_range, strip_dirname,\
-    get_widest_range_file
+from common import *
 
 # Function to split an array according to locations where it's positive or
     # negative

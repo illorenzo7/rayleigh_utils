@@ -11,7 +11,7 @@ import os, sys
 sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
 from rayleigh_diagnostics import GridInfo
-from common import get_widest_range_file, strip_dirname, get_dict
+from common import *
 
 # Get the name of the simulation directory
 dirname = sys.argv[1]

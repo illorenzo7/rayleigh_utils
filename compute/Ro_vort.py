@@ -14,7 +14,7 @@ import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from rayleigh_diagnostics import Shell_Avgs, GridInfo
-from common import get_widest_range_file, get_dict
+from common import *
 from get_length_scales import get_length_scales
 
 # Get directory name

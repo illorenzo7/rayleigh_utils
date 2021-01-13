@@ -29,8 +29,7 @@ import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from rayleigh_diagnostics import Shell_Slices, AZ_Avgs
-from common import get_file_lists, get_desired_range, strip_dirname,\
-    get_widest_range_file, get_dict
+from common import *
 from get_parameter import get_parameter
 
 # Get the name of the run directory

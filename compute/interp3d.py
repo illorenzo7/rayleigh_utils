@@ -4,7 +4,7 @@ import sys, os
 from scipy.interpolate import RegularGridInterpolator
 sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
-from common import get_file_lists, strip_dirname
+from common import *
 from rayleigh_diagnostics import Spherical_3D
 
 # Get command line arguments

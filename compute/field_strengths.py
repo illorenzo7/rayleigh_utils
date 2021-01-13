@@ -19,7 +19,7 @@ import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from rayleigh_diagnostics import Meridional_Slices
-from common import get_file_lists, get_desired_range
+from common import *
 
 # Get the name of the run directory
 dirname = sys.argv[1]

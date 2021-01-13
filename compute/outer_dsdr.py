@@ -9,7 +9,7 @@
 import numpy as np
 import sys, os
 from polytrope import compute_polytrope
-from common import lsun, rhom, rm, ro
+from common import *
 
 sys.path.append(os.environ['rapp'])
 from rayleigh_diagnostics import ReferenceState, TransportCoeffs

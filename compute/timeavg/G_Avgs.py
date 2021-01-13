@@ -18,7 +18,7 @@ import sys, os
 sys.path.append(os.environ['rasource'] + '/post_processing')
 sys.path.append(os.environ['raco'])
 from rayleigh_diagnostics import G_Avgs
-from common import get_file_lists, get_desired_range, strip_dirname
+from common import *
 
 # Get the name of the run directory
 dirname = sys.argv[1]

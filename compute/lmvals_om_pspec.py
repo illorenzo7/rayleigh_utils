@@ -20,7 +20,7 @@ import numpy as np
 import pickle
 import sys, os
 sys.path.append(os.environ['raco'])
-from common import get_dict
+from common import *
 
 # File name of the trace_lmvals_v file 
 fname = sys.argv[1]
