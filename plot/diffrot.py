@@ -18,7 +18,7 @@ import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from azav_util import plot_azav
-from common import get_widest_range_file, strip_dirname, get_dict
+from common import *
 from get_parameter import get_parameter
 from time_scales import compute_Prot, compute_tdt
 from translate_times import translate_times

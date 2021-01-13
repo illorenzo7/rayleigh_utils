@@ -18,7 +18,7 @@ import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from get_parameter import get_parameter
-from common import get_file_lists, rsun
+from common import *
 from rayleigh_diagnostics import Meridional_Slices
 from get_eq import get_eq
 

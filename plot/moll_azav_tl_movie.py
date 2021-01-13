@@ -17,7 +17,7 @@ import numpy as np
 import sys, os
 sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
-from common import get_file_lists, rsun, get_desired_range, range_options,\
+from common import *
         get_dict, get_widest_range_file, sci_format, saturate_array,\
         get_symlog_params, get_exp, append_logfile, allthrees_start,\
         sci_format

@@ -54,7 +54,7 @@ dataname = 'AZ_Avgs'
 
 if rank == 0:
     # modules needed only by proc 0 
-    from common import strip_dirname, get_file_lists, get_desired_range
+from common import *
     from get_parameter import get_parameter
     from get_eq import get_eq
     from time_scales import compute_Prot, compute_tdt

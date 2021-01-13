@@ -13,7 +13,7 @@ sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from get_parameter import get_parameter
 
-from common import strip_dirname, rsun
+from common import *
 from rayleigh_diagnostics import TransportCoeffs
 from reference_tools import equation_coefficients
 from read_kappa00 import read_kappa00

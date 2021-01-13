@@ -14,7 +14,7 @@ import numpy as np
 import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
-from common import get_widest_range_file, strip_dirname,\
+from common import *
         get_iters_from_file, get_dict, rsun
 from get_length_scales import get_length_scales
 from get_parameter import get_parameter

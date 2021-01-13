@@ -11,7 +11,7 @@ import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from varprops import var_indices, var_indices_old
-from common import thermo_R, thermo_gamma, c_P
+from common import *
 from get_parameter import get_parameter
 from get_eq import get_eq
 from rayleigh_diagnostics import GridInfo # for doing averages

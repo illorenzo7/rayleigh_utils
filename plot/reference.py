@@ -14,7 +14,7 @@ sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['idref'])
 
-from common import strip_dirname, rsun
+from common import *
 from plotref import plotref
 from get_eq import get_eq
 

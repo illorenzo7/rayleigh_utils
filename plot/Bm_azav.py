@@ -19,7 +19,7 @@ import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from azav_util import plot_azav, streamfunction
-from common import get_widest_range_file, strip_dirname, get_desired_range,\
+from common import *
         get_dict
 from get_parameter import get_parameter
 from time_scales import compute_Prot, compute_tdt

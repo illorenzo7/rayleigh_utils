@@ -19,7 +19,7 @@ import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from azav_util import plot_azav
-from common import get_widest_range_file, strip_dirname, get_file_lists,\
+from common import *
         get_desired_range
 from rayleigh_diagnostics import AZ_Avgs
 from get_parameter import get_parameter

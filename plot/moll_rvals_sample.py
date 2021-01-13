@@ -7,7 +7,7 @@ import numpy as np
 import sys, os
 sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
-from common import get_file_lists, strip_dirname, rsun
+from common import *
 from plotcommon import axis_range
 from sslice_util import plot_moll
 from get_sslice import get_sslice

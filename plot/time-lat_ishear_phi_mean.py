@@ -9,7 +9,7 @@ csfont = {'fontname':'DejaVu Serif'}
 import numpy as np
 import sys, os
 sys.path.append(os.environ['raco'])
-from common import get_widest_range_file, strip_dirname, rsun, get_dict
+from common import *
 from plotcommon import axis_range
 from get_parameter import get_parameter
 from time_scales import compute_Prot, compute_tdt

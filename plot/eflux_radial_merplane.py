@@ -25,7 +25,7 @@ sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapl'])
 from azav_util import plot_azav
-from common import get_widest_range_file, strip_dirname, get_dict
+from common import *
 from get_parameter import get_parameter
 from compute_grid_info import compute_theta_grid
 from get_eq import get_eq

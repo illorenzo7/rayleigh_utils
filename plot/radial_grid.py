@@ -13,7 +13,7 @@ sys.path.append(os.environ['raco'])
 from compute_grid_info import compute_grid_info
 from get_parameter import get_parameter
 from get_domain_bounds import get_domain_bounds
-from common import print_tuple, rsun
+from common import *
 dirname = sys.argv[1]
 rnorm = None
 rvals = []

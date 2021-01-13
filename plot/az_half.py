@@ -22,7 +22,7 @@ sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapl'])
 from azav_util import plot_azav_half
-from common import get_widest_range_file, get_dict, strip_dirname, my_bool
+from common import *
 from get_parameter import get_parameter
 from time_scales import compute_Prot, compute_tdt
 from translate_times import translate_times

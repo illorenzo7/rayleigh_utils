@@ -11,7 +11,7 @@ import numpy as np
 import sys, os
 sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
-from common import get_file_lists, strip_dirname, rsun, get_desired_range
+from common import *
 from plotcommon import axis_range
 from translate_times import translate_times
 from eqslice_util import plot_eqslice

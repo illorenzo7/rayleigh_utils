@@ -17,7 +17,7 @@ import sys, os
 sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
 from varprops import texunits, texlabels, var_indices
-from common import get_file_lists, get_desired_range, rsun, strip_dirname
+from common import *
 from rayleigh_diagnostics import Shell_Spectra
 from get_parameter import get_parameter
 from time_scales import compute_Prot, compute_tdt

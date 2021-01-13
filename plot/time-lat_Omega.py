@@ -11,7 +11,7 @@ import numpy as np
 import pickle
 import sys, os
 sys.path.append(os.environ['raco'])
-from common import get_file_lists, get_widest_range_file, strip_dirname,\
+from common import *
         rsun, get_dict, allthrees_start
 from plotcommon import axis_range
 from get_parameter import get_parameter

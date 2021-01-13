@@ -10,7 +10,7 @@ sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
 from cartopy import crs
 from varprops import texunits
-from common import get_satvals, saturate_array, sci_format, get_symlog_params
+from common import *
 from plotcommon import default_axes_1by1, default_axes_2by1, axis_range
 
 def deal_with_nans(x, y):
