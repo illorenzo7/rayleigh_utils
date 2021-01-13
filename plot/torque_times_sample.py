@@ -11,17 +11,18 @@ from mpi4py import MPI
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 
+import sys, os
+sys.path.append(os.environ['rapp'])
+sys.path.append(os.environ['raco'])
+sys.path.append(os.environ['rapl'])
+
 # Start timing immediately
 comm.Barrier()
 if rank == 0:
     # timing module
     import time
     # info for print messages
-    import sys, os
-    sys.path.append(os.environ['raco'])
     from common import *
-    from mpi_util import opt_workload
-    lent = 50
     char = '.'
     nproc = comm.Get_size()
     t1_glob = time.time()
@@ -45,7 +46,7 @@ import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapl'])
-from rayleigh_diagnostics import AZ_Avgs
+from rayleigh_diagnostics import AZ_Avgs, GridInfo
 from azav_util import plot_azav, streamfunction
 from common import sci_format
 from rayleigh_diagnostics import AZ_Avgs
