@@ -18,7 +18,6 @@ import sys, os
 sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
 from common import *
-        get_dict, get_widest_range_file, sci_format, saturate_array,\
         get_symlog_params, get_exp, append_logfile, allthrees_start,\
         sci_format
 from sslice_util import plot_moll, get_satvals

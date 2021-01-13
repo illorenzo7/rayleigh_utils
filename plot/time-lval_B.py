@@ -11,7 +11,6 @@ import pickle
 import sys, os
 sys.path.append(os.environ['raco'])
 from common import *
-        rsun, get_dict, get_satvals
 from plotcommon import axis_range, xy_grid, integerticks
 
 # Get the run directory on which to perform the analysis

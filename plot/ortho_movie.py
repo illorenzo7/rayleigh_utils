@@ -8,7 +8,6 @@ import sys, os
 sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
 from common import *
-        get_satvals
 from plotcommon import axis_range
 from sslice_util import plot_ortho
 from get_sslice import get_sslice

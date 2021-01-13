@@ -16,7 +16,6 @@ sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from rayleigh_diagnostics import Shell_Avgs
 from common import *
-        get_iters_from_file, get_dict, rsun, lsun, get_file_lists,\
         get_desired_range
 
 from compute_grid_info import compute_theta_grid

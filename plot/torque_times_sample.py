@@ -55,7 +55,6 @@ dataname = 'AZ_Avgs'
 if rank == 0:
     # modules needed only by proc 0 
 from common import *
-    from time_scales import compute_Prot, compute_tdt
     from rayleigh_diagnostics import AZ_Avgs, GridInfo
 
 # Checkpoint and time

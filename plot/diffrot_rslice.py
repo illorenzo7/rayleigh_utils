@@ -18,7 +18,6 @@ csfont = {'fontname':'DejaVu Serif'}
 import sys, os
 sys.path.append(os.environ['raco'])
 from common import *
-        get_iters_from_file, get_dict, rsun
 from time_scales import compute_Prot
 from translate_times import translate_times
 

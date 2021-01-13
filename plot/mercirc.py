@@ -20,7 +20,6 @@ sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from azav_util import plot_azav, streamfunction
 from common import *
-        trim_field
 from get_eq import get_eq
 from time_scales import compute_Prot, compute_tdt
 from translate_times import translate_times

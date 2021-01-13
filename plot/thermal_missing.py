@@ -15,7 +15,6 @@ import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from common import *
-        get_iters_from_file, get_dict, rsun, get_file_lists,\
         get_desired_range
 from rayleigh_diagnostics import GridInfo, Meridional_Slices
 from get_eq import get_eq

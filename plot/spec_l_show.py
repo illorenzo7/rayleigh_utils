@@ -21,7 +21,6 @@ sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
 from varprops import texunits, texlabels, var_indices
 from common import *
-        get_iters_from_file, get_dict, rsun, sci_format, get_satvals, rms
 from plotcommon import default_axes_1by1, axis_range
 from time_scales import compute_Prot, compute_tdt
 from translate_times import translate_times

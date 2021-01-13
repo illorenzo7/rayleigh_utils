@@ -19,7 +19,6 @@ sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from rayleigh_diagnostics import Shell_Avgs
 from common import *
-        get_iters_from_file, get_dict, rsun, get_file_lists,\
         get_desired_range
 from get_eq import get_eq
 from time_scales import compute_Prot, compute_tdt

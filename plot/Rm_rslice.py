@@ -19,7 +19,6 @@ sys.path.append(os.environ['rapp'])
 from rayleigh_diagnostics import TransportCoeffs
 from reference_tools import equation_coefficients
 from common import *
-        get_iters_from_file, get_dict
 
 # Get directory name and stripped_dirname for plotting purposes
 dirname = sys.argv[1]

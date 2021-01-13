@@ -21,7 +21,6 @@ import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from common import *
-        get_iters_from_file, get_dict, rsun
 from time_scales import compute_Prot, compute_tdt
 from translate_times import translate_times
 from get_eq import get_eq
