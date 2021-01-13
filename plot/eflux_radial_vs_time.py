@@ -19,7 +19,6 @@ from common import *
         get_desired_range
 
 from compute_grid_info import compute_theta_grid
-from time_scales import compute_Prot, compute_tdt
 from translate_times import translate_times
 from get_eq import get_eq
 

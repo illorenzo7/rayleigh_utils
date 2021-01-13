@@ -11,7 +11,6 @@ import sys, os
 sys.path.append(os.environ['raco'])
 from common import *
 from plotcommon import axis_range
-from time_scales import compute_Prot, compute_tdt
 from tl_util import plot_tl
 
 # Get the run directory on which to perform the analysis

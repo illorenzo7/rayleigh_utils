@@ -13,7 +13,6 @@ from sslice_util import plot_moll
 from get_sslice import get_sslice
 from rayleigh_diagnostics import Shell_Slices, GridInfo
 from varprops import texlabels
-from time_scales import compute_Prot, compute_tdt
 
 # Get command line arguments
 dirname = sys.argv[1]

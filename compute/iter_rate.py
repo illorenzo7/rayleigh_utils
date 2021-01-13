@@ -11,7 +11,6 @@ sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from common import read_log
 from get_parameter import get_parameter
-from time_scales import compute_Prot, compute_tdt
 
 # Get the run directory on which to perform the analysis
 dirname = sys.argv[1]

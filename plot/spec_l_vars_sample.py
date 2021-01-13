@@ -22,7 +22,6 @@ sys.path.append(os.environ['rapp'])
 from varprops import texunits, texlabels, var_indices
 from common import *
 from plotcommon import default_axes_1by1, axis_range
-from time_scales import compute_Prot, compute_tdt
 from translate_times import translate_times
 from rayleigh_diagnostics import Shell_Spectra
 

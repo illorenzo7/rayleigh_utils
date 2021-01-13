@@ -9,7 +9,6 @@ sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
 from get_parameter import get_parameter
 from get_eq import get_eq
-from time_scales import compute_Prot, compute_tdt
 from rayleigh_diagnostics import GridInfo
 from common import get_file_lists, get_widest_range_file, strip_dirname,\
         get_dict

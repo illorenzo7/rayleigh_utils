@@ -24,7 +24,6 @@ from varprops import texunits, texlabels, var_indices
 from common import *
 
 from plotcommon import default_axes_1by1, axis_range, xy_grid
-from time_scales import compute_Prot, compute_tdt
 from translate_times import translate_times
 
 # Get directory name and stripped_dirname for plotting purposes

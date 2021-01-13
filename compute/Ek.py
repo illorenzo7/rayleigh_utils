@@ -14,7 +14,6 @@ sys.path.append(os.environ['raco'])
 from rayleigh_diagnostics import Shell_Avgs, GridInfo
 from common import get_widest_range_file, get_dict
 from get_eq import get_eq
-from time_scales import compute_Prot
 
 # Get directory name
 dirname = sys.argv[1]

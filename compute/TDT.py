@@ -10,7 +10,6 @@
 import numpy as np
 import sys, os
 sys.path.append(os.environ['raco'])
-from time_scales import compute_tdt, compute_Prot
 from get_parameter import get_parameter
 
 # Get directory name

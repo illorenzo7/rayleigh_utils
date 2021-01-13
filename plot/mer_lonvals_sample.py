@@ -18,7 +18,6 @@ from azav_util import plot_azav
 from rayleigh_diagnostics import Meridional_Slices, AZ_Avgs, Shell_Avgs
 from get_merslice import get_merslice
 from varprops import texlabels, texunits
-from time_scales import compute_Prot, compute_tdt
 
 # Get command line arguments
 dirname = sys.argv[1]

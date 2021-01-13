@@ -19,7 +19,6 @@ sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
 from rayleigh_diagnostics import Shell_Avgs
 from common import *
-from time_scales import compute_Prot, compute_tdt
 
 # Get directory name and stripped_dirname for plotting purposes
 dirname = sys.argv[1]

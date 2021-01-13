@@ -18,7 +18,6 @@ from eqslice_util import plot_eqslice
 from rayleigh_diagnostics import Equatorial_Slices
 from get_eqslice import get_eqslice
 from varprops import texlabels, texunits
-from time_scales import compute_Prot, compute_tdt
 
 # Get command line arguments
 dirname = sys.argv[1]
