@@ -19,7 +19,6 @@ sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from rayleigh_diagnostics import Shell_Spectra
 from common import *
-from get_parameter import get_parameter
 
 # Get the name of the run directory
 dirname = sys.argv[1]
@@ -29,7 +28,7 @@ dirname_stripped = strip_dirname(dirname)
 # Find the relevant place to store the data, and create the directory if it
 # doesn't already exist
 datadir = dirname + '/data/'
-if (not os.path.isdir(datadir)):
+if not os.path.isdir(datadir):
     os.makedirs(datadir)
 
 radatadir = dirname + '/Shell_Spectra/'

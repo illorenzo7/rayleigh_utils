@@ -22,7 +22,6 @@ sys.path.append(os.environ['rasource'] + '/post_processing')
 sys.path.append(os.environ['raco'])
 from rayleigh_diagnostics import Shell_Spectra
 from common import *
-from get_parameter import get_parameter
 
 # Get the name of the run directory
 dirname = sys.argv[1]
