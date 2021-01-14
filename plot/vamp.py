@@ -32,6 +32,10 @@ ri = np.min(domain_bounds)
 ro = np.max(domain_bounds)
 d = ro - ri
 
+# get rho
+eq = get_eq(dirname)
+rho = eq.density
+
 # Directory with data and plots, make the plotting directory if it doesn't
 # already exist    
 datadir = dirname + '/data/'
@@ -111,10 +115,14 @@ nr = len(rr)
 ri, ro = np.min(rr), np.max(rr)
 shell_depth = ro - ri
 
-# Convective velocity amplitudes...
-print(np.shape(vals))
-vsq_r, vsq_t, vsq_p = vals[:, lut[422]], vals[:, lut[423]],\
-    vals[:, lut[424]]
+# Convective velocity amplitudes, get these from KE
+frke = vals[:, lut[410]]
+ftke = vals[:, lut[411]]
+fpke = vals[:, lut[412]]
+
+vsq_r = frke/rho
+vsq_t = ftke/rho
+vsq_p = fpke/rho
 vsq = vsq_r + vsq_t + vsq_p
 
 amp_v = np.sqrt(vsq)/100.
@@ -164,16 +172,18 @@ ir1, ir2 = np.argmin(np.abs(rr_depth - 0.05)),\
 amp_min = min(np.min(amp_vr[ir1:ir2]), np.min(amp_vt[ir1:ir2]),\
         np.min(amp_vp[ir1:ir2]))
 amp_max = np.max(amp_v[ir1:ir2])
-
+print (amp_min, amp_max)
 if minmax is None:
+    fact = 0.2
     if logscale:
         ratio = amp_max/amp_min
-        ybuffer = 0.2*ratio
+        ybuffer = ratio**fact
         ymin = amp_min/ybuffer
         ymax = amp_max*ybuffer
+        print (ymin, ymax)
     else:
         difference = amp_max - amp_min
-        ybuffer = 0.2*difference
+        ybuffer = fact*difference
         ymin, ymax = amp_min - ybuffer, amp_max + ybuffer
 else:
     ymin, ymax = minmax
