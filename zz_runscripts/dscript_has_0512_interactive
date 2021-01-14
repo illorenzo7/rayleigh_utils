@@ -1,0 +1,1 @@
+qsub -I -q devel -W group_list=s2175 -l select=22:ncpus=24:mpiprocs=24:model=has -l walltime=02:00:00
