@@ -52,7 +52,7 @@ dataname = 'Shell_Avgs'
 if rank == 0:
     # modules needed only by proc 0 
     import pickle
-    from get_eq import get_eq
+    from rayleigh_diagnostics import GridInfo
 
 # Checkpoint and time
 comm.Barrier()
