@@ -1,3 +1,0 @@
-    sys.path.append(os.environ['raco'])
-    # import common here
-    from common import *
