@@ -32,6 +32,7 @@ minmax = None
 iiter = nfiles - 1 # by default plot the last iteration
 varname = 'vr' # by default plot the radial velocity
 clon = 0.
+rvals = []
 
 args = sys.argv[2:]
 nargs = len(args)
@@ -61,6 +62,42 @@ for i in range(nargs):
         iiter = np.argmin(np.abs(int_file_list - desired_iter))
     elif arg == '-clon':
         clon = float(args[i+1])
+    elif arg == '-depths':
+        strings = args[i+1].split()
+        for st in strings:
+            rval = ro - float(st)*d
+            rvals.append(rval)
+    elif arg == '-depthscz':
+        rm = domain_bounds[1]
+        dcz = ro - rm
+        strings = args[i+1].split()
+        for st in strings:
+            rval = ro - float(st)*dcz
+            rvals.append(rval)
+    elif arg == '-depthsrz':
+        rm = domain_bounds[1]
+        drz = rm - ri
+        strings = args[i+1].split()
+        for st in strings:
+            rval = rm - float(st)*drz
+            rvals.append(rval)
+    elif arg == '-rvals':
+        rvals = []
+        strings = args[i+1].split()
+        for st in strings:
+            rval = float(st)*rsun
+            rvals.append(rval)
+    elif arg == '-rvalscm':
+        rvals = []
+        strings = args[i+1].split()
+        for st in strings:
+            rval = float(st)
+            rvals.append(rval)
+    elif arg == '-rrange':
+        r1 = float(args[i+1])
+        r2 = float(args[i+2])
+        n = int(args[i+3])
+        rvals = np.linspace(r1, r2, n)*rsun
 
 # Get the baseline time unit
 rotation = get_parameter(dirname, 'rotation')
@@ -111,7 +148,14 @@ if not os.path.isdir(plotdir):
     os.makedirs(plotdir)
     
 # Loop over rvals and make plots
-for ir in range(a.nr):
+if rvals == []:
+    irvals = np.arange(a.nr) # loop over everything
+else:
+    irvals = np.zeros_like(rvals, dtype='int')
+    for i in range(len(rvals)):
+        irvals[i] = np.argmin(np.abs(a.radius - rvals[i]))
+
+for ir in irvals:
     rval = a.radius[ir]/rsun
     vals = get_sslice(a, varname, dirname=dirname)
     field = vals[:, :, ir]
