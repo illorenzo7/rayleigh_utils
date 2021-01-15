@@ -22,7 +22,7 @@ import pickle
 import sys, os
 sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
-from common import get_file_lists, get_widest_range_file, strip_dirname,\
+from common import *
         rsun, get_dict, allthrees_start, get_exp, get_symlog_params,\
         sci_format
 from plotcommon import axis_range

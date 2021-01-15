@@ -13,7 +13,7 @@ sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 
 from reference_tools import equation_coefficients
-from common import rsun
+from common import *
 import basic_constants as bc
 
 # Get directory name

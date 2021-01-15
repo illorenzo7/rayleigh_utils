@@ -1,7 +1,7 @@
 import sys, os
 import numpy as np
 import matplotlib.pyplot as plt
-from common import strip_dirname, get_widest_range_file
+from common import *
 
 # Get the name of the run directory
 dirname = sys.argv[1]

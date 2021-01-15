@@ -5,7 +5,7 @@ mpl.use('Agg')
 from matplotlib import colors
 import matplotlib.pyplot as plt
 from diagnostic_reading import Meridional_Slice
-from common import strip_dirname, get_widest_range_file, get_iters_from_file
+from common import *
 
 # Get the name of the run directory
 dirname = sys.argv[1]

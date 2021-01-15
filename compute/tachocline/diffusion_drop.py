@@ -48,7 +48,7 @@ sys.path.append(os.environ['raco'])
 import basic_constants as bc
 
 from reference_tools import equation_coefficients
-from common import rsun
+from common import *
 
 # Set default constants
 rt = 4.87e10 # by default transition a bit below RZ-CZ transition

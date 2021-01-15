@@ -13,7 +13,7 @@ sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['idref'])
 
-from common import strip_dirname
+from common import *
 from plotref import plotref
 from reference_tools import equation_coefficients
 from get_parameter import get_parameter

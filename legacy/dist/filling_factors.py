@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys, os
 from diagnostic_reading import ReferenceState
-from common import get_widest_range_file, strip_dirname
+from common import *
 
 dirname = sys.argv[1]
 # Get the stripped name to use in file naming

@@ -6,7 +6,7 @@
 
 # Import relevant modules here
 import numpy as np
-from common import get_widest_range_file, interpx
+from common import *
 import sys
 
 # Get simulation directory and data directory

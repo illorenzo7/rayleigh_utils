@@ -7,10 +7,9 @@ import numpy as np
 import sys, os
 sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
-from common import get_file_lists, strip_dirname, rsun, reverse_dict,\
+from common import *
         get_satvals, saturate_array, get_widest_range_file, get_dict
 from plotcommon import axis_range, default_axes_1by1
-from translate_times import translate_times
 from rayleigh_diagnostics import Meridional_Slices, ReferenceState
 from varprops import texlabels, var_indices, texunits
 from azav_util import plot_azav

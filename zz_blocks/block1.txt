@@ -1,1 +1,1 @@
-from translate_times
+from common import

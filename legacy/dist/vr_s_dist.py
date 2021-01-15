@@ -11,7 +11,7 @@
 import numpy as np
 import sys, os
 from diagnostic_reading import Meridional_Slice
-from common import get_file_lists, get_desired_range, strip_dirname,\
+from common import *
     get_widest_range_file
 
 # Get the name of the run directory

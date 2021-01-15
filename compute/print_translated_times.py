@@ -6,6 +6,7 @@
 
 import sys
 import numpy as np
+from common import *
 
 # Get the run directory on which to perform the analysis
 dirname = sys.argv[1]

@@ -4,7 +4,7 @@ from derivs import drad, dth
 import numpy as np
 import sys, os
 from diagnostic_reading import ReferenceState
-from common import get_widest_range_file, get_iters_from_file, strip_dirname
+from common import *
 from get_parameter import get_parameter
 
 dirname = sys.argv[1]

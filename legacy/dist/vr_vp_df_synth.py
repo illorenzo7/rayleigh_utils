@@ -1,6 +1,6 @@
 import sys, os
 import numpy as np
-from common import strip_dirname, get_widest_range_file, get_iters_from_file,\
+from common import *
     interpx, interpy
 
 # Get the name of the run directory

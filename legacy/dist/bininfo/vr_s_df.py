@@ -14,7 +14,7 @@
 # Import relevant modules
 import numpy as np
 import sys, os
-from common import get_widest_range_file
+from common import *
 
 # Get the name of the run directory
 dirname = sys.argv[1]
