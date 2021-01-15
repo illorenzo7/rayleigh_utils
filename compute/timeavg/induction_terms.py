@@ -45,7 +45,9 @@ import numpy as np
 # data type and reading function
 import sys, os
 sys.path.append(os.environ['rapp'])
+sys.path.append(os.environ['raco'])
 from rayleigh_diagnostics import AZ_Avgs, Meridional_Slices
+from common import drad, dth
 reading_func1 = AZ_Avgs
 reading_func2 = Meridional_Slices
 dataname1 = 'AZ_Avgs'
@@ -74,7 +76,7 @@ if rank == 0:
     radatadir2 = dirname + '/' + dataname2 + '/'
 
     # Get all the file names in datadir and their integer counterparts
-    file_list, int_file_list, nfiles = get_file_lists(radatadir)
+    file_list, int_file_list, nfiles = get_file_lists(radatadir1)
 
     # Get desired file list from command-line arguments
     args = sys.argv[2:]
@@ -95,12 +97,11 @@ if rank == 0:
             opt_workload(nfiles, nproc)
 
     # Will need the first data file for a number of things
-    a0 = reading_func(radatadir + file_list[0], '')
+    a0 = reading_func1(radatadir1 + file_list[0], '')
     nrec_full = a0.niter
-    nq = a0.nq  # will add the three internal energies after
 
     # Will need nrec (last niter) to get proper time axis size
-    af = reading_func(radatadir + file_list[-1], '')
+    af = reading_func1(radatadir1 + file_list[-1], '')
     nrec_last = af.niter
     ntimes = (nfiles - 1)*nrec_full + nrec_last
 
@@ -151,35 +152,77 @@ else: # recieve my_files, my_nfiles, my_ntimes
 
 # Broadcast dirname, radatadir, nq, etc.
 if rank == 0:
-    meta = [dirname, radatadir, nq, nt, nr, ntimes]
+    meta = [dirname, radatadir1, radatadir2, nt, nr, ntimes, rr, rr_2d]
 else:
     meta = None
-dirname, radatadir, nq, nt, nr, ntimes = comm.bcast(meta, root=0)
+dirname, radatadir1, radatadir2, nt, nr, ntimes, rr, rr_2d =\
+    comm.bcast(meta, root=0)
 
 # Checkpoint and time
 comm.Barrier()
 if rank == 0:
     t2 = time.time()
     print ('%8.2e s' %(t2 - t1))
-    print ('Considering %i %s files for the average: %s through %s'\
-        %(nfiles, dataname, file_list[0], file_list[-1]))
+    print ('Considering %i %s/%s files for the trace: %s through %s'\
+        %(nfiles, dataname1, dataname2, file_list[0], file_list[-1]))
     print ("no. slices = %i" %ntimes)
     print(fill_str('computing', lent, char), end='\r')
     t1 = time.time()
 
 # Now analyze the data
+nq = 4
 my_vals = np.zeros((nt, nr, nq))
 # "my_vals will be a weighted sum"
-my_weight = my_ntimes/ntimes
+my_weight = 1./ntimes
 
 for i in range(my_nfiles):
-    if rank == 0 and i == 0:
-        a = a0
-    else:   
-        a = reading_func(radatadir + str(my_files[i]).zfill(8), '')
+    a = reading_func1(radatadir1 + str(my_files[i]).zfill(8), '')
+    mer = reading_func2(radatadir2 + str(my_files[i]).zfill(8), '')
     # take mean along the time axis;
-    # get the spherical average (not rms/skew/kurt)
-    my_vals = np.mean(a.vals, axis=3)*my_weight
+
+    for j in range(a.niter):
+        # mean B
+        br_m = a.vals[:, :, a.lut[801], j].reshape((1, nt, nr))
+        bt_m = a.vals[:, :, a.lut[802], j].reshape((1, nt, nr))
+        bp_m = a.vals[:, :, a.lut[803], j].reshape((1, nt, nr))
+
+        # mean v
+        vr_m = a.vals[:, :, a.lut[1], j].reshape((1, nt, nr))
+        vt_m = a.vals[:, :, a.lut[2], j].reshape((1, nt, nr))
+        vp_m = a.vals[:, :, a.lut[3], j].reshape((1, nt, nr))
+
+        # full B
+        br = mer.vals[:, :, :, mer.lut[801], j]
+        bt = mer.vals[:, :, :, mer.lut[802], j]
+        bp = mer.vals[:, :, :, mer.lut[803], j]
+
+        # full v
+        vr = mer.vals[:, :, :, mer.lut[1], j]
+        vt = mer.vals[:, :, :, mer.lut[2], j]
+        vp = mer.vals[:, :, :, mer.lut[3], j]
+
+        # fluc B
+        br_p = br - br_m
+        bt_p = bt - bt_m
+        bp_p = bp - bp_m
+
+        # fluc v
+        vr_p = vr - vr_m
+        vt_p = vt - vt_m
+        vp_p = vp - vp_m
+
+        # correlations
+        vtbr_mm = np.mean(vt_m*br_m, axis=0)
+        vrbt_mm = np.mean(vr_m*bt_m, axis=0)
+        vtbr_pp = np.mean(vt_p*br_p, axis=0)
+        vrbt_pp = np.mean(vr_p*bt_p, axis=0)
+        
+        # induction terms
+        my_vals[:, :, 0] += 1./rr_2d*drad(rr_2d*vtbr_mm, rr)*my_weight
+        my_vals[:, :, 1] += -1./rr_2d*drad(rr_2d*vrbt_mm, rr)*my_weight
+        my_vals[:, :, 2] += 1./rr_2d*drad(rr_2d*vtbr_pp, rr)*my_weight
+        my_vals[:, :, 3] += -1./rr_2d*drad(rr_2d*vrbt_pp, rr)*my_weight
+
     if rank == 0:
         pcnt_done = (i + 1)/my_nfiles*100.
         print(fill_str('computing', lent, char) +\
@@ -207,7 +250,6 @@ if rank == 0:
             my_vals = comm.recv(source=j)
         # "my_vals" are all weighted: their sum equals the overall average
         vals += my_vals 
-
 else: # other processes send their data
     comm.send(my_vals, dest=0)
 
@@ -224,7 +266,7 @@ if rank == 0:
     # Set the timetrace savename by the directory, what we are saving,
     # and first and last iteration files for the trace
     dirname_stripped = strip_dirname(dirname)
-    savename = dirname_stripped + '_AZ_Avgs_' +\
+    savename = dirname_stripped + '_induction_terms_' +\
             file_list[0] + '_' + file_list[-1] + '.pkl'
     savefile = datadir + savename
 
