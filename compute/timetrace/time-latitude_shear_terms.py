@@ -46,40 +46,14 @@ if rank == 0:
             end='')
 
 # Derivative functions needed by everyone
-def drad(arr, radius):
-    nphi, nt, nr = np.shape(arr)
-    two_dr = np.zeros((1, 1, nr-2))
-    two_dr[0, 0, :] = radius[:nr-2] - radius[2:nr]     
-    deriv = np.zeros_like(arr)
-    deriv[:, :, 1:nr-1] = (arr[:, :, :nr-2] - arr[:, :, 2:nr])/two_dr
-    deriv[:, :, 0] = deriv[:, :, 1]
-    deriv[:, :, nr-1] = deriv[:, :, nr-2]
-    return deriv
-
-def dth(arr, theta):
-    nphi, nt, nr = np.shape(arr)
-    two_dt = np.zeros((1, nt-2, 1))
-    two_dt[0, :, 0] = theta[:nt-2] - theta[2:nt]     
-    deriv = np.zeros_like(arr)
-    deriv[:, 1:nt-1, :] = (arr[:, :nt-2, :] - arr[:, 2:nt, :])/two_dt
-    deriv[:, 0, :] = deriv[:, 1, :]
-    deriv[:, nt-1, :] = deriv[:, nt-2, :]
-    return deriv
-
-def dph(arr):
-    nphi, nt, nr = np.shape(arr)
-    dphi = 2.*np.pi/nphi
-    arr2 = np.roll(arr, -1, axis=0)
-    arr1 = np.roll(arr, 1, axis=0)
-    deriv = (arr2 - arr1)/2./dphi
-    return deriv
-
 # modules needed by everyone
 import numpy as np
 # data type and reading function
 import sys, os
 sys.path.append(os.environ['rapp'])
+sys.path.append(os.environ['raco'])
 from rayleigh_diagnostics import AZ_Avgs, Meridional_Slices
+from common import drad_3d, dth_3d
 reading_func1 = AZ_Avgs
 reading_func2 = Meridional_Slices
 dataname1 = 'AZ_Avgs'
@@ -328,12 +302,12 @@ for i in range(my_nfiles):
         vp_m = a.vals[:, :, a.lut[3], j].reshape((1, nt, nr))
 
         # mean v derivs
-        dvrdr_m = drad(vr_m, rr)
-        dvrdt_m = dth(vr_m, tt)/rr_3d
-        dvtdr_m = drad(vt_m, rr)
-        dvtdt_m = dth(vt_m, tt)/rr_3d
-        dvpdr_m = drad(vp_m, rr)
-        dvpdt_m = dth(vp_m, tt)/rr_3d
+        dvrdr_m = drad_3d(vr_m, rr)
+        dvrdt_m = dth_3d(vr_m, tt)/rr_3d
+        dvtdr_m = drad_3d(vt_m, rr)
+        dvtdt_m = dth_3d(vt_m, tt)/rr_3d
+        dvpdr_m = drad_3d(vp_m, rr)
+        dvpdt_m = dth_3d(vp_m, tt)/rr_3d
 
         # now get only the radial indices we need
         vr_m = vr_m[:, :, rinds]
@@ -373,12 +347,12 @@ for i in range(my_nfiles):
         vp = mer.vals[:, :, :, mer.lut[3], j]
 
         # full v derivs
-        dvrdr = drad(vr, rr)
-        dvrdt = dth(vr, tt)/rr_3d
-        dvtdr = drad(vt, rr)
-        dvtdt = dth(vt, tt)/rr_3d
-        dvpdr = drad(vp, rr)
-        dvpdt = dth(vp, tt)/rr_3d
+        dvrdr = drad_3d(vr, rr)
+        dvrdt = dth_3d(vr, tt)/rr_3d
+        dvtdr = drad_3d(vt, rr)
+        dvtdt = dth_3d(vt, tt)/rr_3d
+        dvpdr = drad_3d(vp, rr)
+        dvpdt = dth_3d(vp, tt)/rr_3d
         if phi_deriv:
             dvrdp = mer.vals[:, :, :, mer.lut[28], j]/rr_3d/sint_3d
             dvtdp = mer.vals[:, :, :, mer.lut[29], j]/rr_3d/sint_3d

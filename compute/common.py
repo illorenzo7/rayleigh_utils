@@ -763,6 +763,34 @@ def dth(arr,theta):
     deriv[nt-1, :] = deriv[nt-2, :]
     return deriv
 
+def drad_3d(arr, radius):
+    nphi, nt, nr = np.shape(arr)
+    two_dr = np.zeros((1, 1, nr-2))
+    two_dr[0, 0, :] = radius[:nr-2] - radius[2:nr]     
+    deriv = np.zeros_like(arr)
+    deriv[:, :, 1:nr-1] = (arr[:, :, :nr-2] - arr[:, :, 2:nr])/two_dr
+    deriv[:, :, 0] = deriv[:, :, 1]
+    deriv[:, :, nr-1] = deriv[:, :, nr-2]
+    return deriv
+
+def dth_3d(arr, theta):
+    nphi, nt, nr = np.shape(arr)
+    two_dt = np.zeros((1, nt-2, 1))
+    two_dt[0, :, 0] = theta[:nt-2] - theta[2:nt]     
+    deriv = np.zeros_like(arr)
+    deriv[:, 1:nt-1, :] = (arr[:, :nt-2, :] - arr[:, 2:nt, :])/two_dt
+    deriv[:, 0, :] = deriv[:, 1, :]
+    deriv[:, nt-1, :] = deriv[:, nt-2, :]
+    return deriv
+
+def dph_3d(arr):
+    nphi, nt, nr = np.shape(arr)
+    dphi = 2.*np.pi/nphi
+    arr2 = np.roll(arr, -1, axis=0)
+    arr1 = np.roll(arr, 1, axis=0)
+    deriv = (arr2 - arr1)/2./dphi
+    return deriv
+
 def deriv_1d(x, y):
     n = len(x)
     deriv = np.zeros(n)
