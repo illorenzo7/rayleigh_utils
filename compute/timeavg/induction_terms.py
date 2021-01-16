@@ -152,11 +152,12 @@ else: # recieve my_files, my_nfiles, my_ntimes
 
 # Broadcast dirname, radatadir, nq, etc.
 if rank == 0:
-    meta = [dirname, radatadir1, radatadir2, nt, nr, ntimes, rr, rr_2d]
+    meta = [dirname, radatadir1, radatadir2, nt, nr, ntimes, rr, rr_2d,\
+            tt, tt_2d, sint_2d]
 else:
     meta = None
-dirname, radatadir1, radatadir2, nt, nr, ntimes, rr, rr_2d =\
-    comm.bcast(meta, root=0)
+dirname, radatadir1, radatadir2, nt, nr, ntimes, rr, rr_2d,\
+    tt, tt_2d, sint_2d = comm.bcast(meta, root=0)
 
 # Checkpoint and time
 comm.Barrier()
@@ -170,7 +171,7 @@ if rank == 0:
     t1 = time.time()
 
 # Now analyze the data
-nq = 4
+nq = 16
 my_vals = np.zeros((nt, nr, nq))
 # "my_vals will be a weighted sum"
 my_weight = 1./ntimes
@@ -212,16 +213,55 @@ for i in range(my_nfiles):
         vp_p = vp - vp_m
 
         # correlations
-        vtbr_mm = np.mean(vt_m*br_m, axis=0)
         vrbt_mm = np.mean(vr_m*bt_m, axis=0)
-        vtbr_pp = np.mean(vt_p*br_p, axis=0)
         vrbt_pp = np.mean(vr_p*bt_p, axis=0)
+        vrbp_mm = np.mean(vr_m*bp_m, axis=0)
+        vrbp_pp = np.mean(vr_p*bp_p, axis=0)
+    
+        vtbr_mm = np.mean(vt_m*br_m, axis=0)
+        vtbr_pp = np.mean(vt_p*br_p, axis=0)
+        vtbp_mm = np.mean(vt_m*bp_m, axis=0)
+        vtbp_pp = np.mean(vt_p*bp_p, axis=0)
+
+        vpbr_mm = np.mean(vp_m*br_m, axis=0)
+        vpbr_pp = np.mean(vp_p*br_p, axis=0)
+        vpbt_mm = np.mean(vp_m*bt_m, axis=0)
+        vpbt_pp = np.mean(vp_p*bt_p, axis=0)
         
         # induction terms
-        my_vals[:, :, 0] += 1./rr_2d*drad(rr_2d*vtbr_mm, rr)*my_weight
-        my_vals[:, :, 1] += -1./rr_2d*drad(rr_2d*vrbt_mm, rr)*my_weight
-        my_vals[:, :, 2] += 1./rr_2d*drad(rr_2d*vtbr_pp, rr)*my_weight
-        my_vals[:, :, 3] += -1./rr_2d*drad(rr_2d*vrbt_pp, rr)*my_weight
+        # radial
+        my_vals[:, :, 0] += 1./rr_2d/sint_2d*\
+            dth(sint_2d*vrbt_mm, tt)*my_weight
+        my_vals[:, :, 1] += -1./rr_2d/sint_2d*\
+            dth(sint_2d*vtbr_mm, tt)*my_weight
+        my_vals[:, :, 2] += 1./rr_2d/sint_2d*\
+            dth(sint_2d*vrbt_pp, tt)*my_weight
+        my_vals[:, :, 3] += -1./rr_2d/sint_2d*\
+            dth(sint_2d*vtbr_pp, tt)*my_weight
+        # theta
+        ind_off = 4
+        my_vals[:, :, ind_off + 0] +=\
+            1./rr_2d*drad(rr_2d*vtbr_mm, rr)*my_weight
+        my_vals[:, :, ind_off + 1] +=\
+            -1./rr_2d*drad(rr_2d*vrbt_mm, rr)*my_weight
+        my_vals[:, :, ind_off + 2] +=\
+            1./rr_2d*drad(rr_2d*vtbr_pp, rr)*my_weight
+        my_vals[:, :, ind_off + 3] +=\
+            -1./rr_2d*drad(rr_2d*vrbt_pp, rr)*my_weight
+        # phi
+        ind_off += 4
+        my_vals[:, :, ind_off + 0] +=\
+            1./rr_2d*drad(rr_2d*vpbr_mm, rr)*my_weight
+        my_vals[:, :, ind_off + 1] +=\
+            -1./rr_2d*drad(rr_2d*vrbp_mm, rr)*my_weight
+        my_vals[:, :, ind_off + 2] += 1./rr_2d*dth(vpbt_mm, tt)*my_weight
+        my_vals[:, :, ind_off + 3] += -1./rr_2d*dth(vtbp_mm, tt)*my_weight
+        my_vals[:, :, ind_off + 4] +=\
+            1./rr_2d*drad(rr_2d*vpbr_pp, rr)*my_weight
+        my_vals[:, :, ind_off + 5] +=\
+            -1./rr_2d*drad(rr_2d*vrbp_pp, rr)*my_weight
+        my_vals[:, :, ind_off + 6] += 1./rr_2d*dth(vpbt_pp, tt)*my_weight
+        my_vals[:, :, ind_off + 7] += -1./rr_2d*dth(vtbp_pp, tt)*my_weight
 
     if rank == 0:
         pcnt_done = (i + 1)/my_nfiles*100.
