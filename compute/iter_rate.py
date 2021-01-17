@@ -50,6 +50,7 @@ if fname is None:
 
 print ("In %s:" %fname)
 di = read_log(dirname + '/' + fname)
+print ("ncpu: ", di['ncpu'])
 mean_iters_per_sec = np.mean(di['iters_per_sec'])
 mean_secs_per_iter = np.mean(di['delta_t'])
 print ("Iters/sec (real time): %.1f" %mean_iters_per_sec)

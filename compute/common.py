@@ -382,7 +382,10 @@ def read_log(fname):
     delta_t = []
     iters_per_sec = []
     for line in lines:
-        if "teration" in line:
+        if 'NCPU' in line:
+            split = line.split()
+            ncpu = int(split[-1])
+        elif "teration" in line:
             split = line.split()
             lensplit = len(split)
             if lensplit == 6:
@@ -404,9 +407,10 @@ def read_log(fname):
 
     if len(iters_per_sec) > 0:
         di = dict({'iters': np.array(iters), 'delta_t': np.array(delta_t),\
-                'iters_per_sec': np.array(iters_per_sec)})
+                'iters_per_sec': np.array(iters_per_sec), 'ncpu': ncpu})
     else:
-        di = dict({'iters': np.array(iters), 'delta_t': np.array(delta_t)})
+        di = dict({'iters': np.array(iters), 'delta_t': np.array(delta_t),\
+                'ncpu': ncpu})
 
     return di
 
