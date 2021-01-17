@@ -249,7 +249,7 @@ for i in range(my_nfiles):
         my_vals[:, :, ind_off + 3] +=\
             -1./rr_2d*drad(rr_2d*vrbt_pp, rr)*my_weight
         # phi
-        ind_off += 4
+        ind_off = 8
         my_vals[:, :, ind_off + 0] +=\
             1./rr_2d*drad(rr_2d*vpbr_mm, rr)*my_weight
         my_vals[:, :, ind_off + 1] +=\

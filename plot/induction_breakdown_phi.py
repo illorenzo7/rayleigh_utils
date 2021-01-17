@@ -1,5 +1,5 @@
 # Author: Loren Matilsky
-# Created: 01/14/2021
+# Created: 01/16/2021
 # This script plots induction terms in the meridional plane 
 # ...for the Rayleigh run directory indicated by [dirname]. 
 # To use an AZ_Avgs file
@@ -172,23 +172,39 @@ xx = di['xx']
 nr, nt = di['nr'], di['nt']
 
 # Get induction terms
-terms = [vals[:, :, lut[1609]]] # full induction
-ind_off = 4
+terms = [vals[:, :, lut[1614]]] # full induction
+ind_off = 8
 terms.append(vals_bd[:, :, ind_off + 0]) # mean correlation #1
 terms.append(vals_bd[:, :, ind_off + 1]) # mean correlation #2
-terms.append(vals_bd[:, :, ind_off + 2]) # fluc correlation #1
-terms.append(vals_bd[:, :, ind_off + 3]) # fluc correlation #2
-terms.append(terms[1] + terms[2] + terms[3] + terms[4]) 
+terms.append(vals_bd[:, :, ind_off + 2]) # mean correlation #3
+terms.append(vals_bd[:, :, ind_off + 3]) # mean correlation #4
+
+terms.append(vals_bd[:, :, ind_off + 4]) # fluc correlation #1
+terms.append(vals_bd[:, :, ind_off + 5]) # fluc correlation #2
+terms.append(vals_bd[:, :, ind_off + 6]) # fluc correlation #3
+terms.append(vals_bd[:, :, ind_off + 7]) # fluc correlation #4
+
+term_tot = np.zeros_like(terms[0])
+for i in range(8):
+    term_tot += terms[i]
+terms.append(term_tot)
 # (should ~ equal full induction)
 
 # field units and labels
 units = r'$\rm{G\ s^{-1}}$'
-titles = [r'$[\nabla\times(\left\langle\mathbf{v}\times\mathbf{B}\right\rangle)]_\theta$',\
-    r'$\frac{1}{r}\frac{\partial}{\partial r}[r\langle v_\theta\rangle\langle B_r\rangle]$',\
-    r'$-\frac{1}{r}\frac{\partial}{\partial r}[r\langle v_r\rangle\langle B_\theta\rangle]$',\
-    r'$\frac{1}{r}\frac{\partial}{\partial r}[r\langle v_\theta^\prime B_r^\prime\rangle]$',\
-    r'$-\frac{1}{r}\frac{\partial}{\partial r}[r\langle v_r^\prime B_\theta^\prime\rangle]$',\
-    r'$-\frac{1}{r}\frac{\partial}{\partial r}[r\langle \mathbf{v}\times\mathbf{B}\rangle_\phi]$']
+titles = [r'$[\nabla\times(\left\langle\mathbf{v}\times\mathbf{B}\right\rangle)]_\phi$',\
+
+    r'$\frac{1}{r}\frac{\partial}{\partial r}[r\langle v_\phi\rangle\langle B_r\rangle]$',\
+    r'$-\frac{1}{r}\frac{\partial}{\partial r}[r\langle v_r\rangle\langle B_\phi\rangle]$',\
+    r'$\frac{1}{r}\frac{\partial}{\partial \theta}[\langle v_\phi\rangle\langle B_\theta\rangle]$',\
+    r'$-\frac{1}{r}\frac{\partial}{\partial \theta}[\langle v_\theta\rangle\langle B_\phi\rangle]$',\
+
+    r'$\frac{1}{r}\frac{\partial}{\partial r}[r\langle v_\phi^\prime B_r^\prime\rangle]$',\
+    r'$-\frac{1}{r}\frac{\partial}{\partial r}[r\langle v_r^\prime B_\phi^\prime\rangle]$',\
+    r'$\frac{1}{r}\frac{\partial}{\partial \theta}[\langle v_\phi^\prime B_\theta^\prime\rangle]$',\
+    r'$-\frac{1}{r}\frac{\partial}{\partial \theta}[\langle v_\theta^\prime B_\phi^\prime\rangle]$',\
+
+    r'$\frac{1}{r}\frac{\partial}{\partial r}[r\langle \mathbf{v}\times\mathbf{B}\rangle_\theta] - \frac{1}{r}\frac{\partial}{\partial \theta}[r\langle \mathbf{v}\times\mathbf{B}\rangle_r]$']
 
 # Set up the actual figure from scratch
 fig_width_inches = 7. # TOTAL figure width, in inches
@@ -257,12 +273,12 @@ else:
 fsize = 12
 fig.text(margin_x, 1 - 0.1*margin_top, dirname_stripped,\
          ha='left', va='top', fontsize=fsize, **csfont)
-fig.text(margin_x, 1 - 0.3*margin_top, 'theta-induction (broken down)',\
+fig.text(margin_x, 1 - 0.3*margin_top, 'phi-induction (broken down)',\
          ha='left', va='top', fontsize=fsize, **csfont)
 fig.text(margin_x, 1 - 0.5*margin_top, time_string,\
          ha='left', va='top', fontsize=fsize, **csfont)
 
-savefile = plotdir + dirname_stripped + '_induction_breakdown_theta_' +\
+savefile = plotdir + dirname_stripped + '_induction_breakdown_phi_' +\
         str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + tag + '.png'
 
 if saveplot:
