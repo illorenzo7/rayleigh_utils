@@ -8,11 +8,7 @@
 # 
 # By default, the quantities traced are the nq (=5, or 8) fluid variables 
 # (vr, vt, vp, s, p, [bp, bt, and bp] (if magnetism present).
-# This may be changed via the '-vars' CLA, e.g., -vars '1 2 3 1425 1427'.
-#
-# By default, the quantities traced are the nq (=5, 8) fluid variables 
-# (vr, vt, vp, s, p, [bp, bt, and bp] (if magnetism present).
-# This may be changed via the '-vars' CLA, e.g., -vars '1 2 3 1425 1427'.
+# This may be changed via the '-qvals' CLA, e.g., -qvals '1 2 3 1425 1427'.
 #
 # By default, the 8 variables are computed at each time (for all radii)
 # at nlats = 13 latitudes equally spaced from -90 degrees to 90 degrees,
@@ -111,7 +107,7 @@ if rank == 0:
     tag = ''
     for i in range(nargs):
         arg = args[i]
-        if arg == '-vars':
+        if arg == '-qvals':
             qvals = []
             qvals_str = args[i+1].split() 
             for qval_str in qvals_str:
@@ -124,8 +120,8 @@ if rank == 0:
         elif arg == '-tag':
             tag_already_provided = True
             tag = args[i+1] + '_'
-        elif arg == '-torques':
-            print("tracing over TORQUES")
+        elif arg == '-torque':
+            print("tracing over TORQUE QUANTITIES")
             qvals = [3, 1801, 1802, 1803, 1804, 1819]
             if magnetism:
                 qvals.append(1805)

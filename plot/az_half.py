@@ -59,7 +59,7 @@ args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
-    if arg == '-qv':
+    if arg == '-qvals':
         qv_str = args[i+1].split()
         print(qv_str)
         qv = []

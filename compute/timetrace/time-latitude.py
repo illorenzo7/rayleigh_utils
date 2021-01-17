@@ -8,7 +8,7 @@
 # 
 # By default, the quantities traced are the nq (=5, or 8) fluid variables 
 # (vr, vt, vp, s, p, [bp, bt, and bp] (if magnetism present).
-# This may be changed via the '-vars' CLA, e.g., -vars '1 2 3 1425 1427'.
+# This may be changed via the '-qvals' CLA, e.g., -qvals '1 2 3 1425 1427'.
 #
 # By default, the 8 variables are computed at each time (for all latitudes)
 # at ndepths = 9 depths equally spaced throughout the shell (like the shell
@@ -104,7 +104,7 @@ if rank == 0:
     # reset parameters with CLAs
     for i in range(nargs):
         arg = args[i]
-        if arg == '-vars':
+        if arg == '-qvals':
             qvals = []
             qvals_str = args[i+1].split() 
             for qval_str in qvals_str:
