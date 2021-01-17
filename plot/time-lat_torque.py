@@ -52,6 +52,7 @@ tag = '' # optional way to tag save directory
 lats = [0.]
 plottimes = None
 magnetism = get_parameter(dirname, 'magnetism')
+shortlabel=False
 
 # Get command-line arguments
 args = sys.argv[2:]
@@ -108,6 +109,8 @@ for i in range(nargs):
         plottimes = []
         for string in strings:
             plottimes.append(float(string))
+    elif arg == '-shortlabel':
+        shortlabel = True
 
 # Get plot directory and create if not already there
 plotdir = dirname + '/plots/time-lat' + tag + '_torque/'
@@ -197,7 +200,16 @@ terms.insert(-1, torque_tot)
 # field units and labels
 units = r'$\rm{g cm^{-1} s^{-2}}$'
 units_amom = r'$\rm{g cm^{-1} s^{-1}}$'
-labels = [r'$\tau_{\rm{rs}}=-\nabla\cdot[\overline{\rho}r\sin\theta\left\langle\mathbf{v}_m^\prime v_\phi^\prime\right\rangle]$',\
+if shortlabel:
+    labels = [r'$\tau_{\rm{rs}}$',\
+    r'$\tau_{\rm{mc,\left\langle v_\phi\right\rangle}}$',\
+    r'$\tau_{\rm{cor}}$',\
+    r'$\tau_{\rm{mc}}$',\
+    r'$\tau_{\rm{v}}$',\
+    r'$\tau_{\rm{tot}}$',\
+    r'$\mathcal{L}$']
+else:
+    labels = [r'$\tau_{\rm{rs}}=-\nabla\cdot[\overline{\rho}r\sin\theta\left\langle\mathbf{v}_m^\prime v_\phi^\prime\right\rangle]$',\
     r'$\tau_{\rm{mc,\left\langle v_\phi\right\rangle}}=-\nabla\cdot[\overline{\rho}r\sin\theta\left\langle\mathbf{v}_m\right\rangle \left\langle v_\phi\right\rangle]$',\
     r'$\tau_{\rm{cor}}=-2\overline{\rho}r\sin\theta\Omega_0[\left\langle v_r\right\rangle\sin\theta + \left\langle v_\theta\right\rangle\cos\theta]$',\
     r'$\tau_{\rm{mc}}=-\overline{\rho}\left\langle\mathbf{v}_m\right\rangle\cdot\nabla\mathcal{L}$',\
@@ -205,8 +217,12 @@ labels = [r'$\tau_{\rm{rs}}=-\nabla\cdot[\overline{\rho}r\sin\theta\left\langle\
     r'$\tau_{\rm{tot}}=\frac{\partial\mathcal{L}}{\partial t}}$',\
     r'$\mathcal{L} = r\sin\theta[\Omega_0r\sin\theta+\left\langle v_\phi\right\rangle]$']
 if magnetism:
-    labels.insert(4, r'$\tau_{mm}=\frac{1}{4\pi}\nabla\cdot[r\sin\theta\left\langle\mathbf{B}_m\right\rangle\left\langle B_\phi\right\rangle]$')
-    labels.insert(5, r'$\tau_{ms}=\frac{1}{4\pi}\nabla\cdot[r\sin\theta\left\langle\mathbf{B}_m^\prime B_\phi^\prime\right\rangle]$')
+    if shortlabel:
+        labels.insert(4, r'$\tau_{mm}$')
+        labels.insert(5, r'$\tau_{ms}$')
+    else:
+        labels.insert(4, r'$\tau_{mm}=\frac{1}{4\pi}\nabla\cdot[r\sin\theta\left\langle\mathbf{B}_m\right\rangle\left\langle B_\phi\right\rangle]$')
+        labels.insert(5, r'$\tau_{ms}=\frac{1}{4\pi}\nabla\cdot[r\sin\theta\left\langle\mathbf{B}_m^\prime B_\phi^\prime\right\rangle]$')
 
 # Normalize the time 
 times /= time_unit
