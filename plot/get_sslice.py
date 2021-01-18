@@ -587,6 +587,8 @@ def get_sslice(a, varname, dirname=None, old=False, j=0):
         slice_br = vals[:, :, :, a.lut[var_indices['br']]]
         slice_dv = vals[:, :, :, a.lut[var_indices['dvtdr']]]
         sslice = prime(slice_br)*prime(slice_dv)
+    elif is_an_int(varname):
+        sslice = vals[:, :, :, a.lut[int(varname)]]
     else:
         print("get_sslice(): unknown variable name %s" %varname)
         print("exiting")
