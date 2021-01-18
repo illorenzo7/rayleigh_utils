@@ -189,7 +189,8 @@ if saveplot:
     plotdir = dirname + '/plots/moll/'
     if not os.path.isdir(plotdir):
         os.makedirs(plotdir)
-    savefile = plotdir + 'moll_' + tag + fname + '.png'
+    savefile = plotdir + 'moll_' + tag + fname + ('_rval%0.3f' %rval) +\
+        '.png'
     print ('Saving plot at ' + savefile)
     plt.savefig(savefile, dpi=300)
 # always show
