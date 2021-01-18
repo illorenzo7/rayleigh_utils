@@ -144,7 +144,7 @@ desired_rvals = rvals[ir_vals]
 if not (varname == 'vtot' or varname == 'btot'):
     desired_qv = var_indices[varname]
     iq = np.argmin(np.abs(qv - desired_qv))
-    varlabel = texlabels.get(varname, varname)
+    varlabel = texlabels.get(varname, 'qval = ' + varname)
     units = texunits.get(varname, 'cgs') 
 else:
     if varname == 'vtot':

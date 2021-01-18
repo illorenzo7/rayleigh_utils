@@ -116,7 +116,7 @@ for iiter in range(index_first, index_last + 1):
     ax_delta_y = ax_ymax - ax_ymin
     ax_center_x = ax_xmin + 0.5*ax_delta_x    
     
-    varlabel = texlabels.get(varname, varname)
+    varlabel = texlabels.get(varname, 'qval = ' + varname)
     title = varlabel + '     ' + (r'$r/R_\odot\ =\ %0.3f$' %(rval/rsun)) +\
             '     ' + ('iter = ' + fname)    
     fig.text(ax_center_x, ax_ymax + 0.02*ax_delta_y, title,\

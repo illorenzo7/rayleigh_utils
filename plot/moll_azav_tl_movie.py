@@ -117,7 +117,7 @@ for i in range(nargs):
         log_progress = True
 
 # varlabel and var_index will depend on the variable being plotted
-varlabel = texlabels.get(varname, varname)
+varlabel = texlabels.get(varname, 'qval = ' + varname)
 var_index = var_indices[varname]
 
 # Get some useful info from the first sslice

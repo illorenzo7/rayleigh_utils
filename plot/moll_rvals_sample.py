@@ -187,7 +187,7 @@ for ir in irvals:
         time_string = ('t = %.3f ' %(t_loc/time_unit)) + time_label +\
                 ' (1 ' + time_label + (' = %.1f days)'\
                 %(time_unit/86400.))
-    varlabel = texlabels.get(varname, varname)
+    varlabel = texlabels.get(varname, 'qval = ' + varname)
 
     title = dirname_stripped +\
         '\n' + r'$\rm{Mollweide}$' + '     '  + time_string +\

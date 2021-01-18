@@ -180,7 +180,7 @@ if varlist is None:
 for varname in varlist: 
     # Get Tex units and variable label
     units = texunits.get(varname, 'cgs')
-    texlabel = texlabels.get(varname, varname)
+    texlabel = texlabels.get(varname, 'qval = ' + varname)
 
     vals = get_merslice(mer, varname, dirname=dirname, sh=sh, az=az)
     field = vals[iphi, :, :]

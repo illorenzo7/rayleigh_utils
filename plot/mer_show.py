@@ -172,7 +172,7 @@ subplot_height = subplot_height_inches/fig_height_inches
 
 # create axes
 units = texunits.get(varname, 'cgs')
-texlabel = texlabels.get(varname, varname)
+texlabel = texlabels.get(varname, 'qval = ' + varname)
 
 fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
 ax = fig.add_axes((margin_x, margin_bottom, subplot_width, subplot_height))

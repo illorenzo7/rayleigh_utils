@@ -101,7 +101,7 @@ subplot_height = subplot_height_inches/fig_height_inches
 
 # Get tex units and label
 units = texunits.get(varname, 'cgs')
-texlabel = texlabels.get(varname, varname)
+texlabel = texlabels.get(varname, 'qval = ' + varname)
 
 # Make plot (sub-)directory if it doesn't already exist
 plotdir = dirname + '/plots/eq/times_sample/'

@@ -148,7 +148,7 @@ for i in range(index_first, index_last + 1):
                     lpower[:, ir, spec.lut[qv_vals[2]], :]**2.)
         else:
             field_lpower = lpower[:, ir, spec.lut[var_indices[varname]], :]
-            varlabel = texlabels.get(varname, varname)
+            varlabel = texlabels.get(varname, 'qval = ' + varname)
             units = texunits.get(varname, 'cgs') 
 
         # Get saturation values if not specified--avoid the two extreme 
