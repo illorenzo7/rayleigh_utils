@@ -589,6 +589,14 @@ def get_sslice(a, varname, dirname=None, old=False, j=0):
         sslice = prime(slice_br)*prime(slice_dv)
     elif is_an_int(varname):
         sslice = vals[:, :, :, a.lut[int(varname)]]
+    elif 'plus' in varname:
+        sslice = np.zeros_like(vals[:, :, :, 0])
+        for st in varname.split('plus'):
+            sslice += vals[:, :, :, a.lut[int(st)]]
+    elif 'times' in varname:
+        sslice = np.ones_like(vals[:, :, :, 0])
+        for st in varname.split('times'):
+            sslice *= vals[:, :, :, a.lut[int(st)]]
     else:
         print("get_sslice(): unknown variable name %s" %varname)
         print("exiting")

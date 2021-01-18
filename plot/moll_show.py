@@ -159,7 +159,11 @@ for iplot in range(nplots):
             varname=varname, symlog=symlog, logscale=logscale) 
 
     # label the subplot
-    varlabel = texlabels.get(varname, 'qval = ' + varname)
+    varlabel = texlabels.get(varname, 0)
+    if varlabel == 0:
+        varlabel = varname.replace('plus', ' + ')
+        varlabel = varlabel.replace('times', ' ' + r'$\times$' + ' ')
+        varlabel = 'qvals = ' + varlabel
     ax.set_title(varlabel, verticalalignment='bottom', **csfont)
 
     # Make title
