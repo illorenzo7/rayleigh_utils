@@ -64,7 +64,7 @@ for i in range(nargs):
         rbcz = float(args[i+1])
     elif arg == '-iphi':
         iphi = int(args[i+1])
-    elif arg == '-var':
+    elif arg == '-var' or arg == '-qval':
         varname = args[i+1]
     elif arg == '-symlog':
         symlog = True

@@ -56,7 +56,7 @@ for i in range(nargs):
         ir = int(args[i+1])
     elif arg == '-rval':
         rval = float(args[i+1])
-    elif arg == '-var':
+    elif arg == '-var' or arg == '-qval':
         varname = args[i+1]
     elif arg == '-usefile':
         Shell_Spectra_file = args[i+1]

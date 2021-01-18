@@ -55,7 +55,7 @@ for i in range(nargs):
     arg = args[i]
     if arg == '-minmax':
         minmax = float(args[i+1]), float(args[i+2])
-    elif arg == '-var':
+    elif arg == '-var' or arg == '-qval':
         varname = args[i+1]
     elif arg == '-log':
         logscale = True

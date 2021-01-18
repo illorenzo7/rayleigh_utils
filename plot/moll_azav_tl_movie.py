@@ -96,7 +96,7 @@ for i in range(nargs):
         linscale = float(args[i+1]), float(args[i+2]), float(args[i+3])    
     elif arg == '-linthresh':
         linthresh = float(args[i+1]), float(args[i+2]), float(args[i+3])    
-    elif arg == '-var':
+    elif arg == '-var' or arg == '-qval':
         varname = args[i+1]
     elif arg == '-ir':
         ir = int(args[i+1])

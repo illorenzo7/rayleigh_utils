@@ -49,7 +49,7 @@ for i in range(nargs):
         ir = int(args[i+1])
     elif arg == '-rval':
         rval = float(args[i+1])
-    elif arg == '-var':
+    elif arg == '-var' or arg == '-qval':
         varname = args[i+1]
     elif arg == '-symlog':
         symlog = True

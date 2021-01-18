@@ -63,7 +63,7 @@ for i in range(nargs):
         minmaxrz = float(args[i+1]), float(args[i+2])
     elif arg == '-rbcz':
         rbcz = float(args[i+1])
-    elif arg == '-var':
+    elif arg == '-var' or arg == '-qval':
         varname = args[i+1]
     elif arg == '-symlog':
         symlog = True

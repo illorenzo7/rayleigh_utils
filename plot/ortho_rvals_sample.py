@@ -37,7 +37,7 @@ for i in range(nargs):
         clat = float(args[i+1])
     elif arg == '-clon':
         clon = float(args[i+1])        
-    elif arg == '-var':
+    elif arg == '-var' or arg == '-qval':
         varname = args[i+1]
     elif arg == '-iter':
         desired_iter = int(args[i+1])
