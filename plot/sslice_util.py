@@ -357,14 +357,14 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
         if logscale:
             locator = ticker.LogLocator(subs='all')
             cbar.set_ticks(locator)
-            cbar_units = ' ' + texunits[varname]
+            cbar_units = ' ' + texunits.get(varname, 'cgs')
         elif posdef:
             cbar_units = ' ' + (r'$\times10^{%i}$' %maxabs_exp) + ' ' +\
-                texunits[varname]
+                texunits.get(varname, 'cgs')
             cbar.set_ticks([minmax[0], minmax[1]])
             cbar.set_ticklabels(['%1.1f' %minmax[0], '%1.1f' %minmax[1]])
         elif symlog:
-            cbar_units = ' ' + texunits[varname]
+            cbar_units = ' ' + texunits.get(varname, 'cgs')
             nlin = 5
             nlog = 6
             lin_ticks = np.linspace(-linthresh, linthresh, nlin)
@@ -391,7 +391,7 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
     #            cax.minorticks_on()
         else:
             cbar_units = ' ' + (r'$\times10^{%i}$' %maxabs_exp) +\
-                    ' ' + texunits[varname]
+                    ' ' + texunits.get(varname, 'cgs')
             cbar.set_ticks([minmax[0], 0, minmax[1]])
             cbar.set_ticklabels(['%1.1f' %minmax[0], '0', '%1.1f'\
                     %minmax[1]])
@@ -605,7 +605,7 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
         # If user wants to manually specify units (instead of getting them
         # from the variable name), change that now
         if units is None:
-            base_units = texunits[varname]
+            base_units = texunits.get(varname, 'cgs')
         else:
             base_units = units
         if logscale:
@@ -614,7 +614,7 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
             cbar_units = ' ' + base_units
         elif posdef:
             cbar_units = ' ' + (r'$\times10^{%i}$' %maxabs_exp) + ' ' +\
-                texunits[varname]
+                texunits.get(varname, 'cgs')
             cbar.set_ticks([minmax[0], minmax[1]])
             cbar.set_ticklabels(['%1.1f' %minmax[0], '%1.1f' %minmax[1]])
         elif symlog:

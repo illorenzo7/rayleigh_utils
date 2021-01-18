@@ -157,8 +157,8 @@ subplot_width = subplot_width_inches/fig_width_inches
 subplot_height = subplot_height_inches/fig_height_inches
 
 # Get Tex units and variable label
-units = texunits[varname]
-texlabel = texlabels[varname]
+units = texunits.get(varname, 'cgs')
+texlabel = texlabels.get(varname, varname)
 
 # Make plot (sub-)directory if it doesn't already exist
 plotdir = dirname + '/plots/mer/lonvals_sample/'

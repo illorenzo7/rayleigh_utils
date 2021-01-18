@@ -133,8 +133,8 @@ if varlist is None:
 
 for varname in varlist: 
     # Get Tex units and variable label
-    units = texunits[varname]
-    texlabel = texlabels[varname]
+    units = texunits.get(varname, 'cgs')
+    texlabel = texlabels.get(varname, varname)
 
     # Name to save plot
     savename = 'eq_iter' + fname + '_' + varname  + '.png'

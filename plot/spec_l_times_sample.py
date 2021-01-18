@@ -162,8 +162,8 @@ for i in range(index_first, index_last + 1):
         else:
             desired_qv = var_indices[varname]
             iq = np.argmin(np.abs(qv - desired_qv))
-            varlabel = texlabels[varname]
-            units = texunits[varname] 
+            varlabel = texlabels.get(varname, varname)
+            units = texunits.get(varname, 'cgs') 
             lpower_tot = lpower[:, ir, iq, 0]
             lpower_m0 = lpower[:, ir, iq, 1]
             lpower_mnot0 = lpower[:, ir, iq, 2]

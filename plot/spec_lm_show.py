@@ -180,7 +180,7 @@ fullpower = np.abs(spec.vals[:, :, :, :, 0])**2
 if not (varname == 'vtot' or varname == 'btot'):
     desired_qv = var_indices[varname]
     iq = np.argmin(np.abs(qv - desired_qv))
-    varlabel = texlabels[varname]
+    varlabel = texlabels.get(varname, varname)
 else:
     if varname == 'vtot':
         desired_qv_vals = [1, 2, 3]

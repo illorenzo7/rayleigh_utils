@@ -117,7 +117,7 @@ for i in range(nargs):
         log_progress = True
 
 # varlabel and var_index will depend on the variable being plotted
-varlabel = texlabels[varname]
+varlabel = texlabels.get(varname, varname)
 var_index = var_indices[varname]
 
 # Get some useful info from the first sslice
@@ -362,7 +362,7 @@ for fname in fnames:
         # Make the AZ_Avgs plot:
         field = az.vals[:, :, az.lut[var_index], 0]
         plot_azav (field, rr, cost, fig=fig, ax=ax_azav,\
-               units=texunits[varname], minmax=(min_az, max_az),\
+               units=texunits.get(varname, 'cgs'), minmax=(min_az, max_az),\
                plotcontours=False, plotlatlines=True, cbar_fs=10,\
                rvals=[rval], symlog=symlog, linthresh=linthresh_az,\
                linscale=linscale_az)
