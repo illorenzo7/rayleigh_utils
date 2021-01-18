@@ -24,6 +24,14 @@ def prime_sph(field, tw):
     field_av = np.sum(field_av*tw_2d, axis=0)
     return field - field_av.reshape((1, 1, nr))
 
+def smooth(field, dphi):
+    nphi, dummy, dummy = np.shape(field)
+    nphi_av = int(nphi*dphi/360.)
+    field_smooth = np.zeros_like(field)
+    for i in range(nphi_av):
+        field_smooth += np.roll(field, -(i - nphi_av//2), axis=0)/nphi_av
+    return field_smooth
+
 def get_sslice(a, varname, dirname=None, old=False, j=0):
     # Given a shell_slice object (nphi, ntheta, nr, nq, nt), 
     # return the field (nphi, ntheta, nr) associated with [varname] 
@@ -35,6 +43,12 @@ def get_sslice(a, varname, dirname=None, old=False, j=0):
     # reference-state parameters (get_eq)
     # _prime refers to az-avg subtracted
     # _prime_sph refers to sph-avg subtracted
+
+    smooth_desired = False
+    if 'smooth' in varname:
+        smooth_desired = True
+        nphi_av = int(varname[6:9])
+        varname = varname[9:]
 
     # Get integration weights if needed
     if '_sph' in varname:
@@ -601,4 +615,7 @@ def get_sslice(a, varname, dirname=None, old=False, j=0):
         print("get_sslice(): unknown variable name %s" %varname)
         print("exiting")
         sys.exit()
+    # possibly smooth the variable
+    if smooth_desired:
+        sslice = smooth(sslice, nphi_av)
     return sslice
