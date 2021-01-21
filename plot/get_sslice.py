@@ -25,12 +25,20 @@ def prime_sph(field, tw):
     return field - field_av.reshape((1, 1, nr))
 
 def smooth(field, dphi):
-    nphi, dummy, dummy = np.shape(field)
+    nphi, nt, nr = np.shape(field)
     nphi_av = int(nphi*dphi/360.)
+    ov2 = nphi_av//2
     field_smooth = np.zeros_like(field)
-    for i in range(nphi_av):
-        field_smooth += np.roll(field, -(i - nphi_av//2), axis=0)/nphi_av
-    return field_smooth
+    # calculate the smoothed field phi-index by phi-index
+    for i in np.arange(-ov2, ov2):
+        field_smooth[0] += field[i]
+        print ("i = ", i)
+    for i in range(1, nphi):
+        to_sub = field[i - ov2 - 1]
+        to_add = field[(i + ov2 - 1)%nphi]
+        field_smooth[i] += to_add
+        field_smooth[i] -= to_sub
+    return field_smooth/nphi_av
 
 def get_sslice(a, varname, dirname=None, old=False, j=0):
     # Given a shell_slice object (nphi, ntheta, nr, nq, nt), 
