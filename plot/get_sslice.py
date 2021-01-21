@@ -26,17 +26,29 @@ def prime_sph(field, tw):
 
 def smooth(field, dphi):
     nphi, nt, nr = np.shape(field)
-    nphi_av = int(nphi*dphi/360.)
+    nphi_av = int(nphi*dphi/360.) + 1 # averaging over this number will
+        # yield an interval as close as possible to dphi
     ov2 = nphi_av//2
+    print ("dphi = ", dphi)
+    print ("ov2 = ", ov2)
     field_smooth = np.zeros_like(field)
     # calculate the smoothed field phi-index by phi-index
-    for i in np.arange(-ov2, ov2):
+    iphimin = -ov2
+    if nphi_av % 2 == 0: # nphi_av is even
+        iphimax = ov2
+    else: # nphi_av is odd
+        iphimax = ov2 + 1
+    for i in np.arange(iphimin, iphimax):
         field_smooth[0] += field[i]
+    print ("iphimin = ", iphimin)
+    print ("iphimax = ", iphimax)
     for i in range(1, nphi):
-        to_sub = field[i - ov2 - 1]
-        to_add = field[(i + ov2 - 1)%nphi]
-        field_smooth[i] += to_add
-        field_smooth[i] -= to_sub
+        to_sub = field[iphimin + i - 1]
+        to_add = field[(iphimax + i - 1)%nphi]
+        if i < 20 or i > nphi - 20:
+            print ("sub index = ", iphimin + i - 1)
+            print ("add index = ", (iphimax + i - 1)%nphi)
+        field_smooth[i] += (field_smooth[i-1] + to_add - to_sub)
     return field_smooth/nphi_av
 
 def get_sslice(a, varname, dirname=None, old=False, j=0):
