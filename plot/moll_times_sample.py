@@ -97,8 +97,9 @@ if rank == 0:
     ir = 0 # by default plot just below the surface
     rval = None # can also find ir by finding the closest point
                 # to a local radius divided by rsun
-    varname = 'vr' # by default plot the radial velocity
+    varlist = ['vr'] # by default plot the radial velocity
     clon = 0.
+    ncol = 2 # columns of subplots in figure
     minmax = None
     nskip = 1 # by default don't skip any slices in the range
     ntot = None 
@@ -113,7 +114,7 @@ if rank == 0:
         elif arg == '-rval':
             rval = float(args[i+1])
         elif arg == '-var' or arg == '-qval':
-            varname = args[i+1]
+            varlist = args[i+1].split()
         elif arg == '-minmax':
             minmax = float(args[i+1]), float(args[i+2])
         elif arg == '-nskip':
@@ -121,6 +122,8 @@ if rank == 0:
         elif arg == '-ntot':
             ntot = int(args[i+1])
             nskip = nfiles//ntot
+        elif arg == '-ncol':
+            ncol = int(args[i+1])
 
     # Get the problem size
     nproc_min, nproc_max, n_per_proc_min, n_per_proc_max =\
@@ -171,24 +174,30 @@ if rank == 0:
         time_unit = compute_tdt(dirname)
         time_label = r'$\rm{TDT}$'
 
-    meta = [dirname, radatadir, plotdir, first_rem, nskip, ir, rval, clon, time_unit, time_label, rotation, minmax, varname, dirname_stripped]
+    meta = [dirname, radatadir, plotdir, first_rem, nskip, ir, rval, clon, time_unit, time_label, rotation, minmax, varlist, ncol, dirname_stripped]
 else:
     meta = None
 
-dirname, radatadir, plotdir, first_rem, nskip, ir, rval, clon, time_unit, time_label, rotation, minmax, varname, dirname_stripped = comm.bcast(meta, root=0)
+dirname, radatadir, plotdir, first_rem, nskip, ir, rval, clon, time_unit, time_label, rotation, minmax, varlist, ncol, dirname_stripped = comm.bcast(meta, root=0)
 
-# Create the plot template
-fig_width_inches = 6.
+# figure dimensions
+nplots = len(varlist)
+if ncol > nplots:
+    ncol = nplots # (no point in having empty columns)
+nrow = np.int(np.ceil(nplots/ncol))
+fig_width_inches = 6.*ncol
 
 # General parameters for main axis/color bar
 margin_bottom_inches = 1./2.
-margin_top_inches = 5./8.
+margin_top_inches = 3./4. # margin for big title
+margin_subplot_top_inches = 1/4 # margin to accommodate just subplot titles
 margin_inches = 1./8.
 
-subplot_width_inches = fig_width_inches - 2*margin_inches
+subplot_width_inches = (fig_width_inches - (ncol + 1)*margin_inches)\
+    /ncol
 subplot_height_inches = 0.5*subplot_width_inches
-fig_height_inches = margin_bottom_inches + subplot_height_inches +\
-    margin_top_inches
+fig_height_inches = margin_top_inches + nrow*(margin_bottom_inches +\
+    subplot_height_inches + margin_subplot_top_inches)
 fig_aspect = fig_height_inches/fig_width_inches
 
 # "Non-dimensional" figure parameters
@@ -196,6 +205,7 @@ margin_x = margin_inches/fig_width_inches
 margin_y = margin_inches/fig_height_inches
 margin_bottom = margin_bottom_inches/fig_height_inches
 margin_top = margin_top_inches/fig_height_inches
+margin_subplot_top = margin_subplot_top_inches/fig_height_inches
 
 subplot_width = subplot_width_inches/fig_width_inches
 subplot_height = subplot_height_inches/fig_height_inches
@@ -250,6 +260,9 @@ for i in range(my_nfiles):
             # Get local time (in seconds)
             t_loc = a.time[j]
             iter_loc = a.iters[j]
+
+            for iplot in range(nplots):
+                varname = varlist[iplot]
 
             # Savename
             savename = 'moll_' + varname + ('_rval%0.3f' %rval) + '_iter' +\
