@@ -1,87 +1,181 @@
+# Author: Loren Matilsky
+# Created: 07/02/2020
+# Modified + Parallelized: 01/02/2021
+# This script plots the DR and angular momentum in the meridional plane
+# for many different times (to make up the frames of a movie)
+# Saves plots in subdirectory
+# plots/diffrot_amom_times_sample/
+
+# initialize communication
+from mpi4py import MPI
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
+
+import sys, os
+sys.path.append(os.environ['rapp'])
+sys.path.append(os.environ['raco'])
+sys.path.append(os.environ['rapl'])
+
+# Start timing immediately
+comm.Barrier()
+if rank == 0:
+    # timing module
+    import time
+    # info for print messages
+    from common import *
+    char = '.'
+    nproc = comm.Get_size()
+    t1_glob = time.time()
+    t1 = t1_glob + 0.0
+    if nproc > 1:
+        print ('processing in parallel with %i ranks' %nproc)
+        print ('communication initialized')
+    else:
+        print ('processing in serial with 1 rank')
+    print(fill_str('processes importing necessary modules', lent, char),\
+            end='')
+
+# modules needed by everyone
+import numpy as np
 import matplotlib as mpl
 mpl.use('TkAgg')
 import matplotlib.pyplot as plt
 plt.rcParams['mathtext.fontset'] = 'dejavuserif'
 csfont = {'fontname':'DejaVu Serif'}
-import numpy as np
 import sys, os
-sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
+sys.path.append(os.environ['raco'])
+sys.path.append(os.environ['rapl'])
+from sslice_util import plot_moll
 from common import *
 from plotcommon import axis_range
 from sslice_util import plot_moll
 from get_sslice import get_sslice
-from rayleigh_diagnostics import Shell_Slices, GridInfo
 from varprops import texlabels
+from rayleigh_diagnostics import Shell_Slices
+reading_func = Shell_Slices
+dataname = 'Shell_Slices'
 
-# Get command line arguments
-dirname = sys.argv[1]
-dirname_stripped = strip_dirname(dirname)
+if rank == 0:
+    # modules needed only by proc 0 
+    from rayleigh_diagnostics import GridInfo
 
-# domain bounds
-ncheby, domain_bounds = get_domain_bounds(dirname)
-ri = np.min(domain_bounds)
-ro = np.max(domain_bounds)
-d = ro - ri
+# Checkpoint and time
+comm.Barrier()
+if rank == 0:
+    t2 = time.time()
+    print ('%8.2e s' %(t2 - t1))
+    print(fill_str('proc 0 distributing the file lists', lent, char),\
+            end='')
+    t1 = time.time()
 
-# Data with Shell_Slices
-radatadir = dirname + '/Shell_Slices/'
+if rank == 0:
+    # Get directory name and stripped_dirname for plotting purposes
+    dirname = sys.argv[1]
+    dirname_stripped = strip_dirname(dirname)
 
-# Get list of shell slices at all possible times to plot
-file_list, int_file_list, nfiles = get_file_lists(radatadir)
+    # Directory with data
+    radatadir = dirname + '/' + dataname + '/'
 
-# Get specific range desired for plotting
-args = sys.argv[2:]
-nargs = len(args)
+    # Get all the file names in datadir and their integer counterparts
+    file_list, int_file_list, nfiles = get_file_lists(radatadir)
 
-the_tuple = get_desired_range(int_file_list, args)
-if the_tuple is None: # By default plot the last 10 Shell_Slices
-    index_first, index_last = nfiles - 11, nfiles - 1  
+    # Get specific range desired for plotting
+    args = sys.argv[2:]
+    nargs = len(args)
+
+    the_tuple = get_desired_range(int_file_list, args)
+    if the_tuple is None: # By default plot the last 10 Shell_Slices
+        index_first, index_last = nfiles - 11, nfiles - 1  
+    else:
+        index_first, index_last = the_tuple
+    nfiles = index_last - index_first + 1 # this is the number of files we 
+    # will plot (modulo the nskip or ntot filters)
+
+    # read command-line arguments
+    # defaults
+    ir = 0 # by default plot just below the surface
+    rval = None # can also find ir by finding the closest point
+                # to a local radius divided by rsun
+    varname = 'vr' # by default plot the radial velocity
+    clon = 0.
+    minmax = None
+    nskip = 1 # by default don't skip any slices in the range
+    ntot = None 
+
+    # Change defaults
+    for i in range(nargs):
+        arg = args[i]
+        if arg == '-clon':
+            clon = float(args[i+1])
+        elif arg == '-ir':
+            ir = int(args[i+1])
+        elif arg == '-rval':
+            rval = float(args[i+1])
+        elif arg == '-var' or arg == '-qval':
+            varname = args[i+1]
+        elif arg == '-minmax':
+            minmax = float(args[i+1]), float(args[i+2])
+        elif arg == '-nskip':
+            nskip = int(args[i+1])
+        elif arg == '-ntot':
+            ntot = int(args[i+1])
+            nskip = nfiles//ntot
+
+    # Get the problem size
+    nproc_min, nproc_max, n_per_proc_min, n_per_proc_max =\
+            opt_workload(nfiles, nproc)
+
+    # Make plot (sub-)directory if it doesn't already exist
+    plotdir = dirname + '/plots/moll/times_sample/'
+    if not os.path.isdir(plotdir):
+        os.makedirs(plotdir)
+
+    # Distribute file_list to each process
+    for k in range(nproc - 1, -1, -1):
+        # distribute the partial file list to other procs 
+        if k >= nproc_min: # last processes analyzes more files
+            my_nfiles = np.copy(n_per_proc_max)
+            istart = nproc_min*n_per_proc_min + (k - nproc_min)*my_nfiles
+        else: # first processes analyze fewer files
+            my_nfiles = np.copy(n_per_proc_min)
+            istart = k*my_nfiles
+        iend = istart + my_nfiles
+
+        # Get the file list portion for rank k
+        my_files = np.copy(int_file_list[istart:iend])
+        
+        # remainder of the start index (for nskip)
+        first_rem = (istart - index_first) % nskip
+
+        # send  my_files, my_nfiles, first_rem if nproc > 1
+        if k >= 1:
+            comm.send([my_files, my_nfiles, first_rem], dest=k)
+else: # recieve my_files, my_nfiles
+    my_files, my_nfiles, first_rem = comm.recv(source=0)
+
+# collect and broadcast metadata
+if rank == 0:
+    # compute number files in range
+    n_analyze = index_last - index_first + 1
+    # then set nskip if user specified ntot
+    if not ntot is None:
+        nskip = n_analyze//ntot
+
+    # Get the baseline time unit
+    rotation = get_parameter(dirname, 'rotation')
+    if rotation:
+        time_unit = compute_Prot(dirname)
+        time_label = r'$\rm{P_{rot}}$'
+    else:
+        time_unit = compute_tdt(dirname)
+        time_label = r'$\rm{TDT}$'
+
+    meta = [dirname, radatadir, plotdir, first_rem, nskip, ir, rval, clon, time_unit, time_label, rotation, minmax, varname, dirname_stripped]
 else:
-    index_first, index_last = the_tuple
-nfiles = index_last - index_first + 1 # this is the number of files we 
-# will plot (modulo the nskip or ntot filters)
+    meta = None
 
-# Other defaults
-ir = 0 # by default plot just below the surface
-rval = None # can also find ir by finding the closest point
-            # to a local radius divided by rsun
-varname = 'vr' # by default plot the radial velocity
-clon = 0.
-minmax = None
-nskip = 1 # by default don't skip any slices in the range
-
-# Change the defaults using the CLAs
-for i in range(nargs):
-    arg = args[i]
-    if arg == '-clon':
-        clon = float(args[i+1])
-    elif arg == '-ir':
-        ir = int(args[i+1])
-    elif arg == '-rval':
-        rval = float(args[i+1])
-    elif arg == '-var' or arg == '-qval':
-        varname = args[i+1]
-    elif arg == '-minmax':
-        minmax = float(args[i+1]), float(args[i+2])
-    elif arg == '-nskip':
-        nskip = int(args[i+1])
-    elif arg == '-ntot':
-        ntot = int(args[i+1])
-        nskip = nfiles//ntot
-
-# Get the baseline time unit
-rotation = get_parameter(dirname, 'rotation')
-if rotation:
-    time_unit = compute_Prot(dirname)
-    time_label = r'$\rm{P_{rot}}$'
-else:
-    time_unit = compute_tdt(dirname)
-    time_label = r'$\rm{TDT}$'
-
-# We need the radius, which we can get from grid_info
-gi = GridInfo(dirname + '/grid_info', '')
-radius = gi.radius
+dirname, radatadir, plotdir, first_rem, nskip, ir, rval, clon, time_unit, time_label, rotation, minmax, varname, dirname_stripped = comm.bcast(meta, root=0)
 
 # Create the plot template
 fig_width_inches = 6.
@@ -106,66 +200,109 @@ margin_top = margin_top_inches/fig_height_inches
 subplot_width = subplot_width_inches/fig_width_inches
 subplot_height = subplot_height_inches/fig_height_inches
 
-# Make plot (sub-)directory if it doesn't already exist
-plotdir = dirname + '/plots/moll/times_sample/'
-if not os.path.isdir(plotdir):
-    os.makedirs(plotdir)
+# Checkpoint and time
+comm.Barrier()
+if rank == 0:
+    t2 = time.time()
+    print ('%8.2e s' %(t2 - t1))
+    print(fill_str('plotting', lent, char), end='\r')
+    t1 = time.time()
 
-# Loop over each desired iteration and make plots
-for i in range(index_first, index_last + 1, nskip):
-    # Read in desired shell slice
-    fname = file_list[i]
-    a = Shell_Slices(radatadir + fname, '')
+# make plots
 
-    # Find desired radius (by default ir=0--near outer surface)
-    if not rval is None:
-        ir = np.argmin(np.abs(a.radius/rsun - rval))
-    rval = a.radius[ir]/rsun 
-    # in any case, this is the actual rvalue we get
+# Create the plot template
+fig_width_inches = 6.
 
-    # Loop over the slices in the file 
-    for j in range(a.niter):
-        # Get local time (in seconds)
-        t_loc = a.time[j]
-        iter_loc = a.iters[j]
+# General parameters for main axis/color bar
+margin_bottom_inches = 1./2.
+margin_top_inches = 5./8.
+margin_inches = 1./8.
 
-        # Savename
-        savename = 'moll_' + varname + ('_rval%0.3f' %rval) + '_iter' +\
-                str(iter_loc).zfill(8) + '.png'
-        print('Plotting: ' + savename)
-        vals = get_sslice(a, varname, dirname=dirname, j=j)
-        field = vals[:, :, ir]
-        
-        # Make axes and plot the Mollweide projection
-        fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
-        ax = fig.add_axes([margin_x, margin_bottom, subplot_width,\
-                subplot_height])
-        
-        plot_moll(field, a.costheta, fig=fig, ax=ax, clon=clon,\
-                varname=varname, minmax=minmax)     
+subplot_width_inches = fig_width_inches - 2*margin_inches
+subplot_height_inches = 0.5*subplot_width_inches
+fig_height_inches = margin_bottom_inches + subplot_height_inches +\
+    margin_top_inches
+fig_aspect = fig_height_inches/fig_width_inches
 
-        # Make title
-        ax_xmin, ax_xmax, ax_ymin, ax_ymax = axis_range(ax)
-        ax_delta_x = ax_xmax - ax_xmin
-        ax_delta_y = ax_ymax - ax_ymin
-        ax_center_x = ax_xmin + 0.5*ax_delta_x    
-        
-        if rotation:
-            time_string = ('t = %.1f ' %(t_loc/time_unit)) + time_label +\
-                    ' (1 ' + time_label + (' = %.2f days)'\
-                    %(time_unit/86400.))
-        else:
-            time_string = ('t = %.3f ' %(t_loc/time_unit)) + time_label +\
-                    ' (1 ' + time_label + (' = %.1f days)'\
-                    %(time_unit/86400.))
-        varlabel = texlabels.get(varname, 'qval = ' + varname)
+# "Non-dimensional" figure parameters
+margin_x = margin_inches/fig_width_inches
+margin_y = margin_inches/fig_height_inches
+margin_bottom = margin_bottom_inches/fig_height_inches
+margin_top = margin_top_inches/fig_height_inches
 
-        title = dirname_stripped +\
-            '\n' + r'$\rm{Mollweide}$' + '     '  + time_string +\
-            '\n' + varlabel + '     ' + (r'$r/R_\odot\ =\ %0.3f$' %rval)
-        fig.text(ax_center_x, ax_ymax + 0.02*ax_delta_y, title,\
-             verticalalignment='bottom', horizontalalignment='center',\
-             fontsize=10, **csfont)   
-        
-        plt.savefig(plotdir + savename, dpi=300)
-        plt.close()
+subplot_width = subplot_width_inches/fig_width_inches
+subplot_height = subplot_height_inches/fig_height_inches
+
+# loop over data files and make plots
+for i in range(my_nfiles):
+    if (i - first_rem) % nskip == 0: # respect nskip!
+        a = reading_func(radatadir + str(my_files[i-1]).zfill(8), '')
+
+        # Find desired radius (by default ir=0--near outer surface)
+        if i == 0: # only need to do this once
+            if not rval is None:
+                ir = np.argmin(np.abs(a.radius/rsun - rval))
+            rval = a.radius[ir]/rsun 
+            # in any case, this is the actual rvalue we get
+
+        # Loop over the slices in the file 
+        for j in range(a.niter):
+            # Get local time (in seconds)
+            t_loc = a.time[j]
+            iter_loc = a.iters[j]
+
+            # Savename
+            savename = 'moll_' + varname + ('_rval%0.3f' %rval) + '_iter' +\
+                    str(iter_loc).zfill(8) + '.png'
+            vals = get_sslice(a, varname, dirname=dirname, j=j)
+            field = vals[:, :, ir]
+            
+            # Make axes and plot the Mollweide projection
+            fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
+            ax = fig.add_axes([margin_x, margin_bottom, subplot_width,\
+                    subplot_height])
+            
+            plot_moll(field, a.costheta, fig=fig, ax=ax, clon=clon,\
+                    varname=varname, minmax=minmax)     
+
+            # Make title
+            ax_xmin, ax_xmax, ax_ymin, ax_ymax = axis_range(ax)
+            ax_delta_x = ax_xmax - ax_xmin
+            ax_delta_y = ax_ymax - ax_ymin
+            ax_center_x = ax_xmin + 0.5*ax_delta_x    
+            
+            if rotation:
+                time_string = ('t = %.1f ' %(t_loc/time_unit)) + time_label +\
+                        ' (1 ' + time_label + (' = %.2f days)'\
+                        %(time_unit/86400.))
+            else:
+                time_string = ('t = %.3f ' %(t_loc/time_unit)) + time_label +\
+                        ' (1 ' + time_label + (' = %.1f days)'\
+                        %(time_unit/86400.))
+            varlabel = texlabels.get(varname, 'qval = ' + varname)
+
+            title = dirname_stripped +\
+                '\n' + r'$\rm{Mollweide}$' + '     '  + time_string +\
+                '\n' + varlabel + '     ' + (r'$r/R_\odot\ =\ %0.3f$' %rval)
+            fig.text(ax_center_x, ax_ymax + 0.02*ax_delta_y, title,\
+                 verticalalignment='bottom', horizontalalignment='center',\
+                 fontsize=10, **csfont)   
+            
+            plt.savefig(plotdir + savename, dpi=300)
+            plt.close()
+
+if rank == 0:
+    pcnt_done = i/my_nfiles*100.
+    print(fill_str('computing', lent, char) +\
+        ('rank 0 %5.1f%% done' %pcnt_done), end='\r')
+
+# Checkpoint and time
+comm.Barrier()
+if rank == 0:
+    t2 = time.time()
+    print(fill_str('\nplotting time', lent, char), end='')
+    print ('%8.2e s                                 ' %(t2 - t1))
+    print(fill_str('total time', lent, char), end='')
+    print ('%8.2e s' %(t2 - t1_glob))
+    print ('view frames using ')
+    print ('eog ' + plotdir)
