@@ -32,7 +32,6 @@ def smooth(field, dphi):
     # calculate the smoothed field phi-index by phi-index
     for i in np.arange(-ov2, ov2):
         field_smooth[0] += field[i]
-        print ("i = ", i)
     for i in range(1, nphi):
         to_sub = field[i - ov2 - 1]
         to_add = field[(i + ov2 - 1)%nphi]
@@ -55,8 +54,9 @@ def get_sslice(a, varname, dirname=None, old=False, j=0):
     smooth_desired = False
     if 'smooth' in varname:
         smooth_desired = True
-        nphi_av = int(varname[6:9])
-        varname = varname[9:]
+        varname = varname.replace('smooth', '')
+        nphi_av = int(varname[:3])
+        varname = varname[3:]
 
     # Get integration weights if needed
     if '_sph' in varname:

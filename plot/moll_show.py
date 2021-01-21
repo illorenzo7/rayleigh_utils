@@ -155,14 +155,18 @@ for iplot in range(nplots):
     print('Plotting moll: ' + varname + (', r/rsun = %0.3f (ir = %02i), '\
             %(rval, ir)) + 'iter ' + fname)
 
+    print ("3 std field = ", 3*np.std(field))
     plot_moll(field, a.costheta, fig=fig, ax=ax, minmax=minmax, clon=clon,\
             varname=varname, symlog=symlog, logscale=logscale) 
+    print ("3 std field = ", 3*np.std(field))
 
     # label the subplot
     varlabel = texlabels.get(varname, 0)
     if varlabel == 0:
         varlabel = varname.replace('plus', ' + ')
         varlabel = varlabel.replace('times', ' ' + r'$\times$' + ' ')
+        varlabel = varlabel.replace('smooth', '')
+        varlabel = varlabel[3:]
         varlabel = 'qvals = ' + varlabel
     ax.set_title(varlabel, verticalalignment='bottom', **csfont)
 

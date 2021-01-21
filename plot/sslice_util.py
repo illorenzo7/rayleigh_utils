@@ -423,6 +423,7 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
         
     # Shouldn't have to do this but Python is stupid with arrays ...
     field = np.copy(field_orig)    
+    print ("plot_moll: 3 std field = ", 3*np.std(field))
 
     # Set tick label sizes (for colorbar)
     mpl.rcParams['xtick.labelsize'] = cbar_fs
@@ -464,8 +465,11 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
         # Normalize field by divisor
         field /= divisor
         minmax = minmax[0]/divisor, minmax[1]/divisor
+        print ("not logscale or symlog")
+        print ("plot_moll: 3 std field = ", 3*np.std(field))
     
     # Saturate the array (otherwise contourf will show white areas)
+    print ("plot_moll: minmax = ", minmax)
     saturate_array(field, minmax[0], minmax[1])    
             
     # Get the Mollweide projection coordinates of llon/llat by converting
@@ -656,6 +660,14 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
     psivals = np.linspace(0, 2*np.pi, 100)
     xvals, yvals = 2.*np.cos(psivals), np.sin(psivals)
     ax.plot(xvals, yvals, 'k', linewidth=1.3*lw_scaling)
+
+    # Label smoothing interval (if present)
+    if 'smooth' in varname:
+        varname = varname.replace('smooth', '')
+        dphi = int(varname[:3])
+        ax.text(-1.96, 0.98, r'$\Delta\phi=%i^\circ$' %dphi, ha='left',\
+                va='top')
+
     if figwasNone: # user probably called plot_moll from the python 
         # command line, wanting to view the projection immediately
         plt.show()
