@@ -29,8 +29,6 @@ def smooth(field, dphi):
     nphi_av = int(nphi*dphi/360.) + 1 # averaging over this number will
         # yield an interval as close as possible to dphi
     ov2 = nphi_av//2
-    print ("dphi = ", dphi)
-    print ("ov2 = ", ov2)
     field_smooth = np.zeros_like(field)
     # calculate the smoothed field phi-index by phi-index
     iphimin = -ov2
@@ -40,14 +38,9 @@ def smooth(field, dphi):
         iphimax = ov2 + 1
     for i in np.arange(iphimin, iphimax):
         field_smooth[0] += field[i]
-    print ("iphimin = ", iphimin)
-    print ("iphimax = ", iphimax)
     for i in range(1, nphi):
         to_sub = field[iphimin + i - 1]
         to_add = field[(iphimax + i - 1)%nphi]
-        if i < 20 or i > nphi - 20:
-            print ("sub index = ", iphimin + i - 1)
-            print ("add index = ", (iphimax + i - 1)%nphi)
         field_smooth[i] += (field_smooth[i-1] + to_add - to_sub)
     return field_smooth/nphi_av
 

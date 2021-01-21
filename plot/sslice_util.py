@@ -423,7 +423,6 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
         
     # Shouldn't have to do this but Python is stupid with arrays ...
     field = np.copy(field_orig)    
-    print ("plot_moll: 3 std field = ", 3*np.std(field))
 
     # Set tick label sizes (for colorbar)
     mpl.rcParams['xtick.labelsize'] = cbar_fs
@@ -465,11 +464,8 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
         # Normalize field by divisor
         field /= divisor
         minmax = minmax[0]/divisor, minmax[1]/divisor
-        print ("not logscale or symlog")
-        print ("plot_moll: 3 std field = ", 3*np.std(field))
     
     # Saturate the array (otherwise contourf will show white areas)
-    print ("plot_moll: minmax = ", minmax)
     saturate_array(field, minmax[0], minmax[1])    
             
     # Get the Mollweide projection coordinates of llon/llat by converting

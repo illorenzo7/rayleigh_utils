@@ -155,10 +155,8 @@ for iplot in range(nplots):
     print('Plotting moll: ' + varname + (', r/rsun = %0.3f (ir = %02i), '\
             %(rval, ir)) + 'iter ' + fname)
 
-    print ("3 std field = ", 3*np.std(field))
     plot_moll(field, a.costheta, fig=fig, ax=ax, minmax=minmax, clon=clon,\
             varname=varname, symlog=symlog, logscale=logscale) 
-    print ("3 std field = ", 3*np.std(field))
 
     # label the subplot
     varlabel = texlabels.get(varname, 0)
