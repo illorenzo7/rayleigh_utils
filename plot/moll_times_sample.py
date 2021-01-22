@@ -103,8 +103,10 @@ if rank == 0:
     minmax = None
     nskip = 1 # by default don't skip any slices in the range
     ntot = None 
+    rootname = None
 
     # Change defaults
+    print ("sys.argv = ", sys.argv)
     for i in range(nargs):
         arg = args[i]
         if arg == '-clon':
@@ -115,6 +117,8 @@ if rank == 0:
             rval = float(args[i+1])
         elif arg == '-var' or arg == '-qval':
             varlist = args[i+1].split()
+            print ("var list = ", varlist)
+            print ("len(varlist) = ", len(varlist))
         elif arg == '-minmax':
             minmax = float(args[i+1]), float(args[i+2])
         elif arg == '-nskip':
@@ -124,6 +128,17 @@ if rank == 0:
             nskip = nfiles//ntot
         elif arg == '-ncol':
             ncol = int(args[i+1])
+        elif arg == '-tag':
+            rootname = args[i+1]
+
+    # get the root name to save plots
+    if rootname is None:
+        rootname = varlist[0]
+        if len(varlist) > 1:
+            print ("-tag not specified, so the rootname of the plots will be")
+            print ("the first variable in varlist")
+            print ("varlist[0] = ", varlist[0])
+            print ("you may wish to rerun specifying -tag [helpful_name]")
 
     # Get the problem size
     nproc_min, nproc_max, n_per_proc_min, n_per_proc_max =\
@@ -174,11 +189,11 @@ if rank == 0:
         time_unit = compute_tdt(dirname)
         time_label = r'$\rm{TDT}$'
 
-    meta = [dirname, radatadir, plotdir, first_rem, nskip, ir, rval, clon, time_unit, time_label, rotation, minmax, varlist, ncol, dirname_stripped]
+    meta = [dirname, radatadir, plotdir, rootname, first_rem, nskip, ir, rval, clon, time_unit, time_label, rotation, minmax, varlist, ncol, dirname_stripped]
 else:
     meta = None
 
-dirname, radatadir, plotdir, first_rem, nskip, ir, rval, clon, time_unit, time_label, rotation, minmax, varlist, ncol, dirname_stripped = comm.bcast(meta, root=0)
+dirname, radatadir, plotdir, rootname, first_rem, nskip, ir, rval, clon, time_unit, time_label, rotation, minmax, varlist, ncol, dirname_stripped = comm.bcast(meta, root=0)
 
 # figure dimensions
 nplots = len(varlist)
@@ -224,7 +239,7 @@ if rank == 0:
 fig_width_inches = 6.
 
 # General parameters for main axis/color bar
-margin_bottom_inches = 1./2.
+margin_bottom_inches = 3./4.
 margin_top_inches = 5./8.
 margin_inches = 1./8.
 
@@ -261,53 +276,71 @@ for i in range(my_nfiles):
             t_loc = a.time[j]
             iter_loc = a.iters[j]
 
-            for iplot in range(nplots):
-                varname = varlist[iplot]
-
             # Savename
-            savename = 'moll_' + varname + ('_rval%0.3f' %rval) + '_iter' +\
+            savename = 'moll_' + rootname + ('_rval%0.3f' %rval) + '_iter' +\
                     str(iter_loc).zfill(8) + '.png'
-            vals = get_sslice(a, varname, dirname=dirname, j=j)
-            field = vals[:, :, ir]
-            
-            # Make axes and plot the Mollweide projection
+
+            # make figure
             fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
-            ax = fig.add_axes([margin_x, margin_bottom, subplot_width,\
-                    subplot_height])
-            
-            plot_moll(field, a.costheta, fig=fig, ax=ax, clon=clon,\
-                    varname=varname, minmax=minmax)     
 
-            # Make title
-            ax_xmin, ax_xmax, ax_ymin, ax_ymax = axis_range(ax)
-            ax_delta_x = ax_xmax - ax_xmin
-            ax_delta_y = ax_ymax - ax_ymin
-            ax_center_x = ax_xmin + 0.5*ax_delta_x    
-            
-            if rotation:
-                time_string = ('t = %.1f ' %(t_loc/time_unit)) + time_label +\
-                        ' (1 ' + time_label + (' = %.2f days)'\
-                        %(time_unit/86400.))
-            else:
-                time_string = ('t = %.3f ' %(t_loc/time_unit)) + time_label +\
-                        ' (1 ' + time_label + (' = %.1f days)'\
-                        %(time_unit/86400.))
-            varlabel = texlabels.get(varname, 'qval = ' + varname)
+            # loop over variables
+            for iplot in range(nplots):
+                # get the variable's associated field
+                varname = varlist[iplot]
+                vals = get_sslice(a, varname, dirname=dirname, j=j)
+                field = vals[:, :, ir]
+           
+                # Make axes and plot the Mollweide projection
+                ax_left = margin_x + (iplot%ncol)*(subplot_width + margin_x)
+                ax_bottom = 1. - margin_top - margin_subplot_top -\
+                        subplot_height - (iplot//ncol)*(subplot_height +\
+                        margin_subplot_top + margin_bottom)
+                ax = fig.add_axes((ax_left, ax_bottom, subplot_width, subplot_height))
+                
+                plot_moll(field, a.costheta, fig=fig, ax=ax, clon=clon,\
+                        varname=varname, minmax=minmax)     
 
-            title = dirname_stripped +\
-                '\n' + r'$\rm{Mollweide}$' + '     '  + time_string +\
-                '\n' + varlabel + '     ' + (r'$r/R_\odot\ =\ %0.3f$' %rval)
-            fig.text(ax_center_x, ax_ymax + 0.02*ax_delta_y, title,\
-                 verticalalignment='bottom', horizontalalignment='center',\
-                 fontsize=10, **csfont)   
-            
-            plt.savefig(plotdir + savename, dpi=300)
-            plt.close()
+                # label the subplot
+                varlabel = texlabels.get(varname, 0)
+                if varlabel == 0:
+                    varlabel = varname.replace('plus', ' + ')
+                    varlabel = varlabel.replace('times', ' ' + r'$\times$' + ' ')
+                    varlabel = varlabel.replace('smooth', '')
+                    varlabel = varlabel[3:]
+                    varlabel = 'qvals = ' + varlabel
+                ax.set_title(varlabel, verticalalignment='bottom', **csfont)
 
-if rank == 0:
-    pcnt_done = i/my_nfiles*100.
-    print(fill_str('computing', lent, char) +\
-        ('rank 0 %5.1f%% done' %pcnt_done), end='\r')
+                # Make title
+                if iplot == 0:
+                    ax_xmin, ax_xmax, ax_ymin, ax_ymax = axis_range(ax)
+                    ax_delta_x = ax_xmax - ax_xmin
+                    ax_delta_y = ax_ymax - ax_ymin
+                    ax_center_x = ax_xmin + 0.5*ax_delta_x    
+
+                    if rotation:
+                        time_string = ('t = %.1f ' %(t_loc/time_unit)) + time_label +\
+                                ' (1 ' + time_label + (' = %.2f days)'\
+                                %(time_unit/86400.))
+                    else:
+                        time_string = ('t = %.3f ' %(t_loc/time_unit)) + time_label +\
+                                ' (1 ' + time_label + (' = %.1f days)'\
+                                %(time_unit/86400.))
+
+                    title = dirname_stripped +\
+                        '\n' + r'$\rm{Mollweide}$' + '     '  + time_string +\
+                        '\n' + (r'$r/R_\odot\ =\ %0.3f$' %rval)
+                    fig.text(ax_center_x, ax_ymax + 0.02*ax_delta_y +\
+                            margin_subplot_top, title,\
+                         verticalalignment='bottom', horizontalalignment='center',\
+                         fontsize=10, **csfont)   
+                
+                plt.savefig(plotdir + savename, dpi=300)
+                plt.close()
+
+    if rank == 0:
+        pcnt_done = i/my_nfiles*100.
+        print(fill_str('computing', lent, char) +\
+            ('rank 0 %5.1f%% done' %pcnt_done), end='\r')
 
 # Checkpoint and time
 comm.Barrier()
