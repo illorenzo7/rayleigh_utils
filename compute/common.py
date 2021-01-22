@@ -7,7 +7,8 @@ import sys, os, pickle
 from string_to_num import string_to_number_or_array
 sys.path.append(os.environ['rapp'])
 from reference_tools import equation_coefficients
-from rayleigh_diagnostics import G_Avgs, Shell_Slices
+from rayleigh_diagnostics import G_Avgs, Shell_Slices, ReferenceState,\
+    TransportCoeffs
 from compute_grid_info import compute_grid_info, compute_theta_grid,\
         compute_r_grid
 
