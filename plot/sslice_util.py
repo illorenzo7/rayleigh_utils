@@ -411,6 +411,7 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
     if figwasNone: # user probably called plot_ortho from the python 
         # command line, wanting to view the projection immediately
         plt.show()
+    del field # free up memory
     return im
 
 def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
@@ -667,4 +668,5 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
     if figwasNone: # user probably called plot_moll from the python 
         # command line, wanting to view the projection immediately
         plt.show()
+    del field # free up memory
     return im

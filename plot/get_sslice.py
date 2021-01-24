@@ -631,4 +631,5 @@ def get_sslice(a, varname, dirname=None, old=False, j=0):
     # possibly smooth the variable
     if smooth_desired:
         sslice = smooth(sslice, nphi_av)
+    del vals # free up memory
     return sslice

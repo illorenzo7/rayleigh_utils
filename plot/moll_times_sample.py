@@ -325,9 +325,11 @@ for i in range(my_nfiles):
                             margin_subplot_top, title,\
                          verticalalignment='bottom', horizontalalignment='center',\
                          fontsize=10, **csfont)   
+                del vals, field # free up memory
                 
             plt.savefig(plotdir + savename, dpi=300)
             plt.close()
+        del a # free up memory
 
     if rank == 0:
         pcnt_done = i/my_nfiles*100.
