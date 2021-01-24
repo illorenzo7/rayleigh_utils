@@ -117,8 +117,12 @@ if rank == 0:
             rval = float(args[i+1])
         elif arg == '-var' or arg == '-qval':
             st = args[i+1]
-            if st == 'indphi':
-                varlist = ['803', '1611', '1612', '1613', '1611plus1612plus1613', '1615', '1626', '1627', '1628']
+            if st == 'indr':
+                varlist = ['801', '1601', '1602', '1603', '1601plus1602plus1603', '1605']
+            elif st == 'indt':
+                varlist = ['802', '1606', '1607', '1608', '1606plus1607plus1608', '1610']
+            elif st == 'indp':
+                varlist = ['803', '1611', '1612', '1613', '1611plus1612plus1613', '1615']
             else:
                 varlist = st.split()
         elif arg == '-smooth':

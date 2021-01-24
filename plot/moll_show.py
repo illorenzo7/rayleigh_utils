@@ -54,7 +54,11 @@ for i in range(nargs):
         rval = float(args[i+1])
     elif arg == '-var' or arg == '-qval':
         st = args[i+1]
-        if st == 'indphi':
+        if st == 'indr':
+            varlist = ['801', '1601', '1602', '1603', '1601plus1602plus1603', '1605', '1616', '1617', '1618']
+        elif st == 'indt':
+            varlist = ['802', '1606', '1607', '1608', '1606plus1607plus1608', '1610', '1621', '1622', '1623']
+        elif st == 'indp':
             varlist = ['803', '1611', '1612', '1613', '1611plus1612plus1613', '1615', '1626', '1627', '1628']
         else:
             varlist = st.split()
