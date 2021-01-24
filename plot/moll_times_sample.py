@@ -100,13 +100,13 @@ if rank == 0:
     varlist = ['vr'] # by default plot the radial velocity
     clon = 0.
     ncol = 2 # columns of subplots in figure
+    must_smooth = False
     minmax = None
     nskip = 1 # by default don't skip any slices in the range
     ntot = None 
     rootname = None
 
     # Change defaults
-    print ("sys.argv = ", sys.argv)
     for i in range(nargs):
         arg = args[i]
         if arg == '-clon':
@@ -116,9 +116,16 @@ if rank == 0:
         elif arg == '-rval':
             rval = float(args[i+1])
         elif arg == '-var' or arg == '-qval':
-            varlist = args[i+1].split()
-            print ("var list = ", varlist)
-            print ("len(varlist) = ", len(varlist))
+            st = args[i+1]
+            if st == 'indphi':
+                varlist = ['803', '1611', '1612', '1613', '1611plus1612plus1613', '1615', '1626', '1627', '1628']
+            else:
+                varlist = st.split()
+        elif arg == '-smooth':
+            dlon = int(args[i+1])
+            print ("smoothing nonfield vars over %i degrees in lon." %dlon)
+            prepend = str(dlon).zfill(3) + 'smooth'
+            must_smooth = True
         elif arg == '-minmax':
             minmax = float(args[i+1]), float(args[i+2])
         elif arg == '-nskip':
@@ -130,6 +137,12 @@ if rank == 0:
             ncol = int(args[i+1])
         elif arg == '-tag':
             rootname = args[i+1]
+
+    if must_smooth:
+        for i in range(len(varlist)):
+            var = varlist[i]
+            if not var in ['1', '2', '3', '801', '802', '803']:
+                varlist[i] = prepend + var
 
     # get the root name to save plots
     if rootname is None:
@@ -145,7 +158,7 @@ if rank == 0:
             opt_workload(nfiles, nproc)
 
     # Make plot (sub-)directory if it doesn't already exist
-    plotdir = dirname + '/plots/moll/times_sample/'
+    plotdir = dirname + '/plots/moll/times_sample/' + rootname + '/'
     if not os.path.isdir(plotdir):
         os.makedirs(plotdir)
 
@@ -233,31 +246,6 @@ if rank == 0:
     print(fill_str('plotting', lent, char), end='\r')
     t1 = time.time()
 
-# make plots
-
-# Create the plot template
-fig_width_inches = 6.
-
-# General parameters for main axis/color bar
-margin_bottom_inches = 3./4.
-margin_top_inches = 5./8.
-margin_inches = 1./8.
-
-subplot_width_inches = fig_width_inches - 2*margin_inches
-subplot_height_inches = 0.5*subplot_width_inches
-fig_height_inches = margin_bottom_inches + subplot_height_inches +\
-    margin_top_inches
-fig_aspect = fig_height_inches/fig_width_inches
-
-# "Non-dimensional" figure parameters
-margin_x = margin_inches/fig_width_inches
-margin_y = margin_inches/fig_height_inches
-margin_bottom = margin_bottom_inches/fig_height_inches
-margin_top = margin_top_inches/fig_height_inches
-
-subplot_width = subplot_width_inches/fig_width_inches
-subplot_height = subplot_height_inches/fig_height_inches
-
 # loop over data files and make plots
 for i in range(my_nfiles):
     if (i - first_rem) % nskip == 0: # respect nskip!
@@ -334,12 +322,12 @@ for i in range(my_nfiles):
                          verticalalignment='bottom', horizontalalignment='center',\
                          fontsize=10, **csfont)   
                 
-                plt.savefig(plotdir + savename, dpi=300)
-                plt.close()
+            plt.savefig(plotdir + savename, dpi=300)
+            plt.close()
 
     if rank == 0:
         pcnt_done = i/my_nfiles*100.
-        print(fill_str('computing', lent, char) +\
+        print(fill_str('plotting', lent, char) +\
             ('rank 0 %5.1f%% done' %pcnt_done), end='\r')
 
 # Checkpoint and time

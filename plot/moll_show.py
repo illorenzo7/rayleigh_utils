@@ -40,6 +40,7 @@ varlist = ['vr'] # by default plot the radial velocity
 clon = 0
 saveplot = False
 ncol = 2
+must_smooth = False
 
 args = sys.argv[2:]
 nargs = len(args)
@@ -52,7 +53,16 @@ for i in range(nargs):
     elif arg == '-rval':
         rval = float(args[i+1])
     elif arg == '-var' or arg == '-qval':
-        varlist = args[i+1].split()
+        st = args[i+1]
+        if st == 'indphi':
+            varlist = ['803', '1611', '1612', '1613', '1611plus1612plus1613', '1615', '1626', '1627', '1628']
+        else:
+            varlist = st.split()
+    elif arg == '-smooth':
+        dlon = int(args[i+1])
+        print ("smoothing nonfield vars over %i degrees in lon." %dlon)
+        prepend = str(dlon).zfill(3) + 'smooth'
+        must_smooth = True
     elif arg == '-symlog':
         symlog = True
     elif arg == '-log':
@@ -82,6 +92,12 @@ for i in range(nargs):
         tag = args[i+1] + '_'
     elif arg == '-ncol':
         ncol = int(args[i+1])
+
+if must_smooth:
+    for i in range(len(varlist)):
+        var = varlist[i]
+        if not var in ['1', '2', '3', '801', '802', '803']:
+            varlist[i] = prepend + var
 
 # Get the baseline time unit
 rotation = get_parameter(dirname, 'rotation')
