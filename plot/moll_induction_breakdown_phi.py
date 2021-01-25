@@ -11,7 +11,7 @@ from common import *
 from plotcommon import axis_range
 from sslice_util import plot_moll
 from rayleigh_diagnostics import Shell_Slices
-from get_sslice import get_sslice, prime
+from get_sslice import smooth, prime
 from varprops import texlabels
 
 # Get command line arguments
@@ -40,6 +40,7 @@ clon = 0
 saveplot = False
 ncol = 2
 must_smooth = False
+rootname = 'induction_breakdown_phi'
 
 args = sys.argv[2:]
 nargs = len(args)
@@ -54,7 +55,6 @@ for i in range(nargs):
     elif arg == '-smooth':
         dlon = int(args[i+1])
         print ("smoothing nonfield vars over %i degrees in lon." %dlon)
-        prepend = str(dlon).zfill(3) + 'smooth'
         must_smooth = True
     elif arg == '-symlog':
         symlog = True
@@ -80,9 +80,8 @@ for i in range(nargs):
         iiter = np.argmin(np.abs(int_file_list - desired_iter))
     elif arg == '-clon':
         clon = float(args[i+1])
-    elif arg == '-save':
-        saveplot = True
-        tag = args[i+1] + '_'
+    elif arg == '-tag':
+        rootname = args[i+1]
     elif arg == '-ncol':
         ncol = int(args[i+1])
 
@@ -115,15 +114,17 @@ bp = prime(a.vals[:, :, :, a.lut[803], 0])
 # will need some reference state stuff
 eq = get_eq(dirname)
 rr = a.radius.reshape((1, 1, a.nr))
-dlnrho = eq.dlnrho[a.rinds].reshape((1, 1, a.nr))
+dlnrho = eq.dlnrho[a.inds].reshape((1, 1, a.nr))
 divv = -dlnrho*vr
 nt = a.ntheta
 cost = a.costheta.reshape((1, nt, 1))
 sint = a.sintheta.reshape((1, nt, 1))
 cott = cost/sint
+# now we need cost to be 1D
+cost = a.costheta
 
 # fluid derivatives
-tt = np.arccos(a.costheta)
+tt = np.arccos(cost)
 dvrdt = dth_3d(vr, tt)/rr
 dvtdt = dth_3d(vt, tt)/rr
 dvpdt = dth_3d(vp, tt)/rr
@@ -148,17 +149,39 @@ ad_t = prime(a.vals[:, :, :, a.lut[1608], 0])
 sh_p = prime(a.vals[:, :, :, a.lut[1611], 0])
 co_p = prime(a.vals[:, :, :, a.lut[1612], 0])
 ad_p = prime(a.vals[:, :, :, a.lut[1613], 0])
+ind_p = sh_p + co_p + ad_p
 
 # radial derivs get from other terms
-dvrdr = divv - (dvtdt + dvpdp + 2.*vr/rr + vt*cott/rr)
-dbrdr = - (dbtdt + dbpdp + 2.*br/rr + bt*cott/rr)
-br_dvtdr = sh_t - (bt*dvtdt + bp*dvtdp + bt*vr/rr - bp*vp*cott/rr)
-minus_vr_dbtdr = ad_t + (vt*dbtdt + vp*dbtdp + vt*br/rr - bp*vp*cott/rr)
-br_dvpdr = sh_p - (bt*dvpdt + bp*dvpdp + bp*vr/rr + bp*vt*cott/rr)
-minus_vr_dbpdr = ad_p + (vt*dbpdt + vp*dbpdp + vp*br/rr + bt*vp*cott/rr)
+dvrdr = divv - (dvtdt + dvpdp + 2./rr*vr + cott/rr*vt)
+dbrdr = - (dbtdt + dbpdp + 2./rr*br + cott/rr*bt)
+br_dvtdr = sh_t - (bt*dvtdt + bp*dvtdp + 1./rr*bt*vr - cott/rr*bp*vp)
+minus_vr_dbtdr = ad_t + (vt*dbtdt + vp*dbtdp + 1./rr*vt*br - cott/rr*bp*vp)
+br_dvpdr = sh_p - (bt*dvpdt + bp*dvpdp + 1./rr*bp*vr + cott/rr*bp*vt)
+minus_vr_dbpdr = ad_p + (vt*dbpdt + vp*dbpdp + 1./rr*vp*br + cott/rr*bt*vp)
+
+ind_p_dr1 = br_dvpdr + dbrdr*vp
+ind_p_dr2 = minus_vr_dbpdr - dvrdr*bp
+ind_p_dt1 = dvpdt*bt + vp*dbtdt
+ind_p_dt2 = -dvtdt*bp - vt*dbpdt
+ind_p_curv = 1./rr*(vp*br - vr*bp)
+
+# Other info from the shell slice
+t_loc = a.time[0]
+# Find desired radius (by default ir=0--near outer surface)
+if not rval is None:
+    ir = np.argmin(np.abs(a.radius/rsun - rval))
+rval = a.radius[ir]/rsun # in any case, this is the actual rvalue we get
+
+# free some memory
+del a
+
+# collect the terms
+terms = [ind_p, ind_p_dr1, ind_p_dr2, ind_p_dt1, ind_p_dt2, ind_p_curv]
+labels = ['[del X (v X B)]_phi', '(d/dr)(vt*br)', '-(d/dr)(vr*bt)',\
+        '(1/r)(d/dt)(vp*bt)', '-(1/r)(d/dt)(vt*bp)', '(1/r)(vp*br - vr*bp)']
 
 # figure dimensions
-nplots = len(varlist)
+nplots = len(terms)
 if ncol > nplots:
     ncol = nplots # (no point in having empty columns)
 nrow = np.int(np.ceil(nplots/ncol))
@@ -192,40 +215,24 @@ fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
 
 # loop over desired vars and make plots
 for iplot in range(nplots):
-    varname = varlist[iplot]
     ax_left = margin_x + (iplot%ncol)*(subplot_width + margin_x)
     ax_bottom = 1. - margin_top - margin_subplot_top -\
             subplot_height - (iplot//ncol)*(subplot_height +\
             margin_subplot_top + margin_bottom)
     ax = fig.add_axes((ax_left, ax_bottom, subplot_width, subplot_height))
 
-    vals = get_sslice(a, varname, dirname=dirname)
 
-    # Get local time (in seconds)
-    t_loc = a.time[0]
-
-    # Find desired radius (by default ir=0--near outer surface)
-    if not rval is None:
-        ir = np.argmin(np.abs(a.radius/rsun - rval))
-    field = vals[:, :, ir]
-    rval = a.radius[ir]/rsun # in any case, this is the actual rvalue we get
-
+    if must_smooth:
+        terms[iplot] = smooth(terms[iplot], dlon)
+    field = terms[iplot][:, :, ir]
     # Display at terminal what we are plotting
-    print('Plotting moll: ' + varname + (', r/rsun = %0.3f (ir = %02i), '\
+    print('Plotting moll: ' + rootname + (', r/rsun = %0.3f (ir = %02i), '\
             %(rval, ir)) + 'iter ' + fname)
 
-    plot_moll(field, a.costheta, fig=fig, ax=ax, minmax=minmax, clon=clon,\
-            varname=varname, symlog=symlog, logscale=logscale) 
+    plot_moll(field, cost, fig=fig, ax=ax, minmax=minmax, clon=clon,\
+            varname=rootname, symlog=symlog, logscale=logscale) 
 
-    # label the subplot
-    varlabel = texlabels.get(varname, 0)
-    if varlabel == 0:
-        varlabel = varname.replace('plus', ' + ')
-        varlabel = varlabel.replace('times', ' ' + r'$\times$' + ' ')
-        varlabel = varlabel.replace('smooth', '')
-        varlabel = varlabel[3:]
-        varlabel = 'qvals = ' + varlabel
-    ax.set_title(varlabel, verticalalignment='bottom', **csfont)
+    ax.set_title(labels[iplot], verticalalignment='bottom', **csfont)
 
     # Make title
     if iplot == 0:
@@ -250,13 +257,13 @@ for iplot in range(nplots):
                 margin_subplot_top, title,\
              verticalalignment='bottom', horizontalalignment='center',\
              fontsize=10, **csfont)   
-if saveplot:
-    plotdir = dirname + '/plots/moll/'
-    if not os.path.isdir(plotdir):
-        os.makedirs(plotdir)
-    savefile = plotdir + 'moll_' + tag + fname + ('_rval%0.3f' %rval) +\
-        '.png'
-    print ('Saving plot at ' + savefile)
-    plt.savefig(savefile, dpi=300)
+
+plotdir = dirname + '/plots/moll/'
+if not os.path.isdir(plotdir):
+    os.makedirs(plotdir)
+savefile = plotdir + 'moll_' + rootname + '_' + fname +\
+        ('_rval%0.3f' %rval) + '.png'
+print ('Saving plot at ' + savefile)
+plt.savefig(savefile, dpi=300)
 # always show
 plt.show()   

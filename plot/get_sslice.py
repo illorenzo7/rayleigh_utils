@@ -24,10 +24,10 @@ def prime_sph(field, tw):
     field_av = np.sum(field_av*tw_2d, axis=0)
     return field - field_av.reshape((1, 1, nr))
 
-def smooth(field, dphi):
+def smooth(field, dlon):
     nphi, nt, nr = np.shape(field)
-    nphi_av = int(nphi*dphi/360.) + 1 # averaging over this number will
-        # yield an interval as close as possible to dphi
+    nphi_av = int(nphi*dlon/360.) + 1 # averaging over this number will
+        # yield an interval as close as possible to dlon
     ov2 = nphi_av//2
     field_smooth = np.zeros_like(field)
     # calculate the smoothed field phi-index by phi-index
