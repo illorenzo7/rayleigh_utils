@@ -103,43 +103,40 @@ a = Shell_Slices(radatadir + fname, '')
 # compute induction breakdown
 
 # fluid variables
-vr = prime(a.vals[:, :, :, a.lut[1], 0])
-vt = prime(a.vals[:, :, :, a.lut[2], 0])
-vp = prime(a.vals[:, :, :, a.lut[3], 0])
+vr = a.vals[:, :, :, a.lut[1], 0]
+vt = a.vals[:, :, :, a.lut[2], 0]
+vp = a.vals[:, :, :, a.lut[3], 0]
 
-br = prime(a.vals[:, :, :, a.lut[801], 0])
-bt = prime(a.vals[:, :, :, a.lut[802], 0])
-bp = prime(a.vals[:, :, :, a.lut[803], 0])
-
-# will need some reference state stuff
-eq = get_eq(dirname)
-rr = a.radius.reshape((1, 1, a.nr))
-dlnrho = eq.dlnrho[a.inds].reshape((1, 1, a.nr))
-divv = -dlnrho*vr
-nt = a.ntheta
-cost = a.costheta.reshape((1, nt, 1))
-sint = a.sintheta.reshape((1, nt, 1))
-cott = cost/sint
-# now we need cost to be 1D
-cost = a.costheta
+br = a.vals[:, :, :, a.lut[801], 0]
+bt = a.vals[:, :, :, a.lut[802], 0]
+bp = a.vals[:, :, :, a.lut[803], 0]
 
 # fluid derivatives
-tt = np.arccos(cost)
-dvrdt = dth_3d(vr, tt)/rr
-dvtdt = dth_3d(vt, tt)/rr
-dvpdt = dth_3d(vp, tt)/rr
+# velocity field
+dvrdr = a.vals[:, :, :, a.lut[10], 0]
+dvtdr = a.vals[:, :, :, a.lut[11], 0]
+dvpdr = a.vals[:, :, :, a.lut[12], 0]
 
-dvrdp = dph_3d(vr)/(rr*sint)
-dvtdp = dph_3d(vt)/(rr*sint)
-dvpdp = dph_3d(vp)/(rr*sint)
+dvrdt = a.vals[:, :, :, a.lut[37], 0]
+dvtdt = a.vals[:, :, :, a.lut[38], 0]
+dvpdt = a.vals[:, :, :, a.lut[39], 0]
 
-dbrdt = dth_3d(br, tt)/rr
-dbtdt = dth_3d(bt, tt)/rr
-dbpdt = dth_3d(bp, tt)/rr
+dvrdp = a.vals[:, :, :, a.lut[46], 0]
+dvtdp = a.vals[:, :, :, a.lut[47], 0]
+dvpdp = a.vals[:, :, :, a.lut[48], 0]
 
-dbrdp = dph_3d(vr)/(rr*sint)
-dbtdp = dph_3d(vt)/(rr*sint)
-dbpdp = dph_3d(vp)/(rr*sint)
+# B field
+dbrdr = a.vals[:, :, :, a.lut[810], 0]
+dbtdr = a.vals[:, :, :, a.lut[811], 0]
+dbpdr = a.vals[:, :, :, a.lut[812], 0]
+
+dbrdt = a.vals[:, :, :, a.lut[837], 0]
+dbtdt = a.vals[:, :, :, a.lut[838], 0]
+dbpdt = a.vals[:, :, :, a.lut[839], 0]
+
+dbrdp = a.vals[:, :, :, a.lut[846], 0]
+dbtdp = a.vals[:, :, :, a.lut[847], 0]
+dbpdp = a.vals[:, :, :, a.lut[848], 0]
 
 # induction terms
 sh_t = prime(a.vals[:, :, :, a.lut[1606], 0])
@@ -151,19 +148,22 @@ co_p = prime(a.vals[:, :, :, a.lut[1612], 0])
 ad_p = prime(a.vals[:, :, :, a.lut[1613], 0])
 ind_p = sh_p + co_p + ad_p
 
-# radial derivs get from other terms
-dvrdr = divv - (dvtdt + dvpdp + 2./rr*vr + cott/rr*vt)
-dbrdr = - (dbtdt + dbpdp + 2./rr*br + cott/rr*bt)
-br_dvtdr = sh_t - (bt*dvtdt + bp*dvtdp + 1./rr*bt*vr - cott/rr*bp*vp)
-minus_vr_dbtdr = ad_t + (vt*dbtdt + vp*dbtdp + 1./rr*vt*br - cott/rr*bp*vp)
-br_dvpdr = sh_p - (bt*dvpdt + bp*dvpdp + 1./rr*bp*vr + cott/rr*bp*vt)
-minus_vr_dbpdr = ad_p + (vt*dbpdt + vp*dbpdp + 1./rr*vp*br + cott/rr*bt*vp)
+# will need some reference state stuff
+rr = a.radius.reshape((1, 1, a.nr))
+nt = a.ntheta
+cost = a.costheta.reshape((1, nt, 1))
+sint = a.sintheta.reshape((1, nt, 1))
+cott = cost/sint
 
-ind_p_dr1 = br_dvpdr + dbrdr*vp
-ind_p_dr2 = minus_vr_dbpdr - dvrdr*bp
-ind_p_dt1 = dvpdt*bt + vp*dbtdt
-ind_p_dt2 = -dvtdt*bp - vt*dbpdt
-ind_p_curv = 1./rr*(vp*br - vr*bp)
+# now we need cost to be 1D
+cost = a.costheta
+
+ind_p_dr1 = prime(br*dvpdr + dbrdr*vp)
+ind_p_dr2 = prime(-vr*dbpdr - dvrdr*bp)
+ind_p_dt1 = prime(dvpdt*bt + vp*dbtdt)
+ind_p_dt2 = prime(-dvtdt*bp - vt*dbpdt)
+ind_p_curv = prime(1./rr*(vp*br - vr*bp))
+ind_p_tot = ind_p_dr1 + ind_p_dr2 + ind_p_dt1 + ind_p_dt2 + ind_p_curv
 
 # Other info from the shell slice
 t_loc = a.time[0]
@@ -176,10 +176,11 @@ rval = a.radius[ir]/rsun # in any case, this is the actual rvalue we get
 del a
 
 # collect the terms
-terms = [ind_p, ind_p_dr1, ind_p_dr2, ind_p_dt1, ind_p_dt2, ind_p_curv]
-labels = ['[del X (v X B)]_phi', '(d/dr)(vt*br)', '-(d/dr)(vr*bt)',\
-        '(1/r)(d/dt)(vp*bt)', '-(1/r)(d/dt)(vt*bp)', '(1/r)(vp*br - vr*bp)']
+terms = [bp, ind_p, ind_p_dr1, ind_p_dr2, ind_p_dt1, ind_p_dt2, ind_p_curv, ind_p_tot]
+labels = ['B_phi', '[del X (v X B)]_phi', '(d/dr)(vt*br)', '-(d/dr)(vr*bt)',\
+        '(1/r)(d/dt)(vp*bt)', '-(1/r)(d/dt)(vt*bp)', '(1/r)(vp*br - vr*bp)', 'sum last 4']
 
+print ("rms(exact - sum)/rms(exact) = ", rms(terms[1] - terms[-1])/rms(terms[1]))
 # figure dimensions
 nplots = len(terms)
 if ncol > nplots:
@@ -222,7 +223,7 @@ for iplot in range(nplots):
     ax = fig.add_axes((ax_left, ax_bottom, subplot_width, subplot_height))
 
 
-    if must_smooth:
+    if must_smooth and not labels[iplot] in ['B_r', 'B_theta', 'B_phi']:
         terms[iplot] = smooth(terms[iplot], dlon)
     field = terms[iplot][:, :, ir]
     # Display at terminal what we are plotting
