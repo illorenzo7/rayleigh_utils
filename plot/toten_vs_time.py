@@ -667,18 +667,6 @@ for i in range(index_first, index_last + 1, nskip):
                     if not rbcz is None:
                         ax_rav_cz.set_title("radial avg. CZ", fontsize=fs, **csfont)
                         ax_rav_rz.set_title("radial avg. RZ", fontsize=fs, **csfont)
-                    # mark desired radii on shav plot
-                    for rval in rvals:
-                        if rbcz is None:
-                            ax = ax_shav
-                        else:
-                            if rval <= rbcz:
-                                ax = ax_shav_rz
-                            else:
-                                ax = ax_shav
-                        ymin, ymax = ax.get_ylim()
-                        yvals = np.linspace(ymin, ymax, 100)
-                        ax.plot(np.zeros(100) + rval/rsun, yvals, 'k--', linewidth=0.5*lw)
                     # set x limits
                     for ax in axes_shav:
                         ax.set_xlim(ri/rsun, ro/rsun)
@@ -698,6 +686,19 @@ for i in range(index_first, index_last + 1, nskip):
                         ymaxabs = max(np.abs(mins[1]), np.abs(maxes[1]))
                         ax_shav_rz.set_ylim(buff_minmax(-ymaxabs, ymaxabs))
                         count += 1
+
+                    # mark desired radii on shav plot
+                    for rval in rvals:
+                        if rbcz is None:
+                            ax = ax_shav
+                        else:
+                            if rval <= rbcz:
+                                ax = ax_shav_rz
+                            else:
+                                ax = ax_shav
+                        ymin, ymax = ax.get_ylim()
+                        yvals = np.linspace(ymin, ymax, 100)
+                        ax.plot(np.zeros(100) + rval/rsun, yvals, 'k--', linewidth=0.5*lw)
 
                     # shav ticks (mostly everywhere, deal with split axes)
                     if rbcz is None:
