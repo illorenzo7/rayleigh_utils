@@ -67,6 +67,9 @@ symlog = False
 crudeint = False # by default use exact latitudinal weights and instead 
 # if crudeint = True, use a "crude weight"
 tag = ''
+plot_az = True
+plot_av = True
+av_ext = '.png'
 
 # determine magnetism from main_input
 magnetism = get_parameter(dirname, 'magnetism')
@@ -131,6 +134,12 @@ for i in range(nargs):
         keys = ['toten_me']
     elif arg == '-tote':
         keys = ['toten_tote']
+    elif arg == '-av':
+        plot_az = False
+    elif arg == '-az':
+        plot_av = False
+    elif arg == '-pdf':
+        av_ext = '.pdf'
 
 # Get the data:
 print ('Getting energy production terms from ' +\
@@ -694,7 +703,7 @@ for key in keys:
     plt.close(fig)
     # av
     savefile_av = plotdir + dirname_stripped + '_' + key + '_av_' +\
-            str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + tag + '.pdf'
+            str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + tag + av_ext
     print ('Saving 1D av line plot at\n' + savefile_av)
     fig_av.savefig(savefile_av)
     plt.close(fig_av)

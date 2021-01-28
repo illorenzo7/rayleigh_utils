@@ -563,17 +563,28 @@ for i in range(index_first, index_last + 1, nskip):
                 # collect all av axes
                 axes_shav = [ax_shav]
                 axes_rav = [ax_rav]
+                # keep track of absolute min/max vals along the way
+                mins = [np.inf, np.inf]
+                maxes = [-np.inf, -np.inf]
                 if not rbcz is None:
                     ax_shav_rz = ax_shav.twinx()
                     axes_shav.append(ax_shav_rz)
+                    mins.append(np.inf)
+                    maxes.append(-np.inf)
+
                     ax_rav_cz = fig_av.add_axes((av_margin_x, 1. - av_margin_top -\
                             av_height - 2.*(av_height + av_margin_y), av_width,\
                             av_height))
                     axes_rav.append(ax_rav_cz)
+                    mins.append(np.inf)
+                    maxes.append(-np.inf)
+
                     ax_rav_rz = fig_av.add_axes((av_margin_x, 1. - av_margin_top -\
                             av_height - 3.*(av_height + av_margin_y), av_width,\
                             av_height))
                     axes_rav.append(ax_rav_rz)
+                    mins.append(np.inf)
+                    maxes.append(-np.inf)
 
             # loop over terms and add associated plot to axes
             for iplot in range(nplots):
@@ -587,6 +598,20 @@ for i in range(index_first, index_last + 1, nskip):
                     rav_term_rz = np.sum(term[:, irbcz:]*rw_rz_2d, axis=1)
                     integrated_term_cz = volume_cz*np.sum(shav_term[:irbcz]*rw_cz)
                     integrated_term_rz = volume_rz*np.sum(shav_term[irbcz:]*rw_rz)
+                # collect each term and update mins and maxes
+                if rbcz is None:
+                    av_terms = [shav_term, rav_term]
+                else:
+                    av_terms = [shav_term[:irbcz], shav_term[irbcz:],\
+                            rav_term, rav_term_cz, rav_term_rz]
+
+                count = 0
+                for av_term in av_terms:
+                    if np.max(av_term) > maxes[count]:
+                        maxes[count] = np.max(av_term)
+                    if np.min(av_term) < mins[count]:
+                        mins[count] = np.min(av_term)
+                    count += 1
 
                 # plot azav
                 if plot_az:
@@ -635,17 +660,13 @@ for i in range(index_first, index_last + 1, nskip):
                     if not rbcz is None:
                         ax_rav_cz.legend(bbox_to_anchor=(1.05, 1), loc=2, fontsize=small_fs,            labelspacing=0.5, title='(vol. integral CZ)/L')
                         ax_rav_rz.legend(bbox_to_anchor=(1.05, 1), loc=2, fontsize=small_fs,            labelspacing=0.5, title='(vol. integral RZ)/L')
+
                     # make av plot titles
                     ax_shav.set_title("spherical average", fontsize=fs, **csfont )
                     ax_rav.set_title("radial average", fontsize=fs, **csfont )
                     if not rbcz is None:
                         ax_rav_cz.set_title("radial avg. CZ", fontsize=fs, **csfont)
                         ax_rav_rz.set_title("radial avg. RZ", fontsize=fs, **csfont)
-                    # if rbcz is desired centralize the zero point of the y axis
-                        for ax in [ax_shav, ax_shav_rz]:
-                            ymin, ymax = ax.get_ylim()
-                            ymaxabs = max(np.abs(ymin), np.abs(ymax))
-                            ax.set_ylim(-ymaxabs, ymaxabs)
                     # mark desired radii on shav plot
                     for rval in rvals:
                         if rbcz is None:
@@ -663,11 +684,20 @@ for i in range(index_first, index_last + 1, nskip):
                         ax.set_xlim(ri/rsun, ro/rsun)
                     for ax in axes_rav:
                         ax.set_xlim(-90., 90.)
+
                     # mark zero points on all plots
+                    count = 0
                     for ax in axes_shav + axes_rav:
                         xmin, xmax = ax.get_xlim()
                         xvals = np.linspace(xmin, xmax, 100)
                         ax.plot(xvals, np.zeros(100), 'k--', linewidth=0.5*lw)
+                        # symmetrize y limits
+                        ymaxabs = max(np.abs(mins[count]), np.abs(maxes[count]))
+                        ax.set_ylim(buff_minmax(-ymaxabs, ymaxabs))
+
+                        ymaxabs = max(np.abs(mins[1]), np.abs(maxes[1]))
+                        ax_shav_rz.set_ylim(buff_minmax(-ymaxabs, ymaxabs))
+                        count += 1
 
                     # shav ticks (mostly everywhere, deal with split axes)
                     if rbcz is None:

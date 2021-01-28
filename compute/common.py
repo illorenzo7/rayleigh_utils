@@ -44,6 +44,7 @@ ro = 6.5860209e10 # Radii consistent with the bottom 3 density scale
 
 # width of print messages in parallel routines
 lent = 50
+buff_frac = 0.05 # default buffer to set axes limits
 
 def get_file_lists(radatadir):
     try:
@@ -275,7 +276,8 @@ def rms(array):
     else:
         return np.sqrt(np.mean(array**2))
 
-def get_satvals(field, posdef=False, logscale=False, symlog=False):
+def get_satvals(field, posdef=False, logscale=False, symlog=False,\
+        fullrange=False):
     # Get good place to saturate array [field], assuming either
     # posdef (True or False) and/or logscale (True or False)
     # and/or symlog (True or False)
@@ -298,6 +300,11 @@ def get_satvals(field, posdef=False, logscale=False, symlog=False):
     elif symlog:
         maxabs = np.max(np.abs(field))
         minmax = -maxabs, maxabs       
+    elif fullrange:
+        minval = np.min(field)
+        maxval = np.max(field)
+        buff = buff_frac*(maxval - minval)
+        minmax = minval - buff, maxval + buff
     else:
         sig = np.std(field)
         minmax = -3.*sig, 3.*sig
@@ -305,6 +312,10 @@ def get_satvals(field, posdef=False, logscale=False, symlog=False):
     tinybit = 1.0e-100
     minmax = minmax[0] - tinybit, minmax[1] + tinybit
     return minmax
+
+def buff_minmax(minval, maxval):
+    buff = buff_frac*(maxval - minval)
+    return minval - buff, maxval + buff
 
 def get_symlog_params(field, field_max=None):
     if field_max is None:
