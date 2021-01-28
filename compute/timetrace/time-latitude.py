@@ -91,8 +91,8 @@ if rank == 0:
         qvals.append(801)
         qvals.append(802)
         qvals.append(803)
-    depths = np.array([0.05, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875,\
-        0.95])
+    depths = np.array([0.05, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 0.95])
+    aspect = 0.
     tag = ''
 
     # get some grid info
@@ -136,32 +136,21 @@ if rank == 0:
             # 0.25 of CZ depth
             print("Taking 9 depths in CZ and RZ each")
             print("assuming depth RZ = (1/4) depth CZ")
-            depths = [0.04, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.76,\
-                   0.81, 0.825, 0.85, 0.875, 0.9, 0.925, 0.95, 0.975, 0.990]
+            aspect = 0.25
         elif arg == '-rzhalf': # 9 depths in RZ and CZ, with RZ depth
             # 0.5 of CZ depth
             print("Taking 9 depths in CZ and RZ each")
             print("assuming depth RZ = (1/2) depth CZ")
-            depths = [0.03333333, 0.08333333, 0.16666667, 0.25, 0.33333333,\
-                0.41666667, 0.5, 0.58333333, 0.63333333, 0.68333333,\
-                0.70833333, 0.75, 0.79166667, 0.83333333, 0.875,\
-                0.91666667, 0.95833333, 0.9833333]
+            aspect = 0.5
         elif arg == '-rz75': # 9 depths in RZ and CZ, with RZ depth
             # 0.75 of CZ depth
             print("Taking 9 depths in CZ and RZ each")
             print("assuming depth RZ = (3/4) depth CZ")
-            depths = 1.0 - np.array([0.02142857, 0.05357143, 0.10714286,\
-                    0.16071429, 0.21428571, 0.26785714, 0.32142857, 0.375,\
-                    0.40714286, 0.45714286, 0.5, 0.57142857, 0.64285714,\
-                    0.71428571, 0.78571429, 0.85714286, 0.92857143,\
-                    0.97142857])
+            aspect = 0.75
         elif arg == '-rz1': # 9 depths in RZ and CZ, with RZ depth
-            # equal to CZ depth
-            print("Taking 9 depths in CZ and RZ each")
-            print("assuming depth RZ = depth CZ")
-            depths = 1.0 - np.array([0.025, 0.0625, 0.125, 0.1875, 0.25,\
-                    0.3125, 0.375, 0.4375, 0.475, 0.525, 0.5625, 0.625,\
-                    0.6875, 0.75, 0.8125, 0.875, 0.9375, 0.975])
+            aspect = 1.
+        elif arg == '-aspect':
+            aspect = float(args[i+1])
         elif arg == '-torque':
             print("tracing over TORQUE QUANTITIES")
             qvals = [3, 1801, 1802, 1803, 1804, 1819]
@@ -186,6 +175,18 @@ if rank == 0:
     # convert things to arrays
     depths = np.array(depths)
     qvals = np.array(qvals)
+
+    # if aspect ratio is > 0. make depths apply in each zone separately
+    eps = 1.e-4
+    if aspect > eps:
+        print("Taking 9 depths in CZ and RZ each (plus one at transition)")
+        print("assuming (depth RZ)/(depth CZ) = %.3f" %aspect)
+        d1 = 1./(1. + aspect)*depths
+        d2 = np.array([1./(1. + aspect)]) # include transition point
+        d3 = 1./(1. + aspect) + aspect/(1. + aspect)*depths
+        depths = np.hstack((d1, d2, d3))
+    else:
+        print("Taking 9 depths in CZ")
 
     # Get the Rayleigh data directory
     radatadir = dirname + '/' + dataname + '/'
