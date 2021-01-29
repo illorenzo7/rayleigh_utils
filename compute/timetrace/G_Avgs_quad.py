@@ -177,12 +177,14 @@ if rank == 0:
             for st in strings:
                 latval = float(st)
                 latvals.append(latval)
-            lats = lats[::-1] + [0.] + lats # indicators separtors in
-                                        # only one hemisphere
+            latvals = latvals[::-1] + [0.] + latvals
+            # indicators separtors in only one hemisphere
 
     ndomains = len(ncheby)
     if rvals == [] and ndomains > 1:
         rvals = list(domain_bounds[1:-1][::-1])
+    rbounds = [ro] + rvals + [ri]
+    latbounds = [tt_lat[0]] + latvals + [tt_lat[-1]]
 
     # now get the separator indices
     ir_sep = []
@@ -261,6 +263,9 @@ comm.Barrier()
 if rank == 0:
     t2 = time.time()
     print ('%8.2e s' %(t2 - t1))
+    print ("tracing over %i quadrants" %nquad)
+    print (("nsep_t = %i" %nsep_r), " latbounds = ", latbounds)
+    print (("nsep_r = %i" %nsep_r), " rbounds = ", rbounds)
     print ('Considering %i %s files for the trace: %s through %s'\
         %(nfiles, dataname, file_list[0], file_list[-1]))
     print ("ntimes for trace = %i" %ntimes)
@@ -396,7 +401,7 @@ if rank == 0:
     qv_app = np.array([4000, 4001, 4002])
     qv = np.hstack((a0.qv, qv_app))
     f = open(savefile, 'wb')
-    pickle.dump({'vals': vals, 'vals_full': vals_full,'times': times, 'iters': iters, 'lut': lut, 'ntimes': ntimes, 'iter1': iter1, 'iter2': iter2, 'rr': a0.radius, 'nr': nr, 'nt': nt, 'qv': qv, 'nq': nq, 'nsep_r': nsep_r, 'nsep_t': nsep_t, 'it_sep': it_sep, 'ir_sep': ir_sep, 'volumes': volumes, 'latvals': latvals, 'rvals': rvals}, f, protocol=4)
+    pickle.dump({'vals': vals, 'vals_full': vals_full,'times': times, 'iters': iters, 'lut': lut, 'ntimes': ntimes, 'iter1': iter1, 'iter2': iter2, 'rr': a0.radius, 'nr': nr, 'nt': nt, 'qv': qv, 'nq': nq, 'nsep_r': nsep_r, 'nsep_t': nsep_t, 'it_sep': it_sep, 'ir_sep': ir_sep, 'volumes': volumes, 'latvals_sep': latvals, 'rvals_sep': rvals, 'rbounds': rbounds, 'latbounds': latbounds, 'nquad': nquad}, f, protocol=4)
     f.close()
     t2 = time.time()
     print ('%8.2e s' %(t2 - t1))
