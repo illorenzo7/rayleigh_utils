@@ -177,7 +177,7 @@ if rank == 0:
             for st in strings:
                 latval = float(st)
                 latvals.append(latval)
-            latvals = latvals[::-1] + [0.] + latvals
+            latvals = (-np.array(latvals[::-1])).tolist() + [0.] + latvals
             # indicators separtors in only one hemisphere
 
     ndomains = len(ncheby)
