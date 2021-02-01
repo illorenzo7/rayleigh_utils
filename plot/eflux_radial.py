@@ -208,8 +208,29 @@ magnetism = get_parameter(dirname, 'magnetism')
 savename = dirname_stripped + '_eflux_radial_' +\
     str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
 
-hflux = vals[:, lut[1433]]
 eflux = vals[:, lut[1455]]
+hflux = vals[:, lut[1433]]
+if True in np.isnan(hflux):
+    print ("OUTPUT HEAT FLUX (1433, vol_heat_flux) HAS NANs!!!!")
+    print ("Computing manually from discrete integral")
+    hflux = np.zeros_like(eflux)
+    eq = get_eq(dirname)
+    rr = eq.radius
+    rr2 = rr**2.
+    #rho = eq.density
+    #temp = eq.temperature
+    heat = eq.heating
+    for ir in range(eq.nr - 2, -1, -1):
+        #mean_rho = 0.5*(rho[ir] + rho[ir+1])
+        #mean_t = 0.5*(temp[ir] + temp[ir+1])
+        #mean_t = 0.5*(temp[ir] + temp[ir+1])
+        mean_r2 = 0.5*(rr2[ir] + rr2[ir+1])
+        mean_q = 0.5*(heat[ir] + heat[ir+1])
+        mean_dr = rr[ir] - rr[ir+1]
+        fpr2dr = 4.*np.pi*mean_r2*mean_dr
+        hflux[ir] = hflux[ir+1] + mean_q*fpr2dr
+    hflux = (hflux[0] - hflux)/(4.*np.pi*rr2)
+
 cflux = vals[:, lut[1470]]
 kflux = vals[:, lut[1923]]
 vflux = -vals[:, lut[1935]]
