@@ -1,1 +1,1 @@
-    print (format_time(t2 - t1_glob))
+    print(fill_str('\ncomputing time', lent, char), end='')

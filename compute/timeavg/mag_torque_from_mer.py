@@ -289,7 +289,7 @@ for i in range(my_nfiles):
 comm.Barrier()
 if rank == 0:
     t2 = time.time()
-    print(fill_str('\ncomputing time', lent, char), end='')
+    print('\n' + fill_str('computing time', lent, char), end='')
     print (format_time(t2 - t1))
     print(fill_str('rank 0 collecting and saving the results',\
             lent, char), end='')
