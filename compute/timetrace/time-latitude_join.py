@@ -68,7 +68,8 @@ iters = np.zeros(niter)
 length = 0 # Current (just past?) length of the time axis of nonzero values
     # in the various arrays
 for i in range(nfiles):
-    print('appending %s' %files[i])
+    print(make_bold('appending'))
+    print(files[i])
     if i != nfiles - 1:
         vals[length:length + cutoffs[i]] = di_list[i]['vals'][:cutoffs[i]]
         times[length:length + cutoffs[i]] = di_list[i]['times'][:cutoffs[i]]

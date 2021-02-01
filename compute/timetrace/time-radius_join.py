@@ -29,7 +29,6 @@ for arg in args:
         n_for_cla += 2
 
 nfiles = n_total_args - 1 - n_for_cla
-print(nfiles)
 
 files = sys.argv[1:nfiles + 1]
 dirname = sys.argv[nfiles + 1]
@@ -69,6 +68,8 @@ iters = np.zeros(niter)
 length = 0 # Current (just past?) length of the time axis of nonzero values
     # in the various arrays
 for i in range(nfiles):
+    print(make_bold('appending'))
+    print(files[i])
     if i != nfiles - 1:
         vals[length:length + cutoffs[i]] = di_list[i]['vals'][:cutoffs[i]]
         times[length:length + cutoffs[i]] = di_list[i]['times'][:cutoffs[i]]
@@ -94,6 +95,13 @@ di_all['iter2'] = iter2
 savename = dirname_stripped + '_time-radius_' + tag + str(iter1).zfill(8) +\
         '_' + str(iter2).zfill(8) + '.pkl'
 savefile = datadir + savename
+print (make_bold("deleting"))
+for i in range(nfiles):
+    fname = files[i]
+    print (fname)
+    os.remove(fname)
 f = open(savefile, 'wb')
 pickle.dump(di_all, f, protocol=4)
 f.close()
+print ("Saved joined trace in")
+print (make_bold(savefile))
