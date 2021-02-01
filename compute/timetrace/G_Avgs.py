@@ -56,7 +56,7 @@ if rank == 0:
 comm.Barrier()
 if rank == 0:
     t2 = time.time()
-    print ('%8.2e s' %(t2 - t1))
+    print (format_time(t2 - t1))
     print(fill_str('proc 0 distributing the file lists', lent, char),\
             end='')
     t1 = time.time()
@@ -137,7 +137,7 @@ dirname, radatadir, nq = comm.bcast(meta, root=0)
 comm.Barrier()
 if rank == 0:
     t2 = time.time()
-    print ('%8.2e s' %(t2 - t1))
+    print (format_time(t2 - t1))
     print ('Considering %i %s files for the trace: %s through %s'\
         %(nfiles, dataname, file_list[0], file_list[-1]))
     print ("ntimes for trace = %i" %ntimes)
@@ -172,7 +172,7 @@ comm.Barrier()
 if rank == 0:
     t2 = time.time()
     print(fill_str('\ncomputing time', lent, char), end='')
-    print ('%8.2e s                                 ' %(t2 - t1))
+    print (format_time(t2 - t1))
     print(fill_str('rank 0 collecting and saving the results',\
             lent, char), end='')
     t1 = time.time()
@@ -221,6 +221,6 @@ if rank == 0:
     pickle.dump({'vals': vals, 'times': times, 'iters': iters, 'lut': a0.lut, 'count': ntimes, 'iter1': iter1, 'iter2': iter2, 'qv': a0.qv, 'nq': a0.nq}, f, protocol=4)
     f.close()
     t2 = time.time()
-    print ('%8.2e s' %(t2 - t1))
-    print(fill_str('total time', lent, char), end='')
-    print ('%8.2e s' %(t2 - t1_glob))
+    print (format_time(t2 - t1))
+    print(make_bold(fill_str('total time', lent, char)), end='')
+    print (make_bold(format_time(t2 - t1_glob)))

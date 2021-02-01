@@ -1,1 +1,1 @@
-    print (format_time(t2 - t1))
+    print (make_bold(format_time(t2 - t1_glob)))

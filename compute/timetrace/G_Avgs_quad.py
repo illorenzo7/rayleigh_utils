@@ -59,7 +59,7 @@ if rank == 0:
 comm.Barrier()
 if rank == 0:
     t2 = time.time()
-    print ('%8.2e s' %(t2 - t1))
+    print (format_time(t2 - t1))
     print(fill_str('proc 0 distributing the file lists', lent, char),\
             end='')
     t1 = time.time()
@@ -262,7 +262,7 @@ dirname, radatadir, nq, nt, nr, ir_sep, it_sep, rhot, nsep_r, nsep_t, tw, rw = c
 comm.Barrier()
 if rank == 0:
     t2 = time.time()
-    print ('%8.2e s' %(t2 - t1))
+    print (format_time(t2 - t1))
     print ("tracing over %i quadrants" %nquad)
     print (("nsep_t = %i" %nsep_r), " latbounds = ", latbounds)
     print (("nsep_r = %i" %nsep_r), " rbounds = ", rbounds)
@@ -342,7 +342,7 @@ comm.Barrier()
 if rank == 0:
     t2 = time.time()
     print(fill_str('\ncomputing time', lent, char), end='')
-    print ('%8.2e s                                 ' %(t2 - t1))
+    print (format_time(t2 - t1))
     print(fill_str('rank 0 collecting and saving the results',\
             lent, char), end='')
     t1 = time.time()
@@ -404,6 +404,6 @@ if rank == 0:
     pickle.dump({'vals': vals, 'vals_full': vals_full,'times': times, 'iters': iters, 'lut': lut, 'ntimes': ntimes, 'iter1': iter1, 'iter2': iter2, 'rr': a0.radius, 'nr': nr, 'nt': nt, 'qv': qv, 'nq': nq, 'nsep_r': nsep_r, 'nsep_t': nsep_t, 'it_sep': it_sep, 'ir_sep': ir_sep, 'volumes': volumes, 'latvals_sep': latvals, 'rvals_sep': rvals, 'rbounds': rbounds, 'latbounds': latbounds, 'nquad': nquad}, f, protocol=4)
     f.close()
     t2 = time.time()
-    print ('%8.2e s' %(t2 - t1))
-    print(fill_str('total time', lent, char), end='')
-    print ('%8.2e s' %(t2 - t1_glob))
+    print (format_time(t2 - t1))
+    print(make_bold(fill_str('total time', lent, char)), end='')
+    print (make_bold(format_time(t2 - t1_glob)))

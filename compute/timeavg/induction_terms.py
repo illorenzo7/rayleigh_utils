@@ -61,7 +61,7 @@ if rank == 0:
 comm.Barrier()
 if rank == 0:
     t2 = time.time()
-    print ('%8.2e s' %(t2 - t1))
+    print (format_time(t2 - t1))
     print(fill_str('proc 0 distributing the file lists', lent, char),\
             end='')
     t1 = time.time()
@@ -163,7 +163,7 @@ dirname, radatadir1, radatadir2, nt, nr, ntimes, rr, rr_2d,\
 comm.Barrier()
 if rank == 0:
     t2 = time.time()
-    print ('%8.2e s' %(t2 - t1))
+    print (format_time(t2 - t1))
     print ('Considering %i %s/%s files for the trace: %s through %s'\
         %(nfiles, dataname1, dataname2, file_list[0], file_list[-1]))
     print ("no. slices = %i" %ntimes)
@@ -273,7 +273,7 @@ comm.Barrier()
 if rank == 0:
     t2 = time.time()
     print(fill_str('\ncomputing time', lent, char), end='')
-    print ('%8.2e s                                 ' %(t2 - t1))
+    print (format_time(t2 - t1))
     print(fill_str('rank 0 collecting and saving the results',\
             lent, char), end='')
     t1 = time.time()
@@ -317,8 +317,8 @@ if rank == 0:
     pickle.dump({'vals': vals, 'lut': a0.lut, 'count': ntimes, 'iter1': iter1, 'iter2': iter2, 'qv': a0.qv, 'nq': a0.nq,  'rr': rr, 'rr_depth': rr_depth, 'rr_height': rr_height, 'nr': nr, 'ri': ri, 'ro': ro, 'd': d, 'tt': tt, 'tt_lat': tt_lat, 'sint': sint, 'cost': cost,'nt': nt, 'rr_2d': rr_2d, 'tt_2d': tt_2d, 'sint_2d': sint_2d, 'cost_2d': cost_2d, 'xx': xx, 'zz': zz}, f, protocol=4)
     f.close()
     t2 = time.time()
-    print ('%8.2e s' %(t2 - t1))
-    print(fill_str('total time', lent, char), end='')
-    print ('%8.2e s' %(t2 - t1_glob))
+    print (format_time(t2 - t1))
+    print(make_bold(fill_str('total time', lent, char)), end='')
+    print (make_bold(format_time(t2 - t1_glob)))
     print ('data saved at ')
     print (savefile)

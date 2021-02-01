@@ -58,7 +58,7 @@ def make_bold(st):
 
 def format_time(seconds):
     if seconds < 1: # output in milliseconds
-        return "%s ms" %(round(seconds*1000))
+        return "%5i ms" %(round(seconds*1000))
     elif seconds < 3600: # output as MM:SS
         seconds = int(seconds)
         minutes = seconds // 60

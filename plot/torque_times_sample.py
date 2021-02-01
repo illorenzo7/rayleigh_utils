@@ -61,7 +61,7 @@ if rank == 0:
 comm.Barrier()
 if rank == 0:
     t2 = time.time()
-    print ('%8.2e s' %(t2 - t1))
+    print (format_time(t2 - t1))
     print(fill_str('proc 0 distributing the file lists', lent, char),\
             end='')
     t1 = time.time()
@@ -252,7 +252,7 @@ dirname, radatadir, plotdir, nt, nr, nq, first_rem, nskip, xx,\
 comm.Barrier()
 if rank == 0:
     t2 = time.time()
-    print ('%8.2e s' %(t2 - t1))
+    print (format_time(t2 - t1))
     print(fill_str('plotting', lent, char), end='\r')
     t1 = time.time()
 
@@ -411,8 +411,8 @@ comm.Barrier()
 if rank == 0:
     t2 = time.time()
     print(fill_str('\nplotting time', lent, char), end='')
-    print ('%8.2e s                                 ' %(t2 - t1))
-    print(fill_str('total time', lent, char), end='')
-    print ('%8.2e s' %(t2 - t1_glob))
+    print (format_time(t2 - t1))
+    print(make_bold(fill_str('total time', lent, char)), end='')
+    print (make_bold(format_time(t2 - t1_glob)))
     print ('view frames using ')
     print ('eog ' + plotdir)
