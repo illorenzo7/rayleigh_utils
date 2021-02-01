@@ -25,6 +25,9 @@ dirname = sys.argv[-1] # output directory
 datadir = dirname + '/data/' # data subdirectory of output directory
 dirname_stripped = strip_dirname(dirname)
 nfiles = len(files) # no. files to join
+print(make_bold('starting trace with'))
+print(files[0])
+di0 = get_dict(files[0])
 di0 = get_dict(files[0])
 vals = di0['vals'] # start with arrays from first dictionary and then 
     # append corresponding arrays from all the data files
@@ -56,6 +59,8 @@ vals = vals[:, q_inds0]
 
 # Now append vals, times, and iters with data from joining data files
 for i in range(nfiles - 1):
+    print(make_bold('appending'))
+    print(files[i+1])
     di1 = get_dict(files[i])
     di2 = get_dict(files[i + 1])
 
@@ -85,6 +90,13 @@ di_all['iter2'] = iter2
 savename = dirname_stripped + '_trace_G_Avgs_' + str(iter1).zfill(8) +\
         '_' + str(iter2).zfill(8) + '.pkl'
 savefile = datadir + savename
+print (make_bold("deleting"))
+for i in range(nfiles):
+    fname = files[i]
+    print (fname)
+    os.remove(fname)
 f = open(savefile, 'wb')
 pickle.dump(di_all, f, protocol=4)
 f.close()
+print ("Saved joined trace in")
+print (make_bold(savefile))

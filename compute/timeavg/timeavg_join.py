@@ -162,17 +162,14 @@ elif dtype == 'enstr':
 savename = dirname_stripped + basename + tag + str(iter1).zfill(8) +\
         '_' + str(iter2).zfill(8) + '.pkl'
 savefile = datadir + savename
-print ("=====================")
-print ("deleting")
+print (make_bold("deleting"))
 for i in range(nfiles):
     fname = files[i]
     print (fname)
     os.remove(fname)
-print ("=====================")
 
 f = open(savefile, 'wb')
 pickle.dump(di, f, protocol=4)
 f.close()
-print ("Saved joined average in ")
-print ("=====================")
-print (savefile)
+print ("Saved joined average in")
+print (make_bold(savefile))
