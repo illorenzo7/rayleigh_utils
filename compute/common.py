@@ -46,6 +46,32 @@ ro = 6.5860209e10 # Radii consistent with the bottom 3 density scale
 lent = 50
 buff_frac = 0.05 # default buffer to set axes limits
 
+# character to make text bold
+bold_char_begin = "\033[1m"
+bold_char_end = "\033[0m"
+range_options = ['-range', '-centerrange', '-leftrange', '-rightrange',\
+        '-n', '-f', '-all', '-iter']
+n_options = len(range_options)
+
+def make_bold(st):
+    return bold_char_begin + st + bold_char_end
+
+def format_time(seconds):
+    if seconds < 1: # output in milliseconds
+        return "%s ms" %(round(seconds*1000))
+    elif seconds < 3600: # output as MM:SS
+        seconds = int(seconds)
+        minutes = seconds // 60
+        seconds %= 60
+        return "%02i:%02i" %(minutes, seconds)
+    else: # output as HH:MM:SS
+        seconds = int(seconds)
+        hours = seconds // 3600
+        seconds %= 3600
+        minutes = seconds // 60
+        seconds %= 60
+        return "%02i:%02i:%02i" %(hours, minutes, seconds)
+
 def get_file_lists(radatadir):
     try:
         if 'Spherical_3D' in strip_dirname(radatadir):
@@ -71,9 +97,6 @@ def get_file_lists(radatadir):
     
     return file_list, int_file_list, nfiles
 
-range_options = ['-range', '-centerrange', '-leftrange', '-rightrange',\
-        '-n', '-f', '-all', '-iter']
-n_options = len(range_options)
 
 def get_desired_range(int_file_list, args):
     nargs = len(args)

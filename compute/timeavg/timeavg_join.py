@@ -170,9 +170,9 @@ for i in range(nfiles):
     os.remove(fname)
 print ("=====================")
 
-print ("Saving joined average in ")
-print ("=====================")
-print (savefile)
 f = open(savefile, 'wb')
 pickle.dump(di, f, protocol=4)
 f.close()
+print ("Saved joined average in ")
+print ("=====================")
+print (savefile)
