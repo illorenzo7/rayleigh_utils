@@ -27,7 +27,7 @@ from common import *
 # Find the relevant place to store the data, and create the directory if it
 # doesn't already exist
 
-# Make opportunity for command-line args...
+# Make opportunity for command-line args
 args = sys.argv[1:]
 n_total_args = len(args)
 n_for_cla = 0
@@ -41,7 +41,6 @@ nfiles = n_total_args - 1 - n_for_cla
 
 files = sys.argv[1:nfiles + 1]
 dirname = sys.argv[nfiles + 1]
-print('dirname = ', dirname)
 datadir = dirname + '/data/'
 dirname_stripped = strip_dirname(dirname)
 
@@ -92,12 +91,16 @@ elif dtype == 'enstr':
 lut = np.zeros_like(di_list[0]['lut'])
 lut[qv] = np.arange(nq)
 
+# calculate the total count for weights
 count = 0
 for i in range(nfiles):
-    print('Averaging data from %s ...' %files[i])
+    count += di_list[i]['count']
+
+for i in range(nfiles):
+    print('adding %s' %files[i])
     this_di = di_list[i]
     this_count = this_di['count']
-    print('count = %i ...' %this_count)
+    print('weight = %.3f' %(this_count/count))
     this_lut = this_di['lut']
     if dtype == 'azav':
         these_vals = this_di['vals']
@@ -119,10 +122,6 @@ for i in range(nfiles):
     elif dtype == 'enstr':
         these_vals = this_di['vals']
         vals += this_count*these_vals
-
-    count += this_count
-    print ('total count = %i ...' %count)
-    print ('-------------------------------')
 
 if dtype == 'specav':
     fullpower /= count
@@ -163,7 +162,17 @@ elif dtype == 'enstr':
 savename = dirname_stripped + basename + tag + str(iter1).zfill(8) +\
         '_' + str(iter2).zfill(8) + '.pkl'
 savefile = datadir + savename
-print ("Saving joined average data in %s ..." %savefile)
+print ("=====================")
+print ("deleting")
+for i in range(nfiles):
+    fname = files[i]
+    print (fname)
+    os.remove(fname)
+print ("=====================")
+
+print ("Saving joined average in ")
+print ("=====================")
+print (savefile)
 f = open(savefile, 'wb')
 pickle.dump(di, f, protocol=4)
 f.close()
