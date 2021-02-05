@@ -14,7 +14,7 @@
 # transition radius for heating
 #
 # -delta
-# Transition width delta (as a fraction of rm) default 0.030
+# Transition width delta (as a fraction of rt) default 0.030
 #
 # -lum
 # Luminosity to be driven through layer, default Lsun
@@ -53,7 +53,7 @@ for i in range(nargs):
     elif arg == '-lum':
         lum = float(args[i+1])
 
-# Made the delta "dimensional"
+# Make the delta "dimensional"
 delta *= rt
 
 # Open and read the hopefully already existing reference file!
@@ -73,7 +73,7 @@ radial_shape = profile/int_profile
 print("---------------------------------")
 print("Computed radial shape of heating for RZ-CZ, joined with tanh")
 print("rt: %1.3e cm" %rt) 
-print("delta/rsun: %.3f"  %(delta/rt))
+print("delta/rt: %.3f"  %(delta/rt))
 print("c_10: %1.3e"  %lum)
 print("---------------------------------")
 

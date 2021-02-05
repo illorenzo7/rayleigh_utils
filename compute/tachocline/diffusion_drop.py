@@ -13,7 +13,7 @@
 # transition radius for diffusions
 #
 # -delta
-# Transition width delta (as a fraction of rsun) default 0.005
+# Transition width delta (as a fraction of rt) default 0.030
 #
 # -power
 # default -0.5
@@ -52,7 +52,7 @@ from common import *
 
 # Set default constants
 rt = 4.87e10 # by default transition a bit below RZ-CZ transition
-delta = 0.01*rsun
+delta = 0.030
 power = -0.5
 drop = 1000.
 nutop = 3.0e12
@@ -74,7 +74,7 @@ for i in range(nargs):
     if arg == '-rt':
         rt = float(args[i+1])
     elif arg == '-delta':
-        delta = float(args[i+1])*rsun
+        delta = float(args[i+1])
     elif arg == '-power':
         power = float(args[i+1])
     elif arg == '-drop':
@@ -95,6 +95,9 @@ for i in range(nargs):
         nodropkappa = True
     elif arg == '-nodropeta':
         nodropeta = True
+
+# Make the delta "dimensional"
+delta *= rt
 
 # If hydro, better make sure whatever multiplies eta in energy/induction
 # is zero... but "had we better?" does eta != 0 cause crashes?
@@ -125,15 +128,17 @@ dlnradial_shape = dradial_shape/radial_shape
 print("---------------------------------")
 print("Computed radial shape for RZ-CZ diffusions, joined with tanh")
 print("rt: %1.3e cm" %rt) 
-print("delta/rsun: %.3f"  %(delta/rsun))
+print("delta/rt: %.3f"  %(delta/rt))
 print("drop: %1.2e"  %drop)
+print("Not dropping diffusions for:")
 if nodropnu:
-    print ("nodropnu = True")
+    print ("nu(r)")
 if nodropkappa:
-    print ("nodropkappa = True")
+    print ("kappa(r)")
 if nodropeta:
-    print ("nodropeta = True")
-print("Not dropping diffusions for variables that have 'nodrop' = True")
+    print ("eta(r)")
+if not (nodropnu or nodropkappa or nodropeta):
+    print ("nothing")
 print("---------------------------------")
 
 # Now write to file using the equation_coefficients framework
@@ -142,20 +147,22 @@ print("---------------------------------")
 print("Setting f_3, f_5, f_7, f_11, f_12, and f_13")
 if nodropnu:
     eq.set_function(nutop*monotone, 3)
+    eq.set_function(power*dlnrho, 11)
 else:
     eq.set_function(nutop*radial_shape, 3)
+    eq.set_function(dlnradial_shape, 11)
 if nodropkappa:
     eq.set_function(kappatop*monotone, 5)
+    eq.set_function(power*dlnrho, 12)
 else:
     eq.set_function(kappatop*radial_shape, 5)
+    eq.set_function(dlnradial_shape, 12)
 if nodropeta:
     eq.set_function(etatop*monotone, 7)
+    eq.set_function(power*dlnrho, 13)
 else:
     eq.set_function(etatop*radial_shape, 7)
-
-eq.set_function(dlnradial_shape, 11)
-eq.set_function(dlnradial_shape, 12)
-eq.set_function(dlnradial_shape, 13)
+    eq.set_function(dlnradial_shape, 13)
 
 print("Setting c_5, c_6, c_7, c_8, and c_9")
 if not mag:

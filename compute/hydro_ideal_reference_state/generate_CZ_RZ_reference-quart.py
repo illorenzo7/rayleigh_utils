@@ -51,17 +51,12 @@ from common import *
 import basic_constants as bc
 
 # Set default constants
-ri = 4.176e10  # Set RZ width about 0.5x CZ width
-rm = bc.rm
-ro = bc.ro
-cp = bc.cp
-
-Tm = bc.Tm
-pm = bc.pm
-rhom = bc.rhom
-gam = bc.gamma
+ri = 3.4139791e10 # Set RZ width equal to CZ width 
+cp = c_P
+pm = rhom*thermo_R*Tm
+gam = thermo_gamma
 k = 2.0
-delta = 0.030*rsun
+delta = 0.030
 mag = False
 
 # Get directory to save binary files for reference
@@ -85,7 +80,7 @@ for i in range(nargs):
     elif arg == '-k':
         k = float(args[i+1])  
     elif arg == '-delta':
-        delta = float(args[i+1])*rsun
+        delta = float(args[i+1])
     elif arg == '-gam':
         gam = float(args[i+1]) 
     elif arg == '-cp':
@@ -96,6 +91,9 @@ for i in range(nargs):
         fname = args[i+1]
     elif arg == '-mag':
         mag = True
+
+# Make delta physical length
+delta *= rsun
 
 # First, compute reference state on super-fine grid to interpolate onto later    
 nr = 5000
@@ -125,7 +123,7 @@ for i in range(nr):
         d2sdr2[i] = 0.0
 
 # Make gravity due to a point mass at the origin
-g = bc.G*bc.M/rr**2
+g = G*msun/rr**2
 dgdr = -2.0*g/rr
 
 T, rho, p, dlnT, dlnrho, dlnp, d2lnrho =\
@@ -135,7 +133,7 @@ T, rho, p, dlnT, dlnrho, dlnp, d2lnrho =\
 print("---------------------------------")
 print("Computed atmosphere for RZ-CZ, ds/dr joined with a quartic")
 print("ri: %1.3e cm" %ri) 
-print("rm: %1.3e cm" %rm) 
+print("rm: %1.3e cm" %rm + " (like the rt in diffusion-drop cases)") 
 print("ro: %1.3e cm" %ro) 
 print("delta/rsun: %.3f"  %(delta/rsun))
 print("k [(dsdr in RZ)/cp*rm]: %1.1e"  %k)

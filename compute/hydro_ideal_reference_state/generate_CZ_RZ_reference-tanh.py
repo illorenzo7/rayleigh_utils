@@ -24,7 +24,7 @@
 # Stiffness k, default 2
 # 
 # -delta
-# Transition width delta as a fraction of r_BCZ, default 0.010
+# Transition width delta as a fraction of rm, default 0.010
 #
 # -gam
 # specific heat ratio gamma, default 5/3
@@ -51,15 +51,10 @@ from common import *
 import basic_constants as bc
 
 # Set default constants
-ri = 4.176e10  # Set RZ width about 0.5x CZ width
-rm = bc.rm
-ro = bc.ro
-cp = bc.cp
-
-Tm = bc.Tm
-pm = bc.pm
-rhom = bc.rhom
-gam = bc.gamma
+ri = 3.4139791e10 # Set RZ width equal to CZ width 
+cp = c_P
+pm = rhom*thermo_R*Tm
+gam = thermo_gamma
 k = 2.0
 delta = 0.010
 mag = False
@@ -109,7 +104,7 @@ dsdr = k*cp/rm*0.5*(1.0 - np.tanh((rr - rm)/delta))
 s = k*cp*0.5*((rr/rm - 1.0) -\
         (delta/rm)*np.log(np.cosh((rr - rm)/delta)))
 
-g = bc.G*bc.M/rr**2
+g = G*msun/rr**2
 dgdr = -2.0*g/rr
 
 T, rho, p, dlnT, dlnrho, dlnp, d2lnrho =\
