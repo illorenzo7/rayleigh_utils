@@ -31,7 +31,7 @@ msun = 1.98891e33 # FROM WIKIPEDIA: 1.98847 \pm 0.00007
 #Thermodyanmic variables
 c_P = 3.5e8
 thermo_gamma = 5./3.
-thermo_R = c_P*thermo_gamma*(1. - 1./thermo_gamma)
+thermo_R = c_P*(1. - 1./thermo_gamma)
 
 # I am now calling r_m the base of the convection zone, 
 # while r_i (the inner shell radius) can vary
