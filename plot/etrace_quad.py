@@ -94,9 +94,6 @@ for i in range(nargs):
         xmax = float(args[i+1])
     elif arg == '-inte':
         plot_inte = True
-    elif arg == '-gtr2':
-        plot_inte = True
-        inte_gtr2 = True
     elif arg == '-subt':
         plot_inte = True
         inte_subt = True
@@ -299,14 +296,6 @@ for ir in range(nrow):
             buff = max_ke*0.05
             sub = diff - buff
             inte -= sub
-            if sep_czrz:
-                # integrate rho * T
-                integ = np.sum(rw*rhot)
-                S0 = sub/integ # entropy associated with subtraction
-                integ_cz = np.sum(rw_cz*rhot[:nr_cz])
-                integ_rz = np.sum(rw_rz*rhot[nr_cz:])
-                inte_cz -= (S0*integ_cz)
-                inte_rz -= (S0*integ_rz)
          
         # Get total energy if desired
         if plot_tote:
