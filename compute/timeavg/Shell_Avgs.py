@@ -226,5 +226,3 @@ if rank == 0:
     print (make_bold(format_time(t2 - t1_glob)))
     print ('data saved at ')
     print (make_bold(savefile))
-    print ('data saved at ')
-    print (make_bold(savefile))
