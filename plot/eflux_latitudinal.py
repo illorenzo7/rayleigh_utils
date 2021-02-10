@@ -29,6 +29,7 @@ ncheby, domain_bounds = get_domain_bounds(dirname)
 ri = np.min(domain_bounds)
 ro = np.max(domain_bounds)
 d = ro - ri
+sep_czrz = False # plots the fluxes averaged separately over the two zones 
 
 # Directory with data and plots, make the plotting directory if it doesn't
 # already exist    
@@ -52,6 +53,8 @@ for i in range(nargs):
         AZ_Avgs_file = AZ_Avgs_file.split('/')[-1]
     elif arg == '-minmax':
         minmax = float(args[i+1]), float(args[i+2])
+    elif arg == '-czrz':
+        sep_czrz = True
        
 print ('Getting data from ', datadir + AZ_Avgs_file, ' ...')
 di = get_dict(datadir + AZ_Avgs_file)
@@ -81,6 +84,8 @@ rr, tt, cost, sint = gi.radius, gi.theta, gi.costheta, gi.sintheta
 ri, ro = np.min(rr), np.max(rr)
 shell_depth = ro - ri
 rweights = gi.rweights
+if sep_czrz:
+    ir_bcz = get_parameter(dirname, 'ncheby')[1] - 1
 
 #Create the plot
 lw = 1.5 # Bit thicker lines
@@ -143,6 +148,29 @@ if magnetism:
     mflux_int = np.sum(mflux*areas, axis=1)
 tflux_int = np.sum(tflux*areas, axis=1)
 
+if sep_czrz:
+    eflux_int_cz = np.sum((eflux*areas)[:, :ir_bcz+1], axis=1)
+    eflux_pp_int_cz = np.sum((eflux_pp*areas)[:, :ir_bcz+1], axis=1)
+    eflux_mm_int_cz = np.sum((eflux_mm*areas)[:, :ir_bcz+1], axis=1)
+
+    cflux_int_cz = np.sum((cflux*areas)[:, :ir_bcz+1], axis=1)
+    kflux_int_cz = np.sum((kflux*areas)[:, :ir_bcz+1], axis=1)
+    vflux_int_cz = np.sum((vflux*areas)[:, :ir_bcz+1], axis=1)
+    if magnetism:
+        mflux_int_cz = np.sum((mflux*areas)[:, :ir_bcz+1], axis=1)
+    tflux_int_cz = np.sum((tflux*areas)[:, :ir_bcz+1], axis=1)
+
+    eflux_int_rz = np.sum((eflux*areas)[:, ir_bcz+1:], axis=1)
+    eflux_pp_int_rz = np.sum((eflux_pp*areas)[:, ir_bcz+1:], axis=1)
+    eflux_mm_int_rz = np.sum((eflux_mm*areas)[:, ir_bcz+1:], axis=1)
+
+    cflux_int_rz = np.sum((cflux*areas)[:, ir_bcz+1:], axis=1)
+    kflux_int_rz = np.sum((kflux*areas)[:, ir_bcz+1:], axis=1)
+    vflux_int_rz = np.sum((vflux*areas)[:, ir_bcz+1:], axis=1)
+    if magnetism:
+        mflux_int_rz = np.sum((mflux*areas)[:, ir_bcz+1:], axis=1)
+    tflux_int_rz = np.sum((tflux*areas)[:, ir_bcz+1:], axis=1)
+
 # compute the "equilibrium flux" (latitudinal flux needed to balance out
 # any differences between the inner and outer radial fluxes
 cfluxr = vals[:, :, lut[1470]]
@@ -150,8 +178,17 @@ cflux_out = cfluxr[:, 0]
 lum = eq.lum
 rsq_Flux_in = lum/4/np.pi
 integrand = -2*np.pi*(ro**2*cflux_out - rsq_Flux_in*np.ones(nt))
+
+if sep_czrz:
+    cflux_bcz = cfluxr[:, ir_bcz]
+    integrand_cz = -2*np.pi*(ro**2*cflux_out - rr[ir_bcz]**2*cflux_bcz)
+    integrand_rz = -2*np.pi*(rr[ir_bcz]**2*cflux_bcz -\
+            rsq_Flux_in*np.ones(nt))
     
 eqflux_int = np.zeros(nt)
+if sep_czrz:
+    eqflux_int_cz = np.zeros(nt)
+    eqflux_int_rz = np.zeros(nt)
 
 # Get the latitudinal integration weights
 gi = GridInfo(dirname + '/grid_info')
@@ -165,27 +202,84 @@ for it in range(nt):
     else:
         eqflux_int[it] = -2*np.sum(tw[nt//2:it]*integrand[nt//2:it])
 
-# Create the plot; start with plotting all the energy fluxes
+    if sep_czrz:
+        if it <= nt//2:
+            eqflux_int_cz[it] = 2*np.sum(tw[it:nt//2]*\
+                    integrand_cz[it:nt//2])
+            eqflux_int_rz[it] = 2*np.sum(tw[it:nt//2]*\
+                    integrand_rz[it:nt//2])
+        else:
+            eqflux_int_cz[it] = -2*np.sum(tw[nt//2:it]*\
+                    integrand_cz[nt//2:it])
+            eqflux_int_rz[it] = -2*np.sum(tw[nt//2:it]*\
+                    integrand_rz[nt//2:it])
+
+# create figure with 1-3 columns (total, [CZ], [RZ] fluxes)
+if sep_czrz:
+    ncol = 3
+else:
+    ncol = 1
+fig, axs = plt.subplots(1, ncol, figsize=(5.*ncol, 5.),\
+        sharex=True)
+#if ncol == 1: # need the axis array to consistently be doubly indexed
+#    axs = np.expand_dims(axs, 1)
+
+# Create the plot of total fluxes
 lats = 180*(np.pi/2 - tt)/np.pi
-plt.plot(lats, eflux_int/lum, 'm', label=r'$\rm{F}_{enth}$',\
+axs[0].plot(lats, eflux_int/lum, 'm', label=r'$\rm{F}_{enth}$',\
         linewidth=lw)
-plt.plot(lats, eflux_pp_int/lum, 'm--', label=r'$\rm{F}_{enth,\ pp}$',\
+axs[0].plot(lats, eflux_pp_int/lum, 'm--', label=r'$\rm{F}_{enth,\ pp}$',\
         linewidth=lw)
-plt.plot(lats, eflux_mm_int/lum, 'm:', label=r'$\rm{F}_{enth,\ mm}$',\
+axs[0].plot(lats, eflux_mm_int/lum, 'm:', label=r'$\rm{F}_{enth,\ mm}$',\
         linewidth=lw)
-plt.plot(lats, cflux_int/lum, label=r'$\rm{F}_{cond}$', linewidth=lw)
-plt.plot(lats, kflux_int/lum, label=r'$\rm{F}_{KE}$', linewidth=lw)
-plt.plot(lats, vflux_int/lum, label=r'$\rm{F}_{visc}$', linewidth=lw)
+axs[0].plot(lats, cflux_int/lum, label=r'$\rm{F}_{cond}$', linewidth=lw)
+axs[0].plot(lats, kflux_int/lum, label=r'$\rm{F}_{KE}$', linewidth=lw)
+axs[0].plot(lats, vflux_int/lum, label=r'$\rm{F}_{visc}$', linewidth=lw)
 if magnetism:
-    plt.plot(lats, mflux_int/lum, label=r'$\rm{F}_{Poynting}$',\
+    axs[0].plot(lats, mflux_int/lum, label=r'$\rm{F}_{Poynting}$',\
             linewidth=lw)
-plt.plot(lats, tflux_int/lum, label=r'$\rm{F}_{total}$',\
+axs[0].plot(lats, tflux_int/lum, label=r'$\rm{F}_{total}$',\
         linewidth=lw, color='black')
-plt.plot(lats, eqflux_int/lum, 'k--', label=r'$\rm{F}_{eq}$',\
+axs[0].plot(lats, eqflux_int/lum, 'k--', label=r'$\rm{F}_{eq}$',\
         linewidth=lw)
 
+# fluxes in different zones, if desired
+if sep_czrz:
+    axs[1].plot(lats, eflux_int_cz/lum, 'm', label=r'$\rm{F}_{enth}$',\
+            linewidth=lw)
+    axs[1].plot(lats, eflux_pp_int_cz/lum, 'm--', label=r'$\rm{F}_{enth,\ pp}$',\
+            linewidth=lw)
+    axs[1].plot(lats, eflux_mm_int_cz/lum, 'm:', label=r'$\rm{F}_{enth,\ mm}$',\
+            linewidth=lw)
+    axs[1].plot(lats, cflux_int_cz/lum, label=r'$\rm{F}_{cond}$', linewidth=lw)
+    axs[1].plot(lats, kflux_int_cz/lum, label=r'$\rm{F}_{KE}$', linewidth=lw)
+    axs[1].plot(lats, vflux_int_cz/lum, label=r'$\rm{F}_{visc}$', linewidth=lw)
+    if magnetism:
+        axs[1].plot(lats, mflux_int_cz/lum, label=r'$\rm{F}_{Poynting}$',\
+                linewidth=lw)
+    axs[1].plot(lats, tflux_int_cz/lum, label=r'$\rm{F}_{total}$',\
+            linewidth=lw, color='black')
+    axs[1].plot(lats, eqflux_int_cz/lum, 'k--', label=r'$\rm{F}_{eq}$',\
+            linewidth=lw)
+
+    axs[2].plot(lats, eflux_int_rz/lum, 'm', label=r'$\rm{F}_{enth}$',\
+            linewidth=lw)
+    axs[2].plot(lats, eflux_pp_int_rz/lum, 'm--', label=r'$\rm{F}_{enth,\ pp}$',\
+            linewidth=lw)
+    axs[2].plot(lats, eflux_mm_int_rz/lum, 'm:', label=r'$\rm{F}_{enth,\ mm}$',\
+            linewidth=lw)
+    axs[2].plot(lats, cflux_int_rz/lum, label=r'$\rm{F}_{cond}$', linewidth=lw)
+    axs[2].plot(lats, kflux_int_rz/lum, label=r'$\rm{F}_{KE}$', linewidth=lw)
+    axs[2].plot(lats, vflux_int_rz/lum, label=r'$\rm{F}_{visc}$', linewidth=lw)
+    if magnetism:
+        axs[2].plot(lats, mflux_int_rz/lum, label=r'$\rm{F}_{Poynting}$',\
+                linewidth=lw)
+    axs[2].plot(lats, tflux_int_rz/lum, label=r'$\rm{F}_{total}$',\
+            linewidth=lw, color='black')
+    axs[2].plot(lats, eqflux_int_rz/lum, 'k--', label=r'$\rm{F}_{eq}$',\
+            linewidth=lw)
 # Get the y-axis in scientific notation
-#plt.ticklabel_format(useMathText=True, axis='y', scilimits=(0,0))
+#plt.ticklabel_format(useMathText=True, axis='y', scilimits=(0))
 
 # Get ticks everywhere
 plt.minorticks_on()
