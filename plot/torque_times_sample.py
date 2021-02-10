@@ -168,7 +168,7 @@ if rank == 0:
             opt_workload(nfiles, nproc)
 
     # Create plotdir if doesn't already exist
-    plotdir = dirname +  '/torque_times_sample' + tag + '/'
+    plotdir = dirname +  '/plots/torque_times_sample' + tag + '/'
     if not os.path.isdir(plotdir):
         os.makedirs(plotdir)
 
@@ -414,7 +414,5 @@ if rank == 0:
     print (format_time(t2 - t1))
     print(make_bold(fill_str('total time', lent, char)), end='')
     print (make_bold(format_time(t2 - t1_glob)))
-    print ('data saved at ')
-    print (make_bold(savefile))
     print ('view frames using ')
-    print ('eog ' + plotdir)
+    print (make_bold('eog ' + plotdir))
