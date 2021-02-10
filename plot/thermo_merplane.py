@@ -54,6 +54,7 @@ minmaxrz = None
 linthreshrz = None
 linscalerz = None
 AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
+Shell_Avgs_file = get_widest_range_file(datadir, 'Shell_Avgs') 
 forced = False
 rvals = []
 rbcz = None
@@ -82,6 +83,11 @@ for i in range(nargs):
     elif arg == '-usefile':
         AZ_Avgs_file = args[i+1]
         AZ_Avgs_file = AZ_Avgs_file.split('/')[-1]
+    elif arg == '-usefiles':
+        AZ_Avgs_file = args[i+1]
+        AZ_Avgs_file = AZ_Avgs_file.split('/')[-1]
+        Shell_Avgs_file = args[i+2]
+        Shell_Avgs_file = Shell_Avgs_file.split('/')[-1]
     elif arg == '-forced':
         forced = True
     elif arg == '-depths':
@@ -125,9 +131,6 @@ for i in range(nargs):
         linthreshrz = float(args[i+1])
     elif arg == '-linscalerz':
         linscalerz = float(args[i+1])
-
-# Get AZ_Avgs file
-Shell_Avgs_file = get_widest_range_file(datadir, 'Shell_Avgs') 
 
 print ('Getting zonally averaged thermo. vars from ' + datadir + AZ_Avgs_file + ' ...')
 print ('and the spherically averaged thermo. vars from ' + datadir + Shell_Avgs_file + ' ...')
