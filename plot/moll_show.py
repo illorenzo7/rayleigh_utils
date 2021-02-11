@@ -55,11 +55,11 @@ for i in range(nargs):
     elif arg == '-var' or arg == '-qval':
         st = args[i+1]
         if st == 'indr':
-            varlist = ['801', '1601', '1602', '1603', '1601plus1602plus1603', '1605', '1616', '1617', '1618']
+            varlist = ['801', '1601', '1602', '1603', '1601plus1602plus1603', '1605']
         elif st == 'indt':
-            varlist = ['802', '1606', '1607', '1608', '1606plus1607plus1608', '1610', '1621', '1622', '1623']
+            varlist = ['802', '1606', '1607', '1608', '1606plus1607plus1608', '1610']
         elif st == 'indp':
-            varlist = ['803', '1611', '1612', '1613', '1611plus1612plus1613', '1615', '1626', '1627', '1628']
+            varlist = ['803', '1611', '1612', '1613', '1611plus1612plus1613', '1615']
         else:
             varlist = st.split()
     elif arg == '-smooth':
@@ -183,9 +183,10 @@ for iplot in range(nplots):
     if varlabel == 0:
         varlabel = varname.replace('plus', ' + ')
         varlabel = varlabel.replace('times', ' ' + r'$\times$' + ' ')
-        varlabel = varlabel.replace('smooth', '')
-        varlabel = varlabel[3:]
-        varlabel = 'qvals = ' + varlabel
+        if 'smooth' in varlabel:
+            varlabel = varlabel.replace('smooth', '')
+            varlabel = varlabel[3:]
+        varlabel = 'qval = ' + varlabel
     ax.set_title(varlabel, verticalalignment='bottom', **csfont)
 
     # Make title
