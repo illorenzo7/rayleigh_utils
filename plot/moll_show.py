@@ -41,6 +41,7 @@ clon = 0
 saveplot = False
 ncol = 2
 must_smooth = False
+the_file = None
 
 args = sys.argv[2:]
 nargs = len(args)
@@ -96,6 +97,8 @@ for i in range(nargs):
         tag = args[i+1] + '_'
     elif arg == '-ncol':
         ncol = int(args[i+1])
+    elif arg == '-usefile':
+        the_file = args[i+1]
 
 if must_smooth:
     for i in range(len(varlist)):
@@ -117,6 +120,10 @@ fname = file_list[iiter]
 
 # Read in desired shell slice
 a = Shell_Slices(radatadir + fname, '')
+if not the_file is None:
+    print ("getting an averaged sslice from " + the_file)
+    di = get_dict(the_file)
+    a.vals = di['vals'][..., np.newaxis]
 
 # figure dimensions
 nplots = len(varlist)
