@@ -616,6 +616,13 @@ def get_sslice(a, varname, dirname=None, old=False, j=0):
         sslice = prime(slice_br)*prime(slice_dv)
     elif is_an_int(varname):
         sslice = vals[:, :, :, a.lut[int(varname)]]
+    elif 'plus' in varname and 'times' in varname: # order of operations!
+        sslice = np.zeros_like(vals[:, :, :, 0])
+        for st1 in varname.split('plus'):
+            vals_loc = np.ones_like(vals[:, :, :, 0])
+            for st2 in st1.split('times'):
+                vals_loc *= vals[:, :, :, a.lut[int(st2)]]
+            sslice += vals_loc
     elif 'plus' in varname:
         sslice = np.zeros_like(vals[:, :, :, 0])
         for st in varname.split('plus'):
