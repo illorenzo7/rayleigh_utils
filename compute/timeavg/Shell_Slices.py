@@ -168,7 +168,7 @@ for i in range(my_nfiles):
         a = reading_func(radatadir + str(my_files[i]).zfill(8), '')
     # take mean along the time axis;
     # get the spherical average (not rms/skew/kurt)
-    my_vals = np.mean(a.vals, axis=3)*my_weight
+    my_vals = np.mean(a.vals, axis=4)*my_weight
     if rank == 0:
         pcnt_done = (i + 1)/my_nfiles*100.
         print(fill_str('computing', lent, char) +\
