@@ -11,7 +11,8 @@ from common import *
 from plotcommon import axis_range
 from sslice_util import plot_moll
 from rayleigh_diagnostics import Shell_Slices
-from get_sslice import get_sslice
+#from get_sslice import get_sslice
+from get_slice import get_slice
 from varprops import texlabels
 
 # Get command line arguments
@@ -167,7 +168,7 @@ for iplot in range(nplots):
             margin_subplot_top + margin_bottom)
     ax = fig.add_axes((ax_left, ax_bottom, subplot_width, subplot_height))
 
-    vals = get_sslice(a, varname, dirname=dirname)
+    vals = get_slice(a, varname, dirname=dirname)
 
     # Get local time (in seconds)
     t_loc = a.time[0]

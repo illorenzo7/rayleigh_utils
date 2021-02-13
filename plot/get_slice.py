@@ -91,13 +91,13 @@ def get_varprops(varname):
     if varname[-6:] == '_prime': # prime appears at end to modify varname
         prime = True
         varname = varname[:-6]
-    elif varname[-4:] == '_sph'
+    elif varname[-4:] == '_sph':
         sph = True
         varname = varname[:-4]
     return varname, deriv, prime, sph
 
 def get_fieldlabel(varname):
-    varname, deriv, prime, sph = compute_varprops(varname)
+    varname, deriv, prime, sph = get_varprops(varname)
     if deriv:
         derivdir = varname[-1]
         varname = varname[1:]
@@ -284,10 +284,10 @@ def get_field(vals, lut, rr, cost, varname, dirname=None):
     # if this is one of the standard field variables we're done!
 
     # first get root variable name and store any modifiers
-    varname, deriv, prime, sph = compute_varprops(varname)
+    varname, deriv, prime, sph = get_varprops(varname)
 
     # get sine/cotangent from cosine
-    sint = np.sin(np.acos(cost))
+    sint = np.sin(np.arccos(cost))
     cott = cost/sint
    
     # shape to make geometric fields
@@ -379,7 +379,7 @@ def get_slice(a, varname, dirname=None, j=0):
     # can do arithmetic operations on the basic fields
 
     # first get root variable name and store any modifiers
-    varname, deriv, prime, sph = compute_varprops(varname)
+    varname, deriv, prime, sph = get_varprops(varname)
 
     # Get raw values associated with jth time slice
     vals = a.vals[..., j]
@@ -442,11 +442,11 @@ def get_slice(a, varname, dirname=None, j=0):
         iright_loc = iright[i]
         expr = varname[ileft_loc + 1: iright_loc]
         if i == nparenth - 1: # innermost expression
-            the_slice = resolve_expression(vals, lut, rr, cost, expr, dirname=None, starting_expression=None):
+            the_slice = resolve_expression(vals, lut, rr, cost, expr, dirname=None, starting_expression=None)
         else:
             expr = varname.replace('(' + old_expr + ')', 'expr')
             expr = varname_sh[ileft_loc + 1:iright_loc]
-            the_slice = resolve_expression(vals, lut, rr, cost, expr.replace(old_expr, 'expr'), dirname=None, starting_expression=the_slice):
+            the_slice = resolve_expression(vals, lut, rr, cost, expr.replace(old_expr, 'expr'), dirname=None, starting_expression=the_slice)
         old_expr = expr
     if prime:
         the_slice = prime(the_slice)
