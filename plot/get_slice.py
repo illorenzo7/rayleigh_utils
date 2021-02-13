@@ -96,7 +96,7 @@ def get_varprops(varname):
         varname = varname[:-4]
     return varname, deriv, prime, sph
 
-def get_fieldlabel(varname):
+def get_basic_label(varname):
     varname, deriv, prime, sph = get_varprops(varname)
     if deriv:
         derivdir = varname[-1]
@@ -276,7 +276,7 @@ def smooth(field, dlon):
         field_smooth[i] += (field_smooth[i-1] + to_add - to_sub)
     return field_smooth/nphi_av
 
-def get_field(vals, lut, rr, cost, varname, dirname=None): 
+def get_basic_slice(vals, lut, rr, cost, varname, dirname=None): 
     # gets the basic field associated with vals array
     # more complicated slices can be achieved by doing arithmetic
     # operations on the individual field
@@ -295,15 +295,15 @@ def get_field(vals, lut, rr, cost, varname, dirname=None):
 
     # return the basic field based on the variable name
     if varname in var_indices.keys():
-        the_field = vals[..., lut[var_indices[varname]]]
+        the_slice = vals[..., lut[var_indices[varname]]]
     elif varname == 'cost':
-        the_field = zero + cost
+        the_slice = zero + cost
     elif varname == 'sint':
-        the_field = zero + sint
+        the_slice = zero + sint
     elif varname == 'cott':
-        the_field = zero + cott
+        the_slice = zero + cott
     elif varname == 'rr':
-        the_field = zero + rr
+        the_slice = zero + rr
     elif varname in ['rho', 't']: # derived thermo variable
         # need background thermo reference
         eq = get_eq(dirname)
@@ -320,30 +320,30 @@ def get_field(vals, lut, rr, cost, varname, dirname=None):
         s_field = vals[..., lut[var_indices['s']]]
         p_field = vals[..., lut[var_indices['p']]]
         if varname == 'rho':
-            the_field = ref_rho*(p_field/ref_P/thermo_gamma - s_field/c_P) 
+            the_slice = ref_rho*(p_field/ref_P/thermo_gamma - s_field/c_P) 
         elif varname == 't':
-            the_field = ref_T*(p_field/ref_P*(1. - 1./thermo_gamma) +\
+            the_slice = ref_T*(p_field/ref_P*(1. - 1./thermo_gamma) +\
                     s_field/c_P)
     elif varname[-1] in ['l', 'z']: # cylindrical variable
-        the_field_r = vals[..., lut[var_indices[varname[:-1] + 'r']]]
+        the_slice_r = vals[..., lut[var_indices[varname[:-1] + 'r']]]
         if deriv:
-            the_field_t = vals[..., lut[var_indices[varname[:-1] + 'T']]]
+            the_slice_t = vals[..., lut[var_indices[varname[:-1] + 'T']]]
         else:
-            the_field_t = vals[..., lut[var_indices[varname[:-1] + 't']]]
+            the_slice_t = vals[..., lut[var_indices[varname[:-1] + 't']]]
         if varname[-1] == 'l':
-            the_field = sint*the_field_r + cost*the_field_t
+            the_slice = sint*the_slice_r + cost*the_slice_t
         elif varname[-1] == 'z':
-            the_field = cost*the_field_r - sint*the_field_t
+            the_slice = cost*the_slice_r - sint*the_slice_t
     elif is_an_int(varname):
-        the_field = vals[..., lut[int(varname)]]
+        the_slice = vals[..., lut[int(varname)]]
     if prime:
-        the_field = prime(the_field)
+        the_slice = prime(the_slice)
     elif sph:
         gi = GridInfo(dirname + '/grid_info')
         tw = gi.tweights
-        the_field = prime_sph(the_field, tw)
+        the_slice = prime_sph(the_slice, tw)
     del vals # free up memory
-    return the_field
+    return the_slice
 
 def resolve_expression(vals, lut, rr, cost, expr, dirname=None, starting_expression=None):
     shape = np.array(np.shape(vals[..., 0]))
@@ -359,9 +359,9 @@ def resolve_expression(vals, lut, rr, cost, expr, dirname=None, starting_express
                         field4 = starting_expression
                     else:
                         if count == 1:
-                            field4 = get_field(vals, lut, rr, cost, varname, dirname=dirname)
+                            field4 = get_basic_slice(vals, lut, rr, cost, varname, dirname=dirname)
                         else:
-                            field4 /= get_field(vals, lut, rr, cost, varname, dirname=dirname)
+                            field4 /= get_basic_slice(vals, lut, rr, cost, varname, dirname=dirname)
                     count += 1
                 field3 *= field4
             field2 -= field3
