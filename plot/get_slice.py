@@ -12,6 +12,7 @@ sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from common import *
 from rayleigh_diagnostics import GridInfo # for doing averages
+import re
 
 var_indices = {\
     'vr'    :       1, 
@@ -102,6 +103,7 @@ def get_basic_label(varname):
         derivdir = varname[-1]
         varname = varname[1:]
         varname = varname[:-2]
+
     # now get root label
     # start with thermal vars
     if varname == 'p':
@@ -131,6 +133,34 @@ def get_basic_label(varname):
         label += r'$^{\prime\prime}$'
     if deriv:
         label = r'$\partial$' + label + r'$/$' + r'$\partial$' + dirlabels[derivdir]
+    return label
+
+def get_label(varname):
+    varname, deriv, prime, sph = get_varprops(varname)
+    label = r''
+    # get locations of all the operators
+    lenvar = len(varname)
+    iop = []
+    op_symbols = {'+': r'$\ +\ $', '-': r'$\ -\ $', '*': r'', '/': r'/',\
+                    '(': r'(', ')': r')'}
+    op_keys = op_symbols.keys()
+    for i in range(lenvar):
+        if i in op_keys:
+            iop.append(i)
+    basic_vars = re.split('\(|\)|\+|\-|\*|/', varname)
+    for i in range(len(iop) - 1):
+        i_firstop = iop[i]
+        i_nextop = iop[i+1]
+        if i == 0 and i_firstop > 0:
+            label += get_basic_label(varname[:i_firstop])
+        else:
+            label += op_symbols[varname[i_firstop]]
+        if i_nextop - i_firstop > 1:
+            label += get_basic_label(varname[i_firstop+1:i_nextop])
+    if prime:
+        label += r'$^\prime$'
+    elif sph:
+        label += r'$^{\prime\prime}$'
     return label
 
 def prime(field): # mean along first axis (phi axis)

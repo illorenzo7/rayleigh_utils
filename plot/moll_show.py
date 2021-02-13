@@ -12,7 +12,7 @@ from plotcommon import axis_range
 from sslice_util import plot_moll
 from rayleigh_diagnostics import Shell_Slices
 #from get_sslice import get_sslice
-from get_slice import get_slice
+from get_slice import get_slice, get_label
 from varprops import texlabels
 
 # Get command line arguments
@@ -187,14 +187,15 @@ for iplot in range(nplots):
             varname=varname, symlog=symlog, logscale=logscale) 
 
     # label the subplot
-    varlabel = texlabels.get(varname, 0)
-    if varlabel == 0:
-        varlabel = varname.replace('plus', ' + ')
-        varlabel = varlabel.replace('times', ' ' + r'$\times$' + ' ')
-        if 'smooth' in varlabel:
-            varlabel = varlabel.replace('smooth', '')
-            varlabel = varlabel[3:]
-        varlabel = 'qval = ' + varlabel
+    #varlabel = texlabels.get(varname, 0)
+    #if varlabel == 0:
+    #    varlabel = varname.replace('plus', ' + ')
+    #    varlabel = varlabel.replace('times', ' ' + r'$\times$' + ' ')
+    #    if 'smooth' in varlabel:
+    #        varlabel = varlabel.replace('smooth', '')
+    #        varlabel = varlabel[3:]
+    #    varlabel = 'qval = ' + varlabel
+    varlabel = get_label(varname)
     ax.set_title(varlabel, verticalalignment='bottom', **csfont)
 
     # Make title
