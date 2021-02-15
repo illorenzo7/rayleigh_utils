@@ -184,7 +184,7 @@ for iplot in range(nplots):
             %(rval, ir)) + 'iter ' + fname)
 
     plot_moll(field, a.costheta, fig=fig, ax=ax, minmax=minmax, clon=clon,\
-            varname=varname, symlog=symlog, logscale=logscale) 
+            symlog=symlog, logscale=logscale) 
 
     # label the subplot
     #varlabel = texlabels.get(varname, 0)

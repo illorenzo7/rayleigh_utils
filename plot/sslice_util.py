@@ -9,7 +9,7 @@ import sys, os
 sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
 from cartopy import crs
-from varprops import texunits
+#from varprops import texunits
 from common import *
 from plotcommon import default_axes_1by1, default_axes_2by1, axis_range
 
@@ -84,11 +84,11 @@ def deal_with_nans(x, y):
 
 def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
         minmax=None, clon=0, clat=20, posdef=False, logscale=False,\
-        varname='vr', lw_scaling=1., plot_cbar=True, cbar_fs=10,\
+        lw_scaling=1., plot_cbar=True, cbar_fs=10,\
         symlog=False, linscale=None, linthresh=None, cmap=None,\
-        bold_patch=None, thickcenter=True):
+        bold_patch=None, thickcenter=True, units=''):
     
-    if 'sq' in varname or logscale:
+    if logscale:
         posdef = True
         
     # Shouldn't have to do this but Python is stupid with arrays ...
@@ -357,14 +357,14 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
         if logscale:
             locator = ticker.LogLocator(subs='all')
             cbar.set_ticks(locator)
-            cbar_units = ' ' + texunits.get(varname, 'cgs')
+            cbar_units = ' ' + units #texunits.get(varname, 'cgs')
         elif posdef:
-            cbar_units = ' ' + (r'$\times10^{%i}$' %maxabs_exp) + ' ' +\
-                texunits.get(varname, 'cgs')
+            cbar_units = ' ' + (r'$\times10^{%i}$' %maxabs_exp) + ' ' + units#\
+                #texunits.get(varname, 'cgs')
             cbar.set_ticks([minmax[0], minmax[1]])
             cbar.set_ticklabels(['%1.1f' %minmax[0], '%1.1f' %minmax[1]])
         elif symlog:
-            cbar_units = ' ' + texunits.get(varname, 'cgs')
+            cbar_units = ' ' + units #texunits.get(varname, 'cgs')
             nlin = 5
             nlog = 6
             lin_ticks = np.linspace(-linthresh, linthresh, nlin)
@@ -390,8 +390,8 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
 #                    sci_format(minmax[1])])
     #            cax.minorticks_on()
         else:
-            cbar_units = ' ' + (r'$\times10^{%i}$' %maxabs_exp) +\
-                    ' ' + texunits.get(varname, 'cgs')
+            cbar_units = ' ' + (r'$\times10^{%i}$' %maxabs_exp) + units#\
+                    #' ' + texunits.get(varname, 'cgs')
             cbar.set_ticks([minmax[0], 0, minmax[1]])
             cbar.set_ticklabels(['%1.1f' %minmax[0], '0', '%1.1f'\
                     %minmax[1]])
@@ -415,12 +415,12 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
     return im
 
 def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
-        clon=0., posdef=False, logscale=False, symlog=False, varname='vr',\
+        clon=0., posdef=False, logscale=False, symlog=False,\
         lw_scaling=1., plot_cbar=True, cbar_fs=10, linscale=None,\
-        linthresh=None, units=None, cmap=None): 
+        linthresh=None, units='', cmap=None): 
     
-    if 'sq' in varname or logscale:
-        posdef = True
+    if logscale:
+        posdef = True # for self-consistency
         
     # Shouldn't have to do this but Python is stupid with arrays ...
     field = np.copy(field_orig)    
@@ -605,21 +605,22 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
         # make a "title" (label "m/s" to the right of the colorbar by default)
         # If user wants to manually specify units (instead of getting them
         # from the variable name), change that now
-        if units is None:
-            base_units = texunits.get(varname, 'cgs')
-        else:
-            base_units = units
+        #if units is None:
+            #base_units = texunits.get(varname, 'cgs')
+        #else:
+            #base_units = units
         if logscale:
             locator = ticker.LogLocator(subs='all')
             cbar.set_ticks(locator)
-            cbar_units = ' ' + base_units
+            cbar_units = ' ' + units
+            #cbar_units = ' ' + base_units
         elif posdef:
-            cbar_units = ' ' + (r'$\times10^{%i}$' %maxabs_exp) + ' ' +\
-                texunits.get(varname, 'cgs')
+            cbar_units = ' ' + (r'$\times10^{%i}$' %maxabs_exp) + ' ' + units#\
+                #texunits.get(varname, 'cgs')
             cbar.set_ticks([minmax[0], minmax[1]])
             cbar.set_ticklabels(['%1.1f' %minmax[0], '%1.1f' %minmax[1]])
         elif symlog:
-            cbar_units = ' ' + base_units
+            cbar_units = ' ' + units #base_units
             nlin = 5
             nlog = 6
             lin_ticks = np.linspace(-linthresh, linthresh, nlin)
@@ -639,8 +640,8 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
             ticklabels[nticks - 1] = sci_format(minmax[1])
             cbar.set_ticklabels(ticklabels)
         else:
-            cbar_units = ' ' + (r'$\times10^{%i}$' %maxabs_exp) +\
-                    ' ' + base_units
+            cbar_units = ' ' + (r'$\times10^{%i}$' %maxabs_exp) + units#\
+                    #' ' + base_units
             cbar.set_ticks([minmax[0], 0, minmax[1]])
             cbar.set_ticklabels(['%1.1f' %minmax[0], '0', '%1.1f'\
                     %minmax[1]])
@@ -659,11 +660,11 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
     ax.plot(xvals, yvals, 'k', linewidth=1.3*lw_scaling)
 
     # Label smoothing interval (if present)
-    if 'smooth' in varname:
-        varname = varname.replace('smooth', '')
-        dphi = int(varname[:3])
-        ax.text(-1.96, 0.98, r'$\Delta\phi=%i^\circ$' %dphi, ha='left',\
-                va='top')
+    #if 'smooth' in varname:
+    #    varname = varname.replace('smooth', '')
+    #    dphi = int(varname[:3])
+    #    ax.text(-1.96, 0.98, r'$\Delta\phi=%i^\circ$' %dphi, ha='left',\
+    #            va='top')
 
     if figwasNone: # user probably called plot_moll from the python 
         # command line, wanting to view the projection immediately
