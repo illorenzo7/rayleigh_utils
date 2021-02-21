@@ -34,6 +34,7 @@ ir = 0 # by default plot just below the surface
 rval = None # can also find ir by finding the closest point
 clon = 0.
 varlist = None
+showav = False
 
 args = sys.argv[2:]
 nargs = len(args)
@@ -67,6 +68,8 @@ for i in range(nargs):
         iiter = np.argmin(np.abs(int_file_list - desired_iter))      
     elif arg == '-vars':
         varlist = args[i+1].split()
+    elif arg == '-showav':
+        showav = True
 
 # Get the baseline time unit
 rotation = get_parameter(dirname, 'rotation')
@@ -140,7 +143,7 @@ for varname in varlist:
     ax = fig.add_axes([margin_x, margin_bottom, subplot_width,\
             subplot_height])
 
-    plot_moll(field, a.costheta, fig=fig, ax=ax, clon=clon) 
+    plot_moll(field, a.costheta, fig=fig, ax=ax, clon=clon, showav=showav) 
 
     # Make title
     ax_xmin, ax_xmax, ax_ymin, ax_ymax = axis_range(ax)

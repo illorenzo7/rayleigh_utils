@@ -417,7 +417,7 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
 def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
         clon=0., posdef=False, logscale=False, symlog=False,\
         lw_scaling=1., plot_cbar=True, cbar_fs=10, linscale=None,\
-        linthresh=None, units='', cmap=None): 
+        linthresh=None, units='', cmap=None, showav=False): 
     
     if logscale:
         posdef = True # for self-consistency
@@ -438,6 +438,11 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
     lons = dlon*np.arange(nphi)  # In rayleigh, lons[0] = 0.
     # Make 2d (meshed) grid of longitude/latitude
     llon, llat = np.meshgrid(lons, lats, indexing='ij')    
+
+    # maybe compute average vals in North and South
+    if showav:
+        av_south = np.mean(field[:, :ntheta//2])
+        av_north = np.mean(field[:, ntheta//2:])
     
     # Essence of cartopy is transformations:
     # This one will be from PlateCarree (simple longitude/latitude equally 
@@ -665,6 +670,13 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
     #    dphi = int(varname[:3])
     #    ax.text(-1.96, 0.98, r'$\Delta\phi=%i^\circ$' %dphi, ha='left',\
     #            va='top')
+
+    # Label avg values in each hemisphere (if showav = True)
+    if showav:
+        ax.text(-1.96, 0.98, 'avg North = ' + sci_format(av_north),\
+                ha='left', va='top')
+        ax.text(-1.96, -0.98, 'avg South = ' + sci_format(av_south),\
+                ha='left', va='bottom')
 
     if figwasNone: # user probably called plot_moll from the python 
         # command line, wanting to view the projection immediately
