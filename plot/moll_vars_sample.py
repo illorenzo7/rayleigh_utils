@@ -140,8 +140,7 @@ for varname in varlist:
     ax = fig.add_axes([margin_x, margin_bottom, subplot_width,\
             subplot_height])
 
-    plot_moll(field, a.costheta, fig=fig, ax=ax, varname=varname,\
-            clon=clon) 
+    plot_moll(field, a.costheta, fig=fig, ax=ax, clon=clon) 
 
     # Make title
     ax_xmin, ax_xmax, ax_ymin, ax_ymax = axis_range(ax)

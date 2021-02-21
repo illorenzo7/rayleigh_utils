@@ -170,7 +170,7 @@ for ir in irvals:
     ax = fig.add_axes([margin_x, margin_bottom, subplot_width,\
             subplot_height])
     
-    plot_moll(field, a.costheta, fig=fig, ax=ax, varname=varname,\
+    plot_moll(field, a.costheta, fig=fig, ax=ax,\
             minmax=minmax, clon=clon) 
 
     # Make title
