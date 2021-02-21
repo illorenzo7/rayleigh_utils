@@ -967,6 +967,28 @@ class Shell_Slices:
         if (print_costheta):
             print('.......................')
             print('costheta : ', self.costheta)
+    
+    def write(self,filename='none',path='Shell_Slices/'):
+        # get filename we wish to write to
+        if (filename == 'none'):
+            the_file = path+'00000001'
+        else:
+            the_file = path+filename
+
+        # open the file for writing
+        fd = open(the_file,'wb')
+        # We write header information first; remember the 314
+        dims = np.array([314,self.version,self.niter,self.ntheta,self.nr,self.nq],dtype='int32')
+        dims.tofile(fd)
+        self.qv.tofile(fd)
+        self.radius.tofile(fd)
+        (self.inds+1).tofile(fd) # remember to convert 0-based Python to 1-based Fortran
+        self.costheta.tofile(fd)
+        for i in range(self.niter):
+            self.vals[..., i].T.tofile(fd)
+            self.iters[i].tofile(fd)
+            self.time[i].tofile(fd)
+        fd.close()
 
     def __init__(self,filename='none',path='Shell_Slices/',slice_spec = [], rec0 = False):
         """filename   : The reference state file to read.
