@@ -19,12 +19,25 @@ from common import *
 
 # Find the relevant place to store the data, and create the directory if it
 # doesn't already exist
-files = sys.argv[1:-1] # files to join -- the last argument is the output
-                        # directory
-dirname = sys.argv[-1] # output directory
+files = sys.argv[1].split()
+nfiles = len(files)
+dirname = sys.argv[2]
 datadir = dirname + '/data/' # data subdirectory of output directory
 dirname_stripped = strip_dirname(dirname)
 nfiles = len(files) # no. files to join
+
+# CLAs
+tag = ''
+delete_old_files = True # delete the partial files by default
+args = sys.argv[3:]
+nargs = len(args)
+for i in range(nargs):
+    arg = args[i]
+    if arg == '-tag':
+        tag = args[i+1] + '_'
+    elif arg == '-nodel':
+        delete_old_files = False
+
 print(make_bold('starting trace with'))
 print(files[0])
 di0 = get_dict(files[0])
@@ -90,11 +103,12 @@ di_all['iter2'] = iter2
 savename = dirname_stripped + '_trace_G_Avgs_' + str(iter1).zfill(8) +\
         '_' + str(iter2).zfill(8) + '.pkl'
 savefile = datadir + savename
-print (make_bold("deleting"))
-for i in range(nfiles):
-    fname = files[i]
-    print (fname)
-    os.remove(fname)
+if delete_old_files:
+    print (make_bold("deleting"))
+    for i in range(nfiles):
+        fname = files[i]
+        print (fname)
+        os.remove(fname)
 f = open(savefile, 'wb')
 pickle.dump(di_all, f, protocol=4)
 f.close()

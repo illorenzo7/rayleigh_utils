@@ -31,8 +31,6 @@ from common import *
 files = sys.argv[1].split()
 nfiles = len(files)
 dirname = sys.argv[2]
-#files = sys.argv[1:nfiles + 1]
-#dirname = sys.argv[nfiles + 1]
 datadir = dirname + '/data/'
 dirname_stripped = strip_dirname(dirname)
 
