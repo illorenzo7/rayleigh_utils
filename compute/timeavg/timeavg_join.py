@@ -36,6 +36,8 @@ for arg in args:
         n_for_cla += 2
     elif arg == '-dtype':
         n_for_cla += 2
+    elif arg == '-nodel':
+        n_for_cla += 1
 
 nfiles = n_total_args - 1 - n_for_cla
 
@@ -46,6 +48,7 @@ dirname_stripped = strip_dirname(dirname)
 
 tag = ''
 dtype = 'azav'
+delete_old_files = True # delete the partial files by default
 # Other choices are gav, shav, specav, merav, enstr
 for i in range(n_total_args):
     arg = args[i]
@@ -53,6 +56,8 @@ for i in range(n_total_args):
         tag = args[i+1] + '_'
     elif arg == '-dtype':
         dtype = args[i+1]
+    elif arg == '-nodel':
+        delete_old_files = False
 
 # Read in all the dictionaries to be conjoined
 di_list = []
@@ -162,11 +167,12 @@ elif dtype == 'enstr':
 savename = dirname_stripped + basename + tag + str(iter1).zfill(8) +\
         '_' + str(iter2).zfill(8) + '.pkl'
 savefile = datadir + savename
-print (make_bold("deleting"))
-for i in range(nfiles):
-    fname = files[i]
-    print (fname)
-    os.remove(fname)
+if delete_old_files:
+    print (make_bold("deleting"))
+    for i in range(nfiles):
+        fname = files[i]
+        print (fname)
+        os.remove(fname)
 
 f = open(savefile, 'wb')
 pickle.dump(di, f, protocol=4)
