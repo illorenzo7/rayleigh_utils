@@ -28,29 +28,21 @@ from common import *
 # doesn't already exist
 
 # Make opportunity for command-line args
-args = sys.argv[1:]
-n_total_args = len(args)
-n_for_cla = 0
-for arg in args:
-    if arg == '-tag':
-        n_for_cla += 2
-    elif arg == '-dtype':
-        n_for_cla += 2
-    elif arg == '-nodel':
-        n_for_cla += 1
-
-nfiles = n_total_args - 1 - n_for_cla
-
-files = sys.argv[1:nfiles + 1]
-dirname = sys.argv[nfiles + 1]
+files = sys.argv[1].split()
+nfiles = len(files)
+dirname = sys.argv[2]
+#files = sys.argv[1:nfiles + 1]
+#dirname = sys.argv[nfiles + 1]
 datadir = dirname + '/data/'
 dirname_stripped = strip_dirname(dirname)
 
 tag = ''
 dtype = 'azav'
-delete_old_files = True # delete the partial files by default
 # Other choices are gav, shav, specav, merav, enstr
-for i in range(n_total_args):
+delete_old_files = True # delete the partial files by default
+args = sys.argv[3:]
+nargs = len(args)
+for i in range(nargs):
     arg = args[i]
     if arg == '-tag':
         tag = args[i+1] + '_'
