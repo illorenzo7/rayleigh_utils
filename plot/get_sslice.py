@@ -491,23 +491,26 @@ def get_sslice(a, varname, dirname=None, old=False, j=0):
         ind_br, ind_bp = a.lut[qind_br], a.lut[qind_bp]
         br_slice = vals[:, :, :, ind_br]
         bp_slice = vals[:, :, :, ind_bp]      
-        br_prime_slice = prime(br_slice)
-        bp_prime_slice = prime(bp_slice)
-        sslice = br_prime_slice*bp_prime_slice/(4.*np.pi)
+        #br_prime_slice = prime(br_slice)
+        #bp_prime_slice = prime(bp_slice)
+        #sslice = br_prime_slice*bp_prime_slice/(4.*np.pi)
+        sslice = br_slice*bp_slice/(4*np.pi)
     elif varname == 'brbt':
         ind_br, ind_bt = a.lut[qind_br], a.lut[qind_bt]
         br_slice = vals[:, :, :, ind_br]
         bt_slice = vals[:, :, :, ind_bt]     
-        br_prime_slice = prime(br_slice)
-        bt_prime_slice = prime(bt_slice)
-        sslice = br_prime_slice*bt_prime_slice/(4.*np.pi)
+        #br_prime_slice = prime(br_slice)
+        #bt_prime_slice = prime(bt_slice)
+        #sslice = br_prime_slice*bt_prime_slice/(4.*np.pi)
+        sslice = br_slice*bt_slice/(4*np.pi)
     elif varname == 'btbp':
         ind_bt, ind_bp = a.lut[qind_bt], a.lut[qind_bp]
         bt_slice = vals[:, :, :, ind_bt]
         bp_slice = vals[:, :, :, ind_bp]       
-        bt_prime_slice = prime(bt_slice)
-        bp_prime_slice = prime(bp_slice)
-        sslice = bt_prime_slice*bp_prime_slice/(4.*np.pi)
+        #bt_prime_slice = prime(bt_slice)
+        #bp_prime_slice = prime(bp_slice)
+        #sslice = bt_prime_slice*bp_prime_slice/(4.*np.pi)
+        sslice = bt_slice*bp_slice/(4*np.pi)
         
     # Cylindrical fluctuating magnetic field products 
     # Multiplied by 1/4*pi to get units of magnetic pressure
