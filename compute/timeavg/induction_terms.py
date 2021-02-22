@@ -1,7 +1,7 @@
-# Routine to trace Rayleigh G_Avgs data in time
+# more breakdown of poloidal terms (separate derivatives) than 
+# induction_terms
 # Created by: Loren Matilsky
-# On: 12/18/2018
-# Parallelized: 11/30/2020
+# On: 01/16/2021
 ##################################################################
 # This routine computes the trace in time of the values in the G_Avgs data 
 # for a particular simulation. 
@@ -47,7 +47,7 @@ import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from rayleigh_diagnostics import AZ_Avgs, Meridional_Slices
-from common import drad, dth
+from common import drad, dth, drad_3d, dth_3d
 reading_func1 = AZ_Avgs
 reading_func2 = Meridional_Slices
 dataname1 = 'AZ_Avgs'
@@ -153,11 +153,11 @@ else: # recieve my_files, my_nfiles, my_ntimes
 # Broadcast dirname, radatadir, nq, etc.
 if rank == 0:
     meta = [dirname, radatadir1, radatadir2, nt, nr, ntimes, rr, rr_2d,\
-            tt, tt_2d, sint_2d]
+            tt, tt_2d, sint_2d, cost_2d]
 else:
     meta = None
 dirname, radatadir1, radatadir2, nt, nr, ntimes, rr, rr_2d,\
-    tt, tt_2d, sint_2d = comm.bcast(meta, root=0)
+    tt, tt_2d, sint_2d, cost_2d = comm.bcast(meta, root=0)
 
 # Checkpoint and time
 comm.Barrier()
@@ -171,7 +171,7 @@ if rank == 0:
     t1 = time.time()
 
 # Now analyze the data
-nq = 16
+nq = 32
 my_vals = np.zeros((nt, nr, nq))
 # "my_vals will be a weighted sum"
 my_weight = 1./ntimes
@@ -230,6 +230,7 @@ for i in range(my_nfiles):
         
         # induction terms
         # radial
+        # full terms
         my_vals[:, :, 0] += 1./rr_2d/sint_2d*\
             dth(sint_2d*vrbt_mm, tt)*my_weight
         my_vals[:, :, 1] += -1./rr_2d/sint_2d*\
@@ -238,8 +239,36 @@ for i in range(my_nfiles):
             dth(sint_2d*vrbt_pp, tt)*my_weight
         my_vals[:, :, 3] += -1./rr_2d/sint_2d*\
             dth(sint_2d*vtbr_pp, tt)*my_weight
+
+        # set 1: v derivs
+        my_vals[:, :, 4] += 1./rr_2d*\
+            np.mean(dth_3d(vr_m, tt)*bt_m, axis=0)*my_weight
+        my_vals[:, :, 5] += -1./rr_2d*\
+            np.mean(dth_3d(vt_m, tt)*br_m, axis=0)*my_weight
+        my_vals[:, :, 6] += 1./rr_2d*\
+            np.mean(dth_3d(vr_p, tt)*bt_p, axis=0)*my_weight
+        my_vals[:, :, 7] += -1./rr_2d*\
+            np.mean(dth_3d(vt_p, tt)*br_p, axis=0)*my_weight
+
+        # set 2: B derivs
+        my_vals[:, :, 8] += 1./rr_2d*\
+            np.mean(vr_m*dth_3d(bt_m, tt), axis=0)*my_weight
+        my_vals[:, :, 9] += -1./rr_2d*\
+            np.mean(vt_m*dth_3d(br_m, tt), axis=0)*my_weight
+        my_vals[:, :, 10] += 1./rr_2d*\
+            np.mean(vr_p*dth_3d(bt_p, tt), axis=0)*my_weight
+        my_vals[:, :, 11] += -1./rr_2d*\
+            np.mean(vt_p*dth_3d(br_p, tt), axis=0)*my_weight
+
+        # set 3: curvature
+        my_vals[:, :, 12] += cost_2d/rr_2d/sint_2d*vrbt_mm*my_weight
+        my_vals[:, :, 13] += -cost_2d/rr_2d/sint_2d*vtbr_mm*my_weight
+        my_vals[:, :, 14] += cost_2d/rr_2d/sint_2d*vrbt_pp*my_weight
+        my_vals[:, :, 15] += -cost_2d/rr_2d/sint_2d*vtbr_pp*my_weight
+
         # theta
-        ind_off = 4
+        # full terms
+        ind_off = 16
         my_vals[:, :, ind_off + 0] +=\
             1./rr_2d*drad(rr_2d*vtbr_mm, rr)*my_weight
         my_vals[:, :, ind_off + 1] +=\
@@ -248,20 +277,32 @@ for i in range(my_nfiles):
             1./rr_2d*drad(rr_2d*vtbr_pp, rr)*my_weight
         my_vals[:, :, ind_off + 3] +=\
             -1./rr_2d*drad(rr_2d*vrbt_pp, rr)*my_weight
-        # phi
-        ind_off = 8
-        my_vals[:, :, ind_off + 0] +=\
-            1./rr_2d*drad(rr_2d*vpbr_mm, rr)*my_weight
-        my_vals[:, :, ind_off + 1] +=\
-            -1./rr_2d*drad(rr_2d*vrbp_mm, rr)*my_weight
-        my_vals[:, :, ind_off + 2] += 1./rr_2d*dth(vpbt_mm, tt)*my_weight
-        my_vals[:, :, ind_off + 3] += -1./rr_2d*dth(vtbp_mm, tt)*my_weight
-        my_vals[:, :, ind_off + 4] +=\
-            1./rr_2d*drad(rr_2d*vpbr_pp, rr)*my_weight
-        my_vals[:, :, ind_off + 5] +=\
-            -1./rr_2d*drad(rr_2d*vrbp_pp, rr)*my_weight
-        my_vals[:, :, ind_off + 6] += 1./rr_2d*dth(vpbt_pp, tt)*my_weight
-        my_vals[:, :, ind_off + 7] += -1./rr_2d*dth(vtbp_pp, tt)*my_weight
+
+        # set 1: v derivs
+        my_vals[:, :, ind_off + 4] += \
+            np.mean(drad_3d(vt_m, rr)*br_m, axis=0)*my_weight
+        my_vals[:, :, ind_off + 5] += \
+            -np.mean(drad_3d(vr_m, rr)*bt_m, axis=0)*my_weight
+        my_vals[:, :, ind_off + 6] += \
+            np.mean(drad_3d(vt_p, rr)*br_p, axis=0)*my_weight
+        my_vals[:, :, ind_off + 7] += \
+            -np.mean(drad_3d(vr_p, rr)*bt_p, axis=0)*my_weight
+
+        # set 2: B derivs
+        my_vals[:, :, ind_off + 8] += \
+            np.mean(vt_m*drad_3d(br_m, rr), axis=0)*my_weight
+        my_vals[:, :, ind_off + 9] += \
+            -np.mean(vr_m*drad_3d(bt_m, rr), axis=0)*my_weight
+        my_vals[:, :, ind_off + 10] += \
+            np.mean(vt_p*drad_3d(br_p, rr), axis=0)*my_weight
+        my_vals[:, :, ind_off + 11] += \
+            -np.mean(vr_p*drad_3d(bt_p, rr), axis=0)*my_weight
+
+        # set 3: curvature
+        my_vals[:, :, ind_off + 12] += 1./rr_2d*vtbr_mm*my_weight
+        my_vals[:, :, ind_off + 13] += -1./rr_2d*vrbt_mm*my_weight
+        my_vals[:, :, ind_off + 14] += 1./rr_2d*vtbr_pp*my_weight
+        my_vals[:, :, ind_off + 15] += -1./rr_2d*vrbt_pp*my_weight
 
     if rank == 0:
         pcnt_done = (i + 1)/my_nfiles*100.
@@ -306,7 +347,7 @@ if rank == 0:
     # Set the timetrace savename by the directory, what we are saving,
     # and first and last iteration files for the trace
     dirname_stripped = strip_dirname(dirname)
-    savename = dirname_stripped + '_induction_terms_' +\
+    savename = dirname_stripped + '_induction_pol_terms_' +\
             file_list[0] + '_' + file_list[-1] + '.pkl'
     savefile = datadir + savename
 
