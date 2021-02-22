@@ -47,7 +47,6 @@ import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from rayleigh_diagnostics import AZ_Avgs, Meridional_Slices
-from common import drad, dth, drad_3d, dth_3d
 reading_func1 = AZ_Avgs
 reading_func2 = Meridional_Slices
 dataname1 = 'AZ_Avgs'
@@ -121,6 +120,7 @@ if rank == 0:
     # compute some derivative quantities for the grid
     tt_2d, rr_2d = np.meshgrid(tt, rr, indexing='ij')
     sint_2d = np.sin(tt_2d); cost_2d = np.cos(tt_2d)
+    cott = cost_2d/sint_2d
     xx = rr_2d*sint_2d
     zz = rr_2d*cost_2d
 
@@ -152,12 +152,11 @@ else: # recieve my_files, my_nfiles, my_ntimes
 
 # Broadcast dirname, radatadir, nq, etc.
 if rank == 0:
-    meta = [dirname, radatadir1, radatadir2, nt, nr, ntimes, rr, rr_2d,\
-            tt, tt_2d, sint_2d, cost_2d]
+    meta = [dirname, radatadir1, radatadir2, nt, nr, ntimes, rr_2d,  cott]
 else:
     meta = None
-dirname, radatadir1, radatadir2, nt, nr, ntimes, rr, rr_2d,\
-    tt, tt_2d, sint_2d, cost_2d = comm.bcast(meta, root=0)
+dirname, radatadir1, radatadir2, nt, nr, ntimes, rr_2d, cott =\
+        comm.bcast(meta, root=0)
 
 # Checkpoint and time
 comm.Barrier()
@@ -171,7 +170,7 @@ if rank == 0:
     t1 = time.time()
 
 # Now analyze the data
-nq = 32
+nq = 45
 my_vals = np.zeros((nt, nr, nq))
 # "my_vals will be a weighted sum"
 my_weight = 1./ntimes
@@ -182,127 +181,136 @@ for i in range(my_nfiles):
     # take mean along the time axis;
 
     for j in range(a.niter):
-        # mean B
-        br_m = a.vals[:, :, a.lut[801], j].reshape((1, nt, nr))
-        bt_m = a.vals[:, :, a.lut[802], j].reshape((1, nt, nr))
-        bp_m = a.vals[:, :, a.lut[803], j].reshape((1, nt, nr))
-
-        # mean v
-        vr_m = a.vals[:, :, a.lut[1], j].reshape((1, nt, nr))
-        vt_m = a.vals[:, :, a.lut[2], j].reshape((1, nt, nr))
-        vp_m = a.vals[:, :, a.lut[3], j].reshape((1, nt, nr))
+        # full v
+        vr = mer.vals[:, :, :, mer.lut[1], j]
+        vt = mer.vals[:, :, :, mer.lut[2], j]
+        vp = mer.vals[:, :, :, mer.lut[3], j]
 
         # full B
         br = mer.vals[:, :, :, mer.lut[801], j]
         bt = mer.vals[:, :, :, mer.lut[802], j]
         bp = mer.vals[:, :, :, mer.lut[803], j]
 
-        # full v
-        vr = mer.vals[:, :, :, mer.lut[1], j]
-        vt = mer.vals[:, :, :, mer.lut[2], j]
-        vp = mer.vals[:, :, :, mer.lut[3], j]
+        # mean v
+        vr_m = a.vals[:, :, a.lut[1], j].reshape((1, nt, nr))
+        vt_m = a.vals[:, :, a.lut[2], j].reshape((1, nt, nr))
+        vp_m = a.vals[:, :, a.lut[3], j].reshape((1, nt, nr))
 
-        # fluc B
-        br_p = br - br_m
-        bt_p = bt - bt_m
-        bp_p = bp - bp_m
+        # mean B
+        br_m = a.vals[:, :, a.lut[801], j].reshape((1, nt, nr))
+        bt_m = a.vals[:, :, a.lut[802], j].reshape((1, nt, nr))
+        bp_m = a.vals[:, :, a.lut[803], j].reshape((1, nt, nr))
 
-        # fluc v
-        vr_p = vr - vr_m
-        vt_p = vt - vt_m
-        vp_p = vp - vp_m
+        # full derivatives v
+        dvrdr = mer.vals[:, :, :, mer.lut[10], j]
+        dvtdr = mer.vals[:, :, :, mer.lut[11], j]
+        dvpdr = mer.vals[:, :, :, mer.lut[12], j]
 
-        # correlations
-        vrbt_mm = np.mean(vr_m*bt_m, axis=0)
-        vrbt_pp = np.mean(vr_p*bt_p, axis=0)
-        vrbp_mm = np.mean(vr_m*bp_m, axis=0)
-        vrbp_pp = np.mean(vr_p*bp_p, axis=0)
-    
-        vtbr_mm = np.mean(vt_m*br_m, axis=0)
-        vtbr_pp = np.mean(vt_p*br_p, axis=0)
-        vtbp_mm = np.mean(vt_m*bp_m, axis=0)
-        vtbp_pp = np.mean(vt_p*bp_p, axis=0)
+        dvrdt = mer.vals[:, :, :, mer.lut[37], j]
+        dvtdt = mer.vals[:, :, :, mer.lut[38], j]
+        dvpdt = mer.vals[:, :, :, mer.lut[39], j]
 
-        vpbr_mm = np.mean(vp_m*br_m, axis=0)
-        vpbr_pp = np.mean(vp_p*br_p, axis=0)
-        vpbt_mm = np.mean(vp_m*bt_m, axis=0)
-        vpbt_pp = np.mean(vp_p*bt_p, axis=0)
-        
-        # induction terms
-        # radial
-        # full terms
-        my_vals[:, :, 0] += 1./rr_2d/sint_2d*\
-            dth(sint_2d*vrbt_mm, tt)*my_weight
-        my_vals[:, :, 1] += -1./rr_2d/sint_2d*\
-            dth(sint_2d*vtbr_mm, tt)*my_weight
-        my_vals[:, :, 2] += 1./rr_2d/sint_2d*\
-            dth(sint_2d*vrbt_pp, tt)*my_weight
-        my_vals[:, :, 3] += -1./rr_2d/sint_2d*\
-            dth(sint_2d*vtbr_pp, tt)*my_weight
+        dvrdp = mer.vals[:, :, :, mer.lut[46], j]
+        dvtdp = mer.vals[:, :, :, mer.lut[47], j]
+        dvpdp = mer.vals[:, :, :, mer.lut[48], j]
 
-        # set 1: v derivs
-        my_vals[:, :, 4] += 1./rr_2d*\
-            np.mean(dth_3d(vr_m, tt)*bt_m, axis=0)*my_weight
-        my_vals[:, :, 5] += -1./rr_2d*\
-            np.mean(dth_3d(vt_m, tt)*br_m, axis=0)*my_weight
-        my_vals[:, :, 6] += 1./rr_2d*\
-            np.mean(dth_3d(vr_p, tt)*bt_p, axis=0)*my_weight
-        my_vals[:, :, 7] += -1./rr_2d*\
-            np.mean(dth_3d(vt_p, tt)*br_p, axis=0)*my_weight
+        # full derivatives B
+        dbrdr = mer.vals[:, :, :, mer.lut[810], j]
+        dbtdr = mer.vals[:, :, :, mer.lut[811], j]
+        dbpdr = mer.vals[:, :, :, mer.lut[812], j]
 
-        # set 2: B derivs
-        my_vals[:, :, 8] += 1./rr_2d*\
-            np.mean(vr_m*dth_3d(bt_m, tt), axis=0)*my_weight
-        my_vals[:, :, 9] += -1./rr_2d*\
-            np.mean(vt_m*dth_3d(br_m, tt), axis=0)*my_weight
-        my_vals[:, :, 10] += 1./rr_2d*\
-            np.mean(vr_p*dth_3d(bt_p, tt), axis=0)*my_weight
-        my_vals[:, :, 11] += -1./rr_2d*\
-            np.mean(vt_p*dth_3d(br_p, tt), axis=0)*my_weight
+        dbrdt = mer.vals[:, :, :, mer.lut[837], j]
+        dbtdt = mer.vals[:, :, :, mer.lut[838], j]
+        dbpdt = mer.vals[:, :, :, mer.lut[839], j]
 
-        # set 3: curvature
-        my_vals[:, :, 12] += cost_2d/rr_2d/sint_2d*vrbt_mm*my_weight
-        my_vals[:, :, 13] += -cost_2d/rr_2d/sint_2d*vtbr_mm*my_weight
-        my_vals[:, :, 14] += cost_2d/rr_2d/sint_2d*vrbt_pp*my_weight
-        my_vals[:, :, 15] += -cost_2d/rr_2d/sint_2d*vtbr_pp*my_weight
+        dbrdp = mer.vals[:, :, :, mer.lut[846], j]
+        dbtdp = mer.vals[:, :, :, mer.lut[847], j]
+        dbpdp = mer.vals[:, :, :, mer.lut[848], j]
 
-        # theta
-        # full terms
-        ind_off = 16
-        my_vals[:, :, ind_off + 0] +=\
-            1./rr_2d*drad(rr_2d*vtbr_mm, rr)*my_weight
-        my_vals[:, :, ind_off + 1] +=\
-            -1./rr_2d*drad(rr_2d*vrbt_mm, rr)*my_weight
-        my_vals[:, :, ind_off + 2] +=\
-            1./rr_2d*drad(rr_2d*vtbr_pp, rr)*my_weight
-        my_vals[:, :, ind_off + 3] +=\
-            -1./rr_2d*drad(rr_2d*vrbt_pp, rr)*my_weight
+        # mean derivatives v
+        dvrdr_m = a.vals[:, :, a.lut[10], j].reshape((1, nt, nr))
+        dvtdr_m = a.vals[:, :, a.lut[11], j].reshape((1, nt, nr))
+        dvpdr_m = a.vals[:, :, a.lut[12], j].reshape((1, nt, nr))
 
-        # set 1: v derivs
-        my_vals[:, :, ind_off + 4] += \
-            np.mean(drad_3d(vt_m, rr)*br_m, axis=0)*my_weight
-        my_vals[:, :, ind_off + 5] += \
-            -np.mean(drad_3d(vr_m, rr)*bt_m, axis=0)*my_weight
-        my_vals[:, :, ind_off + 6] += \
-            np.mean(drad_3d(vt_p, rr)*br_p, axis=0)*my_weight
-        my_vals[:, :, ind_off + 7] += \
-            -np.mean(drad_3d(vr_p, rr)*bt_p, axis=0)*my_weight
+        dvrdt_m = a.vals[:, :, a.lut[37], j].reshape((1, nt, nr))
+        dvtdt_m = a.vals[:, :, a.lut[38], j].reshape((1, nt, nr))
+        dvpdt_m = a.vals[:, :, a.lut[39], j].reshape((1, nt, nr))
 
-        # set 2: B derivs
-        my_vals[:, :, ind_off + 8] += \
-            np.mean(vt_m*drad_3d(br_m, rr), axis=0)*my_weight
-        my_vals[:, :, ind_off + 9] += \
-            -np.mean(vr_m*drad_3d(bt_m, rr), axis=0)*my_weight
-        my_vals[:, :, ind_off + 10] += \
-            np.mean(vt_p*drad_3d(br_p, rr), axis=0)*my_weight
-        my_vals[:, :, ind_off + 11] += \
-            -np.mean(vr_p*drad_3d(bt_p, rr), axis=0)*my_weight
+        dvrdp_m = a.vals[:, :, a.lut[46], j].reshape((1, nt, nr))
+        dvtdp_m = a.vals[:, :, a.lut[47], j].reshape((1, nt, nr))
+        dvpdp_m = a.vals[:, :, a.lut[48], j].reshape((1, nt, nr))
 
-        # set 3: curvature
-        my_vals[:, :, ind_off + 12] += 1./rr_2d*vtbr_mm*my_weight
-        my_vals[:, :, ind_off + 13] += -1./rr_2d*vrbt_mm*my_weight
-        my_vals[:, :, ind_off + 14] += 1./rr_2d*vtbr_pp*my_weight
-        my_vals[:, :, ind_off + 15] += -1./rr_2d*vrbt_pp*my_weight
+        # mean derivatives B
+        dbrdr_m = a.vals[:, :, a.lut[810], j].reshape((1, nt, nr))
+        dbtdr_m = a.vals[:, :, a.lut[811], j].reshape((1, nt, nr))
+        dbpdr_m = a.vals[:, :, a.lut[812], j].reshape((1, nt, nr))
+
+        dbrdt_m = a.vals[:, :, a.lut[837], j].reshape((1, nt, nr))
+        dbtdt_m = a.vals[:, :, a.lut[838], j].reshape((1, nt, nr))
+        dbpdt_m = a.vals[:, :, a.lut[839], j].reshape((1, nt, nr))
+
+        dbrdp_m = a.vals[:, :, a.lut[846], j].reshape((1, nt, nr))
+        dbtdp_m = a.vals[:, :, a.lut[847], j].reshape((1, nt, nr))
+        dbpdp_m = a.vals[:, :, a.lut[848], j].reshape((1, nt, nr))
+
+        # compute induction terms
+
+        # full radial
+        ind_off = 0
+        my_vals[:, :, ind_off + 0] += np.mean(dvrdt*bt + vr*dbtdt, axis=0)*my_weight
+        my_vals[:, :, ind_off + 1] += -np.mean(dvtdt*br + vt*dbrdt, axis=0)*my_weight
+        my_vals[:, :, ind_off + 2] += -np.mean(dvpdp*br + vp*dbrdp, axis=0)*my_weight
+        my_vals[:, :, ind_off + 3] += np.mean(dvrdp*bp + vr*dbpdp, axis=0)*my_weight
+        my_vals[:, :, ind_off + 4] += cott/rr_2d*np.mean(vr*bt - vt*br, axis=0)*my_weight
+        ind_off += 5
+
+        # full theta
+        my_vals[:, :, ind_off + 0] += np.mean(dvtdp*bp + vt*dbpdp, axis=0)*my_weight
+        my_vals[:, :, ind_off + 1] += -np.mean(dvpdp*bt + vp*dbtdp, axis=0)*my_weight
+        my_vals[:, :, ind_off + 2] += -np.mean(dvrdr*bt + vr*dbtdr, axis=0)*my_weight
+        my_vals[:, :, ind_off + 3] += np.mean(dvtdr*br + vt*dbrdr, axis=0)*my_weight
+        my_vals[:, :, ind_off + 4] += 1/rr_2d*np.mean(vt*br - vr*bt, axis=0)*my_weight
+        ind_off += 5
+
+        # full phi
+        my_vals[:, :, ind_off + 0] += np.mean(dvpdr*br + vp*dbrdr, axis=0)*my_weight
+        my_vals[:, :, ind_off + 1] += -np.mean(dvrdr*bp + vr*dbpdr, axis=0)*my_weight
+        my_vals[:, :, ind_off + 2] += -np.mean(dvtdt*bp + vt*dbpdt, axis=0)*my_weight
+        my_vals[:, :, ind_off + 3] += np.mean(dvpdt*bt + vp*dbtdt, axis=0)*my_weight
+        my_vals[:, :, ind_off + 4] += 1/rr_2d*np.mean(vp*br - vr*bp, axis=0)*my_weight
+        ind_off += 5
+
+        # mean radial
+        my_vals[:, :, ind_off + 0] += np.mean(dvrdt_m*bt_m + vr*dbtdt_m, axis=0)*my_weight
+        my_vals[:, :, ind_off + 1] += -np.mean(dvtdt_m*br_m + vt_m*dbrdt_m, axis=0)*my_weight
+        my_vals[:, :, ind_off + 2] += -np.mean(dvpdp_m*br_m + vp_m*dbrdp_m, axis=0)*my_weight
+        my_vals[:, :, ind_off + 3] += np.mean(dvrdp_m*bp_m + vr_m*dbpdp_m, axis=0)*my_weight
+        my_vals[:, :, ind_off + 4] += cott/rr_2d*np.mean(vr_m*bt_m - vt_m*br_m, axis=0)*my_weight
+        ind_off += 5
+
+        # mean theta
+        my_vals[:, :, ind_off + 0] += np.mean(dvtdp_m*bp_m + vt_m*dbpdp_m, axis=0)*my_weight
+        my_vals[:, :, ind_off + 1] += -np.mean(dvpdp_m*bt_m + vp_m*dbtdp_m, axis=0)*my_weight
+        my_vals[:, :, ind_off + 2] += -np.mean(dvrdr_m*bt_m + vr_m*dbtdr_m, axis=0)*my_weight
+        my_vals[:, :, ind_off + 3] += np.mean(dvtdr_m*br_m + vt_m*dbrdr_m, axis=0)*my_weight
+        my_vals[:, :, ind_off + 4] += 1/rr_2d*np.mean(vt_m*br_m - vr_m*bt_m, axis=0)*my_weight
+        ind_off += 5
+
+        # mean phi
+        my_vals[:, :, ind_off + 0] += np.mean(dvpdr_m*br_m + vp_m*dbrdr_m, axis=0)*my_weight
+        my_vals[:, :, ind_off + 1] += -np.mean(dvrdr_m*bp_m + vr_m*dbpdr_m, axis=0)*my_weight
+        my_vals[:, :, ind_off + 2] += -np.mean(dvtdt_m*bp_m + vt_m*dbpdt_m, axis=0)*my_weight
+        my_vals[:, :, ind_off + 3] += np.mean(dvpdt_m*bt_m + vp_m*dbtdt_m, axis=0)*my_weight
+        my_vals[:, :, ind_off + 4] += 1/rr_2d*np.mean(vp_m*br_m - vr_m*bp_m, axis=0)*my_weight
+        ind_off += 5
+
+        ind_off_full = 0
+        ind_off_mean = 15
+
+        # fluc terms
+        for i in range(15):
+            my_vals[:, :, ind_off + i] = my_vals[:, :, ind_off_full + i] -\
+                my_vals[:, :, ind_off_mean + i]
 
     if rank == 0:
         pcnt_done = (i + 1)/my_nfiles*100.
