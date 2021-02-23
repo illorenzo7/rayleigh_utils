@@ -55,6 +55,8 @@ fs = 12.
 tag = ''
 
 # Get specific range desired for plotting
+plotdir = None
+
 args = sys.argv[2:]
 nargs = len(args)
 the_tuple = get_desired_range(int_file_list, args)
@@ -66,6 +68,8 @@ else:
 # Read other command-line arguments (CLAs)
 for i in range(nargs):
     arg = args[i]
+    if arg == '-plotdir':
+        plotdir = args[i+1]
     if arg == '-var':
         varname = args[i+1]
     elif arg == '-ir':
@@ -87,6 +91,11 @@ if rotation:
 else:
     time_unit = compute_tdt(dirname)
     time_label = r'$\rm{TDT}$'
+
+if plotdir is None:
+    plotdir = dirname + '/plots/'
+    if not os.path.isdir(plotdir):
+        os.makedirs(plotdir)
 
 # Get general info from first file
 fname = file_list[iiter]

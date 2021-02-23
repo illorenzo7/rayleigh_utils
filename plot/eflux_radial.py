@@ -56,10 +56,14 @@ rmaxwindow = None # If present, set the bounds to zoom in on the boundaries
         # with a window of a particular size
 rminwindow = None
 
+plotdir = None
+
 args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
+    if arg == '-plotdir':
+        plotdir = args[i+1]
     if arg == '-usefile':
         Shell_Avgs_file = args[i+1]
         Shell_Avgs_file = Shell_Avgs_file.split('/')[-1]
@@ -200,6 +204,11 @@ if rotation:
 else:
     time_unit = compute_tdt(dirname)
     time_label = r'$\rm{TDT}$'
+
+if plotdir is None:
+    plotdir = dirname + '/plots/'
+    if not os.path.isdir(plotdir):
+        os.makedirs(plotdir)
 
 # Determine the simulation is magnetic
 magnetism = get_parameter(dirname, 'magnetism')
@@ -421,7 +430,7 @@ plt.legend(loc='lower left', shadow=True, ncol=3, fontsize=10)
 plt.tight_layout()
 
 # Save the plot
-print ('Saving the eflux plot at ' + plotdir + savename + ' ...')
+print ('Saving the eflux plot at ' + plotdir + savename)
 plt.savefig(plotdir + savename, dpi=dpi)
 
 # Show the plot

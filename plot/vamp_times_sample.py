@@ -43,6 +43,8 @@ rvals = [] # user can specify radii to mark by vertical lines
 file_list, int_file_list, nfiles = get_file_lists(radatadir)
 
 # Read in CLAs
+plotdir = None
+
 args = sys.argv[2:]
 nargs = len(args)
 
@@ -55,6 +57,8 @@ else:
 # Change defaults
 for i in range(nargs):
     arg = args[i]
+    if arg == '-plotdir':
+        plotdir = args[i+1]
     if arg == '-rnorm':
         rnorm = float(args[i+1])
     elif arg == '-minmax':
@@ -101,6 +105,11 @@ if rotation:
 else:
     time_unit = compute_tdt(dirname)
     time_label = r'$\rm{TDT}$'
+
+if plotdir is None:
+    plotdir = dirname + '/plots/'
+    if not os.path.isdir(plotdir):
+        os.makedirs(plotdir)
 
 # Make plot directory
 if logscale:

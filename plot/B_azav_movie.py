@@ -46,6 +46,11 @@ else:
     time_unit = compute_tdt(dirname)
     time_label = r'$\rm{TDT}$'
 
+if plotdir is None:
+    plotdir = dirname + '/plots/'
+    if not os.path.isdir(plotdir):
+        os.makedirs(plotdir)
+
 # Set defaults
 count = 0
 mins = None
@@ -53,6 +58,8 @@ maxes = None
 rbcz = None
 
 # Read in CLAs (if any) to change default variable ranges and other options
+plotdir = None
+
 args = sys.argv[2:]
 nargs = len(args)
 
@@ -69,6 +76,8 @@ iter1, iter2 = int_file_list[index_first], int_file_list[index_last]
 
 for i in range(nargs):
     arg = args[i]
+    if arg == '-plotdir':
+        plotdir = args[i+1]
     if arg == '-minmax':
         mins = float(args[i+1]), float(args[i+3]), float(args[i+5])
         maxes = float(args[i+2]), float(args[i+4]), float(args[i+6])

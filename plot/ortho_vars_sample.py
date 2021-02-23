@@ -27,10 +27,14 @@ rval = None # can also find ir by finding the closest point
 clon = 0.
 clat = 20.
 
+plotdir = None
+
 args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
+    if arg == '-plotdir':
+        plotdir = args[i+1]
     if arg == '-clat':
         clat = float(args[i+1])
     elif arg == '-clon':

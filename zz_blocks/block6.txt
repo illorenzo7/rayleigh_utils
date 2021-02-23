@@ -1,0 +1,3 @@
+plotdir = None
+
+args = sys.argv[2:]

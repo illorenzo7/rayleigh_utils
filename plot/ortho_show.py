@@ -33,10 +33,14 @@ clat = 20
 bold_patch = None
 thickcenter = True
 
+plotdir = None
+
 args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
+    if arg == '-plotdir':
+        plotdir = args[i+1]
     if (arg == '-minmax'):
         minmax = float(args[i+1]), float(args[i+2])
     elif (arg == '-ir'):

@@ -59,11 +59,15 @@ Om_subtract = None # by default, do not subtract any differential rotation
 # Default no. rotations to plot per inch (vertically)
 rpi = 100.
 # Get command-line arguments
+plotdir = None
+
 args = sys.argv[2:]
 nargs = len(args)
 tag = ''
 for i in range(nargs):
     arg = args[i]
+    if arg == '-plotdir':
+        plotdir = args[i+1]
     if arg == '-minmax':
         minmax = float(args[i+1]), float(args[i+2])
         minmax_wasnone = False

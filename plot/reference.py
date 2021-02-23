@@ -32,11 +32,15 @@ xminmax = None
 rvals = []
 ylog = True
 
+plotdir = None
+
 args = sys.argv[2:]
 nargs = len(args)
 fname = 'equation_coefficients'
 for i in range(nargs):
     arg = args[i]
+    if arg == '-plotdir':
+        plotdir = args[i+1]
     if arg == '-xminmax':
         xminmax = float(args[i+1]), float(args[i+2])
     elif arg == '-depths':
@@ -80,9 +84,6 @@ for i in range(nargs):
 # Directory with data and plots, make the plotting directory if it doesn't
 # already exist    
 datadir = dirname + '/data/'
-plotdir = dirname + '/plots/'
-if not os.path.isdir(plotdir):
-    os.makedirs(plotdir)
 
 eq = get_eq(dirname, fname=fname)
 r = eq.radius

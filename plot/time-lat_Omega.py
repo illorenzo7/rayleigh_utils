@@ -46,10 +46,14 @@ navg = 1 # by default average over 1 AZ_Avgs instance (no average)
 # for navg > 1, a "sliding average" will be used.
 
 # Get command-line arguments
+plotdir = None
+
 args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
+    if arg == '-plotdir':
+        plotdir = args[i+1]
     if arg == '-minmax':
         try: # See if user wants to set ranges for B_r, B_theta, and B_phi
             minmax = float(args[i+1]), float(args[i+2]), float(args[i+3]),\

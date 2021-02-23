@@ -57,10 +57,14 @@ varlist = None
 tag = ''
 
 # Read command-line arguments (CLAs)
+plotdir = None
+
 args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
+    if arg == '-plotdir':
+        plotdir = args[i+1]
     if arg == '-ir':
         ir = int(args[i+1])
     elif arg == '-rval':
@@ -104,6 +108,11 @@ if rotation:
 else:
     time_unit = compute_tdt(dirname)
     time_label = r'$\rm{TDT}$'
+
+if plotdir is None:
+    plotdir = dirname + '/plots/'
+    if not os.path.isdir(plotdir):
+        os.makedirs(plotdir)
 
 # File name to read
 iter_val = int_file_list[iiter]

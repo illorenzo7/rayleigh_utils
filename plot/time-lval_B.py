@@ -49,10 +49,14 @@ itype = 0
 power_types_dict = {'tot': 0, 'mean': 1, 'conv': 2}
 
 # Get command-line arguments
+plotdir = None
+
 args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
+    if arg == '-plotdir':
+        plotdir = args[i+1]
     if (arg == '-minmax'):
         user_specified_minmax = True
         my_min_br = float(args[i+1])

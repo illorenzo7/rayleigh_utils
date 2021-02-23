@@ -37,6 +37,8 @@ plotdir = dirname + '/plots/'
 if (not os.path.isdir(plotdir)):
     os.makedirs(plotdir)
 
+plotdir = None
+
 args = sys.argv[2:]
 nargs = len(args)
 fname = None
@@ -44,6 +46,8 @@ xminmax = None
 plot_kappa00 = False
 for i in range(nargs):
     arg = args[i]
+    if arg == '-plotdir':
+        plotdir = args[i+1]
     if arg == '-log':
         ylog = True
     elif arg == '-fname':

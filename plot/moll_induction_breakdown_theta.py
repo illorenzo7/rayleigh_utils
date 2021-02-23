@@ -42,10 +42,14 @@ ncol = 2
 must_smooth = False
 rootname = 'induction_breakdown_phi'
 
+plotdir = None
+
 args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
+    if arg == '-plotdir':
+        plotdir = args[i+1]
     if arg == '-minmax':
         minmax = float(args[i+1]), float(args[i+2])
     elif arg == '-ir':
@@ -93,6 +97,11 @@ if rotation:
 else:
     time_unit = compute_tdt(dirname)
     time_label = r'$\rm{TDT}$'
+
+if plotdir is None:
+    plotdir = dirname + '/plots/'
+    if not os.path.isdir(plotdir):
+        os.makedirs(plotdir)
 
 iter_val = int_file_list[iiter]
 fname = file_list[iiter]

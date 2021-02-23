@@ -1,0 +1,4 @@
+for i in range(nargs):
+    arg = args[i]
+    if arg == '-plotdir':
+        plotdir = args[i+1]

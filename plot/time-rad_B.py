@@ -49,10 +49,14 @@ rvals = []
 plottimes = None
 
 # Get command-line arguments
+plotdir = None
+
 args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
+    if arg == '-plotdir':
+        plotdir = args[i+1]
     if arg == '-minmax':
         try: # See if user wants to set ranges for B_r, B_theta, and B_phi
             minmax = float(args[i+1]), float(args[i+2]), float(args[i+3]),\
@@ -139,6 +143,11 @@ if rotation:
 else:
     time_unit = compute_tdt(dirname)
     time_label = r'$\rm{TDT}$'
+
+if plotdir is None:
+    plotdir = dirname + '/plots/'
+    if not os.path.isdir(plotdir):
+        os.makedirs(plotdir)
 
 br_index = np.argmin(np.abs(qvals - 801))
 bt_index = np.argmin(np.abs(qvals - 802))

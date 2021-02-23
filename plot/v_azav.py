@@ -60,10 +60,14 @@ the_file = get_widest_range_file(datadir, 'AZ_Avgs')
 rvals = []
 rbcz = None
 
+plotdir = None
+
 args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
+    if arg == '-plotdir':
+        plotdir = args[i+1]
     if arg == '-minmaxvr':
         minmaxvr = float(args[i+1]), float(args[i+2])
     elif arg == '-minmaxvt':
@@ -143,6 +147,11 @@ if rotation:
 else:
     time_unit = compute_tdt(dirname)
     time_label = r'$\rm{TDT}$'
+
+if plotdir is None:
+    plotdir = dirname + '/plots/'
+    if not os.path.isdir(plotdir):
+        os.makedirs(plotdir)
 
 # Grid info
 rr = di['rr']

@@ -45,9 +45,6 @@ rho = eq.density
 # Directory with data and plots, make the plotting directory if it doesn't
 # already exist    
 datadir = dirname + '/data/'
-plotdir = dirname + '/plots/'
-if not os.path.isdir(plotdir):
-    os.makedirs(plotdir)
 
 # Set defaults
 minmax = None
@@ -65,10 +62,14 @@ plotboundary = True
 rvals = []
 
 # Read in CLAs (if any) to change default variable ranges and other options
+plotdir = None
+
 args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
+    if arg == '-plotdir':
+        plotdir = args[i+1]
     if arg == '-minmax':
         minmax = float(args[i+1]), float(args[i+2])
     elif arg == '-minmaxrz':
@@ -152,6 +153,11 @@ if rotation:
 else:
     time_unit = compute_tdt(dirname)
     time_label = r'$\rm{TDT}$'
+
+if plotdir is None:
+    plotdir = dirname + '/plots/'
+    if not os.path.isdir(plotdir):
+        os.makedirs(plotdir)
 
 vr_av, vt_av, vp_av = vals[:, :, lut[1]], vals[:, :, lut[2]],\
         vals[:, :, lut[3]]

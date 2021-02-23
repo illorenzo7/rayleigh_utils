@@ -53,12 +53,16 @@ rbcz = None
 # Read in CLAs (if any) to change default variable ranges and other options
 minmax = None
 
+plotdir = None
+
 args = sys.argv[2:]
 nargs = len(args)
 
 # Change other defaults
 for i in range(nargs):
     arg = args[i]
+    if arg == '-plotdir':
+        plotdir = args[i+1]
     if arg == '-minmax':
         minmax = float(args[i+1]), float(args[i+2])
     elif arg == '-rbcz':

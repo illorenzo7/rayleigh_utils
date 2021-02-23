@@ -36,10 +36,14 @@ AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
 logscale = False
 
 # Read command-line arguments (CLAs)
+plotdir = None
+
 args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
+    if arg == '-plotdir':
+        plotdir = args[i+1]
     if arg == '-rvals':
         rvals_str = args[i+1].split()
         rvals = []
@@ -83,6 +87,11 @@ if rotation:
 else:
     time_unit = compute_tdt(dirname)
     time_label = r'$\rm{TDT}$'
+
+if plotdir is None:
+    plotdir = dirname + '/plots/'
+    if not os.path.isdir(plotdir):
+        os.makedirs(plotdir)
 
 # By default plot at seven equally spaced radii
 if rvals is None:

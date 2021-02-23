@@ -17,9 +17,6 @@ dirname = sys.argv[1]
 
 # Data and plot directories
 datadir = dirname + '/data/'
-plotdir = dirname + '/plots/'
-if not os.path.isdir(plotdir):
-    os.makedirs(plotdir)
 dirname_stripped = strip_dirname(dirname)
 
 # domain bounds
@@ -125,10 +122,14 @@ chosen_eqtime = None # choose eq time a priori
 tag = ''
 
 # Get command-line arguments
+plotdir = None
+
 args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
+    if arg == '-plotdir':
+        plotdir = args[i+1]
     if arg == '-ntot': # plot w.r.t. iterations
         ntot = int(args[i+1])
     elif arg == '-xiter': # plot w.r.t. iterations
@@ -312,6 +313,11 @@ if rotation:
 else:
     time_unit = compute_tdt(dirname)
     time_label = r'$\rm{TDT}$'
+
+if plotdir is None:
+    plotdir = dirname + '/plots/'
+    if not os.path.isdir(plotdir):
+        os.makedirs(plotdir)
 
 # Take slices based on what xminmax is
 if not xiter:

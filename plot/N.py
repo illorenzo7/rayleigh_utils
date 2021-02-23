@@ -29,9 +29,6 @@ d = ro - ri
 
 # Directory with plots, make the plotting directory if it doesn't
 # already exist    
-plotdir = dirname + '/plots/'
-if not os.path.isdir(plotdir):
-    os.makedirs(plotdir)
 
 # Set defaults
 rnorm = None
@@ -41,10 +38,14 @@ rvals = [] # user can specify radii to mark by vertical lines
 tag = ''
 
 # Read command-line arguments (CLAs)
+plotdir = None
+
 args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
+    if arg == '-plotdir':
+        plotdir = args[i+1]
     if arg == '-rnorm':
         rnorm = float(args[i+1])
     elif arg == '-minmax':

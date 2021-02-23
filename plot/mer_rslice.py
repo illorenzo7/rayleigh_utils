@@ -36,10 +36,14 @@ iphi = 0 # first longitude in slice array, by default
 rvals_to_plot = None # user can specify r-values to mark by vertical lines
 
 # Read command-line arguments (CLAs)
+plotdir = None
+
 args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
+    if arg == '-plotdir':
+        plotdir = args[i+1]
     if arg == '-lats':
         lats_str = args[i+1].split()
         lats = []

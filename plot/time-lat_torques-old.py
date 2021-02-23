@@ -53,10 +53,14 @@ navg = 11 # by default average over 11 AZ_Avgs files for each time
 forced = False
 
 # Get command-line arguments
+plotdir = None
+
 args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
+    if arg == '-plotdir':
+        plotdir = args[i+1]
     if arg == '-minmax':
         minmax = float(args[i+1]), float(args[i+2])
     elif arg == '-nosave':
@@ -121,6 +125,11 @@ if rotation:
 else:
     time_unit = compute_tdt(dirname)
     time_label = r'$\rm{TDT}$'
+
+if plotdir is None:
+    plotdir = dirname + '/plots/'
+    if not os.path.isdir(plotdir):
+        os.makedirs(plotdir)
 
 torque_rs_index = np.argmin(np.abs(qvals - 1801))
 torque_mm_index = np.argmin(np.abs(qvals - 1802))

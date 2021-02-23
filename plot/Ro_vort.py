@@ -34,10 +34,14 @@ rnorm = None
 rvals = []
 log = False
 
+plotdir = None
+
 args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
+    if arg == '-plotdir':
+        plotdir = args[i+1]
     if arg == '-minmax':
         minmax = float(args[i+1]), float(args[i+2])
     elif arg == '-rnorm':
@@ -79,9 +83,6 @@ for i in range(nargs):
 # Directory with data and plots, make the plotting directory if it doesn't
 # already exist    
 datadir = dirname + '/data/'
-plotdir = dirname + '/plots/'
-if not os.path.isdir(plotdir):
-    os.makedirs(plotdir)
 
 # Get the rotation rate
 Om0 = 2.*np.pi/compute_Prot(dirname)
@@ -115,6 +116,11 @@ if rotation:
 else:
     time_unit = compute_tdt(dirname)
     time_label = r'$\rm{TDT}$'
+
+if plotdir is None:
+    plotdir = dirname + '/plots/'
+    if not os.path.isdir(plotdir):
+        os.makedirs(plotdir)
 
 # Compute the spectral Rossby number
 Ror_vort = vamp/(2.*Om0*L_omr)

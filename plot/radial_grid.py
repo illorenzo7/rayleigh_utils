@@ -20,10 +20,14 @@ domain_bounds = None
 xminmax = None
 
 fname = 'grid_info'
+plotdir = None
+
 args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
+    if arg == '-plotdir':
+        plotdir = args[i+1]
     if arg == '-fname':
         fname = args[i+1]
     elif arg == '-depths':

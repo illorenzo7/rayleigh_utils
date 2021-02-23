@@ -48,10 +48,14 @@ AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
 
 # Get command-line arguments to adjust the interval of averaging files
 minmax = None
+plotdir = None
+
 args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
+    if arg == '-plotdir':
+        plotdir = args[i+1]
     if arg == '-usefile':
         AZ_Avgs_file = args[i+1]
         AZ_Avgs_file = AZ_Avgs_file.split('/')[-1]

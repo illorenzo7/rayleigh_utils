@@ -31,9 +31,6 @@ d = ro - ri
 # Directory with data and plots, make the plotting directory if it doesn't
 # already exist    
 datadir = dirname + '/data/'
-plotdir = dirname + '/plots/'
-if not os.path.isdir(plotdir):
-    os.makedirs(plotdir)
 
 # Find the Shell_Avgs file(s) in the data directory. If there are multiple, by
 # default choose the one with widest range in the average
@@ -49,10 +46,14 @@ force_econs = False # By default, no tachocline econs term to worry about
 sep_czrz = False # plots boundary line in between cz/rz and computes
         # heating separately in both domains
 
+plotdir = None
+
 args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
+    if arg == '-plotdir':
+        plotdir = args[i+1]
     if arg == '-usefile':
         Shell_Avgs_file = args[i+1]
         Shell_Avgs_file = Shell_Avgs_file.split('/')[-1]

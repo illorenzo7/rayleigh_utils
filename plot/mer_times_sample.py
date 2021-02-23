@@ -53,6 +53,8 @@ use_az = True
 use_sh = True
 rbcz = None
 
+plotdir = None
+
 args = sys.argv[2:]
 nargs = len(args)
 
@@ -64,6 +66,8 @@ else:
 
 for i in range(nargs):
     arg = args[i]
+    if arg == '-plotdir':
+        plotdir = args[i+1]
     if arg == '-minmax':
         minmax = float(args[i+1]), float(args[i+2])
     elif arg == '-minmaxrz':
@@ -95,6 +99,11 @@ if rotation:
 else:
     time_unit = compute_tdt(dirname)
     time_label = r'$\rm{TDT}$'
+
+if plotdir is None:
+    plotdir = dirname + '/plots/'
+    if not os.path.isdir(plotdir):
+        os.makedirs(plotdir)
 
 # Figure dimensions
 subplot_width_inches = 2.5

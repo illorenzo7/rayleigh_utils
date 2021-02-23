@@ -56,10 +56,14 @@ eq = get_eq(dirname)
 rhotdsdr = eq.density*eq.temperature*eq.dsdr
 
 # Defaults and CLAs
+plotdir = None
+
 args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
+    if arg == '-plotdir':
+        plotdir = args[i+1]
     if arg == '-minmax':
         minmax = float(args[i+1]), float(args[i+2])
     elif arg == '-rnorm':

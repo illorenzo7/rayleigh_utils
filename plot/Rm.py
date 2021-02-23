@@ -34,9 +34,6 @@ d = ro - ri
 # Directory with data and plots, make the plotting directory if it doesn't
 # already exist    
 datadir = dirname + '/data/'
-plotdir = dirname + '/plots/'
-if not os.path.isdir(plotdir):
-    os.makedirs(plotdir)
 
 # Set defaults
 rnorm = None
@@ -48,10 +45,14 @@ use_hrho = False
 Shell_Avgs_file = get_widest_range_file(datadir, 'Shell_Avgs')
 
 # Read command-line arguments (CLAs)
+plotdir = None
+
 args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
+    if arg == '-plotdir':
+        plotdir = args[i+1]
     if arg == '-usefile':
         Shell_Avgs_file = args[i+1]
         Shell_Avgs_file = Shell_Avgs_file.split('/')[-1]
@@ -117,6 +118,11 @@ if rotation:
 else:
     time_unit = compute_tdt(dirname)
     time_label = r'$\rm{TDT}$'
+
+if plotdir is None:
+    plotdir = dirname + '/plots/'
+    if not os.path.isdir(plotdir):
+        os.makedirs(plotdir)
 
 # Derivative grid info
 nr = len(rr)

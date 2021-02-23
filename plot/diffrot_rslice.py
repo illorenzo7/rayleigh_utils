@@ -32,9 +32,6 @@ d = ro - ri
 # Directory with data and plots, make the plotting directory if it doesn't
 # already exist    
 datadir = dirname + '/data/'
-plotdir = dirname + '/plots/'
-if not os.path.isdir(plotdir):
-    os.makedirs(plotdir)
 
 # Set defaults
 rnorm = None
@@ -44,10 +41,14 @@ the_file = get_widest_range_file(datadir, 'AZ_Avgs')
 rvals = []
 
 # Read command-line arguments (CLAs)
+plotdir = None
+
 args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
+    if arg == '-plotdir':
+        plotdir = args[i+1]
     if arg == '-lats':
         lats_str = args[i+1].split()
         lats = []

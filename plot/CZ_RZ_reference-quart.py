@@ -64,10 +64,14 @@ dirname = sys.argv[1]
 
 savename = "ref.png"
 
+plotdir = None
+
 args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
+    if arg == '-plotdir':
+        plotdir = args[i+1]
     if arg == '-ri':
         ri = float(args[i+1])
     elif arg == '-rm':

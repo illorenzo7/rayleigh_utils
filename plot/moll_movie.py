@@ -22,6 +22,8 @@ radatadir = dirname + '/Shell_Slices/'
 file_list, int_file_list, nfiles = get_file_lists(radatadir)
 
 # Get specific range desired for plotting
+plotdir = None
+
 args = sys.argv[2:]
 nargs = len(args)
 
@@ -44,6 +46,8 @@ logscale = False
 
 for i in range(nargs):
     arg = args[i]
+    if arg == '-plotdir':
+        plotdir = args[i+1]
     if arg == '-clon':
         clon = float(args[i+1])
     elif arg == '-ir':

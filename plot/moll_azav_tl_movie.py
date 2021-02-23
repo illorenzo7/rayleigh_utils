@@ -63,11 +63,15 @@ alpha = 0.05 # how greyed out some of the TL is
 rbcz = None
 
 # Get desired data range to plot
+plotdir = None
+
 args = sys.argv[2:]
 nargs = len(args)
 default_range = True
 for i in range(nargs):
     arg = args[i]
+    if arg == '-plotdir':
+        plotdir = args[i+1]
     if arg in range_options:
         default_range = False
 
@@ -84,6 +88,8 @@ fnames = file_list[index_first:index_last+1]
 # Change other defaults
 for i in range(nargs):
     arg = args[i]
+    if arg == '-plotdir':
+        plotdir = args[i+1]
     if arg == '-minmax':
         minmax = float(args[i+1]), float(args[i+2]),\
                 float(args[i+3]), float(args[i+4]),\

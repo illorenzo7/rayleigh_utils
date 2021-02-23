@@ -30,9 +30,6 @@ d = ro - ri
 # Directory with data and plots, make the plotting directory if it doesn't
 # already exist    
 datadir = dirname + '/data/'
-plotdir = dirname + '/plots/'
-if not os.path.isdir(plotdir):
-    os.makedirs(plotdir)
 
 # Find the Shell_Avgs file(s) in the data directory. If there are multiple, by
 # default choose the one with widest range in the average
@@ -44,10 +41,14 @@ minmax = None
 rnorm = None
 rvals = []
 
+plotdir = None
+
 args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
+    if arg == '-plotdir':
+        plotdir = args[i+1]
     if arg == '-usefile':
         the_file = args[i+1]
         the_file = the_file.split('/')[-1]

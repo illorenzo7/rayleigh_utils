@@ -38,10 +38,14 @@ iiter = nfiles - 1 # by default, plot the last data file in the list
 iphi = 0 # first longitude in slice array, by default
 
 # Read command-line arguments (CLAs)
+plotdir = None
+
 args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
+    if arg == '-plotdir':
+        plotdir = args[i+1]
     if arg == '-rvals':
         rvals_str = args[i+1].split()
         rvals = []

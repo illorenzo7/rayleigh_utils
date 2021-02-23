@@ -43,6 +43,11 @@ else:
     time_unit = compute_tdt(dirname)
     time_label = r'$\rm{TDT}$'
 
+if plotdir is None:
+    plotdir = dirname + '/plots/'
+    if not os.path.isdir(plotdir):
+        os.makedirs(plotdir)
+
 
 # Data with Shell_Slices
 radatadir = dirname + '/Shell_Spectra/'
@@ -58,10 +63,14 @@ minmax = None
 tag = ''
 
 # Read command-line arguments (CLAs)
+plotdir = None
+
 args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
+    if arg == '-plotdir':
+        plotdir = args[i+1]
     if arg == '-ir':
         ir = int(args[i+1])
     elif arg == '-rval':

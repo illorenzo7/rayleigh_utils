@@ -51,10 +51,14 @@ fs = 12.
 tag = ''
 
 # Read command-line arguments (CLAs)
+plotdir = None
+
 args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
+    if arg == '-plotdir':
+        plotdir = args[i+1]
     if arg == '-var':
         varname = args[i+1]
     elif arg == '-rvals':
@@ -89,6 +93,11 @@ if rotation:
 else:
     time_unit = compute_tdt(dirname)
     time_label = r'$\rm{TDT}$'
+
+if plotdir is None:
+    plotdir = dirname + '/plots/'
+    if not os.path.isdir(plotdir):
+        os.makedirs(plotdir)
 
 # directory for plots 
 plotdir = dirname + '/plots/specav_lm/rvals_sample' + tag + '/'

@@ -40,10 +40,14 @@ xminmax = None
 plotall = False
 
 # Get command-line arguments
+plotdir = None
+
 args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
+    if arg == '-plotdir':
+        plotdir = args[i+1]
     if arg == '-xiter': # plot w.r.t. iterations
         xiter = True
     elif arg == '-usefile':
@@ -90,6 +94,11 @@ if rotation:
 else:
     time_unit = compute_tdt(dirname)
     time_label = r'$\rm{TDT}$'
+
+if plotdir is None:
+    plotdir = dirname + '/plots/'
+    if not os.path.isdir(plotdir):
+        os.makedirs(plotdir)
 
 # Get the first and last indices in the time direction, depending on 
 # xminmax

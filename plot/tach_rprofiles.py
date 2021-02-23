@@ -44,10 +44,14 @@ minmax = None
 rnorm = None
 rvals = [] # user can specify radii to mark by vertical lines
 
+plotdir = None
+
 args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
+    if arg == '-plotdir':
+        plotdir = args[i+1]
     if (arg == '-usefile'):
         Shell_Avgs_file = args[i+1]
         Shell_Avgs_file = Shell_Avgs_file.split('/')[-1]

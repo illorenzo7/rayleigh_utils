@@ -54,6 +54,8 @@ rmaxwindow = None # If present, set the bounds to zoom in on the boundaries
         # with a window of a particular size
 rminwindow = None
 
+plotdir = None
+
 args = sys.argv[2:]
 nargs = len(args)
 
@@ -72,6 +74,8 @@ ntot = None # user can specify a total number of plots they want to see
 
 for i in range(nargs):
     arg = args[i]
+    if arg == '-plotdir':
+        plotdir = args[i+1]
     if arg == '-minmax':
         minmax = float(args[i+1]), float(args[i+2])
         minmax_was_None = False
@@ -142,6 +146,11 @@ if rotation:
 else:
     time_unit = compute_tdt(dirname)
     time_label = r'$\rm{TDT}$'
+
+if plotdir is None:
+    plotdir = dirname + '/plots/'
+    if not os.path.isdir(plotdir):
+        os.makedirs(plotdir)
 
 # Directory with data and plots, make the plotting directory if it doesn't
 # already exist    
