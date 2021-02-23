@@ -173,22 +173,26 @@ nr, nt = di['nr'], di['nt']
 
 # Get induction terms
 terms = [vals[:, :, lut[1609]]] # full induction
-ind_off = 4
-terms.append(vals_bd[:, :, ind_off + 0]) # mean correlation #1
-terms.append(vals_bd[:, :, ind_off + 1]) # mean correlation #2
-terms.append(vals_bd[:, :, ind_off + 2]) # fluc correlation #1
-terms.append(vals_bd[:, :, ind_off + 3]) # fluc correlation #2
-terms.append(terms[1] + terms[2] + terms[3] + terms[4]) 
+ind_off = 15
+terms.append(vals_bd[:, :, ind_off + 0]) 
+terms.append(vals_bd[:, :, ind_off + 1])
+terms.append(vals_bd[:, :, ind_off + 2])
+terms.append(vals_bd[:, :, ind_off + 3])
+terms.append(vals_bd[:, :, ind_off + 4])
+terms.append(terms[1] + terms[2] + terms[3] + terms[4] + terms[5]) 
 # (should ~ equal full induction)
 
 # field units and labels
 units = r'$\rm{G\ s^{-1}}$'
+# old ones don't put so much effort in....
 titles = [r'$[\nabla\times(\left\langle\mathbf{v}\times\mathbf{B}\right\rangle)]_\theta$',\
     r'$\frac{1}{r}\frac{\partial}{\partial r}[r\langle v_\theta\rangle\langle B_r\rangle]$',\
     r'$-\frac{1}{r}\frac{\partial}{\partial r}[r\langle v_r\rangle\langle B_\theta\rangle]$',\
     r'$\frac{1}{r}\frac{\partial}{\partial r}[r\langle v_\theta^\prime B_r^\prime\rangle]$',\
     r'$-\frac{1}{r}\frac{\partial}{\partial r}[r\langle v_r^\prime B_\theta^\prime\rangle]$',\
     r'$-\frac{1}{r}\frac{\partial}{\partial r}[r\langle \mathbf{v}\times\mathbf{B}\rangle_\phi]$']
+
+titles = ['exact', 'deriv 1', 'deriv 2', 'deriv 3', 'deriv 4', 'curv.', 'sum'] 
 
 # Set up the actual figure from scratch
 fig_width_inches = 7. # TOTAL figure width, in inches
