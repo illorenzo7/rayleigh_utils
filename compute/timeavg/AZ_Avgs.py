@@ -73,14 +73,23 @@ if rank == 0:
     # Get all the file names in datadir and their integer counterparts
     file_list, int_file_list, nfiles = get_file_lists(radatadir)
 
-    # Get desired file list from command-line arguments
+    # get CLAs
     args = sys.argv[2:]
     nargs = len(args)
-    if nargs == 0:
+
+    # get desired analysis range
+    the_tuple = get_desired_range(int_file_list, args)
+    if the_tuple is None:
         index_first, index_last = nfiles - 101, nfiles - 1  
-        # By default average over the last 100 files
+        # By default trace over the last 100 files
     else:
-        index_first, index_last = get_desired_range(int_file_list, args)
+        index_first, index_last = the_tuple
+
+    datadir = None
+    for i in range(nargs):
+        arg = args[i]
+        if arg == '-datadir':
+            datadir = args[i+1]
 
     # Remove parts of file lists we don't need
     file_list = file_list[index_first:index_last + 1]
@@ -214,9 +223,10 @@ comm.Barrier()
 # proc 0 saves the data
 if rank == 0:
     # create data directory if it doesn't already exist
-    datadir = dirname + '/data/'
-    if not os.path.isdir(datadir):
-        os.makedirs(datadir)
+    if datadir is None:
+        datadir = dirname + '/data/'
+        if not os.path.isdir(datadir):
+            os.makedirs(datadir)
 
     # Set the timetrace savename by the directory, what we are saving,
     # and first and last iteration files for the trace

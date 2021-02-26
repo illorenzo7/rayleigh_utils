@@ -113,7 +113,7 @@ else:
     time_label = r'$\rm{TDT}$'
 
 if plotdir is None:
-    plotdir = dirname + '/plots/'
+    plotdir = dirname + '/plots/moll/rvals_sample/'
     if not os.path.isdir(plotdir):
         os.makedirs(plotdir)
 
@@ -151,11 +151,6 @@ margin_top = margin_top_inches/fig_height_inches
 subplot_width = subplot_width_inches/fig_width_inches
 subplot_height = subplot_height_inches/fig_height_inches
 
-# Make plot (sub-)directory if it doesn't already exist
-plotdir = dirname + '/plots/moll/rvals_sample/'
-if not os.path.isdir(plotdir):
-    os.makedirs(plotdir)
-    
 # Loop over rvals and make plots
 if rvals == []:
     irvals = np.arange(a.nr) # loop over everything
