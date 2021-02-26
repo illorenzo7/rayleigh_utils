@@ -210,7 +210,7 @@ for iplot in range(3):
             margin_bottom)
     ax = fig.add_axes((ax_left, ax_bottom, subplot_width, subplot_height))
     plot_azav (field_components[iplot], rr, cost, fig=fig, ax=ax,\
-        units=units, minmax=minmax[iplot], rbcz=rbcz,\
+        units=units, minmax=minmax[iplot], rbcz=rbcz, rvals=rvals,\
         minmaxrz=minmaxrz[iplot], plotlatlines=plotlatlines,\
            plotcontours=plotcontours, plotboundary=plotboundary)
     ax.set_title(titles[iplot], verticalalignment='bottom', **csfont)

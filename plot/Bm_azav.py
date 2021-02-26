@@ -178,7 +178,7 @@ fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
 ax = fig.add_axes((margin_x, margin_bottom, subplot_width, subplot_height))
 
 # Plot B_m magnitude
-plot_azav (bm, rr, cost, fig=fig, ax=ax,\
+plot_azav (bm, rr, cost, fig=fig, ax=ax, rvals=rvals,\
     units = r'$\rm{G}$', plotcontours=False,\
     minmax=minmax, plotlatlines=plotlatlines)
 
