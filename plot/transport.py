@@ -33,10 +33,6 @@ ylog = False
 # Directory with data and plots, make the plotting directory if it doesn't
 # already exist    
 datadir = dirname + '/data/'
-plotdir = dirname + '/plots/'
-if (not os.path.isdir(plotdir)):
-    os.makedirs(plotdir)
-
 plotdir = None
 
 args = sys.argv[2:]
@@ -58,6 +54,11 @@ for i in range(nargs):
         xminmax = float(args[i+1]), float(args[i+2])
     elif arg == '-00':
         plot_kappa00 = True
+
+if plotdir is None:
+    plotdir = dirname + '/plots/'
+    if not os.path.isdir(plotdir):
+        os.makedirs(plotdir)
 
 magnetism = get_parameter(dirname, 'magnetism')
 
