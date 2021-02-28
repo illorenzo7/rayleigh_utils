@@ -122,6 +122,11 @@ t2 = translate_times(iter2, dirname, translate_from='iter')['val_sec']
 time_unit = compute_Prot(dirname)
 time_label = r'$\rm{P_{rot}}$'
 
+if plotdir is None:
+    plotdir = dirname + '/plots/'
+    if not os.path.isdir(plotdir):
+        os.makedirs(plotdir)
+
 # Get frame rate rotation and compute differential rotation in the 
 # lab frame. 
 Om0 = 2.*np.pi/time_unit
