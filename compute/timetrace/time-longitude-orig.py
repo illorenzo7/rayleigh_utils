@@ -1,7 +1,6 @@
-# Routine to trace Rayleigh Shell_Slices data in time
+# Routine to trace Rayleigh G_Avgs data in time
 # Created by: Loren Matilsky
 # On: 08/15/2019
-# Parallelized: 03/02/2021
 ############################################################################
 # This routine computes the trace in time/longitude of quantities in the 
 # Shell_Slices data for a particular simulation. 
@@ -23,56 +22,6 @@
 # The final datacube output ('vals') will have shape
 # (nphi, niter, nr, nq), where nr and nq are the attributes of the shell slices
 
-# initialize communication
-from mpi4py import MPI
-comm = MPI.COMM_WORLD
-rank = comm.Get_rank()
-
-# Start timing immediately
-comm.Barrier()
-if rank == 0:
-    # timing module
-    import time
-    # info for print messages
-    import sys, os
-    sys.path.append(os.environ['raco'])
-    # import common here
-    from common import *
-    char = '.'
-    nproc = comm.Get_size()
-    t1_glob = time.time()
-    t1 = t1_glob + 0.0
-    if nproc > 1:
-        print ('processing in parallel with %i ranks' %nproc)
-        print ('communication initialized')
-    else:
-        print ('processing in serial with 1 rank')
-    print(fill_str('processes importing necessary modules', lent, char),\
-            end='')
-
-# modules needed by everyone
-import numpy as np
-# data type and reading function
-import sys, os
-sys.path.append(os.environ['rapp'])
-from rayleigh_diagnostics import Shell_Slices
-reading_func = Shell_Slices
-dataname = 'Shell_Slices'
-
-if rank == 0:
-    # modules needed only by proc 0 
-    import pickle
-
-# Checkpoint and time
-comm.Barrier()
-if rank == 0:
-    t2 = time.time()
-    print (format_time(t2 - t1))
-    print(fill_str('proc 0 distributing the file lists', lent, char),\
-            end='')
-    t1 = time.time()
-
-
 # Import relevant modules
 import numpy as np
 import pickle
@@ -90,7 +39,7 @@ dirname_stripped = strip_dirname(dirname)
 # Find the relevant place to store the data, and create the directory if it
 # doesn't already exist
 datadir = dirname + '/data/'
-if not os.path.isdir(datadir):
+if (not os.path.isdir(datadir)):
     os.makedirs(datadir)
 
 # We are interested in latitude strips from the shell slices
