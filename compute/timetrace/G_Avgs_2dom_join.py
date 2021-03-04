@@ -21,22 +21,25 @@ from common import *
 # doesn't already exist
 files = sys.argv[1].split()
 nfiles = len(files)
-dirname = sys.argv[2]
+dirname = sys.argv[1]
 datadir = dirname + '/data/' # data subdirectory of output directory
 dirname_stripped = strip_dirname(dirname)
-nfiles = len(files) # no. files to join
 
 # CLAs
 tag = ''
 delete_old_files = True # delete the partial files by default
-args = sys.argv[3:]
+args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
     if arg == '-tag':
         tag = args[i+1] + '_'
-    elif arg == '-nodel':
+    if arg == '-nodel':
         delete_old_files = False
+    if arg[-4:] == '.pkl':
+        files.append(arg)
+
+nfiles = len(files) # no. files to join
 
 print('starting trace with %s' %files[0])
 di0 = get_dict(files[0])
@@ -108,14 +111,16 @@ di_all['iter2'] = iter2
 savename = dirname_stripped + '_trace_2dom_G_Avgs_' + str(iter1).zfill(8) +\
         '_' + str(iter2).zfill(8) + '.pkl'
 savefile = datadir + savename
+f = open(savefile, 'wb')
+pickle.dump(di_all, f, protocol=4)
+f.close()
+print ("Saved joined trace in")
+print (make_bold(savefile))
+
+# only do this after proper save
 if delete_old_files:
     print (make_bold("deleting"))
     for i in range(nfiles):
         fname = files[i]
         print (fname)
         os.remove(fname)
-f = open(savefile, 'wb')
-pickle.dump(di_all, f, protocol=4)
-f.close()
-print ("Saved joined trace in")
-print (make_bold(savefile))

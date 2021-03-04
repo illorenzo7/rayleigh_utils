@@ -19,27 +19,28 @@ from common import *
 
 # Find the relevant place to store the data, and create the directory if it
 # doesn't already exist
-
-# Make opportunity for command-line args...
-args = sys.argv[1:]
-n_total_args = len(args)
-n_for_cla = 0
-for arg in args:
-    if arg == '-tag':
-        n_for_cla += 2
-
-nfiles = n_total_args - 1 - n_for_cla
-
-files = sys.argv[1:nfiles + 1]
-dirname = sys.argv[nfiles + 1]
-datadir = dirname + '/data/'
+files = []
+dirname = sys.argv[1]
+datadir = dirname + '/data/' # data subdirectory of output directory
 dirname_stripped = strip_dirname(dirname)
 
+# CLAs
 tag = ''
-for i in range(n_total_args):
+delete_old_files = True # delete the partial files by default
+args = sys.argv[2:]
+nargs = len(args)
+for i in range(nargs):
     arg = args[i]
     if arg == '-tag':
         tag = args[i+1] + '_'
+    if arg == '-nodel':
+        delete_old_files = False
+    if arg[-4:] == '.pkl':
+        files.append(arg)
+nfiles = len(files)
+
+# Find the relevant place to store the data, and create the directory if it
+# doesn't already exist
 
 # Read in all the dictionaries to be conjoined
 di_list = []
@@ -95,13 +96,16 @@ di_all['iter2'] = iter2
 savename = dirname_stripped + '_time-radius_' + tag + str(iter1).zfill(8) +\
         '_' + str(iter2).zfill(8) + '.pkl'
 savefile = datadir + savename
-print (make_bold("deleting"))
-for i in range(nfiles):
-    fname = files[i]
-    print (fname)
-    os.remove(fname)
 f = open(savefile, 'wb')
 pickle.dump(di_all, f, protocol=4)
 f.close()
 print ("Saved joined trace in")
 print (make_bold(savefile))
+
+# only do this after proper save
+if delete_old_files:
+    print (make_bold("deleting"))
+    for i in range(nfiles):
+        fname = files[i]
+        print (fname)
+        os.remove(fname)

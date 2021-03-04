@@ -28,9 +28,8 @@ from common import *
 # doesn't already exist
 
 # Make opportunity for command-line args
-files = sys.argv[1].split()
-nfiles = len(files)
-dirname = sys.argv[2]
+files = []
+dirname = sys.argv[1]
 datadir = dirname + '/data/'
 dirname_stripped = strip_dirname(dirname)
 
@@ -38,17 +37,21 @@ tag = ''
 dtype = 'azav'
 # Other choices are gav, shav, specav, merav, enstr
 delete_old_files = True # delete the partial files by default
-args = sys.argv[3:]
+args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
     if arg == '-tag':
         tag = args[i+1] + '_'
-    elif arg == '-dtype':
+    if arg == '-dtype':
         dtype = args[i+1]
-    elif arg == '-nodel':
+    if arg == '-nodel':
         delete_old_files = False
+    if arg[-4:] == '.pkl':
+        files.append(arg)
 
+nfiles = len(files)
+print ('nfiles =', nfiles)
 # Read in all the dictionaries to be conjoined
 di_list = []
 for i in range(nfiles):
@@ -157,15 +160,16 @@ elif dtype == 'enstr':
 savename = dirname_stripped + basename + tag + str(iter1).zfill(8) +\
         '_' + str(iter2).zfill(8) + '.pkl'
 savefile = datadir + savename
+f = open(savefile, 'wb')
+pickle.dump(di, f, protocol=4)
+f.close()
+print ("Saved joined average in")
+print (make_bold(savefile))
+
+# only do this after proper save
 if delete_old_files:
     print (make_bold("deleting"))
     for i in range(nfiles):
         fname = files[i]
         print (fname)
         os.remove(fname)
-
-f = open(savefile, 'wb')
-pickle.dump(di, f, protocol=4)
-f.close()
-print ("Saved joined average in")
-print (make_bold(savefile))
