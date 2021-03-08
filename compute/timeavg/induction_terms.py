@@ -308,9 +308,9 @@ for i in range(my_nfiles):
         ind_off_mean = 15
 
         # fluc terms
-        for i in range(15):
-            my_vals[:, :, ind_off + i] = my_vals[:, :, ind_off_full + i] -\
-                my_vals[:, :, ind_off_mean + i]
+        for k in range(15):
+            my_vals[:, :, ind_off + k] = my_vals[:, :, ind_off_full + k] -\
+                my_vals[:, :, ind_off_mean + k]
 
     if rank == 0:
         pcnt_done = (i + 1)/my_nfiles*100.
