@@ -202,9 +202,15 @@ for i in range(my_nfiles):
         bp_m = a.vals[:, :, a.lut[803], j].reshape((1, nt, nr))
 
         # full derivatives v
+        dvrdr = drad_3d(vr, rr)
+        dvtdr = drad_3d(vt, rr)
+        dvpdr = drad_3d(vp, rr)
+
+        # full derivatives v
         dvrdr = mer.vals[:, :, :, mer.lut[10], j]
         dvtdr = mer.vals[:, :, :, mer.lut[11], j]
         dvpdr = mer.vals[:, :, :, mer.lut[12], j]
+            1./rr_2d*drad(rr_2d*vtbr_mm, rr)*my_weight
 
         dvrdt = mer.vals[:, :, :, mer.lut[37], j]
         dvtdt = mer.vals[:, :, :, mer.lut[38], j]
