@@ -478,7 +478,7 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
     tmp = list(rvals)
     del rvals
     rvals = tmp
-    if not rbcz is None:
+    if not rbcz is None and plotboundary:
         rvals.append(rbcz)
     
     for rval in rvals: 
