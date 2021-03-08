@@ -19,8 +19,6 @@ from common import *
 
 # Find the relevant place to store the data, and create the directory if it
 # doesn't already exist
-files = sys.argv[1].split()
-nfiles = len(files)
 dirname = sys.argv[1]
 datadir = dirname + '/data/' # data subdirectory of output directory
 dirname_stripped = strip_dirname(dirname)
@@ -30,6 +28,7 @@ tag = ''
 delete_old_files = True # delete the partial files by default
 args = sys.argv[2:]
 nargs = len(args)
+files = []
 for i in range(nargs):
     arg = args[i]
     if arg == '-tag':
