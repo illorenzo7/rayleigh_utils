@@ -208,6 +208,9 @@ for i in range(my_nfiles):
             my_vals[my_count, 0] = gav
             my_vals[my_count, 1] = gav_cz
             my_vals[my_count, 2] = gav_rz
+
+            my_times[my_count] = a.time[j] 
+            my_iters[my_count] = a.iters[j]
         my_count += 1
         if rank == 0:
             pcnt_done = my_count/my_ntimes*100.
