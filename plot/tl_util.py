@@ -89,10 +89,10 @@ def plot_tl(field, times, yy, fig=None, ax=None, cmap='RdYlBu_r',\
                     logscale=logscale, symlog=symlog)
 
     # Factor out the exponent on the field and put it on the color bar
-    # assuming we want scientific notation (turn off by setting nosci=True
+    # assuming we want scientific notation (turn off by setting nosci=True)
        
     # for the linear-scaled color bars (default and posdef)
-    if not (logscale or symlog) and plotfield and not nosci:
+    if not (logscale or symlog or nosci) and plotfield:
         if rbcz is None:
             maxabs = max(np.abs(minmax[0]), np.abs(minmax[1]))
             exp = get_exp(maxabs)
