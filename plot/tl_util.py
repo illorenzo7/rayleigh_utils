@@ -7,7 +7,7 @@
 import numpy as np
 import matplotlib as mpl
 from matplotlib import ticker
-mpl.use('TkAgg')
+#mpl.use('TkAgg')
 import matplotlib.pyplot as plt
 from matplotlib import colors
 plt.rcParams['mathtext.fontset'] = 'dejavuserif'
@@ -22,7 +22,7 @@ def plot_tl(field, times, yy, fig=None, ax=None, cmap='RdYlBu_r',\
     levels=None, plottimes=None, cbar_fs=10, navg=1,\
     lw_scaling=1., showplot=False, plot_cbar=True, linthresh=None,\
     linscale=None, yvals=None, rbcz=None, minmaxrz=None,\
-    linthreshrz=None, linscalerz=None):
+    linthreshrz=None, linscalerz=None, nosci=False):
 
     ''' Takes (or creates) set of axes
     and adds a plot of [field] in time-yy space to the axes,
@@ -89,8 +89,10 @@ def plot_tl(field, times, yy, fig=None, ax=None, cmap='RdYlBu_r',\
                     logscale=logscale, symlog=symlog)
 
     # Factor out the exponent on the field and put it on the color bar
+    # assuming we want scientific notation (turn off by setting nosci=True
+       
     # for the linear-scaled color bars (default and posdef)
-    if not (logscale or symlog) and plotfield:
+    if not (logscale or symlog) and plotfield and not nosci:
         if rbcz is None:
             maxabs = max(np.abs(minmax[0]), np.abs(minmax[1]))
             exp = get_exp(maxabs)
@@ -305,9 +307,12 @@ def plot_tl(field, times, yy, fig=None, ax=None, cmap='RdYlBu_r',\
                 ticklabels[nticks - 1] = sci_format(minmax[1])
                 cbar.set_ticklabels(ticklabels)
             else:
-                cbar_label = (r'$\times10^{%i}\ $' %exp) + units
+                if nosci:
+                    cbar_label = units
+                else:
+                    cbar_label = (r'$\times10^{%i}\ $' %exp) + units
                 cbar.set_ticks([minmax[0], 0, minmax[1]])
-                cbar.set_ticklabels(['%1.1f' %minmax[0], '0', '%1.1f'\
+                cbar.set_ticklabels(['%.1f' %minmax[0], '0', '%.1f'\
                         %minmax[1]])
     
             # Put the units (and possibly the exponent) to left of colorbar

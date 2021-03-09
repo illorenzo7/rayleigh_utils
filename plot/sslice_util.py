@@ -1,5 +1,5 @@
 import matplotlib as mpl
-mpl.use('TkAgg')
+#mpl.use('TkAgg')
 from matplotlib import ticker, colors
 import matplotlib.pyplot as plt
 plt.rcParams['mathtext.fontset'] = 'dejavuserif'
