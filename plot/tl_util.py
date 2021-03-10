@@ -22,7 +22,7 @@ def plot_tl(field, times, yy, fig=None, ax=None, cmap='RdYlBu_r',\
     levels=None, plottimes=None, cbar_fs=10, navg=1,\
     lw_scaling=1., showplot=False, plot_cbar=True, linthresh=None,\
     linscale=None, yvals=None, rbcz=None, minmaxrz=None,\
-    linthreshrz=None, linscalerz=None, nosci=False):
+    linthreshrz=None, linscalerz=None, nosci=False, cbar_scaling=1.):
 
     ''' Takes (or creates) set of axes
     and adds a plot of [field] in time-yy space to the axes,
@@ -264,10 +264,10 @@ def plot_tl(field, times, yy, fig=None, ax=None, cmap='RdYlBu_r',\
             # with the same height as the subplot
             cbax_center_y = ax_bottom + ax_height/2.
             cbax_aspect = 20.
-            cbax_height = ax_height
+            cbax_height = ax_height*cbar_scaling
             cbax_width = cbax_height*fig_aspect/cbax_aspect
             
-            cbax_left = ax_right + 3./8./fig_width_inches
+            cbax_left = ax_right + 1./4./fig_width_inches
             cbax_bottom = ax_bottom
             
             cbaxes = fig.add_axes([cbax_left, cbax_bottom,\

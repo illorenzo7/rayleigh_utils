@@ -86,7 +86,7 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
         minmax=None, clon=0, clat=20, posdef=False, logscale=False,\
         lw_scaling=1., plot_cbar=True, cbar_fs=10,\
         symlog=False, linscale=None, linthresh=None, cmap=None,\
-        bold_patch=None, thickcenter=True, units=''):
+        bold_patch=None, thickcenter=True, units='', cbar_scaling=1.):
     
     if logscale:
         posdef = True
@@ -346,7 +346,7 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
         fig_aspect = ax_delta_x/ax_delta_y # assumes subplot aspect ratio is 1
             # otherwise, must multiply by proper subplot aspect ratio (=0.5 for
             # Mollweide))
-        cbar_width = 0.5*ax_delta_x # make cbar half as long as plot is wide
+        cbar_width = 0.5*ax_delta_x*cbar_scaling # make cbar half as long as plot is wide
         cbar_height = cbar_width*cbar_aspect/fig_aspect
         cbar_bottom = ax_ymin - 2.5*cbar_height
         cbar_left = ax_xmin + 0.5*ax_delta_x - 0.5*cbar_width
@@ -417,7 +417,8 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
 def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
         clon=0., posdef=False, logscale=False, symlog=False,\
         lw_scaling=1., plot_cbar=True, cbar_fs=10, linscale=None,\
-        linthresh=None, units='', cmap=None, showav=False, nosci=False): 
+        linthresh=None, units='', cmap=None, showav=False, nosci=False,\
+        cbar_scaling=1.): 
     
     if logscale:
         posdef = True # for self-consistency
@@ -593,12 +594,12 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
         ax_delta_x = ax_xmax - ax_xmin
         if symlog:
             cbar_aspect = 1./40.
-            cbar_width = 0.5*ax_delta_x # make cbar one half 
+            cbar_width = 0.5*ax_delta_x*cbar_scaling # make cbar one half 
                             # as long as plot is wide            
         else:
             cbar_aspect = 1./20.
-            cbar_width = 0.25*ax_delta_x # make cbar one quarter
-                            # as long as plot is wide            
+            cbar_width = 0.25*ax_delta_x*cbar_scaling
+            # make cbar one quarter as long as plot is wide            
         fig_width_inches, fig_height_inches = fig.get_size_inches()
         fig_aspect = fig_height_inches/fig_width_inches
         cbar_height = cbar_width*cbar_aspect/fig_aspect

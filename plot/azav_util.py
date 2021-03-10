@@ -20,10 +20,9 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
     units='', minmax=None, posdef=False, logscale=False, symlog=False,\
     plotcontours=True, plotfield=True, nlevs=10, levels=None,\
 	plotlatlines=False, rvals=[], cbar_fs=10,\
-    showplot=False, plot_cbar=True, lw_scaling=1.,\
+    showplot=False, plot_cbar=True, lw_scaling=1., cbar_scaling=1.,\
     linthresh=None, linscale=None, plotboundary=True, rbcz=None,\
     minmaxrz=None, linthreshrz=None, linscalerz=None, nosci=False):
-):
 
     ''' Takes (or creates) set of axes with physical aspect ratio 1x2
     and adds a plot of [field] in the meridional plane to the axes,
@@ -251,8 +250,8 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
             ax_xmin, ax_xmax, ax_ymin, ax_ymax = axis_range(ax)
             ax_delta_x = ax_xmax - ax_xmin
             cbar_aspect = 1./20.
-            cbar_width = 0.75*ax_delta_x # make cbar a fraction as long as\
-                    # plot is wide            
+            cbar_width = 0.75*ax_delta_x*cbar_scaling 
+            # make cbar a fraction as long as # plot is wide            
             fig_width_inches, fig_height_inches = fig.get_size_inches()
             fig_aspect = fig_height_inches/fig_width_inches
             cbar_height = cbar_width*cbar_aspect/fig_aspect
