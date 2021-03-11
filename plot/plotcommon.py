@@ -152,3 +152,133 @@ def testtex(label):
     plt.plot(range(10))
     plt.title(label)
     plt.show()
+
+def generate_cbar(fig, ax, im, aspect=1./20., length=0.75, orientation='horizontal', units='', fs=10., posdef=False, logscale=False, symlog=False, linthresh=None, linscale=None):
+
+    # get figure and axis dimensions
+    ax_xmin, ax_xmax, ax_ymin, ax_ymax = axis_range(ax)
+    ax_delta_x = ax_xmax - ax_xmin
+    ax_delta_y = ax_ymax - ax_ymin
+    fig_width_inches, fig_height_inches = fig.get_size_inches()
+    fig_aspect = fig_height_inches/fig_width_inches
+
+    # make colorbar axes and colorbar itself
+    margin_inches = 1./8.
+    margin_x = margin_inches/fig_width_inches
+    margin_y = margin_inches/fig_height_inches
+    if orientation == 'horizontal':
+        cbar_width = length*ax_delta_x
+        cbar_height = cbar_width*aspect/fig_aspect
+        cbar_left = ax_xmin + 0.5*ax_delta_x - 0.5*cbar_width
+        cbar_bottom = ax_ymin - margin_y - cbar_height
+    if orientation == 'vertical':
+        cbar_height = length*ax_delta_y
+        cbar_width = cbar_height*aspect*fig_aspect
+        cbar_left = ax_xmax + margin_x
+        cbar_bottom = ax_ymin + 0.5*ax_delta_y - 0.5*cbar_height
+    cax = fig.add_axes((cbar_left, cbar_bottom, cbar_width, cbar_height))   
+    cbar = plt.colorbar(im, cax=cax, orientation=orientation)
+        
+    # font size for the ticks
+    cax.tick_params(labelsize=fs)
+    cbar.ax.tick_params(labelsize=fs)   
+
+    # location of the ticks
+    if logscale:
+        locator = ticker.LogLocator(subs='all')
+        cbar.set_ticks(locator)
+        cbar_label = units
+    elif posdef:
+        cbar_label = (r'$\times10^{%i}\ $' %exp) + units
+        cbar.set_ticks([minmax[0], minmax[1]])
+        cbar.set_ticklabels(['%1.1f' %minmax[0],\
+                '%1.1f' %minmax[1]])
+    elif symlog:
+        cbar_label = units
+        nlin = 5
+        nlog = 6
+        lin_ticks = np.linspace(-linthresh, linthresh, nlin)
+        log_ticks1 = np.linspace(minmax[0], -linthresh, nlog,\
+                endpoint=False)
+        log_ticks2 = -log_ticks1[::-1]
+        ticks = np.hstack((log_ticks1, lin_ticks, log_ticks2))
+        nticks = nlin + 2*nlog
+        cbar.set_ticks(ticks)
+        ticklabels = []
+        for i in range(nticks):
+            ticklabels.append(r'')
+#                ticklabels[0] = sci_format(minmax[0])
+        ticklabels[nlog] = sci_format(-linthresh)
+#                ticklabels[nticks//2] = r'$0$'
+#                ticklabels[nlog + nlin - 1] = sci_format(linthresh)
+        ticklabels[nticks - 1] = sci_format(minmax[1])
+        cbar.set_ticklabels(ticklabels)
+    else:
+        if nosci:
+            cbar_label = units
+        else:
+            cbar_label = (r'$\times10^{%i}\ $' %exp) + units
+        cbar.set_ticks([minmax[0], 0, minmax[1]])
+        cbar.set_ticklabels(['%.1f' %minmax[0], '0', '%.1f'\
+                %minmax[1]])
+
+    # Title the colorbar based on the field's units
+    line_height = 1./4./fig_height_inches
+    fig.text(cbar_left + 0.5*cbar_width, cbar_bottom - line_height,\
+             cbar_label, ha='center', va='top', **csfont,\
+             fontsize=cbar_fs) 
+    #fig.text(cbax_left - 0.3*cbax_width, cbax_center_y,\
+    #        cbar_label, ha='right', va='center', rotation=90,\
+    #        fontsize=cbar_fs)
+
+    if not rbcz is None: # Make a colorbar for the RZ
+        cbar_bottom = ax_ymin - 2.5*cbar_height - 3*line_height
+        cbar_left = ax_xmin + 0.5*ax_delta_x - 0.5*cbar_width
+        cax = fig.add_axes((cbar_left, cbar_bottom, cbar_width,\
+                cbar_height))        
+        cbar = plt.colorbar(imrz, cax=cax, orientation='horizontal')
+            
+        cax.tick_params(labelsize=cbar_fs)
+        cbar.ax.tick_params(labelsize=cbar_fs)   
+        # font size for the ticks
+
+        if logscale:
+            locator = ticker.LogLocator(subs='all')
+            cbar.set_ticks(locator)
+            cbar_label = units
+        elif posdef:
+            cbar_label = (r'$\times10^{%i}\ $' %exprz) + units
+            cbar.set_ticks([minmaxrz[0], minmaxrz[1]])
+            cbar.set_ticklabels(['%1.1f' %minmaxrz[0],\
+                    '%1.1f' %minmaxrz[1]])
+        elif symlog:
+            cbar_label = units
+            nlin = 5
+            nlog = 6
+            lin_ticks = np.linspace(-linthreshrz, linthreshrz, nlin)
+            log_ticks1 = np.linspace(minmaxrz[0], -linthreshrz,\
+                    nlog, endpoint=False)
+            log_ticks2 = -log_ticks1[::-1]
+            ticks = np.hstack((log_ticks1, lin_ticks, log_ticks2))
+            nticks = nlin + 2*nlog
+            cbar.set_ticks(ticks)
+            ticklabels = []
+            for i in range(nticks):
+                ticklabels.append(r'')
+#                ticklabels[0] = sci_format(minmax[0])
+            ticklabels[nlog] = sci_format(-linthreshrz)
+#                ticklabels[nticks//2] = r'$0$'
+#                ticklabels[nlog + nlin - 1] = sci_format(linthresh)
+            ticklabels[nticks - 1] = sci_format(minmaxrz[1])
+            cbar.set_ticklabels(ticklabels)
+        else:
+            cbar_label = (r'$\times10^{%i}\ $' %exprz) + units
+            cbar.set_ticks([minmaxrz[0], 0, minmaxrz[1]])
+            cbar.set_ticklabels(['%1.1f' %minmaxrz[0], '0', '%1.1f'\
+                    %minmaxrz[1]])
+
+        # Title the colorbar based on the field's units
+        line_height = 1./4./fig_height_inches
+        fig.text(cbar_left + 0.5*cbar_width, cbar_bottom -\
+                line_height, cbar_label, ha='center', va='top',\
+                **csfont, fontsize=cbar_fs) 
