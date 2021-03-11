@@ -23,7 +23,7 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
     showplot=False, plot_cbar=True, lw_scaling=1., cbar_scaling=1.,\
     linthresh=None, linscale=None, plotboundary=True, rbcz=None,\
     minmaxrz=None, linthreshrz=None, linscalerz=None, nosci=False,\
-    cbar_pres=1):
+    cbar_prec=1):
 
     ''' Takes (or creates) set of axes with physical aspect ratio 1x2
     and adds a plot of [field] in the meridional plane to the axes,
@@ -301,7 +301,7 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
                 else:
                     cbar_label = (r'$\times10^{%i}\ $' %exp) + units
                 cbar.set_ticks([minmax[0], 0, minmax[1]])
-                fmt = '%.' + str(cbar_pres) + 'f'
+                fmt = '%.' + str(cbar_prec) + 'f'
                 cbar.set_ticklabels([fmt %minmax[0], '0', fmt\
                         %minmax[1]])
                 #cbar.set_ticklabels(['%.1f' %minmax[0], '0', '%.1f'\
