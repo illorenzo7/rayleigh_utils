@@ -1035,3 +1035,14 @@ def opt_workload(n, nproc):
         nproc_max -= diff
         nproc_min += diff
     return (nproc_min, nproc_max, n_per_proc_min, n_per_proc_max)
+
+# Thin out the arrays to not deal obscene quantities of data 
+# (and unreadable "curves")
+def thin_data(vals, ntot):
+    nx = np.shape(vals)[0]
+    nskip = nx//ntot
+    if not nskip in [0, 1]: #for ntot < 2*nx, do nothing
+        vals_new = vals[::nskip]
+    else:
+        vals_new = vals
+    return vals_new

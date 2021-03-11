@@ -353,16 +353,6 @@ if sep_czrz:
     vals_cz = vals_cz[ixmin:ixmax+1, :]
     vals_rz = vals_rz[ixmin:ixmax+1, :]
 
-# Thin out the arrays to not deal obscene quantities of data 
-# (and unreadable "curves")
-def thin_data(vals, ntot):
-    nx = np.shape(vals)[0]
-    nskip = nx//ntot
-    if not nskip in [0, 1]: #for ntot < 2*nx, do nothing
-        vals_new = vals[::nskip]
-    else:
-        vals_new = vals
-    return vals_new
 print ("ntot = %i" %ntot)
 print ("before thin_data: len(xaxis) = %i" %len(xaxis))
 xaxis = thin_data(xaxis, ntot)
