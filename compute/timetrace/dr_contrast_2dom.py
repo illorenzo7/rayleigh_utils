@@ -190,20 +190,20 @@ for i in range(my_nfiles):
             # get | Omega - Omega_mean|
             om_merplane = np.copy(a.vals[:, :, a.lut[3], j])/xx
             om_mean = np.sum(tw*om_merplane, axis=0).reshape((1, nr))
-            om = np.abs(om_merplane - om_mean)
+            om = (om_merplane - om_mean)**2.
 
             # Get the values in the CZ/RZ separately
             om_cz = om[:, :ir_bcz + 1]
             om_rz = om[:, ir_bcz + 1:]
 
             gav = np.sum(tw*om, axis=0)
-            gav = np.sum(rw*gav)
+            gav = np.sqrt(np.sum(rw*gav))
 
             gav_cz = np.sum(tw*om_cz, axis=0)
-            gav_cz = np.sum(rw_cz*gav_cz)
+            gav_cz = np.sqrt(np.sum(rw_cz*gav_cz))
 
             gav_rz = np.sum(tw*om_rz, axis=0)
-            gav_rz = np.sum(rw_rz*gav_rz)
+            gav_rz = np.sqrt(np.sum(rw_rz*gav_rz))
 
             my_vals[my_count, 0] = gav
             my_vals[my_count, 1] = gav_cz
