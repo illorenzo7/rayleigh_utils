@@ -119,13 +119,12 @@ if rank == 0:
     xx_rz = xx[:, nr_cz:]
 
     # get averaging weights for CZ and RZ separately
-    rw_cz = np.copy(rw[:nr_cz])
+    r0 = 0.9
+    ir0 = np.argmin(np.abs(rr/rsun - r0))
+    rw_cz = np.copy(rw[:ir0 + 1])
     rw_rz = np.copy(rw[nr_cz:])
     rw_cz /= np.sum(rw_cz)
     rw_rz /= np.sum(rw_rz)
-    #rw = rw.reshape((nr, 1))
-    #rw_cz = rw_cz.reshape((nr_cz, 1))
-    #rw_rz = rw_rz.reshape((nr_rz, 1))
     tw = gi.tweights.reshape((nt, 1))
 
     # Distribute file_list and my_ntimes to each process
@@ -157,11 +156,11 @@ else: # recieve my_files, my_nfiles, my_ntimes
 # Broadcast dirname, radatadir, nq
 if rank == 0:
     meta = [dirname, radatadir, nr, nr_cz, nr_rz, rw, rw_cz, rw_rz,\
-            ir_bcz, tw, nt, xx]
+            ir_bcz, tw, nt, xx, ir0]
 else:
     meta = None
 dirname, radatadir, nr, nr_cz, nr_rz, rw, rw_cz, rw_rz,\
-        ir_bcz, tw, nt, xx = comm.bcast(meta, root=0)
+        ir_bcz, tw, nt, xx, ir0 = comm.bcast(meta, root=0)
 
 # Checkpoint and time
 comm.Barrier()
@@ -190,20 +189,13 @@ for i in range(my_nfiles):
             # get | Omega - Omega_mean|
             om_merplane = np.copy(a.vals[:, :, a.lut[3], j])/xx
             om_mean = np.sum(tw*om_merplane, axis=0).reshape((1, nr))
-            om = (om_merplane - om_mean)**2.
+            om2 = np.sum((om_merplane - om_mean)**2.*tw, axis=0)
+            Dom_r = np.sqrt(om2)
 
             # Get the values in the CZ/RZ separately
-            om_cz = om[:, :ir_bcz + 1]
-            om_rz = om[:, ir_bcz + 1:]
-
-            gav = np.sum(tw*om, axis=0)
             gav = np.sqrt(np.sum(rw*gav))
-
-            gav_cz = np.sum(tw*om_cz, axis=0)
-            gav_cz = np.sqrt(np.sum(rw_cz*gav_cz))
-
-            gav_rz = np.sum(tw*om_rz, axis=0)
-            gav_rz = np.sqrt(np.sum(rw_rz*gav_rz))
+            gav_cz = np.sqrt(np.sum(rw_cz*Dom_r[:ir0+1]))
+            gav_rz = np.sqrt(np.sum(rw_rz*Dom_r[nr_cz:]))
 
             my_vals[my_count, 0] = gav
             my_vals[my_count, 1] = gav_cz
