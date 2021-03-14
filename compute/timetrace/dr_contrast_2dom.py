@@ -193,7 +193,7 @@ for i in range(my_nfiles):
             Dom_r = np.sqrt(om2)
 
             # Get the values in the CZ/RZ separately
-            gav = np.sqrt(np.sum(rw*gav))
+            gav = np.sqrt(np.sum(rw*Dom_r))
             gav_cz = np.sqrt(np.sum(rw_cz*Dom_r[:ir0+1]))
             gav_rz = np.sqrt(np.sum(rw_rz*Dom_r[nr_cz:]))
 
