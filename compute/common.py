@@ -926,7 +926,8 @@ def get_length_scales(dirname):
             vortsqh = vortsqt + vortsqp
             enstr = vortsqr + vortsqt + vortsqp
             # Read in velocity-squared of convective flows
-            vsq = vals[:, lut[422]] + vals[:, lut[423]] + vals[:, lut[424]]
+            # get this from kinetic energy
+            vsq = (vals[:, lut[410]] + vals[:, lut[411]] + vals[:, lut[412]])/eq.rho
             # Compute length scale and put it in dictionary
             L_omr = (vsq/vortsqr)**0.5
             L_omh = (vsq/vortsqh)**0.5
