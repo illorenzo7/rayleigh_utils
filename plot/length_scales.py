@@ -83,8 +83,12 @@ for i in range(nargs):
 
 # Directory with plots, make the plotting directory if it doesn't
 # already exist    
+if plotdir is None:
+    plotdir = dirname + '/plots/'
+    if not os.path.isdir(plotdir):
+        os.makedirs(plotdir)
 
-di = get_length_scales(dirname)
+di = length_scales(dirname)
 rr = di['rr']
 rr_spec = di['rr_spec']
 nr = di['nr']
@@ -147,7 +151,9 @@ plt.xlim(xmin, xmax)
 # Set the y-limits (the following values seem to "work well" for my models
 # so far...perhaps adjust this in the future. 
 
-if not minmax is None:
+if minmax is None:
+    minmax = plt.gca().get_ylim()
+else:
     plt.ylim(minmax[0], minmax[1])
 
 # Label the axes
@@ -184,7 +190,7 @@ if log:
 plt.tight_layout()
 
 # Save the plot
-print ('Saving the length_scales plot at ' + plotdir + savename + ' ...')
+print ('Saving the length_scales plot at ' + plotdir + savename)
 plt.savefig(plotdir + savename, dpi=300)
 
 # Show the plot

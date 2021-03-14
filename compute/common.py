@@ -889,7 +889,125 @@ def get_domain_bounds(dirname):
         ncheby = tuple(get_parameter(dirname, 'ncheby'))
     return ncheby, domain_bounds
 
-def get_length_scales(dirname):
+def field_amp(dirname):
+    # Make empty dictionary for field-amplitude arrays
+    di_out = dict([])
+
+    # See if run is magnetic
+    magnetism = get_parameter(dirname, 'magnetism')
+
+    # First get density
+    eq = get_eq(dirname)
+    rho = eq.rho
+    rr = eq.radius
+    nr = len(rr)
+    di_out['rr'] = rr
+    di_out['nr'] = nr
+
+    # Get data directory
+    datadir = dirname + '/data/'
+
+    # Read in the Shell_Avgs data
+    the_file = get_widest_range_file(datadir, 'Shell_Avgs')
+    if not the_file == '':
+        print ('field_amp(): Getting velocity (maybe B field) amps from '\
+                + the_file)
+        di = get_dict(datadir + the_file)
+        di_out['iter1'], di_out['iter2'] = get_iters_from_file(datadir +\
+                the_file)
+        vals = di['vals']
+        lut = di['lut']
+        try:
+            # Read in velocity-squared of flows
+            # get this from kinetic energy
+            vsqr = 2.0*vals[:, lut[402]]/eq.rho
+            vsqt = 2.0*vals[:, lut[403]]/eq.rho
+            vsqp = 2.0*vals[:, lut[404]]/eq.rho
+
+            vsqr_fluc = 2.0*vals[:, lut[410]]/eq.rho
+            vsqt_fluc = 2.0*vals[:, lut[411]]/eq.rho
+            vsqp_fluc = 2.0*vals[:, lut[412]]/eq.rho
+
+            vsqr_mean = vsqr - vsqr_fluc
+            vsqt_mean = vsqt - vsqt_fluc
+            vsqp_mean = vsqp - vsqp_fluc
+
+            di_out['vamp_r'] = np.sqrt(vsqr)
+            di_out['vamp_t'] = np.sqrt(vsqt)
+            di_out['vamp_p'] = np.sqrt(vsqp)
+            di_out['vamp_pol'] = np.sqrt(vsqr + vsqt)
+            di_out['vamp_hor'] = np.sqrt(vsqt + vsqp)
+            di_out['vamp'] = np.sqrt(vsqr + vsqt + vsqp)
+
+            di_out['vamp_r_fluc'] = np.sqrt(vsqr_fluc)
+            di_out['vamp_t_fluc'] = np.sqrt(vsqt_fluc)
+            di_out['vamp_p_fluc'] = np.sqrt(vsqp_fluc)
+            di_out['vamp_pol_fluc'] = np.sqrt(vsqr_fluc + vsqt_fluc)
+            di_out['vamp_hor_fluc'] = np.sqrt(vsqt_fluc + vsqp_fluc)
+            di_out['vamp_fluc'] = np.sqrt(vsqr_fluc + vsqt_fluc + vsqp_fluc)
+
+            di_out['vamp_r_mean'] = np.sqrt(vsqr_mean)
+            di_out['vamp_t_mean'] = np.sqrt(vsqt_mean)
+            di_out['vamp_p_mean'] = np.sqrt(vsqp_mean)
+            di_out['vamp_pol_mean'] = np.sqrt(vsqr_mean + vsqt_mean)
+            di_out['vamp_hor_mean'] = np.sqrt(vsqt_mean + vsqp_mean)
+            di_out['vamp_mean'] = np.sqrt(vsqr_mean + vsqt_mean + vsqp_mean)
+
+        except:
+            print ("field_amplitudes(): one or more quantities needed for")
+            print("velocity-squared were not output for Shell_Avgs data")
+            print("failed to compute the velocity amplitudes (vamps)")
+
+        if magnetism:
+            try:
+                # Read in B-squared fields
+                # get this from magnetic energy
+                eightpi = 8.*np.pi
+                bsqr = eightpi*vals[:, lut[1102]]
+                bsqt = eightpi*vals[:, lut[1103]]
+                bsqp = eightpi*vals[:, lut[1104]]
+
+                bsqr_fluc = eightpi*vals[:, lut[1110]]
+                bsqt_fluc = eightpi*vals[:, lut[1111]]
+                bsqp_fluc = eightpi*vals[:, lut[1112]]
+
+                bsqr_mean = bsqr - bsqr_fluc
+                bsqt_mean = bsqt - bsqt_fluc
+                bsqp_mean = bsqp - bsqp_fluc
+
+                di_out['bamp_r'] = np.sqrt(bsqr)
+                di_out['bamp_t'] = np.sqrt(bsqt)
+                di_out['bamp_p'] = np.sqrt(bsqp)
+                di_out['bamp_pol'] = np.sqrt(bsqr + bsqt)
+                di_out['bamp_hor'] = np.sqrt(bsqt + bsqp)
+                di_out['bamp'] = np.sqrt(bsqr + bsqt + bsqp)
+
+                di_out['bamp_r_fluc'] = np.sqrt(bsqr_fluc)
+                di_out['bamp_t_fluc'] = np.sqrt(bsqt_fluc)
+                di_out['bamp_p_fluc'] = np.sqrt(bsqp_fluc)
+                di_out['bamp_pol_fluc'] = np.sqrt(bsqr_fluc + bsqt_fluc)
+                di_out['bamp_hor_fluc'] = np.sqrt(bsqt_fluc + bsqp_fluc)
+                di_out['bamp_fluc'] = np.sqrt(bsqr_fluc + bsqt_fluc + bsqp_fluc)
+
+                di_out['bamp_r_mean'] = np.sqrt(bsqr_mean)
+                di_out['bamp_t_mean'] = np.sqrt(bsqt_mean)
+                di_out['bamp_p_mean'] = np.sqrt(bsqp_mean)
+                di_out['bamp_pol_mean'] = np.sqrt(bsqr_mean + bsqt_mean)
+                di_out['bamp_hor_mean'] = np.sqrt(bsqt_mean + bsqp_mean)
+                di_out['bamp_mean'] = np.sqrt(bsqr_mean + bsqt_mean + bsqp_mean)
+
+            except:
+                print ("field_amplitudes(): one or more quantities needed for")
+                print("B-squared (ME) were not output for Shell_Avgs data")
+                print("failed to compute the B-field amplitudes (bamps)")
+
+    # For consistency also compute the shell depth
+    di_out['shell_depth'] = np.max(rr) - np.min(rr)
+
+    # Return the dictionary 
+    return di_out
+
+def length_scales(dirname):
     # Make empty dictionary for length_scale arrays
     di_out = dict([])
 
@@ -908,11 +1026,13 @@ def get_length_scales(dirname):
     # Get data directory
     datadir = dirname + '/data/'
 
+    # Get field amplitudes
+    di_field_amp = field_amp(dirname)
+
     # Read in the Shell_Avgs data
     the_file = get_widest_range_file(datadir, 'Shell_Avgs')
     if not the_file == '':
-        print ('length_scales(): Getting velocity/vorticity from ' +\
-                the_file)
+        print ('length_scales(): Getting vorticity from ' + the_file)
         di = get_dict(datadir + the_file)
         di_out['iter1'], di_out['iter2'] = get_iters_from_file(datadir +\
                 the_file)
@@ -926,8 +1046,7 @@ def get_length_scales(dirname):
             vortsqh = vortsqt + vortsqp
             enstr = vortsqr + vortsqt + vortsqp
             # Read in velocity-squared of convective flows
-            # get this from kinetic energy
-            vsq = (vals[:, lut[410]] + vals[:, lut[411]] + vals[:, lut[412]])/eq.rho
+            vsq = di_field_amp['vamp_fluc']**2.0
             # Compute length scale and put it in dictionary
             L_omr = (vsq/vortsqr)**0.5
             L_omh = (vsq/vortsqh)**0.5
@@ -936,25 +1055,24 @@ def get_length_scales(dirname):
             di_out['L_omh'] = L_omh
             di_out['L_om'] = L_om
         except:
-            print ("length_scales(): one or more quantities needed for enstrophy or")
-            print("velocity-squared were not output for Shell_Avgs data")
+            print ("length_scales(): one or more quantities needed for enstrophy")
+            print("were not output for Shell_Avgs data")
             print("failed to compute L_om")
 
         if magnetism:
-            print ('Getting B fields/currents from ' + the_file)
+            print ('Getting del x B currents from ' + the_file)
             try:
                 # Read in current of convective fields
                 del_crossB2 = vals[:, lut[1015]] + vals[:, lut[1018]] +\
                         vals[:, lut[1021]]
                 # Read in B-squared of convective flows
-                B2 = 8.*np.pi*(vals[:, lut[1110]] + vals[:, lut[1111]] +\
-                        vals[:, lut[1112]])
+                B2 = di_field_amp['bamp_fluc']**2.0
                 # Compute length scale and put it in dictionary
                 L_J = (B2/del_crossB2)**0.5
                 di_out['L_J'] = L_J
             except:
                 print ("one or more quantities needed for current or")
-                print("B-squared were not output for Shell_Avgs data")
+                print("were not output for Shell_Avgs data")
                 print("failed to compute L_J, assigning it L_om ")
                 di_out['L_J'] = L_om
 
