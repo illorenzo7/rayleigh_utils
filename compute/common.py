@@ -8,7 +8,7 @@ from string_to_num import string_to_number_or_array
 sys.path.append(os.environ['rapp'])
 from reference_tools import equation_coefficients
 from rayleigh_diagnostics import G_Avgs, Shell_Slices, ReferenceState,\
-    TransportCoeffs
+    TransportCoeffs, GridInfo
 from compute_grid_info import compute_grid_info, compute_theta_grid,\
         compute_r_grid
 
@@ -1104,6 +1104,7 @@ def length_scales(dirname):
         L_vh = pir/l_rms_vh
         L_v = pir/l_rms_v
         di_out['rr_spec'] = rr_spec
+        di_out['ir_spec'] = di['rinds']
         di_out['nr_spec'] = len(rr_spec)
         di_out['L_vr'] = L_vr
         di_out['L_vh'] = L_vh
@@ -1131,6 +1132,120 @@ def length_scales(dirname):
     di_out['shell_depth'] = np.max(rr) - np.min(rr)
 
     # Return the dictionary 
+    return di_out
+
+def nonD_numbers(dirname, rbcz=None):
+    # all the nonD numbers (as functions of radius and in different zones)
+    # we could ever want
+
+    # Make empty dictionary for length_scale arrays
+    di_out = dict([])
+
+    # See if run is magnetic
+    magnetism = get_parameter(dirname, 'magnetism')
+    rotation = get_parameter(dirname, 'rotation')
+
+    # get reference state
+    eq = get_eq(dirname)
+    rr = eq.radius
+    nr = len(rr)
+    #di_out['rr'] = rr
+    #di_out['nr'] = nr
+
+    di_amp = field_amp(dirname)
+    di_len = length_scales(dirname)
+
+    # get the reference state
+    eq = get_eq(dirname)
+
+    # get the Reynolds numbers
+    shell_depth = di_len['shell_depth']
+    hrho = di_len['L_rho']
+
+    di_out['Re'] = di_amp['vamp']*shell_depth/eq.nu
+    di_out['Re_fluc'] = di_amp['vamp_fluc']*shell_depth/eq.nu
+    di_out['Re_mean'] = di_amp['vamp_mean']*shell_depth/eq.nu
+
+    di_out['Rehrho'] = di_amp['vamp']*hrho/eq.nu
+    di_out['Rehrho_fluc'] = di_amp['vamp_fluc']*hrho/eq.nu
+    di_out['Rehrho_mean'] = di_amp['vamp_fluc']*hrho/eq.nu
+
+    L_om = di_len['L_om']
+    di_out['Revort'] = di_amp['vamp']*L_om/eq.nu
+    di_out['Revort_fluc'] = di_amp['vamp_fluc']*L_om/eq.nu
+    di_out['Revort_mean'] = di_amp['vamp_mean']*L_om/eq.nu
+
+    ir_spec = di_len['ir_spec']
+    rr_spec = di_len['rr_spec']
+    L_v = di_len['L_v']
+    di_out['Respec'] = (di_amp['vamp']/eq.nu)[ir_spec]*L_v
+    di_out['Respec_fluc'] = (di_amp['vamp_fluc']/eq.nu)[ir_spec]*L_v
+    di_out['Respec_mean'] = (di_amp['vamp_mean']/eq.nu)[ir_spec]*L_v
+
+    if magnetism: # magnetic Reynolds numbers Rm
+        L_J = di_len['L_J']
+        di_out['Rm'] = di_amp['vamp']*L_J/eq.eta
+        di_out['Rm_fluc'] = di_amp['vamp_fluc']*L_J/eq.eta
+        di_out['Rm_mean'] = di_amp['vamp_mean']*L_J/eq.eta
+   
+        L_B = di_len['L_B']
+        di_out['Rmspec'] = (di_amp['vamp']/eq.eta)[ir_spec]*L_B
+        di_out['Rmspec_fluc'] = (di_amp['vamp_fluc']/eq.eta)[ir_spec]*L_B
+        di_out['Rmspec_mean'] = (di_amp['vamp_mean']/eq.eta)[ir_spec]*L_B
+
+    if rotation: # Rossby numbers
+        Om0 = 2*np.pi/compute_Prot(dirname)
+        di_out['Ro'] = di_amp['vamp']/(2.0*Om0*shell_depth)
+        di_out['Ro_fluc'] = di_amp['vamp_fluc']/(2.0*Om0*shell_depth)
+        di_out['Ro_mean'] = di_amp['vamp_mean']/(2.0*Om0*shell_depth)
+
+        di_out['Rohrho'] = di_amp['vamp']/(2.0*Om0*hrho)
+        di_out['Rohrho_fluc'] = di_amp['vamp_fluc']/(2.0*Om0*hrho)
+        di_out['Rohrho_mean'] = di_amp['vamp_mean']/(2.0*Om0*hrho)
+
+        di_out['Rovort'] = di_amp['vamp']/(2.0*Om0*L_om)
+        di_out['Rovort_fluc'] = di_amp['vamp_fluc']/(2.0*Om0*L_om)
+        di_out['Rovort_mean'] = di_amp['vamp_mean']/(2.0*Om0*L_om)
+
+        di_out['Rospec'] = (di_amp['vamp']/eq.eta)[ir_spec]/(2.0*Om0*L_v)
+        di_out['Rospec_fluc'] = (di_amp['vamp_fluc']/eq.eta)[ir_spec]/(2.0*Om0*L_v)
+        di_out['Rospec_mean'] = (di_amp['vamp_mean']/eq.eta)[ir_spec]/(2.0*Om0*L_v)
+
+    # now compute the global average of all numbers
+    gi = GridInfo(dirname + '/grid_info', '')
+    rw = gi.rweights
+    if not rbcz is None:
+        irbcz = np.argmin(np.abs(rr/rsun - rbcz))
+        irbcz_spec = np.argmin(np.abs(rr_spec/rsun - rbcz))
+        if not (irbcz == 0 or irbcz == nr - 1):
+            rwcz = rw[:irbcz+1]/np.sum(rw[:irbcz+1])
+            rwrz = rw[irbcz+1:]/np.sum(rw[irbcz+1:])
+        else:
+            print ('nonD_numbers(): dude, you entered a stupid value for')
+            print ('rbcz. you set rbcz = %1.3e' %rbcz)
+            print ('it needs be in the range [%.3f, %.3f]' %(np.min(rr)/rsun, np.max(rr)/rsun))
+            print ('resetting rbcz = None')
+            rbcz = None
+
+    all_keys = list(di_out.keys())
+    for key in all_keys:
+        if 'spec' in key:
+            di_out[key + '_gav'] = np.mean(di_out[key])
+        else:
+            di_out[key + '_gav'] = np.sum(di_out[key]*rw)
+        if not rbcz is None:
+            if 'spec' in key:
+                if not (irbcz_spec == 0 or irbcz_spec == len(rr_spec) - 1):
+                    di_out[key + '_cz'] = np.mean(di_out[key][:irbcz_spec+1])
+                    di_out[key + '_rz'] = np.mean(di_out[key][irbcz_spec+1:])
+                else:
+                    di_out[key + '_cz'] = di_out[key]
+                    di_out[key + '_rz'] = di_out[key]
+            else:
+                print ('key = ', key)
+                di_out[key + '_cz'] = np.sum(di_out[key][:irbcz+1]*rwcz)
+                di_out[key + '_rz'] = np.sum(di_out[key][irbcz+1:]*rwrz)
+    # I think we got it all!
     return di_out
 
 def opt_workload(n, nproc):
