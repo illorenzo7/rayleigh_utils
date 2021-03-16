@@ -1175,23 +1175,33 @@ def nonD_numbers(dirname, rbcz=None):
     di_out['Revort_fluc'] = di_amp['vamp_fluc']*L_om/eq.nu
     di_out['Revort_mean'] = di_amp['vamp_mean']*L_om/eq.nu
 
-    ir_spec = di_len['ir_spec']
-    rr_spec = di_len['rr_spec']
-    L_v = di_len['L_v']
-    di_out['Respec'] = (di_amp['vamp']/eq.nu)[ir_spec]*L_v
-    di_out['Respec_fluc'] = (di_amp['vamp_fluc']/eq.nu)[ir_spec]*L_v
-    di_out['Respec_mean'] = (di_amp['vamp_mean']/eq.nu)[ir_spec]*L_v
+    # Read in the Shell_Spectra data
+    datadir = dirname + '/data/'
+    the_file = get_widest_range_file(datadir, 'Shell_Spectra')
+    if the_file == '':
+        have_spec = False
+    else: 
+        have_spec = True
+
+    if have_spec:
+        ir_spec = di_len['ir_spec']
+        rr_spec = di_len['rr_spec']
+        L_v = di_len['L_v']
+        di_out['Respec'] = (di_amp['vamp']/eq.nu)[ir_spec]*L_v
+        di_out['Respec_fluc'] = (di_amp['vamp_fluc']/eq.nu)[ir_spec]*L_v
+        di_out['Respec_mean'] = (di_amp['vamp_mean']/eq.nu)[ir_spec]*L_v
 
     if magnetism: # magnetic Reynolds numbers Rm
         L_J = di_len['L_J']
         di_out['Rm'] = di_amp['vamp']*L_J/eq.eta
         di_out['Rm_fluc'] = di_amp['vamp_fluc']*L_J/eq.eta
         di_out['Rm_mean'] = di_amp['vamp_mean']*L_J/eq.eta
-   
-        L_B = di_len['L_B']
-        di_out['Rmspec'] = (di_amp['vamp']/eq.eta)[ir_spec]*L_B
-        di_out['Rmspec_fluc'] = (di_amp['vamp_fluc']/eq.eta)[ir_spec]*L_B
-        di_out['Rmspec_mean'] = (di_amp['vamp_mean']/eq.eta)[ir_spec]*L_B
+
+        if have_spec:
+            L_B = di_len['L_B']
+            di_out['Rmspec'] = (di_amp['vamp']/eq.eta)[ir_spec]*L_B
+            di_out['Rmspec_fluc'] = (di_amp['vamp_fluc']/eq.eta)[ir_spec]*L_B
+            di_out['Rmspec_mean'] = (di_amp['vamp_mean']/eq.eta)[ir_spec]*L_B
 
     if rotation: # Rossby numbers
         Om0 = 2*np.pi/compute_Prot(dirname)
@@ -1207,16 +1217,18 @@ def nonD_numbers(dirname, rbcz=None):
         di_out['Rovort_fluc'] = di_amp['vamp_fluc']/(2.0*Om0*L_om)
         di_out['Rovort_mean'] = di_amp['vamp_mean']/(2.0*Om0*L_om)
 
-        di_out['Rospec'] = (di_amp['vamp']/eq.eta)[ir_spec]/(2.0*Om0*L_v)
-        di_out['Rospec_fluc'] = (di_amp['vamp_fluc']/eq.eta)[ir_spec]/(2.0*Om0*L_v)
-        di_out['Rospec_mean'] = (di_amp['vamp_mean']/eq.eta)[ir_spec]/(2.0*Om0*L_v)
+        if have_spec:
+            di_out['Rospec'] = (di_amp['vamp']/eq.eta)[ir_spec]/(2.0*Om0*L_v)
+            di_out['Rospec_fluc'] = (di_amp['vamp_fluc']/eq.eta)[ir_spec]/(2.0*Om0*L_v)
+            di_out['Rospec_mean'] = (di_amp['vamp_mean']/eq.eta)[ir_spec]/(2.0*Om0*L_v)
 
     # now compute the global average of all numbers
     gi = GridInfo(dirname + '/grid_info', '')
     rw = gi.rweights
     if not rbcz is None:
         irbcz = np.argmin(np.abs(rr/rsun - rbcz))
-        irbcz_spec = np.argmin(np.abs(rr_spec/rsun - rbcz))
+        if have_spec:
+            irbcz_spec = np.argmin(np.abs(rr_spec/rsun - rbcz))
         if not (irbcz == 0 or irbcz == nr - 1):
             rwcz = rw[:irbcz+1]/np.sum(rw[:irbcz+1])
             rwrz = rw[irbcz+1:]/np.sum(rw[irbcz+1:])
@@ -1242,7 +1254,6 @@ def nonD_numbers(dirname, rbcz=None):
                     di_out[key + '_cz'] = di_out[key]
                     di_out[key + '_rz'] = di_out[key]
             else:
-                print ('key = ', key)
                 di_out[key + '_cz'] = np.sum(di_out[key][:irbcz+1]*rwcz)
                 di_out[key + '_rz'] = np.sum(di_out[key][irbcz+1:]*rwrz)
     # I think we got it all!
