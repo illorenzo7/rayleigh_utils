@@ -196,11 +196,12 @@ dOmdt = prefactor*amom_visc_t
 dvpdr = 1./rr_2d*(vp - amom_visc_r/mu/sint_2d)
 dvpdt = 1./rr_2d/sint_2d*(cost_2d*vp - amom_visc_t/mu)
 
-terms = [Om, dOmdr, dOmdt, vp, dvpdr, dvpdt]
+terms = [Om, dOmdr, dOmdt, np.sqrt(dOmdr**2. + dOmdt**2.),\
+        vp, dvpdr, dvpdt, np.sqrt(dvpdr**2. + dvpdt**2.)]
 
 # field units and labels
-units = [r'$\rm{s^{-1}}$', r'$\rm{s^{-1}\ cm^{-1}}$', r'$\rm{s^{-1}\ cm^{-1}}$', r'$\rm{cm\ s^{-1}}$', r'$\rm{s^{-1}}$', r'$\rm{s^{-1}}$']
-titles = ['<Om>', 'd<Om>/dr', 'd<Om>/dT', '<v_phi>', 'd<v_phi>/dr', 'd<v_phi>/dT']
+units = [r'$\rm{s^{-1}}$', r'$\rm{s^{-1}\ cm^{-1}}$', r'$\rm{s^{-1}\ cm^{-1}}$', r'$\rm{s^{-1}\ cm^{-1}}$', r'$\rm{cm\ s^{-1}}$', r'$\rm{s^{-1}}$', r'$\rm{s^{-1}}$', r'$\rm{s^{-1}}$']
+titles = ['<Om>', 'd<Om>/dr', 'd<Om>/dT', 'magnitude', '<v_phi>', 'd<v_phi>/dr', 'd<v_phi>/dT', 'magnitude']
 
 # Set up the actual figure from scratch
 fig_width_inches = 7. # TOTAL figure width, in inches
@@ -212,8 +213,8 @@ margin_bottom_inches = 0.75*(2 - (rbcz is None))
 margin_top_inches = 1 # wider top margin to accommodate subplot titles AND metadata
 margin_subplot_top_inches = 1/4 # margin to accommodate just subplot titles
 nplots = len(terms)
-ncol = 3 # put three plots per row
-nrow = np.int(np.ceil(nplots/3))
+ncol = 4 # put three plots per row
+nrow = np.int(np.ceil(nplots/ncol))
 
 subplot_width_inches = (fig_width_inches - (ncol + 1)*margin_inches)/ncol
     # Make the subplot width so that ncol subplots fit together side-by-side
