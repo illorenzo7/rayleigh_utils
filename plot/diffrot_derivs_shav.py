@@ -150,13 +150,10 @@ t1 = translate_times(iter1, dirname, translate_from='iter')['val_sec']
 t2 = translate_times(iter2, dirname, translate_from='iter')['val_sec']
 
 # Get the baseline time unit
-rotation = get_parameter(dirname, 'rotation')
-if rotation:
-    time_unit = compute_Prot(dirname)
-    time_label = r'$\rm{P_{rot}}$'
-else:
-    time_unit = compute_tdt(dirname)
-    time_label = r'$\rm{TDT}$'
+#rotation = get_parameter(dirname, 'rotation')
+time_unit = compute_Prot(dirname)
+Om0 = 2*np.pi/time_unit
+time_label = r'$\rm{P_{rot}}$'
 
 if plotdir is None:
     plotdir = dirname + '/plots/'
@@ -189,25 +186,32 @@ prefactor = -1./(rho*nu*rr_2d**2.*sint_2d**2.)
 
 # get diffrot and its derivs, spherically averaged
 gi = GridInfo(dirname + '/grid_info', '')
-tw = gi.tweights.reshape((nt, 1))
+# make lat cutoff
+lat_cutoff = 60.
+ilat1 = np.argmin(np.abs(tt_lat + lat_cutoff))
+ilat2 = np.argmin(np.abs(tt_lat - lat_cutoff))
+nt_cut = ilat2 - ilat1 + 1
+tw = gi.tweights[ilat1:ilat2+1]
+tw /= np.sum(tw)
+tw = tw.reshape((nt_cut, 1))
 Om = vp/(rr_2d*sint_2d)
 dOmdr_az = prefactor*amom_visc_r
 dOmdt_az = prefactor*amom_visc_t
-dOmdr = np.sqrt(np.sum(dOmdr_az**2., axis=0))
-dOmdt = np.sqrt(np.sum(dOmdt_az**2., axis=0))
-dOm =  np.sqrt(np.sum(dOmdr_az**2. + dOmdt_az**2., axis=0))
+dOmdr = np.sqrt(np.sum(tw*(dOmdr_az**2.)[ilat1:ilat2+1,:], axis=0))
+dOmdt = np.sqrt(np.sum(tw*(dOmdt_az**2.)[ilat1:ilat2+1,:], axis=0))
+dOm =  np.sqrt(np.sum(tw*(dOmdr_az**2. + dOmdt_az**2.)[ilat1:ilat2+1,:], axis=0))
 
 # get <v_phi> derivs
 dvpdr_az = 1./rr_2d*(vp - amom_visc_r/mu/sint_2d)
 dvpdt_az = 1./rr_2d/sint_2d*(cost_2d*vp - amom_visc_t/mu)
-dvpdr = np.sqrt(np.sum(dvpdr_az**2., axis=0))
-dvpdt = np.sqrt(np.sum(dvpdt_az**2., axis=0))
-dvp =  np.sqrt(np.sum(dvpdr_az**2. + dvpdt_az**2., axis=0))
+dvpdr = np.sqrt(np.sum(tw*dvpdr_az[ilat1:ilat2+1,:]**2., axis=0))
+dvpdt = np.sqrt(np.sum(tw*dvpdt_az[ilat1:ilat2+1,:]**2., axis=0))
+dvp =  np.sqrt(np.sum(tw*(dvpdr_az[ilat1:ilat2+1,:]**2. + dvpdt_az[ilat1:ilat2+1,:]**2.), axis=0))
 
-terms = [dOmdr, dOmdt, dOm, dOmdr/dOmdt,\
-        dvpdr, dvpdt, dvp, dvpdr/dvpdt]
-titles = ['dOm/dr', 'dOm/dT', 'magnitude', 'r/T ratio',\
-    'dvp/dr', 'dvp/dT', 'magnitude', 'r/T ratio']
+terms = [dOmdr/(Om0/rsun), dOmdt/(Om0/rsun), dOm/(Om0/rsun), dOmdr/dOmdt,\
+        dvpdr/Om0, dvpdt/Om0, dvp/Om0, dvpdr/dvpdt]
+titles = ['dOm/dr', 'dOm/dT', 'magnitude/(Om0/rsun)', 'r/T ratio',\
+    'dvp/dr', 'dvp/dT', 'magnitude/Om0', 'r/T ratio']
 
 nplots = len(terms)
 ncol = 4
@@ -217,7 +221,6 @@ fig, axs = plt.subplots(nrow, ncol, figsize=(12., 3.*nrow))
 iplot = 0
 for irow in range(nrow):
     for icol in range(ncol):
-        print ("iplot = ", iplot)
         ax = axs[irow, icol]
         term = terms[iplot]
         ax.plot(rr, term)
