@@ -19,6 +19,9 @@ dirname = sys.argv[1]
 datadir = dirname + '/data/'
 dirname_stripped = strip_dirname(dirname)
 
+# mark times
+plottimes = None
+
 # domain bounds
 ncheby, domain_bounds = get_domain_bounds(dirname)
 ri = np.min(domain_bounds)
@@ -134,6 +137,11 @@ for i in range(nargs):
         ntot = int(args[i+1])
     elif arg == '-xiter': # plot w.r.t. iterations
         xiter = True
+    elif arg == '-times':
+        strings = args[i+1].split()
+        plottimes = []
+        for string in strings:
+            plottimes.append(float(string))
     elif arg == '-usefile':
         the_file = args[i+1]
         the_file = the_file.split('/')[-1]
@@ -630,7 +638,6 @@ if ylog:
 else:
     for ax in axs.flatten():
         ax.ticklabel_format(scilimits = (-3,4), useMathText=True)
-
 
 # ===============TOTAL ENERGIES (IN BOTH ZONES)========================
 # plot total KE
@@ -1152,6 +1159,13 @@ if not ymin is None:
 if not ymax is None:
     fminmax = fminmax[0], ymax
 axs[2,0].set_ylim((fminmax[0], fminmax[1]))
+
+if not plottimes is None:
+    for ax in axs.flatten():
+        y1, y2 = ax.get_ylim()
+        yvals = np.linspace(y1, y2, 100)
+        for time in plottimes:
+            ax.plot(time + np.zeros(100), yvals,'k--')
 
 # Get ticks everywhere
 for ax in axs.flatten():
