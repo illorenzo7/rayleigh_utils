@@ -47,6 +47,7 @@ import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from rayleigh_diagnostics import AZ_Avgs, Meridional_Slices
+from common import drad, dth
 reading_func1 = AZ_Avgs
 reading_func2 = Meridional_Slices
 dataname1 = 'AZ_Avgs'
@@ -156,12 +157,12 @@ else: # recieve my_files, my_nfiles, my_ntimes
 
 # Broadcast dirname, radatadir, nq, etc.
 if rank == 0:
-    meta = [dirname, radatadir1, radatadir2, nt, nr, ntimes, rr_2d,  cott,\
-            dlnrho]
+    meta = [dirname, radatadir1, radatadir2, nt, nr, ntimes, rr, tt,\
+            rr_2d,  cott, dlnrho]
 else:
     meta = None
-dirname, radatadir1, radatadir2, nt, nr, ntimes, rr_2d, cott, dlnrho =\
-        comm.bcast(meta, root=0)
+dirname, radatadir1, radatadir2, nt, nr, ntimes, rr, tt,\
+        rr_2d, cott, dlnrho = comm.bcast(meta, root=0)
 
 # Checkpoint and time
 comm.Barrier()
