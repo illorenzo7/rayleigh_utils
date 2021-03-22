@@ -124,6 +124,10 @@ if rank == 0:
     xx = rr_2d*sint_2d
     zz = rr_2d*cost_2d
 
+    # need density derivative (for dvp/dP
+    eq = get_eq(dirname)
+    dlnrho = eq.dlnrho.reshape((1, nr))
+
     # Distribute file_list and my_ntimes to each process
     for k in range(nproc - 1, -1, -1):
         # distribute the partial file list to other procs 
@@ -152,10 +156,11 @@ else: # recieve my_files, my_nfiles, my_ntimes
 
 # Broadcast dirname, radatadir, nq, etc.
 if rank == 0:
-    meta = [dirname, radatadir1, radatadir2, nt, nr, ntimes, rr_2d,  cott]
+    meta = [dirname, radatadir1, radatadir2, nt, nr, ntimes, rr_2d,  cott,\
+            dlnrho]
 else:
     meta = None
-dirname, radatadir1, radatadir2, nt, nr, ntimes, rr_2d, cott =\
+dirname, radatadir1, radatadir2, nt, nr, ntimes, rr_2d, cott, dlnrho =\
         comm.bcast(meta, root=0)
 
 # Checkpoint and time
@@ -191,6 +196,12 @@ for i in range(my_nfiles):
         bt = mer.vals[:, :, :, mer.lut[802], j]
         bp = mer.vals[:, :, :, mer.lut[803], j]
 
+        # full poloidal vort. and current (for phi-derivatives)
+        omr = mer.vals[:, :, :, mer.lut[301], j]
+        omt = mer.vals[:, :, :, mer.lut[302], j]
+        jr = mer.vals[:, :, :, mer.lut[1001], j]
+        jt = mer.vals[:, :, :, mer.lut[1002], j]
+
         # mean v
         vr_m = a.vals[:, :, a.lut[1], j].reshape((1, nt, nr))
         vt_m = a.vals[:, :, a.lut[2], j].reshape((1, nt, nr))
@@ -201,63 +212,69 @@ for i in range(my_nfiles):
         bt_m = a.vals[:, :, a.lut[802], j].reshape((1, nt, nr))
         bp_m = a.vals[:, :, a.lut[803], j].reshape((1, nt, nr))
 
-        # full derivatives v
-        dvrdr = drad_3d(vr, rr)
-        dvtdr = drad_3d(vt, rr)
-        dvpdr = drad_3d(vp, rr)
+        # mean poloidal vort. and current (for phi-derivatives)
+        omr_m = a.vals[:, :, a.lut[301], j].reshape((1, nt, nr))
+        omt_m = a.vals[:, :, a.lut[302], j].reshape((1, nt, nr))
+        jr_m = a.vals[:, :, a.lut[1001], j].reshape((1, nt, nr))
+        jt_m = a.vals[:, :, a.lut[1002], j].reshape((1, nt, nr))
 
-        # full derivatives v
-        dvrdr = mer.vals[:, :, :, mer.lut[10], j]
-        dvtdr = mer.vals[:, :, :, mer.lut[11], j]
-        dvpdr = mer.vals[:, :, :, mer.lut[12], j]
-            1./rr_2d*drad(rr_2d*vtbr_mm, rr)*my_weight
+        # full (poloidal) derivatives v
+        dvrdr = drad(vr, rr)
+        dvtdr = drad(vt, rr)
+        dvpdr = drad(vp, rr)
 
-        dvrdt = mer.vals[:, :, :, mer.lut[37], j]
-        dvtdt = mer.vals[:, :, :, mer.lut[38], j]
-        dvpdt = mer.vals[:, :, :, mer.lut[39], j]
+        dvrdt = dth(vr, tt)/rr_2d
+        dvtdt = dth(vt, tt)/rr_2d
+        dvpdt = dth(vp, tt)/rr_2d
 
-        dvrdp = mer.vals[:, :, :, mer.lut[46], j]
-        dvtdp = mer.vals[:, :, :, mer.lut[47], j]
-        dvpdp = mer.vals[:, :, :, mer.lut[48], j]
+        # full (toroidal) derivatives v
+        dvrdp = dvpdr + (1./rr_2d)*vp + omt
+        dvtdp = dvpdt + (cott/rr_2d)*vp - omr
+        dvpdp = -dlnrho*vr - dvrdr - (2./rr_2d)*vr - dvtdt -\
+                (cott/rr_2d)*vt
 
-        # full derivatives B
-        dbrdr = mer.vals[:, :, :, mer.lut[810], j]
-        dbtdr = mer.vals[:, :, :, mer.lut[811], j]
-        dbpdr = mer.vals[:, :, :, mer.lut[812], j]
+        # full (poloidal) derivatives B
+        dbrdr = drad(br, rr)
+        dbtdr = drad(bt, rr)
+        dbpdr = drad(bp, rr)
 
-        dbrdt = mer.vals[:, :, :, mer.lut[837], j]
-        dbtdt = mer.vals[:, :, :, mer.lut[838], j]
-        dbpdt = mer.vals[:, :, :, mer.lut[839], j]
+        dbrdt = dth(br, tt)/rr_2d
+        dbtdt = dth(bt, tt)/rr_2d
+        dbpdt = dth(bp, tt)/rr_2d
 
-        dbrdp = mer.vals[:, :, :, mer.lut[846], j]
-        dbtdp = mer.vals[:, :, :, mer.lut[847], j]
-        dbpdp = mer.vals[:, :, :, mer.lut[848], j]
+        # full (toroidal) derivatives B
+        dbrdp = dbpdr + (1./rr_2d)*bp + jt
+        dbtdp = dbpdt + (cott/rr_2d)*bp - jr
+        dbpdp = -dbrdr - (2./rr_2d)*br - dbtdt - (cott/rr_2d)*bt
 
-        # mean derivatives v
-        dvrdr_m = a.vals[:, :, a.lut[10], j].reshape((1, nt, nr))
-        dvtdr_m = a.vals[:, :, a.lut[11], j].reshape((1, nt, nr))
-        dvpdr_m = a.vals[:, :, a.lut[12], j].reshape((1, nt, nr))
+        # mean (poloidal) derivatives v
+        dvrdr_m = drad(vr_m, rr)
+        dvtdr_m = drad(vt_m, rr)
+        dvpdr_m = drad(vp_m, rr)
 
-        dvrdt_m = a.vals[:, :, a.lut[37], j].reshape((1, nt, nr))
-        dvtdt_m = a.vals[:, :, a.lut[38], j].reshape((1, nt, nr))
-        dvpdt_m = a.vals[:, :, a.lut[39], j].reshape((1, nt, nr))
+        dvrdt_m = dth(vr_m, tt)/rr_2d
+        dvtdt_m = dth(vt_m, tt)/rr_2d
+        dvpdt_m = dth(vp_m, tt)/rr_2d
 
-        dvrdp_m = a.vals[:, :, a.lut[46], j].reshape((1, nt, nr))
-        dvtdp_m = a.vals[:, :, a.lut[47], j].reshape((1, nt, nr))
-        dvpdp_m = a.vals[:, :, a.lut[48], j].reshape((1, nt, nr))
+        # mean (toroidal) derivatives v
+        dvrdp_m = dvpdr_m + (1./rr_2d)*vp_m + omt_m
+        dvtdp_m = dvpdt_m + (cott/rr_2d)*vp_m - omr_m
+        dvpdp_m = -dlnrho*vr_m - dvrdr_m - (2./rr_2d)*vr_m - dvtdt_m -\
+                (cott/rr_2d)*vt_m
 
-        # mean derivatives B
-        dbrdr_m = a.vals[:, :, a.lut[810], j].reshape((1, nt, nr))
-        dbtdr_m = a.vals[:, :, a.lut[811], j].reshape((1, nt, nr))
-        dbpdr_m = a.vals[:, :, a.lut[812], j].reshape((1, nt, nr))
+        # mean (poloidal) derivatives B
+        dbrdr_m = drad(br_m, rr)
+        dbtdr_m = drad(bt_m, rr)
+        dbpdr_m = drad(bp_m, rr)
 
-        dbrdt_m = a.vals[:, :, a.lut[837], j].reshape((1, nt, nr))
-        dbtdt_m = a.vals[:, :, a.lut[838], j].reshape((1, nt, nr))
-        dbpdt_m = a.vals[:, :, a.lut[839], j].reshape((1, nt, nr))
+        dbrdt_m = dth(br_m, tt)/rr_2d
+        dbtdt_m = dth(bt_m, tt)/rr_2d
+        dbpdt_m = dth(bp_m, tt)/rr_2d
 
-        dbrdp_m = a.vals[:, :, a.lut[846], j].reshape((1, nt, nr))
-        dbtdp_m = a.vals[:, :, a.lut[847], j].reshape((1, nt, nr))
-        dbpdp_m = a.vals[:, :, a.lut[848], j].reshape((1, nt, nr))
+        # mean (toroidal) derivatives B
+        dbrdp_m = dbpdr_m + (1./rr_2d)*bp_m + jt_m
+        dbtdp_m = dbpdt_m + (cott/rr_2d)*bp_m - jr_m
+        dbpdp_m = -dbrdr_m - (2./rr_2d)*br_m - dbtdt_m - (cott/rr_2d)*bt_m
 
         # compute induction terms
 
@@ -361,7 +378,7 @@ if rank == 0:
     # Set the timetrace savename by the directory, what we are saving,
     # and first and last iteration files for the trace
     dirname_stripped = strip_dirname(dirname)
-    savename = dirname_stripped + '_induction_terms_' +\
+    savename = dirname_stripped + '_induction_terms_num_' +\
             file_list[0] + '_' + file_list[-1] + '.pkl'
     savefile = datadir + savename
 
@@ -377,5 +394,3 @@ if rank == 0:
     print (make_bold(format_time(t2 - t1_glob)))
     print ('data saved at ')
     print (make_bold(savefile))
-    print ('data saved at ')
-    print (savefile)
