@@ -19,7 +19,7 @@ from plotcommon import axis_range, default_axes_1by2, default_axes_1by1
 def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
     units='', minmax=None, posdef=False, logscale=False, symlog=False,\
     plotcontours=True, plotfield=True, nlevs=10, levels=None,\
-	plotlatlines=False, rvals=[], cbar_fs=10,\
+	plotlatlines=False, rvals=[], cbar_fs=10, cbar_aspect=1./20.,\
     showplot=False, plot_cbar=True, lw_scaling=1., cbar_scaling=1.,\
     linthresh=None, linscale=None, plotboundary=True, rbcz=None,\
     minmaxrz=None, linthreshrz=None, linscalerz=None, nosci=False,\
@@ -250,7 +250,6 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
         if plot_cbar:
             ax_xmin, ax_xmax, ax_ymin, ax_ymax = axis_range(ax)
             ax_delta_x = ax_xmax - ax_xmin
-            cbar_aspect = 1./20.
             cbar_width = 0.75*ax_delta_x*cbar_scaling 
             # make cbar a fraction as long as # plot is wide            
             fig_width_inches, fig_height_inches = fig.get_size_inches()
@@ -317,7 +316,8 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
             #        fontsize=cbar_fs)
 
             if not rbcz is None: # Make a colorbar for the RZ
-                cbar_bottom = ax_ymin - 2.5*cbar_height - 3*line_height
+                cbar_bottom = ax_ymin - 2.5*cbar_height -\
+                        2.*line_height - cbar_height
                 cbar_left = ax_xmin + 0.5*ax_delta_x - 0.5*cbar_width
                 cax = fig.add_axes((cbar_left, cbar_bottom, cbar_width,\
                         cbar_height))        
