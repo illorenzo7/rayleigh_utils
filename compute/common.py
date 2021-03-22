@@ -806,7 +806,7 @@ def drad(arr, rr): # this works for any dimension array, as long as
             rr[ir1:ir2+1], axis=arr.ndim-1)
     return darr
 
-def dth(arr, theta): # assumes theta falls along the second-to-last axis
+def dth(arr, tt): # assumes theta falls along the second-to-last axis
     # if array is > 1D
     if arr.ndim < 2:
         return np.gradient(arr, tt)
