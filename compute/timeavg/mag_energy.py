@@ -281,45 +281,45 @@ for i in range(my_nfiles):
 
         # full radial
         ind_r = dvrdt*bt + vr*dbtdt
-        ind_r += -dvtdt*br + vt*dbrdt
-        ind_r += -dvpdp*br + vp*dbrdp
+        ind_r += -(dvtdt*br + vt*dbrdt)
+        ind_r += -(dvpdp*br + vp*dbrdp)
         ind_r += dvrdp*bp + vr*dbpdp
-        ind_r += cott/rr_2d*vr*bt - vt*br
+        ind_r += cott/rr_2d*(vr*bt - vt*br)
 
         # full theta
         ind_t = dvtdp*bp + vt*dbpdp
-        ind_t += -dvpdp*bt + vp*dbtdp
-        ind_t += -dvrdr*bt + vr*dbtdr
+        ind_t += -(dvpdp*bt + vp*dbtdp)
+        ind_t += -(dvrdr*bt + vr*dbtdr)
         ind_t += dvtdr*br + vt*dbrdr
-        ind_t += 1/rr_2d*vt*br - vr*bt
+        ind_t += 1/rr_2d*(vt*br - vr*bt)
 
         # full phi
         ind_p = dvpdr*br + vp*dbrdr
-        ind_p += -dvrdr*bp + vr*dbpdr
-        ind_p += -dvtdt*bp + vt*dbpdt
+        ind_p += -(dvrdr*bp + vr*dbpdr)
+        ind_p += -(dvtdt*bp + vt*dbpdt)
         ind_p += dvpdt*bt + vp*dbtdt
-        ind_p += 1/rr_2d*vp*br - vr*bp
+        ind_p += 1/rr_2d*(vp*br - vr*bp)
 
         # mean radial
         ind_r_m = dvrdt_m*bt_m + vr*dbtdt_m
-        ind_r_m += -dvtdt_m*br_m + vt_m*dbrdt_m
-        ind_r_m += -dvpdp_m*br_m + vp_m*dbrdp_m
+        ind_r_m += -(dvtdt_m*br_m + vt_m*dbrdt_m)
+        ind_r_m += -(dvpdp_m*br_m + vp_m*dbrdp_m)
         ind_r_m += dvrdp_m*bp_m + vr_m*dbpdp_m
-        ind_r_m += cott/rr_2d*vr_m*bt_m - vt_m*br_m
+        ind_r_m += cott/rr_2d*(vr_m*bt_m - vt_m*br_m)
 
         # mean theta
         ind_t_m = dvtdp_m*bp_m + vt_m*dbpdp_m
-        ind_t_m += -dvpdp_m*bt_m + vp_m*dbtdp_m
-        ind_t_m += -dvrdr_m*bt_m + vr_m*dbtdr_m
+        ind_t_m += -(dvpdp_m*bt_m + vp_m*dbtdp_m)
+        ind_t_m += -(dvrdr_m*bt_m + vr_m*dbtdr_m)
         ind_t_m += dvtdr_m*br_m + vt_m*dbrdr_m
-        ind_t_m += 1/rr_2d*vt_m*br_m - vr_m*bt_m
+        ind_t_m += 1/rr_2d*(vt_m*br_m - vr_m*bt_m)
 
         # mean phi
         ind_p_m = dvpdr_m*br_m + vp_m*dbrdr_m
-        ind_p_m += -dvrdr_m*bp_m + vr_m*dbpdr_m
-        ind_p_m += -dvtdt_m*bp_m + vt_m*dbpdt_m
+        ind_p_m += -(dvrdr_m*bp_m + vr_m*dbpdr_m)
+        ind_p_m += -(dvtdt_m*bp_m + vt_m*dbpdt_m)
         ind_p_m += dvpdt_m*bt_m + vp_m*dbtdt_m
-        ind_p_m += 1/rr_2d*vp_m*br_m - vr_m*bp_m
+        ind_p_m += 1/rr_2d*(vp_m*br_m - vr_m*bp_m)
 
         # fluc terms
         br_f = br - br_m
