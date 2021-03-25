@@ -119,11 +119,14 @@ if rank == 0:
     nt = a0.ntheta
 
     # compute some derivative quantities for the grid
-    tt_2d, rr_2d = np.meshgrid(tt, rr, indexing='ij')
+    tt_2d = tt.reshape((nt, 1))
+    rr_2d = rr.reshape((1, nr))
     sint_2d = np.sin(tt_2d); cost_2d = np.cos(tt_2d)
     cott = cost_2d/sint_2d
     xx = rr_2d*sint_2d
     zz = rr_2d*cost_2d
+    rr_3d = rr.reshape((1, 1,  nr))
+    cott_3d = cott.reshape((1, nt, 1))
 
     # need density derivative (for dvp/dP
     eq = get_eq(dirname)
@@ -158,11 +161,11 @@ else: # recieve my_files, my_nfiles, my_ntimes
 # Broadcast dirname, radatadir, nq, etc.
 if rank == 0:
     meta = [dirname, radatadir1, radatadir2, nt, nr, ntimes, rr, tt,\
-            rr_2d,  cott, dlnrho]
+            rr_2d,  cott, rr_3d, cott_3d, dlnrho]
 else:
     meta = None
 dirname, radatadir1, radatadir2, nt, nr, ntimes, rr, tt,\
-        rr_2d, cott, dlnrho = comm.bcast(meta, root=0)
+        rr_2d, cott, rr_3d, cott_3d, dlnrho = comm.bcast(meta, root=0)
 
 # Checkpoint and time
 comm.Barrier()
