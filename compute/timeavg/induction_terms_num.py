@@ -122,15 +122,15 @@ if rank == 0:
     tt_2d = tt.reshape((nt, 1))
     rr_2d = rr.reshape((1, nr))
     sint_2d = np.sin(tt_2d); cost_2d = np.cos(tt_2d)
-    cott = cost_2d/sint_2d
+    cott = (cost/sint).reshape((nt, 1))
     xx = rr_2d*sint_2d
     zz = rr_2d*cost_2d
     rr_3d = rr.reshape((1, 1,  nr))
-    cott_3d = cott.reshape((1, nt, 1))
+    cott_3d = (cost/sint).reshape((1, nt, 1))
 
     # need density derivative (for dvp/dP
     eq = get_eq(dirname)
-    dlnrho = eq.dlnrho.reshape((1, nr))
+    dlnrho = eq.dlnrho.reshape((1, 1, nr))
 
     # Distribute file_list and my_ntimes to each process
     for k in range(nproc - 1, -1, -1):
@@ -227,58 +227,59 @@ for i in range(my_nfiles):
         dvtdr = drad(vt, rr)
         dvpdr = drad(vp, rr)
 
-        dvrdt = dth(vr, tt)/rr_2d
-        dvtdt = dth(vt, tt)/rr_2d
-        dvpdt = dth(vp, tt)/rr_2d
+        dvrdt = dth(vr, tt)/rr_3d
+        dvtdt = dth(vt, tt)/rr_3d
+        dvpdt = dth(vp, tt)/rr_3d
 
         # full (toroidal) derivatives v
-        dvrdp = dvpdr + (1./rr_2d)*vp + omt
-        dvtdp = dvpdt + (cott/rr_2d)*vp - omr
-        dvpdp = -dlnrho*vr - dvrdr - (2./rr_2d)*vr - dvtdt -\
-                (cott/rr_2d)*vt
+        dvrdp = dvpdr + (1./rr_3d)*vp + omt
+        dvtdp = dvpdt + (cott_3d/rr_3d)*vp - omr
+        dvpdp = -dlnrho*vr - dvrdr - (2./rr_3d)*vr - dvtdt -\
+                (cott_3d/rr_3d)*vt
 
         # full (poloidal) derivatives B
         dbrdr = drad(br, rr)
         dbtdr = drad(bt, rr)
         dbpdr = drad(bp, rr)
 
-        dbrdt = dth(br, tt)/rr_2d
-        dbtdt = dth(bt, tt)/rr_2d
-        dbpdt = dth(bp, tt)/rr_2d
+        dbrdt = dth(br, tt)/rr_3d
+        dbtdt = dth(bt, tt)/rr_3d
+        dbpdt = dth(bp, tt)/rr_3d
 
         # full (toroidal) derivatives B
-        dbrdp = dbpdr + (1./rr_2d)*bp + jt
-        dbtdp = dbpdt + (cott/rr_2d)*bp - jr
-        dbpdp = -dbrdr - (2./rr_2d)*br - dbtdt - (cott/rr_2d)*bt
+        dbrdp = dbpdr + (1./rr_3d)*bp + jt
+        dbtdp = dbpdt + (cott_3d/rr_3d)*bp - jr
+        dbpdp = -dbrdr - (2./rr_3d)*br - dbtdt - (cott_3d/rr_3d)*bt
 
         # mean (poloidal) derivatives v
         dvrdr_m = drad(vr_m, rr)
         dvtdr_m = drad(vt_m, rr)
         dvpdr_m = drad(vp_m, rr)
 
-        dvrdt_m = dth(vr_m, tt)/rr_2d
-        dvtdt_m = dth(vt_m, tt)/rr_2d
-        dvpdt_m = dth(vp_m, tt)/rr_2d
+        dvrdt_m = dth(vr_m, tt)/rr_3d
+        dvtdt_m = dth(vt_m, tt)/rr_3d
+        dvpdt_m = dth(vp_m, tt)/rr_3d
 
         # mean (toroidal) derivatives v
-        dvrdp_m = dvpdr_m + (1./rr_2d)*vp_m + omt_m
-        dvtdp_m = dvpdt_m + (cott/rr_2d)*vp_m - omr_m
-        dvpdp_m = -dlnrho*vr_m - dvrdr_m - (2./rr_2d)*vr_m - dvtdt_m -\
-                (cott/rr_2d)*vt_m
+        dvrdp_m = dvpdr_m + (1./rr_3d)*vp_m + omt_m
+        dvtdp_m = dvpdt_m + (cott_3d/rr_3d)*vp_m - omr_m
+        dvpdp_m = -dlnrho*vr_m - dvrdr_m - (2./rr_3d)*vr_m - dvtdt_m -\
+                (cott_3d/rr_3d)*vt_m
 
         # mean (poloidal) derivatives B
         dbrdr_m = drad(br_m, rr)
         dbtdr_m = drad(bt_m, rr)
         dbpdr_m = drad(bp_m, rr)
 
-        dbrdt_m = dth(br_m, tt)/rr_2d
-        dbtdt_m = dth(bt_m, tt)/rr_2d
-        dbpdt_m = dth(bp_m, tt)/rr_2d
+        dbrdt_m = dth(br_m, tt)/rr_3d
+        dbtdt_m = dth(bt_m, tt)/rr_3d
+        dbpdt_m = dth(bp_m, tt)/rr_3d
 
         # mean (toroidal) derivatives B
-        dbrdp_m = dbpdr_m + (1./rr_2d)*bp_m + jt_m
-        dbtdp_m = dbpdt_m + (cott/rr_2d)*bp_m - jr_m
-        dbpdp_m = -dbrdr_m - (2./rr_2d)*br_m - dbtdt_m - (cott/rr_2d)*bt_m
+        dbrdp_m = dbpdr_m + (1./rr_3d)*bp_m + jt_m
+        dbtdp_m = dbpdt_m + (cott_3d/rr_3d)*bp_m - jr_m
+        dbpdp_m = -dbrdr_m - (2./rr_3d)*br_m - dbtdt_m -\
+                (cott_3d/rr_3d)*bt_m
 
         # compute induction terms
 
@@ -288,7 +289,7 @@ for i in range(my_nfiles):
         my_vals[:, :, ind_off + 1] += -np.mean(dvtdt*br + vt*dbrdt, axis=0)*my_weight
         my_vals[:, :, ind_off + 2] += -np.mean(dvpdp*br + vp*dbrdp, axis=0)*my_weight
         my_vals[:, :, ind_off + 3] += np.mean(dvrdp*bp + vr*dbpdp, axis=0)*my_weight
-        my_vals[:, :, ind_off + 4] += cott/rr_2d*np.mean(vr*bt - vt*br, axis=0)*my_weight
+        my_vals[:, :, ind_off + 4] += (cott/rr_2d)*np.mean(vr*bt - vt*br, axis=0)*my_weight
         ind_off += 5
 
         # full theta
@@ -296,7 +297,7 @@ for i in range(my_nfiles):
         my_vals[:, :, ind_off + 1] += -np.mean(dvpdp*bt + vp*dbtdp, axis=0)*my_weight
         my_vals[:, :, ind_off + 2] += -np.mean(dvrdr*bt + vr*dbtdr, axis=0)*my_weight
         my_vals[:, :, ind_off + 3] += np.mean(dvtdr*br + vt*dbrdr, axis=0)*my_weight
-        my_vals[:, :, ind_off + 4] += 1/rr_2d*np.mean(vt*br - vr*bt, axis=0)*my_weight
+        my_vals[:, :, ind_off + 4] += (1./rr_2d)*np.mean(vt*br - vr*bt, axis=0)*my_weight
         ind_off += 5
 
         # full phi
@@ -304,7 +305,7 @@ for i in range(my_nfiles):
         my_vals[:, :, ind_off + 1] += -np.mean(dvrdr*bp + vr*dbpdr, axis=0)*my_weight
         my_vals[:, :, ind_off + 2] += -np.mean(dvtdt*bp + vt*dbpdt, axis=0)*my_weight
         my_vals[:, :, ind_off + 3] += np.mean(dvpdt*bt + vp*dbtdt, axis=0)*my_weight
-        my_vals[:, :, ind_off + 4] += 1/rr_2d*np.mean(vp*br - vr*bp, axis=0)*my_weight
+        my_vals[:, :, ind_off + 4] += 1./rr_2d*np.mean(vp*br - vr*bp, axis=0)*my_weight
         ind_off += 5
 
         # mean radial
@@ -312,7 +313,7 @@ for i in range(my_nfiles):
         my_vals[:, :, ind_off + 1] += -np.mean(dvtdt_m*br_m + vt_m*dbrdt_m, axis=0)*my_weight
         my_vals[:, :, ind_off + 2] += -np.mean(dvpdp_m*br_m + vp_m*dbrdp_m, axis=0)*my_weight
         my_vals[:, :, ind_off + 3] += np.mean(dvrdp_m*bp_m + vr_m*dbpdp_m, axis=0)*my_weight
-        my_vals[:, :, ind_off + 4] += cott/rr_2d*np.mean(vr_m*bt_m - vt_m*br_m, axis=0)*my_weight
+        my_vals[:, :, ind_off + 4] += (cott/rr_2d)*np.mean(vr_m*bt_m - vt_m*br_m, axis=0)*my_weight
         ind_off += 5
 
         # mean theta
@@ -320,7 +321,7 @@ for i in range(my_nfiles):
         my_vals[:, :, ind_off + 1] += -np.mean(dvpdp_m*bt_m + vp_m*dbtdp_m, axis=0)*my_weight
         my_vals[:, :, ind_off + 2] += -np.mean(dvrdr_m*bt_m + vr_m*dbtdr_m, axis=0)*my_weight
         my_vals[:, :, ind_off + 3] += np.mean(dvtdr_m*br_m + vt_m*dbrdr_m, axis=0)*my_weight
-        my_vals[:, :, ind_off + 4] += 1/rr_2d*np.mean(vt_m*br_m - vr_m*bt_m, axis=0)*my_weight
+        my_vals[:, :, ind_off + 4] += (1./rr_2d)*np.mean(vt_m*br_m - vr_m*bt_m, axis=0)*my_weight
         ind_off += 5
 
         # mean phi
@@ -328,7 +329,7 @@ for i in range(my_nfiles):
         my_vals[:, :, ind_off + 1] += -np.mean(dvrdr_m*bp_m + vr_m*dbpdr_m, axis=0)*my_weight
         my_vals[:, :, ind_off + 2] += -np.mean(dvtdt_m*bp_m + vt_m*dbpdt_m, axis=0)*my_weight
         my_vals[:, :, ind_off + 3] += np.mean(dvpdt_m*bt_m + vp_m*dbtdt_m, axis=0)*my_weight
-        my_vals[:, :, ind_off + 4] += 1/rr_2d*np.mean(vp_m*br_m - vr_m*bp_m, axis=0)*my_weight
+        my_vals[:, :, ind_off + 4] += (1./rr_2d)*np.mean(vp_m*br_m - vr_m*bp_m, axis=0)*my_weight
         ind_off += 5
 
         ind_off_full = 0
