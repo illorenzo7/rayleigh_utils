@@ -1,5 +1,5 @@
 # more breakdown of poloidal terms (separate derivatives) than 
-# induction_terms
+# magnetic energy terms
 # Created by: Loren Matilsky
 # On: 01/16/2021
 ##################################################################
@@ -119,18 +119,15 @@ if rank == 0:
     nt = a0.ntheta
 
     # compute some derivative quantities for the grid
-    tt_2d = tt.reshape((nt, 1))
-    rr_2d = rr.reshape((1, nr))
+    tt_2d, rr_2d = np.meshgrid(tt, rr, indexing='ij')
     sint_2d = np.sin(tt_2d); cost_2d = np.cos(tt_2d)
-    cott = (cost/sint).reshape((nt, 1))
+    cott = cost_2d/sint_2d
     xx = rr_2d*sint_2d
     zz = rr_2d*cost_2d
-    rr_3d = rr.reshape((1, 1,  nr))
-    cott_3d = (cost/sint).reshape((1, nt, 1))
 
     # need density derivative (for dvp/dP
     eq = get_eq(dirname)
-    dlnrho = eq.dlnrho.reshape((1, 1, nr))
+    dlnrho = eq.dlnrho.reshape((1, nr))
 
     # Distribute file_list and my_ntimes to each process
     for k in range(nproc - 1, -1, -1):
@@ -161,11 +158,11 @@ else: # recieve my_files, my_nfiles, my_ntimes
 # Broadcast dirname, radatadir, nq, etc.
 if rank == 0:
     meta = [dirname, radatadir1, radatadir2, nt, nr, ntimes, rr, tt,\
-            rr_2d,  cott, rr_3d, cott_3d, dlnrho]
+            rr_2d,  cott, dlnrho]
 else:
     meta = None
 dirname, radatadir1, radatadir2, nt, nr, ntimes, rr, tt,\
-        rr_2d, cott, rr_3d, cott_3d, dlnrho = comm.bcast(meta, root=0)
+        rr_2d, cott, dlnrho = comm.bcast(meta, root=0)
 
 # Checkpoint and time
 comm.Barrier()
@@ -179,7 +176,7 @@ if rank == 0:
     t1 = time.time()
 
 # Now analyze the data
-nq = 45
+nq = 9
 my_vals = np.zeros((nt, nr, nq))
 # "my_vals will be a weighted sum"
 my_weight = 1./ntimes
@@ -227,59 +224,58 @@ for i in range(my_nfiles):
         dvtdr = drad(vt, rr)
         dvpdr = drad(vp, rr)
 
-        dvrdt = dth(vr, tt)/rr_3d
-        dvtdt = dth(vt, tt)/rr_3d
-        dvpdt = dth(vp, tt)/rr_3d
+        dvrdt = dth(vr, tt)/rr_2d
+        dvtdt = dth(vt, tt)/rr_2d
+        dvpdt = dth(vp, tt)/rr_2d
 
         # full (toroidal) derivatives v
-        dvrdp = dvpdr + (1./rr_3d)*vp + omt
-        dvtdp = dvpdt + (cott_3d/rr_3d)*vp - omr
-        dvpdp = -dlnrho*vr - dvrdr - (2./rr_3d)*vr - dvtdt -\
-                (cott_3d/rr_3d)*vt
+        dvrdp = dvpdr + (1./rr_2d)*vp + omt
+        dvtdp = dvpdt + (cott/rr_2d)*vp - omr
+        dvpdp = -dlnrho*vr - dvrdr - (2./rr_2d)*vr - dvtdt -\
+                (cott/rr_2d)*vt
 
         # full (poloidal) derivatives B
         dbrdr = drad(br, rr)
         dbtdr = drad(bt, rr)
         dbpdr = drad(bp, rr)
 
-        dbrdt = dth(br, tt)/rr_3d
-        dbtdt = dth(bt, tt)/rr_3d
-        dbpdt = dth(bp, tt)/rr_3d
+        dbrdt = dth(br, tt)/rr_2d
+        dbtdt = dth(bt, tt)/rr_2d
+        dbpdt = dth(bp, tt)/rr_2d
 
         # full (toroidal) derivatives B
-        dbrdp = dbpdr + (1./rr_3d)*bp + jt
-        dbtdp = dbpdt + (cott_3d/rr_3d)*bp - jr
-        dbpdp = -dbrdr - (2./rr_3d)*br - dbtdt - (cott_3d/rr_3d)*bt
+        dbrdp = dbpdr + (1./rr_2d)*bp + jt
+        dbtdp = dbpdt + (cott/rr_2d)*bp - jr
+        dbpdp = -dbrdr - (2./rr_2d)*br - dbtdt - (cott/rr_2d)*bt
 
         # mean (poloidal) derivatives v
         dvrdr_m = drad(vr_m, rr)
         dvtdr_m = drad(vt_m, rr)
         dvpdr_m = drad(vp_m, rr)
 
-        dvrdt_m = dth(vr_m, tt)/rr_3d
-        dvtdt_m = dth(vt_m, tt)/rr_3d
-        dvpdt_m = dth(vp_m, tt)/rr_3d
+        dvrdt_m = dth(vr_m, tt)/rr_2d
+        dvtdt_m = dth(vt_m, tt)/rr_2d
+        dvpdt_m = dth(vp_m, tt)/rr_2d
 
         # mean (toroidal) derivatives v
-        dvrdp_m = dvpdr_m + (1./rr_3d)*vp_m + omt_m
-        dvtdp_m = dvpdt_m + (cott_3d/rr_3d)*vp_m - omr_m
-        dvpdp_m = -dlnrho*vr_m - dvrdr_m - (2./rr_3d)*vr_m - dvtdt_m -\
-                (cott_3d/rr_3d)*vt_m
+        dvrdp_m = dvpdr_m + (1./rr_2d)*vp_m + omt_m
+        dvtdp_m = dvpdt_m + (cott/rr_2d)*vp_m - omr_m
+        dvpdp_m = -dlnrho*vr_m - dvrdr_m - (2./rr_2d)*vr_m - dvtdt_m -\
+                (cott/rr_2d)*vt_m
 
         # mean (poloidal) derivatives B
         dbrdr_m = drad(br_m, rr)
         dbtdr_m = drad(bt_m, rr)
         dbpdr_m = drad(bp_m, rr)
 
-        dbrdt_m = dth(br_m, tt)/rr_3d
-        dbtdt_m = dth(bt_m, tt)/rr_3d
-        dbpdt_m = dth(bp_m, tt)/rr_3d
+        dbrdt_m = dth(br_m, tt)/rr_2d
+        dbtdt_m = dth(bt_m, tt)/rr_2d
+        dbpdt_m = dth(bp_m, tt)/rr_2d
 
         # mean (toroidal) derivatives B
-        dbrdp_m = dbpdr_m + (1./rr_3d)*bp_m + jt_m
-        dbtdp_m = dbpdt_m + (cott_3d/rr_3d)*bp_m - jr_m
-        dbpdp_m = -dbrdr_m - (2./rr_3d)*br_m - dbtdt_m -\
-                (cott_3d/rr_3d)*bt_m
+        dbrdp_m = dbpdr_m + (1./rr_2d)*bp_m + jt_m
+        dbtdp_m = dbpdt_m + (cott/rr_2d)*bp_m - jr_m
+        dbpdp_m = -dbrdr_m - (2./rr_2d)*br_m - dbtdt_m - (cott/rr_2d)*bt_m
 
         # compute induction terms
 
@@ -288,42 +284,42 @@ for i in range(my_nfiles):
         ind_r += -(dvtdt*br + vt*dbrdt)
         ind_r += -(dvpdp*br + vp*dbrdp)
         ind_r += dvrdp*bp + vr*dbpdp
-        ind_r += (cott_3d/rr_3d)*(vr*bt - vt*br)
+        ind_r += cott/rr_2d*(vr*bt - vt*br)
 
         # full theta
         ind_t = dvtdp*bp + vt*dbpdp
         ind_t += -(dvpdp*bt + vp*dbtdp)
         ind_t += -(dvrdr*bt + vr*dbtdr)
         ind_t += dvtdr*br + vt*dbrdr
-        ind_t += (1./rr_3d)*(vt*br - vr*bt)
+        ind_t += 1/rr_2d*(vt*br - vr*bt)
 
         # full phi
         ind_p = dvpdr*br + vp*dbrdr
         ind_p += -(dvrdr*bp + vr*dbpdr)
         ind_p += -(dvtdt*bp + vt*dbpdt)
         ind_p += dvpdt*bt + vp*dbtdt
-        ind_p += (1./rr_3d)*(vp*br - vr*bp)
+        ind_p += 1/rr_2d*(vp*br - vr*bp)
 
         # mean radial
         ind_r_m = dvrdt_m*bt_m + vr*dbtdt_m
         ind_r_m += -(dvtdt_m*br_m + vt_m*dbrdt_m)
         ind_r_m += -(dvpdp_m*br_m + vp_m*dbrdp_m)
         ind_r_m += dvrdp_m*bp_m + vr_m*dbpdp_m
-        ind_r_m += (cott_3d/rr_3d)*(vr_m*bt_m - vt_m*br_m)
+        ind_r_m += cott/rr_2d*(vr_m*bt_m - vt_m*br_m)
 
         # mean theta
         ind_t_m = dvtdp_m*bp_m + vt_m*dbpdp_m
         ind_t_m += -(dvpdp_m*bt_m + vp_m*dbtdp_m)
         ind_t_m += -(dvrdr_m*bt_m + vr_m*dbtdr_m)
         ind_t_m += dvtdr_m*br_m + vt_m*dbrdr_m
-        ind_t_m += (1./rr_3d)*(vt_m*br_m - vr_m*bt_m)
+        ind_t_m += 1/rr_2d*(vt_m*br_m - vr_m*bt_m)
 
         # mean phi
         ind_p_m = dvpdr_m*br_m + vp_m*dbrdr_m
         ind_p_m += -(dvrdr_m*bp_m + vr_m*dbpdr_m)
         ind_p_m += -(dvtdt_m*bp_m + vt_m*dbpdt_m)
         ind_p_m += dvpdt_m*bt_m + vp_m*dbtdt_m
-        ind_p_m += (1./rr_3d)*(vp_m*br_m - vr_m*bp_m)
+        ind_p_m += 1/rr_2d*(vp_m*br_m - vr_m*bp_m)
 
         # fluc terms
         br_f = br - br_m
@@ -389,7 +385,7 @@ if rank == 0:
     # Set the timetrace savename by the directory, what we are saving,
     # and first and last iteration files for the trace
     dirname_stripped = strip_dirname(dirname)
-    savename = dirname_stripped + '_induction_terms_num_' +\
+    savename = dirname_stripped + '_mag_energy_' +\
             file_list[0] + '_' + file_list[-1] + '.pkl'
     savefile = datadir + savename
 
