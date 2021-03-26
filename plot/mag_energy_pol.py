@@ -252,7 +252,7 @@ else:
 fsize = 12
 fig.text(margin_x, 1 - 0.1*margin_top, dirname_stripped,\
          ha='left', va='top', fontsize=fsize, **csfont)
-fig.text(margin_x, 1 - 0.3*margin_top, 'inductive work (tot)',\
+fig.text(margin_x, 1 - 0.3*margin_top, 'inductive work (poloidal)',\
          ha='left', va='top', fontsize=fsize, **csfont)
 fig.text(margin_x, 1 - 0.5*margin_top, time_string,\
          ha='left', va='top', fontsize=fsize, **csfont)

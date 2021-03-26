@@ -183,7 +183,7 @@ terms = [ind_tot, ind_mmm, ind_ppp, ind_rest]
 
 # field units and labels
 units = r'$\rm{erg\ s^{-1}\ cm^{-3}}$'
-titles = ['tot (pol.)', 'mmm (pol.)', 'fff (pol.)', 'the rest (pol.)']
+titles = ['tot (tor.)', 'mmm (tor.)', 'fff (tor.)', 'the rest (tor.)']
 
 # Set up the actual figure from scratch
 fig_width_inches = 7. # TOTAL figure width, in inches
@@ -252,7 +252,7 @@ else:
 fsize = 12
 fig.text(margin_x, 1 - 0.1*margin_top, dirname_stripped,\
          ha='left', va='top', fontsize=fsize, **csfont)
-fig.text(margin_x, 1 - 0.3*margin_top, 'inductive work (tot)',\
+fig.text(margin_x, 1 - 0.3*margin_top, 'inductive work (toroidal)',\
          ha='left', va='top', fontsize=fsize, **csfont)
 fig.text(margin_x, 1 - 0.5*margin_top, time_string,\
          ha='left', va='top', fontsize=fsize, **csfont)
