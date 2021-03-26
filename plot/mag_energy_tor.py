@@ -138,7 +138,7 @@ for i in range(nargs):
         tag = '_' + args[i+1]
 
 # Get the terms:
-print ('Getting work (pol) from ' + datadir + the_file)
+print ('Getting work (tor) from ' + datadir + the_file)
 di = get_dict(datadir + the_file)
 
 iter1, iter2 = di['iter1'], di['iter2']
