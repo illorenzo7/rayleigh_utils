@@ -281,49 +281,43 @@ for i in range(my_nfiles):
         dbpdp_m = -dbrdr_m - (2./rr_3d)*br_m - dbtdt_m -\
                 (cott_3d/rr_3d)*bt_m
 
-        # compute induction terms
+        # compute induction shear terms
 
         # full radial
-        ind_r = dvrdt*bt + vr*dbtdt
-        ind_r += -(dvtdt*br + vt*dbrdt)
-        ind_r += -(dvpdp*br + vp*dbrdp)
-        ind_r += dvrdp*bp + vr*dbpdp
-        ind_r += (cott_3d/rr_3d)*(vr*bt - vt*br)
+        ind_r = dvrdr*br
+        ind_r += dvrdt*bt
+        ind_r += dvrdp*bp
+        ind_r += -(1./rr_3d)*(vt*bt + vp*bp)
 
         # full theta
-        ind_t = dvtdp*bp + vt*dbpdp
-        ind_t += -(dvpdp*bt + vp*dbtdp)
-        ind_t += -(dvrdr*bt + vr*dbtdr)
-        ind_t += dvtdr*br + vt*dbrdr
-        ind_t += (1./rr_3d)*(vt*br - vr*bt)
+        ind_t = dvtdr*br
+        ind_t += dvtdt*bt
+        ind_t += dvtdp*bp
+        ind_t += (1./rr_3d)*(bt*vr - cott_3d*vp*bp)
 
         # full phi
-        ind_p = dvpdr*br + vp*dbrdr
-        ind_p += -(dvrdr*bp + vr*dbpdr)
-        ind_p += -(dvtdt*bp + vt*dbpdt)
-        ind_p += dvpdt*bt + vp*dbtdt
-        ind_p += (1./rr_3d)*(vp*br - vr*bp)
+        ind_p = dvpdr*br
+        ind_p += dvpdt*bt
+        ind_p += dvpdp*bp
+        ind_p += (1./rr_3d)*(bp*vr + cott_3d*bp*vt)
 
         # mean radial
-        ind_r_m = dvrdt_m*bt_m + vr*dbtdt_m
-        ind_r_m += -(dvtdt_m*br_m + vt_m*dbrdt_m)
-        ind_r_m += -(dvpdp_m*br_m + vp_m*dbrdp_m)
-        ind_r_m += dvrdp_m*bp_m + vr_m*dbpdp_m
-        ind_r_m += (cott_3d/rr_3d)*(vr_m*bt_m - vt_m*br_m)
+        ind_r_m = dvrdr_m*br_m
+        ind_r_m += dvrdt_m*bt_m
+        ind_r_m += dvrdp_m*bp_m
+        ind_r_m += -(1./rr_3d)*(vt_m*bt_m + vp_m*bp_m)
 
         # mean theta
-        ind_t_m = dvtdp_m*bp_m + vt_m*dbpdp_m
-        ind_t_m += -(dvpdp_m*bt_m + vp_m*dbtdp_m)
-        ind_t_m += -(dvrdr_m*bt_m + vr_m*dbtdr_m)
-        ind_t_m += dvtdr_m*br_m + vt_m*dbrdr_m
-        ind_t_m += (1./rr_3d)*(vt_m*br_m - vr_m*bt_m)
+        ind_t_m = dvtdr_m*br_m
+        ind_t_m += dvtdt_m*bt_m
+        ind_t_m += dvtdp_m*bp_m
+        ind_t_m += (1./rr_3d)*(bt_m*vr_m - cott_3d*vp_m*bp_m)
 
-        # mean phi
-        ind_p_m = dvpdr_m*br_m + vp_m*dbrdr_m
-        ind_p_m += -(dvrdr_m*bp_m + vr_m*dbpdr_m)
-        ind_p_m += -(dvtdt_m*bp_m + vt_m*dbpdt_m)
-        ind_p_m += dvpdt_m*bt_m + vp_m*dbtdt_m
-        ind_p_m += (1./rr_3d)*(vp_m*br_m - vr_m*bp_m)
+        # full phi
+        ind_p_m = dvpdr_m*br_m
+        ind_p_m += dvpdt_m*bt_m
+        ind_p_m += dvpdp_m*bp_m
+        ind_p_m += (1./rr_3d)*(bp_m*vr_m + cott_3d*bp_m*vt_m)
 
         # fluc terms
         br_f = br - br_m
@@ -389,7 +383,7 @@ if rank == 0:
     # Set the timetrace savename by the directory, what we are saving,
     # and first and last iteration files for the trace
     dirname_stripped = strip_dirname(dirname)
-    savename = dirname_stripped + '_induction_terms_num_' +\
+    savename = dirname_stripped + '_mag_energy_shear_' +\
             file_list[0] + '_' + file_list[-1] + '.pkl'
     savefile = datadir + savename
 
