@@ -1,27 +1,30 @@
-# Routine to trace Rayleigh Shell_Slices data in time
+# Routine to trace AZ_Avgs in time/latitude space (pick different radii)
 # Created by: Loren Matilsky
-# On: 08/15/2019
-# Parallelized: 03/02/2021
-############################################################################
-# This routine computes the trace in time/longitude of quantities in the 
-# Shell_Slices data for a particular simulation. 
+# On: 02/27/2019
+# Parallelized: 12/12/2020
+##################################################################
+# This routine computes the trace in time/latitude of quantities in the 
+# AZ_Avgs data for a particular simulation. 
+# 
+# By default, the quantities traced are the nq (=5, or 8) fluid variables 
+# (vr, vt, vp, s, p, [bp, bt, and bp] (if magnetism present).
+# This may be changed via the '-qvals' CLA, e.g., -qvals '1 2 3 1425 1427'.
 #
-# By default, the 8 variables are computed at each time, in a latitude strip
-# defined by (clat, dlat) = ([central latitude for average],
-# [range of latitudes to average over]) at the depths the shell slices were 
-# sampled. 
+# By default, the 8 variables are computed at each time (for all latitudes)
+# at ndepths = 9 depths equally spaced throughout the shell (like the shell
+# slice levels).
+# This may be changed via the '-depths' CLA, e.g., -depths '0 0.4 0.75 0.95'
+# or -rzquarter, -rzhalf, -rz75, -rz1 (depth RZ = 1/4 depth CZ, 1/2, 3/4, 1)
+# will generate 9 depths in each zone
+# (assuming rm = 5.0 x 10^10 cm, ro = 6.5860209 x 10^10 cm)
+# also can be changed with -rvals '.719 .863' [radii units of rsun]
+# or -rvalscm '5e10 5.8e10' [radii units of cm]
 #
-# The strip range can be changed using the options -clat and -dlat, e.g., 
-# -clat 60 -dlat 30, for a strip averaged between 45 and 75 degrees (North)
-#
-# By default, the routine traces over all Shell_Slices in the directory,
-# though user can specify an alternate range, by, e.g.,
+# By default, the routine traces over the last 100 files of datadir, though
+# the user can specify a different range in sevaral ways:
 # -n 10 (last 10 files)
-# -range iter1 iter2 (no.s for start/stop data files; iter2 can be "last")
+# -range iter1 iter2 (names of start and stop data files; iter2 can be 'last')
 # -centerrange iter0 nfiles (trace about central file iter0 over nfiles)
-#
-# The final datacube output ('vals') will have shape
-# (nphi, niter, nr, nq), where nr and nq are the attributes of the shell slices
 
 # initialize communication
 from mpi4py import MPI
@@ -55,9 +58,9 @@ import numpy as np
 # data type and reading function
 import sys, os
 sys.path.append(os.environ['rapp'])
-from rayleigh_diagnostics import Shell_Slices
-reading_func = Shell_Slices
-dataname = 'Shell_Slices'
+from rayleigh_diagnostics import AZ_Avgs
+reading_func = AZ_Avgs
+dataname = 'AZ_Avgs'
 
 if rank == 0:
     # modules needed only by proc 0 
@@ -77,119 +80,280 @@ if rank == 0:
     # Get the name of the run directory
     dirname = sys.argv[1]
 
-    # Get the stripped name to use in file naming
-    dirname_stripped = strip_dirname(dirname)
-
-    # Find the relevant place to store the data, and create the directory if it
-    # doesn't already exist
-    datadir = dirname + '/data/'
-    if not os.path.isdir(datadir):
-        os.makedirs(datadir)
-
-    # We are interested in latitude strips from the shell slices
-    radatadir = dirname + '/Shell_Slices/'
-
-    # Get all the file names in datadir and their integer counterparts
-    file_list, int_file_list, nfiles = get_file_lists(radatadir)
-
     # Read in CLAs
     args = sys.argv[2:]
     nargs = len(args)
 
-    # By default, have the iter indices range over full file range
-    index_first, index_last = 0, nfiles - 1
-    for arg in args:
-        if arg in ['-range', '-centerrange', '-leftrange', '-rightrange', '-n',\
-                '-f', '-all', '-iter']:
-            index_first, index_last = get_desired_range(int_file_list, args)
-
     # Set other defaults
+    qvals = [1, 2, 3, 301, 302]
+    magnetism = get_parameter(dirname, 'magnetism')
+    if magnetism:
+        qvals.append(801)
+        qvals.append(802)
+        qvals.append(803)
+    depths = np.array([0.05, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 0.95])
+    aspect = 0.
     tag = ''
-    clat = 10.
-    dlat = 0. # by default do NOT average over latitude
-    remove_diffrot = True
+
+    # get some grid info
+    ncheby, domain_bounds = get_domain_bounds(dirname)
+    ri = np.min(domain_bounds)
+    ro = np.max(domain_bounds)
+    d = ro - ri
+
+    # reset parameters with CLAs
     for i in range(nargs):
         arg = args[i]
-        if arg == '-tag':
+        if arg == '-qvals':
+            qvals = []
+            qvals_str = args[i+1].split() 
+            for qval_str in qvals_str:
+                qvals.append(int(qval_str))
+        elif arg == '-depths':
+            depths = []
+            depths_str = args[i+1].split()
+            for depth_str in depths_str:
+                depths.append(float(depth_str))
+        elif arg == '-rvals':
+            depths = []
+            strings = args[i+1].split()
+            for st in strings:
+                rvalcm = float(st)*rsun
+                depths.append((ro - rvalcm)/d)
+        elif arg == '-rvalscm':
+            depths = []
+            strings = args[i+1].split()
+            for st in strings:
+                rvalcm = float(st)
+                depths.append((ro - rvalcm)/d)
+        elif arg == '-rrange':
+            r1 = float(args[i+1])
+            r2 = float(args[i+2])
+            n = int(args[i+3])
+            rvalscm = np.linspace(r1, r2, n)*rsun
+            depths = (ro - rvalscm)/d
+        elif arg == '-rzquarter': # 9 depths in RZ and CZ, with RZ depth
+            # 0.25 of CZ depth
+            print("Taking 9 depths in CZ and RZ each")
+            print("assuming depth RZ = (1/4) depth CZ")
+            aspect = 0.25
+        elif arg == '-rzhalf': # 9 depths in RZ and CZ, with RZ depth
+            # 0.5 of CZ depth
+            print("Taking 9 depths in CZ and RZ each")
+            print("assuming depth RZ = (1/2) depth CZ")
+            aspect = 0.5
+        elif arg == '-rz75': # 9 depths in RZ and CZ, with RZ depth
+            # 0.75 of CZ depth
+            print("Taking 9 depths in CZ and RZ each")
+            print("assuming depth RZ = (3/4) depth CZ")
+            aspect = 0.75
+        elif arg == '-rz1': # 9 depths in RZ and CZ, with RZ depth
+            aspect = 1.
+        elif arg == '-aspect':
+            aspect = float(args[i+1])
+        elif arg == '-torque':
+            print("tracing over TORQUE QUANTITIES")
+            qvals = [3, 1801, 1802, 1803, 1804, 1819]
+            if magnetism:
+                qvals.append(1805)
+                qvals.append(1806)
+            # only change tag if it wasn't specified already:
+            if tag == '':
+                tag = 'torque' + '_'
+        elif arg == '-induction':
+            print("tracing over INDUCTION QUANTITIES")
+            qvals = [1604,1605, 1609,1610, 1614,1615,\
+                    1619,1620, 1624,1625, 1629,1630,\
+            1601,1602,1603, 1606,1607,1608, 1611,1612,1613,\
+            1616,1617,1618, 1621,1622,1623, 1626,1627,1628]
+            # only change tag if it wasn't specified already:
+            if tag == '':
+                tag = 'induction' + '_'
+        elif arg == '-tag':
             tag = args[i+1] + '_'
-        elif arg == '-clat':
-            clat = float(args[i+1])
-        elif arg == '-dlat':
-            dlat = float(args[i+1])
-            
-    # Set the timetrace savename by the directory, what we are saving, 
-    # and first and last iteration files for the trace (and optional tag)
-    if clat >= 0.:
-        hemisphere = 'N'
-    else:
-        hemisphere = 'S'
         
-    savename = dirname_stripped + '_time-longitude_' + tag +\
-            ('clat%s%02.0f_dlat%03.0f' %(hemisphere, np.abs(clat), dlat)) +\
-            '_' + file_list[index_first] + '_' + file_list[index_last] + '.pkl'
-    savefile = datadir + savename    
-    print('Your data will be saved in the file %s.' %savename)
+    # convert things to arrays
+    depths = np.array(depths)
+    qvals = np.array(qvals)
 
-    # Read in first Shell_Slices/AZ_Avgs file 
-    a0 = Shell_Slices(radatadir + file_list[index_first], '')
-az0 = AZ_Avgs(dirname + '/AZ_Avgs/' + file_list[index_first], '')
+    # if aspect ratio is > 0. make depths apply in each zone separately
+    eps = 1.e-4
+    if aspect > eps:
+        print("Taking 9 depths in CZ and RZ each (plus one at transition)")
+        print("assuming (depth RZ)/(depth CZ) = %.3f" %aspect)
+        d1 = 1./(1. + aspect)*depths
+        d2 = np.array([1./(1. + aspect)]) # include transition point
+        d3 = 1./(1. + aspect) + aspect/(1. + aspect)*depths
+        depths = np.hstack((d1, d2, d3))
+    else:
+        print("Taking 9 depths in CZ")
 
-# Read in grid info from AZ_Avgs slice
-rr =az0.radius
-ri, ro = np.min(rr), np.max(rr)
-sint, cost = az0.sintheta, az0.costheta
-tt = np.arccos(cost)
-tt_lat = (np.pi/2 - tt)*180./np.pi
-nt, nr = len(sint), len(rr)
-nphi = 2*nt
-lons = np.arange(0., 360., 360/nphi)
+    # Get the Rayleigh data directory
+    radatadir = dirname + '/' + dataname + '/'
 
-# Desired latitude range
-ith1 = np.argmin(np.abs(tt_lat - (clat - dlat/2.)))
-ith2 = np.argmin(np.abs(tt_lat - (clat + dlat/2.)))
-lats_strip = tt_lat[ith1:ith2+1]
+    # Get all the file names in datadir and their integer counterparts
+    file_list, int_file_list, nfiles = get_file_lists(radatadir)
 
-# Start building the time-longitude traces
-print ('Considering Shell_Slices files %s through %s for the trace ...'\
-        %(file_list[index_first], file_list[index_last]))
+    # get desired analysis range
+    the_tuple = get_desired_range(int_file_list, args)
+    if the_tuple is None:
+        index_first, index_last = nfiles - 101, nfiles - 1  
+        # By default trace over the last 100 files
+    else:
+        index_first, index_last = the_tuple
 
-iter1, iter2 = int_file_list[index_first], int_file_list[index_last]
-                      
-vals = []
-times = []
-iters = []
+    # Remove parts of file lists we don't need
+    file_list = file_list[index_first:index_last + 1]
+    int_file_list = int_file_list[index_first:index_last + 1]
+    nfiles = index_last - index_first + 1
 
-count = 0 # don't know a priori how many times there will be to sample, 
-            # so "count" as we go
-    
-for i in range(index_first, index_last + 1):
-    print ('Adding Shell_Slices/%s to the trace ...' %file_list[i])
-    if i == index_first:
+    # Get the problem size
+    nproc_min, nproc_max, n_per_proc_min, n_per_proc_max =\
+            opt_workload(nfiles, nproc)
+
+    # Get metadata
+    a0 = reading_func(radatadir + file_list[0], '')
+    nrec_full = a0.niter
+    nq = len(qvals)
+
+    # Get bunch of grid info
+    rr = a0.radius
+    ri, ro = np.min(rr), np.max(rr)
+    d = ro - ri
+    rr_depth = (ro - rr)/d
+    rr_height = (rr - ri)/d
+    sint = a0.sintheta
+    cost = a0.costheta
+    tt = np.arccos(cost)
+    tt_lat = (np.pi/2 - tt)*180./np.pi
+    nr = a0.nr
+    ndepths = len(depths)
+    nt = a0.ntheta
+
+    # compute some derivative quantities for the grid
+    tt_2d, rr_2d = np.meshgrid(tt, rr, indexing='ij')
+    sint_2d = np.sin(tt_2d); cost_2d = np.cos(tt_2d)
+    xx = rr_2d*sint_2d
+    zz = rr_2d*cost_2d
+
+    # get r-indices associated with depths
+    rinds = []
+    for depth in depths:
+        rinds.append(np.argmin(np.abs(rr_depth - depth)))
+    rinds = np.array(rinds)
+
+    # recompute the actual depths we get
+    depths = rr_depth[rinds]
+    rvalscm = ro - d*depths
+    rvals = rvalscm/rsun
+    print ("taking radii at ")
+    print ("rinds = ", rinds)
+    print ("rvals = ", rvals)
+    print ("rvalscm = ", rvalscm)
+    print ("depths = ", depths)
+
+    # Will need nrec (last niter) to get proper time axis size
+    af = reading_func(radatadir + file_list[-1], '')
+    nrec_last = af.niter
+    ntimes = (nfiles - 1)*nrec_full + nrec_last
+
+    # Distribute file_list and my_ntimes to each process
+    for k in range(nproc - 1, -1, -1):
+        # distribute the partial file list to other procs 
+        if k >= nproc_min: # last processes analyzes more files
+            my_nfiles = np.copy(n_per_proc_max)
+            istart = nproc_min*n_per_proc_min + (k - nproc_min)*my_nfiles
+            iend = istart + my_nfiles
+        else: # first processes analyze fewer files
+            my_nfiles = np.copy(n_per_proc_min)
+            istart = k*my_nfiles
+            iend = istart + my_nfiles
+
+        if k == nproc - 1: # last process may have nrec_last != nrec_full
+            my_ntimes = (my_nfiles - 1)*nrec_full + nrec_last
+        else:
+            my_ntimes = my_nfiles*nrec_full
+
+        # Get the file list portion for rank k
+        my_files = np.copy(int_file_list[istart:iend])
+
+        # send  my_files, my_nfiles, my_ntimes if nproc > 1
+        if k >= 1:
+            comm.send([my_files, my_nfiles, my_ntimes], dest=k)
+else: # recieve my_files, my_nfiles, my_ntimes
+    my_files, my_nfiles, my_ntimes = comm.recv(source=0)
+
+# Broadcast dirname, radatadir, qvals, nq, rinds, ndepths, nt
+if rank == 0:
+    meta = [dirname, radatadir, qvals, nq, rinds, ndepths, nt]
+else:
+    meta = None
+dirname, radatadir, qvals, nq, rinds, ndepths, nt = comm.bcast(meta, root=0)
+
+# Checkpoint and time
+comm.Barrier()
+if rank == 0:
+    t2 = time.time()
+    print (format_time(t2 - t1))
+    print ('Considering %i %s files for the trace: %s through %s'\
+        %(nfiles, dataname, file_list[0], file_list[-1]))
+    print ("ntimes for trace = %i" %ntimes)
+    print(fill_str('computing', lent, char), end='\r')
+    t1 = time.time()
+
+# Now analyze the data
+my_times = np.zeros(my_ntimes)
+my_iters = np.zeros(my_ntimes, dtype='int')
+my_vals = np.zeros((my_ntimes, nt, ndepths, nq))
+
+my_count = 0
+for i in range(my_nfiles):
+    if rank == 0 and i == 0:
         a = a0
     else:   
-        a = Shell_Slices(radatadir + file_list[i], '')
-                     
-    ntimes_loc = a.niter
-    for j in range(ntimes_loc):
-        vals_strip = a.vals[:, ith1:ith2+1, :, :, j]
-        vals_av = np.mean(vals_strip, axis=1)
-        
-        times.append(a.time[j])
-        iters.append(a.iters[j])
-        vals.append(vals_av.tolist())                      
-        count += 1        
+        a = reading_func(radatadir + str(my_files[i]).zfill(8), '')
+    for j in range(a.niter):
+        if my_count < my_ntimes: # make sure we don't go over the allotted
+            # space in the arrays
+            my_vals[my_count, :, :, :] =\
+                    a.vals[:, :, :, j][:, rinds, :][:, :, a.lut[qvals]]
+            my_times[my_count] = a.time[j] 
+            my_iters[my_count] = a.iters[j]
+        my_count += 1
+    if rank == 0:
+        pcnt_done = my_count/my_ntimes*100.
+        print(fill_str('computing', lent, char) +\
+                ('rank 0 %5.1f%% done' %pcnt_done), end='\r')
 
-# Convert lists into arrays
-vals = np.array(vals)
-times = np.array(times)
-iters = np.array(iters)
+# Checkpoint and time
+comm.Barrier()
+if rank == 0:
+    t2 = time.time()
+    print('\n' + fill_str('computing time', lent, char), end='')
+    print (format_time(t2 - t1))
+    print(fill_str('rank 0 collecting and saving the results',\
+            lent, char), end='')
+    t1 = time.time()
 
-# Miscellaneous metadata 
-niter = len(iters)
-nq = a.nq
-rinds = a0.inds
-rvals = a0.radius
-nrvals = a0.nr
+# proc 0 now collects the results from each process
+if rank == 0:
+    # Initialize zero-filled 'vals/times/iters' arrays to store the data
+    vals = np.zeros((ntimes, nt, ndepths, nq))
+    times = np.zeros(ntimes)
+    iters = np.zeros(ntimes, dtype='int')
+
+    # Gather the results into these "master" arrays
+    istart = 0
+    for j in range(nproc):
+        if j >= 1:
+            # Get my_ntimes, my_times, my_iters, my_vals from rank j
+            my_ntimes, my_times, my_iters, my_vals = comm.recv(source=j)
+        times[istart:istart+my_ntimes] = my_times
+        iters[istart:istart+my_ntimes] = my_iters
+        vals[istart:istart+my_ntimes, :, :, :] = my_vals
+        istart += my_ntimes
+else: # other processes send their data
+    comm.send([my_ntimes, my_times, my_iters, my_vals], dest=0)
 
 # Make sure proc 0 collects all data
 comm.Barrier()
@@ -212,10 +376,19 @@ if rank == 0:
     f = open(savefile, 'wb')
     # will also need first and last iteration files
     iter1, iter2 = int_file_list[0], int_file_list[-1]
-    pickle.dump({'vals': vals, 'times': times, 'iters': iters, 'qvals': a0.qv,\
-            'rinds': rinds, 'rvals': rvals, 'nrvals': nrvals, 'lut': a0.lut,\
-            'niter': niter, 'nq': nq, 'iter1': iter1, 'iter2': iter2, 'rr': rr,\
-        'nr': nr, 'ri': ri, 'ro': ro, 'tt': tt, 'tt_lat': tt_lat, 'sint': sint,\
-        'cost': cost,'nt': nt, 'lats_strip': lats_strip, 'clat': clat,\
-        'dlat': dlat, 'lons':lons, 'nphi': nphi}, f, protocol=4)
+    pickle.dump({'vals': vals, 'times': times, 'iters': iters,\
+    'rvals': rvals, 'rvalscm': rvalscm,\
+    'depths': depths,'qvals': qvals, 'rinds': rinds, 'niter': len(iters),\
+    'ndepths': ndepths, 'nq': nq, 'iter1': iter1, 'iter2': iter2, 'rr': rr,\
+    'rr_depth': rr_depth, 'rr_height': rr_height, 'nr': nr, 'ri': ri,\
+    'ro': ro, 'd': d, 'tt': tt, 'tt_lat': tt_lat,\
+    'sint': sint, 'cost': cost, 'ntheta': nt,\
+    'rr_2d': rr_2d, 'tt_2d': tt_2d, 'sint_2d': sint_2d,\
+    'cost_2d': cost_2d, 'xx': xx, 'zz': zz}, f, protocol=4)
     f.close()
+    t2 = time.time()
+    print (format_time(t2 - t1))
+    print(make_bold(fill_str('total time', lent, char)), end='')
+    print (make_bold(format_time(t2 - t1_glob)))
+    print ('data saved at ')
+    print (make_bold(savefile))
