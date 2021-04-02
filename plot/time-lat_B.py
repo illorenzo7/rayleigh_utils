@@ -104,11 +104,12 @@ for i in range(nargs):
             plottimes.append(float(string))
 
 # Get plot directory and create if not already there
-plotdir = dirname + '/plots/time-lat' + tag + '_B/'
-if labelbytime:
-    plotdir = dirname + '/plots/time-lat' + tag + '_B_tlabel/'
-if not os.path.isdir(plotdir):
-    os.makedirs(plotdir)
+if plotdir is None:
+    plotdir = dirname + '/plots/time-lat' + tag + '_B/'
+    if labelbytime:
+        plotdir = dirname + '/plots/time-lat' + tag + '_B_tlabel/'
+    if not os.path.isdir(plotdir):
+        os.makedirs(plotdir)
 
 # Read in the time-latitude data (dictionary form)
 print ('Getting time-latitude trace from ' + datadir + the_file)
@@ -140,11 +141,6 @@ if rotation:
 else:
     time_unit = compute_tdt(dirname)
     time_label = r'$\rm{TDT}$'
-
-if plotdir is None:
-    plotdir = dirname + '/plots/'
-    if not os.path.isdir(plotdir):
-        os.makedirs(plotdir)
 
 br_index = np.argmin(np.abs(qvals - 801))
 bt_index = np.argmin(np.abs(qvals - 802))

@@ -17,9 +17,6 @@ dirname = sys.argv[1]
 
 # Data and plot directories
 datadir = dirname + '/data/'
-plotdir = dirname + '/plots/time-longitude/'
-if (not os.path.isdir(plotdir)):
-    os.makedirs(plotdir)
 dirname_stripped = strip_dirname(dirname)
 
 # domain bounds
@@ -40,30 +37,35 @@ minmax_wasnone = True # This always will be true unless user specifies
             # values through -minmax
 # By default (if tminmax is None) will plot over whole time trace
 tminmax = None
-saveplot = True
-showplot = True # will only show if plotting one figure
+saveplot = None # turned off by default if saving one figure, can change
+# with -save option
+showplot = False # will only show if plotting one figure
+labelbytime = False # by default label by first/last iteration number
 
-desired_rvals = [0.83] # by default, plot time-radius diagram for fields 
-    # mid-CZ (units of solar radius)
+rvals = 'all'  # by default, plot all available time-lat levels
+    # user specifies another choice via -rvals '[val1] [val2] ... [valn]'
+    # where 'vals' have dimensional units in cm: 4.8e10, 5e10, etc.
+irvals = None # user can also specify -irvals '2 3 9', etc.
 
 # By default, plot longitudinal B field
 qval = 803
 
-clat = 10. # ten degrees north latitude by default
-dlat = 0. # no time averaging by default
-
 Om_subtract = None # by default, do not subtract any differential rotation
 # if nonzero, subtract a CONSTANT DR
 
-
 # Default no. rotations to plot per inch (vertically)
 rpi = 100.
+
 # Get command-line arguments
 plotdir = None
 
 args = sys.argv[2:]
 nargs = len(args)
 tag = ''
+plottimes = None
+clat = 10. 
+dlat = 0.
+the_file = None
 for i in range(nargs):
     arg = args[i]
     if arg == '-plotdir':
@@ -72,22 +74,24 @@ for i in range(nargs):
         minmax = float(args[i+1]), float(args[i+2])
         minmax_wasnone = False
     elif arg == '-usefile':
-        time_longitude_file = args[i+1]
-        time_longitude_file = time_longitude_file.split('/')[-1]
+        the_file = args[i+1]
+        the_file = the_file.split('/')[-1]
     elif arg == '-rvals':
-        string_desired_rvals = args[i+1].split()
-        if string_desired_rvals == ['all']:
-            desired_rvals = 'all'
-        else:
-            desired_rvals = []
-            for j in range(len(string_desired_rvals)):
-                desired_rvals.append(float(string_desired_rvals[j]))
+        strings = args[i+1].split()
+        rvals = []
+        for j in range(len(strings)):
+            rvals.append(float(strings[j]))
+    elif arg == '-irvals':
+        irvals = []
+        strings = args[i+1].split()
+        for j in range(len(strings)):
+            irvals.append(int(strings[j]))
     elif arg == '-tminmax':
         tminmax = float(args[i+1]), float(args[i+2])
-    elif arg == '-nosave':
-        saveplot = False
-    elif arg == '-noshow':
-        showplot = False
+    elif arg == '-save':
+        saveplot = True
+    elif arg == '-tlabel':
+        labelbytime = True
     elif arg == '-rpi': # rpi = rotations per inch
         rpi = float(args[i+1])
     elif arg == '-qval':
@@ -101,32 +105,45 @@ for i in range(nargs):
     elif arg == '-om': # enter this value in nHz, in the LAB frame
         Om_subtract = float(args[i+1]) - Om0_nhz
         Om_subtract *= (2*np.pi/1e9) # convert nHz --> rad s^-1
+    elif arg == '-times':
+        strings = args[i+1].split()
+        plottimes = []
+        for string in strings:
+            plottimes.append(float(string))
+
+# Get plot directory and create if not already there
+plotdir = dirname + '/plots/time-lon' + tag + '/'
+if labelbytime:
+    plotdir = dirname + '/plots/time-lon' + tag + '_tlabel/'
+if not os.path.isdir(plotdir):
+    os.makedirs(plotdir)
 
 # Find the time-longitude file(s) the data directory, for clat and dlat. 
 # If there are 
 # multiple, by default choose the one with widest range in the trace.
-if clat >= 0.:
-    hemisphere = 'N'
-else:
-    hemisphere = 'S'
+if the_file is None:
+    if clat >= 0.:
+        hemisphere = 'N'
+    else:
+        hemisphere = 'S'
 
-the_file = get_widest_range_file(datadir, 'time-longitude_clat' + hemisphere +\
-        '%02.0f_dlat%03.0f' %(np.abs(clat), dlat))
+    the_file = get_widest_range_file(datadir, 'time-longitude_clat' + hemisphere +\
+            '%02.0f_dlat%03.0f' %(np.abs(clat), dlat))
 
 # Read in the time-longitude data (dictionary form)
-print ('Getting time-longitude trace from ' + datadir + the_file + ' ...')
+print ('Getting time-longitude trace from ' + datadir + the_file)
 di = get_dict(datadir + the_file)
 
 vals = di['vals']
-times = di['times'] - allthrees_start*Prot
+times = di['times']
 iters = di['iters']
 lut = di['lut']
 rr = di['rr']
 ri = di['ri']; ro = di['ro']; shell_depth = ro - ri
 clat = di['clat']
 dlat = di['dlat']
-rinds = di['rinds'] # radial locations sampled for the trace
-rvals_sampled = rr[rinds]/rsun
+irvals_avail = di['rinds']
+rvals_avail = rr[irvals_avail]
 lons = di['lons']
 nphi = di['nphi']
 
@@ -138,6 +155,14 @@ nq = di['nq']
 iter1 = di['iter1']
 iter2 = di['iter2']
 
+# Get the baseline time unit
+rotation = get_parameter(dirname, 'rotation')
+if rotation:
+    time_unit = compute_Prot(dirname)
+    time_label = r'$\rm{P_{rot}}$'
+else:
+    time_unit = compute_tdt(dirname)
+    time_label = r'$\rm{TDT}$'
 
 # Get radial indices of values we want to plot
 i_desiredrvals = []
@@ -256,7 +281,7 @@ for i in range(len(i_desiredrvals)):
     #Save the plot
     if saveplot:
         print ('Saving the time-latitude plot at ' + plotdir +\
-                savename + ' ...')
+                savename)
         plt.savefig(plotdir + savename, dpi=300)
 
     # Show the plot if only plotting at one latitude
