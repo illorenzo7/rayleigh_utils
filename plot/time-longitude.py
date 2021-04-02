@@ -112,11 +112,12 @@ for i in range(nargs):
             plottimes.append(float(string))
 
 # Get plot directory and create if not already there
-plotdir = dirname + '/plots/time-lon' + tag + '/'
-if labelbytime:
-    plotdir = dirname + '/plots/time-lon' + tag + '_tlabel/'
-if not os.path.isdir(plotdir):
-    os.makedirs(plotdir)
+if plotdir is None:
+    plotdir = dirname + '/plots/time-lon' + tag + '/'
+    if labelbytime:
+        plotdir = dirname + '/plots/time-lon' + tag + '_tlabel/'
+    if not os.path.isdir(plotdir):
+        os.makedirs(plotdir)
 
 # Find the time-longitude file(s) the data directory, for clat and dlat. 
 # If there are 
@@ -138,6 +139,7 @@ vals = di['vals']
 times = di['times']
 iters = di['iters']
 lut = di['lut']
+qvals = di['qvals']
 rr = di['rr']
 ri = di['ri']; ro = di['ro']; shell_depth = ro - ri
 clat = di['clat']
@@ -164,19 +166,22 @@ else:
     time_unit = compute_tdt(dirname)
     time_label = r'$\rm{TDT}$'
 
-# Get radial indices of values we want to plot
-i_desiredrvals = []
-rvals_to_plot = []
-if desired_rvals == 'all':
-    i_desiredrvals = np.arange(len(rinds))
-    rvals_to_plot = rvals_sampled
-else:
-    i_desiredrvals = []
-    rvals_to_plot = []
-    for desired_rval in desired_rvals:
-        i_desiredrval = np.argmin(np.abs(rvals_sampled - desired_rval))
-        i_desiredrvals.append(i_desiredrval)
-        rvals_to_plot.append(rvals_sampled[i_desiredrval])
+# determine desired levels to plot
+if irvals is None:
+    if rvals == 'all':
+        irvals = np.arange(len(irvals_avail))
+    else:
+        irvals = []
+        for rval in rvals:
+            ir = np.argmin(np.abs(rvals_avail - rval))
+            irvals.append(ir)
+if saveplot is None:
+    if len(irvals) == 1:
+        saveplot = False
+    else:
+        saveplot = True
+if len(irvals) == 1:
+    showplot = True
 
 # Get raw trace of "qval"
 if tminmax is None:
@@ -185,7 +190,9 @@ else:
     it1 = np.argmin(np.abs(times/Prot - tminmax[0]))
     it2 = np.argmin(np.abs(times/Prot - tminmax[1]))
 
-quant = vals[it1:it2+1, :, :, lut[qval]]
+q_index = np.argmin(np.abs(qvals - qval))
+
+quant = vals[it1:it2+1, :, :, q_index]
 times = times[it1:it2+1]/Prot
 t1, t2 = times[0], times[-1] # These begin times and end times
         # will be used for labeling the plots
@@ -195,22 +202,31 @@ lons_2d, times_2d = np.meshgrid(lons, times, indexing='ij')
 
 # Subtract DR, if desired
 if not Om_subtract is None:
-    phi_deflections = (times*Prot*Om_subtract*180/np.pi) % 360
+    phi_deflections = (times*Prot*Om_subtract*180./np.pi) % 360.
     for it in range(len(times)):
         phi_deflection = phi_deflections[it]
         nroll = int(phi_deflection/360*nphi)
         quant[it, :, :] = np.roll(quant[it, :, :], -nroll, axis=0)
 
 # Loop over the desired radii and save plots
-for i in range(len(i_desiredrvals)):
-    i_desiredrval = i_desiredrvals[i]
-    rval_to_plot = rvals_to_plot[i]
+for i in range(len(irvals)):
+    ir = irvals[i]
+    rval = rvals_avail[ir]/rsun 
+    print('plotting r/rsun = %0.3f (ir = %02i)' %(rval, ir))
     
-    quant_loc = quant[:, :, i_desiredrval]
-    
-    savename = tag + ('Prot%05.0f-to-%05.0f_clat%s%02.0f_dlat%02.0f_' \
-            %(t1, t2, hemisphere, np.abs(clat), dlat)) + ('qv%i_' %qval) +\
-            ('rval%0.3f' %rval_to_plot) + '.png'
+    quant_loc = quant[:, :, ir]
+
+    # Make appropriate file name to save
+    if labelbytime:
+        savename = dirname_stripped + '_time-lon_' +\
+                ('Prot%05.0f-to-%05.0f_clat%s%02.0f_dlat%02.0f_'\
+                %(t1, t2, hemisphere, np.abs(clat), dlat)) +\
+                ('qv%04i_' %qval) + ('rval%0.3f' %rval) + '.png'
+    else:
+        savename = dirname_stripped + '_time-lon_' +\
+                ('%08i_%08i_clat%s%02.0f_dlat%02.0f_'\
+                %(iter1, iter2, hemisphere, np.abs(clat), dlat)) +\
+                ('qv%04i_' %qval) + ('rval%0.3f' %rval) + '.png'
 
     if minmax is None or minmax_wasnone:
         std_quant = np.std(quant_loc)
@@ -264,7 +280,7 @@ for i in range(len(i_desiredrvals)):
 
     # Put some useful information on the title
     title = dirname_stripped + (', iq = %i' %qval) + '\n' +\
-            (r'$r/R_\odot\ =\ %0.3f$' %rval_to_plot) + '\n' +\
+            (r'$r/R_\odot\ =\ %0.3f$' %rval) + '\n' +\
             (r'$\lambda_c=%02.0f^\circ\ \ \ \ \ \Delta\lambda=%02.0f^\circ$'\
             %(clat, dlat)) 
     ax.set_title(title, **csfont)
@@ -285,6 +301,6 @@ for i in range(len(i_desiredrvals)):
         plt.savefig(plotdir + savename, dpi=300)
 
     # Show the plot if only plotting at one latitude
-    if len(rvals_to_plot) == 1 and showplot:
+    if showplot:
         plt.show()
     plt.close()
