@@ -294,8 +294,6 @@ for i in range(len(irvals)):
     ax.grid(color='k', linestyle='-', linewidth=1., alpha=0.3)
     ax.grid(which='minor', color='k', linestyle='-', linewidth=0.5, alpha=0.3)
 
-    plt.sca(ax)
-    plt.tight_layout()
     #Save the plot
     if saveplot:
         print ('Saving the time-latitude plot at ' + plotdir +\
