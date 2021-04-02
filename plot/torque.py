@@ -265,7 +265,7 @@ margin_top_inches = 1 # wider top margin to accommodate subplot titles AND metad
 margin_subplot_top_inches = 1/4 # margin to accommodate just subplot titles
 nplots = 4 + 2*magnetism + 1*forced + nadd
 ncol = 3 # put three plots per row
-nrow = np.int(np.ceil(nplots/3))
+nrow = np.int(np.ceil(nplots/ncol))
 
 subplot_width_inches = (fig_width_inches - (ncol + 1)*margin_inches)/ncol
     # Make the subplot width so that ncol subplots fit together side-by-side

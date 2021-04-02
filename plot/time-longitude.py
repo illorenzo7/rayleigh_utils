@@ -127,13 +127,19 @@ if the_file is None:
         hemisphere = 'N'
     else:
         hemisphere = 'S'
-
     the_file = get_widest_range_file(datadir, 'time-longitude_clat' + hemisphere +\
             '%02.0f_dlat%03.0f' %(np.abs(clat), dlat))
 
 # Read in the time-longitude data (dictionary form)
 print ('Getting time-longitude trace from ' + datadir + the_file)
 di = get_dict(datadir + the_file)
+
+# this is clat + hemisphere we ended up with
+clat = di['clat']
+if clat >= 0.:
+    hemisphere = 'N'
+else:
+    hemisphere = 'S'
 
 vals = di['vals']
 times = di['times']
@@ -208,6 +214,45 @@ if not Om_subtract is None:
         nroll = int(phi_deflection/360*nphi)
         quant[it, :, :] = np.roll(quant[it, :, :], -nroll, axis=0)
 
+# Create figure dimensions
+# Create figure as a vertical strip, taking into account the desired
+# rpi
+ncol = 1
+nplots = ncol
+nrow = 1
+#nrow = np.int(np.ceil(nplots/ncol))
+fig_width_inches = 5.
+margin_inches = 1./16. # margin width in inches (for both x and y) and 
+    # horizontally in between figures
+margin_right_inches = 1.
+margin_left_inches = 1.
+margin_bottom_inches = 0.5
+# larger bottom margin to make room for colorbar(s)
+margin_top_inches = 1. # wider top margin to accommodate subplot titles AND metadata
+subplot_height_inches = (times[-1] - times[0])/rpi
+fig_height_inches = margin_top_inches + nrow*(subplot_height_inches +\
+        margin_bottom_inches)
+print('figsize = ', fig_width_inches, fig_height_inches)
+
+subplot_width_inches = (fig_width_inches - margin_left_inches -\
+        margin_right_inches - (ncol - 1)*margin_inches)/ncol
+    # Make the subplot width so that ncol subplots fit together side-by-side
+    # with margins in between them and at the left and right.
+
+# "Margin" in "figure units"; figure units extend from 0 to 1 in BOTH 
+# directions, so unitless dimensions of margin will be different in x and y
+# to force an equal physical margin
+margin_x = margin_inches/fig_width_inches
+margin_y = margin_inches/fig_height_inches
+margin_top = margin_top_inches/fig_height_inches
+margin_bottom = margin_bottom_inches/fig_height_inches
+margin_right = margin_right_inches/fig_width_inches
+margin_left = margin_left_inches/fig_width_inches
+
+# Subplot dimensions in figure units
+subplot_width = subplot_width_inches/fig_width_inches
+subplot_height = subplot_height_inches/fig_height_inches
+
 # Loop over the desired radii and save plots
 for i in range(len(irvals)):
     ir = irvals[i]
@@ -232,67 +277,67 @@ for i in range(len(irvals)):
         std_quant = np.std(quant_loc)
         minmax = -3.*std_quant, 3.*std_quant
         minmax_wasnone = True
+
+    # Generate the actual figure of the correct dimensions
+    fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
+
+    for iplot in range(nplots):
+        ax_left = margin_left + (iplot%ncol)*(subplot_width + margin_x)
+        ax_bottom = 1. - margin_top - subplot_height
+        ax = fig.add_axes((ax_left, ax_bottom, subplot_width, subplot_height))
      
-    # Create figure as a vertical strip, taking into account the desired
-    # rpi
-    fig_width_inches = 5.
-    fig_height_inches = (times[-1] - times[0])/rpi
-    print('figsize = ', fig_width_inches, fig_height_inches)
-    fig, ax = plt.subplots(figsize=(fig_width_inches, fig_height_inches)) 
+        im = ax.pcolormesh(lons_2d, times_2d, quant_loc.T,\
+                vmin=minmax[0], vmax=minmax[1], cmap='RdYlBu_r')
+        ax.invert_yaxis()
 
-    im = ax.pcolormesh(lons_2d, times_2d, quant_loc.T,\
-            vmin=minmax[0], vmax=minmax[1], cmap='RdYlBu_r')
-    plt.gca().invert_yaxis()
+        # Put colorbar next to plot 
+        # First make room and then find location of subplot
 
-    # Put colorbar next to plot 
-    # First make room and then find location of subplot
-    plt.subplots_adjust(left=0.2, right=0.8, wspace=0.03, top=0.9)
+        ax_xmin, ax_xmax, ax_ymin, ax_ymax = axis_range(ax)
+        ax_delta_x = ax_xmax - ax_xmin
+        ax_delta_y = ax_ymax - ax_ymin
+        ax_center_x = ax_xmin + 0.5*ax_delta_x
 
-    ax_xmin, ax_xmax, ax_ymin, ax_ymax = axis_range(ax)
-    ax_delta_x = ax_xmax - ax_xmin
-    ax_delta_y = ax_ymax - ax_ymin
-    ax_center_x = ax_xmin + 0.5*ax_delta_x
+        cbar_width = 0.15*(1 - ax_xmax)
+        cbar_height = 0.4*ax_delta_y
 
-    cbar_width = 0.15*(1 - ax_xmax)
-    cbar_height = 0.4*ax_delta_y
+        cbar_left = ax_xmax + 0.1*(1 - ax_xmax)
+        cbar_bottom = ax_ymin + 0.5*ax_delta_y - 0.5*cbar_height
+        cax = fig.add_axes((cbar_left, cbar_bottom, cbar_width, cbar_height))
+        cax.set_title('cgs', **csfont)
+        plt.colorbar(im, cax=cax)
 
-    cbar_left = ax_xmax + 0.1*(1 - ax_xmax)
-    cbar_bottom = ax_ymin + 0.5*ax_delta_y - 0.5*cbar_height
-    cax = fig.add_axes((cbar_left, cbar_bottom, cbar_width, cbar_height))
-    cax.set_title('cgs', **csfont)
-    plt.colorbar(im, cax=cax)
+        # Set x label
+        ax.set_xlabel('longitude (deg)', fontsize=12)
 
-    # Set x label
-    ax.set_xlabel(r'$\rm{longitude}\ (^\circ)$', fontsize=12)
+        # Label y (time) axis
+        timeunit = r'$$'
+        ylabel = r'$\rm{time}\ (P_{\rm{rot}})}$'
+    #    ylabel = r'$\rm{time}\ (\longleftarrow)}$'
+        ax.set_ylabel(ylabel, **csfont, fontsize=12)
 
-    # Label y (time) axis
-    timeunit = r'$$'
-    ylabel = r'$\rm{time}\ (P_{\rm{rot}})}$'
-#    ylabel = r'$\rm{time}\ (\longleftarrow)}$'
-    ax.set_ylabel(ylabel, **csfont, fontsize=12)
+        ax.set_xlim((lons[0], lons[-1]))
 
-    ax.set_xlim((lons[0], lons[-1]))
+        # Label the plots by B_r, B_theta, B_phi
+        ax_xmin, ax_xmax = ax.get_xlim()
+        ax_Dx = ax_xmax - ax_xmin
+        ax.text(ax_xmin + 1.01*ax_Dx, 0.,  'qval = %i' %qval, **csfont)
 
-    # Label the plots by B_r, B_theta, B_phi
-    ax_xmin, ax_xmax = ax.get_xlim()
-    ax_Dx = ax_xmax - ax_xmin
-    ax.text(ax_xmin + 1.01*ax_Dx, 0.,  'qval = %i' %qval, **csfont)
+        # Put some useful information on the title
+        title = dirname_stripped + (', iq = %i' %qval) + '\n' +\
+                (r'$r/R_\odot\ =\ %0.3f$' %rval) + '\n' +\
+                (r'$\lambda_c=%02.0f^\circ\ \ \ \ \ \Delta\lambda=%02.0f^\circ$'\
+                %(clat, dlat)) 
+        ax.set_title(title, **csfont)
 
-    # Put some useful information on the title
-    title = dirname_stripped + (', iq = %i' %qval) + '\n' +\
-            (r'$r/R_\odot\ =\ %0.3f$' %rval) + '\n' +\
-            (r'$\lambda_c=%02.0f^\circ\ \ \ \ \ \Delta\lambda=%02.0f^\circ$'\
-            %(clat, dlat)) 
-    ax.set_title(title, **csfont)
+        # Get ticks everywhere
+        plt.sca(ax)
+        plt.minorticks_on()
+        plt.tick_params(top=True, right=True, direction='in', which='both')
 
-    # Get ticks everywhere
-    plt.sca(ax)
-    plt.minorticks_on()
-    plt.tick_params(top=True, right=True, direction='in', which='both')
-
-    # Put grid of white lines on plot
-    ax.grid(color='k', linestyle='-', linewidth=1., alpha=0.3)
-    ax.grid(which='minor', color='k', linestyle='-', linewidth=0.5, alpha=0.3)
+        # Put grid of white lines on plot
+        ax.grid(color='k', linestyle='-', linewidth=1., alpha=0.3)
+        ax.grid(which='minor', color='k', linestyle='-', linewidth=0.5, alpha=0.3)
 
     #Save the plot
     if saveplot:
