@@ -51,7 +51,7 @@ linscale = None
 minmaxrz = None
 linthreshrz = None
 linscalerz = None
-the_file = get_widest_range_file(datadir, 'mag_energy')
+the_file = None
 
 forced = False
 rvals = []
@@ -60,6 +60,12 @@ symlog = False
 tag = ''
 
 plotdir = None
+
+which = 'tot' # by default look at total energy production from induction
+# other options:
+# -shear
+# -adv
+# -comp
 
 args = sys.argv[2:]
 nargs = len(args)
@@ -136,6 +142,19 @@ for i in range(nargs):
         nsubset.append(len(loc_list))
     elif arg == '-tag':
         tag = '_' + args[i+1]
+    elif arg == '-shear':
+        which = 'shear'
+    elif arg == '-adv':
+        which = 'adv'
+    elif arg == '-comp':
+        which = 'comp'
+
+if the_file is None:
+    dataname = 'mag_energy'
+    if which != 'tot':
+        dataname += '_' + which
+    the_file = get_widest_range_file(datadir, dataname)
+
 
 # Get the terms:
 print ('Getting work (tor) from ' + datadir + the_file)
@@ -252,12 +271,12 @@ else:
 fsize = 12
 fig.text(margin_x, 1 - 0.1*margin_top, dirname_stripped,\
          ha='left', va='top', fontsize=fsize, **csfont)
-fig.text(margin_x, 1 - 0.3*margin_top, 'inductive work (toroidal)',\
+fig.text(margin_x, 1 - 0.3*margin_top, 'inductive work tor. (' + which + ')',\
          ha='left', va='top', fontsize=fsize, **csfont)
 fig.text(margin_x, 1 - 0.5*margin_top, time_string,\
          ha='left', va='top', fontsize=fsize, **csfont)
 
-savefile = plotdir + dirname_stripped + '_magE_tor_' +\
+savefile = plotdir + dirname_stripped + '_mag_energy_tor_' + which + '_' +\
         str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + tag + '.png'
 
 if saveplot:

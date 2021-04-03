@@ -52,7 +52,7 @@ minmaxrz = None
 linthreshrz = None
 linscalerz = None
 the_file = get_widest_range_file(datadir, 'AZ_Avgs')
-the_me_file = get_widest_range_file(datadir, 'mag_energy')
+the_me_file = None
 
 forced = False
 rvals = []
@@ -61,6 +61,12 @@ symlog = False
 tag = ''
 
 plotdir = None
+
+which = 'tot' # by default look at total energy production from induction
+# other options:
+# -shear
+# -adv
+# -comp
 
 args = sys.argv[2:]
 nargs = len(args)
@@ -82,6 +88,9 @@ for i in range(nargs):
         the_file = args[i+1]
         the_file = the_file.split('/')[-1]
         the_me_file = args[i+2]
+        the_me_file = the_me_file.split('/')[-1]
+    elif arg == '-usefile':
+        the_me_file = args[i+1]
         the_me_file = the_me_file.split('/')[-1]
     elif arg == '-depths':
         strings = args[i+1].split()
@@ -139,11 +148,23 @@ for i in range(nargs):
         nsubset.append(len(loc_list))
     elif arg == '-tag':
         tag = '_' + args[i+1]
+    elif arg == '-shear':
+        which = 'shear'
+    elif arg == '-adv':
+        which = 'adv'
+    elif arg == '-comp':
+        which = 'comp'
+
+if the_me_file is None:
+    dataname = 'mag_energy'
+    if which != 'tot':
+        dataname += '_' + which
+    the_me_file = get_widest_range_file(datadir, dataname)
 
 # Get the terms:
 print ('Getting exact work (tot) from ' + datadir + the_file)
 di = get_dict(datadir + the_file)
-print ('Getting individual terms from ' + datadir + the_me_file)
+print ('Getting individual induction terms from ' + datadir + the_me_file)
 di_me = get_dict(datadir + the_me_file)
 
 iter1, iter2 = di['iter1'], di['iter2']
@@ -180,9 +201,18 @@ nr, nt = di['nr'], di['nt']
 # Get work terms
 fact = 1./4./np.pi # (to make into energy generation)
 # induct work: tot, mmm, fff, everything else (mpp + pmp + ppm)
-ind_tot = fact*vals[:, :, lut[2019]]
-ind_mmm = fact*vals[:, :, lut[2024]]
-ind_ppp = fact*vals[:, :, lut[2020]]
+if which == 'tot':
+    the_inds = [2019, 2024, 2020]
+elif which == 'shear':
+    the_inds = [2025, 2034, 2040]
+elif which == 'adv':
+    the_inds = [2026, 2035, 2041]
+elif which == 'comp':
+    the_inds = [2027, 2036, 2042]
+
+ind_tot = fact*vals[:, :, lut[the_inds[0]]]
+ind_mmm = fact*vals[:, :, lut[the_inds[1]]]
+ind_ppp = fact*vals[:, :, lut[the_inds[2]]]
 ind_rest = ind_tot - ind_mmm - ind_ppp
 terms = [ind_tot, ind_mmm, ind_ppp, ind_rest]
 
@@ -269,12 +299,12 @@ else:
 fsize = 12
 fig.text(margin_x, 1 - 0.1*margin_top, dirname_stripped,\
          ha='left', va='top', fontsize=fsize, **csfont)
-fig.text(margin_x, 1 - 0.3*margin_top, 'inductive work (tot)',\
+fig.text(margin_x, 1 - 0.3*margin_top, 'inductive work tot. (' + which + ')',\
          ha='left', va='top', fontsize=fsize, **csfont)
 fig.text(margin_x, 1 - 0.5*margin_top, time_string,\
          ha='left', va='top', fontsize=fsize, **csfont)
 
-savefile = plotdir + dirname_stripped + '_magE_tot_' +\
+savefile = plotdir + dirname_stripped + '_mag_energy_tot_' + which + '_' +\
         str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + tag + '.png'
 
 if saveplot:
