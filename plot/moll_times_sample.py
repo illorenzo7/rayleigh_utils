@@ -290,7 +290,7 @@ for i in range(my_nfiles):
                 ax = fig.add_axes((ax_left, ax_bottom, subplot_width, subplot_height))
                 
                 plot_moll(field, a.costheta, fig=fig, ax=ax, clon=clon,\
-                        varname=varname, minmax=minmax)     
+                        minmax=minmax)     
 
                 # label the subplot
                 varlabel = texlabels.get(varname, 0)
@@ -344,7 +344,7 @@ if rank == 0:
     print (format_time(t2 - t1))
     print(make_bold(fill_str('total time', lent, char)), end='')
     print (make_bold(format_time(t2 - t1_glob)))
-    print ('data saved at ')
-    print (make_bold(savefile))
+    print ('plots saved at ')
+    print (make_bold(plotdir))
     print ('view frames using ')
     print ('eog ' + plotdir)
