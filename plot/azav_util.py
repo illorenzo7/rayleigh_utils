@@ -19,7 +19,7 @@ from plotcommon import axis_range, default_axes_1by2, default_axes_1by1
 def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
     units='', minmax=None, posdef=False, logscale=False, symlog=False,\
     plotcontours=True, plotfield=True, nlevs=10, levels=None,\
-	plotlatlines=False, rvals=[], cbar_fs=10, cbar_aspect=1./20.,\
+	plotlatlines=False, rvals=[], cbar_fs=10, fontsize=12.0, cbar_aspect=1./20.,\
     showplot=False, plot_cbar=True, lw_scaling=1., cbar_scaling=1.,\
     linthresh=None, linscale=None, plotboundary=True, rbcz=None,\
     minmaxrz=None, linthreshrz=None, linscalerz=None, nosci=False,\
@@ -261,8 +261,8 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
                     cbar_height))        
             cbar = plt.colorbar(im, cax=cax, orientation='horizontal')
                 
-            cax.tick_params(labelsize=cbar_fs)
-            cbar.ax.tick_params(labelsize=cbar_fs)   
+            cax.tick_params(labelsize=fontsize)
+            cbar.ax.tick_params(labelsize=fontsize)   
             # font size for the ticks
 
             if logscale:
@@ -310,7 +310,7 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
             line_height = 1./4./fig_height_inches
             fig.text(cbar_left + 0.5*cbar_width, cbar_bottom - line_height,\
                      cbar_label, ha='center', va='top', **csfont,\
-                     fontsize=cbar_fs) 
+                     fontsize=fontsize) 
             #fig.text(cbax_left - 0.3*cbax_width, cbax_center_y,\
             #        cbar_label, ha='right', va='center', rotation=90,\
             #        fontsize=cbar_fs)
@@ -323,8 +323,8 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
                         cbar_height))        
                 cbar = plt.colorbar(imrz, cax=cax, orientation='horizontal')
                     
-                cax.tick_params(labelsize=cbar_fs)
-                cbar.ax.tick_params(labelsize=cbar_fs)   
+                cax.tick_params(labelsize=fontsize)
+                cbar.ax.tick_params(labelsize=fontsize)   
                 # font size for the ticks
 
                 if logscale:
@@ -366,7 +366,7 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
                 line_height = 1./4./fig_height_inches
                 fig.text(cbar_left + 0.5*cbar_width, cbar_bottom -\
                         line_height, cbar_label, ha='center', va='top',\
-                        **csfont, fontsize=cbar_fs) 
+                        **csfont, fontsize=fontsize) 
 
     # Plot contours in the meridional plane, if desired
     if plotcontours:
@@ -883,3 +883,59 @@ def streamfunction(vr,vt,r,cost,order=0):
             psi=0.5*(psi+psi2)
             
     return psi
+
+def plot_azav_grid(terms, rr, cost, maintitle=None, titles=None, fig_width_inches=7.0, ncol=3, cmap='RdYlBu_r', units='', minmax=None, posdef=False, logscale=False, symlog=False, plotcontours=True, plotfield=True, nlevs=10, levels=None, plotlatlines=False, rvals=[], cbar_fs=10.0, fontsize=12.0, cbar_aspect=1.0/20.0, showplot=False, plot_cbar=True, lw_scaling=1.0, cbar_scaling=1.0, linthresh=None, linscale=None, plotboundary=True, rbcz=None, minmaxrz=None, linthreshrz=None, linscalerz=None, nosci=False, cbar_prec=1):
+
+    # Set up the actual figure from scratch
+    margin_inches = 0.125 # margin width in inches (for both x and y) and 
+        # horizontally in between figures
+    margin_bottom_inches = 0.75*(2.0 - (rbcz is None)) 
+        # larger bottom margin to make room for colorbar(s)
+    margin_top_inches = 1.0 # wider top margin to accommodate subplot titles AND metadata
+    margin_subplot_top_inches = 0.25 # margin to accommodate just subplot titles
+    nplots = len(terms)
+    nrow = np.int(np.ceil(nplots/ncol))
+
+    subplot_width_inches = (fig_width_inches - (ncol + 1.0)*margin_inches)/ncol
+    # Make the subplot width so that ncol subplots fit together side-by-side
+    # with margins in between them and at the left and right.
+    subplot_height_inches = 2.0*subplot_width_inches 
+    # Each subplot should have an
+    # aspect ratio of y/x = 2/1 to accommodate meridional planes. 
+    fig_height_inches = margin_top_inches + nrow*(subplot_height_inches +\
+            margin_subplot_top_inches + margin_bottom_inches)
+    fig_aspect = fig_height_inches/fig_width_inches
+
+    # "Margin" in "figure units"; figure units extend from 0 to 1 in BOTH 
+    # directions, so unitless dimensions of margin will be different in x and y
+    # to force an equal physical margin
+    margin_x = margin_inches/fig_width_inches
+    margin_y = margin_inches/fig_height_inches
+    margin_top = margin_top_inches/fig_height_inches
+    margin_bottom = margin_bottom_inches/fig_height_inches
+    margin_subplot_top = margin_subplot_top_inches/fig_height_inches
+
+    # Subplot dimensions in figure units
+    subplot_width = subplot_width_inches/fig_width_inches
+    subplot_height = subplot_height_inches/fig_height_inches
+
+    # Generate the figure of the correct dimensions
+    fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
+
+    # plot all the terms
+    for iplot in range(nplots):
+        ax_left = margin_x + (iplot%ncol)*(subplot_width + margin_x)
+        ax_bottom = 1.0 - margin_top - subplot_height - margin_subplot_top - (iplot//ncol)*(subplot_height + margin_subplot_top + margin_bottom)
+        ax = fig.add_axes((ax_left, ax_bottom, subplot_width, subplot_height))
+        plot_azav(terms[iplot], rr, cost, fig=fig, ax=ax, cmap=cmap, units=units, minmax=minmax, posdef=posdef, logscale=logscale, symlog=symlog, plotcontours=plotcontours, plotfield=plotfield, nlevs=nlevs, levels=levels, plotlatlines=plotlatlines, rvals=rvals, fontsize=fontsize, cbar_aspect=cbar_aspect, showplot=showplot, plot_cbar=plot_cbar, lw_scaling=lw_scaling, cbar_scaling=cbar_scaling, linthresh=linthresh, linscale=linscale, plotboundary=plotboundary, rbcz=rbcz, minmaxrz=minmaxrz, linthreshrz=linthreshrz, linscalerz=linscalerz, nosci=nosci, cbar_prec=cbar_prec)
+
+        if not titles is None:
+            title_loc = '(' + letters[iplot] + ') ' + titles[iplot]
+        else:
+            title_loc = '(' + letters[iplot] + ')'
+        ax.set_title(title_loc, loc='left', va='bottom', **csfont, fontsize=fontsize)
+
+    # Put the main title in upper left
+    fig.text(margin_x, 1.0 - margin_y, maintitle, ha='left', va='top', fontsize=fontsize, **csfont)
+
+    return fig
