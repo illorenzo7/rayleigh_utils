@@ -1235,3 +1235,63 @@ def thin_data(vals, ntot):
     else:
         vals_new = vals
     return vals_new
+
+class cla_object:
+    def __init__(self, dataval, datatype):
+        self.val = dataval
+        self.type = datatype
+
+clas_default = dict({})
+clas_default['showplot'] = cla_object(True, my_bool)
+clas_default['saveplot'] = cla_object(True, my_bool)
+clas_default['plotcontours'] = cla_object(True, my_bool)
+clas_default['plotlatlines'] = cla_object(True, my_bool)
+clas_default['plotboundary'] = cla_object(True, my_bool)
+clas_default['forced'] = cla_object(False, my_bool)
+clas_default['symlog'] = cla_object(False, my_bool)
+
+clas_default['minmax'] = cla_object(None, float)
+clas_default['linthresh'] = cla_object(None, float)
+clas_default['linscale'] = cla_object(None, float)
+clas_default['minmaxrz'] = cla_object(None, float)
+clas_default['linthreshrz'] = cla_object(None, float)
+clas_default['linscalerz'] = cla_object(None, float)
+clas_default['rvals'] = cla_object(None, float)
+clas_default['rbcz'] = cla_object(None, float)
+
+clas_default['thefile'] = cla_object(None, str)
+clas_default['tag'] = cla_object('', str)
+clas_default['plotdir'] = cla_object(None, str)
+
+def read_clas(args):
+    clas_out = clas_default.copy()
+    nargs = len(args)
+    where_keys = []
+    for i in range(nargs):
+        arg = args[i]
+        if arg[:2] == '--':
+            where_keys.append(i)
+    nkeys = len(where_keys)
+    for ikey in range(nkeys):
+        iarg_key = where_keys[ikey]
+        key = args[iarg_key][2:] # strip the prepending "--"
+        the_type = clas_default[key].type
+        if ikey == nkeys - 1:
+            iarg_nextkey = nargs
+        else:
+            iarg_nextkey = where_keys[ikey + 1]
+
+        # store the cla value in the "vals" list
+        vals = []
+        for i in range(iarg_key + 1, iarg_nextkey):
+            arg = args[i]
+            for st in arg.split():
+                vals.append(the_type(st))
+        # if the list has only one value, make it not a list
+        if len(vals) == 1:
+            vals = vals[0]
+        print (clas_out.keys())
+        print ("key = ", key)
+        clas_out[key] = cla_object(vals, the_type)
+        print (clas_out.keys())
+    return clas_out
