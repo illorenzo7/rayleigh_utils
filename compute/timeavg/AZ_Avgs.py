@@ -95,6 +95,7 @@ if rank == 0:
     file_list = file_list[index_first:index_last + 1]
     int_file_list = int_file_list[index_first:index_last + 1]
     nfiles = index_last - index_first + 1
+    weight = 1.0/nfiles
 
     # Get the problem size
     nproc_min, nproc_max, n_per_proc_min, n_per_proc_max =\
@@ -102,13 +103,7 @@ if rank == 0:
 
     # Will need the first data file for a number of things
     a0 = reading_func(radatadir + file_list[0], '')
-    nrec_full = a0.niter
     nq = a0.nq  # will add the three internal energies after
-
-    # Will need nrec (last niter) to get proper time axis size
-    af = reading_func(radatadir + file_list[-1], '')
-    nrec_last = af.niter
-    ntimes = (nfiles - 1)*nrec_full + nrec_last
 
     # get grid information
     rr = a0.radius
@@ -129,7 +124,7 @@ if rank == 0:
     xx = rr_2d*sint_2d
     zz = rr_2d*cost_2d
 
-    # Distribute file_list and my_ntimes to each process
+    # Distribute file_list to each process
     for k in range(nproc - 1, -1, -1):
         # distribute the partial file list to other procs 
         if k >= nproc_min: # last processes analyzes more files
@@ -141,26 +136,21 @@ if rank == 0:
             istart = k*my_nfiles
             iend = istart + my_nfiles
 
-        if k == nproc - 1: # last process may have nrec_last != nrec_full
-            my_ntimes = (my_nfiles - 1)*nrec_full + nrec_last
-        else:
-            my_ntimes = my_nfiles*nrec_full
-
         # Get the file list portion for rank k
         my_files = np.copy(int_file_list[istart:iend])
 
-        # send  my_files, my_nfiles, my_ntimes if nproc > 1
+        # send  my_files nproc > 1
         if k >= 1:
-            comm.send([my_files, my_nfiles, my_ntimes, ntimes], dest=k)
-else: # recieve my_files, my_nfiles, my_ntimes
-    my_files, my_nfiles, my_ntimes, ntimes = comm.recv(source=0)
+            comm.send(my_files, dest=k)
+else: # recieve my_files
+    my_files = comm.recv(source=0)
 
 # Broadcast dirname, radatadir, nq, etc.
 if rank == 0:
-    meta = [dirname, radatadir, nq, nt, nr, ntimes]
+    meta = [dirname, radatadir, nq, nt, nr, weight]
 else:
     meta = None
-dirname, radatadir, nq, nt, nr, ntimes = comm.bcast(meta, root=0)
+dirname, radatadir, nq, nt, nr, weight = comm.bcast(meta, root=0)
 
 # Checkpoint and time
 comm.Barrier()
@@ -169,14 +159,13 @@ if rank == 0:
     print (format_time(t2 - t1))
     print ('Considering %i %s files for the average: %s through %s'\
         %(nfiles, dataname, file_list[0], file_list[-1]))
-    print ("no. slices = %i" %ntimes)
     print(fill_str('computing', lent, char), end='\r')
     t1 = time.time()
 
 # Now analyze the data
 my_vals = np.zeros((nt, nr, nq))
 # "my_vals will be a weighted sum"
-my_weight = my_ntimes/ntimes
+my_nfiles = len(my_files)
 
 for i in range(my_nfiles):
     if rank == 0 and i == 0:
@@ -185,7 +174,7 @@ for i in range(my_nfiles):
         a = reading_func(radatadir + str(my_files[i]).zfill(8), '')
     # take mean along the time axis;
     # get the spherical average (not rms/skew/kurt)
-    my_vals = np.mean(a.vals, axis=3)*my_weight
+    my_vals += np.mean(a.vals, axis=3)*weight
     if rank == 0:
         pcnt_done = (i + 1)/my_nfiles*100.
         print(fill_str('computing', lent, char) +\
@@ -209,7 +198,7 @@ if rank == 0:
     # Gather the results into this "master" array
     for j in range(nproc):
         if j >= 1:
-            # Get my_ntimes, my_times, my_iters, my_vals from rank j
+            # Get my_vals from rank j
             my_vals = comm.recv(source=j)
         # "my_vals" are all weighted: their sum equals the overall average
         vals += my_vals 
@@ -239,7 +228,7 @@ if rank == 0:
     # Get first and last iters of files
     iter1, iter2 = int_file_list[0], int_file_list[-1]
     f = open(savefile, 'wb')
-    pickle.dump({'vals': vals, 'lut': a0.lut, 'count': ntimes, 'iter1': iter1, 'iter2': iter2, 'qv': a0.qv, 'nq': a0.nq,  'rr': rr, 'rr_depth': rr_depth, 'rr_height': rr_height, 'nr': nr, 'ri': ri, 'ro': ro, 'd': d, 'tt': tt, 'tt_lat': tt_lat, 'sint': sint, 'cost': cost,'nt': nt, 'rr_2d': rr_2d, 'tt_2d': tt_2d, 'sint_2d': sint_2d, 'cost_2d': cost_2d, 'xx': xx, 'zz': zz}, f, protocol=4)
+    pickle.dump({'vals': vals, 'lut': a0.lut, 'count': nfiles, 'iter1': iter1, 'iter2': iter2, 'qv': a0.qv, 'nq': a0.nq,  'rr': rr, 'rr_depth': rr_depth, 'rr_height': rr_height, 'nr': nr, 'ri': ri, 'ro': ro, 'd': d, 'tt': tt, 'tt_lat': tt_lat, 'sint': sint, 'cost': cost,'nt': nt, 'rr_2d': rr_2d, 'tt_2d': tt_2d, 'sint_2d': sint_2d, 'cost_2d': cost_2d, 'xx': xx, 'zz': zz}, f, protocol=4)
     f.close()
     t2 = time.time()
     print (format_time(t2 - t1))
