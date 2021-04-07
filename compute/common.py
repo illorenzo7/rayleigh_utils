@@ -1256,7 +1256,6 @@ clas_default['linscale'] = cla_object(None, float)
 clas_default['minmaxrz'] = cla_object(None, float)
 clas_default['linthreshrz'] = cla_object(None, float)
 clas_default['linscalerz'] = cla_object(None, float)
-clas_default['rvals'] = cla_object(None, float)
 clas_default['rbcz'] = cla_object(None, float)
 
 clas_default['thefile'] = cla_object(None, str)
@@ -1295,3 +1294,72 @@ def read_clas(args):
         clas_out[key] = cla_object(vals, the_type)
         print (clas_out.keys())
     return clas_out
+
+def read_rvals(dirname, args):
+    ncheby, domain_bounds = get_domain_bounds(dirname)
+    ri = np.min(domain_bounds)
+    ro = np.max(domain_bounds)
+    ri, rm, ro = domain_bounds
+    rvals = []
+    for arg in args:
+        if arg == '--depths':
+            strings = args[i+1].split()
+            for st in strings:
+                rval = ro - float(st)*d
+                rvals.append(rval)
+        if arg == '--depthscz':
+            dcz = ro - rm
+            strings = args[i+1].split()
+            for st in strings:
+                rval = ro - float(st)*dcz
+                rvals.append(rval)
+        if arg == '--depthsrz':
+            drz = rm - ri
+            strings = args[i+1].split()
+            for st in strings:
+                rval = rm - float(st)*drz
+                rvals.append(rval)
+        if arg == '--rvals':
+            rvals = []
+            strings = args[i+1].split()
+            for st in strings:
+                rval = float(st)*rsun
+                rvals.append(rval)
+        if arg == '--rvalscm':
+            rvals = []
+            strings = args[i+1].split()
+            for st in strings:
+                rval = float(st)
+                rvals.append(rval)
+    return (np.array(rvals)/rsun).tolist()
+
+# Label averaging interval
+def get_time_info(dirname, iter1, iter2):
+    # Get the time range in sec
+    t1 = translate_times(iter1, dirname, translate_from='iter')['val_sec']
+    t2 = translate_times(iter2, dirname, translate_from='iter')['val_sec']
+
+    # Get the baseline time unit
+    rotation = get_parameter(dirname, 'rotation')
+    if rotation:
+        time_unit = compute_Prot(dirname)
+        time_label = r'$\rm{P_{rot}}$'
+        time_key = 'prot'
+    else:
+        time_unit = compute_tdt(dirname)
+        time_label = r'$\rm{TDT}$'
+        time_key = 'tdt'
+
+    if rotation:
+        time_string = ('t = %.1f to %.1f ' %(t1/time_unit, t2/time_unit))\
+                + time_label + (r'$\ (\Delta t = %.1f\ $'\
+                %((t2 - t1)/time_unit)) + time_label + ')'
+    else:
+        time_string = ('t = %.3f to %.3f ' %(t1/time_unit, t2/time_unit))\
+                + time_label + (r'$\ (\Delta t = %.3f\ $'\
+                %((t2 - t1)/time_unit)) + time_label + ')'
+    return time_string, time_unit, time_label, time_key
+
+def make_plotdir(plotdir):
+    if not os.path.isdir(plotdir):
+        os.makedirs(plotdir)
