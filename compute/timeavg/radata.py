@@ -255,7 +255,7 @@ if rank == 0:
     # set the save name by what we are saving (dataname)
     # and first and last iteration files for the trace
     iter1, iter2 = int_file_list[0], int_file_list[-1]
-    savename = dataname + '_' + str(iter1).zfill(8) + '_' +\
+    savename = dataname + '-' + str(iter1).zfill(8) + '_' +\
             str(iter2).zfill(8) + '.pkl'
     savefile = datadir + savename
 
