@@ -289,7 +289,7 @@ if xiter and tag == '':
 # Might need to use trace_2dom_G_Avgs file instead of trace_G_Avgs
 if inte_gtr2 or inte_subt or inte_subb or sep_czrz:
     if the_file is None:
-        the_file = get_widest_range_file(datadir, 'trace_2dom_G_Avgs')
+        the_file = get_widest_range_file(datadir, 'G_Avgs_trace_2dom')
     print ('Using 2dom trace from ' + datadir + the_file)
     di = get_dict(datadir + the_file) 
     vals = di['vals']
@@ -303,7 +303,7 @@ if inte_gtr2 or inte_subt or inte_subb or sep_czrz:
 
 else: # otherwise get it from trace_G_Avgs
     if the_file is None:
-        the_file = get_widest_range_file(datadir, 'trace_G_Avgs')
+        the_file = get_widest_range_file(datadir, 'G_Avgs_trace')
     print ('Using G_Avgs trace from ' + datadir + the_file)
     di = get_dict(datadir + the_file)
     vals = di['vals']

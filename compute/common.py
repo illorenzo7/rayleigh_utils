@@ -195,17 +195,6 @@ def strip_dirname(dirname):
         os.chdir(orig_dir)
     return dirname_stripped
 
-def strip_filename(filename):
-    filename_stripped = filename[:-4] # strip off the .npy
-    filename_split = filename_stripped.split('_')
-    return filename_split[0]
-
-def get_iters_from_file(filename):
-    filename_stripped = filename[:-4] # strip off the .npy
-    filename_split = filename_stripped.split('_')
-    iter1, iter2 = int(filename_split[-2]), int(filename_split[-1])
-    return iter1, iter2
-
 def is_an_int(string):
     len_str = len(string)
     bool_val = True
@@ -213,6 +202,16 @@ def is_an_int(string):
         char = string[i]
         bool_val *= (char >= '0' and char <= '9')
     return(bool(bool_val))
+
+def get_dataname_from_file(filename):
+    return = filename.split('-')[0]
+
+def get_iters_from_file(filename):
+    filename_end = filename.split('-')[-1][:-4] 
+    # (gets the [iter1]_[iter2].pkl and removes the trailing .ext)
+    iters_st = specific_file_end.split('_')
+    iter1, iter2 = int(iters_st[0]), int(iters_st[1])
+    return iter1, iter2
         
 def get_widest_range_file(datadir, dataname):
     # Find the desired file(s) in the data directory. If there are 
@@ -231,10 +230,7 @@ def get_widest_range_file(datadir, dataname):
     iters2 = []
     if len(specific_files) > 0:
         for specific_file in specific_files:
-            specific_file_end = specific_file.split('-')[-1][:-4] 
-            # (gets the [iter1]_[iter2].pkl and removes the trailing .pkl)
-            iters_st = specific_file_end.split('_')
-            iter1, iter2 = int(iters_st[0]), int(iters_st[1])
+            iter1, iter2 = get_iters_from_file(specific_file)
             ranges.append(iter2 - iter1)
             iters1.append(iter1)
             iters2.append(iter2)

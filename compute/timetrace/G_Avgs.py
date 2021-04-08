@@ -72,14 +72,14 @@ if rank == 0:
     # Get all the file names in datadir and their integer counterparts
     file_list, int_file_list, nfiles = get_file_lists(radatadir)
 
-    # Get desired file list from command-line arguments
+    # get desired analysis range
     args = sys.argv[2:]
-    nargs = len(args)
-    if nargs == 0:
-        index_first, index_last = nfiles - 101, nfiles - 1  
+    the_tuple = get_desired_range(int_file_list, args)
+    if the_tuple is None:
+        index_first, index_last = nfiles - 100, nfiles - 1  
         # By default trace over the last 100 files
     else:
-        index_first, index_last = get_desired_range(int_file_list, args)
+        index_first, index_last = the_tuple
 
     # Remove parts of file lists we don't need
     file_list = file_list[index_first:index_last + 1]
@@ -207,9 +207,7 @@ if rank == 0:
     if not os.path.isdir(datadir):
         os.makedirs(datadir)
 
-    # Set the timetrace savename by the directory, what we are saving,
-    # and first and last iteration files for the trace
-    dirname_stripped = strip_dirname(dirname)
+    # Set the timetrace savename 
     savename = 'G_Avgs_trace-' + file_list[0] + '_' +\
             file_list[-1] + '.pkl'
     savefile = datadir + savename
