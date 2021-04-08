@@ -53,30 +53,30 @@ from rayleigh_diagnostics import AZ_Avgs, Shell_Avgs, G_Avgs,\
 if rank == 0:
     args = sys.argv[2:]
     clas = read_clas(args)
-    dtype = clas['dtype'].val
+    radtype = clas['radtype']
 else:
-    dtype = None
-dtype = comm.bcast(dtype, root=0)
+    radtype = None
+radtype = comm.bcast(radtype, root=0)
 
-if dtype == 'azav':
+if radtype == 'azav':
     reading_func = AZ_Avgs
     dataname = 'AZ_Avgs'
-if dtype == 'shav':
+if radtype == 'shav':
     reading_func = Shell_Avgs
     dataname = 'Shell_Avgs'
-if dtype == 'gav':
+if radtype == 'gav':
     reading_func = G_Avgs
     dataname = 'G_Avgs'
-if dtype == 'specav':
+if radtype == 'specav':
     reading_func = Shell_Spectra
     dataname = 'Shell_Spectra'
-if dtype == 'ssav':
+if radtype == 'ssav':
     reading_func = Shell_Slices
     dataname = 'Shell_Slices'
-if dtype == 'merav':
+if radtype == 'merav':
     reading_func = Meridional_Slices
     dataname = 'Meridional_Slices'
-if dtype == 'eqav':
+if radtype == 'eqav':
     reading_func = Equatorial_Slices
     dataname = 'Equatorial_Slices'
 
@@ -128,12 +128,12 @@ if rank == 0:
     # Will need the first data file for array shape
     # (exclude the last axis---time axis---from the shape
     a0 = reading_func(radatadir + file_list[0], '')
-    if dtype == 'gav':
+    if radtype == 'gav':
         shape = np.shape(a0.vals[0, ...]) # Nick put the G_Avgs array as 
                                           # (ntimes, nq) for some reason
     else:
         shape = np.shape(a0.vals[..., 0]) #
-    if dtype == 'specav':
+    if radtype == 'specav':
         shape_lpower = np.shape(a0.lpower[:, :, :, 0, :]) # time axis
         # in weird place on this one
 
@@ -161,11 +161,11 @@ else: # recieve my_files
 # Broadcast dirname, radatadir, nq, etc.
 if rank == 0:
     meta = [dirname, radatadir, shape, weight]
-    if dtype == 'specav':
+    if radtype == 'specav':
         meta.append(shape_lpower)
 else:
     meta = None
-if dtype == 'specav':
+if radtype == 'specav':
     dirname, radatadir, shape, weight, shape_lpower = comm.bcast(meta, root=0)
 else:
     dirname, radatadir, shape, weight = comm.bcast(meta, root=0)
@@ -182,7 +182,7 @@ if rank == 0:
 
 # Now analyze the data
 my_vals = np.zeros(shape)
-if dtype == 'specav':
+if radtype == 'specav':
     my_lpower = np.zeros(shape_lpower)
 my_nfiles = len(my_files)
 for i in range(my_nfiles):
@@ -191,11 +191,11 @@ for i in range(my_nfiles):
     else:   
         a = reading_func(radatadir + str(my_files[i]).zfill(8), '')
     # take mean along the time axis, which is usually the last axis
-    if dtype == 'gav':
+    if radtype == 'gav':
         axis_to_average = 0
     else:
         axis_to_average = len(shape)
-    if dtype == 'specav':
+    if radtype == 'specav':
         my_vals += np.mean(np.abs(a.vals)**2.0, axis=axis_to_average)*weight
         my_lpower += np.mean(a.lpower, axis=3)*weight
     else:
@@ -220,7 +220,7 @@ if rank == 0:
 if rank == 0:
     # Initialize zero-filled 'vals' array to store the data
     vals = np.zeros(shape)
-    if dtype == 'specav':
+    if radtype == 'specav':
         lpower = np.zeros(shape_lpower)
 
     # Gather the results into this "master" array
@@ -228,16 +228,16 @@ if rank == 0:
         if j >= 1:
             # Get my_vals from rank j
             my_vals = comm.recv(source=j, tag=0)
-            if dtype == 'specav':
+            if radtype == 'specav':
                 my_lpower = comm.recv(source=j, tag=1)
         # "my_vals" are all weighted: their sum equals the overall average
         vals += my_vals 
-        if dtype == 'specav':
+        if radtype == 'specav':
             lpower += my_lpower
 
 else: # other processes send their data
     comm.send(my_vals, dest=0, tag=0)
-    if dtype == 'specav':
+    if radtype == 'specav':
         comm.send(my_lpower, dest=0, tag=1)
 
 # Make sure proc 0 collects all data
@@ -246,7 +246,7 @@ comm.Barrier()
 # proc 0 saves the data
 if rank == 0:
     # create data directory if it doesn't already exist
-    datadir = clas['datadir'].val
+    datadir = clas['datadir']
     if datadir is None:
         datadir = dirname + '/data/'
     if not os.path.isdir(datadir):
@@ -262,7 +262,7 @@ if rank == 0:
     # save the data
     f = open(savefile, 'wb')
     di_sav = {'vals': vals, 'lut': a0.lut, 'count': nfiles, 'iter1': iter1, 'iter2': iter2, 'qv': a0.qv, 'shape': shape}
-    if dtype == 'specav':
+    if radtype == 'specav':
         di_sav['lpower'] = lpower
         di_sav['shape_lpower'] = shape_lpower
     pickle.dump(di_sav, f, protocol=4)
