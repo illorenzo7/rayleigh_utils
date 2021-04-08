@@ -214,44 +214,27 @@ def is_an_int(string):
         bool_val *= (char >= '0' and char <= '9')
     return(bool(bool_val))
         
-def get_widest_range_file(datadir, data_name):
+def get_widest_range_file(datadir, dataname):
     # Find the desired file(s) in the data directory. If there are 
     # multiple, by default choose the one with widest range in the
     # trace/average/distribution
     # If there is no matching file, return the empty string
     datafiles = os.listdir(datadir)
-    len_name = len(data_name)
     specific_files = []
     for i in range(len(datafiles)):
         datafile = datafiles[i]
-        if data_name in datafile:
-            istart = datafile.find(data_name)
-            num = 1 # iterations should usually start right after the 
-                    # data type name
-            if data_name == 'time-longitude': # except for time-latitude
-                num = 16
-            possible_iter = datafile[istart + len_name + num:istart + len_name + num + 8]
-            if is_an_int(possible_iter):
-                if data_name == 'G_Avgs' or data_name == 'Shell_Avgs':
-                    # can't confuse "G_Avgs" or "Shell_Avgs"  with 
-                    # "trace_G_Avgs"/"trace_Shell_Avgs"; 
-                    # please NEVER make a run directory with "trace" in 
-                    # the name!
-                    if not 'trace' in datafile and \
-                            not 'inte_from' in datafile:
-                        specific_files.append(datafile)
-                else:
-                    specific_files.append(datafile)
+        if dataname == datafile.split('-')[0]:
+            specific_files.append(datafile)
 
     ranges = []
     iters1 = []
     iters2 = []
     if len(specific_files) > 0:
         for specific_file in specific_files:
-            specific_file_stripped = specific_file[:-4] 
-                # get rid of '.npy'...
-            li2 = specific_file_stripped.split('_')
-            iter1, iter2 = int(li2[-2]), int(li2[-1])
+            specific_file_end = specific_file.split('-')[-1][:-4] 
+            # (gets the [iter1]_[iter2].pkl and removes the trailing .pkl)
+            iters_st = specific_file_end.split('_')
+            iter1, iter2 = int(iters_st[0]), int(iters_st[1])
             ranges.append(iter2 - iter1)
             iters1.append(iter1)
             iters2.append(iter2)
