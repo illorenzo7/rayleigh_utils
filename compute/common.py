@@ -1261,6 +1261,8 @@ clas_default['rbcz'] = cla_object(None, float)
 clas_default['thefile'] = cla_object(None, str)
 clas_default['tag'] = cla_object('', str)
 clas_default['plotdir'] = cla_object(None, str)
+clas_default['datadir'] = cla_object(None, str)
+clas_default['dtype'] = cla_object('azav', str)
 
 def read_clas(args):
     clas_out = clas_default.copy()
