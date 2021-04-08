@@ -19,7 +19,7 @@ from plotcommon import axis_range, default_axes_1by2, default_axes_1by1
 def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
     units='', minmax=None, posdef=False, logscale=False, symlog=False,\
     plotcontours=True, plotfield=True, nlevs=10, levels=None,\
-	plotlatlines=False, rvals=[], cbar_fs=10, fontsize=12.0, cbar_aspect=1./20.,\
+	plotlatlines=False, rvals=None, cbar_fs=10, fontsize=12.0, cbar_aspect=1./20.,\
     showplot=False, plot_cbar=True, lw_scaling=1., cbar_scaling=1.,\
     linthresh=None, linscale=None, plotboundary=True, rbcz=None,\
     minmaxrz=None, linthreshrz=None, linscalerz=None, nosci=False,\
@@ -481,19 +481,18 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
 
     # Plot various radii, if desired
     # If rbcz has been provided, it should be one of the radii plotted
-    # crude way to ensure "rvals" is passed by value, not reference
-    tmp = list(rvals)
-    del rvals
-    rvals = tmp
     if not rbcz is None and plotboundary:
-        rvals.append(rbcz)
-    
-    for rval in rvals: 
-        plt.sca(ax)
-        rval /= ro
-        # "dimensional" rval (in dimensions of ro!)
-        plt.plot(rval*sint, rval*cost, 'k--',\
-                linewidth=.7*lw_scaling)
+        if rvals is None:
+            rvals = np.array([rbcz])
+        else:
+            rvals = np.hstack((rvals, np.array([rbcz])))
+  
+    if not rvals is None:
+        for rval in rvals: 
+            plt.sca(ax)
+            rval *= (rsun/ro)
+            plt.plot(rval*sint, rval*cost, 'k--',\
+                    linewidth=0.7*lw_scaling)
 
     # Set ax ranges to be just outside the boundary lines
     lilbit = 0.01

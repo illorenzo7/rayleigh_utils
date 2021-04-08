@@ -1255,13 +1255,26 @@ def read_cla_vals(args, i, dtype='float'):
 clas_default = dict({})
 clas_default['datadir'] = None
 clas_default['radtype'] = 'azav'
+clas_default['tag'] = ''
 
 # plotting stuff
+clas_default['plotdir'] = None
 clas_default['nlevs'] = 20
 clas_default['rbcz'] = None
 clas_default['minmax'] = None
-clas_default['rvals'] = []
+clas_default['minmaxrz'] = None
 clas_default['the_file'] = None
+clas_default['linthresh'] = None
+clas_default['linscale'] = None
+clas_default['linthreshrz'] = None
+clas_default['linscalerz'] = None
+
+clas_default['symlog'] = False
+clas_default['plotcontours'] = True
+clas_default['plotlatlines'] = True
+clas_default['plotboundary'] = True
+clas_default['saveplot'] = True
+clas_default['showplot'] = True
 
 def read_clas(args):
     clas = clas_default.copy()
@@ -1278,20 +1291,40 @@ def read_clas(args):
             clas['plotdir'] = args[i+1]
         if arg == '--minmax':
             clas['minmax'] = read_cla_vals(args, i)
-        elif arg == '--rbcz':
+        if arg == '-minmaxrz':
+            minmaxrz = read_cla_vals(args, i)
+        if arg == '--rbcz':
             clas['rbcz'] = float(args[i+1])
-        elif arg == '--nlevs':
+        if arg == '--nlevs':
             clas['nlevs'] = int(args[i+1])
-        elif arg == '--usefile':
+        if arg == '--usefile':
             the_file = args[i+1]
             clas['the_file'] = the_file.split('/')[-1]
+        if arg == '--nocontour':
+            clas['plotcontours'] = False
+        if arg == '--nobound':
+            clas['plotboundary'] = False
+        if arg == '--nolat':
+            clas['plotlatlines'] = False
+        if arg == '--symlog':
+            clas['symlog'] = True
+        if arg == '--linthresh':
+            clas['linthresh'] = float(args[i+1])
+        if arg == '--linscale':
+            clas['linscale'] = float(args[i+1])
+        if arg == '--linthreshrz':
+            clas['linthreshrz'] = float(args[i+1])
+        if arg == '--linscalerz':
+            clas['linscalerz'] = float(args[i+1])
+        if arg == '--tag':
+            clas['tag'] = '_' + args[i+1]
     return clas
 
 def read_rvals(dirname, args):
     nargs = len(args)
     ncheby, domain_bounds = get_domain_bounds(dirname)
     ri, rm, ro = domain_bounds
-    rvals = []
+    rvals = None
     # first get rvals in cm
     for i in range(nargs):
         arg = args[i]
@@ -1300,14 +1333,16 @@ def read_rvals(dirname, args):
         if arg == '--depthscz':
             dcz = ro - rm
             rvals = ro - read_cla_vals(args, i)*dcz
-        if arg == '--depthsrz':
+        if arg == '--depthirz':
             drz = rm - ri
             rvals = rm - read_cla_vals(args, i)*drz
         if arg == '--rvals':
             rvals = read_cla_vals(args, i)*rsun
         if arg == '--rvalscm':
             rvals = read_cla_vals(args, i)
-    return (rvals/rsun)
+    if not rvals is None:
+        rvals /= rsun
+    return rvals
 
 # Label averaging interval
 def get_time_info(dirname, iter1, iter2):
@@ -1339,3 +1374,24 @@ def get_time_info(dirname, iter1, iter2):
 def make_plotdir(plotdir):
     if not os.path.isdir(plotdir):
         os.makedirs(plotdir)
+
+def get_grid_info(dirname):
+    di_out = dict({})
+    gi = GridInfo(dirname + '/grid_info', '')
+    di_out['rr'] = gi.radius
+    di_out['rr'] = gi.radius
+    di_out['cost'] = gi.costheta
+    di_out['sint'] = gi.sintheta
+    di_out['cott'] = di_out['cost']/di_out['sint']
+    di_out['tt'] = np.arccos(di_out['cost'])
+    di_out['tt_lat'] = (np.pi/2 - di_out['tt'])*180/np.pi
+    di_out['nr'] = gi.nr
+    di_out['nt'] = gi.ntheta
+    di_out['tt_2d'] = di_out['tt'].reshape((di_out['nt'], 1))
+    di_out['rr_2d'] = di_out['rr'].reshape((1, di_out['nr']))
+    di_out['sint_2d'] = np.sin(di_out['tt_2d'])
+    di_out['cost_2d'] = np.cos(di_out['tt_2d'])
+    di_out['cott_2d'] = di_out['cost_2d']/di_out['sint_2d']
+    di_out['xx'] = di_out['rr_2d']*di_out['sint_2d']
+    di_out['zz'] = di_out['rr_2d']*di_out['cost_2d']
+    return di_out

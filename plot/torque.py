@@ -37,11 +37,6 @@ datadir = dirname + '/data/'
 args = sys.argv[2:]
 clas = read_clas(args)
 rvals = read_rvals(dirname, args)
-#nargs = len(args)
-#for i in range(nargs):
-#    arg = args[i]
-#    if arg == '-plotdir':
-#        plotdir = args[i+1]
 
 # See if magnetism is "on"
 try:
@@ -49,47 +44,30 @@ try:
 except:
     magnetism = False # if magnetism wasn't specified, it must be "off"
 
-# Get the torques:
-thefile = clas['thefile'].val
-if thefile is None:
-    thefile = get_widest_range_file(datadir, 'AZ_Avgs')
-print ('Getting torques from ' + datadir + thefile)
-di = get_dict(datadir + thefile)
+# Get the torques
+the_file = clas['the_file']
+if the_file is None:
+    the_file = get_widest_range_file(datadir, 'AZ_Avgs')
+print ('Getting torques from ' + datadir + the_file)
+di = get_dict(datadir + the_file)
 
 iter1, iter2 = di['iter1'], di['iter2']
 vals = di['vals']
 lut = di['lut']
 
-plotdir = clas['plotdir'].val
+plotdir = clas['plotdir']
 if plotdir is None:
     plotdir = dirname + '/plots/'
 make_plotdir(plotdir)
 
-# Get necessary grid info
-rr = di['rr']
-cost = di['cost']
-sint = di['sint']
-tt_lat = di['tt_lat']
-xx = di['xx']
-nr, nt = di['nr'], di['nt']
-
-ind_pp = lut[1801]
-ind_mm = lut[1802]
-ind_cor = lut[1803]
-ind_visc = lut[1804]
-
-torque_rs, torque_mc, torque_visc = -vals[:, :, ind_pp],\
-        -vals[:, :, ind_mm] + vals[:, :, ind_cor],\
-        vals[:, :, ind_visc]
+torque_rs, torque_mc, torque_visc = -vals[:, :, lut[1801]],\
+        -vals[:, :, lut[1802]] + vals[:, :, lut[1803]],\
+        vals[:, :, lut[1804]]
 torque_tot = torque_rs + torque_mc + torque_visc
 
 if magnetism:
-    ind_Maxwell_mean = lut[1805]
-    ind_Maxwell_rs = lut[1806]
-    
-    torque_Maxwell_mean = vals[:, :, ind_Maxwell_mean]
-    torque_Maxwell_rs = vals[:, :, ind_Maxwell_rs]
-    
+    torque_Maxwell_mean = vals[:, :, lut[1805]]
+    torque_Maxwell_rs = vals[:, :, lut[1806]]
     torque_tot += torque_Maxwell_mean + torque_Maxwell_rs
 
 torques = [torque_rs, torque_mc, torque_visc, torque_tot]
@@ -113,27 +91,28 @@ maintitle = dirname_stripped + '\n' +\
         time_string
 
 # Generate the figure using standard routine
-fig = plot_azav_grid (torques, rr, cost, units=units, maintitle=maintitle, titles=titles,\
-        minmax=clas['minmax'].val,\
-        plotcontours=clas['plotcontours'].val,\
+di_grid = get_grid_info(dirname)
+fig = plot_azav_grid (torques, di_grid['rr'], di_grid['cost'], units=units, maintitle=maintitle, titles=titles,\
+        minmax=clas['minmax'],\
+        plotcontours=clas['plotcontours'],\
         rvals=rvals,\
-        minmaxrz=clas['minmaxrz'].val,\
-        rbcz=clas['rbcz'].val,\
-        symlog=clas['symlog'].val,\
-    linthresh=clas['linthresh'].val,\
-    linscale=clas['linscale'].val,\
-    linthreshrz=clas['linthreshrz'].val,\
-    linscalerz=clas['linscalerz'].val,\
-    plotlatlines=clas['plotlatlines'].val,\
-    plotboundary=clas['plotboundary'].val)
+        minmaxrz=clas['minmaxrz'],\
+        rbcz=clas['rbcz'],\
+        symlog=clas['symlog'],\
+    linthresh=clas['linthresh'],\
+    linscale=clas['linscale'],\
+    linthreshrz=clas['linthreshrz'],\
+    linscalerz=clas['linscalerz'],\
+    plotlatlines=clas['plotlatlines'],\
+    plotboundary=clas['plotboundary'])
 
 # save the figure
 savefile = plotdir + dirname_stripped + '_torque_' + str(iter1).zfill(8) +\
-    '_' + str(iter2).zfill(8) + clas['tag'].val + '.png'
+    '_' + str(iter2).zfill(8) + clas['tag'] + '.png'
 
-if clas['saveplot'].val:
+if clas['saveplot']:
     print ('saving figure at ' + savefile)
     plt.savefig(savefile, dpi=300)
-if clas['showplot'].val:
+if clas['showplot']:
     plt.show()
 plt.close()
