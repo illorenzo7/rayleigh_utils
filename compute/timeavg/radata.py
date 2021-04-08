@@ -115,10 +115,6 @@ if rank == 0:
     else:
         index_first, index_last = the_tuple
 
-    datadir = clas['datadir'].val
-    if datadir is None:
-        datadir = dirname + '/data/'
-
     # Remove parts of file lists we don't need
     file_list = file_list[index_first:index_last + 1]
     int_file_list = int_file_list[index_first:index_last + 1]
@@ -132,7 +128,14 @@ if rank == 0:
     # Will need the first data file for array shape
     # (exclude the last axis---time axis---from the shape
     a0 = reading_func(radatadir + file_list[0], '')
-    shape = np.shape(a0.vals[..., 0])
+    if dtype == 'gav':
+        shape = np.shape(a0.vals[0, ...]) # Nick put the G_Avgs array as 
+                                          # (ntimes, nq) for some reason
+    else:
+        shape = np.shape(a0.vals[..., 0]) #
+    if dtype == 'specav':
+        shape_lpower = np.shape(a0.lpower[:, :, :, 0, :]) # time axis
+        # in weird place on this one
 
     # Distribute file_list to each process
     for k in range(nproc - 1, -1, -1):
@@ -158,9 +161,14 @@ else: # recieve my_files
 # Broadcast dirname, radatadir, nq, etc.
 if rank == 0:
     meta = [dirname, radatadir, shape, weight]
+    if dtype == 'specav':
+        meta.append(shape_lpower)
 else:
     meta = None
-dirname, radatadir, shape, weight = comm.bcast(meta, root=0)
+if dtype == 'specav':
+    dirname, radatadir, shape, weight, shape_lpower = comm.bcast(meta, root=0)
+else:
+    dirname, radatadir, shape, weight = comm.bcast(meta, root=0)
 
 # Checkpoint and time
 comm.Barrier()
@@ -174,16 +182,25 @@ if rank == 0:
 
 # Now analyze the data
 my_vals = np.zeros(shape)
-# "my_vals will be a weighted sum"
+if dtype == 'specav':
+    my_lpower = np.zeros(shape_lpower)
 my_nfiles = len(my_files)
-
 for i in range(my_nfiles):
     if rank == 0 and i == 0:
         a = a0
     else:   
         a = reading_func(radatadir + str(my_files[i]).zfill(8), '')
-    # take mean along the time axis, which is always the last axis
-    my_vals += np.mean(a.vals, axis=len(shape))*weight
+    # take mean along the time axis, which is usually the last axis
+    if dtype == 'gav':
+        axis_to_average = 0
+    else:
+        axis_to_average = len(shape)
+    if dtype == 'specav':
+        my_vals += np.mean(np.abs(a.vals)**2.0, axis=axis_to_average)*weight
+        my_lpower += np.mean(a.lpower, axis=3)*weight
+    else:
+        my_vals += np.mean(a.vals, axis=axis_to_average)*weight
+
     if rank == 0:
         pcnt_done = (i + 1)/my_nfiles*100.
         print(fill_str('computing', lent, char) +\
@@ -203,17 +220,25 @@ if rank == 0:
 if rank == 0:
     # Initialize zero-filled 'vals' array to store the data
     vals = np.zeros(shape)
+    if dtype == 'specav':
+        lpower = np.zeros(shape_lpower)
 
     # Gather the results into this "master" array
     for j in range(nproc):
         if j >= 1:
             # Get my_vals from rank j
-            my_vals = comm.recv(source=j)
+            my_vals = comm.recv(source=j, tag=0)
+            if dtype == 'specav':
+                my_lpower = comm.recv(source=j, tag=1)
         # "my_vals" are all weighted: their sum equals the overall average
         vals += my_vals 
+        if dtype == 'specav':
+            lpower += my_lpower
 
 else: # other processes send their data
-    comm.send(my_vals, dest=0)
+    comm.send(my_vals, dest=0, tag=0)
+    if dtype == 'specav':
+        comm.send(my_lpower, dest=0, tag=1)
 
 # Make sure proc 0 collects all data
 comm.Barrier()
@@ -221,10 +246,11 @@ comm.Barrier()
 # proc 0 saves the data
 if rank == 0:
     # create data directory if it doesn't already exist
+    datadir = clas['datadir'].val
     if datadir is None:
         datadir = dirname + '/data/'
-        if not os.path.isdir(datadir):
-            os.makedirs(datadir)
+    if not os.path.isdir(datadir):
+        os.makedirs(datadir)
 
     # set the save name by what we are saving (dataname)
     # and first and last iteration files for the trace
@@ -235,7 +261,11 @@ if rank == 0:
 
     # save the data
     f = open(savefile, 'wb')
-    pickle.dump({'vals': vals, 'lut': a0.lut, 'count': nfiles, 'iter1': iter1, 'iter2': iter2, 'qv': a0.qv, 'shape': shape}, f, protocol=4)
+    di_sav = {'vals': vals, 'lut': a0.lut, 'count': nfiles, 'iter1': iter1, 'iter2': iter2, 'qv': a0.qv, 'shape': shape}
+    if dtype == 'specav':
+        di_sav['lpower'] = lpower
+        di_sav['shape_lpower'] = shape_lpower
+    pickle.dump(di_sav, f, protocol=4)
     f.close()
     t2 = time.time()
     print (format_time(t2 - t1))
