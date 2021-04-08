@@ -1247,11 +1247,21 @@ def read_cla_vals(args, i, dtype='float'):
     # if the list has only one value, make it not a list
     if len(vals) == 1:
         vals = vals[0]
-    return vals
+    return np.array(vals)
 
+# set default CLAs
+
+# data averaging stuff
 clas_default = dict({})
 clas_default['datadir'] = None
 clas_default['radtype'] = 'azav'
+
+# plotting stuff
+clas_default['nlevs'] = 20
+clas_default['rbcz'] = None
+clas_default['minmax'] = None
+clas_default['rvals'] = []
+clas_default['the_file'] = None
 
 def read_clas(args):
     clas = clas_default.copy()
@@ -1259,48 +1269,45 @@ def read_clas(args):
     for i in range(nargs):
         arg = args[i]
         if arg == '--datadir':
-            clas['datadir'] = read_cla_vals(args, i, dtype='str')
+            clas['datadir'] = args[i+1]
         if arg == '--radtype':
-            clas['radtype'] = read_cla_vals(args, i, dtype='str')
+            clas['radtype'] = args[i+1]
+
+        # plotting stuff
+        if arg == '--plotdir':
+            clas['plotdir'] = args[i+1]
+        if arg == '--minmax':
+            clas['minmax'] = read_cla_vals(args, i)
+        elif arg == '--rbcz':
+            clas['rbcz'] = float(args[i+1])
+        elif arg == '--nlevs':
+            clas['nlevs'] = int(args[i+1])
+        elif arg == '--usefile':
+            the_file = args[i+1]
+            clas['the_file'] = the_file.split('/')[-1]
     return clas
 
 def read_rvals(dirname, args):
+    nargs = len(args)
     ncheby, domain_bounds = get_domain_bounds(dirname)
-    ri = np.min(domain_bounds)
-    ro = np.max(domain_bounds)
     ri, rm, ro = domain_bounds
     rvals = []
-    for arg in args:
+    # first get rvals in cm
+    for i in range(nargs):
+        arg = args[i]
         if arg == '--depths':
-            strings = args[i+1].split()
-            for st in strings:
-                rval = ro - float(st)*d
-                rvals.append(rval)
+            rvals = ro - read_cla_vals(args, i)*d
         if arg == '--depthscz':
             dcz = ro - rm
-            strings = args[i+1].split()
-            for st in strings:
-                rval = ro - float(st)*dcz
-                rvals.append(rval)
+            rvals = ro - read_cla_vals(args, i)*dcz
         if arg == '--depthsrz':
             drz = rm - ri
-            strings = args[i+1].split()
-            for st in strings:
-                rval = rm - float(st)*drz
-                rvals.append(rval)
+            rvals = rm - read_cla_vals(args, i)*drz
         if arg == '--rvals':
-            rvals = []
-            strings = args[i+1].split()
-            for st in strings:
-                rval = float(st)*rsun
-                rvals.append(rval)
+            rvals = read_cla_vals(args, i)*rsun
         if arg == '--rvalscm':
-            rvals = []
-            strings = args[i+1].split()
-            for st in strings:
-                rval = float(st)
-                rvals.append(rval)
-    return (np.array(rvals)/rsun).tolist()
+            rvals = read_cla_vals(args, i)
+    return (rvals/rsun)
 
 # Label averaging interval
 def get_time_info(dirname, iter1, iter2):

@@ -41,66 +41,16 @@ else:
 # already exist    
 datadir = dirname + '/data/'
 
-# Set defaults
-nlevs = 20
-AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
-rbcz = None
-minmax = None
-rvals = []
-
-# Read in CLAs (if any) to change default variable ranges and other options
-plotdir = None
-
 args = sys.argv[2:]
-nargs = len(args)
-for i in range(nargs):
-    arg = args[i]
-    if arg == '-plotdir':
-        plotdir = args[i+1]
-    if arg == '-minmax':
-        minmax = float(args[i+1]), float(args[i+2])
-    elif arg == '-rbcz':
-        rbcz = float(args[i+1])
-    elif arg == '-nlevs':
-        nlevs = int(args[i+1])
-    elif arg == '-usefile':
-        AZ_Avgs_file = args[i+1]
-        AZ_Avgs_file = AZ_Avgs_file.split('/')[-1]
-    elif arg == '-depths':
-        strings = args[i+1].split()
-        for st in strings:
-            rval = ro - float(st)*d
-            rvals.append(rval)
-    elif arg == '-depthscz':
-        rm = domain_bounds[1]
-        dcz = ro - rm
-        strings = args[i+1].split()
-        for st in strings:
-            rval = ro - float(st)*dcz
-            rvals.append(rval)
-    elif arg == '-depthsrz':
-        rm = domain_bounds[1]
-        drz = rm - ri
-        strings = args[i+1].split()
-        for st in strings:
-            rval = rm - float(st)*drz
-            rvals.append(rval)
-    elif arg == '-rvals':
-        rvals = []
-        strings = args[i+1].split()
-        for st in strings:
-            rval = float(st)*rsun
-            rvals.append(rval)
-    elif arg == '-rvalscm':
-        rvals = []
-        strings = args[i+1].split()
-        for st in strings:
-            rval = float(st)
-            rvals.append(rval)
-       
+clas = read_clas(args)
+rvals = read_rvals(dirname, args)
+
+the_file = clas['the_file']
+if the_file is None:
+    the_file = get_widest_range_file(datadir, 'AZ_Avgs')
 # Read in AZ_Avgs data
-print ('Getting data from ' + datadir + AZ_Avgs_file + ' ...')
-di = get_dict(datadir + AZ_Avgs_file)
+print ('Getting data from ' + datadir + the_file)
+di = get_dict(datadir + the_file)
 
 iter1, iter2 = di['iter1'], di['iter2']
 vals = di['vals']
