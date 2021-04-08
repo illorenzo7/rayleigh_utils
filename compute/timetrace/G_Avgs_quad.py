@@ -380,8 +380,8 @@ if rank == 0:
     # Set the timetrace savename by the directory, what we are saving,
     # and first and last iteration files for the trace
     dirname_stripped = strip_dirname(dirname)
-    savename = dirname_stripped + '_trace_quad_G_Avgs_' +\
-            file_list[0] + '_' + file_list[-1] + '.pkl'
+    savename = 'G_Avgs_trace_quad-' + file_list[0] + '_' +\
+            file_list[-1] + '.pkl'
     savefile = datadir + savename
 
     # compute the full average over the whole volume

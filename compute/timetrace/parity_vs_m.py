@@ -49,7 +49,7 @@ else:
 
 # Set the timetrace savename by the directory, what we are saving, 
 # and first and last iteration files for the trace
-savename = dirname_stripped + '_parity_vs_m_' +\
+savename = 'parity_vs_m-' +\
         file_list[index_first] + '_' + file_list[index_last] + '.pkl'
 savefile = datadir + savename    
 

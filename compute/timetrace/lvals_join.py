@@ -91,7 +91,7 @@ iter1, iter2 = di_list[0]['iter1'], di_list[nfiles - 1]['iter2']
 di_all['iter1'] = iter1
 di_all['iter2'] = iter2
 
-savename = dirname_stripped + '_trace_lvals_' + tag + str(iter1).zfill(8) +\
+savename = 'trace_lvals_' + tag + str(iter1).zfill(8) +\
         '_' + str(iter2).zfill(8) + '.pkl'
 savefile = datadir + savename
 print('saving ', savefile)

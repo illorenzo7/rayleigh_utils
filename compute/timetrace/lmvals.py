@@ -52,8 +52,8 @@ else:
 
 # Set the timetrace savename by the directory, what we are saving, 
 # and first and last iteration files for the trace
-savename = dirname_stripped + '_trace_lmvals_' +\
-        file_list[index_first] + '_' + file_list[index_last] + '.pkl'
+savename = 'lmvals_trace-' + file_list[index_first] + '_' +\
+        file_list[index_last] + '.pkl'
 savefile = datadir + savename    
 
 # Read in first Shell_Spectra file for (spectral) grid info

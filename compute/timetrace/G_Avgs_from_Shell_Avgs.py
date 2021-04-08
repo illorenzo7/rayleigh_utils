@@ -59,7 +59,7 @@ else:
 
 # Set the timetrace savename by the directory, what we are saving, and first and last
 # iteration files for the trace
-savename = dirname_stripped + '_trace_G_Avgs_' + file_list[index_first] + '_' +\
+savename = dirname_stripped + 'G_Avgs_trace-' + file_list[index_first] + '_' +\
     file_list[index_last] + '.pkl'
 savefile = datadir + savename    
 

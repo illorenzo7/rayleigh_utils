@@ -63,7 +63,7 @@ mvals = np.arange(nm, dtype='float')
 
 # Set the timetrace savename by the directory, what we are saving, 
 # and first and last iteration files for the trace
-savename = dirname_stripped + '_trace_lmvals_v_' +\
+savename = 'lmvals_v_trace-' +\
         file_list[index_first] + '_' + file_list[index_last] + '.pkl'
 savefile = datadir + savename    
 

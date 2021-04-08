@@ -291,8 +291,7 @@ if rank == 0:
 
     # Set the timetrace savename by the directory, what we are saving,
     # and first and last iteration files for the trace
-    dirname_stripped = strip_dirname(dirname)
-    savename = dirname_stripped + '_mag_energy_comp_' +\
+    savename = 'mag_energy_comp-' +\
             file_list[0] + '_' + file_list[-1] + '.pkl'
     savefile = datadir + savename
 
