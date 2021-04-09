@@ -204,12 +204,13 @@ def is_an_int(string):
     return(bool(bool_val))
 
 def get_dataname_from_file(filename):
-    return = filename.split('-')[0]
+    just_file = filename.split('/')[-1] #strip the possible full path info
+    return just_file.split('-')[0]
 
 def get_iters_from_file(filename):
     filename_end = filename.split('-')[-1][:-4] 
     # (gets the [iter1]_[iter2].pkl and removes the trailing .ext)
-    iters_st = specific_file_end.split('_')
+    iters_st = filename_end.split('_')
     iter1, iter2 = int(iters_st[0]), int(iters_st[1])
     return iter1, iter2
         

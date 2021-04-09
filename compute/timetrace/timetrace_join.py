@@ -15,7 +15,6 @@ import pickle
 import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
-from rayleigh_diagnostics import AZ_Avgs
 from common import *
 
 # Find the relevant place to store the data, and create the directory if it
@@ -23,55 +22,36 @@ from common import *
 files = []
 dirname = sys.argv[1]
 datadir = dirname + '/data/' # data subdirectory of output directory
-dirname_stripped = strip_dirname(dirname)
 
 # CLAs
-tag = ''
-delete_old_files = True # delete the partial files by default
 args = sys.argv[2:]
 nargs = len(args)
+tag = read_clas(args)['tag']
+delete_old_files = True # delete the partial files by default
 for i in range(nargs):
     arg = args[i]
-    if arg == '-tag':
-        tag = args[i+1] + '_'
-    if arg == '-nodel':
+    if arg == '--nodel':
         delete_old_files = False
     if arg[-4:] == '.pkl':
         files.append(arg)
-
 nfiles = len(files)
 
-print(make_bold('starting trace with'))
+dataname = get_dataname_from_file(files[0])
+print(make_bold('starting joined %s with' %dataname))
 print(files[0])
-di0 = get_dict(files[0])
 di0 = get_dict(files[0])
 vals = di0['vals'] # start with arrays from first dictionary and then 
     # append corresponding arrays from all the data files
+if dataname == 'G_Avgs_2dom':
+    vals_cz = di0['vals_cz'] 
+    vals_rz = di0['vals_rz'] 
+
 times = di0['times']
 iters = di0['iters']
 iter1 = di0['iter1']
 iter2 = di0['iter2']
 
 di_all = dict(di0)
-
-# Figure out the overlap of the values that are output in each dictionary
-qv0 = di0['qv']
-qv = np.copy(qv0)
-for i in range(nfiles - 1):
-    qv = np.intersect1d(qv, get_dict(files[i + 1])['qv'])
-di_all['qv'] = qv
-nq = len(qv)
-
-# Also need to update the lookup table
-lut = np.zeros_like(di_all['lut']) + 4000
-lut[qv] = np.arange(nq)
-di_all['lut'] = lut
-
-# Rearrange first axis in vals to correspond to qv
-q_inds0 = np.zeros(nq, dtype=int)
-for iq in range(nq):
-    q_inds0[iq] = np.argmin(np.abs(qv0 - qv[iq]))
-vals = vals[:, q_inds0]
 
 # Now append vals, times, and iters with data from joining data files
 for i in range(nfiles - 1):
@@ -85,25 +65,27 @@ for i in range(nfiles - 1):
     niters2 = len(np.where(di2_iters > di1_iter2)[0]) # this is the number
             # of NON-OVERLAPPING values in di2_iters
 
-    # Build array of (sorted) qv indices the dictionary to append
-    q_inds2 = np.zeros(nq, dtype='int')
-    for iq in range(nq):
-        q_inds2[iq] = np.argmin(np.abs(di2['qv'] - qv[iq]))
-
     # Now join the dictionary to append
-    vals = np.vstack((vals, di2['vals'][-niters2:, q_inds2]))
+    vals = np.vstack((vals, di2['vals'][-niters2:]))
+    if dataname == 'G_Avgs_2dom':
+        vals_cz = np.vstack((vals_cz, di2['vals'][-niters2:]))
+        vals_rz = np.vstack((vals_rz, di2['vals'][-niters2:]))
     times = np.hstack((times, di2['times'][-niters2:]))
     iters = np.hstack((iters, di2['iters'][-niters2:]))
     if i == nfiles - 2:
         iter2 = di2['iter2']
 
 di_all['vals'] = vals
+if dataname == 'G_Avgs_2d':
+    di_all['vals_cz'] = vals_cz
+    di_all['vals_rz'] = vals_rz
+
 di_all['times'] = times
 di_all['iters'] = iters
 di_all['iter1'] = iter1
 di_all['iter2'] = iter2
 
-savename = dirname_stripped + '_trace_G_Avgs_' + str(iter1).zfill(8) +\
+savename = dataname + tag + '-' + str(iter1).zfill(8) +\
         '_' + str(iter2).zfill(8) + '.pkl'
 savefile = datadir + savename
 f = open(savefile, 'wb')
