@@ -77,143 +77,29 @@ if rank == 0:
 
 # proc 0 reads the file lists and distributes them, also the meta data
 if rank == 0:
-    # Get the name of the run directory
+    # get the name of the run directory + CLAs
     dirname = sys.argv[1]
-
-    # Read in CLAs
     args = sys.argv[2:]
-    nargs = len(args)
+    clas = read_clas(dirname, args)
 
-    # Set other defaults
-    qvals = [1, 2, 3, 301, 302]
-    magnetism = get_parameter(dirname, 'magnetism')
-    if magnetism:
-        qvals.append(801)
-        qvals.append(802)
-        qvals.append(803)
-    depths = np.array([0.05, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 0.95])
-    aspect = 0.
-    tag = ''
-
-    # get some grid info
-    ncheby, domain_bounds = get_domain_bounds(dirname)
-    ri = np.min(domain_bounds)
-    ro = np.max(domain_bounds)
-    d = ro - ri
-
-    # reset parameters with CLAs
-    for i in range(nargs):
-        arg = args[i]
-        if arg == '-qvals':
-            qvals = []
-            qvals_str = args[i+1].split() 
-            for qval_str in qvals_str:
-                qvals.append(int(qval_str))
-        elif arg == '-depths':
-            depths = []
-            depths_str = args[i+1].split()
-            for depth_str in depths_str:
-                depths.append(float(depth_str))
-        elif arg == '-rvals':
-            depths = []
-            strings = args[i+1].split()
-            for st in strings:
-                rvalcm = float(st)*rsun
-                depths.append((ro - rvalcm)/d)
-        elif arg == '-rvalscm':
-            depths = []
-            strings = args[i+1].split()
-            for st in strings:
-                rvalcm = float(st)
-                depths.append((ro - rvalcm)/d)
-        elif arg == '-rrange':
-            r1 = float(args[i+1])
-            r2 = float(args[i+2])
-            n = int(args[i+3])
-            rvalscm = np.linspace(r1, r2, n)*rsun
-            depths = (ro - rvalscm)/d
-        elif arg == '-rzquarter': # 9 depths in RZ and CZ, with RZ depth
-            # 0.25 of CZ depth
-            print("Taking 9 depths in CZ and RZ each")
-            print("assuming depth RZ = (1/4) depth CZ")
-            aspect = 0.25
-        elif arg == '-rzhalf': # 9 depths in RZ and CZ, with RZ depth
-            # 0.5 of CZ depth
-            print("Taking 9 depths in CZ and RZ each")
-            print("assuming depth RZ = (1/2) depth CZ")
-            aspect = 0.5
-        elif arg == '-rz75': # 9 depths in RZ and CZ, with RZ depth
-            # 0.75 of CZ depth
-            print("Taking 9 depths in CZ and RZ each")
-            print("assuming depth RZ = (3/4) depth CZ")
-            aspect = 0.75
-        elif arg == '-rz1': # 9 depths in RZ and CZ, with RZ depth
-            aspect = 1.
-        elif arg == '-aspect':
-            aspect = float(args[i+1])
-        elif arg == '-torque':
-            print("tracing over TORQUE QUANTITIES")
-            qvals = [3, 1801, 1802, 1803, 1804, 1819]
-            if magnetism:
-                qvals.append(1805)
-                qvals.append(1806)
-            # only change tag if it wasn't specified already:
-            if tag == '':
-                tag = '_torque'
-        elif arg == '-induction':
-            print("tracing over INDUCTION QUANTITIES")
-            qvals = [1604,1605, 1609,1610, 1614,1615,\
-                    1619,1620, 1624,1625, 1629,1630,\
-            1601,1602,1603, 1606,1607,1608, 1611,1612,1613,\
-            1616,1617,1618, 1621,1622,1623, 1626,1627,1628]
-            # only change tag if it wasn't specified already:
-            if tag == '':
-                tag = '_induction'
-        elif arg == '-tag':
-            tag = '_' + args[i+1]
-        
-    # convert things to arrays
-    depths = np.array(depths)
-    qvals = np.array(qvals)
-
-    # if aspect ratio is > 0. make depths apply in each zone separately
-    eps = 1.e-4
-    if aspect > eps:
-        print("Taking 9 depths in CZ and RZ each (plus one at transition)")
-        print("assuming (depth RZ)/(depth CZ) = %.3f" %aspect)
-        d1 = 1./(1. + aspect)*depths
-        d2 = np.array([1./(1. + aspect)]) # include transition point
-        d3 = 1./(1. + aspect) + aspect/(1. + aspect)*depths
-        depths = np.hstack((d1, d2, d3))
-    else:
-        print("Taking 9 depths in CZ")
-
-    # Get the Rayleigh data directory
+    # get the Rayleigh data directory
     radatadir = dirname + '/' + dataname + '/'
 
-    # Get all the file names in datadir and their integer counterparts
-    file_list, int_file_list, nfiles = get_file_lists(radatadir)
-
     # get desired analysis range
-    the_tuple = get_desired_range(int_file_list, args)
-    if the_tuple is None:
-        index_first, index_last = nfiles - 101, nfiles - 1  
-        # By default trace over the last 100 files
-    else:
-        index_first, index_last = the_tuple
-
-    # Remove parts of file lists we don't need
+    file_list, int_file_list, nfiles = get_file_lists(radatadir)
+    index_first, index_last = get_desired_range(int_file_list, args)
     file_list = file_list[index_first:index_last + 1]
     int_file_list = int_file_list[index_first:index_last + 1]
     nfiles = index_last - index_first + 1
 
-    # Get the problem size
+    # get the problem size
     nproc_min, nproc_max, n_per_proc_min, n_per_proc_max =\
             opt_workload(nfiles, nproc)
 
     # Get metadata
     a0 = reading_func(radatadir + file_list[0], '')
     nrec_full = a0.niter
+    qvals = clas['qvals']
     nq = len(qvals)
 
     # Get bunch of grid info
@@ -227,7 +113,6 @@ if rank == 0:
     tt = np.arccos(cost)
     tt_lat = (np.pi/2 - tt)*180./np.pi
     nr = a0.nr
-    ndepths = len(depths)
     nt = a0.ntheta
 
     # compute some derivative quantities for the grid
@@ -236,21 +121,16 @@ if rank == 0:
     xx = rr_2d*sint_2d
     zz = rr_2d*cost_2d
 
-    # get r-indices associated with depths
-    rinds = []
-    for depth in depths:
-        rinds.append(np.argmin(np.abs(rr_depth - depth)))
-    rinds = np.array(rinds)
-
-    # recompute the actual depths we get
-    depths = rr_depth[rinds]
-    rvalscm = ro - d*depths
-    rvals = rvalscm/rsun
-    print ("taking radii at ")
-    print ("rinds = ", rinds)
-    print ("rvals = ", rvals)
-    print ("rvalscm = ", rvalscm)
-    print ("depths = ", depths)
+    # get r-indices associated with desired rvals
+    irvals = []
+    for rval in clas['rvals']:
+        irvals.append(np.argmin(np.abs(rr/rsun - rval)))
+    irvals = np.array(irvals)
+    # recompute the actual rvals we get
+    rvals = rr[irvals]/rsun
+    nrvals = len(rvals)
+    print ("sampling radii at")
+    print ("rvals = " + arr_to_str(rvals, '%1.3f'))
 
     # Will need nrec (last niter) to get proper time axis size
     af = reading_func(radatadir + file_list[-1], '')
@@ -283,12 +163,12 @@ if rank == 0:
 else: # recieve my_files, my_nfiles, my_ntimes
     my_files, my_nfiles, my_ntimes = comm.recv(source=0)
 
-# Broadcast dirname, radatadir, qvals, nq, rinds, ndepths, nt
+# broadcast meta data
 if rank == 0:
-    meta = [dirname, radatadir, qvals, nq, rinds, ndepths, nt]
+    meta = [dirname, radatadir, qvals, nq, irvals, nrvals, nt]
 else:
     meta = None
-dirname, radatadir, qvals, nq, rinds, ndepths, nt = comm.bcast(meta, root=0)
+dirname, radatadir, qvals, nq, irvals, nrvals, nt = comm.bcast(meta, root=0)
 
 # Checkpoint and time
 comm.Barrier()
@@ -304,7 +184,7 @@ if rank == 0:
 # Now analyze the data
 my_times = np.zeros(my_ntimes)
 my_iters = np.zeros(my_ntimes, dtype='int')
-my_vals = np.zeros((my_ntimes, nt, ndepths, nq))
+my_vals = np.zeros((my_ntimes, nt, nrvals, nq))
 
 my_count = 0
 for i in range(my_nfiles):
@@ -316,12 +196,12 @@ for i in range(my_nfiles):
         if my_count < my_ntimes: # make sure we don't go over the allotted
             # space in the arrays
             my_vals[my_count, :, :, :] =\
-                    a.vals[:, :, :, j][:, rinds, :][:, :, a.lut[qvals]]
+                    a.vals[:, :, :, j][:, irvals, :][:, :, a.lut[qvals]]
             my_times[my_count] = a.time[j] 
             my_iters[my_count] = a.iters[j]
         my_count += 1
     if rank == 0:
-        pcnt_done = my_count/my_ntimes*100.
+        pcnt_done = my_count/my_ntimes*100.0
         print(fill_str('computing', lent, char) +\
                 ('rank 0 %5.1f%% done' %pcnt_done), end='\r')
 
@@ -338,7 +218,7 @@ if rank == 0:
 # proc 0 now collects the results from each process
 if rank == 0:
     # Initialize zero-filled 'vals/times/iters' arrays to store the data
-    vals = np.zeros((ntimes, nt, ndepths, nq))
+    vals = np.zeros((ntimes, nt, nrvals, nq))
     times = np.zeros(ntimes)
     iters = np.zeros(ntimes, dtype='int')
 
@@ -367,23 +247,15 @@ if rank == 0:
 
     # Set the timetrace savename by the directory, what we are saving,
     # and first and last iteration files for the trace
-    savename = 'timelat' + tag + '-' +\
+    savename = 'timelat' + clas['tag'] + '-' +\
             file_list[0] + '_' + file_list[-1] + '.pkl'
     savefile = datadir + savename
 
     # save the data
     f = open(savefile, 'wb')
-    # will also need first and last iteration files
-    iter1, iter2 = int_file_list[0], int_file_list[-1]
-    pickle.dump({'vals': vals, 'times': times, 'iters': iters,\
-    'rvals': rvals, 'rvalscm': rvalscm,\
-    'depths': depths,'qvals': qvals, 'rinds': rinds, 'niter': len(iters),\
-    'ndepths': ndepths, 'nq': nq, 'iter1': iter1, 'iter2': iter2, 'rr': rr,\
-    'rr_depth': rr_depth, 'rr_height': rr_height, 'nr': nr, 'ri': ri,\
-    'ro': ro, 'd': d, 'tt': tt, 'tt_lat': tt_lat,\
-    'sint': sint, 'cost': cost, 'ntheta': nt,\
-    'rr_2d': rr_2d, 'tt_2d': tt_2d, 'sint_2d': sint_2d,\
-    'cost_2d': cost_2d, 'xx': xx, 'zz': zz}, f, protocol=4)
+    di_sav = {'vals': vals, 'times': times, 'iters': iters,\
+    'rvals': rvals, 'qvals': qvals}
+    pickle.dump(di_sav, f, protocol=4)
     f.close()
     t2 = time.time()
     print (format_time(t2 - t1))

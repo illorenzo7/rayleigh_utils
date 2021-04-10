@@ -261,10 +261,9 @@ if rank == 0:
 
     # save the data
     f = open(savefile, 'wb')
-    di_sav = {'vals': vals, 'lut': a0.lut, 'count': nfiles, 'iter1': iter1, 'iter2': iter2, 'qv': a0.qv, 'shape': shape}
+    di_sav = {'vals': vals, 'lut': a0.lut, 'count': nfiles, 'qv': a0.qv}
     if radtype == 'specav':
         di_sav['lpower'] = lpower
-        di_sav['shape_lpower'] = shape_lpower
     pickle.dump(di_sav, f, protocol=4)
     f.close()
     t2 = time.time()

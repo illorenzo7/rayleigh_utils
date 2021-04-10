@@ -97,89 +97,77 @@ def get_file_lists(radatadir):
     
     return file_list, int_file_list, nfiles
 
-range_options = ['--range', '--centerrange', '--leftrange',\
-        '--rightrange', '--n', '--f', '--all', '--iter']
-n_range_options = len(range_options)
-
 def get_desired_range(int_file_list, args):
     nargs = len(args)
     nfiles = len(int_file_list)
     # By default, the range will always be the last 100 files:
     index_first, index_last = nfiles - 100, nfiles - 1
-    # Determine if user specified any sort of range
-    # If not return None instead of (index_first, index_last) tuple
-    user_specified_range = False
-    for i in range(n_range_options):
-        if range_options[i] in args:
-            user_specified_range = True
-    if user_specified_range:
-        for i in range(nargs):
-            arg = args[i]
-            if arg in ['--range', '--centerrange', '--leftrange',\
-                    '--rightrange', '--iter']: # first arg will be iter no.
-                # 'first' means first available file.
-                # 'last' means last available file.
-                desired_iter = args[i+1]
-                if desired_iter == 'first':
-                    desired_iter = int_file_list[0]
-                elif desired_iter == 'last':
-                    desired__iter = int_file_list[-1]
-                else:
-                    desired_iter = int(desired_iter)
-                index = np.argmin(np.abs(int_file_list - desired_iter))
-            if arg in ['--centerrange', '--rightrange', '--leftrange']:
-                # many options include an "ndatafiles" argument
-                ndatafiles = int(args[i+2])
-            elif arg in ['--n', '--f']:
-                ndatafiles = int(args[i+1])
-            if arg == '--range': # average between two specific files
-                index_first = index # first arg is first desired iter
-                # also need last iter
-                desired_iter = args[i+2]
-                if desired_iter == 'first':
-                    desired_iter = int_file_list[0]
-                elif desired_iter == 'last':
-                    desired_iter = int_file_list[-1]
-                else:
-                    desired_iter = int(desired_iter)
-                index_last = np.argmin(np.abs(int_file_list - desired_iter))
-            elif arg == '--centerrange': #range centered around specific file
-                if ndatafiles % 2 == 0: #ndatafiles is even
-                    index_first = index - ndatafiles//2 + 1
-                    index_last = index + ndatafiles//2
-                else:  #ndatafiles is odd
-                    index_first = index - ndatafiles//2
-                    index_last = index + ndatafiles//2
-            elif arg == '--leftrange': # range with specific file first
-                index_first = index
-                index_last = index + ndatafiles - 1
-            elif arg == '--rightrange': # range with specific file last
-                index_last = index
-                index_first = index - ndatafiles + 1
-            elif arg == '--n': 
-                # range with certain no. files ending with the last
-                index_last = nfiles - 1
-                index_first = nfiles - ndatafiles
-            elif arg == '--f': 
-                # range with certain no. files starting with the first
-                index_first = 0
-                index_last = ndatafiles - 1
-            elif arg == '--all': # all files
-                index_first = 0
-                index_last = nfiles - 1
-            elif arg == '--iter': # just get 1 iter
-                index_first = index_last = index
-        # Check to see if either of the indices fall "out of bounds"
-        # and if they do replace them with the first or last index
-        if index_first < 0: 
-            index_first = 0
-        if index_last > nfiles - 1: 
-            index_last = nfiles - 1
-        the_tuple = index_first, index_last
-    else: # user screwed up specifying the range; return nothing
-        the_tuple = None
 
+    # user can modify this default in a number of ways
+    for i in range(nargs):
+        arg = args[i]
+        if arg in ['--range', '--centerrange', '--leftrange',\
+                '--rightrange', '--iter']: # first arg will be iter no.
+            # 'first' means first available file.
+            # 'last' means last available file.
+            desired_iter = args[i+1]
+            if desired_iter == 'first':
+                desired_iter = int_file_list[0]
+            elif desired_iter == 'last':
+                desired__iter = int_file_list[-1]
+            else:
+                desired_iter = int(desired_iter)
+            index = np.argmin(np.abs(int_file_list - desired_iter))
+        if arg in ['--centerrange', '--rightrange', '--leftrange']:
+            # many options include an "ndatafiles" argument
+            ndatafiles = int(args[i+2])
+        if arg in ['--n', '--f']:
+            ndatafiles = int(args[i+1])
+        if arg == '--range': # average between two specific files
+            index_first = index # first arg is first desired iter
+            # also need last iter
+            desired_iter = args[i+2]
+            if desired_iter == 'first':
+                desired_iter = int_file_list[0]
+            elif desired_iter == 'last':
+                desired_iter = int_file_list[-1]
+            else:
+                desired_iter = int(desired_iter)
+            index_last = np.argmin(np.abs(int_file_list - desired_iter))
+        elif arg == '--centerrange': #range centered around specific file
+            if ndatafiles % 2 == 0: #ndatafiles is even
+                index_first = index - ndatafiles//2 + 1
+                index_last = index + ndatafiles//2
+            else:  #ndatafiles is odd
+                index_first = index - ndatafiles//2
+                index_last = index + ndatafiles//2
+        elif arg == '--leftrange': # range with specific file first
+            index_first = index
+            index_last = index + ndatafiles - 1
+        elif arg == '--rightrange': # range with specific file last
+            index_last = index
+            index_first = index - ndatafiles + 1
+        elif arg == '--n': 
+            # range with certain no. files ending with the last
+            index_last = nfiles - 1
+            index_first = nfiles - ndatafiles
+        elif arg == '--f': 
+            # range with certain no. files starting with the first
+            index_first = 0
+            index_last = ndatafiles - 1
+        elif arg == '--all': # all files
+            index_first = 0
+            index_last = nfiles - 1
+        elif arg == '--iter': # just get 1 iter
+            index_first = index_last = index
+    # Check to see if either of the indices fall "out of bounds"
+    # and if they do replace them with the first or last index
+    if index_first < 0: 
+        index_first = 0
+    if index_last > nfiles - 1: 
+        index_last = nfiles - 1
     # Return the desired indices
+    the_tuple = index_first, index_last
     return the_tuple
 
 def strip_dirname(dirname):
@@ -1265,7 +1253,6 @@ clas_default['linthresh'] = None
 clas_default['linscale'] = None
 clas_default['linthreshrz'] = None
 clas_default['linscalerz'] = None
-
 clas_default['symlog'] = False
 clas_default['plotcontours'] = True
 clas_default['plotlatlines'] = True
@@ -1273,8 +1260,37 @@ clas_default['plotboundary'] = True
 clas_default['saveplot'] = True
 clas_default['showplot'] = True
 
-def read_clas(args):
+def read_clas(dirname, args):
+    # start with default CLAs, then change them
     clas = clas_default.copy()
+    # set default qvals: velocity + vorticity, Pressure/ entropy
+    # then possibly B, del x B
+    qvals = [1, 2, 3, 301, 302, 303, 501, 502]
+    magnetism = get_parameter(dirname, 'magnetism')
+    if magnetism:
+        qvals.append(801)
+        qvals.append(802)
+        qvals.append(803)
+        qvals.append(1001)
+        qvals.append(1002)
+        qvals.append(1003)
+
+    # set the deafult rvals
+    ncheby, domain_bounds = get_domain_bounds(dirname)
+    ndomains = len(ncheby)
+    ri, rm, ro = domain_bounds
+    basedepths = np.array([0.05, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 0.95, 1.0])
+    rvals = np.array([], dtype='float')
+    for idomain in range(ndomains):
+        rbot = domain_bounds[ndomains - idomain - 1]
+        rtop = domain_bounds[ndomains - idomain]
+        if idomain == ndomains - 1:
+            rvals_to_add = rtop - (rtop - rbot)*basedepths[:-1]
+        else:
+            rvals_to_add = rtop - (rtop - rbot)*basedepths
+        rvals = np.hstack((rvals, rvals_to_add))
+    clas['rvals'] = rvals
+
     nargs = len(args)
     for i in range(nargs):
         arg = args[i]
@@ -1282,8 +1298,6 @@ def read_clas(args):
             clas['datadir'] = args[i+1]
         if arg == '--radtype':
             clas['radtype'] = args[i+1]
-
-        # plotting stuff
         if arg == '--plotdir':
             clas['plotdir'] = args[i+1]
         if arg == '--minmax':
@@ -1315,33 +1329,57 @@ def read_clas(args):
             clas['linscalerz'] = float(args[i+1])
         if arg == '--tag':
             clas['tag'] = '_' + args[i+1]
-    return clas
-
-def read_rvals(dirname, args):
-    nargs = len(args)
-    ncheby, domain_bounds = get_domain_bounds(dirname)
-    ri, rm, ro = domain_bounds
-    rvals = None
-    # first get rvals in cm
-    for i in range(nargs):
-        arg = args[i]
         if arg == '--depths':
-            rvals = ro - read_cla_vals(args, i)*d
+            clas['rvals'] = ro - read_cla_vals(args, i)*d
         if arg == '--depthscz':
             dcz = ro - rm
-            rvals = ro - read_cla_vals(args, i)*dcz
+            clas['rvals'] = ro - read_cla_vals(args, i)*dcz
         if arg == '--depthirz':
             drz = rm - ri
-            rvals = rm - read_cla_vals(args, i)*drz
+            clas['rvals'] = rm - read_cla_vals(args, i)*drz
         if arg == '--rvals':
-            rvals = read_cla_vals(args, i)*rsun
+            clas['rvals'] = read_cla_vals(args, i)*rsun
         if arg == '--rvalscm':
-            rvals = read_cla_vals(args, i)
-    if not rvals is None:
-        rvals /= rsun
-    return rvals
+            clas['rvals'] = read_cla_vals(args, i)
+        if arg == '--rrange':
+            rbot, rtop, nrvals = read_cla_vals(args, i)
+            nrvals = int(nrvals)
+            clas['rvals'] = np.linspace(rtop, rbot, nrvals)
+        if arg == '--nrperzone':
+            rvals = np.array([], dtype='float')
+            nrperzone = int(args[i+1])
+            basedepths = np.arange(1.0/(nperzone+1.0), 1.0,\
+                    1.0/(nperzone+1.0))
+            for idomain in range(ndomains):
+                rbot = domain_bounds[ndomains - idomain - 1]
+                rtop = domain_bounds[ndomains - idomain]
+                if idomain == ndomains - 1:
+                    rvals_to_add = rtop - (rtop - rbot)*basedepths[:-1]
+                else:
+                    rvals_to_add = rtop - (rtop - rbot)*basedepths
+                rvals = np.hstack((rvals, rvals_to_add))
+            clas['rvals'] = rvals
+        if arg == '--qvals':
+            if args[i+1] == 'torque':
+                qvals = [3, 1801, 1802, 1803, 1804, 1819]
+                if magnetism:
+                    qvals.append(1805)
+                    qvals.append(1806)
+                if not clas['tag'] is None:
+                    clas['tag'] = '_torque'
+            elif args[i+1] == 'induction':
+                qvals = [801, 802, 803]            
+                for j in range(1, 31):
+                    qvals.append(16 + j)
+                if not clas['tag'] is None:
+                    clas['tag'] = '_induction'
+            else:
+                qvals = read_cla_vals(args, i, dtype='int')
+    # deal with qvals, which we need to convert from a list
+    clas['qvals'] = np.array(qvals)
+    clas['rvals'] /= rsun # always keep rvals in solar radius units
+    return clas
 
-# Label averaging interval
 def get_time_info(dirname, iter1, iter2):
     # Get the time range in sec
     t1 = translate_times(iter1, dirname, translate_from='iter')['val_sec']
@@ -1358,6 +1396,7 @@ def get_time_info(dirname, iter1, iter2):
         time_label = r'$\rm{TDT}$'
         time_key = 'tdt'
 
+    # set the averaging-interval label
     if rotation:
         time_string = ('t = %.1f to %.1f ' %(t1/time_unit, t2/time_unit))\
                 + time_label + (r'$\ (\Delta t = %.1f\ $'\
@@ -1392,3 +1431,9 @@ def get_grid_info(dirname):
     di_out['xx'] = di_out['rr_2d']*di_out['sint_2d']
     di_out['zz'] = di_out['rr_2d']*di_out['cost_2d']
     return di_out
+
+def arr_to_str(a, fmt):
+    st = ''
+    for ele in a:
+        st += (fmt + ' ') %ele
+    return '[' + st[:-1] + ']'
