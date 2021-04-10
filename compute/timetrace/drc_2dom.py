@@ -118,6 +118,18 @@ if rank == 0:
     xx_cz = xx[:, :nr_cz]
     xx_rz = xx[:, nr_cz:]
 
+    # get latitudes, and upper bound (lat 60)
+    cost = a0.costheta
+    tt = np.arccos(cost)
+    tt_lat = (np.pi/2.0 - tt)*180.0/np.pi
+    latcut = 60.0
+    icut1 = np.argmin(np.abs(tt_lat + latcut))
+    icut2 = np.argmin(np.abs(tt_lat - latcut))
+    tw = gi.tweights[icut1:icut2+1]
+    tw /= np.sum(tw)
+    ntcut = len(tw)
+    tw = tw.reshape((ntcut, 1))
+
     # get averaging weights for CZ and RZ separately
     r0 = 0.9
     ir0 = np.argmin(np.abs(rr/rsun - r0))
@@ -125,7 +137,6 @@ if rank == 0:
     rw_rz = np.copy(rw[nr_cz:])
     rw_cz /= np.sum(rw_cz)
     rw_rz /= np.sum(rw_rz)
-    tw = gi.tweights.reshape((nt, 1))
 
     # Distribute file_list and my_ntimes to each process
     for k in range(nproc - 1, -1, -1):
@@ -156,11 +167,11 @@ else: # recieve my_files, my_nfiles, my_ntimes
 # Broadcast dirname, radatadir, nq
 if rank == 0:
     meta = [dirname, radatadir, nr, nr_cz, nr_rz, rw, rw_cz, rw_rz,\
-            ir_bcz, tw, nt, xx, ir0]
+            ir_bcz, tw, nt, xx, ir0, icut1, icut2]
 else:
     meta = None
 dirname, radatadir, nr, nr_cz, nr_rz, rw, rw_cz, rw_rz,\
-        ir_bcz, tw, nt, xx, ir0 = comm.bcast(meta, root=0)
+        ir_bcz, tw, nt, xx, ir0, icut1, icut2 = comm.bcast(meta, root=0)
 
 # Checkpoint and time
 comm.Barrier()
@@ -187,7 +198,7 @@ for i in range(my_nfiles):
     for j in range(a.niter):
         if my_count < my_ntimes: # make sure we don't go over the allotted
             # get | Omega - Omega_mean|
-            om_merplane = np.copy(a.vals[:, :, a.lut[3], j])/xx
+            om_merplane = (np.copy(a.vals[:, :, a.lut[3], j])/xx)[icut1:icut2+1,:]
             om_mean = np.sum(tw*om_merplane, axis=0).reshape((1, nr))
             om2 = np.sum((om_merplane - om_mean)**2.*tw, axis=0)
             Dom_r = np.sqrt(om2)
@@ -255,16 +266,9 @@ if rank == 0:
     savefile = datadir + savename
 
     # save the data
-    # Get first and last iters of files
-    iter1, iter2 = int_file_list[0], int_file_list[-1]
-    # append the lut (making the inte, inte_subt, and inte_subb quantities
-    # (4000, 4001, 4002)
-    lut_app = np.array([a0.nq, a0.nq + 1, a0.nq + 2])
-    lut = np.hstack((a0.lut, lut_app))
-    qv_app = np.array([4000, 4001, 4002])
-    qv = np.hstack((a0.qv, qv_app))
     f = open(savefile, 'wb')
-    pickle.dump({'vals': vals, 'times': times, 'iters': iters, 'lut': lut, 'ntimes': ntimes, 'iter1': iter1, 'iter2': iter2, 'rr': a0.radius, 'nr': a0.nr, 'qv': qv, 'nq': nq}, f, protocol=4)
+    di_sav = {'vals': vals, 'times': times, 'iters': iters}
+    pickle.dump(di_sav, f, protocol=4)
     f.close()
     t2 = time.time()
     print (format_time(t2 - t1))
