@@ -1259,6 +1259,7 @@ clas_default['plotlatlines'] = True
 clas_default['plotboundary'] = True
 clas_default['saveplot'] = True
 clas_default['showplot'] = True
+clas_default['latvals'] = np.array([-85., -75., -60., -45., -30., -15., 0., 15., 30., 45., 60., 75., 85.])
 
 def read_clas(dirname, args):
     # start with default CLAs, then change them
@@ -1375,6 +1376,13 @@ def read_clas(dirname, args):
                     clas['tag'] = '_induction'
             else:
                 qvals = read_cla_vals(args, i, dtype='int')
+        if arg == '--latvals':
+            clas['latvals'] = read_cla_vals(args, i)
+        if arg == '--latrange':
+            latmin, latmax, nlatvals = read_cla_vals(args, i)
+            nlatvals = int(nlatvals)
+            clas['latvals'] = np.linspace(latmin, latmax, nlatvals)
+
     # deal with qvals, which we need to convert from a list
     clas['qvals'] = np.array(qvals)
     clas['rvals'] /= rsun # always keep rvals in solar radius units

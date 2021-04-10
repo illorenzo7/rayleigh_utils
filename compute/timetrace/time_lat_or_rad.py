@@ -3,29 +3,10 @@
 # On: 02/27/2019
 # Parallelized: 12/12/2020
 ##################################################################
-# This routine computes the trace in time/latitude of quantities in the 
+# This routine computes the trace in time/latitude (by default) or
+# time/radius of quantities in the 
 # AZ_Avgs data for a particular simulation. 
-# 
-# By default, the quantities traced are the nq (=5, or 8) fluid variables 
-# (vr, vt, vp, s, p, [bp, bt, and bp] (if magnetism present).
-# This may be changed via the '-qvals' CLA, e.g., -qvals '1 2 3 1425 1427'.
 #
-# By default, the 8 variables are computed at each time (for all latitudes)
-# at ndepths = 9 depths equally spaced throughout the shell (like the shell
-# slice levels).
-# This may be changed via the '-depths' CLA, e.g., -depths '0 0.4 0.75 0.95'
-# or -rzquarter, -rzhalf, -rz75, -rz1 (depth RZ = 1/4 depth CZ, 1/2, 3/4, 1)
-# will generate 9 depths in each zone
-# (assuming rm = 5.0 x 10^10 cm, ro = 6.5860209 x 10^10 cm)
-# also can be changed with -rvals '.719 .863' [radii units of rsun]
-# or -rvalscm '5e10 5.8e10' [radii units of cm]
-#
-# By default, the routine traces over the last 100 files of datadir, though
-# the user can specify a different range in sevaral ways:
-# -n 10 (last 10 files)
-# -range iter1 iter2 (names of start and stop data files; iter2 can be 'last')
-# -centerrange iter0 nfiles (trace about central file iter0 over nfiles)
-
 # initialize communication
 from mpi4py import MPI
 comm = MPI.COMM_WORLD
@@ -80,7 +61,15 @@ if rank == 0:
     # get the name of the run directory + CLAs
     dirname = sys.argv[1]
     args = sys.argv[2:]
+    nargs = len(args)
     clas = read_clas(dirname, args)
+
+    # get whether we are doing a lat. or rad. trace
+    rad = False
+    for i in range(nargs):
+        arg = args[i]
+        if arg == '--rad':
+            rad = True
 
     # get the Rayleigh data directory
     radatadir = dirname + '/' + dataname + '/'
@@ -104,33 +93,27 @@ if rank == 0:
 
     # Get bunch of grid info
     rr = a0.radius
-    ri, ro = np.min(rr), np.max(rr)
-    d = ro - ri
-    rr_depth = (ro - rr)/d
-    rr_height = (rr - ri)/d
-    sint = a0.sintheta
     cost = a0.costheta
     tt = np.arccos(cost)
-    tt_lat = (np.pi/2 - tt)*180./np.pi
+    tt_lat = (np.pi/2.0 - tt)*180.0/np.pi
     nr = a0.nr
     nt = a0.ntheta
 
-    # compute some derivative quantities for the grid
-    tt_2d, rr_2d = np.meshgrid(tt, rr, indexing='ij')
-    sint_2d = np.sin(tt_2d); cost_2d = np.cos(tt_2d)
-    xx = rr_2d*sint_2d
-    zz = rr_2d*cost_2d
+    # get indices associated with desired sample vals
+    if rad:
+        samplevals = clas['latvals']
+        sampleaxis = tt_lat
+    else:
+        samplevals = clas['rvals']
+        sampleaxis = rr/rsun
 
-    # get r-indices associated with desired rvals
-    irvals = []
-    for rval in clas['rvals']:
-        irvals.append(np.argmin(np.abs(rr/rsun - rval)))
-    irvals = np.array(irvals)
-    # recompute the actual rvals we get
-    rvals = rr[irvals]/rsun
-    nrvals = len(rvals)
-    print ("sampling radii at")
-    print ("rvals = " + arr_to_str(rvals, '%1.3f'))
+    isamplevals = []
+    for sampleval in samplevals:
+        isamplevals.append(np.argmin(np.abs(sampleaxis - sampleval)))
+    isamplevals = np.array(isamplevals)
+    # recompute the actual sample values we get
+    samplevals = sampleaxis[isamplevals]
+    nsamplevals = len(samplevals)
 
     # Will need nrec (last niter) to get proper time axis size
     af = reading_func(radatadir + file_list[-1], '')
@@ -165,10 +148,10 @@ else: # recieve my_files, my_nfiles, my_ntimes
 
 # broadcast meta data
 if rank == 0:
-    meta = [dirname, radatadir, qvals, nq, irvals, nrvals, nt]
+    meta = [dirname, radatadir, qvals, nq, isamplevals, nsamplevals, nr, nt, rad]
 else:
     meta = None
-dirname, radatadir, qvals, nq, irvals, nrvals, nt = comm.bcast(meta, root=0)
+dirname, radatadir, qvals, nq, isamplevals, nsamplevals, nr, nt, rad = comm.bcast(meta, root=0)
 
 # Checkpoint and time
 comm.Barrier()
@@ -178,13 +161,25 @@ if rank == 0:
     print ('Considering %i %s files for the trace: %s through %s'\
         %(nfiles, dataname, file_list[0], file_list[-1]))
     print ("ntimes for trace = %i" %ntimes)
+    st = "sampling at"
+    if rad:
+        st += " lats = "
+        fmt = '%.1f'
+    else:
+        st += " rvals = "
+        fmt = '%1.3f'
+    print (st)
+    print (arr_to_str(samplevals, fmt))
     print(fill_str('computing', lent, char), end='\r')
     t1 = time.time()
 
 # Now analyze the data
 my_times = np.zeros(my_ntimes)
 my_iters = np.zeros(my_ntimes, dtype='int')
-my_vals = np.zeros((my_ntimes, nt, nrvals, nq))
+if rad:
+    my_vals = np.zeros((my_ntimes, nsamplevals, nr, nq))
+else:
+    my_vals = np.zeros((my_ntimes, nt, nsamplevals, nq))
 
 my_count = 0
 for i in range(my_nfiles):
@@ -195,8 +190,12 @@ for i in range(my_nfiles):
     for j in range(a.niter):
         if my_count < my_ntimes: # make sure we don't go over the allotted
             # space in the arrays
-            my_vals[my_count, :, :, :] =\
-                    a.vals[:, :, :, j][:, irvals, :][:, :, a.lut[qvals]]
+            if rad:
+                my_vals[my_count, :, :, :] =\
+                a.vals[:, :, :, j][isamplevals, :,  :][:, :, a.lut[qvals]]
+            else:
+                my_vals[my_count, :, :, :] =\
+                a.vals[:, :, :, j][:, isamplevals, :][:, :, a.lut[qvals]]
             my_times[my_count] = a.time[j] 
             my_iters[my_count] = a.iters[j]
         my_count += 1
@@ -218,7 +217,10 @@ if rank == 0:
 # proc 0 now collects the results from each process
 if rank == 0:
     # Initialize zero-filled 'vals/times/iters' arrays to store the data
-    vals = np.zeros((ntimes, nt, nrvals, nq))
+    if rad:
+        vals = np.zeros((ntimes, nsamplevals, nr, nq))
+    else:
+        vals = np.zeros((ntimes, nt, nsamplevals, nq))
     times = np.zeros(ntimes)
     iters = np.zeros(ntimes, dtype='int')
 
@@ -247,14 +249,18 @@ if rank == 0:
 
     # Set the timetrace savename by the directory, what we are saving,
     # and first and last iteration files for the trace
-    savename = 'timelat' + clas['tag'] + '-' +\
+    if rad:
+        basename = 'timerad'
+    else:
+        basename = 'timelat'
+    savename = basename + clas['tag'] + '-' +\
             file_list[0] + '_' + file_list[-1] + '.pkl'
     savefile = datadir + savename
 
     # save the data
     f = open(savefile, 'wb')
     di_sav = {'vals': vals, 'times': times, 'iters': iters,\
-    'rvals': rvals, 'qvals': qvals}
+    'samplevals': samplevals, 'qvals': qvals}
     pickle.dump(di_sav, f, protocol=4)
     f.close()
     t2 = time.time()
