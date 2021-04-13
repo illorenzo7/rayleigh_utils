@@ -49,11 +49,12 @@ sys.path.append(os.environ['rapp'])
 from rayleigh_diagnostics import AZ_Avgs, Shell_Avgs, G_Avgs,\
         Shell_Spectra, Shell_Slices, Meridional_Slices, Equatorial_Slices
 
-# Broadcast the desired datatype
+# Broadcast the desired datatype (azav by default)
 if rank == 0:
     args = sys.argv[2:]
-    clas = read_clas(args)
-    radtype = clas['radtype']
+    radtype = read_cla_arbitrary('radtype', args)
+    if radtype is None:
+        radtype = 'azav'
 else:
     radtype = None
 radtype = comm.bcast(radtype, root=0)
@@ -95,31 +96,17 @@ if rank == 0:
 
 # proc 0 reads the file lists and distributes them
 if rank == 0:
-    # Get the name of the run directory
+    # read the arguments
     dirname = sys.argv[1]
+    args = sys.argv[2:]
+    clas = read_clas(dirname, args)
 
     # Get the Rayleigh data directory
     radatadir = dirname + '/' + dataname + '/'
 
     # Get all the file names in datadir and their integer counterparts
-    file_list, int_file_list, nfiles = get_file_lists(radatadir)
-
-    # get CLAs
-    args = sys.argv[2:]
-
-    # get desired analysis range
-    the_tuple = get_desired_range(int_file_list, args)
-    if the_tuple is None:
-        index_first, index_last = nfiles - 101, nfiles - 1  
-        # By default trace over the last 100 files
-    else:
-        index_first, index_last = the_tuple
-
-    # Remove parts of file lists we don't need
-    file_list = file_list[index_first:index_last + 1]
-    int_file_list = int_file_list[index_first:index_last + 1]
-    nfiles = index_last - index_first + 1
-    weight = 1.0/nfiles
+    file_list, int_file_list, nfiles = get_file_lists(radatadir, args)
+    weight = 1.0/nfiles # this is the averaging weight
 
     # Get the problem size
     nproc_min, nproc_max, n_per_proc_min, n_per_proc_max =\

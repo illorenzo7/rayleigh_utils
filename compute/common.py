@@ -72,7 +72,8 @@ def format_time(seconds):
         seconds %= 60
         return "%02i:%02i:%02i" %(hours, minutes, seconds)
 
-def get_file_lists(radatadir):
+def get_file_lists_all(radatadir):
+    # Get all the file names in datadir and their integer counterparts
     try:
         if 'Spherical_3D' in strip_dirname(radatadir):
             file_list_long = os.listdir(radatadir)
@@ -168,6 +169,20 @@ def get_desired_range(int_file_list, args):
         index_last = nfiles - 1
     # Return the desired indices
     return index_first, index_last
+
+def get_file_lists(radatadir, args):
+    # Get file names in datadir and their integer counterparts
+    # (only the ones in the desired range determined by args)
+
+    # get all files
+    file_list, int_file_list, nfiles = get_file_lists_all(radatadir)
+    # get the desired range
+    index_first, index_last = get_desired_range(int_file_list, args)
+    # Remove parts of file lists we don't need
+    file_list = file_list[index_first:index_last + 1]
+    int_file_list = int_file_list[index_first:index_last + 1]
+    nfiles = index_last - index_first + 1
+    return file_list, int_file_list, nfiles
 
 def strip_dirname(dirname):
     dirname_stripped = dirname.split('/')[-1]
@@ -1232,6 +1247,15 @@ def read_cla_vals(args, i, dtype='float'):
     if len(vals) == 1:
         vals = vals[0]
     return np.array(vals)
+
+def read_cla_arbitrary(key, args):
+    nargs = len(args)
+    out = None
+    for i in range(nargs):
+        arg = args[i]
+        if arg == '--' + key:
+            out = args[i+1]
+    return out
 
 # set default CLAs
 
