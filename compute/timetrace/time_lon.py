@@ -11,8 +11,8 @@
 # [range of latitudes to average over]) at the depths the shell slices were 
 # sampled. 
 #
-# The strip range can be changed using the options -clat and -dlat, e.g., 
-# -clat 60 -dlat 30, for a strip averaged between 45 and 75 degrees (North)
+# The strip range can be changed using the options --clat and --dlat, e.g., 
+# --clat 60 --dlat 30, for a strip averaged between 45 and 75 degrees (North)
 #
 # By default, the routine traces over all Shell_Slices in the directory,
 # though user can specify an alternate range, by, e.g.,
@@ -129,93 +129,14 @@ if rank == 0:
     # reset parameters with CLAs
     for i in range(nargs):
         arg = args[i]
-        if arg == '-qvals':
-            qvals = []
-            qvals_str = args[i+1].split() 
-            for qval_str in qvals_str:
-                qvals.append(int(qval_str))
-        elif arg == '-depths':
-            depths = []
-            depths_str = args[i+1].split()
-            for depth_str in depths_str:
-                depths.append(float(depth_str))
-        elif arg == '-rvals':
-            depths = []
-            strings = args[i+1].split()
-            for st in strings:
-                rvalcm = float(st)*rsun
-                depths.append((ro - rvalcm)/d)
-        elif arg == '-rvalscm':
-            depths = []
-            strings = args[i+1].split()
-            for st in strings:
-                rvalcm = float(st)
-                depths.append((ro - rvalcm)/d)
-        elif arg == '-rrange':
-            r1 = float(args[i+1])
-            r2 = float(args[i+2])
-            n = int(args[i+3])
-            rvalscm = np.linspace(r1, r2, n)*rsun
-            depths = (ro - rvalscm)/d
-        elif arg == '-rzquarter': # 9 depths in RZ and CZ, with RZ depth
-            # 0.25 of CZ depth
-            print("Taking 9 depths in CZ and RZ each")
-            print("assuming depth RZ = (1/4) depth CZ")
-            aspect = 0.25
-        elif arg == '-rzhalf': # 9 depths in RZ and CZ, with RZ depth
-            # 0.5 of CZ depth
-            print("Taking 9 depths in CZ and RZ each")
-            print("assuming depth RZ = (1/2) depth CZ")
-            aspect = 0.5
-        elif arg == '-rz75': # 9 depths in RZ and CZ, with RZ depth
-            # 0.75 of CZ depth
-            print("Taking 9 depths in CZ and RZ each")
-            print("assuming depth RZ = (3/4) depth CZ")
-            aspect = 0.75
-        elif arg == '-rz1': # 9 depths in RZ and CZ, with RZ depth
-            aspect = 1.
-        elif arg == '-aspect':
-            aspect = float(args[i+1])
-        elif arg == '-torque':
-            print("tracing over TORQUE QUANTITIES")
-            qvals = [3, 1801, 1802, 1803, 1804, 1819]
-            if magnetism:
-                qvals.append(1805)
-                qvals.append(1806)
-            # only change tag if it wasn't specified already:
-            if tag == '':
-                tag = 'torque' + '_'
-        elif arg == '-induction':
-            print("tracing over INDUCTION QUANTITIES")
-            qvals = [1604,1605, 1609,1610, 1614,1615,\
-                    1619,1620, 1624,1625, 1629,1630,\
-            1601,1602,1603, 1606,1607,1608, 1611,1612,1613,\
-            1616,1617,1618, 1621,1622,1623, 1626,1627,1628]
-            # only change tag if it wasn't specified already:
-            if tag == '':
-                tag = 'induction' + '_'
-        elif arg == '-tag':
-            tag = args[i+1] + '_'
-        elif arg == '-clat':
+        if arg == '--clat':
             clat = float(args[i+1])
-        elif arg == '-dlat':
+        if arg == '--dlat':
             dlat = float(args[i+1])
 
     # convert things to arrays
     depths = np.array(depths)
     qvals = np.array(qvals)
-
-    # if aspect ratio is > 0. make depths apply in each zone separately
-    eps = 1.e-4
-    if aspect > eps:
-        print("Taking 9 depths in CZ and RZ each (plus one at transition)")
-        print("assuming (depth RZ)/(depth CZ) = %.3f" %aspect)
-        d1 = 1./(1. + aspect)*depths
-        d2 = np.array([1./(1. + aspect)]) # include transition point
-        d3 = 1./(1. + aspect) + aspect/(1. + aspect)*depths
-        depths = np.hstack((d1, d2, d3))
-    else:
-        print("Taking all depths sampled by the shell slices")
 
     # didn't put this earlier because it got messed up by the message
     # saying which depths we were taking
