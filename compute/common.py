@@ -167,8 +167,7 @@ def get_desired_range(int_file_list, args):
     if index_last > nfiles - 1: 
         index_last = nfiles - 1
     # Return the desired indices
-    the_tuple = index_first, index_last
-    return the_tuple
+    return index_first, index_last
 
 def strip_dirname(dirname):
     dirname_stripped = dirname.split('/')[-1]
@@ -1246,6 +1245,7 @@ clas_default['tag'] = ''
 clas_default['plotdir'] = None
 clas_default['nlevs'] = 20
 clas_default['rbcz'] = None
+clas_default['rvals'] = None
 clas_default['minmax'] = None
 clas_default['minmaxrz'] = None
 clas_default['the_file'] = None
@@ -1261,6 +1261,22 @@ clas_default['saveplot'] = True
 clas_default['showplot'] = True
 clas_default['latvals'] = np.array([-85., -75., -60., -45., -30., -15., 0., 15., 30., 45., 60., 75., 85.])
 
+def get_default_rvals(dirname):
+    ncheby, domain_bounds = get_domain_bounds(dirname)
+    ndomains = len(ncheby)
+    ri, rm, ro = domain_bounds
+    basedepths = np.array([0.05, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 0.95, 1.0])
+    rvals = np.array([], dtype='float')
+    for idomain in range(ndomains):
+        rbot = domain_bounds[ndomains - idomain - 1]
+        rtop = domain_bounds[ndomains - idomain]
+        if idomain == ndomains - 1:
+            rvals_to_add = rtop - (rtop - rbot)*basedepths[:-1]
+        else:
+            rvals_to_add = rtop - (rtop - rbot)*basedepths
+        rvals = np.hstack((rvals, rvals_to_add))
+    return rvals/rsun
+
 def read_clas(dirname, args):
     # start with default CLAs, then change them
     clas = clas_default.copy()
@@ -1275,22 +1291,6 @@ def read_clas(dirname, args):
         qvals.append(1001)
         qvals.append(1002)
         qvals.append(1003)
-
-    # set the deafult rvals
-    ncheby, domain_bounds = get_domain_bounds(dirname)
-    ndomains = len(ncheby)
-    ri, rm, ro = domain_bounds
-    basedepths = np.array([0.05, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 0.95, 1.0])
-    rvals = np.array([], dtype='float')
-    for idomain in range(ndomains):
-        rbot = domain_bounds[ndomains - idomain - 1]
-        rtop = domain_bounds[ndomains - idomain]
-        if idomain == ndomains - 1:
-            rvals_to_add = rtop - (rtop - rbot)*basedepths[:-1]
-        else:
-            rvals_to_add = rtop - (rtop - rbot)*basedepths
-        rvals = np.hstack((rvals, rvals_to_add))
-    clas['rvals'] = rvals
 
     nargs = len(args)
     for i in range(nargs):
@@ -1385,7 +1385,8 @@ def read_clas(dirname, args):
 
     # deal with qvals, which we need to convert from a list
     clas['qvals'] = np.array(qvals)
-    clas['rvals'] /= rsun # always keep rvals in solar radius units
+    if not clas['rvals'] is None:
+        clas['rvals'] /= rsun # always keep rvals in solar radius units
     return clas
 
 def get_time_info(dirname, iter1, iter2):
@@ -1422,22 +1423,43 @@ def make_plotdir(plotdir):
 def get_grid_info(dirname):
     di_out = dict({})
     gi = GridInfo(dirname + '/grid_info', '')
+    # 1D arrays
     di_out['rr'] = gi.radius
-    di_out['rr'] = gi.radius
+    di_out['tt'] = gi.theta
     di_out['cost'] = gi.costheta
     di_out['sint'] = gi.sintheta
     di_out['cott'] = di_out['cost']/di_out['sint']
-    di_out['tt'] = np.arccos(di_out['cost'])
     di_out['tt_lat'] = (np.pi/2 - di_out['tt'])*180/np.pi
+    di_out['phi'] = gi.phi
+    di_out['rw'] = gi.rweights
+    di_out['tw'] = gi.tweights
+    di_out['pw'] = gi.pweights
+    # grid dimensions
     di_out['nr'] = gi.nr
     di_out['nt'] = gi.ntheta
+    di_out['nphi'] = gi.nphi
+    # 2D arrays (theta, r)
     di_out['tt_2d'] = di_out['tt'].reshape((di_out['nt'], 1))
-    di_out['rr_2d'] = di_out['rr'].reshape((1, di_out['nr']))
     di_out['sint_2d'] = np.sin(di_out['tt_2d'])
     di_out['cost_2d'] = np.cos(di_out['tt_2d'])
     di_out['cott_2d'] = di_out['cost_2d']/di_out['sint_2d']
+    di_out['tw_2d'] = di_out['tw'].reshape((di_out['nt'], 1))
+    di_out['rr_2d'] = di_out['rr'].reshape((1, di_out['nr']))
+    di_out['rw_2d'] = di_out['rw'].reshape((1, di_out['nr']))
     di_out['xx'] = di_out['rr_2d']*di_out['sint_2d']
     di_out['zz'] = di_out['rr_2d']*di_out['cost_2d']
+    # 3D arrays (phi, theta, r)
+    di_out['phi_3d'] = di_out['phi'].reshape((di_out['nphi'], 1, 1))
+    di_out['pw_3d'] = di_out['pw'].reshape((di_out['nphi'], 1, 1))
+    di_out['tt_3d'] = di_out['tt'].reshape((1, di_out['nt'], 1))
+    di_out['sint_3d'] = np.sin(di_out['tt_3d'])
+    di_out['cost_3d'] = np.cos(di_out['tt_3d'])
+    di_out['cott_3d'] = di_out['cost_3d']/di_out['sint_3d']
+    di_out['tw_3d'] = di_out['tw'].reshape((1, di_out['nt'], 1))
+    di_out['rr_3d'] = di_out['rr'].reshape((1, 1, di_out['nr']))
+    di_out['rw_3d'] = di_out['rw'].reshape((1, 1, di_out['nr']))
+    di_out['xx_3d'] = di_out['rr_3d']*di_out['sint_3d']
+    di_out['zz_3d'] = di_out['rr_3d']*di_out['cost_3d']
     return di_out
 
 def arr_to_str(a, fmt):

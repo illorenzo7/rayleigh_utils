@@ -85,44 +85,16 @@ if rank == 0:
     # Read in CLAs
     args = sys.argv[2:]
     nargs = len(args)
+    clas = read_clas(dirname, args)
 
     # get desired analysis range
-    the_tuple = get_desired_range(int_file_list, args)
-    if the_tuple is None:
-        index_first, index_last = nfiles - 101, nfiles - 1  
-        # By default trace over the last 100 files
-    else:
-        index_first, index_last = the_tuple
-
-    # Remove parts of file lists we don't need
+    file_list, int_file_list, nfiles = get_file_lists(radatadir)
+    index_first, index_last = get_desired_range(int_file_list, args)
     file_list = file_list[index_first:index_last + 1]
     int_file_list = int_file_list[index_first:index_last + 1]
     nfiles = index_last - index_first + 1
 
-    # Read in grid info from GridInfo file
-    gi = GridInfo(dirname + '/grid_info', '')
-    rr = gi.radius
-    ri, ro = np.min(rr), np.max(rr)
-    d = ro - ri
-    rr_depth = (ro - rr)/d
-    rr_height = (rr - ri)/d
-    sint, cost = gi.sintheta, gi.costheta
-    tt = np.arccos(cost)
-    tt_lat = (np.pi/2 - tt)*180./np.pi
-    nt, nr = len(sint), len(rr)
-    nphi = 2*nt
-    lons = np.arange(0., 360., 360/nphi)
-    tw = gi.tweights
-
-    # By default trace over all quantities and depths
-    a0 = reading_func(radatadir + file_list[0], '')
-    qvals = a0.qv
-    all_depths = (ro - a0.radius)/(ro - ri)
-    depths = np.copy(all_depths)
-    aspect = 0.
-
     # Set other defaults
-    tag = ''
     clat = 10.
     dlat = 0. # by default do NOT average over latitude
 
@@ -134,23 +106,35 @@ if rank == 0:
         if arg == '--dlat':
             dlat = float(args[i+1])
 
-    # convert things to arrays
-    depths = np.array(depths)
-    qvals = np.array(qvals)
+    # Get metadata
+    a0 = reading_func(radatadir + file_list[0], '')
+    nrec_full = a0.niter
+    qvals = clas['qvals']
+    nq = len(qvals)
+    rvals = clas['rvals']
+    if rvals is None:
+        rvals = a0.radius/rsun
+    nrvals = len(rvals)
+    irvals = []
+    for rval in rvals:
+        irvals.append(np.argmin(np.abs(a0.radius/rsun - rval)))
+    irvals = np.array(irvals)
+    # recompute the actual sample values we get
+    rvals = a0.radius[irvals]/rsun
 
     # didn't put this earlier because it got messed up by the message
     # saying which depths we were taking
     print(fill_str('proc 0 distributing the file lists', lent, char),\
             end='')
  
-    # Desired latitude range
-    ith1 = np.argmin(np.abs(tt_lat - (clat - dlat/2.)))
-    ith2 = np.argmin(np.abs(tt_lat - (clat + dlat/2.)))
-    lats_strip = tt_lat[ith1:ith2+1]
-    tw_strip = tw[ith1:ith2+1]
+    # Desired latitude range + nphi
+    di_grid = get_grid_info(dirname)
+    ith1 = np.argmin(np.abs(di_grid['tt_lat'] - (clat - dlat/2.)))
+    ith2 = np.argmin(np.abs(di_grid['tt_lat'] - (clat + dlat/2.)))
+    tw_strip = di_grid['tw'][ith1:ith2+1]
     tw_strip /= np.sum(tw_strip)
-    tw_strip_1d = np.copy(tw_strip)
     tw_strip = tw_strip.reshape((1, ith2 - ith1 + 1, 1, 1))
+    nphi =  di_grid['nphi']
 
     # Get the problem size
     nproc_min, nproc_max, n_per_proc_min, n_per_proc_max =\
@@ -158,22 +142,7 @@ if rank == 0:
 
     # Get metadata
     nrec_full = a0.niter
-    ndepths = len(depths)
     nq = len(qvals)
-
-    # get r-indices associated with depths
-    rinds = []
-    rinds_sslice = []
-    for depth in depths:
-        rinds.append(np.argmin(np.abs(rr_depth - depth)))
-        rinds_sslice.append(np.argmin(np.abs(all_depths - depth)))
-    rinds = np.array(rinds)
-    rinds_sslice = np.array(rinds_sslice)
-
-    # recompute the actual depths we get
-    depths = rr_depth[rinds]
-    rvalscm = ro - d*depths
-    rvals = rvalscm/rsun
 
     # Will need nrec (last niter) to get proper time axis size
     af = reading_func(radatadir + file_list[-1], '')
@@ -208,11 +177,11 @@ else: # recieve my_files, my_nfiles, my_ntimes
 
 # Broadcast meta data
 if rank == 0:
-    meta = [dirname, radatadir, qvals, nq, rinds_sslice, ndepths, nphi,\
+    meta = [dirname, radatadir, qvals, nq, irvals, nrvals, nphi,\
             ith1, ith2, tw_strip]
 else:
     meta = None
-dirname, radatadir, qvals, nq, rinds_sslice, ndepths, nphi,\
+dirname, radatadir, qvals, nq, irvals, nrvals, nphi,\
         ith1, ith2, tw_strip = comm.bcast(meta, root=0)
 
 # Checkpoint and time
@@ -228,13 +197,14 @@ if rank == 0:
         print("averaging over %.2f in latitude" %dlat)
     else:
         print("not averaging in latitude")
+    print ("sampling at rvals = " + arr_to_str(rvals, '%1.3f'))
     print(fill_str('computing', lent, char), end='\r')
     t1 = time.time()
 
 # Now analyze the data
 my_times = np.zeros(my_ntimes)
 my_iters = np.zeros(my_ntimes, dtype='int')
-my_vals = np.zeros((my_ntimes, nphi, ndepths, nq))
+my_vals = np.zeros((my_ntimes, nphi, nrvals, nq))
 
 my_count = 0
 for i in range(my_nfiles):
@@ -246,9 +216,9 @@ for i in range(my_nfiles):
         if my_count < my_ntimes: # make sure we don't go over the allotted
             # space in the arrays
             # get desired values in the strip, careful not to change 
-            # the dimensionality of the array: (nphi, nlats, ndepths, nq)
+            # the dimensionality of the array: (nphi, nlats, nrvals, nq)
             vals_strip = a.vals[:, ith1:ith2+1, :, :, j]
-            vals_strip = vals_strip[:, :, rinds_sslice, :]
+            vals_strip = vals_strip[:, :, irvals, :]
             vals_strip = vals_strip[:, :, :, a.lut[qvals]]
             my_vals[my_count, :, :, :] = np.sum(vals_strip*tw_strip, axis=1)
             my_times[my_count] = a.time[j] 
@@ -272,7 +242,7 @@ if rank == 0:
 # proc 0 now collects the results from each process
 if rank == 0:
     # Initialize zero-filled 'vals/times/iters' arrays to store the data
-    vals = np.zeros((ntimes, nphi, ndepths, nq))
+    vals = np.zeros((ntimes, nphi, nrvals, nq))
     times = np.zeros(ntimes)
     iters = np.zeros(ntimes, dtype='int')
 
@@ -306,24 +276,14 @@ if rank == 0:
     else:
         hemisphere = 'S'
         
-    dirname_stripped = strip_dirname(dirname)
-    savename = dirname_stripped + '_time-longitude_' + tag +\
+    savename = 'time_lon-' + clas['tag'] +\
             ('clat%s%02.0f_dlat%03.0f' %(hemisphere, np.abs(clat), dlat)) +\
-            '_' + file_list[0] + '_' + file_list[-1] + '.pkl'
+            '-' + file_list[0] + '_' + file_list[-1] + '.pkl'
     savefile = datadir + savename    
 
     # save the data
     f = open(savefile, 'wb')
-    # will also need first and last iteration files
-    iter1, iter2 = int_file_list[0], int_file_list[-1]
-    pickle.dump({'vals': vals, 'times': times, 'iters': iters, 'qvals': a0.qv,\
-            'rinds': rinds, 'rinds_sslice': rinds_sslice, 'qvals': qvals,\
-        'rvals': rvals, 'nrvals': len(rvals), 'lut': a0.lut,\
-       'niter': len(iters), 'nq': nq, 'iter1': iter1, 'iter2': iter2, 'rr': rr,\
-        'nr': nr, 'ri': ri, 'ro': ro, 'tt': tt, 'tt_lat': tt_lat, 'sint': sint,\
-        'cost': cost,'nt': nt, 'lats_strip': lats_strip, 'clat': clat,\
-        'dlat': dlat, 'lons':lons, 'nphi': nphi, 'tw': tw,\
-        'tw_strip': tw_strip_1d}, f, protocol=4)
+    pickle.dump({'vals': vals, 'times': times, 'iters': iters, 'rvals': rvals, 'qvals': qvals, 'clat': clat, 'dlat': dlat}, f, protocol=4)
     f.close()
     t2 = time.time()
     print (format_time(t2 - t1))
