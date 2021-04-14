@@ -76,36 +76,16 @@ if rank == 0:
     nproc_min, nproc_max, n_per_proc_min, n_per_proc_max =\
             opt_workload(nfiles, nproc)
 
-    # Will need the first data file for a number of things
-    a0 = reading_func1(radatadir1 + file_list[0], '')
-    nrec_full = a0.niter
-
-    # Will need nrec (last niter) to get proper time axis size
-    af = reading_func1(radatadir1 + file_list[-1], '')
-    nrec_last = af.niter
-    ntimes = (nfiles - 1)*nrec_full + nrec_last
-
     # get grid information
-    rr = a0.radius
-    ri, ro = np.min(rr), np.max(rr)
-    d = ro - ri
-    rr_depth = (ro - rr)/d
-    rr_height = (rr - ri)/d
-    sint = a0.sintheta
-    cost = a0.costheta
-    tt = np.arccos(cost)
-    tt_lat = (np.pi/2 - tt)*180/np.pi
-    nr = a0.nr
-    nt = a0.ntheta
+    di_grid = get_grid_info(dirname)
+    nt = di_grid['nt']
+    nr = di_grid['nr']
+    rr = di_grid['rr']
+    tt = di_grid['tt']
+    rr_2d = di_grid['rr_2d']
+    cott_2d = di_grid['cott_2d']
 
-    # compute some derivative quantities for the grid
-    tt_2d, rr_2d = np.meshgrid(tt, rr, indexing='ij')
-    sint_2d = np.sin(tt_2d); cost_2d = np.cos(tt_2d)
-    cott = cost_2d/sint_2d
-    xx = rr_2d*sint_2d
-    zz = rr_2d*cost_2d
-
-    # Distribute file_list and my_ntimes to each process
+    # Distribute file lists to each process
     for k in range(nproc - 1, -1, -1):
         # distribute the partial file list to other procs 
         if k >= nproc_min: # last processes analyzes more files
@@ -117,26 +97,21 @@ if rank == 0:
             istart = k*my_nfiles
             iend = istart + my_nfiles
 
-        if k == nproc - 1: # last process may have nrec_last != nrec_full
-            my_ntimes = (my_nfiles - 1)*nrec_full + nrec_last
-        else:
-            my_ntimes = my_nfiles*nrec_full
-
         # Get the file list portion for rank k
         my_files = np.copy(int_file_list[istart:iend])
 
-        # send  my_files, my_nfiles, my_ntimes if nproc > 1
+        # send  my_files nproc > 1
         if k >= 1:
-            comm.send([my_files, my_nfiles, my_ntimes, ntimes], dest=k)
-else: # recieve my_files, my_nfiles, my_ntimes
-    my_files, my_nfiles, my_ntimes, ntimes = comm.recv(source=0)
+            comm.send(my_files, dest=k)
+else: # recieve my_files
+    my_files = comm.recv(source=0)
 
 # Broadcast dirname, radatadir, nq, etc.
 if rank == 0:
-    meta = [dirname, radatadir1, radatadir2, nt, nr, ntimes, rr_2d,  cott]
+    meta = [dirname, radatadir1, radatadir2, nt, nr, nfiles, rr_2d, cott_2d]
 else:
     meta = None
-dirname, radatadir1, radatadir2, nt, nr, ntimes, rr_2d, cott =\
+dirname, radatadir1, radatadir2, nt, nr, nfiles, rr_2d, cott_2d =\
         comm.bcast(meta, root=0)
 
 # Checkpoint and time
@@ -146,21 +121,19 @@ if rank == 0:
     print (format_time(t2 - t1))
     print ('Considering %i %s/%s files for the trace: %s through %s'\
         %(nfiles, dataname1, dataname2, file_list[0], file_list[-1]))
-    print ("no. slices = %i" %ntimes)
     print(fill_str('computing', lent, char), end='\r')
     t1 = time.time()
 
 # Now analyze the data
 nq = 45
 my_vals = np.zeros((nt, nr, nq))
-# "my_vals will be a weighted sum"
-my_weight = 1./ntimes
 
 for i in range(my_nfiles):
     a = reading_func1(radatadir1 + str(my_files[i]).zfill(8), '')
     mer = reading_func2(radatadir2 + str(my_files[i]).zfill(8), '')
     # take mean along the time axis;
 
+    my_weight = 1.0/(nfiles*a.niter)
     for j in range(a.niter):
         # full v
         vr = mer.vals[:, :, :, mer.lut[1], j]
@@ -242,7 +215,7 @@ for i in range(my_nfiles):
         my_vals[:, :, ind_off + 1] += -np.mean(dvtdt*br + vt*dbrdt, axis=0)*my_weight
         my_vals[:, :, ind_off + 2] += -np.mean(dvpdp*br + vp*dbrdp, axis=0)*my_weight
         my_vals[:, :, ind_off + 3] += np.mean(dvrdp*bp + vr*dbpdp, axis=0)*my_weight
-        my_vals[:, :, ind_off + 4] += cott/rr_2d*np.mean(vr*bt - vt*br, axis=0)*my_weight
+        my_vals[:, :, ind_off + 4] += cott_2d/rr_2d*np.mean(vr*bt - vt*br, axis=0)*my_weight
         ind_off += 5
 
         # full theta
@@ -266,7 +239,7 @@ for i in range(my_nfiles):
         my_vals[:, :, ind_off + 1] += -np.mean(dvtdt_m*br_m + vt_m*dbrdt_m, axis=0)*my_weight
         my_vals[:, :, ind_off + 2] += -np.mean(dvpdp_m*br_m + vp_m*dbrdp_m, axis=0)*my_weight
         my_vals[:, :, ind_off + 3] += np.mean(dvrdp_m*bp_m + vr_m*dbpdp_m, axis=0)*my_weight
-        my_vals[:, :, ind_off + 4] += cott/rr_2d*np.mean(vr_m*bt_m - vt_m*br_m, axis=0)*my_weight
+        my_vals[:, :, ind_off + 4] += cott_2d/rr_2d*np.mean(vr_m*bt_m - vt_m*br_m, axis=0)*my_weight
         ind_off += 5
 
         # mean theta
@@ -343,7 +316,7 @@ if rank == 0:
     # Get first and last iters of files
     iter1, iter2 = int_file_list[0], int_file_list[-1]
     f = open(savefile, 'wb')
-    pickle.dump({'vals': vals, 'lut': a0.lut, 'count': ntimes, 'iter1': iter1, 'iter2': iter2, 'qv': a0.qv, 'nq': a0.nq,  'rr': rr, 'rr_depth': rr_depth, 'rr_height': rr_height, 'nr': nr, 'ri': ri, 'ro': ro, 'd': d, 'tt': tt, 'tt_lat': tt_lat, 'sint': sint, 'cost': cost,'nt': nt, 'rr_2d': rr_2d, 'tt_2d': tt_2d, 'sint_2d': sint_2d, 'cost_2d': cost_2d, 'xx': xx, 'zz': zz}, f, protocol=4)
+    pickle.dump({'vals': vals}, f, protocol=4)
     f.close()
     t2 = time.time()
     print (format_time(t2 - t1))
