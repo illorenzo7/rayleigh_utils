@@ -1,16 +1,14 @@
-# Routine to trace Rayleigh G_Avgs data in time
-# Created by: Loren Matilsky
-# On: 12/18/2018
+##################################################################
+# Routine to trace DR contrast in time (for Tacho paper)
+# Author: Loren Matilsky
+# Created: 12/18/2018
 # Parallelized: 11/26/2020
 ##################################################################
-# This routine computes the trace in time of the values in the G_Avgs data 
-# for a particular simulation. 
-
-# By default, the routine traces over the last 100 files of datadir, though
-# the user can specify a different range in sevaral ways:
-# -n 10 (last 10 files)
-# -range iter1 iter2 (names of start and stop data files; iter2 can be 'last')
-# -centerrange iter0 nfiles (trace about central file iter0 over nfiles)
+# This routine computes the trace in time of sigma_Omega (spherical stddev
+# of Omega from equator to latcut = 60.)
+# separates into full, CZ (r/rsun = 0.9 to outer surface), and RZ (full RZ)
+# shape(vals) = (ntimes, 3) 
+##################################################################
 
 # initialize communication
 from mpi4py import MPI
@@ -65,28 +63,15 @@ if rank == 0:
 
 # proc 0 reads the file lists and distributes them
 if rank == 0:
-    # Get the name of the run directory
+    # read the arguments
     dirname = sys.argv[1]
+    args = sys.argv[2:]
 
     # Get the Rayleigh data directory
     radatadir = dirname + '/' + dataname + '/'
 
     # Get all the file names in datadir and their integer counterparts
-    file_list, int_file_list, nfiles = get_file_lists(radatadir)
-
-    # Get desired file list from command-line arguments
-    args = sys.argv[2:]
-    nargs = len(args)
-    if nargs == 0:
-        index_first, index_last = nfiles - 101, nfiles - 1  
-        # By default trace over the last 100 files
-    else:
-        index_first, index_last = get_desired_range(int_file_list, args)
-
-    # Remove parts of file lists we don't need
-    file_list = file_list[index_first:index_last + 1]
-    int_file_list = int_file_list[index_first:index_last + 1]
-    nfiles = index_last - index_first + 1
+    file_list, int_file_list, nfiles = get_file_lists(radatadir, args)
 
     # Get the problem size
     nproc_min, nproc_max, n_per_proc_min, n_per_proc_max =\

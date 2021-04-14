@@ -1,11 +1,13 @@
+##################################################################
 # Routine to trace AZ_Avgs in time/latitude space (pick different radii)
-# Created by: Loren Matilsky
-# On: 02/27/2019
+# Author: Loren Matilsky
+# Created: 02/27/2019
 # Parallelized: 12/12/2020
 ##################################################################
 # This routine computes the trace in time/latitude (by default) or
 # time/radius of quantities in the 
 # AZ_Avgs data for a particular simulation. 
+##################################################################
 #
 # initialize communication
 from mpi4py import MPI
@@ -75,11 +77,7 @@ if rank == 0:
     radatadir = dirname + '/' + dataname + '/'
 
     # get desired analysis range
-    file_list, int_file_list, nfiles = get_file_lists(radatadir)
-    index_first, index_last = get_desired_range(int_file_list, args)
-    file_list = file_list[index_first:index_last + 1]
-    int_file_list = int_file_list[index_first:index_last + 1]
-    nfiles = index_last - index_first + 1
+    file_list, int_file_list, nfiles = get_file_lists(radatadir, args)
 
     # get the problem size
     nproc_min, nproc_max, n_per_proc_min, n_per_proc_max =\
@@ -91,20 +89,23 @@ if rank == 0:
     qvals = clas['qvals']
     nq = len(qvals)
 
-    # Get bunch of grid info
-    rr = a0.radius
-    cost = a0.costheta
-    tt = np.arccos(cost)
-    tt_lat = (np.pi/2.0 - tt)*180.0/np.pi
-    nr = a0.nr
-    nt = a0.ntheta
+    # get grid information
+    di_grid = get_grid_info(dirname)
+    nt = di_grid['nt']
+    nr = di_grid['nr']
+    rr = di_grid['rr']
+    tt_lat = di_grid['tt_lat']
 
     # get indices associated with desired sample vals
     if rad:
         samplevals = clas['latvals']
+        if samplevals is None:
+            samplevals = default_latvals
         sampleaxis = tt_lat
     else:
         samplevals = clas['rvals']
+        if samplevals is None:
+            samplevals = get_default_rvals(dirname)
         sampleaxis = rr/rsun
 
     isamplevals = []
@@ -161,15 +162,17 @@ if rank == 0:
     print ('Considering %i %s files for the trace: %s through %s'\
         %(nfiles, dataname, file_list[0], file_list[-1]))
     print ("ntimes for trace = %i" %ntimes)
-    st = "sampling at"
+    print ("sampling values:")
+    print ("qvals = " + arr_to_str(qvals, "%i"))
+    st = "sampling locations:"
     if rad:
-        st += " lats = "
+        st2 = "lats = "
         fmt = '%.1f'
     else:
-        st += " rvals = "
+        st2 = "rvals = "
         fmt = '%1.3f'
-    print (st)
-    print (arr_to_str(samplevals, fmt))
+    print(st)
+    print (st2 + arr_to_str(samplevals, fmt))
     print(fill_str('computing', lent, char), end='\r')
     t1 = time.time()
 

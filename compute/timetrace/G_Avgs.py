@@ -1,16 +1,12 @@
+##################################################################
 # Routine to trace Rayleigh G_Avgs data in time
-# Created by: Loren Matilsky
-# On: 12/18/2018
+# Author: Loren Matilsky
+# Created: 12/18/2018
 # Parallelized: 11/26/2020
 ##################################################################
 # This routine computes the trace in time of the values in the G_Avgs data 
 # for a particular simulation. 
-
-# By default, the routine traces over the last 100 files of datadir, though
-# the user can specify a different range in sevaral ways:
-# -n 10 (last 10 files)
-# -range iter1 iter2 (names of start and stop data files; iter2 can be 'last')
-# -centerrange iter0 nfiles (trace about central file iter0 over nfiles)
+##################################################################
 
 # initialize communication
 from mpi4py import MPI
@@ -63,28 +59,15 @@ if rank == 0:
 
 # proc 0 reads the file lists and distributes them
 if rank == 0:
-    # Get the name of the run directory
+    # read the arguments
     dirname = sys.argv[1]
+    args = sys.argv[2:]
 
     # Get the Rayleigh data directory
     radatadir = dirname + '/' + dataname + '/'
 
     # Get all the file names in datadir and their integer counterparts
-    file_list, int_file_list, nfiles = get_file_lists(radatadir)
-
-    # get desired analysis range
-    args = sys.argv[2:]
-    the_tuple = get_desired_range(int_file_list, args)
-    if the_tuple is None:
-        index_first, index_last = nfiles - 100, nfiles - 1  
-        # By default trace over the last 100 files
-    else:
-        index_first, index_last = the_tuple
-
-    # Remove parts of file lists we don't need
-    file_list = file_list[index_first:index_last + 1]
-    int_file_list = int_file_list[index_first:index_last + 1]
-    nfiles = index_last - index_first + 1
+    file_list, int_file_list, nfiles = get_file_lists(radatadir, args)
 
     # Get the problem size
     nproc_min, nproc_max, n_per_proc_min, n_per_proc_max =\
@@ -214,9 +197,7 @@ if rank == 0:
 
     # save the data
     f = open(savefile, 'wb')
-    # will also need first and last iteration files
-    iter1, iter2 = int_file_list[0], int_file_list[-1]
-    pickle.dump({'vals': vals, 'times': times, 'iters': iters, 'lut': a0.lut, 'count': ntimes, 'iter1': iter1, 'iter2': iter2, 'qv': a0.qv, 'nq': a0.nq}, f, protocol=4)
+    pickle.dump({'vals': vals, 'times': times, 'iters': iters, 'lut': a0.lut, 'qv': a0.qv}, f, protocol=4)
     f.close()
     t2 = time.time()
     print (format_time(t2 - t1))

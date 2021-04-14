@@ -246,7 +246,7 @@ if rank == 0:
 
     # save the data
     f = open(savefile, 'wb')
-    di_sav = {'vals': vals, 'lut': a0.lut, 'ntimes': nfiles, 'qv': a0.qv}
+    di_sav = {'vals': vals, 'lut': a0.lut, 'qv': a0.qv}
     if radtype == 'specav':
         di_sav['lpower'] = lpower
     pickle.dump(di_sav, f, protocol=4)

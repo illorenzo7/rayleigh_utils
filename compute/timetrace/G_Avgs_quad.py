@@ -1,17 +1,16 @@
-# Routine to trace Rayleigh G_Avgs data in time
-# Created by: Loren Matilsky
-# On: 01/28/2021
 ##################################################################
+# Routine to trace Rayleigh G_Avgs data in time
+# Author: Loren Matilsky
+# Created: 12/18/2018
+# Parallelized: 11/26/2020
+##################################################################
+# This routine computes the trace in time of the values in the G_Avgs data 
+# for a particular simulation. 
 # This routine computes the trace in time of the values in the G_Avgs data 
 # for a particular simulation. 
 # traces separtely over different "quadrants" (4-8 in total, depending on
 # if rbcz is specified to separate the domains in radius)
-
-# By default, the routine traces over the last 100 files of datadir, though
-# the user can specify a different range in sevaral ways:
-# -n 10 (last 10 files)
-# -range iter1 iter2 (names of start and stop data files; iter2 can be 'last')
-# -centerrange iter0 nfiles (trace about central file iter0 over nfiles)
+##################################################################
 
 # initialize communication
 from mpi4py import MPI
@@ -53,7 +52,6 @@ dataname = 'AZ_Avgs'
 if rank == 0:
     # modules needed only by proc 0 
     import pickle
-    from rayleigh_diagnostics import GridInfo
 
 # Checkpoint and time
 comm.Barrier()
@@ -66,29 +64,16 @@ if rank == 0:
 
 # proc 0 reads the file lists and distributes them
 if rank == 0:
-    # Get the name of the run directory
+    # read the arguments
     dirname = sys.argv[1]
     args = sys.argv[2:]
-    nargs = len(args)
+    clas = read_clas(dirname, args)
 
     # Get the Rayleigh data directory
     radatadir = dirname + '/' + dataname + '/'
 
     # Get all the file names in datadir and their integer counterparts
-    file_list, int_file_list, nfiles = get_file_lists(radatadir)
-    
-    # get desired range for analysis
-    the_tuple = get_desired_range(int_file_list, args)
-    if the_tuple is None:
-        index_first, index_last = nfiles - 101, nfiles - 1  
-        # By default trace over the last 100 files
-    else:
-        index_first, index_last = the_tuple
-
-    # Remove parts of file lists we don't need
-    file_list = file_list[index_first:index_last + 1]
-    int_file_list = int_file_list[index_first:index_last + 1]
-    nfiles = index_last - index_first + 1
+    file_list, int_file_list, nfiles = get_file_lists(radatadir, args)
 
     # Get the problem size
     nproc_min, nproc_max, n_per_proc_min, n_per_proc_max =\
@@ -105,86 +90,45 @@ if rank == 0:
     ntimes = (nfiles - 1)*nrec_full + nrec_last
 
     # get grid information
-    gi = GridInfo(dirname + '/grid_info', '')
-    rr = gi.radius
-    cost = gi.costheta
-    sint = gi.sintheta
-    tt = np.arccos(cost)
-    tt_lat = 180./np.pi*(np.pi/2. - tt)
-    rw = gi.rweights
-    nr = gi.nr
-    tw = gi.tweights
-    nt = gi.ntheta
+    di_grid = get_grid_info(dirname)
+    nt = di_grid['nt']
+    nr = di_grid['nr']
+    rw = di_grid['rw']
+    tw = di_grid['tw']
+    rr = di_grid['rr']
+    cost = di_grid['cost']
+    tt_lat = di_grid['tt_lat']
 
-    # domain bounds
-    ncheby, domain_bounds = get_domain_bounds(dirname)
-    ri = np.min(domain_bounds)
-    ro = np.max(domain_bounds)
-    d = ro - ri
+    # Get rho*T
+    eq = get_eq(dirname)
+    rhot = (eq.density*eq.temperature).reshape((1, nr))
 
     # get zone separators, defaulting to 
     # the domain bounds in radius and
     # [-45, 0, 45] in latitude
 
-    # Read in CLAs
-    latvals = [-45., 0., 45.]
-    rvals = []
-    for i in range(nargs):
-        arg = args[i]
-        if arg == '-rbcz':
-            rvals = [float(args[i+1])*rsun]
-        elif arg == '-rbczcm':
-            rvals = [float(args[i+1])]
-        elif arg == '-depths':
-            strings = args[i+1].split()
-            for st in strings:
-                rval = ro - float(st)*d
-                rvals.append(rval)
-        elif arg == '-depthscz':
-            rm = domain_bounds[1]
-            dcz = ro - rm
-            strings = args[i+1].split()
-            for st in strings:
-                rval = ro - float(st)*dcz
-                rvals.append(rval)
-        elif arg == '-depthsrz':
-            rm = domain_bounds[1]
-            drz = rm - ri
-            strings = args[i+1].split()
-            for st in strings:
-                rval = rm - float(st)*drz
-                rvals.append(rval)
-        elif arg == '-rvals':
-            rvals = []
-            strings = args[i+1].split()
-            for st in strings:
-                rval = float(st)*rsun
-                rvals.append(rval)
-        elif arg == '-rvalscm':
-            rvals = []
-            strings = args[i+1].split()
-            for st in strings:
-                rval = float(st)
-                rvals.append(rval)
-        elif arg == '-rrange':
-            r1 = float(args[i+1])
-            r2 = float(args[i+2])
-            n = int(args[i+3])
-            rvals = np.linspace(r1, r2, n)*rsun
-        elif arg == '-lats':
-            latvals = []
-            strings = args[i+1].split()
-            for st in strings:
-                latval = float(st)
-                latvals.append(latval)
-            latvals = (-np.array(latvals[::-1])).tolist() + [0.] + latvals
-            # indicators separtors in only one hemisphere
+    latvals = clas['latvals']
+    if latvals is None:
+        latvals = [-45., 0., 45.]
 
+    rvals = clas['rvals']
+    if rvals is None:
+        rvals = [] # by default don't separate domain in radius...
+    else:
+        rvals = rvals.tolist()
+
+    ncheby, domain_bounds = get_domain_bounds(dirname)
+    domain_bounds = np.array(domain_bounds)/rsun # normalize by rsun
+    ri, ro = domain_bounds[0], domain_bounds[1]
     ndomains = len(ncheby)
-    if rvals == [] and ndomains > 1:
+    if rvals == [] and ndomains > 1: # 
         rvals = list(domain_bounds[1:-1][::-1])
     rbounds = [ro] + rvals + [ri]
     latbounds = [tt_lat[0]] + latvals + [tt_lat[-1]]
+    
+    # make into arrays (normalize rr)
+    rbounds = np.array(rbounds)
+    latbounds = np.array(latbounds)
 
     # now get the separator indices
     ir_sep = []
@@ -193,6 +137,10 @@ if rank == 0:
     it_sep = []
     for lat in latvals:
         it_sep.append(np.argmin(np.abs(tt_lat - lat)))
+
+    # make everything arrays
+    ir_sep = np.array(ir_sep)
+    it_sep = np.array(it_sep)
 
     nsep_r = len(ir_sep)
     nsep_t = len(it_sep)
@@ -220,10 +168,6 @@ if rank == 0:
                 ir2 = ir_sep[ir]
             volumes[it, ir] = 2.*np.pi/3.*(rr[ir1]**3. - rr[ir2]*3.)*\
                     np.abs(cost[it1] - cost[it2])
-
-    # Get rho*T
-    eq = get_eq(dirname)
-    rhot = (eq.density*eq.temperature).reshape((1, nr))
 
     # Distribute file_list and my_ntimes to each process
     for k in range(nproc - 1, -1, -1):
@@ -263,9 +207,12 @@ comm.Barrier()
 if rank == 0:
     t2 = time.time()
     print (format_time(t2 - t1))
-    print ("tracing over %i quadrants" %nquad)
-    print (("nsep_t = %i" %nsep_r), " latbounds = ", latbounds)
-    print (("nsep_r = %i" %nsep_r), " rbounds = ", rbounds)
+    print ("tracing over %i x %i = %i quadrants" %(nsep_r + 1,\
+            nsep_t + 1, nquad))
+    print ("rbounds/rsun = " + arr_to_str(rbounds, "%.3f") +\
+            (" (nsep_r = %i)" %nsep_r) )
+    print ("latbounds = " + arr_to_str(latbounds, "%.1f") +\
+            (" (nsep_t = %i)" %nsep_t) )
     print ('Considering %i %s files for the trace: %s through %s'\
         %(nfiles, dataname, file_list[0], file_list[-1]))
     print ("ntimes for trace = %i" %ntimes)

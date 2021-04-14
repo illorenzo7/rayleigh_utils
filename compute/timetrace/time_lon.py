@@ -1,27 +1,20 @@
-# Routine to trace Rayleigh Shell_Slices data in time
-# Created by: Loren Matilsky
-# On: 08/15/2019
-# Parallelized: 04/01/2021
-############################################################################
+##################################################################
+# Routine to trace Rayleigh Shell_Slices data in time and longitude
+# Author: Loren Matilsky
+# Created: 04/01/2021
+##################################################################
 # This routine computes the trace in time/longitude of quantities in the 
 # Shell_Slices data for a particular simulation. 
-#
-# By default, the 8 variables are computed at each time, in a latitude strip
-# defined by (clat, dlat) = ([central latitude for average],
-# [range of latitudes to average over]) at the depths the shell slices were 
-# sampled. 
+# By default, the [qvals] are computed at each time, in a latitude strip
+# defined by clat = [central latitude for average] and
+# dlat = [range of latitudes to average over]) 
 #
 # The strip range can be changed using the options --clat and --dlat, e.g., 
-# --clat 60 --dlat 30, for a strip averaged between 45 and 75 degrees (North)
-#
-# By default, the routine traces over all Shell_Slices in the directory,
-# though user can specify an alternate range, by, e.g.,
-# -n 10 (last 10 files)
-# -range iter1 iter2 (no.s for start/stop data files; iter2 can be "last")
-# -centerrange iter0 nfiles (trace about central file iter0 over nfiles)
-#
+# --clat 60 --dlat 30, for a strip averaged between 45 and 75 degrees 
+# (North)
 # The final datacube output ('vals') will have shape
-# (nphi, niter, nr, nq), where nr and nq are the attributes of the shell slices
+# (ntimes, nphi, nr, nq), where nr and nq are the attributes of Shell_Slices
+############################################################################
 
 # initialize communication
 from mpi4py import MPI
@@ -73,26 +66,17 @@ if rank == 0:
 
 # proc 0 reads the file lists and distributes them, also the meta data
 if rank == 0:
-    # Get the name of the run directory
+    # read the arguments
     dirname = sys.argv[1]
+    args = sys.argv[2:]
+    clas = read_clas(dirname, args)
+    nargs = len(args)
 
     # Get the Rayleigh data directory
     radatadir = dirname + '/' + dataname + '/'
 
     # Get all the file names in datadir and their integer counterparts
-    file_list, int_file_list, nfiles = get_file_lists(radatadir)
-
-    # Read in CLAs
-    args = sys.argv[2:]
-    nargs = len(args)
-    clas = read_clas(dirname, args)
-
-    # get desired analysis range
-    file_list, int_file_list, nfiles = get_file_lists(radatadir)
-    index_first, index_last = get_desired_range(int_file_list, args)
-    file_list = file_list[index_first:index_last + 1]
-    int_file_list = int_file_list[index_first:index_last + 1]
-    nfiles = index_last - index_first + 1
+    file_list, int_file_list, nfiles = get_file_lists(radatadir, args)
 
     # Set other defaults
     clat = 10.
@@ -192,12 +176,17 @@ if rank == 0:
     print ('Considering %i %s files for the trace: %s through %s'\
         %(nfiles, dataname, file_list[0], file_list[-1]))
     print ("ntimes for trace = %i" %ntimes)
-    print ("central latitude = %.1f" %clat)
+    print ("clat = %+.1f" %clat)
     if ith2 - ith1 + 1 > 1:
-        print("averaging over %.2f in latitude" %dlat)
+        print("dlat = %+.2f in latitude" %dlat)
     else:
-        print("not averaging in latitude")
-    print ("sampling at rvals = " + arr_to_str(rvals, '%1.3f'))
+        print("dlat = 0.00 (not averaging in latitude)")
+    print ("lat1 = %+.1f" %(clat - dlat/2.0))
+    print ("lat2 = %+.1f" %(clat + dlat/2.0))
+    print ("sampling values:")
+    print ("qvals = " + arr_to_str(qvals, "%i"))
+    print ("sampling locations:")
+    print ("rvals = " + arr_to_str(rvals, '%1.3f'))
     print(fill_str('computing', lent, char), end='\r')
     t1 = time.time()
 
@@ -276,7 +265,7 @@ if rank == 0:
     else:
         hemisphere = 'S'
         
-    savename = 'time_lon-' + clas['tag'] +\
+    savename = 'time_lon' + clas['tag'] + '-' +\
             ('clat%s%02.0f_dlat%03.0f' %(hemisphere, np.abs(clat), dlat)) +\
             '-' + file_list[0] + '_' + file_list[-1] + '.pkl'
     savefile = datadir + savename    

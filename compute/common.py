@@ -1283,7 +1283,9 @@ clas_default['plotlatlines'] = True
 clas_default['plotboundary'] = True
 clas_default['saveplot'] = True
 clas_default['showplot'] = True
-clas_default['latvals'] = np.array([-85., -75., -60., -45., -30., -15., 0., 15., 30., 45., 60., 75., 85.])
+clas_default['latvals'] = None
+
+default_latvals = np.array([-85., -75., -60., -45., -30., -15., 0., 15., 30., 45., 60., 75., 85.])
 
 def get_default_rvals(dirname):
     ncheby, domain_bounds = get_domain_bounds(dirname)
@@ -1395,7 +1397,7 @@ def read_clas(dirname, args):
             elif args[i+1] == 'induction':
                 qvals = [801, 802, 803]            
                 for j in range(1, 31):
-                    qvals.append(16 + j)
+                    qvals.append(1600 + j)
                 if not clas['tag'] is None:
                     clas['tag'] = '_induction'
             else:
