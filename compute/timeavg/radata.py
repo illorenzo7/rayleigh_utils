@@ -1,15 +1,13 @@
+##################################################################
 # Routine to average Rayleigh data in time (generic)
 # Author: Loren Matilsky
-# 04/08/2021
+# Created: 04/08/2021
 ##################################################################
-# This routine computes the trace in time of the values in the G_Avgs data 
-# for a particular simulation. 
-
-# By default, the routine traces over the last 100 files of datadir, though
-# the user can specify a different range in sevaral ways:
-# -n 10 (last 10 files)
-# -range iter1 iter2 (names of start and stop data files; iter2 can be 'last')
-# -centerrange iter0 nfiles (trace about central file iter0 over nfiles)
+# This routine computes the time average of Rayleigh data
+# default data type is azav. to specify another 
+# (specav, gav, shav, ssav, merav, eqav) use
+# --radtype [radataname]
+##################################################################
 
 # initialize communication
 from mpi4py import MPI
@@ -248,7 +246,7 @@ if rank == 0:
 
     # save the data
     f = open(savefile, 'wb')
-    di_sav = {'vals': vals, 'lut': a0.lut, 'count': nfiles, 'qv': a0.qv}
+    di_sav = {'vals': vals, 'lut': a0.lut, 'ntimes': nfiles, 'qv': a0.qv}
     if radtype == 'specav':
         di_sav['lpower'] = lpower
     pickle.dump(di_sav, f, protocol=4)

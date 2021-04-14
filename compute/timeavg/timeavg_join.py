@@ -1,19 +1,16 @@
-# Created by: Loren Matilsky
-# On: 09/13/2019
-# Routine to average Rayleigh time-averaged data subsets.
-# Weights each average in proportion to "count" (time-averaging interval).
-# Averages only the intersection of the different qv's updating 
-# "nq" and "lut" appropriately in the output dictionary.
-# Usage: python timeavg_join.py dir1/data/[...]_iter1_iter2.pkl  
-# dir2/data/[...]_iter2_iter3.pkl dir3/data/[...]_iter3_iter4.pkl
-# dirname/ -->  
-# dirname/data/[...]_iter1_iter4.pkl
-# Assumes default data type is AZ_Avgs. To specify another datatype, use
-# -dtype key, where key = 
-# specav: Shell_Spectra
-# shav: Shell_Avgs
-# gav: G_Avgs
-# merav: Meridional_Slices
+##################################################################
+# Routine to average Rayleigh data in time (generic)
+# Author: Loren Matilsky
+# Created: 09/13/2019
+##################################################################
+# This routine joines several time averages of Rayleigh data
+# averaging in proportion each one's interval (iter2 - iter1)
+# Usage: 
+# python timeavg_join.py dirname dir1/data/[dataname]_iter1_iter2.pkl  
+# dir2/data/[dataname]_iter2_iter3.pkl dir3/data/[dataname]_iter3_iter4.pkl
+#  -->  
+# dirname/data/[dataname]_iter1_iter4.pkl
+##################################################################
 
 # Import relevant modules
 import numpy as np
@@ -33,132 +30,65 @@ dirname = sys.argv[1]
 datadir = dirname + '/data/'
 dirname_stripped = strip_dirname(dirname)
 
-tag = ''
-dtype = 'azav'
-# Other choices are gav, shav, specav, merav, enstr
 delete_old_files = True # delete the partial files by default
 args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
-    if arg == '-tag':
-        tag = args[i+1] + '_'
-    if arg == '-dtype':
-        dtype = args[i+1]
-    if arg == '-nodel':
+    if arg == '--nodel':
         delete_old_files = False
     if arg[-4:] == '.pkl':
         files.append(arg)
 
 nfiles = len(files)
-print ('nfiles =', nfiles)
+dataname = get_dataname_from_file(files[0])
+print ('averaging %i %s files' %(nfiles, dataname))
 # Read in all the dictionaries to be conjoined
 di_list = []
 for i in range(nfiles):
     di = get_dict(files[i])
     di_list.append(di)
-di0 = di_list[0]
 
-# Get intersection of qv
-qv = np.copy(di_list[0]['qv'])
-for i in range(nfiles - 1):
-    qv = np.intersect1d(qv, di_list[i + 1]['qv'])
-nq = len(qv)
-
-# Create new data array of zeros, overwriting nq with value from intersection
-if dtype == 'azav':
-    nt, nr, nq_old = np.shape(di0['vals'])
-    vals = np.zeros((nt, nr, nq))
-elif dtype == 'gav':
-    nq_old, = np.shape(di0['vals'])
-    vals = np.zeros((nq,))
-elif dtype == 'shav':
-    nr, nq_old = np.shape(di0['vals'])
-    vals = np.zeros((nr, nq))
-elif dtype == 'merav':
-    nphi, nt, nr, nq_old = np.shape(di0['vals'])
-    vals = np.zeros((nphi, nt, nr, nq))
-elif dtype == 'specav':
-    nl, nm, nr, nq_old = np.shape(di0['fullpower'])
-    fullpower = np.zeros((nl, nm, nr, nq))
-    lpower = np.zeros((nl, nr, nq, 3))
-elif dtype == 'enstr':
-    nphi, nt, nr = np.shape(di0['vals'])
-    vals = np.zeros((nphi, nt, nr))
-
-lut = np.zeros_like(di_list[0]['lut'])
-lut[qv] = np.arange(nq)
-
-# calculate the total count for weights
-count = 0
+# calculate the averaging weights
+interval_tot = 0.
 for i in range(nfiles):
-    count += di_list[i]['count']
+    iter1, iter2 = get_iters_from_file(files[i])
+    interval_tot += (iter2 - iter1)
+weights = np.zeros(nfiles)
+for i in range(nfiles):
+    iter1, iter2 = get_iters_from_file(files[i])
+    interval_loc = iter2 - iter1
+    weights[i] = interval_loc/interval_tot
+    if i == 0:
+        iter1_glob = iter1
+    if i == nfiles - 1:
+        iter2_glob = iter2
+
+# average the files together
+di0 = di_list[0]
+vals = np.copy(di0['vals'])
+if dataname == 'Shell_Spectra':
+    lpower = np.copy(di0['lpower'])
 
 for i in range(nfiles):
     print('adding %s' %files[i])
-    this_di = di_list[i]
-    this_count = this_di['count']
-    print('weight = %.3f' %(this_count/count))
-    this_lut = this_di['lut']
-    if dtype == 'azav':
-        these_vals = this_di['vals']
-        vals += this_count*these_vals[:, :, this_lut[qv]]
-    elif dtype == 'gav':
-        these_vals = this_di['vals']
-        vals += this_count*these_vals[this_lut[qv]]
-    elif dtype == 'shav':
-        these_vals = this_di['vals']
-        vals += this_count*these_vals[:, this_lut[qv]]
-    elif dtype == 'merav':
-        these_vals = this_di['vals']
-        vals += this_count*these_vals[:, :, :, this_lut[qv]]
-    elif dtype == 'specav':
-        this_fullpower = this_di['fullpower']
-        this_lpower = this_di['lpower']
-        fullpower += this_count*this_fullpower[:, :, :, this_lut[qv]]
-        lpower += this_count*this_lpower[:, :, this_lut[qv], :]
-    elif dtype == 'enstr':
-        these_vals = this_di['vals']
-        vals += this_count*these_vals
-
-if dtype == 'specav':
-    fullpower /= count
-    lpower /= count
-else:
-    vals /= count
+    di_loc = di_list[i]
+    weight_loc = weights[i]
+    print ('weight = %.3f' %weight_loc)
+    vals_loc = di_loc['vals']
+    vals += vals_loc*weight_loc
+    if dataname == 'Shell_Spectra':
+        lpower_loc = di_loc['lpower']
+        lpower += lpower_loc*weight_loc
 
 # Initialize joined dictionary, then change it
 di = dict(di_list[0])
-
-if dtype == 'specav':
-    di['fullpower'] = fullpower
+di['vals'] = vals
+if dataname == 'Shell_Spectra':
     di['lpower'] = lpower
-else:
-    di['vals'] = vals
 
-iter1, iter2 = di_list[0]['iter1'], di_list[nfiles - 1]['iter2']
-di['iter1'] = iter1
-di['iter2'] = iter2
-di['count'] = count
-
-di['qv'] = qv
-di['nq'] = nq
-di['lut'] = lut
-
-basename = '_AZ_Avgs_'
-if dtype == 'gav':
-    basename = '_G_Avgs_'
-elif dtype == 'shav':
-    basename = '_Shell_Avgs_'
-elif dtype == 'specav':
-    basename = '_Shell_Spectra_'
-elif dtype == 'merav':
-    basename = '_Meridional_Slices_'
-elif dtype == 'enstr':
-    basename = '_enstrophy_from_mer_'
-
-savename = dirname_stripped + basename + tag + str(iter1).zfill(8) +\
-        '_' + str(iter2).zfill(8) + '.pkl'
+savename = dataname + '-' +  str(iter1_glob).zfill(8) + '_' +\
+        str(iter2_glob).zfill(8) + '.pkl'
 savefile = datadir + savename
 f = open(savefile, 'wb')
 pickle.dump(di, f, protocol=4)

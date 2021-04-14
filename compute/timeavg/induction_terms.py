@@ -1,16 +1,11 @@
-# more breakdown of poloidal terms (separate derivatives) than 
-# induction_terms
-# Created by: Loren Matilsky
-# On: 01/16/2021
 ##################################################################
-# This routine computes the trace in time of the values in the G_Avgs data 
-# for a particular simulation. 
-
-# By default, the routine traces over the last 100 files of datadir, though
-# the user can specify a different range in sevaral ways:
-# -n 10 (last 10 files)
-# -range iter1 iter2 (names of start and stop data files; iter2 can be 'last')
-# -centerrange iter0 nfiles (trace about central file iter0 over nfiles)
+# Author: Loren Matilsky
+# Created: 01/16/2021
+##################################################################
+# This routine computes the time average of induction terms
+# (individual derivatives of products in v X B)
+# from EXACT derivatives of v and B (must be output by Rayleigh)
+##################################################################
 
 # initialize communication
 from mpi4py import MPI
@@ -75,21 +70,7 @@ if rank == 0:
     radatadir2 = dirname + '/' + dataname2 + '/'
 
     # Get all the file names in datadir and their integer counterparts
-    file_list, int_file_list, nfiles = get_file_lists(radatadir1)
-
-    # Get desired file list from command-line arguments
-    args = sys.argv[2:]
-    nargs = len(args)
-    if nargs == 0:
-        index_first, index_last = nfiles - 101, nfiles - 1  
-        # By default average over the last 100 files
-    else:
-        index_first, index_last = get_desired_range(int_file_list, args)
-
-    # Remove parts of file lists we don't need
-    file_list = file_list[index_first:index_last + 1]
-    int_file_list = int_file_list[index_first:index_last + 1]
-    nfiles = index_last - index_first + 1
+    file_list, int_file_list, nfiles = get_file_lists(radatadir1, args)
 
     # Get the problem size
     nproc_min, nproc_max, n_per_proc_min, n_per_proc_max =\

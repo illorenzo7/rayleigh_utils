@@ -1,16 +1,11 @@
-# more breakdown of poloidal terms (separate derivatives) than 
-# induction_terms
-# Created by: Loren Matilsky
-# On: 01/16/2021
 ##################################################################
-# This routine computes the trace in time of the values in the G_Avgs data 
-# for a particular simulation. 
-
-# By default, the routine traces over the last 100 files of datadir, though
-# the user can specify a different range in sevaral ways:
-# -n 10 (last 10 files)
-# -range iter1 iter2 (names of start and stop data files; iter2 can be 'last')
-# -centerrange iter0 nfiles (trace about central file iter0 over nfiles)
+# Author: Loren Matilsky
+# Created: 01/16/2021
+##################################################################
+# This routine computes the time average of induction terms
+# (individual derivatives of products in v X B)
+# from NUMERICAL derivatives of v and B (must output v, B, om, J)
+##################################################################
 
 # initialize communication
 from mpi4py import MPI
@@ -68,29 +63,16 @@ if rank == 0:
 
 # proc 0 reads the file lists and distributes them
 if rank == 0:
-    # Get the name of the run directory
+    #  get arguments
     dirname = sys.argv[1]
+    args = sys.argv[2:]
 
     # Get the Rayleigh data directory
     radatadir1 = dirname + '/' + dataname1 + '/'
     radatadir2 = dirname + '/' + dataname2 + '/'
 
     # Get all the file names in datadir and their integer counterparts
-    file_list, int_file_list, nfiles = get_file_lists(radatadir1)
-
-    # Get desired file list from command-line arguments
-    args = sys.argv[2:]
-    nargs = len(args)
-    if nargs == 0:
-        index_first, index_last = nfiles - 101, nfiles - 1  
-        # By default average over the last 100 files
-    else:
-        index_first, index_last = get_desired_range(int_file_list, args)
-
-    # Remove parts of file lists we don't need
-    file_list = file_list[index_first:index_last + 1]
-    int_file_list = int_file_list[index_first:index_last + 1]
-    nfiles = index_last - index_first + 1
+    file_list, int_file_list, nfiles = get_file_lists(radatadir1, args)
 
     # Get the problem size
     nproc_min, nproc_max, n_per_proc_min, n_per_proc_max =\
@@ -106,29 +88,17 @@ if rank == 0:
     ntimes = (nfiles - 1)*nrec_full + nrec_last
 
     # get grid information
-    rr = a0.radius
-    ri, ro = np.min(rr), np.max(rr)
-    d = ro - ri
-    rr_depth = (ro - rr)/d
-    rr_height = (rr - ri)/d
-    sint = a0.sintheta
-    cost = a0.costheta
-    tt = np.arccos(cost)
-    tt_lat = (np.pi/2 - tt)*180/np.pi
-    nr = a0.nr
-    nt = a0.ntheta
+    di_grid = get_grid_info(dirname)
+    nt = di_grid['nt']
+    nr = di_grid['nr']
+    rr = di_grid['rr']
+    tt = di_grid['tt']
+    rr_2d = di_grid['rr_2d']
+    cott_2d = di_grid['cott_2d']
+    rr_3d = di_grid['rr_3d']
+    cott_3d = di_grid['cott_3d']
 
-    # compute some derivative quantities for the grid
-    tt_2d = tt.reshape((nt, 1))
-    rr_2d = rr.reshape((1, nr))
-    sint_2d = np.sin(tt_2d); cost_2d = np.cos(tt_2d)
-    cott = (cost/sint).reshape((nt, 1))
-    xx = rr_2d*sint_2d
-    zz = rr_2d*cost_2d
-    rr_3d = rr.reshape((1, 1,  nr))
-    cott_3d = (cost/sint).reshape((1, nt, 1))
-
-    # need density derivative (for dvp/dP
+    # need density derivative (for dvp/dP)
     eq = get_eq(dirname)
     dlnrho = eq.dlnrho.reshape((1, 1, nr))
 
@@ -161,11 +131,11 @@ else: # recieve my_files, my_nfiles, my_ntimes
 # Broadcast dirname, radatadir, nq, etc.
 if rank == 0:
     meta = [dirname, radatadir1, radatadir2, nt, nr, ntimes, rr, tt,\
-            rr_2d,  cott, rr_3d, cott_3d, dlnrho]
+            rr_2d,  cott_2d, rr_3d, cott_3d, dlnrho]
 else:
     meta = None
 dirname, radatadir1, radatadir2, nt, nr, ntimes, rr, tt,\
-        rr_2d, cott, rr_3d, cott_3d, dlnrho = comm.bcast(meta, root=0)
+        rr_2d, cott_2d, rr_3d, cott_3d, dlnrho = comm.bcast(meta, root=0)
 
 # Checkpoint and time
 comm.Barrier()
@@ -289,7 +259,7 @@ for i in range(my_nfiles):
         my_vals[:, :, ind_off + 1] += -np.mean(dvtdt*br + vt*dbrdt, axis=0)*my_weight
         my_vals[:, :, ind_off + 2] += -np.mean(dvpdp*br + vp*dbrdp, axis=0)*my_weight
         my_vals[:, :, ind_off + 3] += np.mean(dvrdp*bp + vr*dbpdp, axis=0)*my_weight
-        my_vals[:, :, ind_off + 4] += (cott/rr_2d)*np.mean(vr*bt - vt*br, axis=0)*my_weight
+        my_vals[:, :, ind_off + 4] += (cott_2d/rr_2d)*np.mean(vr*bt - vt*br, axis=0)*my_weight
         ind_off += 5
 
         # full theta
@@ -313,7 +283,7 @@ for i in range(my_nfiles):
         my_vals[:, :, ind_off + 1] += -np.mean(dvtdt_m*br_m + vt_m*dbrdt_m, axis=0)*my_weight
         my_vals[:, :, ind_off + 2] += -np.mean(dvpdp_m*br_m + vp_m*dbrdp_m, axis=0)*my_weight
         my_vals[:, :, ind_off + 3] += np.mean(dvrdp_m*bp_m + vr_m*dbpdp_m, axis=0)*my_weight
-        my_vals[:, :, ind_off + 4] += (cott/rr_2d)*np.mean(vr_m*bt_m - vt_m*br_m, axis=0)*my_weight
+        my_vals[:, :, ind_off + 4] += (cott_2d/rr_2d)*np.mean(vr_m*bt_m - vt_m*br_m, axis=0)*my_weight
         ind_off += 5
 
         # mean theta
@@ -390,7 +360,7 @@ if rank == 0:
     # Get first and last iters of files
     iter1, iter2 = int_file_list[0], int_file_list[-1]
     f = open(savefile, 'wb')
-    pickle.dump({'vals': vals, 'lut': a0.lut, 'count': ntimes, 'iter1': iter1, 'iter2': iter2, 'qv': a0.qv, 'nq': a0.nq,  'rr': rr, 'rr_depth': rr_depth, 'rr_height': rr_height, 'nr': nr, 'ri': ri, 'ro': ro, 'd': d, 'tt': tt, 'tt_lat': tt_lat, 'sint': sint, 'cost': cost,'nt': nt, 'rr_2d': rr_2d, 'tt_2d': tt_2d, 'sint_2d': sint_2d, 'cost_2d': cost_2d, 'xx': xx, 'zz': zz}, f, protocol=4)
+    pickle.dump({'vals': vals, 'ntimes': ntimes}, f, protocol=4)
     f.close()
     t2 = time.time()
     print (format_time(t2 - t1))
