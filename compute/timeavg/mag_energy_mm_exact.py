@@ -1,16 +1,13 @@
-# more breakdown of poloidal terms (separate derivatives) than 
-# induction_terms
-# Created by: Loren Matilsky
-# On: 01/16/2021
 ##################################################################
-# This routine computes the trace in time of the values in the G_Avgs data 
-# for a particular simulation. 
-
-# By default, the routine traces over the last 100 files of datadir, though
-# the user can specify a different range in sevaral ways:
-# -n 10 (last 10 files)
-# -range iter1 iter2 (names of start and stop data files; iter2 can be 'last')
-# -centerrange iter0 nfiles (trace about central file iter0 over nfiles)
+# Routine to average magnetic energy production terms (the exact quantities)
+# from <B> dot <induction>
+# Author: Loren Matilsky
+# Created: 04/08/2021
+# the output (in sets of five) is:
+# (shear, comp, adv, induc, diff) = 5 
+# x (r, theta, phi) = 3 
+# x (tot, mean-mean, fluc-fluc) = 3 = 45
+##################################################################
 
 # initialize communication
 from mpi4py import MPI
@@ -65,70 +62,26 @@ if rank == 0:
 
 # proc 0 reads the file lists and distributes them
 if rank == 0:
-    # Get the name of the run directory
+    #  get arguments
     dirname = sys.argv[1]
+    args = sys.argv[2:]
 
     # Get the Rayleigh data directory
     radatadir = dirname + '/' + dataname + '/'
 
     # Get all the file names in datadir and their integer counterparts
-    file_list, int_file_list, nfiles = get_file_lists(radatadir)
-
-    # Get desired file list from command-line arguments
-    args = sys.argv[2:]
-    nargs = len(args)
-    if nargs == 0:
-        index_first, index_last = nfiles - 101, nfiles - 1  
-        # By default average over the last 100 files
-    else:
-        index_first, index_last = get_desired_range(int_file_list, args)
-
-    # Remove parts of file lists we don't need
-    file_list = file_list[index_first:index_last + 1]
-    int_file_list = int_file_list[index_first:index_last + 1]
-    nfiles = index_last - index_first + 1
+    file_list, int_file_list, nfiles = get_file_lists(radatadir, args)
 
     # Get the problem size
     nproc_min, nproc_max, n_per_proc_min, n_per_proc_max =\
             opt_workload(nfiles, nproc)
 
-    # Will need the first data file for a number of things
-    a0 = reading_func(radatadir + file_list[0], '')
-    nrec_full = a0.niter
-
-    # Will need nrec (last niter) to get proper time axis size
-    af = reading_func(radatadir + file_list[-1], '')
-    nrec_last = af.niter
-    ntimes = (nfiles - 1)*nrec_full + nrec_last
-
     # get grid information
-    rr = a0.radius
-    ri, ro = np.min(rr), np.max(rr)
-    d = ro - ri
-    rr_depth = (ro - rr)/d
-    rr_height = (rr - ri)/d
-    sint = a0.sintheta
-    cost = a0.costheta
-    tt = np.arccos(cost)
-    tt_lat = (np.pi/2 - tt)*180/np.pi
-    nr = a0.nr
-    nt = a0.ntheta
+    di_grid = get_grid_info(dirname)
+    nt = di_grid['nt']
+    nr = di_grid['nr']
 
-    # compute some derivative quantities for the grid
-    tt_2d = tt.reshape((nt, 1))
-    rr_2d = rr.reshape((1, nr))
-    sint_2d = np.sin(tt_2d); cost_2d = np.cos(tt_2d)
-    cott = (cost/sint).reshape((nt, 1))
-    xx = rr_2d*sint_2d
-    zz = rr_2d*cost_2d
-    rr_3d = rr.reshape((1, 1,  nr))
-    cott_3d = (cost/sint).reshape((1, nt, 1))
-
-    # need density derivative (for dvp/dP
-    eq = get_eq(dirname)
-    dlnrho = eq.dlnrho.reshape((1, 1, nr))
-
-    # Distribute file_list and my_ntimes to each process
+    # Distribute file_list to each process
     for k in range(nproc - 1, -1, -1):
         # distribute the partial file list to other procs 
         if k >= nproc_min: # last processes analyzes more files
@@ -140,28 +93,21 @@ if rank == 0:
             istart = k*my_nfiles
             iend = istart + my_nfiles
 
-        if k == nproc - 1: # last process may have nrec_last != nrec_full
-            my_ntimes = (my_nfiles - 1)*nrec_full + nrec_last
-        else:
-            my_ntimes = my_nfiles*nrec_full
-
         # Get the file list portion for rank k
         my_files = np.copy(int_file_list[istart:iend])
 
-        # send  my_files, my_nfiles, my_ntimes if nproc > 1
+        # send my_files, my_nfiles
         if k >= 1:
-            comm.send([my_files, my_nfiles, my_ntimes, ntimes], dest=k)
-else: # recieve my_files, my_nfiles, my_ntimes
-    my_files, my_nfiles, my_ntimes, ntimes = comm.recv(source=0)
+            comm.send([my_files, my_nfiles], dest=k)
+else: # recieve my_files, my_nfiles
+    my_files, my_nfiles = comm.recv(source=0)
 
 # Broadcast dirname, radatadir, nq, etc.
 if rank == 0:
-    meta = [dirname, radatadir, nt, nr, ntimes, rr, tt,\
-            rr_2d,  cott, rr_3d, cott_3d, dlnrho]
+    meta = [dirname, radatadir, nt, nr, nfiles]
 else:
     meta = None
-dirname, radatadir, nt, nr, ntimes, rr, tt,\
-        rr_2d, cott, rr_3d, cott_3d, dlnrho = comm.bcast(meta, root=0)
+dirname, radatadir, nt, nr, nfiles = comm.bcast(meta, root=0)
 
 # Checkpoint and time
 comm.Barrier()
@@ -170,7 +116,6 @@ if rank == 0:
     print (format_time(t2 - t1))
     print ('Considering %i %s files for the trace: %s through %s'\
         %(nfiles, dataname, file_list[0], file_list[-1]))
-    print ("no. slices = %i" %ntimes)
     print(fill_str('computing', lent, char), end='\r')
     t1 = time.time()
 
@@ -178,12 +123,11 @@ if rank == 0:
 nq = 45
 my_vals = np.zeros((nt, nr, nq))
 # "my_vals will be a weighted sum"
-my_weight = 1./ntimes
 
 for i in range(my_nfiles):
     a = reading_func(radatadir + str(my_files[i]).zfill(8), '')
     # average over all records
-
+    my_weight = 1.0/(nfiles*a.niter)
     for j in range(a.niter):
         # mean B
         bfields = [a.vals[:, :, a.lut[801], j],\
@@ -193,15 +137,11 @@ for i in range(my_nfiles):
         # first compute products of fields with total and vm bm terms
         for iq in range(30):
             my_vals[:, :, iq] += bfields[iq//5 % 3]*\
-                    a.vals[:, :, a.lut[1601 + iq], j]
+                    a.vals[:, :, a.lut[1601 + iq], j]*my_weight
         # now get the products of fields with vfluc bfluc
         for iq in range(15):
             my_vals[:, :, iq + 30] += my_vals[:, :, iq] -\
                     my_vals[:, :, iq + 15]
-
-        # the output (in sets of five) is:
-        # (shear, comp, adv, induc, diff) = 5 x (r, theta, phi) = 3 x
-        # (tot, mean-mean, fluc-fluc) = 3 = 45
 
     if rank == 0:
         pcnt_done = (i + 1)/my_nfiles*100.
@@ -226,7 +166,7 @@ if rank == 0:
     # Gather the results into this "master" array
     for j in range(nproc):
         if j >= 1:
-            # Get my_ntimes, my_times, my_iters, my_vals from rank j
+            # Get my_vals from rank j
             my_vals = comm.recv(source=j)
         # "my_vals" are all weighted: their sum equals the overall average
         vals += my_vals 
@@ -251,9 +191,8 @@ if rank == 0:
 
     # save the data
     # Get first and last iters of files
-    iter1, iter2 = int_file_list[0], int_file_list[-1]
     f = open(savefile, 'wb')
-    pickle.dump({'vals': vals, 'lut': a0.lut, 'count': ntimes, 'iter1': iter1, 'iter2': iter2, 'qv': a0.qv, 'nq': a0.nq,  'rr': rr, 'rr_depth': rr_depth, 'rr_height': rr_height, 'nr': nr, 'ri': ri, 'ro': ro, 'd': d, 'tt': tt, 'tt_lat': tt_lat, 'sint': sint, 'cost': cost,'nt': nt, 'rr_2d': rr_2d, 'tt_2d': tt_2d, 'sint_2d': sint_2d, 'cost_2d': cost_2d, 'xx': xx, 'zz': zz}, f, protocol=4)
+    pickle.dump({'vals': vals}, f, protocol=4)
     f.close()
     t2 = time.time()
     print (format_time(t2 - t1))
