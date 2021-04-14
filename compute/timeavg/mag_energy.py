@@ -3,7 +3,10 @@
 # Created: 01/16/2021
 ##################################################################
 # This routine computes the time average of mag. energy production terms
-# breaking down by verticl/horizontal terms
+# breaking down by:
+# production of (r, theta, phi)
+# nonzero terms in triple product: tot, pmp, ppm, mmm, mpp, ppp
+# and induct, shear, advec, [comp], [diff] = 78 terms
 ##################################################################
 
 # initialize communication
@@ -133,7 +136,7 @@ if rank == 0:
     t1 = time.time()
 
 # Now analyze the data
-nq = 45
+nq = 72
 my_vals = np.zeros((nt, nr, nq))
 
 my_nfiles = len(my_files)
@@ -235,70 +238,118 @@ for i in range(my_nfiles):
         dbpdp_m = -dbrdr_m - (2./rr_3d)*br_m - dbtdt_m -\
                 (cott_3d/rr_3d)*bt_m
 
-        # compute induction terms
+        # make vectors/tensors: 
+        # row indexes vector components, col indexes derivative direction
+        vv = [vr, vt, vp]
+        dvdx = [    [dvrdr, dvrdt, dvrdp],\
+                    [dvtdr, dvtdt, dvtdp],\
+                    [dvpdr, dvpdt, dvpdp] ]
+        vv_m = [vr_m, vt_m, vp_m]
+        dvdx_m = [  [dvrdr_m, dvrdt_m, dvrdp_m],\
+                    [dvtdr_m, dvtdt_m, dvtdp_m],\
+                    [dvpdr_m, dvpdt_m, dvpdp_m] ]
 
-        # full radial
-        ind_r = dvrdt*bt + vr*dbtdt
-        ind_r += -(dvtdt*br + vt*dbrdt)
-        ind_r += -(dvpdp*br + vp*dbrdp)
-        ind_r += dvrdp*bp + vr*dbpdp
-        ind_r += (cott_3d/rr_3d)*(vr*bt - vt*br)
+        bb = [br, bt, bp]
+        dbdx = [    [dbrdr, dbrdt, dbrdp],\
+                    [dbtdr, dbtdt, dbtdp],\
+                    [dbpdr, dbpdt, dbpdp] ]
+        bb_m = [br_m, bt_m, bp_m]
+        dbdx_m = [  [dbrdr_m, dbrdt_m, dbrdp_m],\
+                    [dbtdr_m, dbtdt_m, dbtdp_m],\
+                    [dbpdr_m, dbpdt_m, dbpdp_m] ]
 
-        # full theta
-        ind_t = dvtdp*bp + vt*dbpdp
-        ind_t += -(dvpdp*bt + vp*dbtdp)
-        ind_t += -(dvrdr*bt + vr*dbtdr)
-        ind_t += dvtdr*br + vt*dbrdr
-        ind_t += (1./rr_3d)*(vt*br - vr*bt)
+        # also get fluc vectors/tensors
+        vv_p = [0, 0, 0]
+        dvdx_p = [[0 for i in range(3)] for j in range(3)]
+        bb_p = [0, 0, 0]
+        dbdx_p = [[0 for i in range(3)] for j in range(3)]
 
-        # full phi
-        ind_p = dvpdr*br + vp*dbrdr
-        ind_p += -(dvrdr*bp + vr*dbpdr)
-        ind_p += -(dvtdt*bp + vt*dbpdt)
-        ind_p += dvpdt*bt + vp*dbtdt
-        ind_p += (1./rr_3d)*(vp*br - vr*bp)
+        for i in range(3):
+            vv_p[i] = vv[i] - vv_m[i]
+            bb_p[i] = bb[i] - bb_m[i]
+            for j in range(3):
+                dvdx_p[i][j] = dvdx[i][j] - dvdx_m[i][j]
+                dbdx_p[i][j] = dbdx[i][j] - dbdx_m[i][j]
 
-        # mean radial
-        ind_r_m = dvrdt_m*bt_m + vr*dbtdt_m
-        ind_r_m += -(dvtdt_m*br_m + vt_m*dbrdt_m)
-        ind_r_m += -(dvpdp_m*br_m + vp_m*dbrdp_m)
-        ind_r_m += dvrdp_m*bp_m + vr_m*dbpdp_m
-        ind_r_m += (cott_3d/rr_3d)*(vr_m*bt_m - vt_m*br_m)
+        # get tot, pmp, ppm, mmm, mpp, ppp, energy terms
+        # induc, shear, adv, comp, [diffusion] (only for mm and pp)
+        ind_terms = [[0 for i in range(3)] for j in range(4)]
+        count = 0 
+        for k in range(6): 
+            # get appropriate fields for tot, pmp, ppm, mmm, mpp, ppp
+            if k == 0:
+                bb1_loc = bb.copy() # the guy getting dotted into 
+                                    # inductive terms
+                vv_loc = vv.copy()
+                dvdx_loc = dvdx.copy()
+                bb_loc = bb.copy()
+                dbdx_loc = dbdx.copy()
+            if k == 1:
+                bb1_loc = bb_p.copy()
+                vv_loc = vv_m.copy()
+                dvdx_loc = dvdx_m.copy()
+                bb_loc = bb_p.copy()
+                dbdx_loc = dbdx_p.copy()
+            if k == 2:
+                bb1_loc = bb_p.copy()
+                vv_loc = vv_p.copy()
+                dvdx_loc = dvdx_p.copy()
+                bb_loc = bb_m.copy()
+                dbdx_loc = dbdx_m.copy()
+            if k == 3:
+                bb1_loc = bb_m.copy()
+                vv_loc = vv_m.copy()
+                dvdx_loc = dvdx_m.copy()
+                bb_loc = bb_m.copy()
+                dbdx_loc = dbdx_m.copy()
+            if k == 4 or k == 5:
+                vv_loc = vv_p.copy()
+                dvdx_loc = dvdx_p.copy()
+                bb_loc = bb_p.copy()
+                dbdx_loc = dbdx_p.copy()
+            if k == 4:
+                bb1_loc = bb_m.copy()
+            if k == 5:
+                bb1_loc = bb_p.copy()
 
-        # mean theta
-        ind_t_m = dvtdp_m*bp_m + vt_m*dbpdp_m
-        ind_t_m += -(dvpdp_m*bt_m + vp_m*dbtdp_m)
-        ind_t_m += -(dvrdr_m*bt_m + vr_m*dbtdr_m)
-        ind_t_m += dvtdr_m*br_m + vt_m*dbrdr_m
-        ind_t_m += (1./rr_3d)*(vt_m*br_m - vr_m*bt_m)
+            # loop over r, theta, phi
+            for i in range(3):
+                ind_shear =     bb_loc[0]*dvdx_loc[i][0] +\
+                                bb_loc[1]*dvdx_loc[i][1] +\
+                                bb_loc[2]*dvdx_loc[i][2]
+                ind_adv =       -vv_loc[0]*dbdx_loc[i][0] -\
+                                vv_loc[1]*dbdx_loc[i][1] -\
+                                vv_loc[2]*dbdx_loc[i][2]
+                # need curvature terms for shear + adv
+                if i == 0:
+                    ind_shear += -(1./rr_3d)*(vv_loc[1]*bb_loc[1] +\
+                            vv_loc[2]*bb_loc[2])
+                    ind_adv += (1./rr_3d)*(bb_loc[1]*vv_loc[1] +\
+                            bb_loc[2]*vv_loc[2])
+                if i == 1:
+                    ind_shear += (1./rr_3d)*(vv_loc[0]*bb_loc[1] -\
+                            cott_3d*vv_loc[2]*bb_loc[2])
+                    ind_adv += -(1./rr_3d)*(bb_loc[0]*vv_loc[1] -\
+                            cott_3d*bb_loc[2]*vv_loc[2])
+                if i == 2:
+                    ind_shear += (1./rr_3d)*(vv_loc[0]*bb_loc[2] +\
+                            cott_3d*vv_loc[1]*bb_loc[2])
+                    ind_adv += -(1./rr_3d)*(bb_loc[0]*vv_loc[2] +\
+                            cott_3d*bb_loc[1]*vv_loc[2])
+                # compression
+                ind_comp = vv_loc[0]*dlnrho*bb_loc[i]
 
-        # mean phi
-        ind_p_m = dvpdr_m*br_m + vp_m*dbrdr_m
-        ind_p_m += -(dvrdr_m*bp_m + vr_m*dbpdr_m)
-        ind_p_m += -(dvtdt_m*bp_m + vt_m*dbpdt_m)
-        ind_p_m += dvpdt_m*bt_m + vp_m*dbtdt_m
-        ind_p_m += (1./rr_3d)*(vp_m*br_m - vr_m*bp_m)
+                # total induction
+                ind_tot = ind_shear + ind_adv + ind_comp
 
-        # fluc terms
-        br_f = br - br_m
-        bt_f = bt - bt_m
-        bp_f = bp - bp_m
-
-        ind_r_f = ind_r - ind_r_m
-        ind_t_f = ind_t - ind_t_m
-        ind_p_f = ind_p - ind_t_m
-
-        my_vals[:, :, 0] += np.mean(br*ind_r*my_weight, axis=0)
-        my_vals[:, :, 1] += np.mean(bt*ind_t*my_weight, axis=0)
-        my_vals[:, :, 2] += np.mean(bp*ind_p*my_weight, axis=0)
-
-        my_vals[:, :, 3] += np.mean(br_m*ind_r_m*my_weight, axis=0)
-        my_vals[:, :, 4] += np.mean(bt_m*ind_t_m*my_weight, axis=0)
-        my_vals[:, :, 5] += np.mean(bp_m*ind_p_m*my_weight, axis=0)
-
-        my_vals[:, :, 6] += np.mean(br_f*ind_r_f*my_weight, axis=0)
-        my_vals[:, :, 7] += np.mean(bt_f*ind_t_f*my_weight, axis=0)
-        my_vals[:, :, 8] += np.mean(bp_f*ind_p_f*my_weight, axis=0)
+                my_vals[:, :, count] = np.mean(bb1_loc[i]*ind_tot, axis=0)*my_weight
+                count += 1
+                my_vals[:, :, count] = np.mean(bb1_loc[i]*ind_shear, axis=0)*my_weight
+                count += 1
+                my_vals[:, :, count] = np.mean(bb1_loc[i]*ind_adv, axis=0)*my_weight
+                count += 1
+                my_vals[:, :, count] = np.mean(bb1_loc[i]*ind_comp, axis=0)*my_weight
+                count += 1
 
     if rank == 0:
         pcnt_done = (i + 1)/my_nfiles*100.
@@ -348,7 +399,6 @@ if rank == 0:
 
     # save the data
     # Get first and last iters of files
-    iter1, iter2 = int_file_list[0], int_file_list[-1]
     f = open(savefile, 'wb')
     pickle.dump({'vals': vals}, f, protocol=4)
     f.close()
