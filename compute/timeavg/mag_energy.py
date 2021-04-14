@@ -4,9 +4,10 @@
 ##################################################################
 # This routine computes the time average of mag. energy production terms
 # breaking down by:
-# production of (r, theta, phi)
 # nonzero terms in triple product: tot, pmp, ppm, mmm, mpp, ppp
-# and induct, shear, advec, [comp], [diff] = 78 terms
+# production of B_[r, theta, phi]
+# induct, shear, advec, comp
+# 6 x 3 x 4 = 72 terms
 ##################################################################
 
 # initialize communication
@@ -260,20 +261,19 @@ for i in range(my_nfiles):
 
         # also get fluc vectors/tensors
         vv_p = [0, 0, 0]
-        dvdx_p = [[0 for i in range(3)] for j in range(3)]
+        dvdx_p = [[0 for k in range(3)] for l in range(3)]
         bb_p = [0, 0, 0]
-        dbdx_p = [[0 for i in range(3)] for j in range(3)]
+        dbdx_p = [[0 for k in range(3)] for l in range(3)]
 
-        for i in range(3):
-            vv_p[i] = vv[i] - vv_m[i]
-            bb_p[i] = bb[i] - bb_m[i]
-            for j in range(3):
-                dvdx_p[i][j] = dvdx[i][j] - dvdx_m[i][j]
-                dbdx_p[i][j] = dbdx[i][j] - dbdx_m[i][j]
+        for k in range(3):
+            vv_p[k] = vv[k] - vv_m[k]
+            bb_p[k] = bb[k] - bb_m[k]
+            for l in range(3):
+                dvdx_p[k][l] = dvdx[k][l] - dvdx_m[k][l]
+                dbdx_p[k][l] = dbdx[k][l] - dbdx_m[k][l]
 
         # get tot, pmp, ppm, mmm, mpp, ppp, energy terms
         # induc, shear, adv, comp, [diffusion] (only for mm and pp)
-        ind_terms = [[0 for i in range(3)] for j in range(4)]
         count = 0 
         for k in range(6): 
             # get appropriate fields for tot, pmp, ppm, mmm, mpp, ppp
@@ -313,42 +313,42 @@ for i in range(my_nfiles):
                 bb1_loc = bb_p.copy()
 
             # loop over r, theta, phi
-            for i in range(3):
-                ind_shear =     bb_loc[0]*dvdx_loc[i][0] +\
-                                bb_loc[1]*dvdx_loc[i][1] +\
-                                bb_loc[2]*dvdx_loc[i][2]
-                ind_adv =       -vv_loc[0]*dbdx_loc[i][0] -\
-                                vv_loc[1]*dbdx_loc[i][1] -\
-                                vv_loc[2]*dbdx_loc[i][2]
+            for l in range(3):
+                ind_shear =     bb_loc[0]*dvdx_loc[l][0] +\
+                                bb_loc[1]*dvdx_loc[l][1] +\
+                                bb_loc[2]*dvdx_loc[l][2]
+                ind_adv =       -vv_loc[0]*dbdx_loc[l][0] -\
+                                vv_loc[1]*dbdx_loc[l][1] -\
+                                vv_loc[2]*dbdx_loc[l][2]
                 # need curvature terms for shear + adv
-                if i == 0:
+                if l == 0:
                     ind_shear += -(1./rr_3d)*(vv_loc[1]*bb_loc[1] +\
                             vv_loc[2]*bb_loc[2])
                     ind_adv += (1./rr_3d)*(bb_loc[1]*vv_loc[1] +\
                             bb_loc[2]*vv_loc[2])
-                if i == 1:
+                if l == 1:
                     ind_shear += (1./rr_3d)*(vv_loc[0]*bb_loc[1] -\
                             cott_3d*vv_loc[2]*bb_loc[2])
                     ind_adv += -(1./rr_3d)*(bb_loc[0]*vv_loc[1] -\
                             cott_3d*bb_loc[2]*vv_loc[2])
-                if i == 2:
+                if l == 2:
                     ind_shear += (1./rr_3d)*(vv_loc[0]*bb_loc[2] +\
                             cott_3d*vv_loc[1]*bb_loc[2])
                     ind_adv += -(1./rr_3d)*(bb_loc[0]*vv_loc[2] +\
                             cott_3d*bb_loc[1]*vv_loc[2])
                 # compression
-                ind_comp = vv_loc[0]*dlnrho*bb_loc[i]
+                ind_comp = vv_loc[0]*dlnrho*bb_loc[l]
 
                 # total induction
                 ind_tot = ind_shear + ind_adv + ind_comp
 
-                my_vals[:, :, count] = np.mean(bb1_loc[i]*ind_tot, axis=0)*my_weight
+                my_vals[:, :, count] = np.mean(bb1_loc[l]*ind_tot, axis=0)*my_weight
                 count += 1
-                my_vals[:, :, count] = np.mean(bb1_loc[i]*ind_shear, axis=0)*my_weight
+                my_vals[:, :, count] = np.mean(bb1_loc[l]*ind_shear, axis=0)*my_weight
                 count += 1
-                my_vals[:, :, count] = np.mean(bb1_loc[i]*ind_adv, axis=0)*my_weight
+                my_vals[:, :, count] = np.mean(bb1_loc[l]*ind_adv, axis=0)*my_weight
                 count += 1
-                my_vals[:, :, count] = np.mean(bb1_loc[i]*ind_comp, axis=0)*my_weight
+                my_vals[:, :, count] = np.mean(bb1_loc[l]*ind_comp, axis=0)*my_weight
                 count += 1
 
     if rank == 0:
