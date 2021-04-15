@@ -83,18 +83,13 @@ if rank == 0:
     nproc_min, nproc_max, n_per_proc_min, n_per_proc_max =\
             opt_workload(nfiles, nproc)
 
-    # Get metadata
-    a0 = reading_func(radatadir + file_list[0], '')
-    nrec_full = a0.niter
-    qvals = clas['qvals']
-    nq = len(qvals)
-
     # get grid information
     di_grid = get_grid_info(dirname)
-    nt = di_grid['nt']
-    nr = di_grid['nr']
     rr = di_grid['rr']
     tt_lat = di_grid['tt_lat']
+
+    # get desired quantities
+    qvals = clas['qvals']
 
     # get indices associated with desired sample vals
     if rad:
@@ -116,12 +111,7 @@ if rank == 0:
     samplevals = sampleaxis[isamplevals]
     nsamplevals = len(samplevals)
 
-    # Will need nrec (last niter) to get proper time axis size
-    af = reading_func(radatadir + file_list[-1], '')
-    nrec_last = af.niter
-    ntimes = (nfiles - 1)*nrec_full + nrec_last
-
-    # Distribute file_list and my_ntimes to each process
+    # Distribute file_list to each process
     for k in range(nproc - 1, -1, -1):
         # distribute the partial file list to other procs 
         if k >= nproc_min: # last processes analyzes more files
@@ -133,26 +123,21 @@ if rank == 0:
             istart = k*my_nfiles
             iend = istart + my_nfiles
 
-        if k == nproc - 1: # last process may have nrec_last != nrec_full
-            my_ntimes = (my_nfiles - 1)*nrec_full + nrec_last
-        else:
-            my_ntimes = my_nfiles*nrec_full
-
         # Get the file list portion for rank k
         my_files = np.copy(int_file_list[istart:iend])
 
-        # send  my_files, my_nfiles, my_ntimes if nproc > 1
+        # send appropriate file info if nproc > 1
         if k >= 1:
-            comm.send([my_files, my_nfiles, my_ntimes], dest=k)
-else: # recieve my_files, my_nfiles, my_ntimes
-    my_files, my_nfiles, my_ntimes = comm.recv(source=0)
+            comm.send([my_files, my_nfiles], dest=k)
+else: # recieve appropriate file info if rank > 1
+    my_files, my_nfiles = comm.recv(source=0)
 
 # broadcast meta data
 if rank == 0:
-    meta = [dirname, radatadir, qvals, nq, isamplevals, nsamplevals, nr, nt, rad]
+    meta = [dirname, radatadir, qvals, isamplevals, nsamplevals, rad]
 else:
     meta = None
-dirname, radatadir, qvals, nq, isamplevals, nsamplevals, nr, nt, rad = comm.bcast(meta, root=0)
+dirname, radatadir, qvals, isamplevals, nsamplevals, rad = comm.bcast(meta, root=0)
 
 # Checkpoint and time
 comm.Barrier()
@@ -161,7 +146,6 @@ if rank == 0:
     print (format_time(t2 - t1))
     print ('Considering %i %s files for the trace: %s through %s'\
         %(nfiles, dataname, file_list[0], file_list[-1]))
-    print ("ntimes for trace = %i" %ntimes)
     print ("sampling values:")
     print ("qvals = " + arr_to_str(qvals, "%i"))
     st = "sampling locations:"
@@ -177,33 +161,21 @@ if rank == 0:
     t1 = time.time()
 
 # Now analyze the data
-my_times = np.zeros(my_ntimes)
-my_iters = np.zeros(my_ntimes, dtype='int')
-if rad:
-    my_vals = np.zeros((my_ntimes, nsamplevals, nr, nq))
-else:
-    my_vals = np.zeros((my_ntimes, nt, nsamplevals, nq))
+my_times = []
+my_iters = []
+my_vals = []
 
-my_count = 0
 for i in range(my_nfiles):
-    if rank == 0 and i == 0:
-        a = a0
-    else:   
-        a = reading_func(radatadir + str(my_files[i]).zfill(8), '')
+    a = reading_func(radatadir + str(my_files[i]).zfill(8), '')
     for j in range(a.niter):
-        if my_count < my_ntimes: # make sure we don't go over the allotted
-            # space in the arrays
-            if rad:
-                my_vals[my_count, :, :, :] =\
-                a.vals[:, :, :, j][isamplevals, :,  :][:, :, a.lut[qvals]]
-            else:
-                my_vals[my_count, :, :, :] =\
-                a.vals[:, :, :, j][:, isamplevals, :][:, :, a.lut[qvals]]
-            my_times[my_count] = a.time[j] 
-            my_iters[my_count] = a.iters[j]
-        my_count += 1
+        if rad:
+            my_vals.append(a.vals[:, :, :, j][isamplevals, :,  :][:, :, a.lut[qvals]])
+        else:
+            my_vals.append(a.vals[:, :, :, j][:, isamplevals, :][:, :, a.lut[qvals]])
+        my_times.append(a.time[j])
+        my_iters.append(a.iters[j])
     if rank == 0:
-        pcnt_done = my_count/my_ntimes*100.0
+        pcnt_done = i/my_nfiles*100.0
         print(fill_str('computing', lent, char) +\
                 ('rank 0 %5.1f%% done' %pcnt_done), end='\r')
 
@@ -219,26 +191,22 @@ if rank == 0:
 
 # proc 0 now collects the results from each process
 if rank == 0:
-    # Initialize zero-filled 'vals/times/iters' arrays to store the data
-    if rad:
-        vals = np.zeros((ntimes, nsamplevals, nr, nq))
-    else:
-        vals = np.zeros((ntimes, nt, nsamplevals, nq))
-    times = np.zeros(ntimes)
-    iters = np.zeros(ntimes, dtype='int')
+    # initialize empty lists for the final arrays
+    times = []
+    iters = []
+    vals = []
 
     # Gather the results into these "master" arrays
     istart = 0
     for j in range(nproc):
         if j >= 1:
-            # Get my_ntimes, my_times, my_iters, my_vals from rank j
-            my_ntimes, my_times, my_iters, my_vals = comm.recv(source=j)
-        times[istart:istart+my_ntimes] = my_times
-        iters[istart:istart+my_ntimes] = my_iters
-        vals[istart:istart+my_ntimes, :, :, :] = my_vals
-        istart += my_ntimes
+            # Get my_my_times, my_iters, my_vals from rank j
+            my_times, my_iters, my_vals = comm.recv(source=j)
+        times += my_times
+        iters += my_iters
+        vals += my_vals
 else: # other processes send their data
-    comm.send([my_ntimes, my_times, my_iters, my_vals], dest=0)
+    comm.send([my_times, my_iters, my_vals], dest=0)
 
 # Make sure proc 0 collects all data
 comm.Barrier()
@@ -262,6 +230,10 @@ if rank == 0:
 
     # save the data
     f = open(savefile, 'wb')
+    # convert everything to arrays
+    vals = np.array(vals)
+    times = np.array(times)
+    iters = np.array(iters)
     di_sav = {'vals': vals, 'times': times, 'iters': iters,\
     'samplevals': samplevals, 'qvals': qvals}
     pickle.dump(di_sav, f, protocol=4)

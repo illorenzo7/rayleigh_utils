@@ -77,16 +77,6 @@ if rank == 0:
     nproc_min, nproc_max, n_per_proc_min, n_per_proc_max =\
             opt_workload(nfiles, nproc)
 
-    # Will need the first data file for a number of things
-    a0 = reading_func(radatadir + file_list[0], '')
-    nrec_full = a0.niter
-    nq = a0.nq + 3 # will add the three internal energies after
-
-    # Will need nrec (last niter) to get proper time axis size
-    af = reading_func(radatadir + file_list[-1], '')
-    nrec_last = af.niter
-    ntimes = (nfiles - 1)*nrec_full + nrec_last
-
     # get grid information
     gi = GridInfo(dirname + '/grid_info', '')
     rw = gi.rweights
@@ -104,7 +94,7 @@ if rank == 0:
     xx_rz = xx[:, nr_cz:]
 
     # get latitudes, and upper bound (lat 60)
-    cost = a0.costheta
+    cost = gi.costheta
     tt = np.arccos(cost)
     tt_lat = (np.pi/2.0 - tt)*180.0/np.pi
     latcut = 60.0
@@ -123,7 +113,7 @@ if rank == 0:
     rw_cz /= np.sum(rw_cz)
     rw_rz /= np.sum(rw_rz)
 
-    # Distribute file_list and my_ntimes to each process
+    # Distribute file_list to each process
     for k in range(nproc - 1, -1, -1):
         # distribute the partial file list to other procs 
         if k >= nproc_min: # last processes analyzes more files
@@ -135,19 +125,14 @@ if rank == 0:
             istart = k*my_nfiles
             iend = istart + my_nfiles
 
-        if k == nproc - 1: # last process may have nrec_last != nrec_full
-            my_ntimes = (my_nfiles - 1)*nrec_full + nrec_last
-        else:
-            my_ntimes = my_nfiles*nrec_full
-
         # Get the file list portion for rank k
         my_files = np.copy(int_file_list[istart:iend])
 
-        # send  my_files, my_nfiles, my_ntimes if nproc > 1
+        # send  my_files, my_nfiles if nproc > 1
         if k >= 1:
-            comm.send([my_files, my_nfiles, my_ntimes], dest=k)
-else: # recieve my_files, my_nfiles, my_ntimes
-    my_files, my_nfiles, my_ntimes = comm.recv(source=0)
+            comm.send([my_files, my_nfiles], dest=k)
+else: # recieve my_files, my_nfiles
+    my_files, my_nfiles = comm.recv(source=0)
 
 # Broadcast dirname, radatadir, nq
 if rank == 0:
@@ -165,45 +150,35 @@ if rank == 0:
     print (format_time(t2 - t1))
     print ('Considering %i %s files for the trace: %s through %s'\
         %(nfiles, dataname, file_list[0], file_list[-1]))
-    print ("ntimes for trace = %i" %ntimes)
     print(fill_str('computing', lent, char), end='\r')
     t1 = time.time()
 
 # Now analyze the data
-my_times = np.zeros(my_ntimes)
-my_iters = np.zeros(my_ntimes, dtype='int')
-my_vals = np.zeros((my_ntimes, 3)) # full, CZ, RZ
+my_times = []
+my_iters = []
+my_vals = []
 
-my_count = 0
 for i in range(my_nfiles):
-    if rank == 0 and i == 0:
-        a = a0
-    else:   
-        a = reading_func(radatadir + str(my_files[i]).zfill(8), '')
+    a = reading_func(radatadir + str(my_files[i]).zfill(8), '')
     for j in range(a.niter):
-        if my_count < my_ntimes: # make sure we don't go over the allotted
-            # get | Omega - Omega_mean|
-            om_merplane = (np.copy(a.vals[:, :, a.lut[3], j])/xx)[icut1:icut2+1,:]
-            om_mean = np.sum(tw*om_merplane, axis=0).reshape((1, nr))
-            om2 = np.sum((om_merplane - om_mean)**2.*tw, axis=0)
-            Dom_r = np.sqrt(om2)
+        om_merplane = (np.copy(a.vals[:, :, a.lut[3], j])/xx)[icut1:icut2+1,:]
+        om_mean = np.sum(tw*om_merplane, axis=0).reshape((1, nr))
+        om2 = np.sum((om_merplane - om_mean)**2.*tw, axis=0)
+        Dom_r = np.sqrt(om2)
 
-            # Get the values in the CZ/RZ separately
-            gav = np.sqrt(np.sum(rw*Dom_r))
-            gav_cz = np.sqrt(np.sum(rw_cz*Dom_r[:ir0+1]))
-            gav_rz = np.sqrt(np.sum(rw_rz*Dom_r[nr_cz:]))
+        # Get the values in the CZ/RZ separately
+        gav = np.sqrt(np.sum(rw*Dom_r))
+        gav_cz = np.sqrt(np.sum(rw_cz*Dom_r[:ir0+1]))
+        gav_rz = np.sqrt(np.sum(rw_rz*Dom_r[nr_cz:]))
 
-            my_vals[my_count, 0] = gav
-            my_vals[my_count, 1] = gav_cz
-            my_vals[my_count, 2] = gav_rz
+        my_vals.append(np.array([gav, gav_cz, gav_rz]))
 
-            my_times[my_count] = a.time[j] 
-            my_iters[my_count] = a.iters[j]
-        my_count += 1
-        if rank == 0:
-            pcnt_done = my_count/my_ntimes*100.
-            print(fill_str('computing', lent, char) +\
-                    ('rank 0 %5.1f%% done' %pcnt_done), end='\r')
+        my_times.append(a.time[j])
+        my_iters.append(a.iters[j])
+    if rank == 0:
+        pcnt_done = i/my_nfiles*100.0
+        print(fill_str('computing', lent, char) +\
+                ('rank 0 %5.1f%% done' %pcnt_done), end='\r')
 # Checkpoint and time
 comm.Barrier()
 if rank == 0:
@@ -216,23 +191,21 @@ if rank == 0:
 
 # proc 0 now collects the results from each process
 if rank == 0:
-    # Initialize zero-filled 'vals/times/iters' arrays to store the data
-    times = np.zeros(ntimes)
-    iters = np.zeros(ntimes, dtype='int')
-    vals = np.zeros((ntimes, 3))
+    # initialize empty lists for the final arrays
+    times = []
+    iters = []
+    vals = []
 
     # Gather the results into these "master" arrays
-    istart = 0
     for j in range(nproc):
         if j >= 1:
-            # Get my_ntimes, my_times, my_iters, my_vals from rank j
-            my_ntimes, my_times, my_iters, my_vals = comm.recv(source=j)
-        times[istart:istart+my_ntimes] = my_times
-        iters[istart:istart+my_ntimes] = my_iters
-        vals[istart:istart+my_ntimes, :] = my_vals
-        istart += my_ntimes
+            # Get data from rank j
+            my_times, my_iters, my_vals = comm.recv(source=j)
+        times += my_times
+        iters += my_iters
+        vals += my_vals
 else: # other processes send their data
-    comm.send([my_ntimes, my_times, my_iters, my_vals], dest=0)
+    comm.send([my_times, my_iters, my_vals], dest=0)
 
 # Make sure proc 0 collects all data
 comm.Barrier()
@@ -252,6 +225,10 @@ if rank == 0:
 
     # save the data
     f = open(savefile, 'wb')
+    # convert everything to arrays
+    vals = np.array(vals)
+    times = np.array(times)
+    iters = np.array(iters)
     di_sav = {'vals': vals, 'times': times, 'iters': iters}
     pickle.dump(di_sav, f, protocol=4)
     f.close()

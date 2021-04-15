@@ -79,16 +79,6 @@ if rank == 0:
     nproc_min, nproc_max, n_per_proc_min, n_per_proc_max =\
             opt_workload(nfiles, nproc)
 
-    # Will need the first data file for a number of things
-    a0 = reading_func(radatadir + file_list[0], '')
-    nrec_full = a0.niter
-    nq = a0.nq + 3 # will add the three internal energies after
-
-    # Will need nrec (last niter) to get proper time axis size
-    af = reading_func(radatadir + file_list[-1], '')
-    nrec_last = af.niter
-    ntimes = (nfiles - 1)*nrec_full + nrec_last
-
     # get grid information
     di_grid = get_grid_info(dirname)
     nt = di_grid['nt']
@@ -169,7 +159,7 @@ if rank == 0:
             volumes[it, ir] = 2.*np.pi/3.*(rr[ir1]**3. - rr[ir2]*3.)*\
                     np.abs(cost[it1] - cost[it2])
 
-    # Distribute file_list and my_ntimes to each process
+    # Distribute file_list to each process
     for k in range(nproc - 1, -1, -1):
         # distribute the partial file list to other procs 
         if k >= nproc_min: # last processes analyzes more files
@@ -181,26 +171,21 @@ if rank == 0:
             istart = k*my_nfiles
             iend = istart + my_nfiles
 
-        if k == nproc - 1: # last process may have nrec_last != nrec_full
-            my_ntimes = (my_nfiles - 1)*nrec_full + nrec_last
-        else:
-            my_ntimes = my_nfiles*nrec_full
-
         # Get the file list portion for rank k
         my_files = np.copy(int_file_list[istart:iend])
 
-        # send  my_files, my_nfiles, my_ntimes if nproc > 1
+        # send  my_files, my_nfiles if nproc > 1
         if k >= 1:
-            comm.send([my_files, my_nfiles, my_ntimes], dest=k)
-else: # recieve my_files, my_nfiles, my_ntimes
-    my_files, my_nfiles, my_ntimes = comm.recv(source=0)
+            comm.send([my_files, my_nfiles], dest=k)
+else: # recieve my_files, my_nfiles
+    my_files, my_nfiles = comm.recv(source=0)
 
-# Broadcast dirname, radatadir, nq
+# Broadcast dirname, radatadir, etc.
 if rank == 0:
-    meta = [dirname, radatadir, nq, nt, nr, ir_sep, it_sep, rhot, nsep_r, nsep_t, tw, rw]
+    meta = [dirname, radatadir, nt, nr, ir_sep, it_sep, rhot, nsep_r, nsep_t, tw, rw]
 else:
     meta = None
-dirname, radatadir, nq, nt, nr, ir_sep, it_sep, rhot, nsep_r, nsep_t, tw, rw = comm.bcast(meta, root=0)
+dirname, radatadir, nt, nr, ir_sep, it_sep, rhot, nsep_r, nsep_t, tw, rw = comm.bcast(meta, root=0)
 
 # Checkpoint and time
 comm.Barrier()
@@ -215,75 +200,69 @@ if rank == 0:
             (" (nsep_t = %i)" %nsep_t) )
     print ('Considering %i %s files for the trace: %s through %s'\
         %(nfiles, dataname, file_list[0], file_list[-1]))
-    print ("ntimes for trace = %i" %ntimes)
     print(fill_str('computing', lent, char), end='\r')
     t1 = time.time()
 
 # Now analyze the data
-my_times = np.zeros(my_ntimes)
-my_iters = np.zeros(my_ntimes, dtype='int')
-my_vals = np.zeros((my_ntimes, nq, nsep_t + 1, nsep_r + 1))
+my_times = []
+my_iters = []
+my_vals = []
 
-my_count = 0
 for i in range(my_nfiles):
-    if rank == 0 and i == 0:
-        a = a0
-    else:   
-        a = reading_func(radatadir + str(my_files[i]).zfill(8), '')
+    a = reading_func(radatadir + str(my_files[i]).zfill(8), '')
     for j in range(a.niter):
-        if my_count < my_ntimes: # make sure we don't go over the allotted
-            # space in the arrays
-            vals_loc = np.copy(a.vals[:, :, :, j])
-            # add in internal energy
-            inte_loc = rhot*vals_loc[:, :, a.lut[501]]
-            # top S subtracted
-            topS = np.sum(tw*vals_loc[:, 0, a.lut[501]])
-            inte_loc_subt = rhot*(vals_loc[:, :, a.lut[501]] - topS)
-            # bottom S subtracted
-            botS = np.sum(tw*vals_loc[:, -1, a.lut[501]])
-            inte_loc_subb = rhot*(vals_loc[:, :, a.lut[501]] - botS)
+        vals_loc = np.copy(a.vals[:, :, :, j])
+        # add in internal energy
+        inte_loc = rhot*vals_loc[:, :, a.lut[501]]
+        # top S subtracted
+        topS = np.sum(tw*vals_loc[:, 0, a.lut[501]])
+        inte_loc_subt = rhot*(vals_loc[:, :, a.lut[501]] - topS)
+        # bottom S subtracted
+        botS = np.sum(tw*vals_loc[:, -1, a.lut[501]])
+        inte_loc_subb = rhot*(vals_loc[:, :, a.lut[501]] - botS)
 
-            # add in the three energies
-            vals_loc = np.concatenate((vals_loc, inte_loc.reshape((nt, nr, 1)), inte_loc_subt.reshape((nt, nr, 1)),\
-                    inte_loc_subb.reshape((nt, nr, 1))), axis=2)
+        # add in the three energies
+        vals_loc = np.concatenate((vals_loc, inte_loc.reshape((nt, nr, 1)), inte_loc_subt.reshape((nt, nr, 1)),\
+                inte_loc_subb.reshape((nt, nr, 1))), axis=2)
 
-            # Get the values in the separate quadrants
-            for it in range(nsep_t + 1):
-                if it == 0:
-                    it1 = 0
+        # Get the values in the separate quadrants
+        vals_gav = np.zeros((a.nq + 3, nsep_t + 1, nsep_r + 1))
+        for it in range(nsep_t + 1):
+            if it == 0:
+                it1 = 0
+            else:
+                it1 = it_sep[it - 1]
+            if it == nsep_t:
+                it2 = nt - 1
+            else:
+                it2 = it_sep[it]
+            for ir in range(nsep_r + 1):
+                if ir == 0:
+                    ir1 = 0
                 else:
-                    it1 = it_sep[it - 1]
-                if it == nsep_t:
-                    it2 = nt - 1
+                    ir1 = ir_sep[ir - 1]
+                if ir == nsep_r:
+                    ir2 = nr - 1
                 else:
-                    it2 = it_sep[it]
-                for ir in range(nsep_r + 1):
-                    if ir == 0:
-                        ir1 = 0
-                    else:
-                        ir1 = ir_sep[ir - 1]
-                    if ir == nsep_r:
-                        ir2 = nr - 1
-                    else:
-                        ir2 = ir_sep[ir]
+                    ir2 = ir_sep[ir]
 
-                    vals_quad = vals_loc[it1:it2+1, ir1:ir2+1, :]
-                    tw_quad = (tw[it1:it2+1]/np.sum(tw[it1:it2+1])).\
-                            reshape((it2 - it1 + 1, 1, 1))
-                    rw_quad = (rw[ir1:ir2+1]/np.sum(rw[ir1:ir2+1])).\
-                            reshape((ir2 - ir1 + 1, 1))
+                vals_quad = vals_loc[it1:it2+1, ir1:ir2+1, :]
+                tw_quad = (tw[it1:it2+1]/np.sum(tw[it1:it2+1])).\
+                        reshape((it2 - it1 + 1, 1, 1))
+                rw_quad = (rw[ir1:ir2+1]/np.sum(rw[ir1:ir2+1])).\
+                        reshape((ir2 - ir1 + 1, 1))
 
 
-                    gav = np.sum(tw_quad*vals_quad, axis=0)
-                    gav = np.sum(rw_quad*gav, axis=0)
-                    my_vals[my_count, :, it, ir] = gav
-            my_times[my_count] = a.time[j] 
-            my_iters[my_count] = a.iters[j]
-        my_count += 1
-        if rank == 0:
-            pcnt_done = my_count/my_ntimes*100.
-            print(fill_str('computing', lent, char) +\
-                    ('rank 0 %5.1f%% done' %pcnt_done), end='\r')
+                gav = np.sum(tw_quad*vals_quad, axis=0)
+                gav = np.sum(rw_quad*gav, axis=0)
+                vals_gav[:, it, ir] = gav
+        my_vals.append(vals_gav)
+        my_times.append(a.time[j])
+        my_iters.append(a.iters[j])
+    if rank == 0:
+        pcnt_done = i/my_nfiles*100.
+        print(fill_str('computing', lent, char) +\
+                ('rank 0 %5.1f%% done' %pcnt_done), end='\r')
 # Checkpoint and time
 comm.Barrier()
 if rank == 0:
@@ -296,23 +275,25 @@ if rank == 0:
 
 # proc 0 now collects the results from each process
 if rank == 0:
-    # Initialize zero-filled 'vals/times/iters' arrays to store the data
-    times = np.zeros(ntimes)
-    iters = np.zeros(ntimes, dtype='int')
-    vals = np.zeros((ntimes, nq, nsep_t + 1, nsep_r + 1))
+    # initialize empty lists for the final arrays
+    times = []
+    iters = []
+    vals = []
 
-    # Gather the results into these "master" arrays
-    istart = 0
+    # Gather the results
     for j in range(nproc):
         if j >= 1:
-            # Get my_ntimes, my_times, my_iters, my_vals from rank j
-            my_ntimes, my_times, my_iters, my_vals = comm.recv(source=j)
-        times[istart:istart+my_ntimes] = my_times
-        iters[istart:istart+my_ntimes] = my_iters
-        vals[istart:istart+my_ntimes, :, :, :] = my_vals
-        istart += my_ntimes
+            # Get my_times, my_iters, my_vals from rank j
+            my_times, my_iters, my_vals = comm.recv(source=j)
+        times += my_times
+        iters += my_iters
+        vals += my_vals
+    # convert everything to arrays
+    vals = np.array(vals)
+    times = np.array(times)
+    iters = np.array(iters)
 else: # other processes send their data
-    comm.send([my_ntimes, my_times, my_iters, my_vals], dest=0)
+    comm.send([my_times, my_iters, my_vals], dest=0)
 
 # Make sure proc 0 collects all data
 comm.Barrier()
@@ -332,7 +313,7 @@ if rank == 0:
     savefile = datadir + savename
 
     # compute the full average over the whole volume
-    vals_full = np.zeros((ntimes, nq))
+    vals_full = np.zeros(np.shape(vals[:, :, 0, 0]))
     for it in range(nsep_t + 1):
         for ir in range(nsep_r + 1):
             vals_full += volumes[it, ir]*vals[:, :, it, ir]
@@ -343,12 +324,12 @@ if rank == 0:
     iter1, iter2 = int_file_list[0], int_file_list[-1]
     # append the lut (making the inte, inte_subt, and inte_subb quantities
     # (4000, 4001, 4002)
-    lut_app = np.array([a0.nq, a0.nq + 1, a0.nq + 2])
-    lut = np.hstack((a0.lut, lut_app))
+    lut_app = np.array([a.nq, a.nq + 1, a.nq + 2])
+    lut = np.hstack((a.lut, lut_app))
     qv_app = np.array([4000, 4001, 4002])
-    qv = np.hstack((a0.qv, qv_app))
+    qv = np.hstack((a.qv, qv_app))
     f = open(savefile, 'wb')
-    pickle.dump({'vals': vals, 'vals_full': vals_full,'times': times, 'iters': iters, 'lut': lut, 'ntimes': ntimes, 'iter1': iter1, 'iter2': iter2, 'rr': a0.radius, 'nr': nr, 'nt': nt, 'qv': qv, 'nq': nq, 'nsep_r': nsep_r, 'nsep_t': nsep_t, 'it_sep': it_sep, 'ir_sep': ir_sep, 'volumes': volumes, 'latvals_sep': latvals, 'rvals_sep': rvals, 'rbounds': rbounds, 'latbounds': latbounds, 'nquad': nquad}, f, protocol=4)
+    pickle.dump({'vals': vals, 'vals_full': vals_full,'times': times, 'iters': iters, 'lut': lut, 'qv': qv, 'volumes': volumes, 'rbounds': rbounds, 'latbounds': latbounds}, f, protocol=4)
     f.close()
     t2 = time.time()
     print (format_time(t2 - t1))
