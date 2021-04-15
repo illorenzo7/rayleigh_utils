@@ -49,7 +49,7 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
         xx = rr_2d*sint_2d/ro
         zz = rr_2d*cost_2d/ro
     else:
-        irbcz = np.argmin(np.abs(rr - rbcz))
+        irbcz = np.argmin(np.abs(rr/rsun - rbcz))
         fieldcz = field[:, :irbcz+1]
         fieldrz = field[:, irbcz+1:]
         rrcz = rr[:irbcz+1]
@@ -73,7 +73,7 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
             minmax = get_satvals(trimmed_field, posdef=posdef,\
                     logscale=logscale, symlog=symlog)
         else:
-            trimmed_fieldcz = trim_field(fieldcz, rrcz, cost)
+            trimmed_fieldcz = trim_field(fieldcz, rr[:irbcz], cost)
             minmax = get_satvals(trimmed_fieldcz, posdef=posdef,\
                     logscale=logscale, symlog=symlog)
 

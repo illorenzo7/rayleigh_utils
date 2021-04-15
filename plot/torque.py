@@ -22,8 +22,6 @@ sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapl'])
 from azav_util import plot_azav_grid
 from common import *
-from read_inner_vp import read_inner_vp
-from read_eq_vp import read_eq_vp
 
 # Get directory name and stripped_dirname for plotting purposes
 dirname = sys.argv[1]
@@ -35,8 +33,7 @@ datadir = dirname + '/data/'
 
 # Read command-line arguments (CLAs)
 args = sys.argv[2:]
-clas = read_clas(args)
-rvals = read_rvals(dirname, args)
+clas = read_clas(dirname, args)
 
 # See if magnetism is "on"
 try:
@@ -51,7 +48,6 @@ if the_file is None:
 print ('Getting torques from ' + datadir + the_file)
 di = get_dict(datadir + the_file)
 
-iter1, iter2 = di['iter1'], di['iter2']
 vals = di['vals']
 lut = di['lut']
 
@@ -84,6 +80,7 @@ if magnetism:
     #ind_insert += 2
 
 # make the main title
+iter1, iter2 = get_iters_from_file(the_file)
 time_string, time_unit, time_label, time_key =\
         get_time_info(dirname, iter1, iter2)
 maintitle = dirname_stripped + '\n' +\
@@ -95,7 +92,7 @@ di_grid = get_grid_info(dirname)
 fig = plot_azav_grid (torques, di_grid['rr'], di_grid['cost'], units=units, maintitle=maintitle, titles=titles,\
         minmax=clas['minmax'],\
         plotcontours=clas['plotcontours'],\
-        rvals=rvals,\
+        rvals=clas['rvals'],\
         minmaxrz=clas['minmaxrz'],\
         rbcz=clas['rbcz'],\
         symlog=clas['symlog'],\
@@ -107,8 +104,8 @@ fig = plot_azav_grid (torques, di_grid['rr'], di_grid['cost'], units=units, main
     plotboundary=clas['plotboundary'])
 
 # save the figure
-savefile = plotdir + dirname_stripped + '_torque_' + str(iter1).zfill(8) +\
-    '_' + str(iter2).zfill(8) + clas['tag'] + '.png'
+savefile = plotdir + 'torque' + clas['tag'] + '-' + str(iter1).zfill(8) +\
+    '_' + str(iter2).zfill(8) + '.png'
 
 if clas['saveplot']:
     print ('saving figure at ' + savefile)

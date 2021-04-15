@@ -688,7 +688,7 @@ def translate_times(time, dirname, translate_from='iter'):
 
     # First, if translating from an iter, just use an individual data file
     if translate_from == 'iter': # just read in individual G_Avgs file
-        file_list, int_file_list, nfiles = get_file_lists(dirname + '/G_Avgs')
+        file_list, int_file_list, nfiles = get_file_lists_all(dirname + '/G_Avgs')
         if nfiles > 0: # first see if we can use the G_Avgs data
             #print ("translate_times(): translating using G_Avgs data")
             funct = G_Avgs
@@ -701,7 +701,7 @@ def translate_times(time, dirname, translate_from='iter'):
             val_day = val_sec/86400.
             val_unit = val_sec/time_unit
         else:
-            file_list, int_file_list, nfiles = get_file_lists(dirname +\
+            file_list, int_file_list, nfiles = get_file_lists_all(dirname +\
                     '/Shell_Slices')
             if nfiles > 0: # next see if we can use Shell_Slices data
                 #print ("translate_times(): translating using Shell_Slices data")
@@ -1365,7 +1365,10 @@ def read_clas(dirname, args):
             drz = rm - ri
             clas['rvals'] = rm - read_cla_vals(args, i)*drz
         if arg == '--rvals':
-            clas['rvals'] = read_cla_vals(args, i)*rsun
+            if args[i+1] == 'default':
+                clas['rvals'] = get_default_rvals(dirname)*rsun
+            else:
+                clas['rvals'] = read_cla_vals(args, i)*rsun
         if arg == '--rvalscm':
             clas['rvals'] = read_cla_vals(args, i)
         if arg == '--rrange':
@@ -1413,6 +1416,9 @@ def read_clas(dirname, args):
     clas['qvals'] = np.array(qvals)
     if not clas['rvals'] is None:
         clas['rvals'] /= rsun # always keep rvals in solar radius units
+        if np.isscalar(clas['rvals']):
+            clas['rvals'] = np.array([clas['rvals']]) 
+            # rvals should always be an array
     return clas
 
 def get_time_info(dirname, iter1, iter2):
