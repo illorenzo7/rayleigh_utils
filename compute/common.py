@@ -1421,21 +1421,23 @@ def read_clas(dirname, args):
             # rvals should always be an array
     return clas
 
+def get_time_unit(dirname):
+    rotation = get_parameter(dirname, 'rotation')
+    if rotation:
+        time_unit = compute_Prot(dirname)
+        time_label = r'$\rm{P_{rot}}$'
+    else:
+        time_unit = compute_tdt(dirname)
+        time_label = r'$\rm{TDT}$'
+    return time_unit, time_label, rotation
+
 def get_time_info(dirname, iter1, iter2):
     # Get the time range in sec
     t1 = translate_times(iter1, dirname, translate_from='iter')['val_sec']
     t2 = translate_times(iter2, dirname, translate_from='iter')['val_sec']
 
     # Get the baseline time unit
-    rotation = get_parameter(dirname, 'rotation')
-    if rotation:
-        time_unit = compute_Prot(dirname)
-        time_label = r'$\rm{P_{rot}}$'
-        time_key = 'prot'
-    else:
-        time_unit = compute_tdt(dirname)
-        time_label = r'$\rm{TDT}$'
-        time_key = 'tdt'
+    time_unit, time_label, rotation = get_time_unit(dirname)
 
     # set the averaging-interval label
     if rotation:
@@ -1446,7 +1448,7 @@ def get_time_info(dirname, iter1, iter2):
         time_string = ('t = %.3f to %.3f ' %(t1/time_unit, t2/time_unit))\
                 + time_label + (r'$\ (\Delta t = %.3f\ $'\
                 %((t2 - t1)/time_unit)) + time_label + ')'
-    return time_string, time_unit, time_label, time_key
+    return time_string
 
 def make_plotdir(plotdir):
     if not os.path.isdir(plotdir):

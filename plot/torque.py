@@ -81,8 +81,7 @@ if magnetism:
 
 # make the main title
 iter1, iter2 = get_iters_from_file(the_file)
-time_string, time_unit, time_label, time_key =\
-        get_time_info(dirname, iter1, iter2)
+time_string = get_time_info(dirname, iter1, iter2)
 maintitle = dirname_stripped + '\n' +\
         'Torque balance (zonally averaged)' + '\n' +\
         time_string

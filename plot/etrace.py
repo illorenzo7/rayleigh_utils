@@ -263,8 +263,6 @@ for i in range(nargs):
         plot_tote = True
     elif arg == '-czrz':
         sep_czrz = True
-    elif arg == '-name':
-        savename = args[i+1] + '.png'
     elif arg == '-tol':
         tol = float(args[i+1])
     elif arg == '-mtol':
@@ -298,8 +296,6 @@ if inte_gtr2 or inte_subt or inte_subb or sep_czrz:
     lut = di['lut']
     times = di['times']
     iters = di['iters']
-    iter1 = di['iter1']
-    iter2 = di['iter2']
 
 else: # otherwise get it from trace_G_Avgs
     if the_file is None:
@@ -310,17 +306,6 @@ else: # otherwise get it from trace_G_Avgs
     lut = di['lut']
     times = di['times']
     iters = di['iters']
-    iter1 = di['iter1']
-    iter2 = di['iter2']
-
-# Get the baseline time unit
-rotation = get_parameter(dirname, 'rotation')
-if rotation:
-    time_unit = compute_Prot(dirname)
-    time_label = r'$\rm{P_{rot}}$'
-else:
-    time_unit = compute_tdt(dirname)
-    time_label = r'$\rm{TDT}$'
 
 if plotdir is None:
     plotdir = dirname + '/plots/'
@@ -328,6 +313,7 @@ if plotdir is None:
         os.makedirs(plotdir)
 
 # Take slices based on what xminmax is
+time_unit, time_label, rotation = get_time_unit(dirname)
 if not xiter:
     xaxis = times/time_unit
 else:
@@ -1177,8 +1163,8 @@ for ax in axs.flatten():
 plt.tight_layout()
 #plt.subplots_adjust(left=0.15, bottom=0.08, top=0.85, wspace=0.4)
 
-if savename is None:
-    savename = dirname_stripped + '_etrace_' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + tag + '.png'
+iter1, iter2 = get_iters_from_file(the_file)
+savename = 'etrace' + tag + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
 
 # Save the plot
 print ('Saving the etrace plot at ' + plotdir + savename)
