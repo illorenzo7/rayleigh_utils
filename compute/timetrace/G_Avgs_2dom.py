@@ -192,7 +192,7 @@ if rank == 0:
 
 # proc 0 now collects the results from each process
 if rank == 0:
-    # Initialize zero-filled 'vals/times/iters' arrays to store the data
+    # initialize empty lists for the final arrays
     times = []
     iters = []
     vals = []
