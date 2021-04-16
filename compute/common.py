@@ -52,6 +52,8 @@ bold_char_end = "\033[0m"
 
 letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l',\
     'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
+color_order = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
+style_order = ['-', '--', '-.', ':']
 
 def make_bold(st):
     return bold_char_begin + st + bold_char_end
@@ -1060,6 +1062,101 @@ def length_scales(dirname):
     # Return the dictionary 
     return di_out
 
+def get_grid_info(dirname):
+    di_out = dict({})
+    gi = GridInfo(dirname + '/grid_info', '')
+    # 1D arrays
+    di_out['rr'] = gi.radius
+    di_out['tt'] = gi.theta
+    di_out['cost'] = gi.costheta
+    di_out['sint'] = gi.sintheta
+    di_out['cott'] = di_out['cost']/di_out['sint']
+    di_out['tt_lat'] = (np.pi/2 - di_out['tt'])*180/np.pi
+    di_out['phi'] = gi.phi
+    di_out['rw'] = gi.rweights
+    di_out['tw'] = gi.tweights
+    di_out['pw'] = gi.pweights
+    # grid dimensions
+    di_out['nr'] = gi.nr
+    di_out['nt'] = gi.ntheta
+    di_out['nphi'] = gi.nphi
+    # 2D arrays (theta, r)
+    di_out['tt_2d'] = di_out['tt'].reshape((di_out['nt'], 1))
+    di_out['sint_2d'] = np.sin(di_out['tt_2d'])
+    di_out['cost_2d'] = np.cos(di_out['tt_2d'])
+    di_out['cott_2d'] = di_out['cost_2d']/di_out['sint_2d']
+    di_out['tw_2d'] = di_out['tw'].reshape((di_out['nt'], 1))
+    di_out['rr_2d'] = di_out['rr'].reshape((1, di_out['nr']))
+    di_out['rw_2d'] = di_out['rw'].reshape((1, di_out['nr']))
+    di_out['xx'] = di_out['rr_2d']*di_out['sint_2d']
+    di_out['zz'] = di_out['rr_2d']*di_out['cost_2d']
+    # 3D arrays (phi, theta, r)
+    di_out['phi_3d'] = di_out['phi'].reshape((di_out['nphi'], 1, 1))
+    di_out['pw_3d'] = di_out['pw'].reshape((di_out['nphi'], 1, 1))
+    di_out['tt_3d'] = di_out['tt'].reshape((1, di_out['nt'], 1))
+    di_out['sint_3d'] = np.sin(di_out['tt_3d'])
+    di_out['cost_3d'] = np.cos(di_out['tt_3d'])
+    di_out['cott_3d'] = di_out['cost_3d']/di_out['sint_3d']
+    di_out['tw_3d'] = di_out['tw'].reshape((1, di_out['nt'], 1))
+    di_out['rr_3d'] = di_out['rr'].reshape((1, 1, di_out['nr']))
+    di_out['rw_3d'] = di_out['rw'].reshape((1, 1, di_out['nr']))
+    di_out['xx_3d'] = di_out['rr_3d']*di_out['sint_3d']
+    di_out['zz_3d'] = di_out['rr_3d']*di_out['cost_3d']
+    return di_out
+
+def integrate_in_r(arr, dirname):
+    # routine to integrate in radius (over each domain separately)
+    di = get_grid_info(dirname)
+    rw = di['rw']
+    nr = len(rw)
+    ndim = arr.ndim
+    newshape = [nr]
+    for i in range(ndim - 1):
+        newshape = [1] + newshape
+    rw_nd = rw.reshape(newshape)
+    ncheby, domain_bounds = get_domain_bounds(dirname)
+    ndomains = len(ncheby)
+   
+    # start the return with the fully averaged arr
+    li = [np.sum(arr*rw_nd, axis=ndim-1)]
+
+    # loop over the domains and integrate
+    if ndomains > 1:
+        ir2 = nr
+        ir1 = ir2 - ncheby[0]
+        for idom in range(ndomains):
+            if idom > 0:
+                ir2 -= ncheby[idom - 1]
+                ir1 -= ncheby[idom]
+            rw_loc = rw_nd[..., ir1:ir2]
+            li.append(np.sum(arr[..., ir1:ir2]*rw_loc, axis=ndim-1))
+    return li
+
+def get_volumes(dirname):
+    # routine to integrate in radius (over each domain separately)
+    di = get_grid_info(dirname)
+    rr = di['rr']
+    nr = di['nr']
+    fact = 4.0*np.pi/3.0
+    ncheby, domain_bounds = get_domain_bounds(dirname)
+    ndomains = len(ncheby)
+   
+    # start the return with the full volume
+    li = [fact*(np.max(rr)**3.0 - np.min(rr)**3.0)]
+
+    # loop over the domains and integrate
+    if ndomains > 1:
+        ir2 = nr
+        ir1 = ir2 - ncheby[0]
+        for idom in range(ndomains):
+            if idom > 0:
+                ir2 -= ncheby[idom - 1]
+                ir1 -= ncheby[idom]
+            r1 = rr[ir1]
+            r2 = rr[ir2 - 1]
+            li.append(fact*(r2**3.0 - r1**3.0))
+    return li
+
 def nonD_numbers(dirname, rbcz=None):
     # all the nonD numbers (as functions of radius and in different zones)
     # we could ever want
@@ -1248,13 +1345,19 @@ def read_cla_vals(args, i, dtype='float'):
         vals = vals[0]
     return np.array(vals)
 
-def read_cla_arbitrary(key, args):
+def read_cla_arbitrary(args, key, default=None, dtype='float'):
     nargs = len(args)
-    out = None
+    out = default
     for i in range(nargs):
         arg = args[i]
         if arg == '--' + key:
-            out = args[i+1]
+            if i == nargs - 1: # must be boolean if appearing at end
+                out = True
+            else:
+                if '--' in args[i+1]: # must be boolean if no following val
+                    out = True
+                else:
+                    out = read_cla_vals(args, i, dtype=dtype)
     return out
 
 # set default CLAs
@@ -1270,8 +1373,15 @@ clas_default['plotdir'] = None
 clas_default['nlevs'] = 20
 clas_default['rbcz'] = None
 clas_default['rvals'] = None
+
 clas_default['minmax'] = None
 clas_default['minmaxrz'] = None
+clas_default['ymin'] = None
+clas_default['ymax'] = None
+clas_default['xminmax'] = None
+clas_default['xmin'] = None
+clas_default['xmax'] = None
+
 clas_default['the_file'] = None
 clas_default['linthresh'] = None
 clas_default['linscale'] = None
@@ -1329,6 +1439,16 @@ def read_clas(dirname, args):
             clas['plotdir'] = args[i+1]
         if arg == '--minmax':
             clas['minmax'] = read_cla_vals(args, i)
+        if arg == '--ymin':
+            clas['ymin'] = read_cla_vals(args, i)
+        if arg == '--ymax':
+            clas['ymax'] = read_cla_vals(args, i)
+        if arg == '--xminmax':
+            clas['xminmax'] = read_cla_vals(args, i)
+        if arg == '--xmin':
+            clas['xmin'] = read_cla_vals(args, i)
+        if arg == '--xmax':
+            clas['xmax'] = read_cla_vals(args, i)
         if arg == '-minmaxrz':
             minmaxrz = read_cla_vals(args, i)
         if arg == '--rbcz':
@@ -1454,47 +1574,6 @@ def make_plotdir(plotdir):
     if not os.path.isdir(plotdir):
         os.makedirs(plotdir)
 
-def get_grid_info(dirname):
-    di_out = dict({})
-    gi = GridInfo(dirname + '/grid_info', '')
-    # 1D arrays
-    di_out['rr'] = gi.radius
-    di_out['tt'] = gi.theta
-    di_out['cost'] = gi.costheta
-    di_out['sint'] = gi.sintheta
-    di_out['cott'] = di_out['cost']/di_out['sint']
-    di_out['tt_lat'] = (np.pi/2 - di_out['tt'])*180/np.pi
-    di_out['phi'] = gi.phi
-    di_out['rw'] = gi.rweights
-    di_out['tw'] = gi.tweights
-    di_out['pw'] = gi.pweights
-    # grid dimensions
-    di_out['nr'] = gi.nr
-    di_out['nt'] = gi.ntheta
-    di_out['nphi'] = gi.nphi
-    # 2D arrays (theta, r)
-    di_out['tt_2d'] = di_out['tt'].reshape((di_out['nt'], 1))
-    di_out['sint_2d'] = np.sin(di_out['tt_2d'])
-    di_out['cost_2d'] = np.cos(di_out['tt_2d'])
-    di_out['cott_2d'] = di_out['cost_2d']/di_out['sint_2d']
-    di_out['tw_2d'] = di_out['tw'].reshape((di_out['nt'], 1))
-    di_out['rr_2d'] = di_out['rr'].reshape((1, di_out['nr']))
-    di_out['rw_2d'] = di_out['rw'].reshape((1, di_out['nr']))
-    di_out['xx'] = di_out['rr_2d']*di_out['sint_2d']
-    di_out['zz'] = di_out['rr_2d']*di_out['cost_2d']
-    # 3D arrays (phi, theta, r)
-    di_out['phi_3d'] = di_out['phi'].reshape((di_out['nphi'], 1, 1))
-    di_out['pw_3d'] = di_out['pw'].reshape((di_out['nphi'], 1, 1))
-    di_out['tt_3d'] = di_out['tt'].reshape((1, di_out['nt'], 1))
-    di_out['sint_3d'] = np.sin(di_out['tt_3d'])
-    di_out['cost_3d'] = np.cos(di_out['tt_3d'])
-    di_out['cott_3d'] = di_out['cost_3d']/di_out['sint_3d']
-    di_out['tw_3d'] = di_out['tw'].reshape((1, di_out['nt'], 1))
-    di_out['rr_3d'] = di_out['rr'].reshape((1, 1, di_out['nr']))
-    di_out['rw_3d'] = di_out['rw'].reshape((1, 1, di_out['nr']))
-    di_out['xx_3d'] = di_out['rr_3d']*di_out['sint_3d']
-    di_out['zz_3d'] = di_out['rr_3d']*di_out['cost_3d']
-    return di_out
 
 def arr_to_str(a, fmt):
     st = ''

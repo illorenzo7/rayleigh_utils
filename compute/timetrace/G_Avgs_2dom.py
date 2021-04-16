@@ -241,7 +241,7 @@ if rank == 0:
     vals_rz = np.array(vals_rz)
     times = np.array(times)
     iters = np.array(iters)
-    pickle.dump({'vals': vals, 'vals_cz': vals_cz, 'vals_rz': vals_rz, 'times': times, 'iters': iters, 'lut': a.lut, 'qv': a.qv}, f, protocol=4)
+    pickle.dump({'vals': vals, 'vals_cz': vals_cz, 'vals_rz': vals_rz, 'times': times, 'iters': iters, 'lut': lut, 'qv': qv}, f, protocol=4)
     f.close()
     t2 = time.time()
     print (format_time(t2 - t1))
