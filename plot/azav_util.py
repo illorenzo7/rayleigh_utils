@@ -894,6 +894,8 @@ def plot_azav_grid(terms, rr, cost, maintitle=None, titles=None, fig_width_inche
     margin_subplot_top_inches = 0.25 # margin to accommodate just subplot titles
     nplots = len(terms)
     nrow = np.int(np.ceil(nplots/ncol))
+    if isinstance(units, str): # units is just one label for everybody
+        units = np.array([units]*nplots)
 
     subplot_width_inches = (fig_width_inches - (ncol + 1.0)*margin_inches)/ncol
     # Make the subplot width so that ncol subplots fit together side-by-side
@@ -926,7 +928,7 @@ def plot_azav_grid(terms, rr, cost, maintitle=None, titles=None, fig_width_inche
         ax_left = margin_x + (iplot%ncol)*(subplot_width + margin_x)
         ax_bottom = 1.0 - margin_top - subplot_height - margin_subplot_top - (iplot//ncol)*(subplot_height + margin_subplot_top + margin_bottom)
         ax = fig.add_axes((ax_left, ax_bottom, subplot_width, subplot_height))
-        plot_azav(terms[iplot], rr, cost, fig=fig, ax=ax, cmap=cmap, units=units, minmax=minmax, posdef=posdef, logscale=logscale, symlog=symlog, plotcontours=plotcontours, plotfield=plotfield, nlevs=nlevs, levels=levels, plotlatlines=plotlatlines, rvals=rvals, fontsize=fontsize, cbar_aspect=cbar_aspect, showplot=showplot, plot_cbar=plot_cbar, lw_scaling=lw_scaling, cbar_scaling=cbar_scaling, linthresh=linthresh, linscale=linscale, plotboundary=plotboundary, rbcz=rbcz, minmaxrz=minmaxrz, linthreshrz=linthreshrz, linscalerz=linscalerz, nosci=nosci, cbar_prec=cbar_prec)
+        plot_azav(terms[iplot], rr, cost, fig=fig, ax=ax, cmap=cmap, units=units[iplot], minmax=minmax, posdef=posdef, logscale=logscale, symlog=symlog, plotcontours=plotcontours, plotfield=plotfield, nlevs=nlevs, levels=levels, plotlatlines=plotlatlines, rvals=rvals, fontsize=fontsize, cbar_aspect=cbar_aspect, showplot=showplot, plot_cbar=plot_cbar, lw_scaling=lw_scaling, cbar_scaling=cbar_scaling, linthresh=linthresh, linscale=linscale, plotboundary=plotboundary, rbcz=rbcz, minmaxrz=minmaxrz, linthreshrz=linthreshrz, linscalerz=linscalerz, nosci=nosci, cbar_prec=cbar_prec)
 
         if not titles is None:
             title_loc = '(' + letters[iplot] + ') ' + titles[iplot]
