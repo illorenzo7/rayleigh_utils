@@ -1,13 +1,12 @@
+##################################################################
+# Routine to plot torques (AZ_Avgs)
 # Author: Loren Matilsky
 # Created: 01/28/2019
+##################################################################
 # This script plots the axial torques in the meridional plane (viscous, 
-# Meridional Circ., Reynolds stress, and Maxwell torques (mean and turbulent) 
-# if applicablein the meridional plane 
-# ...for the Rayleigh run directory indicated by [dirname]. To use an AZ_Avgs file
-# different than the one associated with the longest averaging range, use
-# -usefile [complete name of desired AZ_Avgs file]
-# Saves plot in
-# [dirname]_torque_[first iter]_[last iter].png
+# Meridional Circ., Reynolds stress, and possibly
+# Maxwell torques (mean and turbulent) 
+##################################################################
 
 import numpy as np
 import pickle
@@ -28,7 +27,7 @@ dirname = sys.argv[1]
 dirname_stripped = strip_dirname(dirname)
 
 # Directory with data and plots, make the plotting directory if it doesn't
-# already exist    
+#already exist    
 datadir = dirname + '/data/'
 
 # Read command-line arguments (CLAs)
