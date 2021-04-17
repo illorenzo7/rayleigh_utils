@@ -50,9 +50,7 @@ from rayleigh_diagnostics import AZ_Avgs, Shell_Avgs, G_Avgs,\
 # Broadcast the desired datatype (azav by default)
 if rank == 0:
     args = sys.argv[2:]
-    radtype = read_cla_arbitrary('radtype', args)
-    if radtype is None:
-        radtype = 'azav'
+    radtype = read_cla_arbitrary(args, 'radtype', 'azav', 'str')
 else:
     radtype = None
 radtype = comm.bcast(radtype, root=0)
