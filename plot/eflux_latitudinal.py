@@ -40,7 +40,7 @@ if (not os.path.isdir(plotdir)):
 
 # Find the Shell_Avgs file(s) in the data directory. If there are multiple, by
 # default choose the one with widest range in the average
-AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
+the_file = get_widest_range_file(datadir, 'AZ_Avgs')
 minmax = None
 
 # Get command-line arguments to adjust the interval of averaging files
@@ -53,16 +53,16 @@ for i in range(nargs):
     if arg == '-plotdir':
         plotdir = args[i+1]
     if arg == '-usefile':
-        AZ_Avgs_file = args[i+1]
-        AZ_Avgs_file = AZ_Avgs_file.split('/')[-1]
+        the_file = args[i+1]
+        the_file = the_file.split('/')[-1]
     elif arg == '-minmax':
         minmax = float(args[i+1]), float(args[i+2])
     elif arg == '-czrz':
         sep_czrz = True
        
-print ('Getting data from ', datadir + AZ_Avgs_file, ' ...')
-di = get_dict(datadir + AZ_Avgs_file)
-iter1, iter2 = di['iter1'], di['iter2']
+print ('Getting data from ', datadir + the_file, ' ...')
+di = get_dict(datadir + the_file)
+iter1, iter2 = get_iters_from_file(the_file)
 
 # Get the time range in sec
 t1 = translate_times(iter1, dirname, translate_from='iter')['val_sec']
@@ -100,7 +100,7 @@ if sep_czrz:
 lw = 1.5 # Bit thicker lines
 
 # Read in the flux data
-#print ('Getting AZ_Avgs data from %s ...' %AZ_Avgs_file)
+#print ('Getting AZ_Avgs data from %s ...' %the_file)
 vals = di['vals']
 lut = di['lut']
 qindex_eflux = lut[1456]
@@ -230,8 +230,8 @@ else:
     ncol = 1
 fig, axs = plt.subplots(1, ncol, figsize=(5.*ncol, 5.),\
         sharex=True)
-#if ncol == 1: # need the axis array to consistently be doubly indexed
-#    axs = np.expand_dims(axs, 1)
+if ncol == 1: # need the axis array to consistently be doubly indexed
+    axs = np.expand_dims(axs, 0)
 
 # Create the plot of total fluxes
 lats = 180*(np.pi/2 - tt)/np.pi
