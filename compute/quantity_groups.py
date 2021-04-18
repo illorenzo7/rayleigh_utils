@@ -1,6 +1,7 @@
 # routine to get groupings of Rayleigh quantities and also deal with units
 # "building block" units
 import numpy as np
+from common import array_of_strings
 
 def make_unit(st, exp=1):
     the_unit = r'$\rm{%s}$' %st
@@ -40,23 +41,22 @@ def get_quantity_group(tag, magnetism):
         units = [make_unit('cm') + make_unit('s', -1)]
         torque_unit = make_unit('g') + make_unit('cm', -1) +\
                 make_unit('s', -2)
-        for i in range(4):
-            units.append(torque_unit)
-        units.append(make_unit('g') + make_unit('cm', -1) +\
-                make_unit('s', -1))
+        units += [torque_unit]*4
+        units += [make_unit('g') + make_unit('cm', -1) +\
+                make_unit('s', -1)]
 
         if magnetism:
-            qvals.append(1805)
-            qvals.append(1806)
-            titles.append(r'$\tau_{\rm{mm}}$')
-            titles.append(r'$\tau_{\rm{ms}}$')
-            units.append(torque_unit)
-            units.append(torque_unit)
+            qvals += [1805, 1806]
+            titles += [r'$\tau_{\rm{mm}}$', r'$\tau_{\rm{ms}}$']
+            units += [torque_unit]*2
 
     if tag == 'induction':
         qvals = [801, 802, 803]            
         for j in range(1, 31):
             qvals.append(1600 + j)
+        titles = array_of_strings(qvals)
+        units = make_unit('G') + make_unit('s', -1)
+
     di_out['qvals'] = np.array(qvals)
     di_out['titles'] = np.array(titles)
     di_out['units'] = np.array(units)

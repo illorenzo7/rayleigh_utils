@@ -3,7 +3,7 @@
 # Created: 04/17/2021
 
 import numpy as np
-from common import get_parameter, get_domain_bounds
+from common import get_parameter, get_domain_bounds, array_of_strings
 from quantity_groups import get_quantity_group
 
 # set default CLAs
@@ -59,8 +59,6 @@ def get_default_rvals(dirname):
             rvals_to_add = rtop - (rtop - rbot)*basedepths
         rvals = np.hstack((rvals, rvals_to_add))
     return rvals/rsun
-
-
 
 def read_cla_vals(args, i, dtype='float'):
     args_after = args[i+1:]

@@ -11,7 +11,6 @@ from rayleigh_diagnostics import G_Avgs, Shell_Slices, ReferenceState,\
     TransportCoeffs, GridInfo
 from compute_grid_info import compute_grid_info, compute_theta_grid,\
         compute_r_grid
-from quantity_groups import get_quantity_group
 
 # Solar radius, luminosity, and mass (as we have been assuming in Rayleigh)
 rsun = 6.957e10  # value taken from IAU recommendation: arxiv, 1510.07674
