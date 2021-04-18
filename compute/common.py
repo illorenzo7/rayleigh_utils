@@ -11,6 +11,7 @@ from rayleigh_diagnostics import G_Avgs, Shell_Slices, ReferenceState,\
     TransportCoeffs, GridInfo
 from compute_grid_info import compute_grid_info, compute_theta_grid,\
         compute_r_grid
+from quantity_groups import get_quantity_group
 
 # Solar radius, luminosity, and mass (as we have been assuming in Rayleigh)
 rsun = 6.957e10  # value taken from IAU recommendation: arxiv, 1510.07674
@@ -54,13 +55,6 @@ letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l',\
     'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
 color_order = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
 style_order = ['-', '--', '-.', ':']
-
-# "building block" units
-def make_unit(st, exp=1):
-    the_unit = r'$\rm{%s}$' %st
-    if exp != 1:
-        the_unit += r'$^{%i}$' %exp
-    return the_unit
 
 def make_bold(st):
     return bold_char_begin + st + bold_char_end
@@ -1328,62 +1322,6 @@ def array_of_strings(arr):
         li.append(str(ele))
     return np.array(li)
 
-def get_qset(tag, dirname):
-    magnetism = get_parameter(dirname, 'magnetism')
-    di_out = dict({})
-
-    # set default qvals: velocity + vorticity, Pressure/ entropy
-    # then possibly B, del x B
-    if tag == 'default':
-        qvals = [1, 2, 3, 301, 302, 303, 501, 502]
-        titles = [r'$v_r$', r'$v_\theta$', r'$v_\phi$',\
-                r'$\omega_r$', r'$\omega_\theta$', r'$\omega_\phi$',\
-                r'$S$', r'$P$']
-
-        v_unit = make_unit('cm') + make_unit('s', -1)
-        om_unit = make_unit('s', -1)
-        units = [v_unit]*3 + [om_unit]*3 +\
-            [make_unit('erg') + make_unit('g', -1) + make_unit('K', -1),\
-            make_unit('dyn') + make_unit('cm', -2)]
-
-        magnetism = get_parameter(dirname, 'magnetism')
-        if magnetism:
-            qvals += [801, 802, 803, 1001, 1002, 1003]
-            titles += [r'$B_r$', r'$B_\theta$', r'$B_\phi$',\
-                r'$\mathcal{J}_r$', r'$\mathcal{J}_\theta$', r'$\mathcal{J}_\phi$']
-            b_unit = make_unit('G')
-            j_unit = make_unit('G') + make_unit('cm', -1)
-            units += [b_unit]*3 + [j_unit]*3
-
-    if tag == 'torque':
-        qvals = [3, 1801, 1802, 1803, 1804, 1819]
-        titles = [r'$v_\phi$', r'$-\tau_{\rm{rs}}$', r'$-\tau_{\rm{mc,v_\phi}}$',r'$\tau_{\rm{mc,\Omega_0}}$', r'$\tau_{\rm{v}}$',\
-          r'$\mathcal{L}_z$']
-        units = [make_unit('cm') + make_unit('s', -1)]
-        torque_unit = make_unit('g') + make_unit('cm', -1) +\
-                make_unit('s', -2)
-        for i in range(4):
-            units.append(torque_unit)
-        units.append(make_unit('g') + make_unit('cm', -1) +\
-                make_unit('s', -1))
-
-        if magnetism:
-            qvals.append(1805)
-            qvals.append(1806)
-            titles.append(r'$\tau_{\rm{mm}}$')
-            titles.append(r'$\tau_{\rm{ms}}$')
-            units.append(torque_unit)
-            units.append(torque_unit)
-
-    if tag == 'induction':
-        qvals = [801, 802, 803]            
-        for j in range(1, 31):
-            qvals.append(1600 + j)
-    di_out['qvals'] = np.array(qvals)
-    di_out['titles'] = np.array(titles)
-    di_out['units'] = np.array(units)
-    return di_out
-
 def read_cla_vals(args, i, dtype='float'):
     args_after = args[i+1:]
     nafter = len(args_after)
@@ -1487,6 +1425,9 @@ def read_clas(dirname, args):
     # start with default CLAs, then change them
     clas = clas_default.copy()
 
+    # see if magnetism is on
+    magnetism = get_parameter(dirname, 'magnetism')
+
     nargs = len(args)
     for i in range(nargs):
         arg = args[i]
@@ -1570,10 +1511,10 @@ def read_clas(dirname, args):
             clas['rvals'] = rvals
         if arg == '--qvals':
             if isinstance(args[i+1], str):
-                the_qset = get_qset(args[i+1], dirname)
-                clas['qvals'] = the_qset['qvals']
-                clas['titles'] = the_qset['titles']
-                clas['units'] = the_qset['units']
+                the_qgroup = get_quantity_group(args[i+1], magnetism)
+                clas['qvals'] = the_qgroup['qvals']
+                clas['titles'] = the_qgroup['titles']
+                clas['units'] = the_qgroup['units']
             else:
                 clas['qvals'] = read_cla_vals(args, i, dtype='int')
                 clas['titles'] = array_of_strings(qvals)
@@ -1587,10 +1528,10 @@ def read_clas(dirname, args):
 
     # deal with qvals if it is still None
     if clas['qvals'] is None:
-        the_qset = get_qset('default', dirname)
-        clas['qvals'] = the_qset['qvals']
-        clas['titles'] = the_qset['titles']
-        clas['units'] = the_qset['units']
+        the_qgroup = get_quantity_group('default', magnetism)
+        clas['qvals'] = the_qgroup['qvals']
+        clas['titles'] = the_qgroup['titles']
+        clas['units'] = the_qgroup['units']
     if not clas['rvals'] is None:
         clas['rvals'] /= rsun # always keep rvals in solar radius units
         if np.isscalar(clas['rvals']):
