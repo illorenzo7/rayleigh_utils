@@ -21,6 +21,7 @@ sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapl'])
 from azav_util import plot_azav_grid
 from common import *
+from cla_util import *
 
 # Get directory name and stripped_dirname for plotting purposes
 dirname = sys.argv[1]

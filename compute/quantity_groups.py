@@ -25,7 +25,6 @@ def get_quantity_group(tag, magnetism):
             [make_unit('erg') + make_unit('g', -1) + make_unit('K', -1),\
             make_unit('dyn') + make_unit('cm', -2)]
 
-        magnetism = get_parameter(dirname, 'magnetism')
         if magnetism:
             qvals += [801, 802, 803, 1001, 1002, 1003]
             titles += [r'$B_r$', r'$B_\theta$', r'$B_\phi$',\
