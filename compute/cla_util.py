@@ -4,7 +4,7 @@
 
 import numpy as np
 from common import get_parameter, get_domain_bounds, array_of_strings
-from quantity_groups import get_quantity_group
+from varprops import get_quantity_group
 
 # set default CLAs
 
