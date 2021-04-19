@@ -154,6 +154,46 @@ def get_quantity_group(tag, magnetism):
             qvals += [2003]
             titles += [r'$(\mathbf{\mathcal{F}}_{\rm{Poynt}})_\phi$']
 
+    if tag == 'indr': # energy fluxes, r
+        qvals = [1601, 1602, 1603, 1604, 1605, 801]
+        titles = [r'$[\left\langle\mathbf{B}\cdot\nabla\mathbf{v}\right\rangle]_r$',\
+            r'$-\left\langleB_r(\nabla\cdot\mathbf{v})\right\rangle$',\
+            r'$-[\left\langle\mathbf{v}\cdot\nabla\mathbf{B}\right\rangle]_r$',\
+            r'$[\nabla\times(\left\langle\mathbf{v}\times\mathbf{B}\right\rangle)]_r$',\
+            r'$-[\nabla\times(\eta\nabla\times\langle\mathbf{B}\rangle)]_r$',\
+            r'$\left\langle B_r\right\rangle$']
+        units = [utype['induct']]*5 + [utype['b']]
+
+    if tag == 'indrmean': # energy fluxes, r, mean
+        qvals = [1616, 1617, 1618, 1619, 1620, 801]
+        titles = [r'$[\left\langle\mathbf{B}\right\rangle\cdot\nabla\left\langle\mathbf{v}\right\rangle]_r$',\
+    r'$-\left\langleB_r\right\rangle(\nabla\cdot\left\langle\mathbf{v}\right\rangle)$',\
+    r'$-[\left\langle\mathbf{v}\right\rangle\cdot\nabla\left\langle\mathbf{B}\right\rangle]_r$',\
+    r'$[\nabla\times(\left\langle\mathbf{v}\right\rangle\times\left\langle\mathbf{B}\right\rangle)]_r$',\
+    r'$-[\nabla\times(\eta\nabla\times\langle\mathbf{B}\rangle)]_r$',\
+    r'$\left\langleB_r\right\rangle$']
+        units = [utype['induct']]*5 + [utype['b']]
+
+    if tag == 'indt': # energy fluxes, theta
+        qvals = [1606, 1607, 1608, 1609, 1610, 802]
+        titles = [r'$[\left\langle\mathbf{B}\cdot\nabla\mathbf{v}\right\rangle]_\theta$',\
+            r'$-\left\langleB_\theta(\nabla\cdot\mathbf{v})\right\rangle$',\
+            r'$-[\left\langle\mathbf{v}\cdot\nabla\mathbf{B}\right\rangle]_\theta$',\
+            r'$[\nabla\times(\left\langle\mathbf{v}\times\mathbf{B}\right\rangle)]_\theta$',\
+            r'$-[\nabla\times(\eta\nabla\times\langle\mathbf{B}\rangle)]_\theta$',\
+            r'$\left\langle B_\theta\right\rangle$']
+        units = [utype['induct']]*5 + [utype['b']]
+
+    if tag == 'indtmean': # energy fluxes, theta, mean
+        qvals = [1621, 1622, 1623, 1624, 1625, 802]
+        titles = [r'$[\left\langle\mathbf{B}\right\rangle\cdot\nabla\left\langle\mathbf{v}\right\rangle]_\theta$',\
+            r'$-\left\langleB_\theta\right\rangle(\nabla\cdot\left\langle\mathbf{v}\right\rangle)$',\
+            r'$-[\left\langle\mathbf{v}\right\rangle\cdot\nabla\left\langle\mathbf{B}\right\rangle]_\theta$',\
+            r'$[\nabla\times(\left\langle\mathbf{v}\right\rangle\times\left\langle\mathbf{B}\right\rangle)]_\theta$',\
+            r'$-[\nabla\times(\eta\nabla\times\langle\mathbf{B}\rangle)]_\theta$',\
+            r'$\left\langleB_\theta\right\rangle$']
+        units = [utype['induct']]*5 + [utype['b']]
+
     if tag == 'indp': # energy fluxes, phi
         qvals = [1611, 1612, 1613, 1614, 1615, 803]
 
@@ -162,7 +202,6 @@ def get_quantity_group(tag, magnetism):
         r'$-[\left\langle\mathbf{v}\cdot\nabla\mathbf{B}\right\rangle]_\phi$',\
         r'$[\nabla\times(\left\langle\mathbf{v}\times\mathbf{B}\right\rangle)]_\phi$',\
         r'$-[\nabla\times(\eta\nabla\times\langle\mathbf{B}\rangle)]_\phi$',\
-        r'$\frac{\partial\langle B_\phi\rangle}{\partial t}$',\
         r'$\left\langle B_\phi\right\rangle$']
         units = [utype['induct']]*5 + [utype['b']]
 
