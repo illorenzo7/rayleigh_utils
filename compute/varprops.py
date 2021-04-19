@@ -41,6 +41,8 @@ utype['amom'] = make_unit('g') + make_unit('cm', -1) +\
         make_unit('s', -1)
 utype['aflux'] = make_unit('g') + make_unit('cm', -3) +\
         make_unit('s', -2)
+utype['force'] = make_unit('g') + make_unit('cm', -2) +\
+        make_unit('s', -2)
 utype['torque'] = make_unit('g') + make_unit('cm', -1) +\
         make_unit('s', -2)
 utype['induct'] = make_unit('G') + make_unit('s', -1)
@@ -92,6 +94,14 @@ def get_quantity_group(tag, magnetism):
         qvals = [801, 802, 803]            
         titles = [texlabels['br'], texlabels['bt'], texlabels['bp']]
         units = [utype['b']]
+
+    if tag == 'forcer': # linear forces, radial
+        qvals = [1201, 1219, 1237, 1216, 1228]
+        titles= [r'$-(\mathbf{f}_{\rm{adv}})_r$', r'$(\mathbf{f}_{\rm{cor}})_r$',  r'$(\mathbf{f}_{\rm{p}})_r$', r'$(\mathbf{f}_{\rm{buoy}})_r$', r'$(\mathbf{f}_{\rm{v}})_r$', r'$(\mathbf{f}_{\rm{tot}})_r$']
+        units = [utype['force']]
+        if magnetism:
+            qvals += [1248]
+            titles += [r'$(\mathbf{f}_{\rm{mag}})_r$']
 
     di_out['qvals'] = np.array(qvals)
     di_out['titles'] = np.array(titles)
