@@ -166,6 +166,16 @@ def get_quantity_group(tag, magnetism):
         r'$\left\langle B_\phi\right\rangle$']
         units = [utype['induct']]*5 + [utype['b']]
 
+    if tag == 'indpmean': # energy fluxes, phi, mean
+        qvals = [1626, 1627, 1628, 1629, 1630, 803]
+        titles = [r'$[\left\langle\mathbf{B}\right\rangle\cdot\nabla\left\langle\mathbf{v}\right\rangle]_\phi$',\
+            r'$-\left\langleB_\phi\right\rangle(\nabla\cdot\left\langle\mathbf{v}\right\rangle)$',\
+            r'$-[\left\langle\mathbf{v}\right\rangle\cdot\nabla\left\langle\mathbf{B}\right\rangle]_\phi$',\
+            r'$[\nabla\times(\left\langle\mathbf{v}\right\rangle\times\left\langle\mathbf{B}\right\rangle)]_\phi$',\
+            r'$-[\nabla\times(\eta\nabla\times\langle\mathbf{B}\rangle)]_\phi$',\
+            r'$\left\langleB_\phi\right\rangle$']
+        units = [utype['induct']]*5 + [utype['b']]
+
     di_out['qvals'] = np.array(qvals)
     di_out['titles'] = np.array(titles)
     if len(units) > 1:

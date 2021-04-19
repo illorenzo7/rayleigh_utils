@@ -52,10 +52,11 @@ di = get_dict(datadir + the_file)
 vals = di['vals']
 lut = di['lut']
 
-plotdir = clas['plotdir']
-if plotdir is None:
-    plotdir = dirname + '/plots/'
-make_plotdir(plotdir)
+if clas['saveplot']:
+    plotdir = clas['plotdir']
+    if plotdir is None:
+        plotdir = dirname + '/plots/azav/'
+    make_plotdir(plotdir)
 
 terms = []
 for qval in qvals:
