@@ -17,6 +17,7 @@ def make_unit(st, exp=1):
 
 # basic units
 utype = dict({})
+space = ' '
 # field variables
 utype['v'] = make_unit('cm') + make_unit('s', -1)
 utype['om'] = make_unit('s', -1)
@@ -28,11 +29,10 @@ utype['rho'] = make_unit('g') + make_unit('cm', -3)
 utype['t'] = make_unit('K')
 
 # derived stuff
-utype['energy'] = make_unit('erg')
+utype['energy'] = make_unit('erg') + space + make_unit('cm', -3)
 utype['power'] = make_unit('erg') + make_unit('s', -1)
 utype['eflux'] = make_unit('erg') + make_unit('cm', -2) +\
         make_unit('s', -1)
-utype['energy'] = make_unit('erg')
 utype['dsdt'] = make_unit('erg') + make_unit('g', -1) +\
         make_unit('K', -1) + make_unit('s', -1)
 utype['dsdr'] = make_unit('erg') + make_unit('g', -1) +\
@@ -214,6 +214,17 @@ def get_quantity_group(tag, magnetism):
             r'$-[\nabla\times(\eta\nabla\times\langle\mathbf{B}\rangle)]_\phi$',\
             r'$\left\langleB_\phi\right\rangle$']
         units = [utype['induct']]*5 + [utype['b']]
+
+    if tag == 'ke':
+        qvals = [402, 403, 404, 410, 411, 412]
+        titles =\
+            [r'$\overline{\rm{KE}}_{\rm{r}}$',\
+            r'$\overline{\rm{KE}}_{\rm{\theta}}$',\
+            r'$\overline{\rm{KE}}_{\rm{\phi}}$',\
+            r'$\rm{KE}^\prime_r$',\
+            r'$\rm{KE}^\prime_\theta$',\
+            r'$\rm{KE}^\prime_\phi$']
+        units = [utype['energy']]
 
     di_out['qvals'] = np.array(qvals)
     di_out['titles'] = np.array(titles)
