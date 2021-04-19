@@ -1,1 +1,0 @@
-../compute/get_parameter.py
