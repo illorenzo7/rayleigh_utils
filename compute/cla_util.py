@@ -18,6 +18,7 @@ clas_default['qvals'] = None
 # plotting stuff
 clas_default['plotdir'] = None
 clas_default['nlevs'] = 20
+clas_default['ncol'] = 6
 clas_default['rbcz'] = None
 clas_default['rvals'] = None
 
@@ -139,6 +140,8 @@ def read_clas(dirname, args):
             clas['rbcz'] = float(args[i+1])
         if arg == '--nlevs':
             clas['nlevs'] = int(args[i+1])
+        if arg == '--ncol':
+            clas['ncol'] = int(args[i+1])
         if arg == '--usefile':
             the_file = args[i+1]
             clas['the_file'] = the_file.split('/')[-1]
@@ -222,5 +225,3 @@ def read_clas(dirname, args):
             clas['rvals'] = np.array([clas['rvals']]) 
             # rvals should always be an array
     return clas
-
-

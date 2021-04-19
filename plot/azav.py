@@ -82,7 +82,8 @@ fig = plot_azav_grid (terms, di_grid['rr'], di_grid['cost'], units=units, mainti
     linthreshrz=clas['linthreshrz'],\
     linscalerz=clas['linscalerz'],\
     plotlatlines=clas['plotlatlines'],\
-    plotboundary=clas['plotboundary'], ncol=5)
+    plotboundary=clas['plotboundary'],\
+    ncol=clas['ncol'])
 
 # save the figure if tag was specified
 tag = clas['tag']

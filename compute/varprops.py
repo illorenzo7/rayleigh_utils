@@ -81,11 +81,24 @@ def get_quantity_group(tag, magnetism):
         for j in range(1, 31):
             qvals.append(1600 + j)
         titles = array_of_strings(qvals)
-        units = utype['induct']
+        units = [utype['induct']]
+
+    if tag == 'v':
+        qvals = [1, 2, 3]            
+        titles = [texlabels['vr'], texlabels['vt'], texlabels['vp']]
+        units = [utype['b']]
+
+    if tag == 'b':
+        qvals = [801, 802, 803]            
+        titles = [texlabels['br'], texlabels['bt'], texlabels['bp']]
+        units = [utype['b']]
 
     di_out['qvals'] = np.array(qvals)
     di_out['titles'] = np.array(titles)
-    di_out['units'] = np.array(units)
+    if len(units) > 1:
+        di_out['units'] = np.array(units)
+    else:
+        di_out['units'] = units[0]
 
     return di_out
 
