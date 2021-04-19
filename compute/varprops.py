@@ -119,6 +119,41 @@ def get_quantity_group(tag, magnetism):
             qvals += [1250]
             titles += [r'$(\mathbf{f}_{\rm{mag}})_\phi$']
 
+    if tag == 'efr': # energy fluxes, r
+        qvals = [1455, 1458, 1470, 1935, 1923]
+        titles = [r'$(\mathbf{\mathcal{F}}_{\rm{enth}})_r$',\
+          r'$(\mathbf{\mathcal{F}}_{\rm{enth,pp}})_r$',\
+          r'$(\mathbf{\mathcal{F}}_{\rm{cond}})_r$',\
+          r'$-(\mathbf{\mathcal{F}}_{\rm{visc}})_r$',\
+          r'$(\mathbf{\mathcal{F}}_{\rm{KE}})_r$']
+        units = [utype['eflux']]
+        if magnetism:
+            qvals += [2001]
+            titles += [r'$(\mathbf{\mathcal{F}}_{\rm{Poynt}})_r$']
+
+    if tag == 'eft': # energy fluxes, theta
+        qvals = [1456, 1459, 1471, 1936, 1924]
+        titles = [r'$(\mathbf{\mathcal{F}}_{\rm{enth}})_\theta$',\
+          r'$(\mathbf{\mathcal{F}}_{\rm{enth,pp}})_\theta$',\
+          r'$(\mathbf{\mathcal{F}}_{\rm{cond}})_\theta$',\
+          r'$-(\mathbf{\mathcal{F}}_{\rm{visc}})_\theta$',\
+          r'$(\mathbf{\mathcal{F}}_{\rm{KE}})_\theta$']
+        units = [utype['eflux']]
+        if magnetism:
+            qvals += [2002]
+            titles += [r'$(\mathbf{\mathcal{F}}_{\rm{Poynt}})_\theta$']
+
+    if tag == 'efp': # energy fluxes, phi
+        qvals = [1457, 1460, 1937, 1925]
+        titles = [r'$(\mathbf{\mathcal{F}}_{\rm{enth}})_\phi$',\
+          r'$(\mathbf{\mathcal{F}}_{\rm{enth,pp}})_\phi$',\
+          r'$-(\mathbf{\mathcal{F}}_{\rm{visc}})_\phi$',\
+          r'$(\mathbf{\mathcal{F}}_{\rm{KE}})_\phi$']
+        units = [utype['eflux']]
+        if magnetism:
+            qvals += [2003]
+            titles += [r'$(\mathbf{\mathcal{F}}_{\rm{Poynt}})_\phi$']
+
     di_out['qvals'] = np.array(qvals)
     di_out['titles'] = np.array(titles)
     if len(units) > 1:
