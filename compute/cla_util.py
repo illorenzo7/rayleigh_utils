@@ -7,18 +7,14 @@ from common import get_parameter, get_domain_bounds, array_of_strings, is_an_int
 from varprops import get_quantity_group
 
 # set default CLAs
-
-# data averaging stuff
 clas_default = dict({})
 clas_default['datadir'] = None
 clas_default['radtype'] = 'azav'
 clas_default['tag'] = ''
 clas_default['qvals'] = None
 
-# plotting stuff
 clas_default['plotdir'] = None
 clas_default['nlevs'] = 20
-clas_default['ncol'] = 6
 clas_default['rbcz'] = None
 clas_default['rvals'] = None
 
@@ -42,6 +38,10 @@ clas_default['plotboundary'] = True
 clas_default['saveplot'] = True
 clas_default['showplot'] = True
 clas_default['latvals'] = None
+
+clas_default['fig_width_inches'] = 12.0
+clas_default['subplot_width_inches'] = None
+clas_default['ncol'] = 6
 
 default_latvals = np.array([-85., -75., -60., -45., -30., -15., 0., 15., 30., 45., 60., 75., 85.])
 
@@ -142,6 +142,10 @@ def read_clas(dirname, args):
             clas['nlevs'] = int(args[i+1])
         if arg == '--ncol':
             clas['ncol'] = int(args[i+1])
+        if arg == '--width':
+            clas['fig_width_inches'] = float(args[i+1])
+        if arg == '--subwidth':
+            clas['subplot_width_inches'] = float(args[i+1])
         if arg == '--usefile':
             the_file = args[i+1]
             clas['the_file'] = the_file.split('/')[-1]
@@ -208,6 +212,7 @@ def read_clas(dirname, args):
                     clas['qvals'] = the_qgroup['qvals']
                     clas['titles'] = the_qgroup['titles']
                     clas['units'] = the_qgroup['units']
+                    clas['tag'] = argvals
             else:
                 # this was a list of integers
                 clas['qvals'] = read_cla_vals(args, i, 'int')

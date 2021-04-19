@@ -187,7 +187,6 @@ titles = [r'$[\left\langle\mathbf{B}\cdot\nabla\mathbf{v}\right\rangle]_\phi$',\
     r'$-[\left\langle\mathbf{v}\cdot\nabla\mathbf{B}\right\rangle]_\phi$',\
     r'$[\nabla\times(\left\langle\mathbf{v}\times\mathbf{B}\right\rangle)]_\phi$',\
     r'$-[\nabla\times(\eta\nabla\times\langle\mathbf{B}\rangle)]_\phi$',\
-    r'$\frac{\partial\langle B_\phi\rangle}{\partial t}$',\
     r'$\left\langle B_\phi\right\rangle$']
 
 # Set up the actual figure from scratch

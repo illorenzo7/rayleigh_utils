@@ -64,8 +64,12 @@ for qval in qvals:
 # make the main title
 iter1, iter2 = get_iters_from_file(the_file)
 time_string = get_time_info(dirname, iter1, iter2)
+if not clas['tag'] is None:
+    mainlabel = clas['tag']
+else:
+    mainlabel = 'quantities' 
 maintitle = dirname_stripped + '\n' +\
-        'Quantities (zonally averaged)' + '\n' +\
+        clas['tag'] + ' (zonally averaged)' + '\n' +\
         time_string
 
 # Generate the figure using standard routine
@@ -83,13 +87,13 @@ fig = plot_azav_grid (terms, di_grid['rr'], di_grid['cost'], units=units, mainti
     linscalerz=clas['linscalerz'],\
     plotlatlines=clas['plotlatlines'],\
     plotboundary=clas['plotboundary'],\
-    ncol=clas['ncol'])
+    ncol=clas['ncol'],\
+    fig_width_inches=clas['fig_width_inches'],\
+    subplot_width_inches=clas['subplot_width_inches'])
 
 # save the figure if tag was specified
-tag = clas['tag']
-if not tag == '':
-    tag = tag[1:] # (in this case, remove the prepending underscore
-    savefile = plotdir + tag + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
+if not clas['tag'] == '':
+    savefile = plotdir + clas['tag'] + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
     print ('saving figure at ' + savefile)
     plt.savefig(savefile, dpi=300)
 if clas['showplot']:

@@ -154,6 +154,18 @@ def get_quantity_group(tag, magnetism):
             qvals += [2003]
             titles += [r'$(\mathbf{\mathcal{F}}_{\rm{Poynt}})_\phi$']
 
+    if tag == 'indp': # energy fluxes, phi
+        qvals = [1611, 1612, 1613, 1614, 1615, 803]
+
+        titles = [r'$[\left\langle\mathbf{B}\cdot\nabla\mathbf{v}\right\rangle]_\phi$',\
+        r'$-\left\langleB_\phi(\nabla\cdot\mathbf{v})\right\rangle$',\
+        r'$-[\left\langle\mathbf{v}\cdot\nabla\mathbf{B}\right\rangle]_\phi$',\
+        r'$[\nabla\times(\left\langle\mathbf{v}\times\mathbf{B}\right\rangle)]_\phi$',\
+        r'$-[\nabla\times(\eta\nabla\times\langle\mathbf{B}\rangle)]_\phi$',\
+        r'$\frac{\partial\langle B_\phi\rangle}{\partial t}$',\
+        r'$\left\langle B_\phi\right\rangle$']
+        units = [utype['induct']]*5 + [utype['b']]
+
     di_out['qvals'] = np.array(qvals)
     di_out['titles'] = np.array(titles)
     if len(units) > 1:

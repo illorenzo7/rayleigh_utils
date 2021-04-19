@@ -883,7 +883,7 @@ def streamfunction(vr,vt,r,cost,order=0):
             
     return psi
 
-def plot_azav_grid(terms, rr, cost, maintitle=None, titles=None, fig_width_inches=7.0, ncol=3, cmap='RdYlBu_r', units='', minmax=None, posdef=False, logscale=False, symlog=False, plotcontours=True, plotfield=True, nlevs=10, levels=None, plotlatlines=False, rvals=[], cbar_fs=10.0, fontsize=12.0, cbar_aspect=1.0/20.0, showplot=False, plot_cbar=True, lw_scaling=1.0, cbar_scaling=1.0, linthresh=None, linscale=None, plotboundary=True, rbcz=None, minmaxrz=None, linthreshrz=None, linscalerz=None, nosci=False, cbar_prec=1):
+def plot_azav_grid(terms, rr, cost, maintitle=None, titles=None, fig_width_inches=None, subplot_width_inches=None, ncol=6, cmap='RdYlBu_r', units='', minmax=None, posdef=False, logscale=False, symlog=False, plotcontours=True, plotfield=True, nlevs=10, levels=None, plotlatlines=False, rvals=[], cbar_fs=10.0, fontsize=12.0, cbar_aspect=1.0/20.0, showplot=False, plot_cbar=True, lw_scaling=1.0, cbar_scaling=1.0, linthresh=None, linscale=None, plotboundary=True, rbcz=None, minmaxrz=None, linthreshrz=None, linscalerz=None, nosci=False, cbar_prec=1):
 
     # Set up the actual figure from scratch
     margin_inches = 0.125 # margin width in inches (for both x and y) and 
@@ -894,10 +894,19 @@ def plot_azav_grid(terms, rr, cost, maintitle=None, titles=None, fig_width_inche
     margin_subplot_top_inches = 0.25 # margin to accommodate just subplot titles
     nplots = len(terms)
     nrow = np.int(np.ceil(nplots/ncol))
+    if nrow == 1: # don't have unnecessary space if ncol > nplots
+        ncol = nplots
     if isinstance(units, str): # units is just one label for everybody
         units = np.array([units]*nplots)
 
-    subplot_width_inches = (fig_width_inches - (ncol + 1.0)*margin_inches)/ncol
+    if fig_width_inches is None and subplot_width_inches is None:
+        fig_width_inches = 7.0
+        subplot_width_inches = (fig_width_inches - (ncol + 1.0)*margin_inches)/ncol
+    elif fig_width_inches is None: # caller specified subplot_width_inches
+        fig_width_inches = ncol*subplot_width_inches + (ncol + 1.0)*margin_width_inches
+    else:
+        subplot_width_inches = (fig_width_inches - (ncol + 1.0)*margin_inches)/ncol
+
     # Make the subplot width so that ncol subplots fit together side-by-side
     # with margins in between them and at the left and right.
     subplot_height_inches = 2.0*subplot_width_inches 
