@@ -3,7 +3,7 @@
 # Created: 04/17/2021
 
 import numpy as np
-from common import get_parameter, get_domain_bounds, array_of_strings
+from common import get_parameter, get_domain_bounds, array_of_strings, is_an_int
 from varprops import get_quantity_group
 
 # set default CLAs
@@ -89,7 +89,7 @@ def read_cla_vals(args, i, dtype='float'):
     # if the list has only one value, make it not a list
     if len(vals) == 1:
         vals = vals[0]
-    return np.array(vals)
+    return vals
 
 def read_cla_arbitrary(args, key, default=None, dtype='float'):
     nargs = len(args)
@@ -197,14 +197,21 @@ def read_clas(dirname, args):
                 rvals = np.hstack((rvals, rvals_to_add))
             clas['rvals'] = rvals
         if arg == '--qvals':
-            if isinstance(args[i+1], str):
-                the_qgroup = get_quantity_group(args[i+1], magnetism)
-                clas['qvals'] = the_qgroup['qvals']
-                clas['titles'] = the_qgroup['titles']
-                clas['units'] = the_qgroup['units']
+            argvals = read_cla_vals(args, i, 'str')
+            if np.isscalar(argvals): # either group or one int
+                if is_an_int(argvals):
+                    clas['qvals'] = np.array([int(argvals)])
+                    clas['titles'] = array_of_strings(clas['qvals'])
+                    clas['units'] = 'cgs'
+                else:
+                    the_qgroup = get_quantity_group(argvals, magnetism)
+                    clas['qvals'] = the_qgroup['qvals']
+                    clas['titles'] = the_qgroup['titles']
+                    clas['units'] = the_qgroup['units']
             else:
-                clas['qvals'] = read_cla_vals(args, i, dtype='int')
-                clas['titles'] = array_of_strings(qvals)
+                # this was a list of integers
+                clas['qvals'] = read_cla_vals(args, i, 'int')
+                clas['titles'] = array_of_strings(clas['qvals'])
                 clas['units'] = 'cgs'
         if arg == '--latvals':
             clas['latvals'] = read_cla_vals(args, i)
