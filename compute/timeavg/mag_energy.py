@@ -393,7 +393,7 @@ if rank == 0:
 
     # Set the timetrace savename by the directory, what we are saving,
     # and first and last iteration files for the trace
-    savename = 'mag_energy-' +\
+    savename = 'me_prod_' +\
             file_list[0] + '_' + file_list[-1] + '.pkl'
     savefile = datadir + savename
 

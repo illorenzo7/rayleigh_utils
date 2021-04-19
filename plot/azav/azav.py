@@ -30,9 +30,20 @@ dirname_stripped = strip_dirname(dirname)
 #already exist    
 datadir = dirname + '/data/'
 
+# get the data type we want; not all will be an AZ_Avgs file
+dataname_list = dict({})
+for ext in ['tot', 'pmp', 'ppm', 'mmm', 'mpp', 'ppp']:
+    dataname_list['meprodnum' + ext] = 'me_prod'
+
 # Read command-line arguments (CLAs)
 args = sys.argv[2:]
 clas = read_clas(dirname, args)
+
+# get the dataname based on possible group name
+if clas['groupname'] in dataname_list.keys():
+    dataname = dataname_list[clas['groupname']]
+else:
+    dataname = 'AZ_Avgs'
 
 # See if magnetism is "on"
 magnetism = get_parameter(dirname, 'magnetism')
@@ -45,12 +56,12 @@ print ("plotting the following quantities:")
 print ("qvals = " + arr_to_str(qvals, "%i"))
 the_file = clas['the_file']
 if the_file is None:
-    the_file = get_widest_range_file(datadir, 'AZ_Avgs')
+    the_file = get_widest_range_file(datadir, dataname)
 print ('Getting quantities from ' + datadir + the_file)
 di = get_dict(datadir + the_file)
-
 vals = di['vals']
-lut = di['lut']
+if dataname == 'AZ_Avgs':
+    lut = di['lut']
 
 if clas['saveplot']:
     plotdir = clas['plotdir']
@@ -60,17 +71,20 @@ if clas['saveplot']:
 
 terms = []
 for qval in qvals:
-    terms.append(vals[:, :, lut[qval]])
+    if dataname == 'AZ_Avgs':
+        terms.append(vals[:, :, lut[qval]])
+    else:
+        terms.append(vals[:, :, qval])
 
 # make the main title
 iter1, iter2 = get_iters_from_file(the_file)
 time_string = get_time_info(dirname, iter1, iter2)
-if not clas['tag'] is None:
-    mainlabel = clas['tag']
+if not clas['tag'] == clas['groupname'] == '':
+    mainlabel = clas['groupname'] + clas['tag']
 else:
     mainlabel = 'quantities' 
 maintitle = dirname_stripped + '\n' +\
-        clas['tag'] + ' (zonally averaged)' + '\n' +\
+        mainlabel + ' (zonally averaged)' + '\n' +\
         time_string
 
 # Generate the figure using standard routine
@@ -92,9 +106,9 @@ fig = plot_azav_grid (terms, di_grid['rr'], di_grid['cost'], units=units, mainti
     fig_width_inches=clas['fig_width_inches'],\
     subplot_width_inches=clas['subplot_width_inches'])
 
-# save the figure if tag was specified
-if not clas['tag'] == '':
-    savefile = plotdir + clas['tag'] + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
+# save the figure if tag or groupname was specified
+if not (clas['tag'] == clas['groupname'] == ''):
+    savefile = plotdir + clas['groupname'] + clas['tag'] + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
     print ('saving figure at ' + savefile)
     plt.savefig(savefile, dpi=300)
 if clas['showplot']:

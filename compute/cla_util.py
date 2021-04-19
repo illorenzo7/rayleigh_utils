@@ -11,6 +11,7 @@ clas_default = dict({})
 clas_default['datadir'] = None
 clas_default['radtype'] = 'azav'
 clas_default['tag'] = ''
+clas_default['groupname'] = ''
 clas_default['qvals'] = None
 
 clas_default['plotdir'] = None
@@ -167,6 +168,8 @@ def read_clas(dirname, args):
             clas['linscalerz'] = float(args[i+1])
         if arg == '--tag':
             clas['tag'] = '_' + args[i+1]
+        if arg == '--groupname':
+            clas['groupname'] = args[i+1]
         if arg == '--depths':
             clas['rvals'] = ro - read_cla_vals(args, i)*d
         if arg == '--depthscz':
@@ -212,7 +215,7 @@ def read_clas(dirname, args):
                     clas['qvals'] = the_qgroup['qvals']
                     clas['titles'] = the_qgroup['titles']
                     clas['units'] = the_qgroup['units']
-                    clas['tag'] = argvals
+                    clas['groupname'] = argvals
             else:
                 # this was a list of integers
                 clas['qvals'] = read_cla_vals(args, i, 'int')

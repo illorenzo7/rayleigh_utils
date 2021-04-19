@@ -30,6 +30,7 @@ utype['t'] = make_unit('K')
 
 # derived stuff
 utype['energy'] = make_unit('erg') + space + make_unit('cm', -3)
+utype['eprod'] = utype['energy'] + space + make_unit('s', -1)
 utype['power'] = make_unit('erg') + make_unit('s', -1)
 utype['eflux'] = make_unit('erg') + make_unit('cm', -2) +\
         make_unit('s', -1)
@@ -130,6 +131,29 @@ def get_quantity_group(tag, magnetism):
         if magnetism:
             qvals += [2001]
             titles += [r'$(\mathbf{\mathcal{F}}_{\rm{Poynt}})_r$']
+
+    if 'meprodnum' in tag:
+        nq = 12 # (r, t, p) x (ind, shear, adv, comp)
+        ext = tag[-3:]
+        if ext == 'tot':
+            iqstart = 0
+        if ext == 'pmp':
+            iqstart = nq
+        if ext == 'ppm':
+            iqstart = 2*nq
+        if ext == 'mmm':
+            iqstart = 3*nq
+        if ext == 'mpp':
+            iqstart = 4*nq
+        if ext == 'ppp':
+            iqstart = 5*nq
+        qvals = np.arange(iqstart, iqstart + nq)
+        titles = []
+        for direc in ['r', 'th', 'ph']:
+            app = ' (' + direc + ')'
+            titles += ['induct' + app, 'shear' + app, 'advec' + app,\
+                    'comp' + app]
+        units = [utype['eprod']]
 
     if tag == 'eft': # energy fluxes, theta
         qvals = [1456, 1459, 1471, 1936, 1924]
