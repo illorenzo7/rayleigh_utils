@@ -255,7 +255,9 @@ if rank == 0:
         if j >= 1:
             # Get my_ntimes, my_times, my_iters, my_vals from rank j
             my_vals = comm.recv(source=j)
-    
+        # "my_vals" are all weighted: their sum equals the overall average
+        vals += my_vals 
+ 
 else: # other processes send their data
     comm.send(my_vals, dest=0)
 

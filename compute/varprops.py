@@ -264,6 +264,18 @@ def get_quantity_group(tag, magnetism):
                 more_titles.append(titles[j] + '_' + ext)
             titles += more_titles
 
+    if tag == 'magtorquemm':
+        titles = [r'$\tau_{\rm{mm,r}}$', r'$\frac{r\sin\theta}{4\pi}\left\langle B_r\right\rangle\left\langle\frac{\partial B_\phi}{\partial r}\right\rangle$', r'$\frac{r\sin\theta}{4\pi}\left\langle B_\phi\right\rangle\left\langle\frac{\partial B_r}{\partial r}\right\rangle$', r'$\frac{3\sin\theta}{4\pi}\langle B_r\rangle\langle B_\phi\rangle$',\
+        r'$\tau_{\rm{mm,\theta}}$', r'$\frac{\sin\theta}{4\pi}\left\langle B_\theta\right\rangle \left\langle\frac{\partial B_\phi}{\partial \theta}\right\rangle$', r'$\frac{\sin\theta}{4\pi}\left\langle B_\phi\right\rangle\left\langle\frac{\partial B_\theta}{\partial \theta}\right\rangle$', r'$\frac{2\cos\theta}{4\pi}\langle B_\theta\rangle\langle B_\phi\rangle$']
+        qvals = [2, 3, 6, 7, 8, 9, 10, 11]
+        units = [utype['torque']]
+
+    if tag == 'magtorquems':
+        titles = [r'$\tau_{\rm{ms,r}}$', r'$\frac{r\sin\theta}{4\pi}\left\langle B_r^\prime\frac{\partial B_\phi^\prime}{\partial r}\right\rangle$', r'$\frac{r\sin\theta}{4\pi}\left\langle B_\phi^\prime\frac{\partial B_r^\prime}{\partial r}\right\rangle$', r'$\frac{3\sin\theta}{4\pi}\langle B_r^\prime B_\phi^\prime\rangle$',\
+        r'$\tau_{\rm{ms,\theta}}$', r'$\frac{\sin\theta}{4\pi}\left\langle B_\theta^\prime\frac{\partial B_\phi^\prime}{\partial \theta}\right\rangle$', r'$\frac{\sin\theta}{4\pi}\left\langle B_\phi^\prime\frac{\partial B_\theta^\prime}{\partial \theta}\right\rangle$', r'$\frac{2\cos\theta}{4\pi}\langle B_\theta^\prime B_\phi^\prime\rangle$']
+        qvals = [4, 5, 12, 13, 14, 15, 16, 17]
+        units = [utype['torque']]
+
     if tag == 'ke':
         qvals = [402, 403, 404, 410, 411, 412]
         titles =\
