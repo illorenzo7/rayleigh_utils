@@ -215,6 +215,7 @@ def read_clas(dirname, args):
                     clas['qvals'] = the_qgroup['qvals']
                     clas['titles'] = the_qgroup['titles']
                     clas['units'] = the_qgroup['units']
+                    clas['ncol'] = the_qgroup['ncol']
                     clas['groupname'] = argvals
             else:
                 # this was a list of integers

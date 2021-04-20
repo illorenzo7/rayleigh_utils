@@ -28,7 +28,7 @@ utype['p'] = make_unit('dyn') + make_unit('cm', -2)
 utype['rho'] = make_unit('g') + make_unit('cm', -3)
 utype['t'] = make_unit('K')
 
-# derived stuff
+# derived units
 utype['energy'] = make_unit('erg') + space + make_unit('cm', -3)
 utype['eprod'] = utype['energy'] + space + make_unit('s', -1)
 utype['power'] = make_unit('erg') + make_unit('s', -1)
@@ -68,6 +68,8 @@ def get_quantity_group(tag, magnetism):
                 r'$\mathcal{J}_r$', r'$\mathcal{J}_\theta$', r'$\mathcal{J}_\phi$']
             units += [utype['b']]*3 + [utype['j']]*3
 
+        ncol = 4 + 3*magnetism
+
     if tag == 'torque':
         qvals = [3, 1801, 1802, 1803, 1804, 1819]
         titles = [r'$v_\phi$', r'$-\tau_{\rm{rs}}$', r'$-\tau_{\rm{mc,v_\phi}}$',r'$\tau_{\rm{mc,\Omega_0}}$', r'$\tau_{\rm{v}}$',\
@@ -78,6 +80,7 @@ def get_quantity_group(tag, magnetism):
             qvals += [1805, 1806]
             titles += [r'$\tau_{\rm{mm}}$', r'$\tau_{\rm{ms}}$']
             units += [utype['torque']]*2
+        ncol = 3 + magnetism
 
     if tag == 'induct':
         qvals = [801, 802, 803]            
@@ -85,16 +88,19 @@ def get_quantity_group(tag, magnetism):
             qvals.append(1600 + j)
         titles = array_of_strings(qvals)
         units = [utype['induct']]
+        ncol = 11
 
     if tag == 'v':
         qvals = [1, 2, 3]            
         titles = [texlabels['vr'], texlabels['vt'], texlabels['vp']]
         units = [utype['b']]
+        ncol = 3
 
     if tag == 'b':
         qvals = [801, 802, 803]            
         titles = [texlabels['br'], texlabels['bt'], texlabels['bp']]
         units = [utype['b']]
+        ncol = 3
 
     if tag == 'forcer': # linear forces, radial
         qvals = [1201, 1219, 1237, 1216, 1228]
@@ -103,6 +109,7 @@ def get_quantity_group(tag, magnetism):
         if magnetism:
             qvals += [1248]
             titles += [r'$(\mathbf{f}_{\rm{mag}})_r$']
+        ncol = 3
 
     if tag == 'forcet': # linear forces, theta
         qvals = [1202, 1220, 1238, 1229]
@@ -111,6 +118,7 @@ def get_quantity_group(tag, magnetism):
         if magnetism:
             qvals += [1249]
             titles += [r'$(\mathbf{f}_{\rm{mag}})_\theta$']
+        ncol = 3
 
     if tag == 'forcep': # linear forces, phi
         qvals = [1203, 1221, 1239, 1230]
@@ -119,6 +127,7 @@ def get_quantity_group(tag, magnetism):
         if magnetism:
             qvals += [1250]
             titles += [r'$(\mathbf{f}_{\rm{mag}})_\phi$']
+        ncol = 3
 
     if tag == 'efr': # energy fluxes, r
         qvals = [1455, 1458, 1470, 1935, 1923]
@@ -131,6 +140,7 @@ def get_quantity_group(tag, magnetism):
         if magnetism:
             qvals += [2001]
             titles += [r'$(\mathbf{\mathcal{F}}_{\rm{Poynt}})_r$']
+        ncol = 3
 
     if 'meprodnum' in tag:
         nq = 12 # (r, t, p) x (ind, shear, adv, comp)
@@ -154,6 +164,7 @@ def get_quantity_group(tag, magnetism):
             titles += ['induct' + app, 'shear' + app, 'advec' + app,\
                     'comp' + app]
         units = [utype['eprod']]
+        ncol = 4
 
     if tag == 'eft': # energy fluxes, theta
         qvals = [1456, 1459, 1471, 1936, 1924]
@@ -166,6 +177,7 @@ def get_quantity_group(tag, magnetism):
         if magnetism:
             qvals += [2002]
             titles += [r'$(\mathbf{\mathcal{F}}_{\rm{Poynt}})_\theta$']
+        ncol = 3
 
     if tag == 'efp': # energy fluxes, phi
         qvals = [1457, 1460, 1937, 1925]
@@ -177,8 +189,9 @@ def get_quantity_group(tag, magnetism):
         if magnetism:
             qvals += [2003]
             titles += [r'$(\mathbf{\mathcal{F}}_{\rm{Poynt}})_\phi$']
+        ncol = 3
 
-    if tag == 'indr': # energy fluxes, r
+    if tag == 'indr': # induction, r
         qvals = [1601, 1602, 1603, 1604, 1605, 801]
         titles = [r'$[\left\langle\mathbf{B}\cdot\nabla\mathbf{v}\right\rangle]_r$',\
             r'$-\left\langleB_r(\nabla\cdot\mathbf{v})\right\rangle$',\
@@ -187,6 +200,7 @@ def get_quantity_group(tag, magnetism):
             r'$-[\nabla\times(\eta\nabla\times\langle\mathbf{B}\rangle)]_r$',\
             r'$\left\langle B_r\right\rangle$']
         units = [utype['induct']]*5 + [utype['b']]
+        ncol = 3
 
     if tag == 'indrmean': # energy fluxes, r, mean
         qvals = [1616, 1617, 1618, 1619, 1620, 801]
@@ -197,6 +211,7 @@ def get_quantity_group(tag, magnetism):
     r'$-[\nabla\times(\eta\nabla\times\langle\mathbf{B}\rangle)]_r$',\
     r'$\left\langleB_r\right\rangle$']
         units = [utype['induct']]*5 + [utype['b']]
+        ncol = 3
 
     if tag == 'indt': # energy fluxes, theta
         qvals = [1606, 1607, 1608, 1609, 1610, 802]
@@ -207,6 +222,7 @@ def get_quantity_group(tag, magnetism):
             r'$-[\nabla\times(\eta\nabla\times\langle\mathbf{B}\rangle)]_\theta$',\
             r'$\left\langle B_\theta\right\rangle$']
         units = [utype['induct']]*5 + [utype['b']]
+        ncol = 3
 
     if tag == 'indtmean': # energy fluxes, theta, mean
         qvals = [1621, 1622, 1623, 1624, 1625, 802]
@@ -217,6 +233,7 @@ def get_quantity_group(tag, magnetism):
             r'$-[\nabla\times(\eta\nabla\times\langle\mathbf{B}\rangle)]_\theta$',\
             r'$\left\langleB_\theta\right\rangle$']
         units = [utype['induct']]*5 + [utype['b']]
+        ncol = 3
 
     if tag == 'indp': # energy fluxes, phi
         qvals = [1611, 1612, 1613, 1614, 1615, 803]
@@ -228,6 +245,7 @@ def get_quantity_group(tag, magnetism):
         r'$-[\nabla\times(\eta\nabla\times\langle\mathbf{B}\rangle)]_\phi$',\
         r'$\left\langle B_\phi\right\rangle$']
         units = [utype['induct']]*5 + [utype['b']]
+        ncol = 3
 
     if tag == 'indpmean': # energy fluxes, phi, mean
         qvals = [1626, 1627, 1628, 1629, 1630, 803]
@@ -238,6 +256,7 @@ def get_quantity_group(tag, magnetism):
             r'$-[\nabla\times(\eta\nabla\times\langle\mathbf{B}\rangle)]_\phi$',\
             r'$\left\langleB_\phi\right\rangle$']
         units = [utype['induct']]*5 + [utype['b']]
+        ncol = 3
 
     if tag == 'ke':
         qvals = [402, 403, 404, 410, 411, 412]
@@ -249,6 +268,50 @@ def get_quantity_group(tag, magnetism):
             r'$\rm{KE}^\prime_\theta$',\
             r'$\rm{KE}^\prime_\phi$']
         units = [utype['energy']]
+        ncol = 3
+
+    if tag[:-3] == 'meprod': # this is the exact stuff
+        ext = tag[-3:]
+        basetitles = ['induct', 'shear', 'advec', 'comp', 'diff']
+
+        if ext == 'tot':
+            nbase = 5
+            iqstart = 0
+
+        if ext == 'pmp':
+            nbase = 4
+            iqstart = 15
+
+        if ext == 'ppm':
+            nbase = 4
+            iqstart = 23
+
+        if ext == 'mmm':
+            nbase = 5
+            iqstart = 38
+
+        if ext == 'mpp':
+            nbase = 3
+            iqstart = 53
+
+        if ext == 'ppp':
+            nbase = 5
+            iqstart = 62
+
+        # do r, theta, then phi, production terms, in that order
+        qvals = []
+        titles = []
+        count = 0
+        for direc in ['r', 't', 'p']:
+            qvals_loc = 2200 + iqstart + np.arange(1, 16, 3) + count
+            qvals += qvals_loc.tolist()
+            titles_loc = []
+            for j in range(len(basetitles)):
+                titles_loc.append(basetitles[j] + ' (' + ext + ', r)')
+            titles += titles_loc
+            count += 1
+        units = [utype['induct']]
+        ncol = 5
 
     if tag in ['indralt', 'indraltnum']:
         ind_off = 0
@@ -274,18 +337,21 @@ def get_quantity_group(tag, magnetism):
             for j in range(5):
                 more_titles.append(titles[j] + '_' + ext)
             titles += more_titles
+        ncol = 5 
 
     if tag == 'magtorquemm':
         titles = [r'$\tau_{\rm{mm,r}}$', r'$\frac{r\sin\theta}{4\pi}\left\langle B_r\right\rangle\left\langle\frac{\partial B_\phi}{\partial r}\right\rangle$', r'$\frac{r\sin\theta}{4\pi}\left\langle B_\phi\right\rangle\left\langle\frac{\partial B_r}{\partial r}\right\rangle$', r'$\frac{3\sin\theta}{4\pi}\langle B_r\rangle\langle B_\phi\rangle$',\
         r'$\tau_{\rm{mm,\theta}}$', r'$\frac{\sin\theta}{4\pi}\left\langle B_\theta\right\rangle \left\langle\frac{\partial B_\phi}{\partial \theta}\right\rangle$', r'$\frac{\sin\theta}{4\pi}\left\langle B_\phi\right\rangle\left\langle\frac{\partial B_\theta}{\partial \theta}\right\rangle$', r'$\frac{2\cos\theta}{4\pi}\langle B_\theta\rangle\langle B_\phi\rangle$']
         qvals = [2, 3, 6, 7, 8, 9, 10, 11]
         units = [utype['torque']]
+        ncol = 4
 
     if tag == 'magtorquems':
         titles = [r'$\tau_{\rm{ms,r}}$', r'$\frac{r\sin\theta}{4\pi}\left\langle B_r^\prime\frac{\partial B_\phi^\prime}{\partial r}\right\rangle$', r'$\frac{r\sin\theta}{4\pi}\left\langle B_\phi^\prime\frac{\partial B_r^\prime}{\partial r}\right\rangle$', r'$\frac{3\sin\theta}{4\pi}\langle B_r^\prime B_\phi^\prime\rangle$',\
         r'$\tau_{\rm{ms,\theta}}$', r'$\frac{\sin\theta}{4\pi}\left\langle B_\theta^\prime\frac{\partial B_\phi^\prime}{\partial \theta}\right\rangle$', r'$\frac{\sin\theta}{4\pi}\left\langle B_\phi^\prime\frac{\partial B_\theta^\prime}{\partial \theta}\right\rangle$', r'$\frac{2\cos\theta}{4\pi}\langle B_\theta^\prime B_\phi^\prime\rangle$']
         qvals = [4, 5, 12, 13, 14, 15, 16, 17]
         units = [utype['torque']]
+        ncol = 4
 
     if 'meprodmean' in tag:
         nq = 15 # (shear, adv, comp, ind, diff) x (r, th, ph)
@@ -303,6 +369,7 @@ def get_quantity_group(tag, magnetism):
             titles += ['shear' + app, 'comp' + app, 'advec' + app,
                     'induct' + app, 'diff' + app]
         units = [utype['eprod']]
+        ncol = 5
 
     di_out['qvals'] = np.array(qvals)
     di_out['titles'] = np.array(titles)
@@ -310,6 +377,7 @@ def get_quantity_group(tag, magnetism):
         di_out['units'] = np.array(units)
     else:
         di_out['units'] = units[0]
+    di_out['ncol'] = ncol
 
     return di_out
 
