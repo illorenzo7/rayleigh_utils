@@ -302,12 +302,13 @@ def get_quantity_group(tag, magnetism):
         qvals = []
         titles = []
         count = 0
-        for direc in ['r', 't', 'p']:
+        for direc in ['r', 'th', 'ph']:
             qvals_loc = 2200 + iqstart + np.arange(1, 16, 3) + count
             qvals += qvals_loc.tolist()
             titles_loc = []
             for j in range(len(basetitles)):
-                titles_loc.append(basetitles[j] + ' (' + ext + ', r)')
+                titles_loc.append(basetitles[j] + ' (' + ext + ', ' +\
+                        direc + ')')
             titles += titles_loc
             count += 1
         units = [utype['induct']]
