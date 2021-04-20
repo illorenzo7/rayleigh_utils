@@ -239,6 +239,17 @@ def get_quantity_group(tag, magnetism):
             r'$\left\langleB_\phi\right\rangle$']
         units = [utype['induct']]*5 + [utype['b']]
 
+    if tag == 'ke':
+        qvals = [402, 403, 404, 410, 411, 412]
+        titles =\
+            [r'$\overline{\rm{KE}}_{\rm{r}}$',\
+            r'$\overline{\rm{KE}}_{\rm{\theta}}$',\
+            r'$\overline{\rm{KE}}_{\rm{\phi}}$',\
+            r'$\rm{KE}^\prime_r$',\
+            r'$\rm{KE}^\prime_\theta$',\
+            r'$\rm{KE}^\prime_\phi$']
+        units = [utype['energy']]
+
     if tag in ['indralt', 'indraltnum']:
         ind_off = 0
         qvals = np.arange(15) + ind_off
@@ -276,16 +287,22 @@ def get_quantity_group(tag, magnetism):
         qvals = [4, 5, 12, 13, 14, 15, 16, 17]
         units = [utype['torque']]
 
-    if tag == 'ke':
-        qvals = [402, 403, 404, 410, 411, 412]
-        titles =\
-            [r'$\overline{\rm{KE}}_{\rm{r}}$',\
-            r'$\overline{\rm{KE}}_{\rm{\theta}}$',\
-            r'$\overline{\rm{KE}}_{\rm{\phi}}$',\
-            r'$\rm{KE}^\prime_r$',\
-            r'$\rm{KE}^\prime_\theta$',\
-            r'$\rm{KE}^\prime_\phi$']
-        units = [utype['energy']]
+    if 'meprodmean' in tag:
+        nq = 15 # (shear, adv, comp, ind, diff) x (r, th, ph)
+        ext = tag[-3:]
+        if ext == 'tot':
+            iqstart = 0
+        if ext == 'mmm':
+            iqstart = 1*nq
+        if ext == 'mpp':
+            iqstart = 2*nq
+        qvals = np.arange(iqstart, iqstart + nq)
+        titles = []
+        for direc in ['r', 'th', 'ph']:
+            app = ' (' + direc + ')'
+            titles += ['shear' + app, 'comp' + app, 'advec' + app,
+                    'induct' + app, 'diff' + app]
+        units = [utype['eprod']]
 
     di_out['qvals'] = np.array(qvals)
     di_out['titles'] = np.array(titles)

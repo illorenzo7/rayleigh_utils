@@ -39,6 +39,8 @@ for direc in ['r', 't', 'p']:
     dataname_list['ind' + direc + 'altnum'] = 'induct_alt_num'
 for ext in ['mm', 'ms']:
     dataname_list['magtorque' + ext] = 'mag_torque'
+for ext in ['tot', 'mmm', 'mpp']:
+    dataname_list['meprodmean' + ext] = 'me_prod_mean'
 
 # Read command-line arguments (CLAs)
 args = sys.argv[2:]
