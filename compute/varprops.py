@@ -239,6 +239,31 @@ def get_quantity_group(tag, magnetism):
             r'$\left\langleB_\phi\right\rangle$']
         units = [utype['induct']]*5 + [utype['b']]
 
+    if tag in ['indralt', 'indraltnum']:
+        ind_off = 0
+        qvals = np.arange(15) + ind_off
+        titles = ['(d/dT)(vr*bt)', '-(d/dT)(vt*br)', '-(d/dP)(vp*br)', '(d/dP)(vr*bp)', 'curv.']
+        units = [utype['induct']]
+
+    if tag in ['indtalt', 'indtaltnum']:
+        ind_off = 15
+        qvals = np.arange(15) + ind_off
+        titles = ['(d/dP)(vt*bp)', '-(d/dP)(vp*bt)', '-(d/dr)(vr*bt)', '(d/dr)(vt*br)', 'curv.']
+        units = [utype['induct']]
+
+    if tag in ['indpalt', 'indpaltnum']:
+        ind_off = 30
+        qvals = np.arange(15) + ind_off
+        titles = ['(d/dr)(vp*br)', '-(d/dr)(vr*bp)', '-(d/dT)(vt*bp)', '(d/dT)(vp*bt)', 'curv.']
+        units = [utype['induct']]
+
+    if 'ind' in tag and 'alt' in tag:
+        for ext in ['mm', 'pp']:
+            more_titles = []
+            for j in range(5):
+                more_titles.append(titles[j] + '_' + ext)
+            titles += more_titles
+
     if tag == 'ke':
         qvals = [402, 403, 404, 410, 411, 412]
         titles =\

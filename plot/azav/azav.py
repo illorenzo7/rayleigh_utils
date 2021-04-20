@@ -34,6 +34,9 @@ datadir = dirname + '/data/'
 dataname_list = dict({})
 for ext in ['tot', 'pmp', 'ppm', 'mmm', 'mpp', 'ppp']:
     dataname_list['meprodnum' + ext] = 'me_prod'
+for direc in ['r', 't', 'p']:
+    dataname_list['ind' + direc + 'alt'] = 'induct_alt'
+    dataname_list['ind' + direc + 'altnum'] = 'induct_alt_num'
 
 # Read command-line arguments (CLAs)
 args = sys.argv[2:]
