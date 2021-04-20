@@ -16,6 +16,7 @@ import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from common import *
+from cla_util import *
 
 # Find the relevant place to store the data, and create the directory if it
 # doesn't already exist
@@ -26,7 +27,8 @@ datadir = dirname + '/data/' # data subdirectory of output directory
 # CLAs
 args = sys.argv[2:]
 nargs = len(args)
-tag = read_clas(args)['tag']
+clas = read_clas(dirname, args)
+tag = clas['tag']
 delete_old_files = True # delete the partial files by default
 for i in range(nargs):
     arg = args[i]
@@ -48,8 +50,7 @@ if dataname == 'G_Avgs_2dom':
 
 times = di0['times']
 iters = di0['iters']
-iter1 = di0['iter1']
-iter2 = di0['iter2']
+iter1, dummy = get_iters_from_file(files[0])
 
 di_all = dict(di0)
 
@@ -73,7 +74,7 @@ for i in range(nfiles - 1):
     times = np.hstack((times, di2['times'][-niters2:]))
     iters = np.hstack((iters, di2['iters'][-niters2:]))
     if i == nfiles - 2:
-        iter2 = di2['iter2']
+        dummy, iter2 = get_iters_from_file(files[i+1])
 
 di_all['vals'] = vals
 if dataname == 'G_Avgs_2d':

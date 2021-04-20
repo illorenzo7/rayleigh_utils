@@ -9,6 +9,7 @@ import sys, os
 sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
 from common import *
+from cla_util import *
 from rayleigh_diagnostics import GridInfo
 
 # Get the run directory on which to perform the analysis
