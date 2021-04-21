@@ -66,86 +66,86 @@ def integerticks(lmax):
 def default_axes_1by1(width=6.):
     # Good for orthographic projections and AZ_Avgs in HALF meridional plane 
     # and equatorial slices
-    subplot_width_inches = width
-    subplot_height_inches = width
+    sub_width_inches = width
+    sub_height_inches = width
     margin_inches = 1./8.
     margin_bottom_inches = 3./4.
 
-    fig_width_inches = subplot_width_inches + 2.*margin_inches
-    fig_height_inches = subplot_height_inches + margin_inches +\
+    width_inches = sub_width_inches + 2.*margin_inches
+    height_inches = sub_height_inches + margin_inches +\
             margin_bottom_inches
 
-    margin_x = margin_inches/fig_width_inches
-    margin_bottom = margin_bottom_inches/fig_height_inches
-    subplot_width = subplot_width_inches/fig_width_inches
-    subplot_height = subplot_height_inches/fig_height_inches
+    margin_x = margin_inches/width_inches
+    margin_bottom = margin_bottom_inches/height_inches
+    sub_width = sub_width_inches/width_inches
+    sub_height = sub_height_inches/height_inches
 
-    fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
-    ax = fig.add_axes((margin_x, margin_bottom, subplot_width,\
-            subplot_height))
+    fig = plt.figure(figsize=(width_inches, height_inches))
+    ax = fig.add_axes((margin_x, margin_bottom, sub_width,\
+            sub_height))
     return fig, ax
 
 def default_axes_2by1(width=8.):
     # Good for Mollweide projections
-    subplot_width_inches = width
-    subplot_height_inches = 0.5*width
+    sub_width_inches = width
+    sub_height_inches = 0.5*width
     margin_inches = 1./8.
     margin_bottom_inches = 3./4. # leave room for colorbar
 
-    fig_width_inches = subplot_width_inches + 2.*margin_inches
-    fig_height_inches = subplot_height_inches + margin_inches +\
+    width_inches = sub_width_inches + 2.*margin_inches
+    height_inches = sub_height_inches + margin_inches +\
             margin_bottom_inches
 
-    margin_x = margin_inches/fig_width_inches
-    margin_bottom = margin_bottom_inches/fig_height_inches
-    subplot_width = subplot_width_inches/fig_width_inches
-    subplot_height = subplot_height_inches/fig_height_inches
+    margin_x = margin_inches/width_inches
+    margin_bottom = margin_bottom_inches/height_inches
+    sub_width = sub_width_inches/width_inches
+    sub_height = sub_height_inches/height_inches
 
-    fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
-    ax = fig.add_axes((margin_x, margin_bottom, subplot_width,\
-            subplot_height))
+    fig = plt.figure(figsize=(width_inches, height_inches))
+    ax = fig.add_axes((margin_x, margin_bottom, sub_width,\
+            sub_height))
     return fig, ax
 
 def default_axes_1by2(width=3.75):
     # Good for AZ_Avgs in full meridional plane
-    subplot_width_inches = width
-    subplot_height_inches = 2*width
+    sub_width_inches = width
+    sub_height_inches = 2*width
     margin_inches = 1./8.
 
-    fig_width_inches = subplot_width_inches + 2.*margin_inches
-    fig_height_inches = subplot_height_inches + 2.*margin_inches
+    width_inches = sub_width_inches + 2.*margin_inches
+    height_inches = sub_height_inches + 2.*margin_inches
 
-    margin_x = margin_inches/fig_width_inches
-    margin_y = margin_inches/fig_height_inches
-    subplot_width = subplot_width_inches/fig_width_inches
-    subplot_height = subplot_height_inches/fig_height_inches
+    margin_x = margin_inches/width_inches
+    margin_y = margin_inches/height_inches
+    sub_width = sub_width_inches/width_inches
+    sub_height = sub_height_inches/height_inches
 
-    fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
-    ax = fig.add_axes((margin_x, margin_y, subplot_width, subplot_height))
+    fig = plt.figure(figsize=(width_inches, height_inches))
+    ax = fig.add_axes((margin_x, margin_y, sub_width, sub_height))
     return fig, ax
 
 def default_axes_tl(width=7.):
     # Good for time-latitude plots
-    subplot_width_inches = width
-    subplot_height_inches = 1.5
+    sub_width_inches = width
+    sub_height_inches = 1.5
     margin_inches = 1./8.
     margin_left_inches = 1./2.
     margin_right_inches = 1.25
     margin_bottom_inches = 1./2.
 
-    fig_width_inches = subplot_width_inches + margin_left_inches +\
+    width_inches = sub_width_inches + margin_left_inches +\
             margin_right_inches
-    fig_height_inches = subplot_height_inches + margin_inches +\
+    height_inches = sub_height_inches + margin_inches +\
             margin_bottom_inches
 
-    margin_bottom = margin_bottom_inches/fig_height_inches
-    margin_left = margin_left_inches/fig_width_inches
-    subplot_width = subplot_width_inches/fig_width_inches
-    subplot_height = subplot_height_inches/fig_height_inches
+    margin_bottom = margin_bottom_inches/height_inches
+    margin_left = margin_left_inches/width_inches
+    sub_width = sub_width_inches/width_inches
+    sub_height = sub_height_inches/height_inches
 
-    fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
-    ax = fig.add_axes((margin_left, margin_bottom, subplot_width,\
-            subplot_height))
+    fig = plt.figure(figsize=(width_inches, height_inches))
+    ax = fig.add_axes((margin_left, margin_bottom, sub_width,\
+            sub_height))
     return fig, ax
 
 def testtex(label):
@@ -159,21 +159,21 @@ def generate_cbar(fig, ax, im, aspect=1./20., length=0.75, orientation='horizont
     ax_xmin, ax_xmax, ax_ymin, ax_ymax = axis_range(ax)
     ax_delta_x = ax_xmax - ax_xmin
     ax_delta_y = ax_ymax - ax_ymin
-    fig_width_inches, fig_height_inches = fig.get_size_inches()
-    fig_aspect = fig_height_inches/fig_width_inches
+    width_inches, height_inches = fig.get_size_inches()
+    aspect = height_inches/width_inches
 
     # make colorbar axes and colorbar itself
     margin_inches = 1./8.
-    margin_x = margin_inches/fig_width_inches
-    margin_y = margin_inches/fig_height_inches
+    margin_x = margin_inches/width_inches
+    margin_y = margin_inches/height_inches
     if orientation == 'horizontal':
         cbar_width = length*ax_delta_x
-        cbar_height = cbar_width*aspect/fig_aspect
+        cbar_height = cbar_width*aspect/aspect
         cbar_left = ax_xmin + 0.5*ax_delta_x - 0.5*cbar_width
         cbar_bottom = ax_ymin - margin_y - cbar_height
     if orientation == 'vertical':
         cbar_height = length*ax_delta_y
-        cbar_width = cbar_height*aspect*fig_aspect
+        cbar_width = cbar_height*aspect*aspect
         cbar_left = ax_xmax + margin_x
         cbar_bottom = ax_ymin + 0.5*ax_delta_y - 0.5*cbar_height
     cax = fig.add_axes((cbar_left, cbar_bottom, cbar_width, cbar_height))   
@@ -223,7 +223,7 @@ def generate_cbar(fig, ax, im, aspect=1./20., length=0.75, orientation='horizont
                 %minmax[1]])
 
     # Title the colorbar based on the field's units
-    line_height = 1./4./fig_height_inches
+    line_height = 1./4./height_inches
     fig.text(cbar_left + 0.5*cbar_width, cbar_bottom - line_height,\
              cbar_label, ha='center', va='top', **csfont,\
              fontsize=cbar_fs) 
@@ -278,13 +278,171 @@ def generate_cbar(fig, ax, im, aspect=1./20., length=0.75, orientation='horizont
                     %minmaxrz[1]])
 
         # Title the colorbar based on the field's units
-        line_height = 1./4./fig_height_inches
+        line_height = 1./4./height_inches
         fig.text(cbar_left + 0.5*cbar_width, cbar_bottom -\
                 line_height, cbar_label, ha='center', va='top',\
                 **csfont, fontsize=cbar_fs) 
 
-def make_figure(fig_width=3.5, fig_height=2.5, nplots=1, margin_inches=0.125, margin_left_inches=None, margin_right_inches=None, margin_bottom_inches=None, margin_top_inches=None, margin_subplot_left_inches=None, margin_subplot_right_inches=None, margin_subplot_bottom_inches=None, margin_subplot_top_inches=None, subplot_width=None, subplot_height=None):
+def make_figure(nplots=None, sub_width_inches=None, sub_aspect=None, sub_height_inches=None, margin_inches=0.125, nrow=None, ncol=None, margin_left_inches=None, margin_right_inches=None, margin_bottom_inches=None, margin_top_inches=None, sub_margin_left_inches=None, sub_margin_right_inches=None, sub_margin_bottom_inches=None, sub_margin_top_inches=None, width_inches=None, height_inches=None, aspect=None):
 
     # first, if any margin is unspecified, then it equals the default
     # "margin_inches"
-    return 2
+    # subplot margins are above and beyond figure margins
+    if margin_left_inches is None:
+        margin_left_inches = margin_inches
+    if margin_right_inches is None:
+        margin_right_inches = margin_inches
+    if margin_bottom_inches is None:
+        margin_bottom_inches = margin_inches
+    if margin_top_inches is None:
+        margin_top_inches = margin_inches
+    if sub_margin_left_inches is None:
+        sub_margin_left_inches = margin_inches
+    if sub_margin_right_inches is None:
+        sub_margin_right_inches = margin_inches
+    if sub_margin_bottom_inches is None:
+        sub_margin_bottom_inches = margin_inches
+    if sub_margin_top_inches is None:
+        sub_margin_top_inches = margin_inches
+
+    # figure out nplots, nrow, ncol
+    # default values are nplots = nrow = ncol = 1
+
+    # if nplots is specified but others aren't, ncol = min(nplots, 3)
+    # and nrow follows
+    # 
+    # if nplots nrow or ncol specified but others aren't, nplots = (nrow or ncol) and ncol or nrow = 1
+    # 
+    # if two are specified, the other follows
+    # 
+    # if all three are specified, user overdetermined the problem
+    # and the combination (nplots, ncol) determines nrow
+
+    nspec = 0
+    for val in [nplots, nrow, ncol]:
+        nspec += not val is None
+    if nspec == 0: # all unspecified
+        nplots = ncol = nrow = 1
+    if nspec == 1: # 1 is specified
+        if not nplots is None:
+            ncol = min(3, nplots)
+            nrow = int(np.ceil(nplots/ncol))
+        elif not nrow is None:
+            nplots = nrow
+            ncol = 1
+        else:
+            nplots = ncol
+            nrow = 1
+    if nspec >= 2: # two or more are specified
+        if nplots is None:
+            nplots = nrow*ncol
+        elif ncol is None:
+            ncol = int(np.ceil(nplots/nrow))
+        else:
+            nrow = int(np.ceil(nplots/ncol))
+
+    # figure out aspect, width, height
+    # need to specify TWO of these (other gets determined) for EITHER
+    # the figure or the subplots; check subplots first (defaults set here)
+    sub_width_inches_default, sub_height_inches_default = 3.5, 2.5
+    width_inches_default, height_inches_default = 7.0, 4.0
+
+    sub_nspec = 0
+    for val in [sub_width_inches, sub_height_inches, sub_aspect]:
+        sub_nspec += not val is None
+    nspec = 0
+    for val in [width_inches, height_inches, aspect]:
+        nspec += not val is None
+
+    # logic similar to above for nplots, nrow, ncol
+    if nspec == sub_nspec == 0:
+        which_spec = 'sub'
+        sub_width_inches = sub_width_inches_default
+        sub_height_inches = sub_height_inches_default
+        sub_aspect = sub_height_inches/sub_width_inches
+    elif sub_nspec == 1:
+        which_spec = 'sub'
+        if not sub_width_inches is None:
+            sub_height_inches = sub_height_inches_default
+            sub_aspect = sub_height_inches/sub_width_inches
+        elif not sub_height_inches is None:
+            sub_width_inches = sub_width_inches_default
+            sub_aspect = sub_height_inches/sub_width_inches
+        elif not sub_aspect is None:
+            sub_width_inches = sub_width_inches_default
+            sub_height_inches = sub_aspect*sub_width_inches
+    elif sub_nspec == 2:
+        which_spec = 'sub'
+        if sub_width_inches is None:
+            sub_width_inches = sub_height_inches/sub_aspect
+        if sub_height_inches is None:
+            sub_height_inches = sub_width_inches*sub_aspect
+        if sub_aspect is None:
+            sub_aspect = sub_height_inches/sub_width_inches
+
+    elif nspec == 1:
+        which_spec = 'fig'
+        if not width_inches is None:
+            height_inches = height_inches_default
+            aspect = height_inches/width_inches
+        elif not height_inches is None:
+            width_inches = width_inches_default
+            aspect = height_inches/width_inches
+        elif not aspect is None:
+            width_inches = width_inches_default
+            height_inches = aspect*width_inches
+    elif nspec == 2:
+        which_spec = 'fig'
+        if width_inches is None:
+            width_inches = height_inches/aspect
+        if height_inches is None:
+            height_inches = width_inches*aspect
+        if aspect is None:
+            aspect = height_inches/width_inches
+
+    print ("sub_wid = ", sub_width_inches)
+    print ("sub_he = ", sub_height_inches)
+    print ("sub_a = ", sub_aspect)
+    # set the "other" parameters based on if fig or sub dimensions were set
+    if which_spec == 'fig':
+        sub_width_inches = (width_inches - margin_left_inches - margin_right_inches - ncol*(sub_margin_left_inches + sub_margin_right_inches))/ncol
+        sub_height_inches = (height_inches - margin_bottom_inches - margin_top_inches - nrow*(sub_margin_bottom_inches + sub_margin_top_inches))/nrow
+        sub_aspect = sub_height/sub_width
+
+    if which_spec == 'sub':
+        width_inches = ncol*(sub_width_inches + sub_margin_left_inches + sub_margin_right_inches) + margin_left_inches + margin_right_inches
+        height_inches = nrow*(sub_height_inches + sub_margin_bottom_inches + sub_margin_top_inches) + margin_bottom_inches + margin_top_inches
+        aspect = height_inches/width_inches
+
+    # collect all figure parameters in dictionary 
+    fpar = dict({})
+    fpar['nplots'] = nplots
+    fpar['nrow'] = nrow
+    fpar['ncol'] = ncol
+    fpar['width_inches'] = width_inches
+    fpar['height_inches'] = height_inches
+    fpar['aspect'] = height_inches/width_inches
+    fpar['margin_left'] = margin_left_inches/width_inches
+    fpar['margin_right'] = margin_right_inches/width_inches
+    fpar['margin_bottom'] = margin_bottom_inches/height_inches
+    fpar['margin_top'] = margin_top_inches/height_inches
+
+    fpar['sub_width'] = sub_width_inches/width_inches
+    fpar['sub_height'] = sub_height_inches/height_inches
+    fpar['sub_aspect'] = sub_height_inches/sub_width_inches
+    fpar['sub_margin_left'] = sub_margin_left_inches/width_inches
+    fpar['sub_margin_right'] = sub_margin_right_inches/width_inches
+    fpar['sub_margin_bottom'] = sub_margin_bottom_inches/height_inches
+    fpar['sub_margin_top'] = sub_margin_top_inches/height_inches
+
+    # Generate the figure + axes
+    fig = plt.figure(figsize=(width_inches, height_inches))
+    axs = np.zeros((nrow, ncol), dtype=object)
+    for iplot in range(fpar['nplots']):
+        icol = iplot%fpar['ncol']
+        irow = iplot//fpar['ncol']
+        ax_left = fpar['margin_left'] + fpar['sub_margin_left'] + icol*(fpar['sub_width'] + fpar['sub_margin_left'] + fpar['sub_margin_right'])
+        ax_bottom = 1.0 - fpar['margin_top'] - fpar['sub_height'] - fpar['sub_margin_top'] - irow*(fpar['sub_height'] + fpar['sub_margin_top'] + fpar['sub_margin_bottom'])
+        axs[irow,icol] = fig.add_axes((ax_left, ax_bottom, fpar['sub_width'], fpar['sub_height']))
+
+    return fig, axs, fpar
