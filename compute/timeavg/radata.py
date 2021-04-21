@@ -24,6 +24,7 @@ if rank == 0:
     sys.path.append(os.environ['raco'])
     # import common here
     from common import *
+    from cla_util import *
     lent = 50
     char = '.'
     nproc = comm.Get_size()

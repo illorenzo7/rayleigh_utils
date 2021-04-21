@@ -269,33 +269,45 @@ def get_quantity_group(tag, magnetism):
             r'$\rm{KE}^\prime_\phi$']
         units = [utype['energy']]
         ncol = 3
+    
+    if tag == 'me':
+        qvals = [1102, 1103, 1104, 1110, 1111, 1112]
+        titles =\
+            [r'$\overline{\rm{ME}}_{\rm{r}}$',\
+            r'$\overline{\rm{ME}}_{\rm{\theta}}$',\
+            r'$\overline{\rm{ME}}_{\rm{\phi}}$',\
+            r'$\rm{ME}^\prime_r$',\
+            r'$\rm{ME}^\prime_\theta$',\
+            r'$\rm{ME}^\prime_\phi$']
+        units = [utype['energy']]
+        ncol = 3
 
     if tag[:-3] == 'meprod': # this is the exact stuff
         ext = tag[-3:]
         basetitles = ['induct', 'shear', 'advec', 'comp', 'diff']
 
         if ext == 'tot':
-            nbase = 5
+            ncol = 5
             iqstart = 0
 
         if ext == 'pmp':
-            nbase = 4
+            ncol = 4
             iqstart = 15
 
         if ext == 'ppm':
-            nbase = 4
+            ncol = 4
             iqstart = 23
 
         if ext == 'mmm':
-            nbase = 5
+            ncol = 5
             iqstart = 38
 
         if ext == 'mpp':
-            nbase = 3
+            ncol = 3
             iqstart = 53
 
         if ext == 'ppp':
-            nbase = 5
+            ncol = 5
             iqstart = 62
 
         # do r, theta, then phi, production terms, in that order

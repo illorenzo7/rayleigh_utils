@@ -396,8 +396,8 @@ else:
 # y labels
 fs = 14
 axs[0,0].set_ylabel('full energy', fontsize=fs)
-axs[1,0].set_ylabel('mean energy', fontsize=fs)
-axs[2,0].set_ylabel('fluc energy', fontsize=fs)
+axs[1,0].set_ylabel('fluc energy', fontsize=fs)
+axs[2,0].set_ylabel('mean energy', fontsize=fs)
 
 # Make titles
 titles = ["ALL ZONES", "RZ", "CZ"]
