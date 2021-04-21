@@ -40,9 +40,9 @@ clas_default['saveplot'] = True
 clas_default['showplot'] = True
 clas_default['latvals'] = None
 
-clas_default['fig_width_inches'] = 12.0
-clas_default['subplot_width_inches'] = None
-clas_default['ncol'] = 6
+clas_default['fig_width_inches'] = None
+clas_default['sub_width_inches'] = None
+clas_default['ncol'] = None
 
 default_latvals = np.array([-85., -75., -60., -45., -30., -15., 0., 15., 30., 45., 60., 75., 85.])
 
@@ -146,7 +146,7 @@ def read_clas(dirname, args):
         if arg == '--width':
             clas['fig_width_inches'] = float(args[i+1])
         if arg == '--subwidth':
-            clas['subplot_width_inches'] = float(args[i+1])
+            clas['sub_width_inches'] = float(args[i+1])
         if arg == '--usefile':
             the_file = args[i+1]
             clas['the_file'] = the_file.split('/')[-1]

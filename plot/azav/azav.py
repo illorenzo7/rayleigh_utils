@@ -20,6 +20,7 @@ sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapl'])
 from azav_util import plot_azav_grid
 from common import *
+from plotcommon import *
 from cla_util import *
 
 # Get directory name and stripped_dirname for plotting purposes
@@ -114,7 +115,7 @@ fig = plot_azav_grid (terms, di_grid['rr'], di_grid['cost'], units=units, mainti
     plotboundary=clas['plotboundary'],\
     ncol=clas['ncol'],\
     fig_width_inches=clas['fig_width_inches'],\
-    subplot_width_inches=clas['subplot_width_inches'], 
+    sub_width_inches=clas['sub_width_inches'], 
     latav=latav)
 
 # save the figure if tag or groupname was specified

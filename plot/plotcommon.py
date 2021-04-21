@@ -400,9 +400,6 @@ def make_figure(nplots=None, sub_width_inches=None, sub_aspect=None, sub_height_
         if aspect is None:
             aspect = height_inches/width_inches
 
-    print ("sub_wid = ", sub_width_inches)
-    print ("sub_he = ", sub_height_inches)
-    print ("sub_a = ", sub_aspect)
     # set the "other" parameters based on if fig or sub dimensions were set
     if which_spec == 'fig':
         sub_width_inches = (width_inches - margin_left_inches - margin_right_inches - ncol*(sub_margin_left_inches + sub_margin_right_inches))/ncol
