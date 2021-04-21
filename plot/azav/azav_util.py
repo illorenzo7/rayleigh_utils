@@ -891,8 +891,6 @@ def plot_azav_grid(terms, rr, cost, maintitle=None, titles=None, fig_width_inche
     sub_margin_top_inches = 0.25 # margin to accommodate just subplot titles
         # larger bottom margin to make room for colorbar(s)
     nplots = len(terms)
-    print ("nplots = ", nplots)
-    print ("ncol = ", ncol)
     if ncol > nplots:
         ncol = nplots
     # don't have unnecessary space if ncol > nplots

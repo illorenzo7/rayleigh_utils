@@ -41,14 +41,119 @@ def xy_grid(X, Y):
     X_new[m, :] = X_new[m-1, :] + (X_new[m-1, :] - X_new[m-2, :])
     Y_new[0, :] = Y_new[1, :] - (Y_new[2, :] - Y_new[1, :])
     Y_new[m, :] = Y_new[m-1, :] + (Y_new[m-1, :] - Y_new[m-2, :])
+
     return (X_new, Y_new)
+
+def integerticks(lmax):
+    ''' This is for plotting l time-traces
+    Gives O(5) ticklabels between -lmax and lmax, picked sensibly
+    '''
+    delta_l = lmax/3
+    # round this to nearest even number
+    delta_l = 2*round(delta_l/2)
+    positive_ticks = np.arange(0, lmax, delta_l)
+    negative_ticks = np.arange(-1, -lmax - 1, -delta_l)
+    if delta_l > 3:
+        negative_ticks = negative_ticks[1:]
+    tickvals = np.hstack((positive_ticks, negative_ticks))
+    st = []
+    for tickval in tickvals:
+        tickval = int(tickval)
+        st.append(str(np.abs(tickval)))
+    ticklabels = np.array(st)
+    return tickvals, ticklabels
+
+def default_axes_1by1(width=6.):
+    # Good for orthographic projections and AZ_Avgs in HALF meridional plane 
+    # and equatorial slices
+    sub_width_inches = width
+    sub_height_inches = width
+    margin_inches = 1./8.
+    margin_bottom_inches = 3./4.
+
+    width_inches = sub_width_inches + 2.*margin_inches
+    height_inches = sub_height_inches + margin_inches +\
+            margin_bottom_inches
+
+    margin_x = margin_inches/width_inches
+    margin_bottom = margin_bottom_inches/height_inches
+    sub_width = sub_width_inches/width_inches
+    sub_height = sub_height_inches/height_inches
+
+    fig = plt.figure(figsize=(width_inches, height_inches))
+    ax = fig.add_axes((margin_x, margin_bottom, sub_width,\
+            sub_height))
+    return fig, ax
+
+def default_axes_2by1(width=8.):
+    # Good for Mollweide projections
+    sub_width_inches = width
+    sub_height_inches = 0.5*width
+    margin_inches = 1./8.
+    margin_bottom_inches = 3./4. # leave room for colorbar
+
+    width_inches = sub_width_inches + 2.*margin_inches
+    height_inches = sub_height_inches + margin_inches +\
+            margin_bottom_inches
+
+    margin_x = margin_inches/width_inches
+    margin_bottom = margin_bottom_inches/height_inches
+    sub_width = sub_width_inches/width_inches
+    sub_height = sub_height_inches/height_inches
+
+    fig = plt.figure(figsize=(width_inches, height_inches))
+    ax = fig.add_axes((margin_x, margin_bottom, sub_width,\
+            sub_height))
+    return fig, ax
+
+def default_axes_1by2(width=3.75):
+    # Good for AZ_Avgs in full meridional plane
+    sub_width_inches = width
+    sub_height_inches = 2*width
+    margin_inches = 1./8.
+
+    width_inches = sub_width_inches + 2.*margin_inches
+    height_inches = sub_height_inches + 2.*margin_inches
+
+    margin_x = margin_inches/width_inches
+    margin_y = margin_inches/height_inches
+    sub_width = sub_width_inches/width_inches
+    sub_height = sub_height_inches/height_inches
+
+    fig = plt.figure(figsize=(width_inches, height_inches))
+    ax = fig.add_axes((margin_x, margin_y, sub_width, sub_height))
+    return fig, ax
+
+def default_axes_tl(width=7.):
+    # Good for time-latitude plots
+    sub_width_inches = width
+    sub_height_inches = 1.5
+    margin_inches = 1./8.
+    margin_left_inches = 1./2.
+    margin_right_inches = 1.25
+    margin_bottom_inches = 1./2.
+
+    width_inches = sub_width_inches + margin_left_inches +\
+            margin_right_inches
+    height_inches = sub_height_inches + margin_inches +\
+            margin_bottom_inches
+
+    margin_bottom = margin_bottom_inches/height_inches
+    margin_left = margin_left_inches/width_inches
+    sub_width = sub_width_inches/width_inches
+    sub_height = sub_height_inches/height_inches
+
+    fig = plt.figure(figsize=(width_inches, height_inches))
+    ax = fig.add_axes((margin_left, margin_bottom, sub_width,\
+            sub_height))
+    return fig, ax
 
 def testtex(label):
     plt.plot(range(10))
     plt.title(label)
     plt.show()
 
-def make_cbar(fig, ax, im, aspect=1./20., length=0.75, orientation='horizontal', units='', fs=10., posdef=False, logscale=False, symlog=False, linthresh=None, linscale=None):
+def generate_cbar(fig, ax, im, aspect=1./20., length=0.75, orientation='horizontal', units='', fs=10., posdef=False, logscale=False, symlog=False, linthresh=None, linscale=None):
 
     # get figure and axis dimensions
     ax_xmin, ax_xmax, ax_ymin, ax_ymax = axis_range(ax)
