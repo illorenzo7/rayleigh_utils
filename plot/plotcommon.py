@@ -282,3 +282,9 @@ def generate_cbar(fig, ax, im, aspect=1./20., length=0.75, orientation='horizont
         fig.text(cbar_left + 0.5*cbar_width, cbar_bottom -\
                 line_height, cbar_label, ha='center', va='top',\
                 **csfont, fontsize=cbar_fs) 
+
+def make_figure(fig_width=3.5, fig_height=2.5, nplots=1, margin_inches=0.125, margin_left_inches=None, margin_right_inches=None, margin_bottom_inches=None, margin_top_inches=None, margin_subplot_left_inches=None, margin_subplot_right_inches=None, margin_subplot_bottom_inches=None, margin_subplot_top_inches=None, subplot_width=None, subplot_height=None):
+
+    # first, if any margin is unspecified, then it equals the default
+    # "margin_inches"
+    return 2

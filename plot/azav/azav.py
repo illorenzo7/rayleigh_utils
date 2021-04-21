@@ -76,6 +76,9 @@ if clas['saveplot']:
         plotdir = dirname + '/plots/azav/'
     make_plotdir(plotdir)
 
+# see if the user wants a separate plot of lat. averaged quantities
+latav = read_cla_arbitrary(args, 'latav', False)
+
 terms = []
 for qval in qvals:
     if dataname == 'AZ_Avgs':
@@ -111,7 +114,8 @@ fig = plot_azav_grid (terms, di_grid['rr'], di_grid['cost'], units=units, mainti
     plotboundary=clas['plotboundary'],\
     ncol=clas['ncol'],\
     fig_width_inches=clas['fig_width_inches'],\
-    subplot_width_inches=clas['subplot_width_inches'])
+    subplot_width_inches=clas['subplot_width_inches'], 
+    latav=latav)
 
 # save the figure if tag or groupname was specified
 if not (clas['tag'] == clas['groupname'] == ''):
