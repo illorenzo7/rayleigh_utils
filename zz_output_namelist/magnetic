@@ -7,7 +7,7 @@
 shellslice_levels_nrm = 0.05, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 0.95
 ! 9 levels: start/end 5% from shell top and b-ottom, otherwise equally spaced by 12.5%
 ! 9 levels in each zone if two zones
-shellslice_values    = 1,2,3, 301,302,303, 501,502, 801,802,803, 1001,1002,1003
+shellslice_values    = 1,2,3, 301,302,303, 501,502, 801,802,803, 1001,1004,1007
 ! "FLUID VARIABLES" (8 vars, 14 with magnetism)
 ! velocities/vorticities, [r --> phi], pressure, t-var, B-fields/Del X B [r --> phi]
 shellslice_frequency = 10000
@@ -15,17 +15,17 @@ shellslice_frequency = 10000
 shellslice_nrec      = 1
 
 shellspectra_levels_nrm  = 0.05, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 0.95
-shellspectra_values    = 1,2,3, 301,302,303, 501,502, 801,802,803, 1001,1002,1003
+shellspectra_values    = 1,2,3, 301,302,303, 501,502, 801,802,803, 1001,1004,1007
 shellspectra_frequency = 10000
 shellspectra_nrec      = 1
 
-meridional_values    = 1,2,3, 301,302,303, 501,502, 801,802,803, 1001,1002,1003
+meridional_values    = 1,2,3, 301,302,303, 501,502, 801,802,803, 1001,1004,1007
 meridional_frequency = 2500
 meridional_nrec      = 1
 meridional_indices_nrm = 0.0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875
 ! 8 equally spaced longitudes
 
-equatorial_values    = 1,2,3, 301,302,303, 501,502, 801,802,803, 1001,1002,1003
+equatorial_values    = 1,2,3, 301,302,303, 501,502, 801,802,803, 1001,1004,1007
 equatorial_frequency = 2500
 equatorial_nrec      = 1
 
@@ -34,7 +34,7 @@ equatorial_nrec      = 1
 
 azavg_values = 
     ! FLUID VARIABLES
-    1,2,3, 301,302,303, 501,502, 801,802,803, 1001,1002,1003,
+    1,2,3, 301,302,303, 501,502, 801,802,803, 1001,1004,1007,
     ! RADIAL/THETA DERIVS of S, P
     507,508, 513,514,
     ! ENSTROPHY    
@@ -94,7 +94,7 @@ azavg_nrec = 1
 
 shellavg_values =
     ! FLUID VARIABLES
-    1,2,3, 301,302,303, 501,502, 801,802,803, 1001,1002,1003,
+    1,2,3, 301,302,303, 501,502, 801,802,803, 1001,1004,1007,
     ! RADIAL/THETA DERIVS of S, P
     507,508, 513,514,
     ! ENSTROPHY    
@@ -154,7 +154,7 @@ shellavg_nrec = 1
 
 globalavg_values = 
     ! FLUID VARIABLES
-    1,2,3, 301,302,303, 501,502, 801,802,803, 1001,1002,1003,
+    1,2,3, 301,302,303, 501,502, 801,802,803, 1001,1004,1007,
     ! RADIAL/THETA DERIVS of S, P
     507,508, 513,514,
     ! ENSTROPHY    

@@ -9,16 +9,16 @@
 !
 ! Shell slices/spectra and equatorial/meridional/3D cuts: velocities, vorticities, t-var, pressure, maybe B field
 shellslice_levels_nrm = 0.05, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 0.95
-shellslice_values    = 1,2,3, 301,302,303, 501,502, 801,802,803, 1001,1002,1003
+shellslice_values    = 1,2,3, 301,302,303, 501,502, 801,802,803, 1001,1004,1007
 shellslice_frequency = 1
 shellslice_nrec      = 1
 
-meridional_values    = 1,2,3, 301,302,303, 501,502, 801,802,803, 1001,1002,1003
+meridional_values    = 1,2,3, 301,302,303, 501,502, 801,802,803, 1001,1004,1007
 meridional_frequency = 1
 meridional_nrec      = 1
 meridional_indices_nrm = 0.0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875
 
-equatorial_values    =  1,2,3, 301,302,303, 501,502, 801,802,803, 1001,1002,1003
+equatorial_values    =  1,2,3, 301,302,303, 501,502, 801,802,803, 1001,1004,1007
 equatorial_frequency = 1
 equatorial_nrec      = 1
 /
