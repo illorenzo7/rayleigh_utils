@@ -3,7 +3,8 @@
 # Created: 04/17/2021
 
 import numpy as np
-from common import get_parameter, get_domain_bounds, array_of_strings, is_an_int
+#from common import get_parameter, get_domain_bounds, array_of_strings, is_an_int, rsun
+from common import *
 from varprops import get_quantity_group
 
 # set default CLAs
