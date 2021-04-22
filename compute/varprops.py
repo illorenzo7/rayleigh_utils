@@ -286,36 +286,41 @@ def get_quantity_group(tag, magnetism):
         ext = tag[-3:]
         basetitles = ['induct', 'shear', 'advec', 'comp', 'diff']
 
+        custom_offset = 2200
+        set_offset = 15
+        set_offset2 = 12
+        set_offset3 = 9
+
         if ext == 'tot':
             ncol = 5
-            iqstart = 0
+            iqstart = custom_offset + 1
 
         if ext == 'pmp':
             ncol = 4
-            iqstart = 15
+            iqstart = custom_offset + 1 + set_offset
 
         if ext == 'ppm':
             ncol = 4
-            iqstart = 23
+            iqstart = custom_offset + 1 + set_offset + set_offset2
 
         if ext == 'mmm':
             ncol = 5
-            iqstart = 38
+            iqstart = custom_offset + 1 + set_offset + 2*set_offset2
 
         if ext == 'mpp':
             ncol = 3
-            iqstart = 53
+            iqstart = custom_offset + 1 + 2*set_offset + 2*set_offset2
 
         if ext == 'ppp':
             ncol = 5
-            iqstart = 62
+            iqstart = custom_offset + 1 + 2*set_offset + 2*set_offset2 + set_offset3
 
         # do r, theta, then phi, production terms, in that order
         qvals = []
         titles = []
         count = 0
         for direc in ['r', 'th', 'ph']:
-            qvals_loc = 2200 + iqstart + np.arange(1, 16, 3) + count
+            qvals_loc = iqstart + np.arange(0, ncol*3, 3) + count
             qvals += qvals_loc.tolist()
             titles_loc = []
             for j in range(len(basetitles)):
@@ -323,7 +328,7 @@ def get_quantity_group(tag, magnetism):
                         direc + ')')
             titles += titles_loc
             count += 1
-        units = [utype['induct']]
+        units = [utype['eprod']]
         ncol = 5
 
     if tag in ['indralt', 'indraltnum']:
