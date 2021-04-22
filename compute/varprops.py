@@ -166,6 +166,29 @@ def get_quantity_group(tag, magnetism):
         units = [utype['eprod']]
         ncol = 4
 
+    if 'meprodshear' in tag:
+        nq = 15 # (r, t, p) x (br (d/dr), bt (d/dt), bp (d/dp), curv1, curv2
+        ext = tag[-3:]
+        if ext == 'tot':
+            iqstart = 0
+        if ext == 'pmp':
+            iqstart = nq
+        if ext == 'ppm':
+            iqstart = 2*nq
+        if ext == 'mmm':
+            iqstart = 3*nq
+        if ext == 'mpp':
+            iqstart = 4*nq
+        if ext == 'ppp':
+            iqstart = 5*nq
+        qvals = np.arange(iqstart, iqstart + nq)
+        titles = []
+        for direc in ['r', 'th', 'ph']:
+            app = ' (' + direc + ')'
+            titles += ['br (d/dr)' + app, 'bt (d/dT)' + app, 'bp (d/dP)' + app, 'curv1' + app, 'curv2' + app]
+        units = [utype['eprod']]
+        ncol = 5
+
     if tag == 'eft': # energy fluxes, theta
         qvals = [1456, 1459, 1471, 1936, 1924]
         titles = [r'$(\mathbf{\mathcal{F}}_{\rm{enth}})_\theta$',\

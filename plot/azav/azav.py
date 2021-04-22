@@ -35,6 +35,7 @@ datadir = dirname + '/data/'
 dataname_list = dict({})
 for ext in ['tot', 'pmp', 'ppm', 'mmm', 'mpp', 'ppp']:
     dataname_list['meprodnum' + ext] = 'me_prod'
+    dataname_list['meprodshear' + ext] = 'me_prod_shear'
 for direc in ['r', 't', 'p']:
     dataname_list['ind' + direc + 'alt'] = 'induct_alt'
     dataname_list['ind' + direc + 'altnum'] = 'induct_alt_num'
