@@ -81,6 +81,9 @@ def get_quantity_group(tag, magnetism):
             titles += [r'$\tau_{\rm{mm}}$', r'$\tau_{\rm{ms}}$']
             units += [utype['torque']]*2
         ncol = 3 + magnetism
+        totsig = np.ones(len(titles))
+        totsig[0] = 0; totsig[1] = totsig[2] = -1
+        di_out['totsig'] = totsig
 
     if tag == 'induct':
         qvals = [801, 802, 803]            
@@ -110,6 +113,9 @@ def get_quantity_group(tag, magnetism):
             qvals += [1248]
             titles += [r'$(\mathbf{f}_{\rm{mag}})_r$']
         ncol = 3
+        totsig = np.ones(len(titles))
+        totsig[0] = -1
+        di_out['totsig'] = totsig
 
     if tag == 'forcet': # linear forces, theta
         qvals = [1202, 1220, 1238, 1229]
@@ -119,6 +125,9 @@ def get_quantity_group(tag, magnetism):
             qvals += [1249]
             titles += [r'$(\mathbf{f}_{\rm{mag}})_\theta$']
         ncol = 3
+        totsig = np.ones(len(titles))
+        totsig[0] = -1
+        di_out['totsig'] = totsig
 
     if tag == 'forcep': # linear forces, phi
         qvals = [1203, 1221, 1239, 1230]
@@ -128,6 +137,9 @@ def get_quantity_group(tag, magnetism):
             qvals += [1250]
             titles += [r'$(\mathbf{f}_{\rm{mag}})_\phi$']
         ncol = 3
+        totsig = np.ones(len(titles))
+        totsig[0] = -1
+        di_out['totsig'] = totsig
 
     if tag == 'efr': # energy fluxes, r
         qvals = [1455, 1458, 1470, 1935, 1923]
@@ -141,53 +153,9 @@ def get_quantity_group(tag, magnetism):
             qvals += [2001]
             titles += [r'$(\mathbf{\mathcal{F}}_{\rm{Poynt}})_r$']
         ncol = 3
-
-    if 'meprodnum' in tag:
-        nq = 12 # (r, t, p) x (ind, shear, adv, comp)
-        ext = tag[-3:]
-        if ext == 'tot':
-            iqstart = 0
-        if ext == 'pmp':
-            iqstart = nq
-        if ext == 'ppm':
-            iqstart = 2*nq
-        if ext == 'mmm':
-            iqstart = 3*nq
-        if ext == 'mpp':
-            iqstart = 4*nq
-        if ext == 'ppp':
-            iqstart = 5*nq
-        qvals = np.arange(iqstart, iqstart + nq)
-        titles = []
-        for direc in ['r', 'th', 'ph']:
-            app = ' (' + direc + ')'
-            titles += ['induct' + app, 'shear' + app, 'advec' + app,\
-                    'comp' + app]
-        units = [utype['eprod']]
-        ncol = 4
-
-    if 'meprodshear' in tag:
-        nq = 15 # (r, t, p) x (br (d/dr), bt (d/dt), bp (d/dp), curv1, curv2
-        ext = tag[-3:]
-        if ext == 'tot':
-            iqstart = 0
-        if ext == 'pmp':
-            iqstart = nq
-        if ext == 'ppm':
-            iqstart = 2*nq
-        if ext == 'mmm':
-            iqstart = 3*nq
-        if ext == 'mpp':
-            iqstart = 4*nq
-        if ext == 'ppp':
-            iqstart = 5*nq
-        qvals = np.arange(iqstart, iqstart + nq)
-        titles = []
-        for direc in ['r', 'th', 'ph']:
-            app = ' (' + direc + ')'
-            titles += ['br (d/dr)' + app, 'bt (d/dT)' + app, 'bp (d/dP)' + app, 'curv1' + app, 'curv2' + app]
-        units = [utype['eprod']]
-        ncol = 5
+        totsig = np.ones(len(titles))
+        totsig[3] = -1
+        di_out['totsig'] = totsig
 
     if tag == 'eft': # energy fluxes, theta
         qvals = [1456, 1459, 1471, 1936, 1924]
@@ -201,6 +169,7 @@ def get_quantity_group(tag, magnetism):
             qvals += [2002]
             titles += [r'$(\mathbf{\mathcal{F}}_{\rm{Poynt}})_\theta$']
         ncol = 3
+        di_out['totsig'] = 'sumrow'
 
     if tag == 'efp': # energy fluxes, phi
         qvals = [1457, 1460, 1937, 1925]
@@ -304,6 +273,56 @@ def get_quantity_group(tag, magnetism):
             r'$\rm{ME}^\prime_\phi$']
         units = [utype['energy']]
         ncol = 3
+
+    if 'meprodnum' in tag:
+        nq = 12 # (r, t, p) x (ind, shear, adv, comp)
+        ext = tag[-3:]
+        if ext == 'tot':
+            iqstart = 0
+        if ext == 'pmp':
+            iqstart = nq
+        if ext == 'ppm':
+            iqstart = 2*nq
+        if ext == 'mmm':
+            iqstart = 3*nq
+        if ext == 'mpp':
+            iqstart = 4*nq
+        if ext == 'ppp':
+            iqstart = 5*nq
+        qvals = np.arange(iqstart, iqstart + nq)
+        titles = []
+        for direc in ['r', 'th', 'ph']:
+            app = ' (' + direc + ')'
+            titles += ['induct' + app, 'shear' + app, 'advec' + app,\
+                    'comp' + app]
+        units = [utype['eprod']]
+        ncol = 4
+
+
+    if 'meprodshear' in tag:
+        nq = 15 # (r, t, p) x (br (d/dr), bt (d/dt), bp (d/dp), curv1, curv2
+        ext = tag[-3:]
+        if ext == 'tot':
+            iqstart = 0
+        if ext == 'pmp':
+            iqstart = nq
+        if ext == 'ppm':
+            iqstart = 2*nq
+        if ext == 'mmm':
+            iqstart = 3*nq
+        if ext == 'mpp':
+            iqstart = 4*nq
+        if ext == 'ppp':
+            iqstart = 5*nq
+        qvals = np.arange(iqstart, iqstart + nq)
+        titles = []
+        for direc in ['r', 'th', 'ph']:
+            app = ' (' + direc + ')'
+            titles += ['br (d/dr)' + app, 'bt (d/dT)' + app, 'bp (d/dP)' + app, 'curv1' + app, 'curv2' + app]
+        units = [utype['eprod']]
+        ncol = 5
+        di_out['totsig'] = 'sumrow'
+
 
     if tag[:-3] == 'meprod': # this is the exact stuff
         ext = tag[-3:]

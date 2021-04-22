@@ -44,6 +44,7 @@ clas_default['latvals'] = None
 clas_default['fig_width_inches'] = None
 clas_default['sub_width_inches'] = None
 clas_default['ncol'] = None
+clas_default['totsig'] = None
 
 default_latvals = np.array([-85., -75., -60., -45., -30., -15., 0., 15., 30., 45., 60., 75., 85.])
 

@@ -116,8 +116,9 @@ figs = plot_azav_grid (terms, di_grid['rr'], di_grid['cost'], units=units, maint
     plotboundary=clas['plotboundary'],\
     ncol=clas['ncol'],\
     fig_width_inches=clas['fig_width_inches'],\
-    sub_width_inches=clas['sub_width_inches'], 
-    latav=latav, tw=di_grid['tw'])
+    sub_width_inches=clas['sub_width_inches'],\
+    latav=latav, tw=di_grid['tw'],\
+    totsig=clas['totsig'])
 if latav:
     fig, av_fig = figs
 else:
