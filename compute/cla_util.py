@@ -228,6 +228,10 @@ def read_clas(dirname, args):
             latmin, latmax, nlatvals = read_cla_vals(args, i)
             nlatvals = int(nlatvals)
             clas['latvals'] = np.linspace(latmin, latmax, nlatvals)
+        if arg == '--noshow':
+            clas['showplot'] = False
+        if arg == '--nosave':
+            clas['saveplot'] = False
 
     # deal with qvals if it is still None
     if clas['qvals'] is None:

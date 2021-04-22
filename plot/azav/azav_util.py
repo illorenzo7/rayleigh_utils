@@ -904,10 +904,14 @@ def plot_azav_grid(terms, rr, cost, maintitle=None, titles=None, fig_width_inche
 
     # possibly latitudinal average figure as well
     if latav:
-        av_fig, av_axs, av_fpar = make_figure(nplots, ncol=ncol, sub_margin_top_inches=default_margin_label, sub_margin_left_inches=default_margin_ylabel, sub_margin_bottom_inches=default_margin_xlabel)
+        if rbcz is None:
+            sub_margin_right_inches = None
+        else:
+            sub_margin_right_inches = default_margin_xlabel
+        av_fig, av_axs, av_fpar = make_figure(nplots, ncol=ncol, sub_margin_top_inches=default_margin_label, sub_margin_left_inches=default_margin_ylabel, sub_margin_right_inches=sub_margin_right_inches, sub_margin_bottom_inches=default_margin_xlabel)
         xlabel = r'$r/R_\odot$'
+        nt = len(cost)
         if tw is None: # just average everything unweighted
-            nt = len(cost)
             tw = 1.0/nt + np.zeros(nt)
         tw_2d = tw.reshape((nt, 1))
 
@@ -928,7 +932,7 @@ def plot_azav_grid(terms, rr, cost, maintitle=None, titles=None, fig_width_inche
         if latav:
             av_term = np.sum(terms[iplot]*tw_2d, axis=0)
             av_ax = av_axs[irow, icol]
-            lineplot(rr/rsun, av_term, ax=av_ax, xlabel=xlabel, ylabel=units[iplot], title=titles[iplot])
+            lineplot(rr/rsun, av_term, ax=av_ax, xlabel=xlabel, ylabel=units[iplot], title=titles[iplot], xcut=rbcz, yminmax=minmax, yminmax2=minmaxrz)
 
     # Put the main title in upper left
     fig.text(fpar['margin_left'] + fpar['sub_margin_left'], 1.0 - fpar['margin_top'], maintitle, ha='left', va='bottom', fontsize=fontsize, **csfont)

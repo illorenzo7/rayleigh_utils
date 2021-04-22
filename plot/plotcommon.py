@@ -358,71 +358,150 @@ def make_figure(nplots=None, sub_width_inches=None, sub_aspect=None, sub_height_
 
     return fig, axs, fpar
 
-def lineplot(xx, yy, ax=None, axtwin=None, xlabel=None, ylabel=None, title=None, xvals=None, yvals=None, label=None, xlog=False, ylog=False, xminmax=None, yminmax=None, scatter=False, xcut=None, color=color_order[0], linestyle=style_order[0], marker=marker_order[0], lw=default_lw, s=default_s, showplot=False):
+def lineplot(xx, yy, ax=None, axtwin=None, xlabel=None, ylabel=None, title=None, xvals=None, yvals=None, label=None, xlog=False, ylog=False, xminmax=None, yminmax=None, yminmax2=None, scatter=False, xcut=None, color=color_order[0], linestyle=style_order[0], marker=marker_order[0], lw=default_lw, s=default_s, showplot=False):
 
     if ax is None: # probably called from command line
         fig, axs, fpar = make_figure()
         ax = axs[0,0]
         showplot = True
-  
-    if scatter:
-        ax.scatter(xx, yy, label=label, marker=marker, s=s, color=color)
+
+    axs = [ax]
+
+    if not xcut is None:
+        ax2 = ax.twinx()
+        axs.append(ax2)
+        ixcut = np.argmin(np.abs(xx - xcut))
+        if xx[0] < xx[-1]: # x axis goes in "correct" direction
+            ax_left = ax
+            ax_right = ax2
+        else: # x axis is reversed, so the second one is on the left
+            ax_left = ax2
+            ax_right = ax
     else:
-        ax.plot(xx, yy, label=label, linestyle=linestyle, linewidth=lw, color=color)
+        ax_left = ax
+   
+    if xcut is None:
+        if scatter:
+            ax.scatter(xx, yy, label=label, marker=marker, s=s, color=color)
+        else:
+            ax.plot(xx, yy, label=label, linestyle=linestyle, linewidth=lw, color=color)
+    else:
+        if scatter:
+            ax.scatter(xx[:ixcut], yy[:ixcut], marker=marker, s=s, color=color)
+            ax2.scatter(xx[ixcut:], yy[ixcut:], marker=marker, s=s, color=color)
+        else:
+            ax.plot(xx[:ixcut], yy[:ixcut], linestyle=linestyle, linewidth=lw, color=color)
+            ax2.plot(xx[ixcut:], yy[ixcut:], linestyle=linestyle, linewidth=lw, color=color)
+
+    # ticks (mostly everywhere, deal with split axes)
+    if xcut is None:
+        plt.sca(ax)
+        plt.minorticks_on()
+        plt.tick_params(top=True, right=True, direction='in',\
+                which='both')
+        if not ylabel is None:
+            plt.ylabel(ylabel, **csfont, fontsize=default_labelsize)
+    else:
+        plt.sca(ax_right)
+        plt.minorticks_on()
+        plt.tick_params(top=True, left=False, right=True, direction='in', which='both')
+        ax_right.yaxis.tick_right()
+        plt.sca(ax_left)
+        plt.minorticks_on()
+        plt.tick_params(top=True, left=True, right=False, direction='in',\
+                which='both')
+        if not ylabel is None:
+            ax_left.set_ylabel(ylabel, **csfont, fontsize=default_labelsize)
+            ax_left.yaxis.set_label_position('left')
+        ax_left.yaxis.tick_left()
 
     if xlog:
         ax.set_xscale('log')
     if ylog:
-        ax.set_yscale('log')
+        for ax in axs:
+            ax.set_yscale('log')
 
     if xminmax is None:
         xminmax = ax.get_xlim()
     else:
         ax.set_xlim(xminmax)
 
-    if yminmax is None:
-        yminmax = ax.get_ylim()
+    if xcut is None:
+        if yminmax is None:
+            yminmax = ax.get_ylim()
     else:
-        ax.set_ylim(yminmax)
+        if yminmax is None:
+            yminmax = ax.get_ylim()
+            maxabs = max(np.abs(yminmax[0]), np.abs(yminmax[1]))
+            yminmax = -maxabs, maxabs
+        if yminmax2 is None:
+            yminmax2 = ax2.get_ylim()
+            maxabs = max(np.abs(yminmax2[0]), np.abs(yminmax2[1]))
+            yminmax2 = -maxabs, maxabs
+    
+    ax.set_ylim(yminmax)
+    print ("xcut = ", xcut)
+    if not xcut is None:
+        print("yminmax2 = ", yminmax2)
+        ax2.set_ylim(yminmax2)
 
-    xpoints = np.linspace(xminmax[0], xminmax[1])
-    ypoints = np.linspace(yminmax[0], yminmax[1])
-    npoints = len(xpoints)
+
+    # possibly append to xvals and yvals (0 point and xcut)
+    xvals_to_add = []
+    if xminmax[0] < 0.0 < xminmax[1]:
+        xvals_to_add.append(0.0)
+    if not xcut is None:
+        xvals_to_add.append(xx[ixcut])
+    xvals_to_add = np.array(xvals_to_add)
+    if xvals is None:
+        xvals = xvals_to_add
+    else:
+        xvals = np.array(xvals)
+        xvals = np.hstack((xvals, xvals_to_add))
+    if yvals is None:
+        yvals = np.array([0.0])
+    else:
+        yvals = np.hstack((yvals, np.array([0.0])))
+ 
+    npoints = 100
+    xpoints = np.linspace(xminmax[0], xminmax[1], npoints)
 
     # possibly mark x/y - values
     if not xvals is None:
         for xval in xvals:
-            ax.plot(xval + np.zeros(npoints), ypoints, 'k--', linewidth=lw)
+            if xcut is None:
+                ax_loc = ax
+            else:
+                if xval <= xcut:
+                    ax_loc = ax_left
+                else:
+                    ax_loc = ax_right
+            y1, y2 = ax_loc.get_ylim()
+            ypoints = np.linspace(y1, y2, npoints)
+            ax_loc.plot(xval + np.zeros(npoints), ypoints, 'k--', linewidth=lw)
     if not yvals is None:
         for yval in yvals:
-            ax.plot(xpoints, yval + np.zeros(npoints), 'k--', linewidth=lw)
-
-    # if 0 is in the axis range, plot the zero line(s)
-    if xminmax[0] < 0.0 < xminmax[1]:
-        ax.plot(np.zeros(npoints), ypoints, 'k-', linewidth=lw)
-    if yminmax[0] < 0.0 < yminmax[1]:
-        ax.plot(xpoints, np.zeros(npoints), 'k-', linewidth=lw)
+            for ax_loc in axs:
+                # only plot if the line is within the range
+                y1, y2 = ax_loc.get_ylim()
+                if y1 < yval < y2:
+                    ax_loc.plot(xpoints, yval + np.zeros(npoints), 'k--', linewidth=lw)
 
     if not xlabel is None:
         ax.set_xlabel(xlabel, **csfont, fontsize=default_labelsize)
 
-    if not ylabel is None:
-        ax.set_ylabel(ylabel, **csfont, fontsize=default_labelsize)
 
     if not title is None:
         ax.set_title(title, **csfont, fontsize=default_titlesize)
 
     # set the tick label size
-    plt.xticks(fontsize=default_ticksize)
-    plt.yticks(fontsize=default_ticksize)
+    for ax_loc in axs:
+        plt.sca(ax_loc)
+        plt.xticks(fontsize=default_ticksize)
+        plt.yticks(fontsize=default_ticksize)
 
-    # Get the y-axis in scientific notation
-    plt.sca(ax)
-    plt.ticklabel_format(useMathText=True, axis='y', scilimits=(0,0))
-
-    # Get ticks everywhere
-    plt.minorticks_on()
-    plt.tick_params(top=True, right=True, direction='in', which='both')
+        # Get the y-axis in scientific notation
+        plt.ticklabel_format(useMathText=True, axis='y', scilimits=(0,0))
 
     if showplot:
         plt.show()
