@@ -19,7 +19,7 @@ from plotcommon import *
 def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
     units='', minmax=None, posdef=False, logscale=False, symlog=False,\
     plotcontours=True, plotfield=True, nlevs=10, levels=None,\
-	plotlatlines=False, rvals=None, cbar_fs=10, fontsize=12.0, cbar_aspect=1./20.,\
+	plotlatlines=False, rvals=None, cbar_fs=default_labelsize, fontsize=default_labelsize, cbar_aspect=1./20.,\
     showplot=False, plot_cbar=True, lw_scaling=1., cbar_scaling=1.,\
     linthresh=None, linscale=None, plotboundary=True, rbcz=None,\
     minmaxrz=None, linthreshrz=None, linscalerz=None, nosci=False,\
@@ -883,13 +883,10 @@ def streamfunction(vr,vt,r,cost,order=0):
             
     return psi
 
-def plot_azav_grid(terms, rr, cost, maintitle=None, titles=None, fig_width_inches=None, sub_width_inches=None, ncol=6, cmap='RdYlBu_r', units='', minmax=None, posdef=False, logscale=False, symlog=False, plotcontours=True, plotfield=True, nlevs=10, levels=None, plotlatlines=False, rvals=[], cbar_fs=10.0, fontsize=12.0, cbar_aspect=1.0/20.0, showplot=False, plot_cbar=True, lw_scaling=1.0, cbar_scaling=1.0, linthresh=None, linscale=None, plotboundary=True, rbcz=None, minmaxrz=None, linthreshrz=None, linscalerz=None, nosci=False, cbar_prec=1, latav=False):
+def plot_azav_grid(terms, rr, cost, maintitle=None, titles=None, fig_width_inches=None, sub_width_inches=None, ncol=6, cmap='RdYlBu_r', units='', minmax=None, posdef=False, logscale=False, symlog=False, plotcontours=True, plotfield=True, nlevs=10, levels=None, plotlatlines=False, rvals=[], cbar_fs=default_labelsize, fontsize=default_labelsize, cbar_aspect=1.0/20.0, showplot=False, plot_cbar=True, lw_scaling=1.0, cbar_scaling=1.0, linthresh=None, linscale=None, plotboundary=True, rbcz=None, minmaxrz=None, linthreshrz=None, linscalerz=None, nosci=False, cbar_prec=1, latav=False, tw=None):
 
     # set up figure + axes
-    margin_top_inches = 0.75 # wider top margin to accommodate metadata
     sub_margin_bottom_inches = 0.75*(2.0 - (rbcz is None)) 
-    sub_margin_top_inches = 0.25 # margin to accommodate just subplot titles
-        # larger bottom margin to make room for colorbar(s)
     nplots = len(terms)
     if ncol > nplots:
         ncol = nplots
@@ -899,11 +896,20 @@ def plot_azav_grid(terms, rr, cost, maintitle=None, titles=None, fig_width_inche
         units = np.array([units]*nplots)
 
     if fig_width_inches is None and sub_width_inches is None:
-        sub_width_inches = 1.5
+        sub_width_inches = 2.0
     sub_aspect = 2.0
 
     # Generate the figure of the correct dimensions
-    fig, axs, fpar = make_figure(nplots, sub_width_inches, sub_aspect, ncol=ncol, margin_top_inches=margin_top_inches, sub_margin_bottom_inches=sub_margin_bottom_inches, sub_margin_top_inches=sub_margin_top_inches)
+    fig, axs, fpar = make_figure(nplots, sub_width_inches, sub_aspect, ncol=ncol, sub_margin_bottom_inches=sub_margin_bottom_inches)
+
+    # possibly latitudinal average figure as well
+    if latav:
+        av_fig, av_axs, av_fpar = make_figure(nplots, ncol=ncol, sub_margin_top_inches=default_margin_label, sub_margin_left_inches=default_margin_ylabel, sub_margin_bottom_inches=default_margin_xlabel)
+        xlabel = r'$r/R_\odot$'
+        if tw is None: # just average everything unweighted
+            nt = len(cost)
+            tw = 1.0/nt + np.zeros(nt)
+        tw_2d = tw.reshape((nt, 1))
 
     # plot all the terms
     for iplot in range(nplots):
@@ -918,7 +924,19 @@ def plot_azav_grid(terms, rr, cost, maintitle=None, titles=None, fig_width_inche
             title_loc = '(' + letters[iplot] + ')'
         ax.set_title(title_loc, loc='left', va='bottom', **csfont, fontsize=fontsize)
 
-    # Put the main title in upper left
-    fig.text(fpar['margin_left'], 1.0 - fpar['margin_top'], maintitle, ha='left', va='bottom', fontsize=fontsize, **csfont)
+        # possibly plot the lat. average
+        if latav:
+            av_term = np.sum(terms[iplot]*tw_2d, axis=0)
+            av_ax = av_axs[irow, icol]
+            lineplot(rr/rsun, av_term, ax=av_ax, xlabel=xlabel, ylabel=units[iplot], title=titles[iplot])
 
-    return fig
+    # Put the main title in upper left
+    fig.text(fpar['margin_left'] + fpar['sub_margin_left'], 1.0 - fpar['margin_top'], maintitle, ha='left', va='bottom', fontsize=fontsize, **csfont)
+
+    if latav:
+        av_fig.text(av_fpar['margin_left'] + av_fpar['sub_margin_left'], 1.0 - av_fpar['margin_top'], maintitle + ' (lat. avg.)', ha='left', va='bottom', fontsize=fontsize, **csfont)
+
+    if latav:
+        return fig, av_fig
+    else:
+        return fig

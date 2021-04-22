@@ -52,8 +52,6 @@ bold_char_end = "\033[0m"
 
 letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l',\
     'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
-color_order = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
-style_order = ['-', '--', '-.', ':']
 
 def make_bold(st):
     return bold_char_begin + st + bold_char_end
@@ -1353,7 +1351,6 @@ def get_time_info(dirname, iter1, iter2):
 def make_plotdir(plotdir):
     if not os.path.isdir(plotdir):
         os.makedirs(plotdir)
-
 
 def arr_to_str(a, fmt):
     st = ''

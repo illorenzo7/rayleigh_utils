@@ -2,7 +2,26 @@
 # Created: 02/08/2019
 import numpy as np
 import matplotlib.pyplot as plt
+plt.rcParams['mathtext.fontset'] = 'dejavuserif'
+csfont = {'fontname':'DejaVu Serif'}
 #from matplotlib import ticker
+#sys.path.append(os.environ['raco'])
+
+color_order = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
+style_order = ['-', '--', '-.', ':']
+marker_order = [".", "o", "v","s", "*", "x", "^", "<", ">"]
+default_lw = 1.0
+default_s = 0.2 # markersize
+default_labelsize = 12.0
+default_titlesize = 12.0
+default_ticksize = 12.0
+default_margin = 1.0/16.0
+default_margin_label = 3.0/8.0
+default_margin_xlabel = 3.0/8.0 
+default_margin_ylabel = 3.0/4.0
+# ylabels take up more space because floating
+# point numbers are longer than they are tall
+default_margin_title = 3.0/4.0
 
 def axis_range(ax): # gets subplot coordinates on a figure in "normalized"
         # coordinates
@@ -58,9 +77,9 @@ def make_cbar(fig, ax, im, aspect=1./20., length=0.75, orientation='horizontal',
     aspect = height_inches/width_inches
 
     # make colorbar axes and colorbar itself
-    margin_inches = 1./8.
-    margin_x = margin_inches/width_inches
-    margin_y = margin_inches/height_inches
+    default_margin = 1./8.
+    margin_x = default_margin/width_inches
+    margin_y = default_margin/height_inches
     if orientation == 'horizontal':
         cbar_width = length*ax_delta_x
         cbar_height = cbar_width*aspect/aspect
@@ -178,27 +197,27 @@ def make_cbar(fig, ax, im, aspect=1./20., length=0.75, orientation='horizontal',
                 line_height, cbar_label, ha='center', va='top',\
                 **csfont, fontsize=cbar_fs) 
 
-def make_figure(nplots=None, sub_width_inches=None, sub_aspect=None, sub_height_inches=None, margin_inches=0.125, nrow=None, ncol=None, margin_left_inches=None, margin_right_inches=None, margin_bottom_inches=None, margin_top_inches=None, sub_margin_left_inches=None, sub_margin_right_inches=None, sub_margin_bottom_inches=None, sub_margin_top_inches=None, width_inches=None, height_inches=None, aspect=None):
+def make_figure(nplots=None, sub_width_inches=None, sub_aspect=None, sub_height_inches=None, nrow=None, ncol=None, margin_left_inches=None, margin_right_inches=None, margin_bottom_inches=None, margin_top_inches=None, sub_margin_left_inches=None, sub_margin_right_inches=None, sub_margin_bottom_inches=None, sub_margin_top_inches=None, width_inches=None, height_inches=None, aspect=None):
 
     # first, if any margin is unspecified, then it equals the default
-    # "margin_inches"
+    # "default_margin"
     # subplot margins are above and beyond figure margins
     if margin_left_inches is None:
-        margin_left_inches = margin_inches
+        margin_left_inches = default_margin
     if margin_right_inches is None:
-        margin_right_inches = margin_inches
+        margin_right_inches = default_margin
     if margin_bottom_inches is None:
-        margin_bottom_inches = margin_inches
+        margin_bottom_inches = default_margin
     if margin_top_inches is None:
-        margin_top_inches = margin_inches
+        margin_top_inches = default_margin_title
     if sub_margin_left_inches is None:
-        sub_margin_left_inches = margin_inches
+        sub_margin_left_inches = default_margin
     if sub_margin_right_inches is None:
-        sub_margin_right_inches = margin_inches
+        sub_margin_right_inches = default_margin
     if sub_margin_bottom_inches is None:
-        sub_margin_bottom_inches = margin_inches
+        sub_margin_bottom_inches = default_margin
     if sub_margin_top_inches is None:
-        sub_margin_top_inches = margin_inches
+        sub_margin_top_inches = default_margin_label
 
     # figure out nplots, nrow, ncol
     # default values are nplots = nrow = ncol = 1
@@ -338,3 +357,73 @@ def make_figure(nplots=None, sub_width_inches=None, sub_aspect=None, sub_height_
         axs[irow,icol] = fig.add_axes((ax_left, ax_bottom, fpar['sub_width'], fpar['sub_height']))
 
     return fig, axs, fpar
+
+def lineplot(xx, yy, ax=None, axtwin=None, xlabel=None, ylabel=None, title=None, xvals=None, yvals=None, label=None, xlog=False, ylog=False, xminmax=None, yminmax=None, scatter=False, xcut=None, color=color_order[0], linestyle=style_order[0], marker=marker_order[0], lw=default_lw, s=default_s, showplot=False):
+
+    if ax is None: # probably called from command line
+        fig, axs, fpar = make_figure()
+        ax = axs[0,0]
+        showplot = True
+  
+    if scatter:
+        ax.scatter(xx, yy, label=label, marker=marker, s=s, color=color)
+    else:
+        ax.plot(xx, yy, label=label, linestyle=linestyle, linewidth=lw, color=color)
+
+    if xlog:
+        ax.set_xscale('log')
+    if ylog:
+        ax.set_yscale('log')
+
+    if xminmax is None:
+        xminmax = ax.get_xlim()
+    else:
+        ax.set_xlim(xminmax)
+
+    if yminmax is None:
+        yminmax = ax.get_ylim()
+    else:
+        ax.set_ylim(yminmax)
+
+    xpoints = np.linspace(xminmax[0], xminmax[1])
+    ypoints = np.linspace(yminmax[0], yminmax[1])
+    npoints = len(xpoints)
+
+    # possibly mark x/y - values
+    if not xvals is None:
+        for xval in xvals:
+            ax.plot(xval + np.zeros(npoints), ypoints, 'k--', linewidth=lw)
+    if not yvals is None:
+        for yval in yvals:
+            ax.plot(xpoints, yval + np.zeros(npoints), 'k--', linewidth=lw)
+
+    # if 0 is in the axis range, plot the zero line(s)
+    if xminmax[0] < 0.0 < xminmax[1]:
+        ax.plot(np.zeros(npoints), ypoints, 'k-', linewidth=lw)
+    if yminmax[0] < 0.0 < yminmax[1]:
+        ax.plot(xpoints, np.zeros(npoints), 'k-', linewidth=lw)
+
+    if not xlabel is None:
+        ax.set_xlabel(xlabel, **csfont, fontsize=default_labelsize)
+
+    if not ylabel is None:
+        ax.set_ylabel(ylabel, **csfont, fontsize=default_labelsize)
+
+    if not title is None:
+        ax.set_title(title, **csfont, fontsize=default_titlesize)
+
+    # set the tick label size
+    plt.xticks(fontsize=default_ticksize)
+    plt.yticks(fontsize=default_ticksize)
+
+    # Get the y-axis in scientific notation
+    plt.sca(ax)
+    plt.ticklabel_format(useMathText=True, axis='y', scilimits=(0,0))
+
+    # Get ticks everywhere
+    plt.minorticks_on()
+    plt.tick_params(top=True, right=True, direction='in', which='both')
+
+    if showplot:
+        plt.show()
+        return fig, ax

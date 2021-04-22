@@ -100,7 +100,7 @@ maintitle = dirname_stripped + '\n' +\
 
 # Generate the figure using standard routine
 di_grid = get_grid_info(dirname)
-fig = plot_azav_grid (terms, di_grid['rr'], di_grid['cost'], units=units, maintitle=maintitle, titles=titles,\
+figs = plot_azav_grid (terms, di_grid['rr'], di_grid['cost'], units=units, maintitle=maintitle, titles=titles,\
         minmax=clas['minmax'],\
         plotcontours=clas['plotcontours'],\
         rvals=clas['rvals'],\
@@ -117,12 +117,23 @@ fig = plot_azav_grid (terms, di_grid['rr'], di_grid['cost'], units=units, mainti
     fig_width_inches=clas['fig_width_inches'],\
     sub_width_inches=clas['sub_width_inches'], 
     latav=latav)
+if latav:
+    fig, av_fig = figs
+else:
+    fig = figs
 
 # save the figure if tag or groupname was specified
 if not (clas['tag'] == clas['groupname'] == ''):
     savefile = plotdir + clas['groupname'] + clas['tag'] + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
     print ('saving figure at ' + savefile)
-    plt.savefig(savefile, dpi=300)
+    fig.savefig(savefile, dpi=300)
+
+    if latav:
+        av_savefile = plotdir + clas['groupname'] + clas['tag'] + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '-latav' + '.png'
+        print ('saving lat. avg. figure at ' + av_savefile)
+        av_fig.savefig(av_savefile, dpi=300)
+
 if clas['showplot']:
     plt.show()
-plt.close()
+plt.close(fig)
+plt.close(av_fig)
