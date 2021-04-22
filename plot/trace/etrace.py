@@ -8,7 +8,9 @@ import numpy as np
 import sys, os
 sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
+sys.path.append(os.environ['rapl'])
 from common import *
+from plotcommon import *
 from cla_util import *
 from rayleigh_diagnostics import GridInfo
 
