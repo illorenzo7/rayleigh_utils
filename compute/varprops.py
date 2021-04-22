@@ -329,7 +329,6 @@ def get_quantity_group(tag, magnetism):
             titles += titles_loc
             count += 1
         units = [utype['eprod']]
-        ncol = 5
 
     if tag in ['indralt', 'indraltnum']:
         ind_off = 0
