@@ -440,9 +440,7 @@ def lineplot(xx, yy, ax=None, axtwin=None, xlabel=None, ylabel=None, title=None,
             yminmax2 = -maxabs, maxabs
     
     ax.set_ylim(yminmax)
-    print ("xcut = ", xcut)
     if not xcut is None:
-        print("yminmax2 = ", yminmax2)
         ax2.set_ylim(yminmax2)
 
 
