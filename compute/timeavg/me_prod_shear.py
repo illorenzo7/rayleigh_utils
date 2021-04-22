@@ -137,7 +137,7 @@ if rank == 0:
     t1 = time.time()
 
 # Now analyze the data
-nq = 72
+nq = 90
 my_vals = np.zeros((nt, nr, nq))
 
 my_nfiles = len(my_files)
@@ -323,7 +323,7 @@ for i in range(my_nfiles):
                     curv2 = -(1./rr_3d)*vv_loc[2]*bb_loc[2]
                 if l == 1:
                     curv1 = (1./rr_3d)*vv_loc[0]*bb_loc[1]
-                    curv2 = -(1./rr_3d)*cott_3d*vv_loc[2]*bb_loc[2])
+                    curv2 = -(1./rr_3d)*cott_3d*vv_loc[2]*bb_loc[2]
                 if l == 2:
                     curv1 = (1./rr_3d)*vv_loc[0]*bb_loc[2]
                     curv2 = (1./rr_3d)*cott_3d*vv_loc[1]*bb_loc[2]
@@ -379,8 +379,8 @@ if rank == 0:
     if not os.path.isdir(datadir):
         os.makedirs(datadir)
 
-    # Set the timetrace savename by the directory, what we are saving,
-    # and first and last iteration files for the trace
+    # Set the savename what we are saving,
+    # and first and last iteration files
     savename = 'me_prod_shear-' +\
             file_list[0] + '_' + file_list[-1] + '.pkl'
     savefile = datadir + savename
