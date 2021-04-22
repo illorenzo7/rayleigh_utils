@@ -888,9 +888,6 @@ def plot_azav_grid(terms, rr, cost, maintitle=None, titles=None, fig_width_inche
     # set up figure + axes
     sub_margin_bottom_inches = 0.75*(2.0 - (rbcz is None)) 
     nplots = len(terms)
-    if ncol > nplots:
-        ncol = nplots
-    # don't have unnecessary space if ncol > nplots
 
     if isinstance(units, str): # units is just one label for everybody
         units = np.array([units]*nplots)

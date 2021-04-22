@@ -136,4 +136,5 @@ if not (clas['tag'] == clas['groupname'] == ''):
 if clas['showplot']:
     plt.show()
 plt.close(fig)
-plt.close(av_fig)
+if latav:
+    plt.close(av_fig)
