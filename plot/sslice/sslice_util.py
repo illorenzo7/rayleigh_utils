@@ -8,10 +8,11 @@ import numpy as np
 import sys, os
 sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
+sys.path.append(os.environ['rapl'])
 from cartopy import crs
 #from varprops import texunits
 from common import *
-from plotcommon import default_axes_1by1, default_axes_2by1, axis_range
+from plotcommon import *
 
 def deal_with_nans(x, y):
     """ Nandles the NaN in x and y produced by an orthographic projection

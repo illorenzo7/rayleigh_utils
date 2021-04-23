@@ -51,10 +51,7 @@ di = get_dict(datadir + the_file)
 vals = di['vals']
 lut = di['lut']
 
-plotdir = clas['plotdir']
-if plotdir is None:
-    plotdir = dirname + '/plots/'
-make_plotdir(plotdir)
+plotdir = make_plotdir(dirname, clas['plotdir'], '/plots/azav/')
 
 torque_rs, torque_mc, torque_visc = -vals[:, :, lut[1801]],\
         -vals[:, :, lut[1802]] + vals[:, :, lut[1803]],\

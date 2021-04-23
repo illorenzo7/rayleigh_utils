@@ -1348,9 +1348,19 @@ def get_time_info(dirname, iter1, iter2):
                 %((t2 - t1)/time_unit)) + time_label + ')'
     return time_string
 
-def make_plotdir(plotdir):
+def make_plotdir(dirname, plotdir, default=None):
+    # the default is trumped if user specifies the plotdir
+    if plotdir is None:
+        if default is None:
+            plotdir = dirname + '/plots/'
+        else:
+            plotdir = dirname + default
+    else:
+        plotdir = dirname + plotdir
+
     if not os.path.isdir(plotdir):
         os.makedirs(plotdir)
+    return plotdir
 
 def arr_to_str(a, fmt):
     st = ''

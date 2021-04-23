@@ -13,6 +13,9 @@ from matplotlib import colors
 plt.rcParams['mathtext.fontset'] = 'dejavuserif'
 csfont = {'fontname':'DejaVu Serif'}
 plt.rcParams['contour.negative_linestyle'] = 'solid'
+import sys, os
+sys.path.append(os.environ['rapl'])
+sys.path.append(os.environ['raco'])
 from common import *
 from plotcommon import *
 

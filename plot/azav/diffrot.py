@@ -19,6 +19,7 @@ sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from azav_util import plot_azav
 from common import *
+from cla_util import *
 
 # Get directory name and stripped_dirname for plotting purposes
 dirname = sys.argv[1]
@@ -42,8 +43,7 @@ else:
 datadir = dirname + '/data/'
 
 args = sys.argv[2:]
-clas = read_clas(args)
-rvals = read_rvals(dirname, args)
+clas = read_clas(dirname, args)
 
 the_file = clas['the_file']
 if the_file is None:
@@ -52,7 +52,7 @@ if the_file is None:
 print ('Getting data from ' + datadir + the_file)
 di = get_dict(datadir + the_file)
 
-iter1, iter2 = di['iter1'], di['iter2']
+iter1, iter2 = get_iters_from_file(the_file)
 vals = di['vals']
 lut = di['lut']
 
@@ -115,7 +115,7 @@ subplot_height = subplot_height_inches/fig_height_inches
 fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
 ax = fig.add_axes((margin_x, margin_bottom, subplot_width, subplot_height))
 plot_azav (diffrot, rr, cost, fig=fig, ax=ax, units='nHz',\
-        nlevs=nlevs, minmax=minmax, rvals=rvals)
+        nlevs=nlevs, minmax=minmax, rvals=clas['rvals'])
 # Make title + label diff. rot. contrast and no. contours
 # Label averaging interval
 if rotation:

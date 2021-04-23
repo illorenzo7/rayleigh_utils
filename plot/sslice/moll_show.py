@@ -7,6 +7,7 @@ import numpy as np
 import sys, os
 sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
+sys.path.append(os.environ['rapl'])
 from common import *
 from plotcommon import axis_range
 from sslice_util import plot_moll
@@ -17,6 +18,8 @@ from varprops import texlabels
 
 # Get command line arguments
 dirname = sys.argv[1]
+args = sys.argv[2:]
+nargs = len(args)
 dirname_stripped = strip_dirname(dirname)
 
 # domain bounds
@@ -28,7 +31,7 @@ d = ro - ri
 # Data with Shell_Slices
 radatadir = dirname + '/Shell_Slices/'
 
-file_list, int_file_list, nfiles = get_file_lists(radatadir)
+file_list, int_file_list, nfiles = get_file_lists(radatadir, args)
 
 minmax = None
 symlog = False
@@ -46,8 +49,6 @@ the_file = None
 
 plotdir = None
 
-args = sys.argv[2:]
-nargs = len(args)
 for i in range(nargs):
     arg = args[i]
     if arg == '-plotdir':
