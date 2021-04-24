@@ -886,7 +886,24 @@ def streamfunction(vr,vt,r,cost,order=0):
             
     return psi
 
-def plot_azav_grid(terms, rr, cost, maintitle=None, titles=None, fig_width_inches=None, sub_width_inches=None, ncol=6, cmap='RdYlBu_r', units='', minmax=None, posdef=False, logscale=False, symlog=False, plotcontours=True, plotfield=True, nlevs=10, levels=None, plotlatlines=False, rvals=[], cbar_fs=default_labelsize, fontsize=default_labelsize, cbar_aspect=1.0/20.0, showplot=False, plot_cbar=True, lw_scaling=1.0, cbar_scaling=1.0, linthresh=None, linscale=None, plotboundary=True, rbcz=None, minmaxrz=None, linthreshrz=None, linscalerz=None, nosci=False, cbar_prec=1, latav=False, tw=None):
+def plot_azav_grid(terms, rr, cost, maintitle=None, titles=None, fig_width_inches=None, sub_width_inches=None, ncol=6, cmap='RdYlBu_r', units='', minmax=None, posdef=False, logscale=False, symlog=False, plotcontours=True, plotfield=True, nlevs=10, levels=None, plotlatlines=False, rvals=[], cbar_fs=default_labelsize, fontsize=default_labelsize, cbar_aspect=1.0/20.0, showplot=False, plot_cbar=True, lw_scaling=1.0, cbar_scaling=1.0, linthresh=None, linscale=None, plotboundary=True, rbcz=None, minmaxrz=None, linthreshrz=None, linscalerz=None, nosci=False, cbar_prec=1, latav=False, tw=None, totsig=None):
+
+    # possibly sum some terms, based on totsig
+    nrow = len(terms)//ncol # don't increase nrow
+    tot_arr = np.zeros_like(terms[0])
+    if not totsig is None:
+        if totsig == 'sumrow':
+            icol = 0
+            iterm = 0
+            for term in terms:
+                tot_arr += term
+                icol += 1
+                iterm += 1
+                if icol % ncol == 0: # just summed the last term in row
+                    terms.insert(iterm, tot_arr)
+                    tot_arr = np.zeros_like(terms[0])
+                    icol = 0
+                    iterm += 1
 
     # set up figure + axes
     sub_margin_bottom_inches = 0.75*(2.0 - (rbcz is None)) 

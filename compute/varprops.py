@@ -170,6 +170,9 @@ def get_quantity_group(tag, magnetism):
             titles += [r'$(\mathbf{\mathcal{F}}_{\rm{Poynt}})_\theta$']
         ncol = 3
         di_out['totsig'] = 'sumrow'
+        totsig = np.ones(len(titles))
+        totsig[3] = -1
+        di_out['totsig'] = totsig
 
     if tag == 'efp': # energy fluxes, phi
         qvals = [1457, 1460, 1937, 1925]
@@ -182,6 +185,9 @@ def get_quantity_group(tag, magnetism):
             qvals += [2003]
             titles += [r'$(\mathbf{\mathcal{F}}_{\rm{Poynt}})_\phi$']
         ncol = 3
+        totsig = np.ones(len(titles))
+        totsig[3] = -1
+        di_out['totsig'] = totsig
 
     if tag == 'indr': # induction, r
         qvals = [1601, 1602, 1603, 1604, 1605, 801]
@@ -193,6 +199,9 @@ def get_quantity_group(tag, magnetism):
             r'$\left\langle B_r\right\rangle$']
         units = [utype['induct']]*5 + [utype['b']]
         ncol = 3
+        totsig = np.zeros(len(titles))
+        totsig[3] = tosig[4] = 1
+        di_out['totsig'] = totsig
 
     if tag == 'indrmean': # energy fluxes, r, mean
         qvals = [1616, 1617, 1618, 1619, 1620, 801]
@@ -204,6 +213,9 @@ def get_quantity_group(tag, magnetism):
     r'$\left\langleB_r\right\rangle$']
         units = [utype['induct']]*5 + [utype['b']]
         ncol = 3
+        totsig = np.zeros(len(titles))
+        totsig[3] = tosig[4] = 1
+        di_out['totsig'] = totsig
 
     if tag == 'indt': # energy fluxes, theta
         qvals = [1606, 1607, 1608, 1609, 1610, 802]
@@ -215,6 +227,9 @@ def get_quantity_group(tag, magnetism):
             r'$\left\langle B_\theta\right\rangle$']
         units = [utype['induct']]*5 + [utype['b']]
         ncol = 3
+        totsig = np.zeros(len(titles))
+        totsig[3] = tosig[4] = 1
+        di_out['totsig'] = totsig
 
     if tag == 'indtmean': # energy fluxes, theta, mean
         qvals = [1621, 1622, 1623, 1624, 1625, 802]
@@ -226,6 +241,9 @@ def get_quantity_group(tag, magnetism):
             r'$\left\langleB_\theta\right\rangle$']
         units = [utype['induct']]*5 + [utype['b']]
         ncol = 3
+        totsig = np.zeros(len(titles))
+        totsig[3] = tosig[4] = 1
+        di_out['totsig'] = totsig
 
     if tag == 'indp': # energy fluxes, phi
         qvals = [1611, 1612, 1613, 1614, 1615, 803]
@@ -238,6 +256,9 @@ def get_quantity_group(tag, magnetism):
         r'$\left\langle B_\phi\right\rangle$']
         units = [utype['induct']]*5 + [utype['b']]
         ncol = 3
+        totsig = np.zeros(len(titles))
+        totsig[3] = tosig[4] = 1
+        di_out['totsig'] = totsig
 
     if tag == 'indpmean': # energy fluxes, phi, mean
         qvals = [1626, 1627, 1628, 1629, 1630, 803]
@@ -249,6 +270,9 @@ def get_quantity_group(tag, magnetism):
             r'$\left\langleB_\phi\right\rangle$']
         units = [utype['induct']]*5 + [utype['b']]
         ncol = 3
+        totsig = np.zeros(len(titles))
+        totsig[3] = tosig[4] = 1
+        di_out['totsig'] = totsig
 
     if tag == 'ke':
         qvals = [402, 403, 404, 410, 411, 412]
@@ -261,6 +285,7 @@ def get_quantity_group(tag, magnetism):
             r'$\rm{KE}^\prime_\phi$']
         units = [utype['energy']]
         ncol = 3
+        totsig = 'sumrow'
     
     if tag == 'me':
         qvals = [1102, 1103, 1104, 1110, 1111, 1112]
@@ -273,6 +298,7 @@ def get_quantity_group(tag, magnetism):
             r'$\rm{ME}^\prime_\phi$']
         units = [utype['energy']]
         ncol = 3
+        totsig = 'sumrow'
 
     if 'meprodnum' in tag:
         nq = 12 # (r, t, p) x (ind, shear, adv, comp)
@@ -298,7 +324,6 @@ def get_quantity_group(tag, magnetism):
         units = [utype['eprod']]
         ncol = 4
 
-
     if 'meprodshear' in tag:
         nq = 15 # (r, t, p) x (br (d/dr), bt (d/dt), bp (d/dp), curv1, curv2
         ext = tag[-3:]
@@ -322,7 +347,6 @@ def get_quantity_group(tag, magnetism):
         units = [utype['eprod']]
         ncol = 5
         di_out['totsig'] = 'sumrow'
-
 
     if tag[:-3] == 'meprod': # this is the exact stuff
         ext = tag[-3:]
@@ -371,24 +395,22 @@ def get_quantity_group(tag, magnetism):
             titles += titles_loc
             count += 1
         units = [utype['eprod']]
+        di_out['totsig'] = np.array([1, 0, 0, 0, 1])
 
     if tag in ['indralt', 'indraltnum']:
         ind_off = 0
         qvals = np.arange(15) + ind_off
         titles = ['(d/dT)(vr*bt)', '-(d/dT)(vt*br)', '-(d/dP)(vp*br)', '(d/dP)(vr*bp)', 'curv.']
-        units = [utype['induct']]
 
     if tag in ['indtalt', 'indtaltnum']:
         ind_off = 15
         qvals = np.arange(15) + ind_off
         titles = ['(d/dP)(vt*bp)', '-(d/dP)(vp*bt)', '-(d/dr)(vr*bt)', '(d/dr)(vt*br)', 'curv.']
-        units = [utype['induct']]
 
     if tag in ['indpalt', 'indpaltnum']:
         ind_off = 30
         qvals = np.arange(15) + ind_off
         titles = ['(d/dr)(vp*br)', '-(d/dr)(vr*bp)', '-(d/dT)(vt*bp)', '(d/dT)(vp*bt)', 'curv.']
-        units = [utype['induct']]
 
     if 'ind' in tag and 'alt' in tag:
         for ext in ['mm', 'pp']:
@@ -397,6 +419,8 @@ def get_quantity_group(tag, magnetism):
                 more_titles.append(titles[j] + '_' + ext)
             titles += more_titles
         ncol = 5 
+        units = [utype['induct']]
+        di_out['totsig'] = 'sumrow'
 
     if tag == 'magtorquemm':
         titles = [r'$\tau_{\rm{mm,r}}$', r'$\frac{r\sin\theta}{4\pi}\left\langle B_r\right\rangle\left\langle\frac{\partial B_\phi}{\partial r}\right\rangle$', r'$\frac{r\sin\theta}{4\pi}\left\langle B_\phi\right\rangle\left\langle\frac{\partial B_r}{\partial r}\right\rangle$', r'$\frac{3\sin\theta}{4\pi}\langle B_r\rangle\langle B_\phi\rangle$',\
@@ -429,6 +453,7 @@ def get_quantity_group(tag, magnetism):
                     'induct' + app, 'diff' + app]
         units = [utype['eprod']]
         ncol = 5
+        di_out['totsig'] = np.array([1, 0, 0, 0, 1])
 
     di_out['qvals'] = np.array(qvals)
     di_out['titles'] = np.array(titles)
