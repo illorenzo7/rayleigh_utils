@@ -10,8 +10,6 @@ from varprops import get_quantity_group
 # set default CLAs
 clas_default = dict({})
 clas_default['dirname'] = '.'
-clas_default['datadir'] = './data/'
-clas_default['plotdir'] = './plots/'
 
 clas_default['radtype'] = 'azav'
 clas_default['tag'] = ''
@@ -118,6 +116,8 @@ def read_clas(args):
     
     clas['routinename'] = args[0].split('/')[-1][:-3]
     clas['dirname'] = args[1]
+    clas['datadir'] = dirname + '/data/'
+    clas['plotdir'] = dirname + '/plots/'
 
     # see if magnetism is on
     magnetism = get_parameter(clas['dirname'], 'magnetism')

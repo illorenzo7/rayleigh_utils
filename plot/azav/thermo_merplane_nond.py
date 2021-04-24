@@ -284,6 +284,7 @@ fig.text(margin_x, 1 - 0.3*margin_top, dirname_stripped,\
          ha='left', va='top', fontsize=fsize, **csfont)
 fig.text(margin_x, 1 - 0.5*margin_top, time_string,\
          ha='left', va='top', fontsize=fsize, **csfont)
+
 # save the figure
 plotdir = make_plotdir(dirname, clas['plotdir'], '/plots/azav/')
 savefile = plotdir + clas['routinename'] + clas['tag'] + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'

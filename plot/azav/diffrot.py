@@ -69,11 +69,6 @@ else:
     time_unit = compute_tdt(dirname)
     time_label = r'$\rm{TDT}$'
 
-if plotdir is None:
-    plotdir = dirname + '/plots/'
-    if not os.path.isdir(plotdir):
-        os.makedirs(plotdir)
-
 vr_av, vt_av, vp_av = vals[:, :, lut[1]], vals[:, :, lut[2]],\
         vals[:, :, lut[3]]
 
@@ -140,18 +135,14 @@ fig.text(margin_x, 1 - margin_y - 5*line_height,\
 fig.text(margin_x, 1 - margin_y - 6*line_height,\
          'nlevs = %i' %nlevs,
          ha='left', va='top', fontsize=fsize, **csfont)
+
 # save the figure
-plotdir = make_plotdir(dirname, clas['plotdir'], '/plots/azav/')
-savefile = plotdir + 'diffrot' + clas['tag'] + '-' + str(iter1).zfill(8) +\
-    '_' + str(iter2).zfill(8) + '.png'
+plotdir = my_mkdir(clas['plotdir'] + 'azav/')
+savefile = plotdir + clas['routinename'] + clas['tag'] + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
 
 if clas['saveplot']:
     print ('saving figure at ' + savefile)
     plt.savefig(savefile, dpi=300)
 if clas['showplot']:
     plt.show()
-plt.close()savefile = plotdir + dirname_stripped + '_diffrot_' + str(iter1).zfill(8) +\
-    '_' + str(iter2).zfill(8) + '.png'
-print ('Saving plot at %s ...' %savefile)
-plt.savefig(savefile, dpi=300)
-plt.show()
+plt.close()
