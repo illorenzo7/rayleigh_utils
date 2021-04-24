@@ -116,8 +116,8 @@ def read_clas(args):
     
     clas['routinename'] = args[0].split('/')[-1][:-3]
     clas['dirname'] = args[1]
-    clas['datadir'] = dirname + '/data/'
-    clas['plotdir'] = dirname + '/plots/'
+    clas['datadir'] = clas['dirname'] + '/data/'
+    clas['plotdir'] = clas['dirname'] + '/plots/'
 
     # see if magnetism is on
     magnetism = get_parameter(clas['dirname'], 'magnetism')

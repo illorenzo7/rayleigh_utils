@@ -9,17 +9,17 @@
 ##################################################################
 
 import numpy as np
-import pickle
 import matplotlib as mpl
 mpl.use('TkAgg')
 import matplotlib.pyplot as plt
 plt.rcParams['mathtext.fontset'] = 'dejavuserif'
 csfont = {'fontname':'DejaVu Serif'}
 import sys, os
-sys.path.append(os.environ['rapp'])
+#sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapl'])
 from azav_util import plot_azav_grid
+from varprops import utype
 from common import *
 from cla_util import *
 
@@ -28,45 +28,32 @@ clas = read_clas(sys.argv)
 dirname = clas['dirname']
 dirname_stripped = strip_dirname(dirname)
 
-# Directory with data and plots, make the plotting directory if it doesn't
-#already exist    
-datadir = dirname + '/data/'
-
 # See if magnetism is "on"
 magnetism = get_parameter(dirname, 'magnetism')
 
 # Get the torques
 the_file = clas['the_file']
 if the_file is None:
-    the_file = get_widest_range_file(datadir, 'AZ_Avgs')
-print ('Getting torques from ' + datadir + the_file)
-di = get_dict(datadir + the_file)
-
+    the_file = get_widest_range_file(clas['datadir'], 'AZ_Avgs')
+print ('Getting torques from ' + the_file)
+di = get_dict(the_file)
 vals = di['vals']
 lut = di['lut']
 
-torque_rs, torque_mc, torque_visc = -vals[:, :, lut[1801]],\
-        -vals[:, :, lut[1802]] + vals[:, :, lut[1803]],\
-        vals[:, :, lut[1804]]
-torque_tot = torque_rs + torque_mc + torque_visc
+torques = [-vals[:, :, lut[1801]], -vals[:, :, lut[1802]] + vals[:, :, lut[1803]], vals[:, :, lut[1804]]] # rs, mc, visc
+titles = [r'$\tau_{\rm{rs}}$', r'$\tau_{\rm{mc}}$', r'$\tau_{\rm{v}}$']
+units = utype['torque']
 
 if magnetism:
-    torque_Maxwell_mean = vals[:, :, lut[1805]]
-    torque_Maxwell_rs = vals[:, :, lut[1806]]
-    torque_tot += torque_Maxwell_mean + torque_Maxwell_rs
+    torques += [vals[:, :, lut[1805]], vals[:, :, lut[1806]]] # mm, ms
+    titles += [r'$\tau_{\rm{mm}}$', r'$\tau_{\rm{ms}}$']
 
-torques = [torque_rs, torque_mc, torque_visc, torque_tot]
-titles = [r'$\tau_{\rm{rs}}$', r'$\tau_{\rm{mc}}$', r'$\tau_{\rm{v}}$',\
-          r'$\tau_{\rm{tot}}$']
-units = r'$\rm{g}\ \rm{cm}^{-1}\ \rm{s}^{-2}$'
-
-ind_insert = 3
-if magnetism:
-    torques.insert(ind_insert, torque_Maxwell_mean)
-    torques.insert(ind_insert + 1, torque_Maxwell_rs)
-    titles.insert(ind_insert, r'$\tau_{\rm{mm}}$') 
-    titles.insert(ind_insert + 1, r'$\tau_{\rm{ms}}$')
-    #ind_insert += 2
+# get total torque
+torque_tot = np.zeros_like(torques[0])
+for torque in torques:
+    torque_tot += torque
+torques.append(torque_tot)
+titles.append(r'$\tau_{\rm{tot}}$')
 
 # make the main title
 iter1, iter2 = get_iters_from_file(the_file)
@@ -77,7 +64,8 @@ maintitle = dirname_stripped + '\n' +\
 
 # Generate the figure using standard routine
 di_grid = get_grid_info(dirname)
-fig = plot_azav_grid (torques, di_grid['rr'], di_grid['cost'], units=units, maintitle=maintitle, titles=titles,\
+fig = plot_azav_grid (torques, di_grid['rr'], di_grid['cost'],\
+        units=units, maintitle=maintitle, titles=titles,\
         minmax=clas['minmax'],\
         plotcontours=clas['plotcontours'],\
         rvals=clas['rvals'],\
@@ -92,7 +80,7 @@ fig = plot_azav_grid (torques, di_grid['rr'], di_grid['cost'], units=units, main
     plotboundary=clas['plotboundary'])
 
 # save the figure
-plotdir = make_plotdir(dirname, clas['plotdir'], '/plots/azav/')
+plotdir = my_mkdir(clas['plotdir'] + '/azav/')
 savefile = plotdir + clas['routinename'] + clas['tag'] + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
 
 if clas['saveplot']:

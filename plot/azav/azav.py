@@ -8,14 +8,12 @@
 ##################################################################
 
 import numpy as np
-import pickle
 import matplotlib as mpl
 mpl.use('TkAgg')
 import matplotlib.pyplot as plt
 plt.rcParams['mathtext.fontset'] = 'dejavuserif'
 csfont = {'fontname':'DejaVu Serif'}
 import sys, os
-sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapl'])
 from azav_util import plot_azav_grid
@@ -23,13 +21,10 @@ from common import *
 from plotcommon import *
 from cla_util import *
 
-# Get directory name and stripped_dirname for plotting purposes
-dirname = sys.argv[1]
+# Read command-line arguments (CLAs)
+clas = read_clas(sys.argv)
+dirname = clas['dirname']
 dirname_stripped = strip_dirname(dirname)
-
-# Directory with data and plots, make the plotting directory if it doesn't
-#already exist    
-datadir = dirname + '/data/'
 
 # get the data type we want; not all will be an AZ_Avgs file
 dataname_list = dict({})
@@ -43,10 +38,6 @@ for ext in ['mm', 'ms']:
     dataname_list['magtorque' + ext] = 'mag_torque'
 for ext in ['tot', 'mmm', 'mpp']:
     dataname_list['meprodmean' + ext] = 'me_prod_mean'
-
-# Read command-line arguments (CLAs)
-args = sys.argv[2:]
-clas = read_clas(dirname, args)
 
 # get the dataname based on possible group name
 if clas['groupname'] in dataname_list.keys():
@@ -65,21 +56,15 @@ print ("plotting the following quantities:")
 print ("qvals = " + arr_to_str(qvals, "%i"))
 the_file = clas['the_file']
 if the_file is None:
-    the_file = get_widest_range_file(datadir, dataname)
-print ('Getting quantities from ' + datadir + the_file)
-di = get_dict(datadir + the_file)
+    the_file = get_widest_range_file(clas['datadir'], dataname)
+print ('Getting quantities from ' + the_file)
+di = get_dict(the_file)
 vals = di['vals']
 if dataname == 'AZ_Avgs':
     lut = di['lut']
 
-if clas['saveplot']:
-    plotdir = clas['plotdir']
-    if plotdir is None:
-        plotdir = dirname + '/plots/azav/'
-    make_plotdir(plotdir)
-
 # see if the user wants a separate plot of lat. averaged quantities
-latav = read_cla_arbitrary(args, 'latav', False)
+latav = read_cla_arbitrary(sys.argv, 'latav', False)
 
 terms = []
 for qval in qvals:
@@ -125,6 +110,7 @@ else:
     fig = figs
 
 # save the figure if tag or groupname was specified
+plotdir = my_mkdir(clas['plotdir'] + '/azav/')
 if not (clas['tag'] == clas['groupname'] == ''):
     savefile = plotdir + clas['groupname'] + clas['tag'] + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
     print ('saving figure at ' + savefile)
@@ -137,6 +123,7 @@ if not (clas['tag'] == clas['groupname'] == ''):
 
 if clas['showplot']:
     plt.show()
+
 plt.close(fig)
 if latav:
     plt.close(av_fig)

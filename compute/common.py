@@ -246,7 +246,7 @@ def get_widest_range_file(datadir, dataname):
         iters2_maxrange = iters2[inds_max_range]
         # By default, use the file closest to the end of the simulation
         ind = inds_max_range[0][np.argmax(iters2_maxrange)]
-        return specific_files[ind]
+        return datadir + specific_files[ind]
     else:
         return ''
 
