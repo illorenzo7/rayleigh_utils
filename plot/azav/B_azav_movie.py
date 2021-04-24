@@ -46,19 +46,11 @@ else:
     time_unit = compute_tdt(dirname)
     time_label = r'$\rm{TDT}$'
 
-if plotdir is None:
-    plotdir = dirname + '/plots/'
-    if not os.path.isdir(plotdir):
-        os.makedirs(plotdir)
-
 # Set defaults
 count = 0
 mins = None
 maxes = None
 rbcz = None
-
-# Read in CLAs (if any) to change default variable ranges and other options
-plotdir = None
 
 args = sys.argv[2:]
 nargs = len(args)
@@ -76,8 +68,6 @@ iter1, iter2 = int_file_list[index_first], int_file_list[index_last]
 
 for i in range(nargs):
     arg = args[i]
-    if arg == '-plotdir':
-        plotdir = args[i+1]
     if arg == '-minmax':
         mins = float(args[i+1]), float(args[i+3]), float(args[i+5])
         maxes = float(args[i+2]), float(args[i+4]), float(args[i+6])
@@ -116,9 +106,7 @@ if mins is None and maxes is None:
     maxes = nstd*np.std(br0), nstd*np.std(bt0), nstd*np.std(bp0)
 
 # Create the save directory if it doesn't already exist
-plotdir = dirname + '/plots/Bazav_movie/'
-if not os.path.isdir(plotdir):
-    os.makedirs(plotdir)
+plotdir = make_plotdir(dirname, clas['plotdir'], '/plots/Bazav_movie/')
 
 # Before plotting, set up figure dimensions
 fig_width_inches = 7 # TOTAL figure width, in inches
@@ -203,6 +191,6 @@ for i in range(index_first, index_last + 1):
         fig.text(margin_x + 0.5*subplot_width + (margin_x + subplot_width),\
                 1. - 0.3*margin_top, title, ha='center',\
                 va='center', **csfont, fontsize=fsize)
-        print("Saving " + plotdir + savename + ' ...')
-        plt.savefig(plotdir + savename, dpi=200)
+        print("saving " + plotdir + savename)
+        plt.savefig(plotdir + savename, dpi=300)
         plt.close()

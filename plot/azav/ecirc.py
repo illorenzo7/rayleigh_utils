@@ -162,6 +162,16 @@ fig.text(margin_x, 1 - 3/8*margin_top,\
 fig.text(margin_x, 1 - 5/8*margin_top,\
          str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8),\
          ha='left', va='top', fontsize=fsize, **csfont)
+# save the figure
+plotdir = make_plotdir(dirname, clas['plotdir'], '/plots/azav/')
+savefile = plotdir + 'ecirc' + clas['tag'] + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
+
+if clas['saveplot']:
+    print ('saving figure at ' + savefile)
+    plt.savefig(savefile, dpi=300)
+if clas['showplot']:
+    plt.show()
+plt.close()
 
 savefile = plotdir + dirname_stripped + '_ecirc_' + str(iter1).zfill(8) +\
     '_' + str(iter2).zfill(8) + '.png'

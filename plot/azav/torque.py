@@ -24,22 +24,16 @@ from common import *
 from cla_util import *
 
 # Get directory name and stripped_dirname for plotting purposes
-dirname = sys.argv[1]
+clas = read_clas(sys.argv)
+dirname = clas['dirname']
 dirname_stripped = strip_dirname(dirname)
 
 # Directory with data and plots, make the plotting directory if it doesn't
 #already exist    
 datadir = dirname + '/data/'
 
-# Read command-line arguments (CLAs)
-args = sys.argv[2:]
-clas = read_clas(dirname, args)
-
 # See if magnetism is "on"
-try:
-    magnetism = get_parameter(dirname, 'magnetism')
-except:
-    magnetism = False # if magnetism wasn't specified, it must be "off"
+magnetism = get_parameter(dirname, 'magnetism')
 
 # Get the torques
 the_file = clas['the_file']
@@ -50,8 +44,6 @@ di = get_dict(datadir + the_file)
 
 vals = di['vals']
 lut = di['lut']
-
-plotdir = make_plotdir(dirname, clas['plotdir'], '/plots/azav/')
 
 torque_rs, torque_mc, torque_visc = -vals[:, :, lut[1801]],\
         -vals[:, :, lut[1802]] + vals[:, :, lut[1803]],\
@@ -100,8 +92,8 @@ fig = plot_azav_grid (torques, di_grid['rr'], di_grid['cost'], units=units, main
     plotboundary=clas['plotboundary'])
 
 # save the figure
-savefile = plotdir + 'torque' + clas['tag'] + '-' + str(iter1).zfill(8) +\
-    '_' + str(iter2).zfill(8) + '.png'
+plotdir = make_plotdir(dirname, clas['plotdir'], '/plots/azav/')
+savefile = plotdir + clas['routinename'] + clas['tag'] + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
 
 if clas['saveplot']:
     print ('saving figure at ' + savefile)

@@ -140,7 +140,17 @@ fig.text(margin_x, 1 - margin_y - 5*line_height,\
 fig.text(margin_x, 1 - margin_y - 6*line_height,\
          'nlevs = %i' %nlevs,
          ha='left', va='top', fontsize=fsize, **csfont)
-savefile = plotdir + dirname_stripped + '_diffrot_' + str(iter1).zfill(8) +\
+# save the figure
+plotdir = make_plotdir(dirname, clas['plotdir'], '/plots/azav/')
+savefile = plotdir + 'diffrot' + clas['tag'] + '-' + str(iter1).zfill(8) +\
+    '_' + str(iter2).zfill(8) + '.png'
+
+if clas['saveplot']:
+    print ('saving figure at ' + savefile)
+    plt.savefig(savefile, dpi=300)
+if clas['showplot']:
+    plt.show()
+plt.close()savefile = plotdir + dirname_stripped + '_diffrot_' + str(iter1).zfill(8) +\
     '_' + str(iter2).zfill(8) + '.png'
 print ('Saving plot at %s ...' %savefile)
 plt.savefig(savefile, dpi=300)

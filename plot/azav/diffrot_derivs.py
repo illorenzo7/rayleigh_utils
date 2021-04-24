@@ -275,12 +275,14 @@ fig.text(margin_x, 1 - 0.3*margin_top, 'Diff. Rot. (derivs)',\
 fig.text(margin_x, 1 - 0.5*margin_top, time_string,\
          ha='left', va='top', fontsize=fsize, **csfont)
 
-savefile = plotdir + dirname_stripped + '_diffrot_derivs_' +\
-        str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + tag + '.png'
+# save the figure
+plotdir = make_plotdir(dirname, clas['plotdir'], '/plots/azav/')
+savefile = plotdir + 'Bm' + clas['tag'] + '-' + str(iter1).zfill(8) +\
+    '_' + str(iter2).zfill(8) + '.png'
 
-if saveplot:
-    print ('Saving mean-shear terms at ' + savefile)
+if clas['saveplot']:
+    print ('saving figure at ' + savefile)
     plt.savefig(savefile, dpi=300)
-if showplot:
+if clas['showplot']:
     plt.show()
 plt.close()

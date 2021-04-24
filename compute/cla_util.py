@@ -9,13 +9,15 @@ from varprops import get_quantity_group
 
 # set default CLAs
 clas_default = dict({})
-clas_default['datadir'] = None
+clas_default['dirname'] = '.'
+clas_default['datadir'] = './data/'
+clas_default['plotdir'] = './plots/'
+
 clas_default['radtype'] = 'azav'
 clas_default['tag'] = ''
 clas_default['groupname'] = ''
 clas_default['qvals'] = None
 
-clas_default['plotdir'] = None
 clas_default['nlevs'] = 20
 clas_default['rbcz'] = None
 clas_default['rvals'] = None
@@ -88,6 +90,7 @@ def read_cla_vals(args, i, dtype='float'):
     for val_arg in val_args:
         for st in val_arg.split():
             vals.append(convert(st))
+    vals = np.array(vals)
 
     # if the list has only one value, make it not a list
     if len(vals) == 1:
@@ -109,13 +112,17 @@ def read_cla_arbitrary(args, key, default=None, dtype='float'):
                     out = read_cla_vals(args, i, dtype=dtype)
     return out
 
-def read_clas(dirname, args):
+def read_clas(args):
     # start with default CLAs, then change them
     clas = clas_default.copy()
+    
+    clas['routinename'] = args[0].split('/')[-1][:-3]
+    clas['dirname'] = args[1]
 
     # see if magnetism is on
-    magnetism = get_parameter(dirname, 'magnetism')
+    magnetism = get_parameter(clas['dirname'], 'magnetism')
 
+    args = args[2:]
     nargs = len(args)
     for i in range(nargs):
         arg = args[i]
@@ -182,7 +189,7 @@ def read_clas(dirname, args):
             clas['rvals'] = rm - read_cla_vals(args, i)*drz
         if arg == '--rvals':
             if args[i+1] == 'default':
-                clas['rvals'] = get_default_rvals(dirname)*rsun
+                clas['rvals'] = get_default_rvals(clas['dirname'])*rsun
             else:
                 clas['rvals'] = read_cla_vals(args, i)*rsun
         if arg == '--rvalscm':

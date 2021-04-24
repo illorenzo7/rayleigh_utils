@@ -206,6 +206,16 @@ plt.minorticks_on()
 plt.tick_params(top=True, right=True, direction='in', which='both')
 plt.tight_layout()
 
+# save the figure
+plotdir = make_plotdir(dirname, clas['plotdir'], '/plots/azav/')
+savefile = plotdir + 'diffrot_rslice' + clas['tag'] + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
+
+if clas['saveplot']:
+    print ('saving figure at ' + savefile)
+    plt.savefig(savefile, dpi=300)
+if clas['showplot']:
+    plt.show()
+plt.close()
 savefile = plotdir + dirname_stripped + '_diffrot_rslice_' +\
     str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
 print('Saving plot at ' + savefile + ' ...')

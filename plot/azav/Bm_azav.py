@@ -209,10 +209,14 @@ fig.text(margin_x, 1 - margin_y - line_height,\
 fig.text(margin_x, 1 - margin_y - 2*line_height,\
         time_string, ha='left', va='top', fontsize=fsize, **csfont)
 
-savefile = plotdir + dirname_stripped + '_Bm_' + str(iter1).zfill(8) +\
+# save the figure
+plotdir = make_plotdir(dirname, clas['plotdir'], '/plots/azav/')
+savefile = plotdir + 'Bm' + clas['tag'] + '-' + str(iter1).zfill(8) +\
     '_' + str(iter2).zfill(8) + '.png'
-print ('Saving plot at %s' %savefile)
-if saveplot:
+
+if clas['saveplot']:
+    print ('saving figure at ' + savefile)
     plt.savefig(savefile, dpi=300)
-if showplot:
+if clas['showplot']:
     plt.show()
+plt.close()

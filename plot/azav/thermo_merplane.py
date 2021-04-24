@@ -283,6 +283,16 @@ fig.text(margin_x, 1 - 0.3*margin_top, dirname_stripped,\
          ha='left', va='top', fontsize=fsize, **csfont)
 fig.text(margin_x, 1 - 0.5*margin_top, time_string,\
          ha='left', va='top', fontsize=fsize, **csfont)
+# save the figure
+plotdir = make_plotdir(dirname, clas['plotdir'], '/plots/azav/')
+savefile = plotdir + clas['routinename'] + clas['tag'] + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
+
+if clas['saveplot']:
+    print ('saving figure at ' + savefile)
+    plt.savefig(savefile, dpi=300)
+if clas['showplot']:
+    plt.show()
+plt.close()
 
 savefile = plotdir + dirname_stripped + '_thermo_merplane_' +\
     str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'

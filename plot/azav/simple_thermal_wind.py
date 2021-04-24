@@ -182,6 +182,16 @@ iter_string = str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8)
 
 fig.text(margin_x, 1 - 0.5*margin_top, iter_string,\
          ha='left', va='top', fontsize=fsize, **csfont)
+# save the figure
+plotdir = make_plotdir(dirname, clas['plotdir'], '/plots/azav/')
+savefile = plotdir + clas['routinename'] + clas['tag'] + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
+
+if clas['saveplot']:
+    print ('saving figure at ' + savefile)
+    plt.savefig(savefile, dpi=300)
+if clas['showplot']:
+    plt.show()
+plt.close()
 
 savename = dirname_stripped + '_simple_tw_' + str(iter1).zfill(8) + '_' +\
         str(iter2).zfill(8) + '.png'
