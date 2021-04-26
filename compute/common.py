@@ -1071,6 +1071,7 @@ def get_grid_info(dirname):
     di_out['cott'] = di_out['cost']/di_out['sint']
     di_out['tt_lat'] = (np.pi/2 - di_out['tt'])*180/np.pi
     di_out['phi'] = gi.phi
+    di_out['lons'] = gi.phi*180./np.pi
     di_out['rw'] = gi.rweights
     di_out['tw'] = gi.tweights
     di_out['pw'] = gi.pweights

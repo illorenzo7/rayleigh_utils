@@ -9,8 +9,9 @@ import numpy as np
 import pickle
 import sys, os
 sys.path.append(os.environ['raco'])
+sys.path.append(os.environ['rapl'])
 from common import *
-from plotcommon import axis_range
+from plotcommon import *
 
 # Get the run directory on which to perform the analysis
 dirname = sys.argv[1]
@@ -127,12 +128,12 @@ if the_file is None:
         hemisphere = 'N'
     else:
         hemisphere = 'S'
-    the_file = get_widest_range_file(datadir, 'time-longitude_clat' + hemisphere +\
+    the_file = get_widest_range_file(datadir, 'time_lon_clat' + hemisphere +\
             '%02.0f_dlat%03.0f' %(np.abs(clat), dlat))
 
 # Read in the time-longitude data (dictionary form)
-print ('Getting time-longitude trace from ' + datadir + the_file)
-di = get_dict(datadir + the_file)
+print ('Getting time-longitude trace from ' + the_file)
+di = get_dict(the_file)
 
 # this is clat + hemisphere we ended up with
 clat = di['clat']
@@ -144,43 +145,31 @@ else:
 vals = di['vals']
 times = di['times']
 iters = di['iters']
-lut = di['lut']
 qvals = di['qvals']
-rr = di['rr']
-ri = di['ri']; ro = di['ro']; shell_depth = ro - ri
+rvals_avail = di['rvals']
 clat = di['clat']
 dlat = di['dlat']
-irvals_avail = di['rinds']
-rvals_avail = rr[irvals_avail]
-lons = di['lons']
-nphi = di['nphi']
 
-niter = di['niter']
-nr = di['nr']
-nrvals = di['nrvals']
-nq = di['nq']
+# get grid info
+di_grid = get_grid_info(dirname)
 
-iter1 = di['iter1']
-iter2 = di['iter2']
+lons = di_grid['lons']
+nphi = di_grid['nphi']
 
-# Get the baseline time unit
-rotation = get_parameter(dirname, 'rotation')
-if rotation:
-    time_unit = compute_Prot(dirname)
-    time_label = r'$\rm{P_{rot}}$'
-else:
-    time_unit = compute_tdt(dirname)
-    time_label = r'$\rm{TDT}$'
+# baseline time unit
+iter1, iter2 = get_iters_from_file(the_file)
+time_unit, time_label, rotation = get_time_unit(dirname)
 
 # determine desired levels to plot
 if irvals is None:
     if rvals == 'all':
-        irvals = np.arange(len(irvals_avail))
+        irvals = np.arange(len(rvals_avail))
     else:
         irvals = []
         for rval in rvals:
             ir = np.argmin(np.abs(rvals_avail - rval))
             irvals.append(ir)
+
 if saveplot is None:
     if len(irvals) == 1:
         saveplot = False
@@ -191,10 +180,10 @@ if len(irvals) == 1:
 
 # Get raw trace of "qval"
 if tminmax is None:
-    it1, it2 = 0, niter - 1
+    it1, it2 = 0, len(times) - 1
 else:
-    it1 = np.argmin(np.abs(times/Prot - tminmax[0]))
-    it2 = np.argmin(np.abs(times/Prot - tminmax[1]))
+    it1 = np.argmin(np.abs(times/time_unit - tminmax[0]))
+    it2 = np.argmin(np.abs(times/time_unit - tminmax[1]))
 
 q_index = np.argmin(np.abs(qvals - qval))
 
@@ -256,7 +245,7 @@ subplot_height = subplot_height_inches/fig_height_inches
 # Loop over the desired radii and save plots
 for i in range(len(irvals)):
     ir = irvals[i]
-    rval = rvals_avail[ir]/rsun 
+    rval = rvals_avail[ir]
     print('plotting r/rsun = %0.3f (ir = %02i)' %(rval, ir))
     
     quant_loc = quant[:, :, ir]

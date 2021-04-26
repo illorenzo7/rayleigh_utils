@@ -138,6 +138,7 @@ if irvals is None:
         for rval in rvals:
             ir = np.argmin(np.abs(rvals_avail - rval))
             irvals.append(ir)
+
 if saveplot is None:
     if len(irvals) == 1:
         saveplot = False

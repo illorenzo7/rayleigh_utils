@@ -245,7 +245,7 @@ if rank == 0:
     else:
         hemisphere = 'S'
         
-    savename = 'time_lon' + clas['tag'] + '-' +\
+    savename = 'time_lon' + clas['tag'] + '_' +\
             ('clat%s%02.0f_dlat%03.0f' %(hemisphere, np.abs(clat), dlat)) +\
             '-' + file_list[0] + '_' + file_list[-1] + '.pkl'
     savefile = datadir + savename    
