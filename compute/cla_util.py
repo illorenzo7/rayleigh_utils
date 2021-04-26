@@ -13,7 +13,6 @@ clas_default['dirname'] = '.'
 
 clas_default['radtype'] = 'azav'
 clas_default['tag'] = ''
-clas_default['groupname'] = ''
 clas_default['qvals'] = None
 
 clas_default['nlevs'] = 20
@@ -177,8 +176,6 @@ def read_clas(args):
             clas['linscalerz'] = float(args[i+1])
         if arg == '--tag':
             clas['tag'] = '_' + args[i+1]
-        if arg == '--groupname':
-            clas['groupname'] = args[i+1]
         if arg == '--depths':
             clas['rvals'] = ro - read_cla_vals(args, i)*d
         if arg == '--depthscz':
@@ -225,7 +222,7 @@ def read_clas(args):
                     clas['titles'] = the_qgroup['titles']
                     clas['units'] = the_qgroup['units']
                     clas['ncol'] = the_qgroup['ncol']
-                    clas['groupname'] = argvals
+                    clas['tag'] = '_' + argvals
             else:
                 # this was a list of integers
                 clas['qvals'] = read_cla_vals(args, i, 'int')
@@ -242,12 +239,6 @@ def read_clas(args):
         if arg == '--nosave':
             clas['saveplot'] = False
 
-    # deal with qvals if it is still None
-    if clas['qvals'] is None:
-        the_qgroup = get_quantity_group('default', magnetism)
-        clas['qvals'] = the_qgroup['qvals']
-        clas['titles'] = the_qgroup['titles']
-        clas['units'] = the_qgroup['units']
     if not clas['rvals'] is None:
         clas['rvals'] /= rsun # always keep rvals in solar radius units
         if np.isscalar(clas['rvals']):

@@ -62,10 +62,10 @@ if rank == 0:
 # proc 0 reads the file lists and distributes them, also the meta data
 if rank == 0:
     # get the name of the run directory + CLAs
-    dirname = sys.argv[1]
-    args = sys.argv[2:]
+    args = sys.argv
     nargs = len(args)
-    clas = read_clas(dirname, args)
+    clas = read_clas(args)
+    dirname = clas['dirname']
 
     # get whether we are doing a lat. or rad. trace
     rad = False
@@ -91,6 +91,8 @@ if rank == 0:
 
     # get desired quantities
     qvals = clas['qvals']
+    if qvals is None:
+        qvals = np.array([801, 802, 803])
 
     # get indices associated with desired sample vals
     if rad:
