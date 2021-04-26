@@ -6,6 +6,7 @@ csfont = {'fontname':'DejaVu Serif'}
 import numpy as np
 import sys, os
 sys.path.append(os.environ['raco'])
+sys.path.append(os.environ['rapl'])
 sys.path.append(os.environ['rapp'])
 from common import *
 from plotcommon import axis_range
@@ -26,7 +27,9 @@ d = ro - ri
 
 # Data with Shell_Slices
 radatadir = dirname + '/Shell_Slices/'
-file_list, int_file_list, nfiles = get_file_lists(radatadir)
+args = sys.argv[2:]
+nargs = len(args)
+file_list, int_file_list, nfiles = get_file_lists(radatadir, args)
 
 minmax = None
 iiter = nfiles - 1 # by default plot the last iteration
@@ -36,8 +39,6 @@ rvals = []
 
 plotdir = None
 
-args = sys.argv[2:]
-nargs = len(args)
 for i in range(nargs):
     arg = args[i]
     if arg == '-plotdir':
