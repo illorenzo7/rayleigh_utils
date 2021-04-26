@@ -8,6 +8,7 @@ csfont = {'fontname':'DejaVu Serif'}
 import numpy as np
 import sys, os
 sys.path.append(os.environ['raco'])
+sys.path.append(os.environ['rapl'])
 from common import *
 from plotcommon import axis_range
 from tl_util import plot_tl
@@ -25,7 +26,7 @@ datadir = dirname + '/data/'
 
 # Find the time/latitude file(s) the data directory. If there are 
 # multiple, by default choose the one with widest range in the trace.
-the_file = get_widest_range_file(datadir, 'time-latitude')
+the_file = get_widest_range_file(datadir, 'timelat')
 
 # more defaults
 minmax = None
@@ -112,35 +113,17 @@ if plotdir is None:
         os.makedirs(plotdir)
 
 # Read in the time-latitude data (dictionary form)
-print ('Getting time-latitude trace from ' + datadir + the_file)
-di = get_dict(datadir + the_file)
+print ('Getting time-latitude trace from ' + the_file)
+di = get_dict(the_file)
 vals = di['vals']
 times = di['times']
 iters = di['iters']
-rr = di['rr']
-irvals_avail = di['rinds']
-rvals_avail = rr[irvals_avail]
-ri = di['ri']; ro = di['ro']; shell_depth = ro - ri
-tt_lat = di['tt_lat']
-ntheta = di['ntheta']
-
+rvals_avail = di['samplevals']
 qvals = np.array(di['qvals'])
 
-niter = di['niter']
-nr = di['nr']
-nq = di['nq']
-
-iter1 = di['iter1']
-iter2 = di['iter2']
-
-# Get the baseline time unit
-rotation = get_parameter(dirname, 'rotation')
-if rotation:
-    time_unit = compute_Prot(dirname)
-    time_label = r'$\rm{P_{rot}}$'
-else:
-    time_unit = compute_tdt(dirname)
-    time_label = r'$\rm{TDT}$'
+# baseline time unit
+iter1, iter2 = get_iters_from_file(the_file)
+time_unit, time_label, rotation = get_time_unit(dirname)
 
 br_index = np.argmin(np.abs(qvals - 801))
 bt_index = np.argmin(np.abs(qvals - 802))
@@ -149,7 +132,7 @@ bp_index = np.argmin(np.abs(qvals - 803))
 # determine desired levels to plot
 if irvals is None:
     if rvals == 'all':
-        irvals = np.arange(len(irvals_avail))
+        irvals = np.arange(len(rvals_avail))
     else:
         irvals = []
         for rval in rvals:
@@ -171,7 +154,6 @@ bp = vals[:, :, :, bp_index]
 # Normalize the time 
 times /= time_unit
 
-# Make meshgrid of time/latitude
 # Take into account if user specified xmin, xmax
 if xminmax is None:
     xminmax = np.min(times), np.max(times)
@@ -216,10 +198,13 @@ units = r'$\rm{G}$'
 labels = [r'$\langle B_r\rangle$', r'$\langle B_\theta\rangle$',\
         r'$\langle B_\phi\rangle$']
 
+# get grid info
+di_grid = get_grid_info(dirname)
+
 # Loop over the desired radii and save plots
 for i in range(len(irvals)):
     ir = irvals[i]
-    rval = rvals_avail[ir]/rsun 
+    rval = rvals_avail[ir]
     print('plotting r/rsun = %0.3f (ir = %02i)' %(rval, ir))
     br_loc = br[:, :, ir]
     bt_loc = bt[:, :, ir]
@@ -268,13 +253,13 @@ for i in range(len(irvals)):
             subplot_width, subplot_height))
 
     # Plot evolution of each (zonally averaged) field component
-    plot_tl(br_loc, times, tt_lat, fig=fig, ax=ax1, navg=navg,\
+    plot_tl(br_loc, times, di_grid['tt_lat'], fig=fig, ax=ax1, navg=navg,\
             minmax=minmax_br, units=units, xminmax=xminmax, yvals=lats,\
             plottimes=plottimes)
-    plot_tl(bt_loc, times, tt_lat, fig=fig, ax=ax2, navg=navg,\
+    plot_tl(bt_loc, times, di_grid['tt_lat'], fig=fig, ax=ax2, navg=navg,\
             minmax=minmax_bt, units=units, xminmax=xminmax, yvals=lats,\
             plottimes=plottimes)
-    plot_tl(bp_loc, times, tt_lat, fig=fig, ax=ax3, navg=navg,\
+    plot_tl(bp_loc, times, di_grid['tt_lat'], fig=fig, ax=ax3, navg=navg,\
             minmax=minmax_bp, units=units, xminmax=xminmax, yvals=lats,\
             plottimes=plottimes)
 
@@ -296,7 +281,7 @@ for i in range(len(irvals)):
     ax2.set_ylabel('latitude (deg)', **csfont)
 
     # Put some useful information on the title
-    averaging_time = (times[-1] - times[0])/niter*navg
+    averaging_time = (times[-1] - times[0])/len(times)*navg
     title = dirname_stripped + '     ' + (r'$r/R_\odot\ =\ %0.3f$' %rval)
     if navg > 1:
         title += '     ' + ('t_avg = %.1f Prot' %averaging_time)

@@ -14,7 +14,7 @@ plt.rcParams['mathtext.fontset'] = 'dejavuserif'
 csfont = {'fontname':'DejaVu Serif'}
 plt.rcParams['contour.negative_linestyle'] = 'solid'
 from common import *
-from plotcommon import axis_range, default_axes_tl
+from plotcommon import *
 
 def plot_tl(field, times, yy, fig=None, ax=None, cmap='RdYlBu_r',\
     units='', minmax=None, xminmax=None, posdef=False, logscale=False,\
@@ -121,14 +121,6 @@ def plot_tl(field, times, yy, fig=None, ax=None, cmap='RdYlBu_r',\
     else:
         saturate_array(fieldcz, minmax[0], minmax[1])
         saturate_array(fieldrz, minmaxrz[0], minmaxrz[1])
-
-    # Create a default set of figure axes if they weren't already
-    # specified by user
-    if fig is None or ax is None:
-        fig, ax = default_axes_tl()
-        showplot = True # probably in this case the user just
-        # ran plot_tl from the command line wanting to view
-        # view the plot
 
     # Specify linewidths to be used, one for the 
     # boundary (lw) and one for the contours (contour_lw) and 
