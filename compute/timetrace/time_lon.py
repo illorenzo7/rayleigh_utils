@@ -68,9 +68,9 @@ if rank == 0:
 # proc 0 reads the file lists and distributes them, also the meta data
 if rank == 0:
     # read the arguments
-    dirname = sys.argv[1]
-    args = sys.argv[2:]
-    clas = read_clas(dirname, args)
+    args = sys.argv
+    clas = read_clas(args)
+    dirname = clas['dirname']
     nargs = len(args)
 
     # Get the Rayleigh data directory
