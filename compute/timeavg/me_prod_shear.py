@@ -25,6 +25,7 @@ if rank == 0:
     sys.path.append(os.environ['raco'])
     # import common here
     from common import *
+    from cla_util import *
     lent = 50
     char = '.'
     nproc = comm.Get_size()
@@ -66,9 +67,11 @@ if rank == 0:
 
 # proc 0 reads the file lists and distributes them
 if rank == 0:
-    #  get arguments
-    dirname = sys.argv[1]
-    args = sys.argv[2:]
+    # get the name of the run directory + CLAs
+    args = sys.argv
+    nargs = len(args)
+    clas = read_clas(args)
+    dirname = clas['dirname']
 
     # Get the Rayleigh data directory
     radatadir1 = dirname + '/' + dataname1 + '/'

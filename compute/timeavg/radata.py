@@ -93,10 +93,11 @@ if rank == 0:
 
 # proc 0 reads the file lists and distributes them
 if rank == 0:
-    # read the arguments
-    dirname = sys.argv[1]
-    args = sys.argv[2:]
-    clas = read_clas(dirname, args)
+    # get the name of the run directory + CLAs
+    args = sys.argv
+    nargs = len(args)
+    clas = read_clas(args)
+    dirname = clas['dirname']
 
     # Get the Rayleigh data directory
     radatadir = dirname + '/' + dataname + '/'
