@@ -15,7 +15,6 @@ sys.path.append(os.environ['raco'])
 from common import *
 from rayleigh_diagnostics import TransportCoeffs
 from reference_tools import equation_coefficients
-from read_kappa00 import read_kappa00
 
 # Get the run directory on which to perform the analysis
 dirname = sys.argv[1]
@@ -39,7 +38,6 @@ args = sys.argv[2:]
 nargs = len(args)
 fname = None
 xminmax = None
-plot_kappa00 = False
 for i in range(nargs):
     arg = args[i]
     if arg == '-plotdir':
@@ -52,8 +50,6 @@ for i in range(nargs):
         fname = 'custom_reference_binary'
     elif arg == '-xminmax':
         xminmax = float(args[i+1]), float(args[i+2])
-    elif arg == '-00':
-        plot_kappa00 = True
 
 if plotdir is None:
     plotdir = dirname + '/plots/'
@@ -99,25 +95,12 @@ else:
             eta = eq.constants[6]*eq.functions[6, :]
             dlneta = eq.functions[12, :]
 
-if plot_kappa00:
-    print ("Getting kappa00 coefficient from 'kappa00' file")
-    dummy, dummy, kappa00, dlnkappa00 = read_kappa00(dirname + '/kappa00') 
-    # nr and rr are "dummies"
-
 if magnetism:
-    if plot_kappa00:
-        figsize = 7., 13.
-        fig, axs = plt.subplots(4, 2, figsize=figsize, sharex=True)
-    else:
-        figsize = 7., 10.
-        fig, axs = plt.subplots(3, 2, figsize=figsize, sharex=True)
+    figsize = 7., 10.
+    fig, axs = plt.subplots(3, 2, figsize=figsize, sharex=True)
 else:
-    if plot_kappa00:
-        figsize = 7., 10.
-        fig, axs = plt.subplots(3, 2, figsize=figsize, sharex=True)
-    else:
-        figsize = 7., 7.
-        fig, axs = plt.subplots(2, 2, figsize=figsize, sharex=True)
+    figsize = 7., 7.
+    fig, axs = plt.subplots(2, 2, figsize=figsize, sharex=True)
 
 # If xminmax was specified only a plot a portion of the profiles
 if not xminmax is None:
@@ -135,9 +118,6 @@ if not xminmax is None:
     if magnetism:
         eta = eta[ir1:ir2+1]
         dlneta = dlneta[ir1:ir2+1]
-    if plot_kappa00:
-        kappa00 = kappa00[ir1:ir2+1]
-        dlnkappa00 = dlnkappa00[ir1:ir2+1]
 
 # Plot transport coeff and log derivatives one-by-one
 lw = 1.
@@ -183,28 +163,6 @@ plt.minorticks_on()
 plt.tick_params(top=True, right=True, direction='in', which='both')    
 
 mag_index = 2
-if plot_kappa00:
-    mag_index += 1
-    axs[2,0].plot(r/rsun, kappa00, linewidth=lw)
-    #    axs[1,0].yaxis.set_major_formatter(yfmt)
-    axs[2,0].ticklabel_format(scilimits = (0,0), useMathText=True, axis='y')
-    axs[2,0].set_ylabel(r'$\kappa_{00}(r)\ $' +  r'$\rm{[cm^2\ s^{-1}]}$')
-    if ylog:
-        axs[2,0].set_yscale('log')
-
-    axs[2,1].plot(r/rsun, dlnkappa00, linewidth=lw)
-    #    axs[1,0].yaxis.set_major_formatter(yfmt)
-    axs[2,1].ticklabel_format(scilimits = (0,0), useMathText=True, axis='y')
-    axs[2,1].set_ylabel(r'$d\ln\kappa_{00}/dr\ $' +  r'$\rm{[cm^{-1}]}$')
-    
-    # ticks everywhere
-    plt.sca(axs[2,0])
-    plt.minorticks_on()
-    plt.tick_params(top=True, right=True, direction='in', which='both')
-
-    plt.sca(axs[2,1])
-    plt.minorticks_on()
-    plt.tick_params(top=True, right=True, direction='in', which='both')    
 
 if magnetism:
     axs[mag_index,0].plot(r/rsun, eta, linewidth=lw)

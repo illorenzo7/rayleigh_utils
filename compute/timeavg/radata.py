@@ -249,6 +249,8 @@ if rank == 0:
     di_sav = {'vals': vals, 'lut': a0.lut, 'qv': a0.qv}
     if radtype == 'specav':
         di_sav['lpower'] = lpower
+    if radtype in ['specav', 'ssav']:
+        di_sav['rvals'] = a.radius/rsun
     pickle.dump(di_sav, f, protocol=4)
     f.close()
     t2 = time.time()

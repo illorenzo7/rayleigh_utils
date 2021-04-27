@@ -72,6 +72,13 @@ def format_time(seconds):
         seconds %= 60
         return "%02i:%02i:%02i" %(hours, minutes, seconds)
 
+def inds_from_vals(arr, arrvals):
+    nind = len(arrvals)
+    indarr = np.zeros(nind, 'int')
+    for i in range(nind):
+        indarr[i] = np.argmin(np.abs(arr - arrvals[i]))
+    return indarr
+
 def get_file_lists_all(radatadir):
     # Get all the file names in datadir and their integer counterparts
     try:
@@ -714,15 +721,15 @@ def translate_times(time, dirname, translate_from='iter'):
                 val_iter = a.iters[jiter]
                 val_day = val_sec/86400.
                 val_unit = val_sec/time_unit
-            else: # Finally use trace_G_Avgs or time-latitude data
+            else: # Finally use G_Avgs_trace or time-latitude data
                 datadir = dirname + '/data/'
                 try:        
-                    the_file = get_widest_range_file(datadir, 'trace_G_Avgs')
-                    di = get_dict(datadir + the_file)
-                    #print ("translate_times(): translating using trace_G_Avgs file")
+                    the_file = get_widest_range_file(datadir, 'G_Avgs_trace')
+                    di = get_dict(the_file)
+                    #print ("translate_times(): translating using G_Avgs_trace file")
                 except:
                     the_file = get_widest_range_file(datadir, 'time-latitude')
-                    di = get_dict(datadir + the_file)
+                    di = get_dict(the_file)
                     print ("translate_times(): translating using time-latitude file")
 
                 # Get times and iters from trace file
@@ -739,12 +746,12 @@ def translate_times(time, dirname, translate_from='iter'):
         datadir = dirname + '/data/'
      
         try:        
-            the_file = get_widest_range_file(datadir, 'trace_G_Avgs')
-            di = get_dict(datadir + the_file)
-            #print ("translate_times(): translating using trace_G_Avgs file")
+            the_file = get_widest_range_file(datadir, 'G_Avgs_trace')
+            di = get_dict(the_file)
+            #print ("translate_times(): translating using G_Avgs_trace file")
         except:
             the_file = get_widest_range_file(datadir, 'time-latitude')
-            di = get_dict(datadir + the_file)
+            di = get_dict(the_file)
             #print ("translate_times(): translating using time-latitude file")
 
         # Get times and iters from trace file
@@ -838,7 +845,7 @@ def field_amp(dirname):
     if not the_file == '':
         print ('field_amp(): Getting velocity (maybe B field) amps from '\
                 + the_file)
-        di = get_dict(datadir + the_file)
+        di = get_dict(the_file)
         di_out['iter1'], di_out['iter2'] = get_iters_from_file(datadir +\
                 the_file)
         vals = di['vals']
@@ -846,13 +853,13 @@ def field_amp(dirname):
         try:
             # Read in velocity-squared of flows
             # get this from kinetic energy
-            vsqr = 2.0*vals[:, lut[402]]/eq.rho
-            vsqt = 2.0*vals[:, lut[403]]/eq.rho
-            vsqp = 2.0*vals[:, lut[404]]/eq.rho
+            vsqr = 2.0*vals[:, 0, lut[402]]/eq.rho
+            vsqt = 2.0*vals[:, 0, lut[403]]/eq.rho
+            vsqp = 2.0*vals[:, 0, lut[404]]/eq.rho
 
-            vsqr_fluc = 2.0*vals[:, lut[410]]/eq.rho
-            vsqt_fluc = 2.0*vals[:, lut[411]]/eq.rho
-            vsqp_fluc = 2.0*vals[:, lut[412]]/eq.rho
+            vsqr_fluc = 2.0*vals[:, 0, lut[410]]/eq.rho
+            vsqt_fluc = 2.0*vals[:, 0, lut[411]]/eq.rho
+            vsqp_fluc = 2.0*vals[:, 0, lut[412]]/eq.rho
 
             vsqr_mean = vsqr - vsqr_fluc
             vsqt_mean = vsqt - vsqt_fluc
@@ -889,13 +896,13 @@ def field_amp(dirname):
                 # Read in B-squared fields
                 # get this from magnetic energy
                 eightpi = 8.*np.pi
-                bsqr = eightpi*vals[:, lut[1102]]
-                bsqt = eightpi*vals[:, lut[1103]]
-                bsqp = eightpi*vals[:, lut[1104]]
+                bsqr = eightpi*vals[:, 0, lut[1102]]
+                bsqt = eightpi*vals[:, 0, lut[1103]]
+                bsqp = eightpi*vals[:, 0, lut[1104]]
 
-                bsqr_fluc = eightpi*vals[:, lut[1110]]
-                bsqt_fluc = eightpi*vals[:, lut[1111]]
-                bsqp_fluc = eightpi*vals[:, lut[1112]]
+                bsqr_fluc = eightpi*vals[:, 0, lut[1110]]
+                bsqt_fluc = eightpi*vals[:, 0, lut[1111]]
+                bsqp_fluc = eightpi*vals[:, 0, lut[1112]]
 
                 bsqr_mean = bsqr - bsqr_fluc
                 bsqt_mean = bsqt - bsqt_fluc
@@ -959,16 +966,15 @@ def length_scales(dirname):
     the_file = get_widest_range_file(datadir, 'Shell_Avgs')
     if not the_file == '':
         print ('length_scales(): Getting vorticity from ' + the_file)
-        di = get_dict(datadir + the_file)
-        di_out['iter1'], di_out['iter2'] = get_iters_from_file(datadir +\
-                the_file)
+        di = get_dict(the_file)
+        di_out['iter1'], di_out['iter2'] = get_iters_from_file(the_file)
         vals = di['vals']
         lut = di['lut']
         try:
             # Read in enstrophy of convective flows
-            vortsqr = vals[:, lut[317]] 
-            vortsqt = vals[:, lut[318]]
-            vortsqp = vals[:, lut[319]]
+            vortsqr = vals[:, 0, lut[317]] 
+            vortsqt = vals[:, 0, lut[318]]
+            vortsqp = vals[:, 0, lut[319]]
             vortsqh = vortsqt + vortsqp
             enstr = vortsqr + vortsqt + vortsqp
             # Read in velocity-squared of convective flows
@@ -989,8 +995,7 @@ def length_scales(dirname):
             print ('Getting del x B currents from ' + the_file)
             try:
                 # Read in current of convective fields
-                del_crossB2 = vals[:, lut[1015]] + vals[:, lut[1018]] +\
-                        vals[:, lut[1021]]
+                del_crossB2 = vals[:, 0, lut[1015]] + vals[:, 0, lut[1018]] + vals[:, 0, lut[1021]]
                 # Read in B-squared of convective flows
                 B2 = di_field_amp['bamp_fluc']**2.0
                 # Compute length scale and put it in dictionary
@@ -1007,11 +1012,11 @@ def length_scales(dirname):
     if not the_file == '':
         print ('length_scales(): Reading Shell_Spectra data from ' +\
                 the_file)
-        di = get_dict(datadir + the_file)
+        di = get_dict(the_file)
         lpower = di['lpower']
-        rinds = di['rinds']
-        nell = di['nell']
-        lvals = di['lvals'].reshape((nell, 1))
+        nell = np.shape(lpower)[0]
+        lvals = np.arange(nell)
+        lvals = lvals.reshape((nell, 1))
         lut = di['lut']
         rr_spec = di['rvals']
         # get the convective power    
@@ -1030,7 +1035,7 @@ def length_scales(dirname):
         L_vh = pir/l_rms_vh
         L_v = pir/l_rms_v
         di_out['rr_spec'] = rr_spec
-        di_out['ir_spec'] = di['rinds']
+        di_out['ir_spec'] = inds_from_vals(rr, di_out['rr_spec'])
         di_out['nr_spec'] = len(rr_spec)
         di_out['L_vr'] = L_vr
         di_out['L_vh'] = L_vh

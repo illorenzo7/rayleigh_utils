@@ -21,22 +21,22 @@ def plottrans(r, nu, dlnu, k, dlnk, \
         fig, axs = plt.subplots(4, 1, figsize= (12,4), sharex=True)
     
     lw = 0.7
-    axs[0,0].plot(r/bc.rsun, T, label=label, color=color, linewidth=lw)
+    axs[0,0].plot(r/rsun, T, label=label, color=color, linewidth=lw)
     axs[0,0].yaxis.set_major_formatter(yfmt)
     axs[0,0].ticklabel_format(scilimits = (0,0), useMathText=True, axis='y')
     axs[0,0].set_ylabel(r'$T(r)$' +  ' [K]')
     if ylog:
         axs[0,0].set_yscale('log')
-    axs[0,0].set_xlim(np.min(r)/bc.rsun, np.max(r)/bc.rsun)
+    axs[0,0].set_xlim(np.min(r)/rsun, np.max(r)/rsun)
     
-    axs[1,0].plot(r/bc.rsun, rho, label=label, color=color, linewidth=lw)
+    axs[1,0].plot(r/rsun, rho, label=label, color=color, linewidth=lw)
     axs[1,0].yaxis.set_major_formatter(yfmt)
     axs[1,0].ticklabel_format(scilimits = (0,0), useMathText=True, axis='y')
     axs[1,0].set_ylabel(r'$\rho(r)\ $' +  r'$\rm{[g\ cm^{-3}]}$')
     if ylog:
         axs[1,0].set_yscale('log')
         
-    axs[2,0].plot(r/bc.rsun, p, label=label, color=color, linewidth=lw)
+    axs[2,0].plot(r/rsun, p, label=label, color=color, linewidth=lw)
     axs[2,0].yaxis.set_major_formatter(yfmt)
     axs[2,0].ticklabel_format(scilimits = (0,0), useMathText=True, axis='y')
     axs[2,0].set_xlabel(r'$r/R_\odot$')
@@ -44,36 +44,36 @@ def plottrans(r, nu, dlnu, k, dlnk, \
     if ylog:
         axs[2,0].set_yscale('log')
         
-    axs[0,1].plot(r/bc.rsun, s, label=label, color=color, linewidth=lw)
+    axs[0,1].plot(r/rsun, s, label=label, color=color, linewidth=lw)
     axs[0,1].yaxis.set_major_formatter(yfmt)
     axs[0,1].ticklabel_format(scilimits = (0,0), useMathText=True, axis='y')
     axs[0,1].set_xlabel(r'$r/R_\odot$')
     axs[0,1].set_ylabel(r'$s(r)\ $' +  r'$\rm{[erg\ g^{-1}\ K^{-1}]}$') 
         
-    axs[1,1].plot(r/bc.rsun, dlnT, label=label, color=color, linewidth=lw)
+    axs[1,1].plot(r/rsun, dlnT, label=label, color=color, linewidth=lw)
     axs[1,1].yaxis.set_major_formatter(yfmt)
     axs[1,1].ticklabel_format(scilimits = (0,0), useMathText=True, axis='y')
     axs[1,1].set_ylabel(r'$d\ln{T}/dr\ $' +  r'$\rm{[cm^{-1}]}$')
         
-    axs[2,1].plot(r/bc.rsun, dlnrho, label=label, color=color, linewidth=lw)
+    axs[2,1].plot(r/rsun, dlnrho, label=label, color=color, linewidth=lw)
     axs[2,1].yaxis.set_major_formatter(yfmt)
     axs[2,1].ticklabel_format(scilimits = (0,0), useMathText=True, axis='y')
     axs[2,1].set_ylabel(r'$d\ln{\rho}/dr\ $' +  r'$\rm{[cm^{-1}]}$')
         
-    axs[0,2].plot(r/bc.rsun, dlnp, label=label, color=color, linewidth=lw)
+    axs[0,2].plot(r/rsun, dlnp, label=label, color=color, linewidth=lw)
     axs[0,2].yaxis.set_major_formatter(yfmt)
     axs[0,2].ticklabel_format(scilimits = (0,0), useMathText=True, axis='y')
     axs[0,2].set_xlabel(r'$r/R_\odot$')
     axs[0,2].set_ylabel(r'$d\ln{p}/dr\ $' +  r'$\rm{[cm^{-1}]}$')  
 
-    axs[1,2].plot(r/bc.rsun, dsdr, label=label, color=color, linewidth=lw)
+    axs[1,2].plot(r/rsun, dsdr, label=label, color=color, linewidth=lw)
     axs[1,2].yaxis.set_major_formatter(yfmt)
     axs[1,2].ticklabel_format(scilimits = (0,0), useMathText=True, axis='y')
     axs[1,2].set_xlabel(r'$r/R_\odot$')
     axs[1,2].set_ylabel(r'$ds/dr\ $' +\
        r'$\rm{[erg\ g^{-1}\ K^{-1}\ cm^{-1}]}$')  
         
-    axs[2,2].plot(r/bc.rsun, d2lnrho, label=label, color=color, linewidth=lw)
+    axs[2,2].plot(r/rsun, d2lnrho, label=label, color=color, linewidth=lw)
     axs[2,2].yaxis.set_major_formatter(yfmt)
     axs[2,2].ticklabel_format(scilimits = (0,0), useMathText=True, axis='y')
     axs[2,2].set_xlabel(r'$r/R_\odot$')
