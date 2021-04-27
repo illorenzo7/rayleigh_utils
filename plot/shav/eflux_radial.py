@@ -118,8 +118,8 @@ for i in range(nargs):
 #Create the plot
 
 # Read in the flux data
-print ('Getting radial fluxes from ' + datadir + the_file + ' ...')
-di = get_dict(datadir + the_file)
+print ('Getting radial fluxes from ' + the_file)
+di = get_dict(the_file)
 vals = di['vals']
 lut = di['lut']
 qv = di['qv']

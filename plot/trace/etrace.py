@@ -15,15 +15,15 @@ from cla_util import *
 from rayleigh_diagnostics import GridInfo
 
 # Get the run directory on which to perform the analysis
-dirname = sys.argv[1]
+args = sys.argv
+clas = read_clas(args)
+dirname = clas['dirname']
+dirname_stripped = strip_dirname(dirname)
 
 # Data and plot directories
 datadir = dirname + '/data/'
-dirname_stripped = strip_dirname(dirname)
 
 # Read command-line arguments (CLAs)
-args = sys.argv[2:]
-clas = read_clas(dirname, args)
 minmax_user = clas['minmax']
 ymin = clas['ymin']
 ymax = clas['ymax']
@@ -82,16 +82,16 @@ the_file = clas['the_file']
 if inte_gtr2 or inte_subt or inte_subb or sep_czrz:
     if the_file is None:
         the_file = get_widest_range_file(datadir, 'G_Avgs_trace_2dom')
-    print ('Using 2dom trace from ' + datadir + the_file)
-    di = get_dict(datadir + the_file) 
+    print ('Using 2dom trace from ' + the_file)
+    di = get_dict(the_file) 
     vals_gav = di['vals']
     vals_cz = di['vals_cz']
     vals_rz = di['vals_rz']
 else: 
     if the_file is None:
         the_file = get_widest_range_file(datadir, 'G_Avgs_trace')
-    print ('Using G_Avgs trace from ' + datadir + the_file)
-    di = get_dict(datadir + the_file)
+    print ('Using G_Avgs trace from ' + the_file)
+    di = get_dict(the_file)
     vals_gav = di['vals']
 # get lut, times, iters no matter the file type
 lut = di['lut']
@@ -434,14 +434,8 @@ iter1, iter2 = get_iters_from_file(the_file)
 tag = clas['tag']
 if xiter and tag == '':
     tag = '_xiter'
-
+plotdir = my_mkdir(clas['plotdir'] + '/azav/')
 savename = 'etrace' + tag + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
-
-# get plotdir and possibly create it
-plotdir = clas['plotdir']
-if plotdir is None:
-    plotdir = dirname + '/plots/'
-make_plotdir(plotdir)
 
 print ('Saving the etrace plot at ' + plotdir + savename)
 plt.savefig(plotdir + savename, dpi=300)

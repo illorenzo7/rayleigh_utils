@@ -24,7 +24,8 @@ from common import *
 from cla_util import *
 
 # Get directory name and stripped_dirname for plotting purposes
-clas = read_clas(sys.argv)
+args = sys.argv
+clas = read_clas(args)
 dirname = clas['dirname']
 dirname_stripped = strip_dirname(dirname)
 
