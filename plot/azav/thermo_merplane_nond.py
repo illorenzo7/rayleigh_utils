@@ -23,9 +23,12 @@ sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapl'])
 from azav_util import plot_azav
 from common import *
+from cla_util import *
 
 # Get directory name and stripped_dirname for plotting purposes
-dirname = sys.argv[1]
+args = sys.argv
+clas = read_clas(args)
+dirname = clas['dirname']
 dirname_stripped = strip_dirname(dirname)
 
 # domain bounds
@@ -37,9 +40,6 @@ d = ro - ri
 # Directory with data and plots, make the plotting directory if it doesn't
 # already exist    
 datadir = dirname + '/data/'
-plotdir = dirname + '/plots/'
-if (not os.path.isdir(plotdir)):
-    os.makedirs(plotdir)
 
 # Read command-line arguments (CLAs)
 showplot = True
@@ -52,13 +52,11 @@ linscale = None
 minmaxrz = None
 linthreshrz = None
 linscalerz = None
-AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
+the_file = get_widest_range_file(datadir, 'AZ_Avgs')
 forced = False
 rvals = []
 rbcz = None
 symlog = False
-
-plotdir = None
 
 args = sys.argv[2:]
 nargs = len(args)
@@ -79,8 +77,8 @@ for i in range(nargs):
     elif arg == '-nocontour':
         plotcontours = False
     elif arg == '-usefile':
-        AZ_Avgs_file = args[i+1]
-        AZ_Avgs_file = AZ_Avgs_file.split('/')[-1]
+        the_file = args[i+1]
+        the_file = the_file.split('/')[-1]
     elif arg == '-forced':
         forced = True
     elif arg == '-depths':
@@ -130,13 +128,13 @@ for i in range(nargs):
 # Get AZ_Avgs file
 Shell_Avgs_file = get_widest_range_file(datadir, 'Shell_Avgs') 
 
-print ('Getting zonally averaged thermo. vars from ' + datadir + AZ_Avgs_file + ' ...')
-print ('and the spherically averaged thermo. vars from ' + datadir + Shell_Avgs_file + ' ...')
+print ('Getting zonally averaged thermo. vars from '  + the_file)
+print ('and the spherically averaged thermo. vars from ' + Shell_Avgs_file)
 
-di = get_dict(datadir + AZ_Avgs_file)
-di_sph = get_dict(datadir + Shell_Avgs_file)
+di = get_dict(the_file)
+di_sph = get_dict(Shell_Avgs_file)
 
-iter1, iter2 = di['iter1'], di['iter2']
+iter1, iter2 = get_iters_from_file(the_file)
 vals = di['vals']
 vals_sph = di_sph['vals']
 lut = di['lut']
@@ -155,14 +153,13 @@ else:
     time_unit = compute_tdt(dirname)
     time_label = r'$\rm{TDT}$'
 
-if plotdir is None:
-    plotdir = dirname + '/plots/'
-    if not os.path.isdir(plotdir):
-        os.makedirs(plotdir)
-
-# Get grid info
-rr, tt, cost, sint = di['rr'], di['tt'], di['cost'], di['sint'] 
-nr, nt = di['nr'], di['nt']
+# Get necessary grid info
+di_grid = get_grid_info(dirname)
+rr = di_grid['rr']
+cost = di_grid['cost']
+tt_lat = di_grid['tt_lat']
+tt = di_grid['tt']
+xx = di_grid['xx']
 
 # Compute the thermodynamic variables
 prs_spec_heat = get_parameter(dirname, 'pressure_specific_heat')
@@ -286,7 +283,7 @@ fig.text(margin_x, 1 - 0.5*margin_top, time_string,\
          ha='left', va='top', fontsize=fsize, **csfont)
 
 # save the figure
-plotdir = make_plotdir(dirname, clas['plotdir'], '/plots/azav/')
+plotdir = my_mkdir(clas['plotdir'] + 'azav/')
 savefile = plotdir + clas['routinename'] + clas['tag'] + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
 
 if clas['saveplot']:
@@ -298,11 +295,3 @@ plt.close()
 
 savefile = plotdir + dirname_stripped + '_thermo_merplane_nond_' +\
     str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
-
-if saveplot:
-    print ('Saving thermo. vars (in the meridional plane) at ' +\
-            savefile + ' ...')
-    plt.savefig(savefile, dpi=300)
-if showplot:
-    plt.show()
-plt.close()

@@ -22,7 +22,9 @@ from common import *
 from cla_util import *
 
 # Get directory name and stripped_dirname for plotting purposes
-dirname = sys.argv[1]
+args = sys.argv
+clas = read_clas(args)
+dirname = clas['dirname']
 dirname_stripped = strip_dirname(dirname)
 
 # domain bounds
@@ -41,18 +43,15 @@ else:
 # Directory with data and plots, make the plotting directory if it doesn't
 # already exist    
 datadir = dirname + '/data/'
-
-args = sys.argv[2:]
-clas = read_clas(dirname, args)
+clas = read_clas(args)
 
 the_file = clas['the_file']
 if the_file is None:
     the_file = get_widest_range_file(datadir, 'AZ_Avgs')
 # Read in AZ_Avgs data
-print ('Getting data from ' + datadir + the_file)
-di = get_dict(datadir + the_file)
+print ('Getting data from ' + the_file)
+di = get_dict(the_file)
 
-iter1, iter2 = get_iters_from_file(the_file)
 vals = di['vals']
 lut = di['lut']
 
@@ -73,11 +72,11 @@ vr_av, vt_av, vp_av = vals[:, :, lut[1]], vals[:, :, lut[2]],\
         vals[:, :, lut[3]]
 
 # Get necessary grid info
-rr = di['rr']
-cost = di['cost']
-sint = di['sint']
-tt_lat = di['tt_lat']
-xx = di['xx']
+di_grid = get_grid_info(dirname)
+rr = di_grid['rr']
+cost = di_grid['cost']
+tt_lat = di_grid['tt_lat']
+xx = di_grid['xx']
 
 # Get differential rotation in the rotating frame. 
 Om = vp_av/xx
@@ -92,7 +91,7 @@ subplot_width_inches = 2.5
 subplot_height_inches = 5.
 margin_inches = 1./8.
 margin_top_inches = 2. # larger top margin to make room for titles
-margin_bottom_inches = 0.75*(2 - (rbcz is None)) 
+margin_bottom_inches = 0.75*(2 - (clas['rbcz'] is None)) 
     # larger bottom margin to make room for colorbar(s)
 
 fig_width_inches = subplot_width_inches + 2*margin_inches
@@ -110,7 +109,7 @@ subplot_height = subplot_height_inches/fig_height_inches
 fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
 ax = fig.add_axes((margin_x, margin_bottom, subplot_width, subplot_height))
 plot_azav (diffrot, rr, cost, fig=fig, ax=ax, units='nHz',\
-        nlevs=nlevs, minmax=minmax, rvals=clas['rvals'])
+        nlevs=clas['nlevs'], minmax=clas['minmax'], rvals=clas['rvals'])
 # Make title + label diff. rot. contrast and no. contours
 # Label averaging interval
 if rotation:
@@ -133,7 +132,7 @@ fig.text(margin_x, 1 - margin_y - 5*line_height,\
          r'$\Delta\Omega_{\rm{60}} = %.1f\ nHz$' %Delta_Om,\
          ha='left', va='top', fontsize=fsize, **csfont)
 fig.text(margin_x, 1 - margin_y - 6*line_height,\
-         'nlevs = %i' %nlevs,
+         'nlevs = %i' %clas['nlevs'],
          ha='left', va='top', fontsize=fsize, **csfont)
 
 # save the figure

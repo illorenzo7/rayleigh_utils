@@ -18,9 +18,12 @@ csfont = {'fontname':'DejaVu Serif'}
 import sys, os
 sys.path.append(os.environ['raco'])
 from common import *
+from cla_util import *
 
 # Get directory name and stripped_dirname for plotting purposes
-dirname = sys.argv[1]
+args = sys.argv
+clas = read_clas(args)
+dirname = clas['dirname']
 dirname_stripped = strip_dirname(dirname)
 
 # domain bounds
@@ -99,17 +102,19 @@ colats = 90. - lats
 theta_vals = colats*np.pi/180.
 
 # Read in vavg data
-print ('Reading AZ_Avgs data from ' + datadir + the_file)
-di = get_dict(datadir + the_file)
+print ('Reading AZ_Avgs data from ' + the_file)
+di = get_dict(the_file)
 
 vals = di['vals']
 lut = di['lut']
-iter1, iter2 = di['iter1'], di['iter2']
-rr = di['rr']
-tt = di['tt']
-cost, sint = di['cost'], di['sint']
-xx = di['xx']
-ri = di['ri']
+iter1, iter2 = get_iters_from_file(the_file)
+# Get necessary grid info
+di_grid = get_grid_info(dirname)
+rr = di_grid['rr']
+cost = di_grid['cost']
+tt_lat = di_grid['tt_lat']
+tt = di_grid['tt']
+xx = di_grid['xx']
 
 vr_av, vt_av, vp_av = vals[:, :, lut[1]], vals[:, :, lut[2]],\
         vals[:, :, lut[3]]
@@ -121,11 +126,6 @@ t2 = translate_times(iter2, dirname, translate_from='iter')['val_sec']
 # Get the baseline time unit
 time_unit = compute_Prot(dirname)
 time_label = r'$\rm{P_{rot}}$'
-
-if plotdir is None:
-    plotdir = dirname + '/plots/'
-    if not os.path.isdir(plotdir):
-        os.makedirs(plotdir)
 
 # Get frame rate rotation and compute differential rotation in the 
 # lab frame. 
@@ -207,7 +207,7 @@ plt.tick_params(top=True, right=True, direction='in', which='both')
 plt.tight_layout()
 
 # save the figure
-plotdir = make_plotdir(dirname, clas['plotdir'], '/plots/azav/')
+plotdir = my_mkdir(clas['plotdir'] + 'azav/')
 savefile = plotdir + 'diffrot_rslice' + clas['tag'] + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
 
 if clas['saveplot']:
@@ -216,8 +216,3 @@ if clas['saveplot']:
 if clas['showplot']:
     plt.show()
 plt.close()
-savefile = plotdir + dirname_stripped + '_diffrot_rslice_' +\
-    str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
-print('Saving plot at ' + savefile + ' ...')
-plt.savefig(savefile, dpi=300)
-plt.show()

@@ -22,9 +22,12 @@ sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapl'])
 from azav_util import plot_azav
 from common import *
+from cla_util import *
 
 # Get directory name and stripped_dirname for plotting purposes
-dirname = sys.argv[1]
+args = sys.argv
+clas = read_clas(args)
+dirname = clas['dirname']
 dirname_stripped = strip_dirname(dirname)
 
 # domain bounds
@@ -138,10 +141,10 @@ for i in range(nargs):
         tag = '_' + args[i+1]
 
 # Get the terms:
-print ('Getting terms from ' + datadir + the_file)
-di = get_dict(datadir + the_file)
+print ('Getting terms from ' + the_file)
+di = get_dict(the_file)
 
-iter1, iter2 = di['iter1'], di['iter2']
+iter1, iter2 = get_iters_from_file(the_file)
 vals = di['vals']
 lut = di['lut']
 
@@ -158,21 +161,17 @@ else:
     time_unit = compute_tdt(dirname)
     time_label = r'$\rm{TDT}$'
 
-if plotdir is None:
-    plotdir = dirname + '/plots/'
-    if not os.path.isdir(plotdir):
-        os.makedirs(plotdir)
-
 # Get necessary grid info
-rr = di['rr']
-rr_2d = di['rr_2d']
-cost = di['cost']
-sint = di['sint']
-cost_2d = di['cost_2d']
-sint_2d = di['sint_2d']
-tt_lat = di['tt_lat'] 
-xx = di['xx'] 
-nr, nt = di['nr'], di['nt'] 
+di_grid = get_grid_info(dirname)
+rr = di_grid['rr']
+rr_2d = di_grid['rr_2d']
+sint_2d = di_grid['sint_2d']
+cost_2d = di_grid['cost_2d']
+nr = di_grid['nr']
+cost = di_grid['cost']
+tt_lat = di_grid['tt_lat']
+tt = di_grid['tt']
+xx = di_grid['xx']
 
 # Get <v_phi>
 vp = vals[:, :, lut[3]]
@@ -276,7 +275,7 @@ fig.text(margin_x, 1 - 0.5*margin_top, time_string,\
          ha='left', va='top', fontsize=fsize, **csfont)
 
 # save the figure
-plotdir = make_plotdir(dirname, clas['plotdir'], '/plots/azav/')
+plotdir = my_mkdir(clas['plotdir'] + 'azav/')
 savefile = plotdir + 'Bm' + clas['tag'] + '-' + str(iter1).zfill(8) +\
     '_' + str(iter2).zfill(8) + '.png'
 

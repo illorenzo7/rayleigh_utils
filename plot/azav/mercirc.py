@@ -20,9 +20,12 @@ sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from azav_util import plot_azav, streamfunction
 from common import *
+from cla_util import *
 
 # Get directory name and stripped_dirname for plotting purposes
-dirname = sys.argv[1]
+args = sys.argv
+clas = read_clas(args)
+dirname = clas['dirname']
 dirname_stripped = strip_dirname(dirname)
 
 # domain bounds
@@ -53,7 +56,7 @@ linscale = None
 minmaxrz = None
 linthreshrz = None
 linscalerz = None
-AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
+the_file = get_widest_range_file(datadir, 'AZ_Avgs')
 rbcz = None
 symlog = False
 plotcontours = True
@@ -77,8 +80,8 @@ for i in range(nargs):
     elif arg == '-nlevs':
         my_nlevs = int(args[i+1])
     elif arg == '-usefile':
-        AZ_Avgs_file = args[i+1]
-        AZ_Avgs_file = AZ_Avgs_file.split('/')[-1]
+        the_file = args[i+1]
+        the_file = the_file.split('/')[-1]
     elif arg == '-nocontour':
         plotcontours = False
     elif arg == '-nobound':
@@ -130,16 +133,19 @@ for i in range(nargs):
             rvals.append(rval)
 
 # Read in AZ_Avgs data
-print ('Getting data from ' + datadir + AZ_Avgs_file + ' ...')
-di = get_dict(datadir + AZ_Avgs_file)
+print ('Getting data from ' + the_file)
+di = get_dict(the_file)
 
 vals = di['vals']
 lut = di['lut']
-iter1, iter2 = di['iter1'], di['iter2']
-rr = di['rr']
-tt = di['tt']
-cost = di['cost']
-sint = di['sint']
+iter1, iter2 = get_iters_from_file(the_file)
+# Get necessary grid info
+di_grid = get_grid_info(dirname)
+rr = di_grid['rr']
+cost = di_grid['cost']
+tt_lat = di_grid['tt_lat']
+tt = di_grid['tt']
+xx = di_grid['xx']
 
 # Get the time range in sec
 t1 = translate_times(iter1, dirname, translate_from='iter')['val_sec']
@@ -153,11 +159,6 @@ if rotation:
 else:
     time_unit = compute_tdt(dirname)
     time_label = r'$\rm{TDT}$'
-
-if plotdir is None:
-    plotdir = dirname + '/plots/'
-    if not os.path.isdir(plotdir):
-        os.makedirs(plotdir)
 
 vr_av, vt_av, vp_av = vals[:, :, lut[1]], vals[:, :, lut[2]],\
         vals[:, :, lut[3]]
@@ -233,7 +234,7 @@ fig.text(margin_x, 1 - 5/8*margin_top,\
         time_string, ha='left', va='top', fontsize=fsize, **csfont)
 
 # save the figure
-plotdir = make_plotdir(dirname, clas['plotdir'], '/plots/azav/')
+plotdir = my_mkdir(clas['plotdir'] + 'azav/')
 savefile = plotdir + clas['routinename'] + clas['tag'] + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
 
 if clas['saveplot']:
@@ -242,9 +243,3 @@ if clas['saveplot']:
 if clas['showplot']:
     plt.show()
 plt.close()
-
-savefile = plotdir + dirname_stripped + '_mercirc_' + str(iter1).zfill(8) +\
-    '_' + str(iter2).zfill(8) + '.png'
-print ('Saving plot at %s ...' %savefile)
-plt.savefig(savefile, dpi=300)
-plt.show()
