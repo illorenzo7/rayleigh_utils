@@ -19,18 +19,16 @@ if rotation:
 else:
     time_unit = compute_tdt(dirname)
     time_label = 'TDTs'
-print(time_label)
-print(datadir)
-the_file = get_widest_range_file(datadir, 'trace_G_Avgs')
+
+the_file = get_widest_range_file(datadir, 'G_Avgs_trace')
 if the_file == '':
-    the_file = get_widest_range_file(datadir, 'trace_2dom_G_Avgs')
-print(the_file)
-di = get_dict(datadir + the_file) 
+    the_file = get_widest_range_file(datadir, 'G_Avgs_trace_2dom')
+di = get_dict(the_file) 
 times = di['times']
 iters = di['iters']
 print ("got time/iter translation from %s" %the_file)
 
-dummy, int_file_list, nfiles = get_file_lists(radatadir)
+dummy, int_file_list, nfiles = get_file_lists_all(radatadir)
 times_data = np.zeros(nfiles)
 for i in range(nfiles):
     iter_loc = int_file_list[i]
@@ -46,4 +44,3 @@ print (fill_str('stddev cadence', lent, char) +\
         ('%.3f '  + time_label) %np.std(times_diff))
 print (fill_str('avg output frequency', lent, char) +\
         ('%.1f iters') %np.mean(iters_diff))
-

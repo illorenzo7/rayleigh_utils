@@ -50,7 +50,7 @@ datadir = dirname + '/data/'
 print ("-------------------------------------------------")
 if use_gav:
     gavg_dir = dirname + '/G_Avgs/'
-    file_list, int_file_list, nfiles = get_file_lists(gavg_dir)
+    file_list, int_file_list, nfiles = get_file_lists_all(gavg_dir)
 
     the_tuple = get_desired_range(int_file_list, args)
     if the_tuple is None:
@@ -74,7 +74,7 @@ if use_gav:
 
 elif use_sslice:
     sslice_dir = dirname + '/Shell_Slices/'
-    file_list, int_file_list, nfiles = get_file_lists(sslice_dir)
+    file_list, int_file_list, nfiles = get_file_lists_all(sslice_dir)
 
     the_tuple = get_desired_range(int_file_list, args)
     if the_tuple is None:
