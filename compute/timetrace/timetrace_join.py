@@ -25,9 +25,10 @@ dirname = sys.argv[1]
 datadir = dirname + '/data/' # data subdirectory of output directory
 
 # CLAs
-args = sys.argv[2:]
+args = sys.argv
 nargs = len(args)
-clas = read_clas(dirname, args)
+clas = read_clas(args)
+dirname = clas['dirname']
 tag = clas['tag']
 delete_old_files = True # delete the partial files by default
 for i in range(nargs):
