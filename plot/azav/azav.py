@@ -39,19 +39,28 @@ for ext in ['mm', 'ms']:
 for ext in ['tot', 'mmm', 'mpp']:
     dataname_list['meprodmean' + ext] = 'me_prod_mean'
 
-# get the dataname based on possible group name
-if clas['groupname'] in dataname_list.keys():
-    dataname = dataname_list[clas['groupname']]
-else:
-    dataname = 'AZ_Avgs'
-
 # See if magnetism is "on"
 magnetism = get_parameter(dirname, 'magnetism')
 
 # get desired quantities
 qvals = clas['qvals']
-titles = clas['titles']
-units = clas['units']
+if qvals is None:
+    qvals = np.array([1, 2, 3])
+    titles = array_of_strings(qvals)
+    units = 'cgs'
+    clas['tag'] = '_v'
+else:
+    titles = clas['titles']
+    units = clas['units']
+
+if not clas['tag'] == '': # the "tag" represents a quantity group
+    clas['tag'] = clas['tag'][1:] # remove the prepending _
+
+if clas['tag'] in dataname_list.keys():
+    dataname = dataname_list[clas['tag']]
+else:
+    dataname = 'AZ_Avgs'
+
 print ("plotting the following quantities:")
 print ("qvals = " + arr_to_str(qvals, "%i"))
 the_file = clas['the_file']
@@ -76,8 +85,8 @@ for qval in qvals:
 # make the main title
 iter1, iter2 = get_iters_from_file(the_file)
 time_string = get_time_info(dirname, iter1, iter2)
-if not clas['tag'] == clas['groupname'] == '':
-    mainlabel = clas['groupname'] + clas['tag']
+if not clas['tag'] == '':
+    mainlabel = clas['tag']
 else:
     mainlabel = 'quantities' 
 maintitle = dirname_stripped + '\n' +\
@@ -109,15 +118,15 @@ if latav:
 else:
     fig = figs
 
-# save the figure if tag or groupname was specified
+# save the figure if tag was specified
 plotdir = my_mkdir(clas['plotdir'] + '/azav/')
-if not (clas['tag'] == clas['groupname'] == ''):
-    savefile = plotdir + clas['groupname'] + clas['tag'] + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
+if not clas['tag'] == '':
+    savefile = plotdir + clas['tag'] + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
     print ('saving figure at ' + savefile)
     fig.savefig(savefile, dpi=300)
 
     if latav:
-        av_savefile = plotdir + clas['groupname'] + clas['tag'] + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '-latav' + '.png'
+        av_savefile = plotdir + clas['tag'] + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '-latav' + '.png'
         print ('saving lat. avg. figure at ' + av_savefile)
         av_fig.savefig(av_savefile, dpi=300)
 
