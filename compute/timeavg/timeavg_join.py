@@ -65,7 +65,7 @@ for i in range(nfiles):
         iter2_glob = iter2
 
 # average the files together
-di0 = di_list[0]*
+di0 = di_list[0]
 vals = np.zeros_like(di0['vals'])
 if dataname == 'Shell_Spectra':
     lpower = np.zeros_like(di0['lpower'])
