@@ -65,10 +65,10 @@ for i in range(nfiles):
         iter2_glob = iter2
 
 # average the files together
-di0 = di_list[0]
-vals = np.copy(di0['vals'])
+di0 = di_list[0]*
+vals = np.zeros_like(di0['vals'])
 if dataname == 'Shell_Spectra':
-    lpower = np.copy(di0['lpower'])
+    lpower = np.zeros_like(di0['lpower'])
 
 for i in range(nfiles):
     print('adding %s' %files[i])
