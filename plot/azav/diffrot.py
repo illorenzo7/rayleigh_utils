@@ -56,6 +56,7 @@ vals = di['vals']
 lut = di['lut']
 
 # Get the time range in sec
+iter1, iter2 = get_iters_from_file(the_file)
 t1 = translate_times(iter1, dirname, translate_from='iter')['val_sec']
 t2 = translate_times(iter2, dirname, translate_from='iter')['val_sec']
 
