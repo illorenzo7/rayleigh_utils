@@ -45,10 +45,12 @@ magnetism = get_parameter(dirname, 'magnetism')
 # get desired quantities
 qvals = clas['qvals']
 if qvals is None:
-    qvals = np.array([1, 2, 3])
-    titles = array_of_strings(qvals)
-    units = 'cgs'
-    clas['tag'] = '_v'
+    the_qgroup = get_quantity_group('v', magnetism)
+    qvals = the_qgroup['qvals']
+    titles = the_qgroup['titles']
+    units = the_qgroup['units']
+    ncol = the_qgroup['ncol']
+    clas['tag'] = '_v' 
 else:
     titles = clas['titles']
     units = clas['units']

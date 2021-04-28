@@ -222,6 +222,7 @@ def read_clas(args):
                     clas['units'] = the_qgroup['units']
                     clas['ncol'] = the_qgroup['ncol']
                     clas['tag'] = '_' + argvals
+                    clas['totsig'] = the_qgroup['totsig']
             else:
                 # this was a list of integers
                 clas['qvals'] = read_cla_vals(args, i, 'int')

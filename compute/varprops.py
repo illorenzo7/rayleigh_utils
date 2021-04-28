@@ -82,7 +82,7 @@ def get_quantity_group(tag, magnetism):
             units += [utype['torque']]*2
         ncol = 3 + magnetism
         totsig = np.ones(len(titles))
-        totsig[0] = 0; totsig[1] = totsig[2] = -1
+        totsig[0] = totsig[5] = 0; totsig[1] = totsig[2] = -1
         di_out['totsig'] = totsig
 
     if tag == 'induct':
@@ -96,7 +96,7 @@ def get_quantity_group(tag, magnetism):
     if tag == 'v':
         qvals = [1, 2, 3]            
         titles = [texlabels['vr'], texlabels['vt'], texlabels['vp']]
-        units = [utype['b']]
+        units = [utype['v']]
         ncol = 3
 
     if tag == 'b':

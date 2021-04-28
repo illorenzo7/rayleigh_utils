@@ -888,30 +888,38 @@ def streamfunction(vr,vt,r,cost,order=0):
 
 def plot_azav_grid(terms, rr, cost, maintitle=None, titles=None, fig_width_inches=None, sub_width_inches=None, ncol=6, cmap='RdYlBu_r', units='', minmax=None, posdef=False, logscale=False, symlog=False, plotcontours=True, plotfield=True, nlevs=10, levels=None, plotlatlines=False, rvals=[], fontsize=default_labelsize, cbar_aspect=1.0/20.0, showplot=False, plot_cbar=True, lw_scaling=1.0, cbar_scaling=1.0, linthresh=None, linscale=None, plotboundary=True, rbcz=None, minmaxrz=None, linthreshrz=None, linscalerz=None, nosci=False, cbar_prec=1, latav=False, tw=None, totsig=None):
 
-    # possibly sum some terms, based on totsig
-    nrow = len(terms)//ncol # don't increase nrow
-    tot_arr = np.zeros_like(terms[0])
-    if not totsig is None:
-        if totsig == 'sumrow':
-            icol = 0
-            iterm = 0
-            for term in terms:
-                tot_arr += term
-                icol += 1
-                iterm += 1
-                if icol % ncol == 0: # just summed the last term in row
-                    terms.insert(iterm, tot_arr)
-                    tot_arr = np.zeros_like(terms[0])
-                    icol = 0
-                    iterm += 1
-
-    # set up figure + axes
-    sub_margin_bottom_inches = 0.75*(2.0 - (rbcz is None)) 
+    # may need to make units an array
     nplots = len(terms)
-
     if isinstance(units, str): # units is just one label for everybody
         units = np.array([units]*nplots)
 
+    # possibly sum some terms, based on totsig
+    if not totsig is None:
+        if totsig == 'sumrow':
+            ncol_loc = ncol
+            totsig = np.ones(ncol)
+        else:
+            ncol_loc = len(totsig)
+        nrow_loc = len(terms)//ncol_loc
+
+        iterm = 0
+        titles = titles.tolist()
+        units = units.tolist()
+        for irow in range(nrow_loc):
+            tot_term = np.zeros_like(terms[0])
+            for icol in range(ncol_loc):
+                tot_term += terms[iterm]*totsig[icol]
+                iterm += 1
+
+            # insert the tot_term at the correct place
+            iterm += 1
+            terms.insert(iterm, tot_term)
+            titles.insert(iterm, 'tot')
+            units.insert(iterm, units[iterm - 2])
+            nplots += 1
+
+    # set up figure + axes
+    sub_margin_bottom_inches = 0.75*(2.0 - (rbcz is None)) 
     if fig_width_inches is None and sub_width_inches is None:
         sub_width_inches = 2.0
     sub_aspect = 2.0
