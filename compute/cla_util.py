@@ -157,7 +157,6 @@ def read_clas(args):
             clas['sub_width_inches'] = float(args[i+1])
         if arg == '--usefile':
             the_file = args[i+1]
-            clas['the_file'] = the_file.split('/')[-1]
         if arg == '--nocontour':
             clas['plotcontours'] = False
         if arg == '--nobound':
