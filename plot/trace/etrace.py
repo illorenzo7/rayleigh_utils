@@ -434,7 +434,7 @@ iter1, iter2 = get_iters_from_file(the_file)
 tag = clas['tag']
 if xiter and tag == '':
     tag = '_xiter'
-plotdir = my_mkdir(clas['plotdir'] + '/azav/')
+plotdir = my_mkdir(clas['plotdir']) 
 savename = 'etrace' + tag + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
 
 print ('Saving the etrace plot at ' + plotdir + savename)

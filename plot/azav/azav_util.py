@@ -22,7 +22,7 @@ from plotcommon import *
 def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
     units='', minmax=None, posdef=False, logscale=False, symlog=False,\
     plotcontours=True, plotfield=True, nlevs=10, levels=None,\
-	plotlatlines=False, rvals=None, cbar_fs=default_labelsize, fontsize=default_labelsize, cbar_aspect=1./20.,\
+	plotlatlines=False, rvals=None, fontsize=default_labelsize, cbar_aspect=1./20.,\
     showplot=False, plot_cbar=True, lw_scaling=1., cbar_scaling=1.,\
     linthresh=None, linscale=None, plotboundary=True, rbcz=None,\
     minmaxrz=None, linthreshrz=None, linscalerz=None, nosci=False,\
@@ -316,7 +316,7 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
                      fontsize=fontsize) 
             #fig.text(cbax_left - 0.3*cbax_width, cbax_center_y,\
             #        cbar_label, ha='right', va='center', rotation=90,\
-            #        fontsize=cbar_fs)
+            #        fontsize=fontsize)
 
             if not rbcz is None: # Make a colorbar for the RZ
                 cbar_bottom = ax_ymin - 2.5*cbar_height -\
@@ -512,7 +512,7 @@ def plot_azav_half(field, rr, cost, sym='even', fig=None, ax=None,\
         cmap='RdYlBu_r', units='', minmax=None, posdef=False, logscale=False,\
         symlog=False, linthresh=None, linscale=None, plotcontours=True,\
         plotfield=True, nlevs=10, levels=None, plotlatlines=False, rvals=[],\
-        norm=None, cbar_fs=10, showplot=False, plot_cbar=True):
+        norm=None, fontsize=10, showplot=False, plot_cbar=True):
 	
     '''Takes a figure with a subplot (axis) of aspect ratio 1x1 (or
     generates default axes if they are not provided) and adds
@@ -619,8 +619,8 @@ def plot_azav_half(field, rr, cost, sym='even', fig=None, ax=None,\
                        cbax_width, cbax_height])
         cbar = plt.colorbar(cax=cbaxes)
 
-        cbaxes.tick_params(labelsize=cbar_fs)
-        cbar.ax.tick_params(labelsize=cbar_fs)   #font size for the ticks
+        cbaxes.tick_params(labelsize=fontsize)
+        cbar.ax.tick_params(labelsize=fontsize)   #font size for the ticks
 
         if not logscale:
             if posdef:
@@ -640,7 +640,7 @@ def plot_azav_half(field, rr, cost, sym='even', fig=None, ax=None,\
         # Put the units and exponent to left of colorbar
         fig.text(cbax_left - 0.3*cbax_width, cbax_bottom + cbax_height/2.,\
                 cbar_label, ha='right', va='center', rotation=90,\
-                fontsize=cbar_fs)
+                fontsize=fontsize)
 
     # Plot the boundary of the meridional plane
     plt.sca(ax)
@@ -696,7 +696,7 @@ def plot_azav_half(field, rr, cost, sym='even', fig=None, ax=None,\
         plt.show()
 
 def plot_quiver(vr, vt, rr, cost, fig=None, ax=None, minmax=None,\
-        plotlatlines=False, rvals=[], cbar_fs=10,\
+        plotlatlines=False, rvals=[], fontsize=10,\
         showplot=False, scale=None, plot_poles=False, nsample_t=20,\
         nsample_r=10, scale_by_mag=True, plotboundary=True):
 
@@ -886,7 +886,7 @@ def streamfunction(vr,vt,r,cost,order=0):
             
     return psi
 
-def plot_azav_grid(terms, rr, cost, maintitle=None, titles=None, fig_width_inches=None, sub_width_inches=None, ncol=6, cmap='RdYlBu_r', units='', minmax=None, posdef=False, logscale=False, symlog=False, plotcontours=True, plotfield=True, nlevs=10, levels=None, plotlatlines=False, rvals=[], cbar_fs=default_labelsize, fontsize=default_labelsize, cbar_aspect=1.0/20.0, showplot=False, plot_cbar=True, lw_scaling=1.0, cbar_scaling=1.0, linthresh=None, linscale=None, plotboundary=True, rbcz=None, minmaxrz=None, linthreshrz=None, linscalerz=None, nosci=False, cbar_prec=1, latav=False, tw=None, totsig=None):
+def plot_azav_grid(terms, rr, cost, maintitle=None, titles=None, fig_width_inches=None, sub_width_inches=None, ncol=6, cmap='RdYlBu_r', units='', minmax=None, posdef=False, logscale=False, symlog=False, plotcontours=True, plotfield=True, nlevs=10, levels=None, plotlatlines=False, rvals=[], fontsize=default_labelsize, cbar_aspect=1.0/20.0, showplot=False, plot_cbar=True, lw_scaling=1.0, cbar_scaling=1.0, linthresh=None, linscale=None, plotboundary=True, rbcz=None, minmaxrz=None, linthreshrz=None, linscalerz=None, nosci=False, cbar_prec=1, latav=False, tw=None, totsig=None):
 
     # possibly sum some terms, based on totsig
     nrow = len(terms)//ncol # don't increase nrow
