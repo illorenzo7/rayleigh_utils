@@ -47,7 +47,7 @@ logscale = False
 rvals = [] # user can specify radii to mark by vertical lines
 tag = ''
 use_hrho = False
-Shell_Avgs_file = get_widest_range_file(datadir, 'Shell_Avgs')
+the_file = get_widest_range_file(datadir, 'Shell_Avgs')
 
 # Read command-line arguments (CLAs)
 plotdir = None
@@ -59,8 +59,8 @@ for i in range(nargs):
     if arg == '-plotdir':
         plotdir = args[i+1]
     if arg == '-usefile':
-        Shell_Avgs_file = args[i+1]
-        Shell_Avgs_file = Shell_Avgs_file.split('/')[-1]
+        the_file = args[i+1]
+        the_file = the_file.split('/')[-1]
     elif arg == '-rnorm':
         rnorm = float(args[i+1])
     elif arg == '-minmax':
@@ -109,12 +109,14 @@ if plotdir is None:
         os.makedirs(plotdir)
 
 # Read in vavg data
-print ('Reading Shell_Avgs data from ' + datadir + Shell_Avgs_file + ' ...')
-di = get_dict(datadir + Shell_Avgs_file)
+print ('Reading Shell_Avgs data from ' +  the_file)
+di = get_dict( the_file)
 vals = di['vals']
 lut = di['lut']
-iter1, iter2 = di['iter1'], di['iter2']
-rr = di['rr']
+iter1, iter2 = get_iters_from_file(the_file)
+
+di_grid = get_grid_info(dirname)
+rr = di_grid['rr']
 
 # Derivative grid info
 nr = len(rr)
@@ -123,9 +125,9 @@ shell_depth = ro - ri
 
 # Convective velocity amplitudes, get these from KE
 # use convective velocities to ignore whopping DR
-frke = vals[:, lut[410]]
-ftke = vals[:, lut[411]]
-fpke = vals[:, lut[412]]
+frke = vals[:, 0, lut[410]]
+ftke = vals[:, 0, lut[411]]
+fpke = vals[:, 0, lut[412]]
 
 vsq_r = 2.*frke/rho
 vsq_t = 2.*ftke/rho
@@ -136,8 +138,8 @@ vamp = np.sqrt(vsq)
 # B amplitudes, get these from ME
 # use full amplitude, since both lon. mean and fluc 
 # are likely relevant (i.e., m = 0, 1, 2, could all play a role...)
-rme = vals[:, lut[1102]]
-tme = vals[:, lut[1103]]
+rme = vals[:, 0, lut[1102]]
+tme = vals[:, 0, lut[1103]]
 
 eightpi = 8.*np.pi
 
