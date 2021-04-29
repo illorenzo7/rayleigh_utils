@@ -185,9 +185,18 @@ else:
     it1 = np.argmin(np.abs(times/time_unit - tminmax[0]))
     it2 = np.argmin(np.abs(times/time_unit - tminmax[1]))
 
-q_index = np.argmin(np.abs(qvals - qval))
+if qval == 4001: # shorthand for b_r * b_phi
+    qind1 = np.argmin(np.abs(qvals - 801))
+    qind2 = np.argmin(np.abs(qvals - 803))
+    quant = vals[it1:it2+1, :, :, qind1]*vals[it1:it2+1, :, :, qind2]
+elif qval == 4002: # shorthand for b_theta * b_phi
+    qind1 = np.argmin(np.abs(qvals - 802))
+    qind2 = np.argmin(np.abs(qvals - 803))
+    quant = vals[it1:it2+1, :, :, qind1]*vals[it1:it2+1, :, :, qind2]
+else:
+    qind = np.argmin(np.abs(qvals - qval))
+    quant = vals[it1:it2+1, :, :, qind]
 
-quant = vals[it1:it2+1, :, :, q_index]
 times = times[it1:it2+1]/Prot
 t1, t2 = times[0], times[-1] # These begin times and end times
         # will be used for labeling the plots
