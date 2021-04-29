@@ -51,6 +51,7 @@ utype['induct'] = make_unit('G') + make_unit('s', -1)
 # groups of quantities
 def get_quantity_group(tag, magnetism):
     di_out = dict({})
+    di_out['totsig'] = None # the default
 
     # set default qvals: velocity + vorticity, Pressure/ entropy
     # then possibly B, del x B
