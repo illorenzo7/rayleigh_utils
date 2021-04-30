@@ -1,3 +1,4 @@
+# plot the Alvfen speed
 # Author: Loren Matilsky
 # Created: 10/31/2019
 # This script generates the spherically averaged convective Reynolds 
@@ -103,9 +104,14 @@ for i in range(nargs):
             rval = float(st)
             rvals.append(rval)
 
+if plotdir is None:
+    plotdir = dirname + '/plots/'
+    if not os.path.isdir(plotdir):
+        os.makedirs(plotdir)
+
 # Read in vavg data
-print ('Reading Shell_Avgs data from ' + the_file + ' ...')
-di = get_dict(the_file)
+print ('Reading Shell_Avgs data from ' +  the_file)
+di = get_dict( the_file)
 vals = di['vals']
 lut = di['lut']
 iter1, iter2 = get_iters_from_file(the_file)
@@ -118,55 +124,36 @@ nr = len(rr)
 ri, ro = np.min(rr), np.max(rr)
 shell_depth = ro - ri
 
-# Convective B amplitudes, get these from ME
+# Convective velocity amplitudes, get these from KE
+# use convective velocities to ignore whopping DR
+frke = vals[:, 0, lut[410]]
+ftke = vals[:, 0, lut[411]]
+fpke = vals[:, 0, lut[412]]
+
+vsq_r = 2.*frke/rho
+vsq_t = 2.*ftke/rho
+vsq_p = 2.*fpke/rho
+vsq = vsq_r + vsq_t + vsq_p
+vamp = np.sqrt(vsq)
+
+# B amplitudes, get these from ME
+# use full amplitude, since both lon. mean and fluc 
+# are likely relevant (i.e., m = 0, 1, 2, could all play a role...)
 rme = vals[:, 0, lut[1102]]
 tme = vals[:, 0, lut[1103]]
-pme = vals[:, 0, lut[1104]]
-
-frme = vals[:, 0, lut[1110]]
-ftme = vals[:, 0, lut[1111]]
-fpme = vals[:, 0, lut[1112]]
-
-mrme = rme - frme
-mtme = tme - ftme
-mpme = pme - fpme
 
 eightpi = 8.*np.pi
 
 bsq_r = rme*eightpi
 bsq_t = tme*eightpi
-bsq_p = pme*eightpi
-bsq = bsq_r + bsq_t + bsq_p
 
-fbsq_r = frme*eightpi
-fbsq_t = ftme*eightpi
-fbsq_p = fpme*eightpi
-fbsq = fbsq_r + fbsq_t + fbsq_p
-
-mbsq_r = mrme*eightpi
-mbsq_t = mtme*eightpi
-mbsq_p = mpme*eightpi
-mbsq = mbsq_r + mbsq_t + mbsq_p
-
-amp_b = np.sqrt(bsq)
-amp_br = np.sqrt(bsq_r)
-amp_bt = np.sqrt(bsq_t)
-amp_bp = np.sqrt(bsq_p)
-
-famp_b = np.sqrt(fbsq)
-famp_br = np.sqrt(fbsq_r)
-famp_bt = np.sqrt(fbsq_t)
-famp_bp = np.sqrt(fbsq_p)
-
-mamp_b = np.sqrt(mbsq)
-mamp_br = np.sqrt(mbsq_r)
-mamp_bt = np.sqrt(mbsq_t)
-mamp_bp = np.sqrt(mbsq_p)
+bsq_pol = bsq_r + bsq_t
+v_A = np.sqrt(bsq_pol/4./np.pi/rho)
 
 # Create the plot
 fig = plt.figure()
 ax = fig.add_subplot(111)
-
+                              
 # User can specify what to normalize the radius by
 # By default, normalize by the solar radius
 if rnorm is None:
@@ -174,26 +161,8 @@ if rnorm is None:
 else:
     rr_n = rr/rnorm                                           
 
-# Plot B amps vs radius
-colors = ['k', 'r', 'g', 'b', 'm', 'c']
-ax.plot(rr_n, amp_b, colors[0] + '-', label='tot, all m')
-ax.plot(rr_n, amp_br, colors[1] + '-', label='rad')
-ax.plot(rr_n, amp_bt, colors[2] + '-', label='theta')
-ax.plot(rr_n, amp_bp, colors[3] + '-', label='phi')
-ax.plot(rr_n, np.sqrt(amp_br**2. + amp_bt**2.), colors[4] + '-',\
-        label='pol')
-
-ax.plot(rr_n, famp_b, colors[0] + '--', label='m != 0')
-ax.plot(rr_n, famp_br, colors[1] + '--')
-ax.plot(rr_n, famp_bt, colors[2] + '--')
-ax.plot(rr_n, famp_bp, colors[3] + '--')
-ax.plot(rr_n, np.sqrt(famp_br**2. + famp_bt**2.), colors[4] + '--')
-
-ax.plot(rr_n, mamp_b, colors[0] + ':', label='m = 0')
-ax.plot(rr_n, mamp_br, colors[1] + ':')
-ax.plot(rr_n, mamp_bt, colors[2] + ':')
-ax.plot(rr_n, mamp_bp, colors[3] + ':')
-ax.plot(rr_n, np.sqrt(mamp_br**2. + mamp_bt**2.), colors[4] + ':')
+# Plot Re vs radius
+ax.plot(rr_n, v_A)
 
 # Label the axes
 if rnorm is None:
@@ -201,7 +170,7 @@ if rnorm is None:
 else:
     plt.xlabel(r'r/(%.1e cm)' %rnorm, fontsize=12, **csfont)
 
-plt.ylabel('B field (G)',fontsize=12,\
+plt.ylabel('Alfven speed (cgs)',fontsize=12,\
         **csfont)
 
 # Set the axis limits
@@ -213,10 +182,8 @@ plt.xlim((xmin, xmax))
 rr_depth = (ro - rr)/shell_depth
 ir1, ir2 = np.argmin(np.abs(rr_depth - 0.05)),\
         np.argmin(np.abs(rr_depth - 0.95))
-amp_min = min(np.min(amp_br[ir1:ir2]), np.min(amp_bt[ir1:ir2]),\
-        np.min(amp_bp[ir1:ir2]))
-amp_max = np.max(amp_b[ir1:ir2])
-print (amp_min, amp_max)
+amp_min = np.min((v_A)[ir1:ir2])
+amp_max = np.max((v_A)[ir1:ir2])
 if minmax is None:
     fact = 0.2
     if logscale:
@@ -248,22 +215,16 @@ if not rvals is None:
             rval_n = rval/rnorm
         plt.plot(rval_n + np.zeros(100), yvals, 'k--')
 
-if plotdir is None:
-    plotdir = dirname + '/plots/'
-    if not os.path.isdir(plotdir):
-        os.makedirs(plotdir)
-
 # Create a title    
-plt.title(dirname_stripped + '\n' +'B Field Amplitudes, ' +\
+plt.title(dirname_stripped + '\n' +'v_Alfven (pol.) / v_convection ' +\
           str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8), **csfont)
-plt.legend()
 
 # Get ticks everywhere
 plt.minorticks_on()
 plt.tick_params(top=True, right=True, direction='in', which='both')
 plt.tight_layout()
 
-savefile = plotdir + dirname_stripped + '_bamp_' +\
+savefile = plotdir + dirname_stripped + '_v_alfven_' +\
     str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + tag + '.png'
 print('Saving plot at ' + savefile + ' ...')
 plt.savefig(savefile, dpi=300)
