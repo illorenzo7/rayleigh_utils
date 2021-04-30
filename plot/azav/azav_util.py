@@ -320,7 +320,7 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
 
             if not rbcz is None: # Make a colorbar for the RZ
                 cbar_bottom = ax_ymin - 2.5*cbar_height -\
-                        2.*line_height - cbar_height
+                        (1 + (units != ''))*line_height - cbar_height
                 cbar_left = ax_xmin + 0.5*ax_delta_x - 0.5*cbar_width
                 cax = fig.add_axes((cbar_left, cbar_bottom, cbar_width,\
                         cbar_height))        
@@ -360,7 +360,10 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
                     ticklabels[nticks - 1] = sci_format(minmaxrz[1])
                     cbar.set_ticklabels(ticklabels)
                 else:
-                    cbar_label = (r'$\times10^{%i}\ $' %exprz) + units
+                    if nosci:
+                        cbar_label = units
+                    else:
+                        cbar_label = (r'$\times10^{%i}\ $' %exprz) + units
                     cbar.set_ticks([minmaxrz[0], 0, minmaxrz[1]])
                     cbar.set_ticklabels(['%1.1f' %minmaxrz[0], '0', '%1.1f'\
                             %minmaxrz[1]])
