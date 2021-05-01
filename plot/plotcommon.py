@@ -32,6 +32,14 @@ def axis_range(ax): # gets subplot coordinates on a figure in "normalized"
     ymin, ymax = bottom_left[1], top_right[1]
     return xmin, xmax, ymin, ymax
 
+def my_set_title(fig, ax, title, fontsize=default_titlesize, ha='center', va='bottom', pad=1./8.):
+    ax_left, ax_right, ax_bottom, ax_top = axis_range(ax)
+    ax_width = ax_right - ax_left
+    ax_height = ax_top - ax_bottom
+    fig_width_inches, fig_height_inches = fig.get_size_inches()
+    margin_y = pad/fig_height_inches
+    fig.text(ax_left + 0.5*ax_width, ax_top + margin_y, title, fontsize=fontsize, ha=ha, va=va, **csfont)
+
 def xy_grid(X, Y):
     """
     plt.pcolormesh() takes arguments X, Y, and C; treats the X, Y 

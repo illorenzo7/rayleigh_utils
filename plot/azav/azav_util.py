@@ -337,8 +337,8 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
                 elif posdef:
                     cbar_label = (r'$\times10^{%i}\ $' %exprz) + units
                     cbar.set_ticks([minmaxrz[0], minmaxrz[1]])
-                    cbar.set_ticklabels(['%1.1f' %minmaxrz[0],\
-                            '%1.1f' %minmaxrz[1]])
+                    cbar.set_ticklabels(['%1.1f' %minmax[0],\
+                        '%1.1f' %minmax[1]])
                 elif symlog:
                     cbar_label = units
                     nlin = 5
@@ -365,7 +365,8 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
                     else:
                         cbar_label = (r'$\times10^{%i}\ $' %exprz) + units
                     cbar.set_ticks([minmaxrz[0], 0, minmaxrz[1]])
-                    cbar.set_ticklabels(['%1.1f' %minmaxrz[0], '0', '%1.1f'\
+                    fmt = '%.' + str(cbar_prec) + 'f'
+                    cbar.set_ticklabels([fmt %minmaxrz[0], '0', fmt\
                             %minmaxrz[1]])
         
                 # Title the colorbar based on the field's units
