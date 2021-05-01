@@ -390,13 +390,17 @@ def get_quantity_group(tag, magnetism):
             qvals_loc = iqstart + np.arange(0, ncol*3, 3) + count
             qvals += qvals_loc.tolist()
             titles_loc = []
-            for j in range(len(basetitles)):
+            for j in range(ncol):
                 titles_loc.append(basetitles[j] + ' (' + ext + ', ' +\
                         direc + ')')
             titles += titles_loc
             count += 1
         units = [utype['eprod']]
-        di_out['totsig'] = np.array([1, 0, 0, 0, 1])
+        totsig = np.zeros(ncol)
+        totsig[0] = 1
+        if ncol == 5: # include diffusion
+            totsig[4] = 1
+        di_out['totsig'] = totsig
 
     if tag in ['indralt', 'indraltnum']:
         ind_off = 0

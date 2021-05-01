@@ -916,11 +916,13 @@ def plot_azav_grid(terms, rr, cost, maintitle=None, titles=None, fig_width_inche
                 iterm += 1
 
             # insert the tot_term at the correct place
-            iterm += 1
             terms.insert(iterm, tot_term)
             titles.insert(iterm, 'tot')
             units.insert(iterm, units[iterm - 2])
+            iterm += 1
             nplots += 1
+        # need to made ncol 1 bigger to include the tot term
+        ncol += 1
 
     # set up figure + axes
     sub_margin_bottom_inches = 0.75*(2.0 - (rbcz is None)) 
