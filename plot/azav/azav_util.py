@@ -20,7 +20,7 @@ from common import *
 from plotcommon import *
 
 def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
-    units='', minmax=None, posdef=False, logscale=False, symlog=False,\
+    cmaprz='PuOr_r', units='', minmax=None, posdef=False, logscale=False, symlog=False,\
     plotcontours=True, plotfield=True, nlevs=10, levels=None,\
 	plotlatlines=False, rvals=None, fontsize=default_labelsize, cbar_aspect=1./20.,\
     showplot=False, plot_cbar=True, lw_scaling=1., cbar_scaling=1.,\
@@ -166,7 +166,7 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
                     linscale=linscale, vmin=minmax[0], vmax=minmax[1]),\
                     levels=levs)
             else:
-                im = ax.contourf(xx, zz, field, cmap='RdYlBu_r',\
+                im = ax.contourf(xx, zz, field, cmap=cmap,\
                         levels=np.linspace(minmax[0], minmax[1], 150))                
         else:
             if logscale:
@@ -244,10 +244,10 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
                     vmax=minmaxrz[1]), levels=levs)
             else:
                 # First plot field in CZ
-                im = ax.contourf(xxcz, zzcz, fieldcz, cmap='RdYlBu_r',\
+                im = ax.contourf(xxcz, zzcz, fieldcz, cmap=cmap,\
                         levels=np.linspace(minmax[0], minmax[1], 150)) 
                 # Then plot field in RZ
-                imrz = ax.contourf(xxrz, zzrz, fieldrz, cmap='RdYlBu_r',\
+                imrz = ax.contourf(xxrz, zzrz, fieldrz, cmap=cmaprz,\
                         levels=np.linspace(minmaxrz[0], minmaxrz[1], 150)) 
 
         if plot_cbar:
