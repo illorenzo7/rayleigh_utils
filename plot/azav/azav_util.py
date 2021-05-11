@@ -487,13 +487,6 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
                     linewidth=contour_lw)
 
     # Plot various radii, if desired
-    # If rbcz has been provided, it should be one of the radii plotted
-    if not rbcz is None and plotboundary:
-        if rvals is None:
-            rvals = np.array([rbcz])
-        else:
-            rvals = np.hstack((rvals, np.array([rbcz])))
-  
     if not rvals is None:
         for rval in rvals: 
             plt.sca(ax)
