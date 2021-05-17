@@ -39,6 +39,9 @@ rho = eq.density
 # Directory with data and plots, make the plotting directory if it doesn't
 # already exist    
 datadir = dirname + '/data/'
+plotdir = dirname + '/plots/'
+if not os.path.isdir(plotdir):
+    os.makedirs(plotdir)
 
 # Set defaults
 rnorm = None
@@ -47,20 +50,16 @@ logscale = False
 rvals = [] # user can specify radii to mark by vertical lines
 tag = ''
 use_hrho = False
-Shell_Avgs_file = get_widest_range_file(datadir, 'Shell_Avgs')
+the_file = get_widest_range_file(datadir, 'Shell_Avgs')
 
 # Read command-line arguments (CLAs)
-plotdir = None
-
 args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
-    if arg == '-plotdir':
-        plotdir = args[i+1]
     if arg == '-usefile':
-        Shell_Avgs_file = args[i+1]
-        Shell_Avgs_file = Shell_Avgs_file.split('/')[-1]
+        the_file = args[i+1]
+        the_file = the_file.split('/')[-1]
     elif arg == '-rnorm':
         rnorm = float(args[i+1])
     elif arg == '-minmax':
@@ -103,18 +102,15 @@ for i in range(nargs):
             rval = float(st)
             rvals.append(rval)
 
-if plotdir is None:
-    plotdir = dirname + '/plots/'
-    if not os.path.isdir(plotdir):
-        os.makedirs(plotdir)
-
 # Read in vavg data
-print ('Reading Shell_Avgs data from ' + datadir + Shell_Avgs_file + ' ...')
-di = get_dict(datadir + Shell_Avgs_file)
+print ('Reading Shell_Avgs data from ' + the_file + ' ...')
+di = get_dict(the_file)
 vals = di['vals']
 lut = di['lut']
-iter1, iter2 = di['iter1'], di['iter2']
-rr = di['rr']
+iter1, iter2 = get_iters_from_file(the_file)
+di_grid = get_grid_info(dirname)
+rr = di_grid['rr']
+nr = di_grid['nr']
 
 # Derivative grid info
 nr = len(rr)
@@ -122,9 +118,9 @@ ri, ro = np.min(rr), np.max(rr)
 shell_depth = ro - ri
 
 # Convective velocity amplitudes, get these from KE
-frke = vals[:, lut[410]]
-ftke = vals[:, lut[411]]
-fpke = vals[:, lut[412]]
+frke = vals[:, 0, lut[410]]
+ftke = vals[:, 0, lut[411]]
+fpke = vals[:, 0, lut[412]]
 
 vsq_r = frke/rho
 vsq_t = ftke/rho

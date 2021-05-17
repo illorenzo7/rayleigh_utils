@@ -39,6 +39,9 @@ rho = eq.density
 # Directory with data and plots, make the plotting directory if it doesn't
 # already exist    
 datadir = dirname + '/data/'
+plotdir = dirname + '/plots/'
+if not os.path.isdir(plotdir):
+    os.makedirs(plotdir)
 
 # Set defaults
 rnorm = None
@@ -50,14 +53,10 @@ use_hrho = False
 the_file = get_widest_range_file(datadir, 'Shell_Avgs')
 
 # Read command-line arguments (CLAs)
-plotdir = None
-
 args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
-    if arg == '-plotdir':
-        plotdir = args[i+1]
     if arg == '-usefile':
         the_file = args[i+1]
         the_file = the_file.split('/')[-1]
@@ -109,9 +108,9 @@ di = get_dict(the_file)
 vals = di['vals']
 lut = di['lut']
 iter1, iter2 = get_iters_from_file(the_file)
-
 di_grid = get_grid_info(dirname)
 rr = di_grid['rr']
+nr = di_grid['nr']
 
 # Derivative grid info
 nr = len(rr)
@@ -119,54 +118,29 @@ ri, ro = np.min(rr), np.max(rr)
 shell_depth = ro - ri
 
 # Convective B amplitudes, get these from ME
-rme = vals[:, 0, lut[1102]]
-tme = vals[:, 0, lut[1103]]
-pme = vals[:, 0, lut[1104]]
+frme = vals[:, 0, lut[1102]]
+ftme = vals[:, 0, lut[1103]]
+fpme = vals[:, 0, lut[1104]]
 
-frme = vals[:, 0, lut[1110]]
-ftme = vals[:, 0, lut[1111]]
-fpme = vals[:, 0, lut[1112]]
+fact = 8*np.pi
+sq_r = frme*fact
+sq_t = ftme*fact
+sq_p = fpme*fact
+sq = sq_r + sq_t + sq_p
 
-mrme = rme - frme
-mtme = tme - ftme
-mpme = pme - fpme
-
-eightpi = 8.*np.pi
-
-bsq_r = rme*eightpi
-bsq_t = tme*eightpi
-bsq_p = pme*eightpi
-bsq = bsq_r + bsq_t + bsq_p
-
-fbsq_r = frme*eightpi
-fbsq_t = ftme*eightpi
-fbsq_p = fpme*eightpi
-fbsq = fbsq_r + fbsq_t + fbsq_p
-
-mbsq_r = mrme*eightpi
-mbsq_t = mtme*eightpi
-mbsq_p = mpme*eightpi
-mbsq = mbsq_r + mbsq_t + mbsq_p
-
-amp_b = np.sqrt(bsq)
-amp_br = np.sqrt(bsq_r)
-amp_bt = np.sqrt(bsq_t)
-amp_bp = np.sqrt(bsq_p)
-
-famp_b = np.sqrt(fbsq)
-famp_br = np.sqrt(fbsq_r)
-famp_bt = np.sqrt(fbsq_t)
-famp_bp = np.sqrt(fbsq_p)
-
-mamp_b = np.sqrt(mbsq)
-mamp_br = np.sqrt(mbsq_r)
-mamp_bt = np.sqrt(mbsq_t)
-mamp_bp = np.sqrt(mbsq_p)
+amp_v = np.sqrt(sq)/1000.
+amp_vr = np.sqrt(sq_r)/1000.
+amp_vt = np.sqrt(sq_t)/1000.
+amp_vp = np.sqrt(sq_p)/1000.
 
 # Create the plot
 fig = plt.figure()
 ax = fig.add_subplot(111)
 
+# Get extrema values for diff. rot.
+maxes = [] # Get the max-value of Omega for plotting purposes
+mins = []  # ditto for the min-value
+                                               
 # User can specify what to normalize the radius by
 # By default, normalize by the solar radius
 if rnorm is None:
@@ -174,26 +148,11 @@ if rnorm is None:
 else:
     rr_n = rr/rnorm                                           
 
-# Plot B amps vs radius
-colors = ['k', 'r', 'g', 'b', 'm', 'c']
-ax.plot(rr_n, amp_b, colors[0] + '-', label='tot, all m')
-ax.plot(rr_n, amp_br, colors[1] + '-', label='rad')
-ax.plot(rr_n, amp_bt, colors[2] + '-', label='theta')
-ax.plot(rr_n, amp_bp, colors[3] + '-', label='phi')
-ax.plot(rr_n, np.sqrt(amp_br**2. + amp_bt**2.), colors[4] + '-',\
-        label='pol')
-
-ax.plot(rr_n, famp_b, colors[0] + '--', label='m != 0')
-ax.plot(rr_n, famp_br, colors[1] + '--')
-ax.plot(rr_n, famp_bt, colors[2] + '--')
-ax.plot(rr_n, famp_bp, colors[3] + '--')
-ax.plot(rr_n, np.sqrt(famp_br**2. + famp_bt**2.), colors[4] + '--')
-
-ax.plot(rr_n, mamp_b, colors[0] + ':', label='m = 0')
-ax.plot(rr_n, mamp_br, colors[1] + ':')
-ax.plot(rr_n, mamp_bt, colors[2] + ':')
-ax.plot(rr_n, mamp_bp, colors[3] + ':')
-ax.plot(rr_n, np.sqrt(mamp_br**2. + mamp_bt**2.), colors[4] + ':')
+# Plot Re vs radius
+ax.plot(rr_n, amp_v, label= r'$B$')
+ax.plot(rr_n, amp_vr, label= r'$B_r$')
+ax.plot(rr_n, amp_vt, label = r'$B_\theta$')
+ax.plot(rr_n, amp_vp, label = r'$B_\phi$')
 
 # Label the axes
 if rnorm is None:
@@ -201,7 +160,7 @@ if rnorm is None:
 else:
     plt.xlabel(r'r/(%.1e cm)' %rnorm, fontsize=12, **csfont)
 
-plt.ylabel('B field (G)',fontsize=12,\
+plt.ylabel('B field (kG)',fontsize=12,\
         **csfont)
 
 # Set the axis limits
@@ -213,9 +172,9 @@ plt.xlim((xmin, xmax))
 rr_depth = (ro - rr)/shell_depth
 ir1, ir2 = np.argmin(np.abs(rr_depth - 0.05)),\
         np.argmin(np.abs(rr_depth - 0.95))
-amp_min = min(np.min(amp_br[ir1:ir2]), np.min(amp_bt[ir1:ir2]),\
-        np.min(amp_bp[ir1:ir2]))
-amp_max = np.max(amp_b[ir1:ir2])
+amp_min = min(np.min(amp_vr[ir1:ir2]), np.min(amp_vt[ir1:ir2]),\
+        np.min(amp_vp[ir1:ir2]))
+amp_max = np.max(amp_v[ir1:ir2])
 print (amp_min, amp_max)
 if minmax is None:
     fact = 0.2
@@ -248,13 +207,8 @@ if not rvals is None:
             rval_n = rval/rnorm
         plt.plot(rval_n + np.zeros(100), yvals, 'k--')
 
-if plotdir is None:
-    plotdir = dirname + '/plots/'
-    if not os.path.isdir(plotdir):
-        os.makedirs(plotdir)
-
 # Create a title    
-plt.title(dirname_stripped + '\n' +'B Field Amplitudes, ' +\
+plt.title(dirname_stripped + '\n' +'Mag field Amplitudes, ' +\
           str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8), **csfont)
 plt.legend()
 
@@ -263,7 +217,7 @@ plt.minorticks_on()
 plt.tick_params(top=True, right=True, direction='in', which='both')
 plt.tight_layout()
 
-savefile = plotdir + dirname_stripped + '_bamp_' +\
+savefile = plotdir + 'bamp-' +\
     str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + tag + '.png'
 print('Saving plot at ' + savefile + ' ...')
 plt.savefig(savefile, dpi=300)
