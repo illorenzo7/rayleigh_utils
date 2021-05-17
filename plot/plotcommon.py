@@ -512,3 +512,94 @@ def lineplot(xx, yy, ax=None, axtwin=None, xlabel=None, ylabel=None, title=None,
     if showplot:
         plt.show()
         return fig, ax
+
+def my_contourf(xx, yy, field, fig=None, ax=None,\
+        # saturation of field values stuff
+        minmax=None, posdef=False, logscale=False, symlog=False, linthresh=None, linscale=None,\
+        # basic flags:
+        plotcontours=True, plotfield=True, nlevs=10, levels=None,
+        # colorbar stuff
+        plot_cbar=True, cbar_width=0.5, cmap=None, units='', nosci=False, cbar_prec=1, fontsize=default_labelsize):
+
+    # Create a default set of figure axes if they weren't specified
+    if fig is None or ax is None:
+        showplot = True # probably in this case the user just
+        # ran plot_azav from the command line
+        
+        # get default axes with correct axis ratio
+        delta_x = np.max(xx), np.min(xx)
+        delta_y = np.max(yy), np.min(yy)
+        nplots = 1
+        sub_width_inches = 4.0
+        sub_aspect = delta_y/delta_x
+        sub_margin_bottom_inches = 1.0
+        fig, axs, fpar = make_figure(nplots, sub_width_inches, sub_aspect, sub_margin_bottom_inches=sub_margin_bottom_inches)
+
+    # First things first, make sure Python does not modify any of the 
+    # arrays it was passed
+    field = np.copy(field)
+
+    # If using logscale, you better have positive values!
+    if logscale:
+        posdef = True
+
+    # Get default bounds (for CZ) if not specified
+    if minmax is None:
+        minmax = get_satvals(field, posdef=posdef, logscale=logscale, symlog=symlog)
+
+    # By default (for the linear-scaled color bars, default and posdef),
+    # Factor out the exponent on the field and put it on the color bar
+    if not (logscale or symlog or nosci) and plotfield:
+        maxabs = max(np.abs(minmax[0]), np.abs(minmax[1]))
+        exp = get_exp(maxabs)
+        divisor = 10.0**exp
+        field /= divisor
+        minmax = minmax[0]/divisor, minmax[1]/divisor
+
+    # plot the field
+    if plotfield:
+        norm = None
+        if logscale:
+            if cmap is None:
+                cmap = 'Greys'
+            log_min, log_max = np.log10(minmax[0]), np.log10(minmax[1])
+            levs = np.logspace(log_min, log_max, 150)
+            norm=colors.LogNorm(vmin=minmax[0], vmax=minmax[1])
+            #im = ax.contourf(xx, yy, field, cmap=cmap,\
+            #    norm=colors.LogNorm(vmin=minmax[0], vmax=minmax[1]),\
+            #    levels=levs)  
+        elif posdef:
+            if cmap is None:
+                cmap = 'plasma'
+            levs = np.linspace(minmax[0], minmax[1], 150)
+            #im = ax.contourf(xx, zz, field, cmap='plasma', levels=levs)
+        elif symlog:
+            if cmap is None:
+                cmap = 'PuOr_r'    
+            linthresh_default, linscale_default =\
+                get_symlog_params(field, field_max=minmax[1])
+            if linthresh is None:
+                linthresh = linthresh_default
+            if linscale is None:
+                linscale = linscale_default
+            log_thresh = np.log10(linthresh)
+            log_max = np.log10(minmax[1])
+            nlevs_per_interval = 100
+            levels_neg = -np.logspace(log_max, log_thresh,\
+                    nlevs_per_interval,\
+                    endpoint=False)
+            levels_mid = np.linspace(-linthresh, linthresh,\
+                    nlevs_per_interval, endpoint=False)
+            levels_pos = np.logspace(log_thresh, log_max,\
+                    nlevs_per_interval)
+            levs = np.hstack((levels_neg, levels_mid, levels_pos))
+            #im = ax.contourf(xx, zz, field, cmap='RdYlBu_r',\
+            #    norm=colors.SymLogNorm(linthresh=linthresh,\
+            #    linscale=linscale, vmin=minmax[0], vmax=minmax[1]),\
+            #    levels=levs)
+        else:
+            if cmap is None:
+                cmap = 'RdYlBu_r'
+            levs=np.linspace(minmax[0], minmax[1], 150)
+        im = ax.contourf(xx, zz, field, cmap=cmap, levels=levs, norm=norm)
+                
