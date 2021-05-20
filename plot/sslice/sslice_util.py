@@ -363,7 +363,7 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
             cbar_units = ' ' + (r'$\times10^{%i}$' %maxabs_exp) + ' ' + units#\
                 #texunits.get(varname, 'cgs')
             cbar.set_ticks([minmax[0], minmax[1]])
-            cbar.set_ticklabels(['%1.1f' %minmax[0], '%1.1f' %minmax[1]])
+            cbar.set_ticklabels(['%1.2f' %minmax[0], '%1.2f' %minmax[1]])
         elif symlog:
             cbar_units = ' ' + units #texunits.get(varname, 'cgs')
             nlin = 5
@@ -394,7 +394,7 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
             cbar_units = ' ' + (r'$\times10^{%i}$' %maxabs_exp) + units#\
                     #' ' + texunits.get(varname, 'cgs')
             cbar.set_ticks([minmax[0], 0, minmax[1]])
-            cbar.set_ticklabels(['%1.1f' %minmax[0], '0', '%1.1f'\
+            cbar.set_ticklabels(['%1.2f' %minmax[0], '0', '%1.2f'\
                     %minmax[1]])
         # Title the colorbar based on the field's units
         fig.text(cbar_left + cbar_width, cbar_bottom + 0.5*cbar_height,\
@@ -626,7 +626,7 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
             cbar_units = ' ' + (r'$\times10^{%i}$' %maxabs_exp) + ' ' + units#\
                 #texunits.get(varname, 'cgs')
             cbar.set_ticks([minmax[0], minmax[1]])
-            cbar.set_ticklabels(['%1.1f' %minmax[0], '%1.1f' %minmax[1]])
+            cbar.set_ticklabels(['%1.2f' %minmax[0], '%1.2f' %minmax[1]])
         elif symlog:
             cbar_units = ' ' + units #base_units
             nlin = 5
@@ -653,7 +653,7 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
             else:
                 cbar_units = ' ' + (r'$\times10^{%i}$' %maxabs_exp) + units
             cbar.set_ticks([minmax[0], 0, minmax[1]])
-            cbar.set_ticklabels(['%.1f' %minmax[0], '0', '%.1f'\
+            cbar.set_ticklabels(['%.2f' %minmax[0], '0', '%.2f'\
                     %minmax[1]])
 
         # Title the colorbar based on the field's units

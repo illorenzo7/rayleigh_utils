@@ -26,7 +26,7 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
     showplot=False, plot_cbar=True, lw_scaling=1., cbar_scaling=1.,\
     linthresh=None, linscale=None, plotboundary=True, rbcz=None,\
     minmaxrz=None, linthreshrz=None, linscalerz=None, nosci=False,\
-    cbar_prec=1):
+    cbar_prec=1, linestrings=None):
 
     ''' Takes (or creates) set of axes with physical aspect ratio 1x2
     and adds a plot of [field] in the meridional plane to the axes,
@@ -488,11 +488,17 @@ def plot_azav(field, rr, cost, fig=None, ax=None, cmap='RdYlBu_r',\
 
     # Plot various radii, if desired
     if not rvals is None:
+        count = 0
         for rval in rvals: 
             plt.sca(ax)
             rval *= (rsun/ro)
-            plt.plot(rval*sint, rval*cost, 'k--',\
+            if linestrings is None:
+                linestring = 'k--'
+            else:
+                linestring = linestrings[count]
+            plt.plot(rval*sint, rval*cost, linestring,\
                     linewidth=0.7*lw_scaling)
+            count += 1
 
     # Set ax ranges to be just outside the boundary lines
     lilbit = 0.01
