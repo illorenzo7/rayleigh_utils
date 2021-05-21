@@ -451,7 +451,6 @@ def lineplot(xx, yy, ax=None, axtwin=None, xlabel=None, ylabel=None, title=None,
     if not xcut is None:
         ax2.set_ylim(yminmax2)
 
-
     # possibly append to xvals and yvals (0 point and xcut)
     xvals_to_add = []
     if xminmax[0] < 0.0 < xminmax[1]:
@@ -517,9 +516,13 @@ def my_contourf(xx, yy, field, fig=None, ax=None,\
         # saturation of field values stuff
         minmax=None, posdef=False, logscale=False, symlog=False, linthresh=None, linscale=None,\
         # basic flags:
-        plotcontours=True, plotfield=True, nlevs=10, levels=None,
+        plotfield=True, nlevelsfield=160, levels=None,\
+        plotcontours=True, ncontours=8, contourlevels=None, contourlw=1.0, contourcolor=None,\
         # colorbar stuff
-        plot_cbar=True, cbar_width=0.5, cmap=None, units='', nosci=False, cbar_prec=1, fontsize=default_labelsize):
+        plot_cbar=True, cbar_thick=1./8., cbar_aspect=1.0/10.0, cbar_prec=2, cbar_no=1, cmap=None, units='', nosci=False, fontsize=default_labelsize,\
+        # coordinate line stuff; do up to two "types"
+        vals1=None, func1=None, linestyles1=None, colors1=None, lw1=1.0,\
+        vals2=None, func2=None, linestyles2=None, colors2=None, lw2=1.0):
 
     # Create a default set of figure axes if they weren't specified
     if fig is None or ax is None:
@@ -534,6 +537,7 @@ def my_contourf(xx, yy, field, fig=None, ax=None,\
         sub_aspect = delta_y/delta_x
         sub_margin_bottom_inches = 1.0
         fig, axs, fpar = make_figure(nplots, sub_width_inches, sub_aspect, sub_margin_bottom_inches=sub_margin_bottom_inches)
+        ax = axs[0, 0]
 
     # First things first, make sure Python does not modify any of the 
     # arrays it was passed
@@ -543,36 +547,39 @@ def my_contourf(xx, yy, field, fig=None, ax=None,\
     if logscale:
         posdef = True
 
-    # Get default bounds (for CZ) if not specified
+    # Get default bounds if not specified
     if minmax is None:
         minmax = get_satvals(field, posdef=posdef, logscale=logscale, symlog=symlog)
 
-    # By default (for the linear-scaled color bars, default and posdef),
-    # Factor out the exponent on the field and put it on the color bar
-    if not (logscale or symlog or nosci) and plotfield:
-        maxabs = max(np.abs(minmax[0]), np.abs(minmax[1]))
-        exp = get_exp(maxabs)
-        divisor = 10.0**exp
-        field /= divisor
-        minmax = minmax[0]/divisor, minmax[1]/divisor
-
     # plot the field
     if plotfield:
+        # By default (for the linear-scaled default and posdef),
+        # Factor out the exponent on the field and put it on the color bar
+        # can turn this behavior off with "nosci=True"
+        if not (logscale or symlog or nosci):
+            maxabs = max(np.abs(minmax[0]), np.abs(minmax[1]))
+            exp = get_exp(maxabs)
+            divisor = 10.0**exp
+            field /= divisor
+            minmax = minmax[0]/divisor, minmax[1]/divisor
+
         norm = None
         if logscale:
             if cmap is None:
                 cmap = 'Greys'
             log_min, log_max = np.log10(minmax[0]), np.log10(minmax[1])
-            levs = np.logspace(log_min, log_max, 150)
+            if levels is None:
+                levels = np.logspace(log_min, log_max, nlevelsfield + 1)
             norm=colors.LogNorm(vmin=minmax[0], vmax=minmax[1])
             #im = ax.contourf(xx, yy, field, cmap=cmap,\
             #    norm=colors.LogNorm(vmin=minmax[0], vmax=minmax[1]),\
-            #    levels=levs)  
+            #    levels=levels)  
         elif posdef:
             if cmap is None:
                 cmap = 'plasma'
-            levs = np.linspace(minmax[0], minmax[1], 150)
-            #im = ax.contourf(xx, zz, field, cmap='plasma', levels=levs)
+            if levels is None:
+                levels = np.linspace(minmax[0], minmax[1], nlevelsfield + 1)
+            #im = ax.contourf(xx, zz, field, cmap='plasma', levels=levels)
         elif symlog:
             if cmap is None:
                 cmap = 'PuOr_r'    
@@ -582,24 +589,156 @@ def my_contourf(xx, yy, field, fig=None, ax=None,\
                 linthresh = linthresh_default
             if linscale is None:
                 linscale = linscale_default
-            log_thresh = np.log10(linthresh)
-            log_max = np.log10(minmax[1])
-            nlevs_per_interval = 100
-            levels_neg = -np.logspace(log_max, log_thresh,\
-                    nlevs_per_interval,\
-                    endpoint=False)
-            levels_mid = np.linspace(-linthresh, linthresh,\
-                    nlevs_per_interval, endpoint=False)
-            levels_pos = np.logspace(log_thresh, log_max,\
-                    nlevs_per_interval)
-            levs = np.hstack((levels_neg, levels_mid, levels_pos))
+            if levels is None:
+                log_thresh = np.log10(linthresh)
+                log_max = np.log10(minmax[1])
+                nlevels_per_interval = nlevelsfield//4
+                levels_neg = -np.logspace(log_max, log_thresh,\
+                        nlevels_per_interval,\
+                        endpoint=False)
+                levels_mid = np.linspace(-linthresh, linthresh,\
+                        2*nlevels_per_interval, endpoint=False)
+                levels_pos = np.logspace(log_thresh, log_max,\
+                        nlevels_per_interval + 1)
+                levels = np.hstack((levels_neg, levels_mid, levels_pos))
+            norm = colors.SymLogNorm(linthresh=linthresh,\
+                linscale=linscale, vmin=minmax[0], vmax=minmax[1])
             #im = ax.contourf(xx, zz, field, cmap='RdYlBu_r',\
             #    norm=colors.SymLogNorm(linthresh=linthresh,\
             #    linscale=linscale, vmin=minmax[0], vmax=minmax[1]),\
-            #    levels=levs)
-        else:
+            #    levels=levels)
+        else: # this is the default...just do linear scaled pos/neg values
             if cmap is None:
                 cmap = 'RdYlBu_r'
-            levs=np.linspace(minmax[0], minmax[1], 150)
-        im = ax.contourf(xx, zz, field, cmap=cmap, levels=levs, norm=norm)
+            if levels is None:
+                levels = np.linspace(minmax[0], minmax[1], nlevs + 1)
+
+        # finally we make the contour plot!
+        im = ax.contourf(xx, yy, field, cmap=cmap, levels=levels, norm=norm)
+
+        # now deal with color bar
+        if plot_cbar:
+            # get cbar dimensions
+            fig_width_inches, fig_height_inches = fig.get_size_inches()
+            fig_aspect = fig_height_inches/fig_width_inches
+            cbar_height = cbar_thick/fig_height_inches
+            cbar_width = cbar_height/cbar_aspect*fig_aspect
+
+            # centrally position colorbar underneath the axes
+            ax_left, ax_right, ax_bottom, ax_top = axis_range(ax)
+            ax_width = ax_right - ax_width
+            ax_height = ax_top - ax_bottom
+            line_height = 1.0/4.0/fig_height_inches # needs to contain
+            # the colorbar ticklabels and little buffer space
+            lilbit = 1.0/16.0/fig_height_inches
+            cbar_left = ax_left + 0.5*ax_width - 0.5*cbar_width
+            cbar_bottom = ax_bottom - lilbit - cbar_height -\
+                    (cbar_no - 1)*(line_height + cbar_height)
+            cax = fig.add_axes((cbar_left, cbar_bottom, cbar_width,\
+                    cbar_height))        
+            cbar = plt.colorbar(im, cax=cax, orientation='horizontal')
                 
+            # font size for the tick labels
+            cax.tick_params(labelsize=fontsize)
+            #cbar.ax.tick_params(labelsize=fontsize)   
+
+            if logscale:
+                locator = ticker.LogLocator(subs='all')
+                cbar.set_ticks(locator)
+                cbar_label = units
+            elif posdef:
+                cbar_label = (r'$\times10^{%i}\ $' %exp) + units
+                cbar.set_ticks([minmax[0], minmax[1]])
+                fmt = '%.' + str(cbar_prec) + 'f'
+                cbar.set_ticklabels([fmt %minmax[0],\
+                        fmt %minmax[1]])
+            elif symlog:
+                cbar_label = units
+                nlin = 5
+                nlog = 6
+                lin_ticks = np.linspace(-linthresh, linthresh, nlin)
+                log_ticks1 = np.linspace(minmax[0], -linthresh, nlog,\
+                        endpoint=False)
+                log_ticks2 = -log_ticks1[::-1]
+                ticks = np.hstack((log_ticks1, lin_ticks, log_ticks2))
+                nticks = nlin + 2*nlog
+                cbar.set_ticks(ticks)
+                ticklabels = []
+                for i in range(nticks):
+                    ticklabels.append(r'')
+#                ticklabels[0] = sci_format(minmax[0])
+                ticklabels[nlog] = sci_format(-linthresh, ndec=cbar_prec)
+#                ticklabels[nticks//2] = r'$0$'
+#                ticklabels[nlog + nlin - 1] = sci_format(linthresh)
+                ticklabels[nticks - 1] = sci_format(minmax[1], ndec=cbar_prec)
+                cbar.set_ticklabels(ticklabels)
+            else:
+                if nosci:
+                    cbar_label = units
+                else:
+                    cbar_label = (r'$\times10^{%i}\ $' %exp) + units
+                cbar.set_ticks([minmax[0], 0, minmax[1]])
+                fmt = '%.' + str(cbar_prec) + 'f'
+                cbar.set_ticklabels([fmt %minmax[0], '0', fmt\
+                        %minmax[1]])
+                #cbar.set_ticklabels(['%.1f' %minmax[0], '0', '%.1f'\
+                #        %minmax[1]])
+    
+            # Title the colorbar based on the field's units
+            fig.text(cbar_right + lilbit/fig_aspect,\
+                    cbar_bottom + 0.5*cbar_height, cbar_label,\
+                    ha='left', va='center', **csfont, fontsize=fontsize) 
+
+    # Plot contours if desired
+    if plotcontours:
+        # Determine the contour levels
+        if contourlevels is None:
+            # just thin out the field levels
+            nskip = nlevelsfield//ncontours
+            contourlevels = levels[::nskip]
+
+        # Determine how to color the contours
+        if contourcolor is None:
+            if logscale:
+                contourcolor = 'r'
+            elif posdef:
+                contourcolor = 'w'
+            else:
+                contourcolor = 'k'
+
+        # plot the contours
+        ax.contour(xx, yy, field, contourlevels,\
+                colors=contour_color, linewidths=contour_lw)
+
+    # finally, plot some lines!
+    if not vals1 is None:
+        if linestyles1 is None:
+            linestyles1 = '--'
+        if colors1 is None:
+            colors1 = 'k'
+        ax.contour(xx, yy, func1, vals1,\
+                linestyles=linestyles1, colors=colors1, linewidths=lw1)
+
+    if not vals2 is None:
+        if linestyles2 is None:
+            linestyles2 = '--'
+        if colors2 is None:
+            colors2 = 'k'
+        ax.contour(xx, yy, func2, vals2,\
+                linestyles=linestyles2, colors=colors2, linewidths=lw2)
+
+    # Set ax ranges to be just outside the boundary lines
+    # avoid weird whitespace cutoffs
+    lilbit = 0.01
+    xmin, xmax = np.min(xx), np.max(xx)
+    ymin, ymax = np.min(yy), np.max(yy)
+    Dx = xmax - xmin
+    Dy = ymax - ymin
+    ax.set_xlim((xmin - lilbit*Dx, xmax + lilbit*Dx))
+    ax.set_ylim((ymin - lilbit*Dy, ymax + lilbit*Dy))
+    ax.axis('off') 
+
+    if showplot:
+        plt.show()
+    if plotfield:
+        return im
