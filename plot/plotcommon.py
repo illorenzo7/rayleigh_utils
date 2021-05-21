@@ -515,7 +515,7 @@ def lineplot(xx, yy, ax=None, axtwin=None, xlabel=None, ylabel=None, title=None,
 
 def my_contourf(xx, yy, field, fig=None, ax=None,\
         # saturation of field values stuff
-        minmax=None, posdef=False, logscale=False, symlog=False, linthresh=None, linscale=None,\
+        minmax=None, fullrange=False, posdef=False, logscale=False, symlog=False, linthresh=None, linscale=None,\
         # basic flags:
         showplot=False, plotfield=True, nlevelsfield=160, levels=None,\
         plotcontours=True, ncontours=8, contourlevels=None, contourlw=1.0, contourcolor=None,\
@@ -551,7 +551,7 @@ def my_contourf(xx, yy, field, fig=None, ax=None,\
 
     # Get default bounds if not specified
     if minmax is None:
-        minmax = get_satvals(field, posdef=posdef, logscale=logscale, symlog=symlog)
+        minmax = get_satvals(field, posdef=posdef, logscale=logscale, symlog=symlog, fullrange=fullrange)
 
     # plot the field
     if plotfield:

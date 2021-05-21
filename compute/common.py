@@ -312,14 +312,9 @@ def get_satvals(field, posdef=False, logscale=False, symlog=False,\
     elif posdef:
         sig = rms(field)
         minmax = 0., 3.*sig        
-    elif symlog:
+    elif symlog or fullrange:
         maxabs = np.max(np.abs(field))
         minmax = -maxabs, maxabs       
-    elif fullrange:
-        minval = np.min(field)
-        maxval = np.max(field)
-        buff = buff_frac*(maxval - minval)
-        minmax = minval - buff, maxval + buff
     else:
         sig = np.std(field)
         minmax = -3.*sig, 3.*sig
