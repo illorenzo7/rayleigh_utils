@@ -98,8 +98,8 @@ elif use_sslice:
 
 elif use_gtr:
     if trace_file == None:
-        trace_file = get_widest_range_file(datadir, 'trace_G_Avgs')
-    di = get_dict(datadir + trace_file)
+        trace_file = get_widest_range_file(datadir, 'G_Avgs_trace')
+    di = get_dict(trace_file)
     times = di['times']
     iters = di['iters']
     t1, t2 = times[0], times[-1]
