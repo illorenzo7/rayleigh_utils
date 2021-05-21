@@ -2,6 +2,7 @@
 # Created: 02/08/2019
 import numpy as np
 import matplotlib.pyplot as plt
+from common import *
 plt.rcParams['mathtext.fontset'] = 'dejavuserif'
 csfont = {'fontname':'DejaVu Serif'}
 #from matplotlib import ticker
@@ -516,13 +517,14 @@ def my_contourf(xx, yy, field, fig=None, ax=None,\
         # saturation of field values stuff
         minmax=None, posdef=False, logscale=False, symlog=False, linthresh=None, linscale=None,\
         # basic flags:
-        plotfield=True, nlevelsfield=160, levels=None,\
+        showplot=False, plotfield=True, nlevelsfield=160, levels=None,\
         plotcontours=True, ncontours=8, contourlevels=None, contourlw=1.0, contourcolor=None,\
         # colorbar stuff
         plot_cbar=True, cbar_thick=1./8., cbar_aspect=1.0/10.0, cbar_prec=2, cbar_no=1, cmap=None, units='', nosci=False, fontsize=default_labelsize,\
         # coordinate line stuff; do up to two "types"
-        vals1=None, func1=None, linestyles1=None, colors1=None, lw1=1.0,\
-        vals2=None, func2=None, linestyles2=None, colors2=None, lw2=1.0):
+        vals1=[], func1=None, linestyles1=[], colors1=[], lw1=1.0,\
+        vals2=[], func2=None, linestyles2=[], colors2=[], lw2=1.0,\
+        plotboundary=False):
 
     # Create a default set of figure axes if they weren't specified
     if fig is None or ax is None:
@@ -530,8 +532,8 @@ def my_contourf(xx, yy, field, fig=None, ax=None,\
         # ran plot_azav from the command line
         
         # get default axes with correct axis ratio
-        delta_x = np.max(xx), np.min(xx)
-        delta_y = np.max(yy), np.min(yy)
+        delta_x = np.max(xx) - np.min(xx)
+        delta_y = np.max(yy) - np.min(yy)
         nplots = 1
         sub_width_inches = 4.0
         sub_aspect = delta_y/delta_x
@@ -562,6 +564,9 @@ def my_contourf(xx, yy, field, fig=None, ax=None,\
             divisor = 10.0**exp
             field /= divisor
             minmax = minmax[0]/divisor, minmax[1]/divisor
+
+        # Saturate the array (otherwise contourf will show white areas)
+        saturate_array(field, minmax[0], minmax[1])
 
         norm = None
         if logscale:
@@ -611,7 +616,7 @@ def my_contourf(xx, yy, field, fig=None, ax=None,\
             if cmap is None:
                 cmap = 'RdYlBu_r'
             if levels is None:
-                levels = np.linspace(minmax[0], minmax[1], nlevs + 1)
+                levels = np.linspace(minmax[0], minmax[1], nlevelsfield + 1)
 
         # finally we make the contour plot!
         im = ax.contourf(xx, yy, field, cmap=cmap, levels=levels, norm=norm)
@@ -626,7 +631,7 @@ def my_contourf(xx, yy, field, fig=None, ax=None,\
 
             # centrally position colorbar underneath the axes
             ax_left, ax_right, ax_bottom, ax_top = axis_range(ax)
-            ax_width = ax_right - ax_width
+            ax_width = ax_right - ax_left
             ax_height = ax_top - ax_bottom
             line_height = 1.0/4.0/fig_height_inches # needs to contain
             # the colorbar ticklabels and little buffer space
@@ -685,7 +690,7 @@ def my_contourf(xx, yy, field, fig=None, ax=None,\
                 #        %minmax[1]])
     
             # Title the colorbar based on the field's units
-            fig.text(cbar_right + lilbit/fig_aspect,\
+            fig.text(cbar_left + cbar_width + lilbit/fig_aspect,\
                     cbar_bottom + 0.5*cbar_height, cbar_label,\
                     ha='left', va='center', **csfont, fontsize=fontsize) 
 
@@ -708,24 +713,49 @@ def my_contourf(xx, yy, field, fig=None, ax=None,\
 
         # plot the contours
         ax.contour(xx, yy, field, contourlevels,\
-                colors=contour_color, linewidths=contour_lw)
+                colors=contourcolor, linewidths=contourlw)
 
     # finally, plot some lines!
-    if not vals1 is None:
-        if linestyles1 is None:
-            linestyles1 = '--'
-        if colors1 is None:
-            colors1 = 'k'
-        ax.contour(xx, yy, func1, vals1,\
-                linestyles=linestyles1, colors=colors1, linewidths=lw1)
+    for ind in [1, 2]:
+        if ind == 1:
+            vals = vals1
+            func = func1
+            linestyles = linestyles1
+            colors = colors1
+            lw = lw1
+        if ind == 2:
+            vals = vals2
+            func = func2
+            linestyles = linestyles2
+            colors = colors2
+            lw = lw2
 
-    if not vals2 is None:
-        if linestyles2 is None:
-            linestyles2 = '--'
-        if colors2 is None:
-            colors2 = 'k'
-        ax.contour(xx, yy, func2, vals2,\
-                linestyles=linestyles2, colors=colors2, linewidths=lw2)
+        vals = list(vals)
+        linestyles = list(linestyles)
+        colors = list(colors)
+        if linestyles == []:
+            linestyles = ['--']*len(vals)
+        if colors == []:
+            colors = ['k']*len(vals)
+        linewidths = [lw]*len(vals)
+        if plotboundary:
+            vals = [np.min(func)] + vals + [np.max(func)]
+            linestyles = ['-'] + linestyles + ['-']
+            colors = ['k'] + colors + ['k']
+            linewidths = [2*lw] + linewidths + [2*lw]
+
+        # check to make sure values are within (strictly) the func's range
+        # (otherwise they can't be plotted)
+        vmin, vmax = np.min(func), np.max(func)
+        for i in range(len(vals)):
+            val = vals[i]
+            if val <= vmin:
+                vals[i] = vmin + 1.0e-6
+            if val >= vmax:
+                vals[i] = vmax - 1.0e-6 # need to do this (same issue with
+                # contourf whitespace, I think. Not sure why)
+        ax.contour(xx, yy, func, vals,\
+                linestyles=linestyles, colors=colors, linewidths=linewidths)
 
     # Set ax ranges to be just outside the boundary lines
     # avoid weird whitespace cutoffs
