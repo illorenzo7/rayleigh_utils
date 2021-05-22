@@ -576,18 +576,14 @@ def my_contourf(xx, yy, field, fig=None, ax=None,\
             if levels is None:
                 levels = np.logspace(log_min, log_max, nlevelsfield + 1)
             norm=colors.LogNorm(vmin=minmax[0], vmax=minmax[1])
-            #im = ax.contourf(xx, yy, field, cmap=cmap,\
-            #    norm=colors.LogNorm(vmin=minmax[0], vmax=minmax[1]),\
-            #    levels=levels)  
         elif posdef:
             if cmap is None:
                 cmap = 'plasma'
             if levels is None:
                 levels = np.linspace(minmax[0], minmax[1], nlevelsfield + 1)
-            #im = ax.contourf(xx, zz, field, cmap='plasma', levels=levels)
         elif symlog:
             if cmap is None:
-                cmap = 'PuOr_r'    
+                cmap = 'RdYlBu_r'
             linthresh_default, linscale_default =\
                 get_symlog_params(field, field_max=minmax[1])
             if linthresh is None:
@@ -608,10 +604,6 @@ def my_contourf(xx, yy, field, fig=None, ax=None,\
                 levels = np.hstack((levels_neg, levels_mid, levels_pos))
             norm = colors.SymLogNorm(linthresh=linthresh,\
                 linscale=linscale, vmin=minmax[0], vmax=minmax[1])
-            #im = ax.contourf(xx, zz, field, cmap='RdYlBu_r',\
-            #    norm=colors.SymLogNorm(linthresh=linthresh,\
-            #    linscale=linscale, vmin=minmax[0], vmax=minmax[1]),\
-            #    levels=levels)
         else: # this is the default...just do linear scaled pos/neg values
             if cmap is None:
                 cmap = 'RdYlBu_r'
@@ -701,6 +693,7 @@ def my_contourf(xx, yy, field, fig=None, ax=None,\
             # just thin out the field levels
             nskip = nlevelsfield//ncontours
             contourlevels = levels[::nskip]
+                    # contourf whitespace, I think. Not sure why)
 
         # Determine how to color the contours
         if contourcolor is None:
@@ -710,6 +703,10 @@ def my_contourf(xx, yy, field, fig=None, ax=None,\
                 contourcolor = 'w'
             else:
                 contourcolor = 'k'
+
+        print ("contourlevels = ", contourlevels)
+        print ("min(field) = ", np.min(field))
+        print ("max(field) = ", np.max(field))
 
         # plot the contours
         ax.contour(xx, yy, field, contourlevels,\
@@ -744,18 +741,21 @@ def my_contourf(xx, yy, field, fig=None, ax=None,\
             colors = ['k'] + colors + ['k']
             linewidths = [2*lw] + linewidths + [2*lw]
 
-        # check to make sure values are within (strictly) the func's range
-        # (otherwise they can't be plotted)
-        vmin, vmax = np.min(func), np.max(func)
-        for i in range(len(vals)):
-            val = vals[i]
-            if val <= vmin:
-                vals[i] = vmin + 1.0e-6
-            if val >= vmax:
-                vals[i] = vmax - 1.0e-6 # need to do this (same issue with
-                # contourf whitespace, I think. Not sure why)
-        ax.contour(xx, yy, func, vals,\
-                linestyles=linestyles, colors=colors, linewidths=linewidths)
+        if len(vals) > 0:
+            # check to make sure values are within (strictly) the func's range
+            # (otherwise they can't be plotted)
+            vmin, vmax = np.min(func), np.max(func)
+            maxabs = np.max(np.abs(func))
+            for i in range(len(vals)):
+                val = vals[i]
+                if val <= vmin:
+                    vals[i] = vmin + maxabs*1.0e-15
+                if val >= vmax:
+                    vals[i] = vmax - maxabs*1.0e-15 
+                    # need to do this (same issue with
+                    # contourf whitespace, I think. Not sure why)
+            ax.contour(xx, yy, func, vals,\
+                    linestyles=linestyles, colors=colors, linewidths=linewidths)
 
     # Set ax ranges to be just outside the boundary lines
     # avoid weird whitespace cutoffs
