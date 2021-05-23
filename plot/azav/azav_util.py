@@ -22,6 +22,10 @@ from plotcommon import *
 def plot_azav(field, rr, cost, rbcz=None, minmaxrz=None, linthreshrz=None, linscalerz=None, cmaprz=None, rvals=[], rstyles=[], rcolors=[], rlw=1.0, plotlatlines=True, latvals=[], latstyles=[], latcolors=[], latlw=1.0, **kwargs):
     # **kwargs corresponds to my_contourf
 
+    # make copy of field
+    field = np.copy(field)
+    field_full = np.copy(field)
+
     # grid info
     nt, nr = len(cost), len(rr)
     zeros = np.zeros((nt, nr))
@@ -29,9 +33,10 @@ def plot_azav(field, rr, cost, rbcz=None, minmaxrz=None, linthreshrz=None, linsc
     rmax = np.max(rr_2d)
     cost_2d = cost.reshape((nt, 1)) + zeros
     sint_2d = np.sqrt(1.0 - cost_2d**2.0)
-    tt_lat_2d = 180.0/np.pi*(np.pi/2.0 - np.arccos(cost_2d))
+    tt_lat = 180.0/np.pi*(np.pi/2.0 - np.arccos(cost_2d))
+    # tt_lat is 2D here!
 
-    # use these to plot lines at end
+    # use these to plot lines/boundaries
     xx_full = rr_2d*sint_2d/rmax
     yy_full = rr_2d*cost_2d/rmax
     rr_full = rr_2d/rsun
@@ -39,14 +44,20 @@ def plot_azav(field, rr, cost, rbcz=None, minmaxrz=None, linthreshrz=None, linsc
     if rbcz is None: # just plotting 1 domain
         xx = xx_full
         yy = yy_full
+        field = field_full
+        rr_cz = rr_full
     else: # plotting two domains
         irbcz = np.argmin(np.abs(rr/rsun - rbcz))
-        fieldcz = field[:, :irbcz+1]
         fieldrz = field[:, irbcz+1:]
+        field = field[:, :irbcz+1]
         xx = (rr_2d*sint_2d)[:, :irbcz+1]/ro
         yy = (rr_2d*cost_2d)[:, :irbcz+1]/ro
         xxrz = (rr_2d*sint_2d)[:, irbcz+1:]/ro
         yyrz = (rr_2d*cost_2d)[:, irbcz+1:]/ro
+        rr_cz = rr_full[:, :irbcz+1]
+        rr_rz = rr_full[:, irbcz+1:]
+        tt_lat_rz = tt_lat_2d[:, irbcz+1:]
+        tt_lat_full = tt_lat[:, :irbcz+1]
 
     if not rbcz is None: # plot the RZ field first (before "showing"
         # the plot, potentially)
@@ -67,19 +78,23 @@ def plot_azav(field, rr, cost, rbcz=None, minmaxrz=None, linthreshrz=None, linsc
             else:
                 cmaprz = 'PuOr_r'    
         kwargsrz['cmap'] = cmaprz
-        my_contourf(xxrz, yyrz, fieldrz, cbar_no=2, **kwargsrz)
+        out = my_contourf(xxrz, yyrz, fieldrz, func1=rr_rz, func2=tt_lat_rz, cbar_no=2, **kwargsrz)
 
     # regardless, plot the CZ field
-    my_contourf(xx, yy, field, **kwargs)
+    if not rbcz is None and (not 'fig' in kwargs.keys() or\
+            not 'ax' in kwargs.keys()): # in this case, need to use the
+        # already-generated fig, ax from the RZ plot
+        kwargs['fig'], kwargs['ax'] = out
+    fig, ax = my_contourf(xx, yy, field, func1=rr_cz, func2=tt_lat, **kwargs)
 
     # potentially plot coordinate lines
     if plotlatlines:
         if latvals == []:
-            latvals = np.arange(-90.0, 90.0, 30.0)
+            latvals = np.arange(-60.0, 89.0, 30.0)
     else:
         latvals = []
 
-    my_contourf(xx_full, yy_full, field, plotfield=False, func1=rr_full, vals1=rvals, linestyles1=rstyles, colors1=rcolors, lw1=rlw, func2=tt_lat_2d, vals2=latvals, linestyles2=latstyles, colors2=latcolors, lw2=latlw)
+    my_contourf(xx_full, yy_full, field_full, fig=fig, ax=ax, plotfield=False, func1=rr_full, vals1=rvals, linestyles1=rstyles, colors1=rcolors, lw1=rlw, func2=tt_lat_full, vals2=latvals, linestyles2=latstyles, colors2=latcolors, lw2=latlw)
 
 def plot_azav_half(field, rr, cost, sym='even', fig=None, ax=None,\
         cmap='RdYlBu_r', units='', minmax=None, posdef=False, logscale=False,\

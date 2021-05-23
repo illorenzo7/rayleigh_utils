@@ -626,7 +626,7 @@ def my_contourf(xx, yy, field, fig=None, ax=None,\
         ax_left, ax_right, ax_bottom, ax_top = axis_range(ax)
         ax_width = ax_right - ax_left
         ax_height = ax_top - ax_bottom
-        line_height = 1.0/4.0/fig_height_inches # needs to contain
+        line_height = 3/8/fig_height_inches # needs to contain
         # the colorbar ticklabels and little buffer space
         lilbit = 1.0/16.0/fig_height_inches
         cbar_left = ax_left + 0.5*ax_width - 0.5*cbar_width
@@ -705,10 +705,6 @@ def my_contourf(xx, yy, field, fig=None, ax=None,\
             else:
                 contourcolor = 'k'
 
-        print ("contourlevels = ", contourlevels)
-        print ("min(field) = ", np.min(field))
-        print ("max(field) = ", np.max(field))
-
         # plot the contours
         ax.contour(xx, yy, field, contourlevels,\
                 colors=contourcolor, linewidths=contourlw)
@@ -769,5 +765,4 @@ def my_contourf(xx, yy, field, fig=None, ax=None,\
     ax.set_ylim((ymin - lilbit*Dy, ymax + lilbit*Dy))
     ax.axis('off') 
 
-    if showplot:
-        plt.show()
+    return fig, ax
