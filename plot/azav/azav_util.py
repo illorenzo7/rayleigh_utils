@@ -19,7 +19,7 @@ sys.path.append(os.environ['raco'])
 from common import *
 from plotcommon import *
 
-def plot_azav(field, rr, cost, rbcz=None, minmaxrz=None, linthreshrz=None, linscalerz=None, cmaprz=None, rvals=[], rstyles=[], rcolors=[], rlw=1.0, plotlatlines=True, latvals=[], latstyles=[], latcolors=[], latlw=1.0, **kwargs):
+def plot_azav(field, rr, cost, rbcz=None, minmaxrz=None, linthreshrz=None, linscalerz=None, cmaprz=None, rvals=np.array([]), rstyles=[], rcolors=[], rlw=1.0, plotlatlines=True, latvals=np.array([]), latstyles=[], latcolors=[], latlw=1.0, **kwargs):
     # **kwargs corresponds to my_contourf
 
     # make copy of field
@@ -40,6 +40,7 @@ def plot_azav(field, rr, cost, rbcz=None, minmaxrz=None, linthreshrz=None, linsc
     xx_full = rr_2d*sint_2d/rmax
     yy_full = rr_2d*cost_2d/rmax
     rr_full = rr_2d/rsun
+    tt_lat_full = np.copy(tt_lat)
 
     if rbcz is None: # just plotting 1 domain
         xx = xx_full
@@ -56,8 +57,8 @@ def plot_azav(field, rr, cost, rbcz=None, minmaxrz=None, linthreshrz=None, linsc
         yyrz = (rr_2d*cost_2d)[:, irbcz+1:]/ro
         rr_cz = rr_full[:, :irbcz+1]
         rr_rz = rr_full[:, irbcz+1:]
-        tt_lat_rz = tt_lat_2d[:, irbcz+1:]
-        tt_lat_full = tt_lat[:, :irbcz+1]
+        tt_lat_rz = tt_lat[:, irbcz+1:]
+        tt_lat = tt_lat[:, :irbcz+1]
 
     if not rbcz is None: # plot the RZ field first (before "showing"
         # the plot, potentially)

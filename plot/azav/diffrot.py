@@ -19,6 +19,7 @@ sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from azav_util import plot_azav
 from common import *
+from plotcommon import *
 from cla_util import *
 
 # Get directory name and stripped_dirname for plotting purposes
@@ -88,29 +89,16 @@ it0, it60 = np.argmin(np.abs(tt_lat)), np.argmin(np.abs(tt_lat - 60))
 Delta_Om = diffrot[it0, 0] - diffrot[it60, 0]
 
 # Create plot
-subplot_width_inches = 2.5
-subplot_height_inches = 5.
-margin_inches = 1./8.
-margin_top_inches = 2. # larger top margin to make room for titles
-margin_bottom_inches = 0.75*(2 - (clas['rbcz'] is None)) 
+width_inches = 3.25
+sub_aspect = 2
+margin_top_inches = 1.5 # larger top margin to make room for titles
+margin_bottom_inches = 0.7*(2 - (clas['rbcz'] is None)) 
     # larger bottom margin to make room for colorbar(s)
+fig, axs, fpar = make_figure(nplots=1, sub_aspect=sub_aspect, margin_top_inches=margin_top_inches, margin_bottom_inches=margin_bottom_inches, width_inches=width_inches)
+ax = axs[0, 0]
 
-fig_width_inches = subplot_width_inches + 2*margin_inches
-fig_height_inches = subplot_height_inches + margin_top_inches +\
-        margin_bottom_inches
-
-fig_aspect = fig_height_inches/fig_width_inches
-margin_x = margin_inches/fig_width_inches
-margin_y = margin_inches/fig_height_inches
-margin_top = margin_top_inches/fig_height_inches
-margin_bottom = margin_bottom_inches/fig_height_inches
-subplot_width = subplot_width_inches/fig_width_inches
-subplot_height = subplot_height_inches/fig_height_inches
-
-fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
-ax = fig.add_axes((margin_x, margin_bottom, subplot_width, subplot_height))
 plot_azav (diffrot, rr, cost, fig=fig, ax=ax, units='nHz',\
-        nlevs=clas['nlevs'], minmax=clas['minmax'], rvals=clas['rvals'])
+        ncontours=clas['nlevs'], minmax=clas['minmax'], rvals=clas['rvals'])
 # Make title + label diff. rot. contrast and no. contours
 # Label averaging interval
 if rotation:
@@ -121,20 +109,21 @@ else:
     time_string = ('t = %.3f to %.3f ' %(t1/time_unit, t2/time_unit))\
             + time_label + (r'$\ (\Delta t = %.3f\ $'\
             %((t2 - t1)/time_unit)) + time_label + ')'
-fsize = 12.
-line_height = 1./4./fig_height_inches
+line_height = 1/4/fpar['height_inches']
+margin_x = fpar['margin_left'] + fpar['sub_margin_left']
+margin_y = default_margin/fpar['height_inches']
 fig.text(margin_x, 1 - margin_y, dirname_stripped_title,\
-         ha='left', va='top', fontsize=fsize, **csfont)
+         ha='left', va='top', fontsize=default_titlesize, **csfont)
 fig.text(margin_x, 1 - margin_y - 2*line_height, r'$\Omega - \Omega_0$',\
-         ha='left', va='top', fontsize=fsize, **csfont)
+         ha='left', va='top', fontsize=default_titlesize, **csfont)
 fig.text(margin_x, 1 - margin_y - 3*line_height, time_string,\
-         ha='left', va='top', fontsize=fsize, **csfont)
+         ha='left', va='top', fontsize=default_titlesize, **csfont)
 fig.text(margin_x, 1 - margin_y - 5*line_height,\
          r'$\Delta\Omega_{\rm{60}} = %.1f\ nHz$' %Delta_Om,\
-         ha='left', va='top', fontsize=fsize, **csfont)
+         ha='left', va='top', fontsize=default_titlesize, **csfont)
 fig.text(margin_x, 1 - margin_y - 6*line_height,\
          'nlevs = %i' %clas['nlevs'],
-         ha='left', va='top', fontsize=fsize, **csfont)
+         ha='left', va='top', fontsize=default_titlesize, **csfont)
 
 # save the figure
 plotdir = my_mkdir(clas['plotdir'] + 'azav/')

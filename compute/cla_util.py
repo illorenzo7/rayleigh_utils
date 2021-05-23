@@ -17,7 +17,7 @@ clas_default['qvals'] = None
 
 clas_default['nlevs'] = 20
 clas_default['rbcz'] = None
-clas_default['rvals'] = None
+clas_default['rvals'] = np.array([])
 
 clas_default['minmax'] = None
 clas_default['minmaxrz'] = None
@@ -192,6 +192,8 @@ def read_clas(args):
             clas['rvals'] = read_cla_vals(args, i)
         if arg == '--rrange':
             rbot, rtop, nrvals = read_cla_vals(args, i)
+            rbot *= rsun
+            rtop *= rsun
             nrvals = int(nrvals)
             clas['rvals'] = np.linspace(rtop, rbot, nrvals)
         if arg == '--nrperzone':

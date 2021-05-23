@@ -14,13 +14,13 @@ style_order = ['-', '--', '-.', ':']
 marker_order = [".", "o", "v","s", "*", "x", "^", "<", ">"]
 default_lw = 1.0
 default_s = 0.2 # markersize
-default_labelsize = 12.0
-default_titlesize = 12.0
-default_ticksize = 12.0
-default_margin = 1.0/16.0
-default_margin_label = 3.0/8.0
-default_margin_xlabel = 3.0/8.0 
-default_margin_ylabel = 3.0/4.0
+default_labelsize = 12
+default_titlesize = 12
+default_ticksize = 12
+default_margin = 1/16
+default_margin_label = 3/8
+default_margin_xlabel = 3/8
+default_margin_ylabel = 3/4
 # ylabels take up more space because floating
 # point numbers are longer than they are tall
 default_margin_title = 3.0/4.0
@@ -521,11 +521,11 @@ def my_contourf(xx, yy, field, fig=None, ax=None,\
         showplot=False, plotfield=True, nlevelsfield=160, levels=None,\
         plotcontours=True, ncontours=8, contourlevels=None, contourlw=1.0, contourcolor=None,\
         # colorbar stuff
-        plotcbar=True, cbar_thick=1./8., cbar_aspect=1.0/20.0, cbar_prec=2, cbar_no=1, cmap=None, units='', nosci=False, fontsize=default_labelsize,\
+        plotcbar=True, cbar_thick=1./8., cbar_aspect=1/15, cbar_prec=2, cbar_no=1, cmap=None, units='', nosci=False, fontsize=default_labelsize,\
         # coordinate line stuff; do up to two "types"
-        vals1=[], func1=None, linestyles1=[], colors1=[], lw1=1.0,\
-        vals2=[], func2=None, linestyles2=[], colors2=[], lw2=1.0,\
-        plotboundary=False):
+        vals1=np.array([]), func1=None, linestyles1=[], colors1=[], lw1=1.0,\
+        vals2=np.array([]), func2=None, linestyles2=[], colors2=[], lw2=1.0,\
+        plotboundary=True):
 
     # Create a default set of figure axes if they weren't specified
     if fig is None or ax is None:
@@ -710,6 +710,15 @@ def my_contourf(xx, yy, field, fig=None, ax=None,\
                 colors=contourcolor, linewidths=contourlw)
 
     # finally, plot some lines!
+
+    # need to check if user provided the appropriate functions
+    # if plotboundary == True
+    if plotboundary:
+        if func1 is None or func2 is None:
+            print ("my_contourf(): plotboundary = True, but either ")
+            print ("func1 or func2 was not provided. Setting plotboundary=False")
+            plotboundary = False
+
     for ind in [1, 2]:
         if ind == 1:
             vals = vals1
@@ -732,8 +741,10 @@ def my_contourf(xx, yy, field, fig=None, ax=None,\
         if colors_loc == []:
             colors_loc = ['k']*len(vals)
         linewidths = [lw]*len(vals)
+
         if plotboundary:
-            vals = [np.min(func)] + vals + [np.max(func)]
+            vals = [np.min(func)] + list(vals) + [np.max(func)]
+            vals = np.array(vals)
             linestyles = ['-'] + linestyles + ['-']
             colors_loc = ['k'] + colors_loc + ['k']
             linewidths = [2*lw] + linewidths + [2*lw]
