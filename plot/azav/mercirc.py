@@ -20,6 +20,7 @@ sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from azav_util import plot_azav, streamfunction
 from common import *
+from plotcommon import *
 from cla_util import *
 
 # Get directory name and stripped_dirname for plotting purposes
@@ -48,118 +49,28 @@ rho = eq.density
 # Directory with data and plots, make the plotting directory if it doesn't
 # already exist    
 datadir = dirname + '/data/'
+clas = read_clas(args)
 
-# Set defaults
-minmax = None
-linthresh = None
-linscale = None
-minmaxrz = None
-linthreshrz = None
-linscalerz = None
-the_file = get_widest_range_file(datadir, 'AZ_Avgs')
-rbcz = None
-symlog = False
-plotcontours = True
-plotlatlines = True
-plotboundary = True
-rvals = []
-
-# Read in CLAs (if any) to change default variable ranges and other options
-plotdir = None
-
-args = sys.argv[2:]
-nargs = len(args)
-for i in range(nargs):
-    arg = args[i]
-    if arg == '-plotdir':
-        plotdir = args[i+1]
-    if arg == '-minmax':
-        minmax = float(args[i+1]), float(args[i+2])
-    elif arg == '-minmaxrz':
-        minmaxrz = float(args[i+1]), float(args[i+2])
-    elif arg == '-nlevs':
-        my_nlevs = int(args[i+1])
-    elif arg == '-usefile':
-        the_file = args[i+1]
-        the_file = the_file.split('/')[-1]
-    elif arg == '-nocontour':
-        plotcontours = False
-    elif arg == '-nobound':
-        plotboundary = False
-    elif arg == '-nolat':
-        plotlatlines = False
-    elif arg == '-rbcz':
-        rbcz = float(args[i+1])
-    elif arg == '-symlog':
-        symlog = True
-    elif arg == '-linthresh':
-        linthresh = float(args[i+1])
-    elif arg == '-linscale':
-        linscale = float(args[i+1])
-    elif arg == '-linthreshrz':
-        linthreshrz = float(args[i+1])
-    elif arg == '-linscalerz':
-        linscalerz = float(args[i+1])
-    elif arg == '-depths':
-        strings = args[i+1].split()
-        for st in strings:
-            rval = ro - float(st)*d
-            rvals.append(rval)
-    elif arg == '-depthscz':
-        rm = domain_bounds[1]
-        dcz = ro - rm
-        strings = args[i+1].split()
-        for st in strings:
-            rval = ro - float(st)*dcz
-            rvals.append(rval)
-    elif arg == '-depthsrz':
-        rm = domain_bounds[1]
-        drz = rm - ri
-        strings = args[i+1].split()
-        for st in strings:
-            rval = rm - float(st)*drz
-            rvals.append(rval)
-    elif arg == '-rvals':
-        rvals = []
-        strings = args[i+1].split()
-        for st in strings:
-            rval = float(st)*rsun
-            rvals.append(rval)
-    elif arg == '-rvalscm':
-        rvals = []
-        strings = args[i+1].split()
-        for st in strings:
-            rval = float(st)
-            rvals.append(rval)
-
+the_file = clas['the_file']
+if the_file is None:
+    the_file = get_widest_range_file(datadir, 'AZ_Avgs')
 # Read in AZ_Avgs data
 print ('Getting data from ' + the_file)
 di = get_dict(the_file)
-
 vals = di['vals']
 lut = di['lut']
+
+# make the main title
 iter1, iter2 = get_iters_from_file(the_file)
+time_string = get_time_info(dirname, iter1, iter2)
+maintitle = 'Meridional Circulation ' + '\n' + time_string
+
 # Get necessary grid info
 di_grid = get_grid_info(dirname)
 rr = di_grid['rr']
 cost = di_grid['cost']
-tt_lat = di_grid['tt_lat']
-tt = di_grid['tt']
-xx = di_grid['xx']
 
-# Get the time range in sec
-t1 = translate_times(iter1, dirname, translate_from='iter')['val_sec']
-t2 = translate_times(iter2, dirname, translate_from='iter')['val_sec']
-
-# Get the baseline time unit
-rotation = get_parameter(dirname, 'rotation')
-if rotation:
-    time_unit = compute_Prot(dirname)
-    time_label = r'$\rm{P_{rot}}$'
-else:
-    time_unit = compute_tdt(dirname)
-    time_label = r'$\rm{TDT}$'
-
+# get the mean flows
 vr_av, vt_av, vp_av = vals[:, :, lut[1]], vals[:, :, lut[2]],\
         vals[:, :, lut[3]]
 
@@ -173,65 +84,41 @@ psi = streamfunction(rho*vr_av, rho*vt_av, rr, cost)
 rhovm *= np.sign(psi)
 
 # Create plot
-subplot_width_inches = 2.5
-subplot_height_inches = 5.
-margin_inches = 1./8.
-margin_top_inches = 1.5 # larger top margin to make room for titles
-margin_bottom_inches = 0.75*(2 - (rbcz is None)) 
+width_inches = 3.25
+sub_aspect = 2
+margin_top_inches = 1 # larger top margin to make room for titles
+margin_bottom_inches = 0.7*(2 - (clas['rbcz'] is None)) 
     # larger bottom margin to make room for colorbar(s)
-
-fig_width_inches = subplot_width_inches + 2*margin_inches
-fig_height_inches = subplot_height_inches + margin_top_inches +\
-        margin_bottom_inches
-
-fig_aspect = fig_height_inches/fig_width_inches
-margin_x = margin_inches/fig_width_inches
-margin_y = margin_inches/fig_height_inches
-margin_top = margin_top_inches/fig_height_inches
-margin_bottom = margin_bottom_inches/fig_height_inches
-subplot_width = subplot_width_inches/fig_width_inches
-subplot_height = subplot_height_inches/fig_height_inches
-
-fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
-ax = fig.add_axes((margin_x, margin_bottom, subplot_width, subplot_height))
+fig, axs, fpar = make_figure(nplots=1, sub_aspect=sub_aspect, margin_top_inches=margin_top_inches, margin_bottom_inches=margin_bottom_inches, width_inches=width_inches)
+ax = axs[0, 0]
 
 # Plot mass flux
 plot_azav (rhovm, rr, cost, fig=fig, ax=ax,\
     units = r'$\rm{g}\ \rm{cm}^{-2}\ \rm{s}^{-1}$', plotcontours=False,\
-    minmax=minmax, minmaxrz=minmaxrz, rbcz=rbcz, symlog=symlog,\
-    linthresh=linthresh, linscale=linscale, linthreshrz=linthreshrz,\
-    linscalerz=linscalerz, plotlatlines=plotlatlines, rvals=rvals,\
-    plotboundary=plotboundary)
+    minmax=clas['minmax'], minmaxrz=clas['minmaxrz'], rbcz=clas['rbcz'], symlog=clas['symlog'],\
+    linthresh=clas['linthresh'], linscale=clas['linscale'], linthreshrz=clas['linthreshrz'],\
+    linscalerz=clas['linscalerz'], plotlatlines=clas['plotlatlines'], rvals=clas['rvals'],\
+    plotboundary=clas['plotboundary'])
 
 # Plot streamfunction contours, if desired
-if plotcontours:
+if clas['plotcontours']:
     lilbit = 0.01
     maxabs = np.max(np.abs(psi))
-    levels = (-maxabs/2., -maxabs/4., -lilbit*maxabs, 0., lilbit*maxabs,\
-            maxabs/4., maxabs/2.)
+    contourlevels = (-maxabs/2., -maxabs/4., -lilbit*maxabs, 0.,\
+            lilbit*maxabs, maxabs/4., maxabs/2.)
     plot_azav (psi, rr, cost, fig=fig, ax=ax, plotfield=False,\
-        levels=levels, symlog=symlog, plotlatlines=plotlatlines,\
-        plotboundary=plotboundary)
-
-# Label averaging interval
-if rotation:
-    time_string = ('t = %.1f to %.1f ' %(t1/time_unit, t2/time_unit))\
-            + time_label + '\n' + (r'$\ (\Delta t = %.1f\ $'\
-            %((t2 - t1)/time_unit)) + time_label + ')'
-else:
-    time_string = ('t = %.3f to %.3f ' %(t1/time_unit, t2/time_unit))\
-            + time_label + (r'$\ (\Delta t = %.3f\ $'\
-            %((t2 - t1)/time_unit)) + time_label + ')'
+        contourlevels=contourlevels, plotlatlines=clas['plotlatlines'], plotboundary=clas['plotboundary'])
 
 # Make title
 fsize = 12
-fig.text(margin_x, 1 - 1/8*margin_top, dirname_stripped_title,\
+margin_x = fpar['margin_left'] + fpar['sub_margin_left']
+margin_y = default_margin/fpar['height_inches']
+line_height = 1/4/fpar['height_inches']
+fig.text(margin_x, 1 - margin_y, dirname_stripped_title,\
          ha='left', va='top', fontsize=fsize, **csfont)
-fig.text(margin_x, 1 - 3/8*margin_top,\
-         r'$|\langle\overline{\rho}\mathbf{v}_m\rangle|$',\
+fig.text(margin_x, 1 - margin_y - 2*line_height,\
+        maintitle,\
          ha='left', va='top', fontsize=fsize, **csfont)
-fig.text(margin_x, 1 - 5/8*margin_top,\
-        time_string, ha='left', va='top', fontsize=fsize, **csfont)
 
 # save the figure
 plotdir = my_mkdir(clas['plotdir'] + 'azav/')

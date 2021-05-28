@@ -52,7 +52,6 @@ if the_file is None:
 # Read in AZ_Avgs data
 print ('Getting data from ' + the_file)
 di = get_dict(the_file)
-
 vals = di['vals']
 lut = di['lut']
 

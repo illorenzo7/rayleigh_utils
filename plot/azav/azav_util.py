@@ -95,7 +95,7 @@ def plot_azav(field, rr, cost, rbcz=None, minmaxrz=None, linthreshrz=None, linsc
     else:
         latvals = []
 
-    my_contourf(xx_full, yy_full, field_full, fig=fig, ax=ax, plotfield=False, func1=rr_full, vals1=rvals, linestyles1=rstyles, colors1=rcolors, lw1=rlw, func2=tt_lat_full, vals2=latvals, linestyles2=latstyles, colors2=latcolors, lw2=latlw)
+    my_contourf(xx_full, yy_full, field_full, fig=fig, ax=ax, plotfield=False, plotcontours=False, func1=rr_full, vals1=rvals, linestyles1=rstyles, colors1=rcolors, lw1=rlw, func2=tt_lat_full, vals2=latvals, linestyles2=latstyles, colors2=latcolors, lw2=latlw)
 
 def plot_azav_half(field, rr, cost, sym='even', fig=None, ax=None,\
         cmap='RdYlBu_r', units='', minmax=None, posdef=False, logscale=False,\
