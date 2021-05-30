@@ -9,79 +9,10 @@ import sys, os
 sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['rapl'])
-from cartopy import crs
 #from varprops import texunits
 from common import *
 from plotcommon import *
-
-def deal_with_nans(x, y):
-    """ Nandles the NaN in x and y produced by an orthographic projection
-    by making quadrilateral corners on the "other side" of the projection 
-    (which the NaNs correspond to) overlap with adjacent quadrilateral
-    corners--so that pcolormesh and contourf plot no data from the "far 
-    side" of the sphere. 
-    Note that for an orthographic projection,
-    x (East-West map coordinate) ~ longitude and y (North-South map
-     coordinate) ~ latitude.
-    Also in plot_ortho, the 0th axis of the arrays corresponds to longitude,
-    and the 1st axis corresponds to latitude.
-    =========================================
-    NOTE: deal_with_nans MUST be passed arrays in which the nans occur in
-    the first and last parts of each column (range of x coords, or 
-    longitudes)--i.e., roll the array so that your desired clon appears 
-    in the middle of the array BEFORE transforming coordinates with 
-    cartopy. If the nans occupy the middle of the column, pcolormesh
-    and contourf will do bad things.
-    """
-    x_dealt, y_dealt = np.copy(x), np.copy(y)
-
-    found_min_iy = False
-    found_max_iy = False
-    
-    nx, ny = np.shape(x)
-    min_iy, max_iy = 0, ny 
-    # assume by default no max and min iy 
-    # ("latitude") values    
-    for iy in range(ny):
-        xvals = np.copy(x_dealt[:, iy])
-        good = np.where(np.isfinite(xvals))[0]
-        if good.size == 0:
-            if found_min_iy and not found_max_iy:
-                max_iy = iy - 1
-                found_max_iy = True
-            continue
-        elif good.size == nx: # no nans, so nothing to do, so move on
-            # if this is the first column with "good" (non-nan) elements,
-            # you've found the min. iy!
-            if not found_min_iy:
-                min_iy = iy
-                found_min_iy = True
-            continue
-        else: # There are some nans to deal with
-            # These had better occur in blocks at the beginning and end
-            # of column iy. You also may have found min_iy!
-            if not found_min_iy:
-                min_iy = iy
-                found_min_iy = True            
-            
-            # Find the nans and replace them with their closest x-coord
-            # (~longitude)
-            ix_min, ix_max = good[0], good[-1]
-            x_dealt[:ix_min, iy] = x_dealt[ix_min, iy]
-            x_dealt[ix_max + 1:, iy] = x_dealt[ix_max, iy]
-            y_dealt[:ix_min, iy] = y_dealt[ix_min, iy]
-            y_dealt[ix_max + 1:, iy] = y_dealt[ix_max, iy]
-    
-    for ix in range(nx):
-        # Replace the nans before min_iy
-        x_dealt[ix, :min_iy] = x_dealt[ix, min_iy]
-        y_dealt[ix, :min_iy] = y_dealt[ix, min_iy]
-        # ...and after max_iy, if applicable
-        if max_iy < ny - 1:
-            x_dealt[ix, max_iy + 1:] = x_dealt[ix, max_iy]
-            y_dealt[ix, max_iy + 1:] = y_dealt[ix, max_iy]            
-       
-    return x_dealt, y_dealt
+from transform_coordinates import mollweide_transform
 
 def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
         minmax=None, clon=0, clat=20, posdef=False, logscale=False,\
@@ -431,33 +362,6 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
     mpl.rcParams['xtick.labelsize'] = cbar_fs
     mpl.rcParams['ytick.labelsize'] = cbar_fs
     
-    # Get latitude and longitude grid from the costheta array
-    theta = np.arccos(costheta)
-    lats = 90. - theta*180./np.pi
-    ntheta = len(theta)
-    nphi = 2*ntheta
-    dlon = 360.0/nphi     
-    lons = dlon*np.arange(nphi)  # In rayleigh, lons[0] = 0.
-    # Make 2d (meshed) grid of longitude/latitude
-    llon, llat = np.meshgrid(lons, lats, indexing='ij')    
-
-    # maybe compute average vals in North and South
-    if showav:
-        av_south = np.mean(field[:, :ntheta//2])
-        av_north = np.mean(field[:, ntheta//2:])
-    
-    # Essence of cartopy is transformations:
-    # This one will be from PlateCarree (simple longitude/latitude equally 
-    # spaced) to Mollweide
-    pc = crs.PlateCarree()
-    moll = crs.Mollweide(central_longitude=180.)
-
-    # "Roll" the original field so that so that the desired clon falls
-	# on 180 degrees, which is the ~center of the lons array
-    difflon = clon - 180.
-    iphi_shift = -int(difflon/360.*nphi)
-    field = np.roll(field, iphi_shift, axis=0)
-
     # Get default bounds if not specified
     if minmax is None:
         minmax = get_satvals(field, posdef=posdef, logscale=logscale,\
@@ -477,17 +381,8 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
     # Saturate the array (otherwise contourf will show white areas)
     saturate_array(field, minmax[0], minmax[1])    
             
-    # Get the Mollweide projection coordinates of llon/llat by converting
-    # between PlateCarree (lat/lon) and Mollweide
-    points_moll = moll.transform_points(pc, llon, llat) 
-        # must see why this doesn't work for othographic proj.
-    x = points_moll[:, :, 0]
-    y = points_moll[:, :, 1]
-
-    # "normalize coordinates":
-    radius = max(np.max(np.abs(x))/2., np.max(np.abs(y)))
-    x /= radius # now falls in [-2, 2]
-    y /= radius # now falls in [-1, 1]
+    # Get the Mollweide projection coordinates associated with costheta
+    xs, ys, llon, llat, beta = mollweide_transform(costheta)
 
     # Create a default fig/ax pair, if calling routine didn't specify
     # them
@@ -515,12 +410,12 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
     if logscale:
         log_min, log_max = np.log10(minmax[0]), np.log10(minmax[1])
         levels = np.logspace(log_min, log_max, 150)
-        im = ax.contourf(x, y, field, cmap=cmap,\
+        im = ax.contourf(xs, ys, field, cmap=cmap,\
             norm=colors.LogNorm(vmin=minmax[0], vmax=minmax[1]),\
             levels=levels)  
     elif posdef:
         levels = np.linspace(minmax[0], minmax[1])
-        im = ax.contourf(x, y, field, cmap=cmap, levels=levels)
+        im = ax.contourf(xs, ys, field, cmap=cmap, levels=levels)
     elif symlog:
         linthresh_default, linscale_default =\
             get_symlog_params(field, field_max=minmax[1])
@@ -539,15 +434,20 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
         levels_pos = np.logspace(log_thresh, log_max,\
                 nlevs_per_interval)
         levels = np.hstack((levels_neg, levels_mid, levels_pos))
-        im = ax.contourf(x, y, field, cmap=cmap,\
+        im = ax.contourf(xs, ys, field, cmap=cmap,\
             norm=colors.SymLogNorm(linthresh=linthresh,\
             linscale=linscale, vmin=minmax[0], vmax=minmax[1]),\
             levels=levels)
     else:
-        im = ax.contourf(x, y, field, cmap=cmap,\
+        im = ax.contourf(xs, ys, field, cmap=cmap,\
                 levels=np.linspace(minmax[0], minmax[1], 150))
       
     # Draw parallels and meridians, evenly spaced by 30 degrees
+    # need some derivative grid info
+    tt = np.arccos(costheta)
+    lat = np.pi/2. - tt # these "latitudes" are in radians...
+    lon = np.linspace(0., 2.*np.pi, 2*len(tt), endpoint=False)
+
     default_lw = 0.5*lw_scaling # default linewidth bit thinner
     parallels = np.arange(-60., 90., 30.)
     
@@ -558,36 +458,18 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
     meridians = np.arange(-difflon, -difflon + 360., 30.)
     
     npoints = 100
+    lw = default_lw
     for meridian in meridians:
-        if meridian == -difflon: 
-            lw = 1.3*lw_scaling # make central longitude thicker
-        else:
-            lw = default_lw
-            
-        lonvals = meridian + np.zeros(npoints)
-        latvals = np.linspace(-90, 90, npoints)
-        linepoints = moll.transform_points(pc, lonvals, latvals)
-        linex, liney = linepoints[:, 0], linepoints[:, 1]
-        linex /= radius
-        liney /= radius
-        
-        ax.plot(linex, liney, 'k', linewidth=lw)
+        imer = np.argmin(np.abs(lon - meridian*np.pi/180.))
+        ax.plot(xs[imer, :], ys[imer, :], 'k', linewidth=lw)
     
     for parallel in parallels:
         if parallel == 0.: 
             lw = 1.3*lw_scaling # make equator thicker
         else:
             lw = default_lw        
-        lonvals = np.linspace(0., 359.99, npoints)
-        # lon = 0 = 360 is treated as a negative-x point for clon=180
-        # so just below 360 is the positive-most x point
-        latvals = np.zeros(npoints) + parallel
-        linepoints = moll.transform_points(pc, lonvals, latvals)
-        linex, liney = linepoints[:, 0], linepoints[:, 1]
-        linex /= radius
-        liney /= radius
-        
-        ax.plot(linex, liney, 'k', linewidth=lw)
+        ilat = np.argmin(np.abs(lat - parallel*np.pi/180.))
+        ax.plot(xs[:, ilat], ys[:, ilat], 'k', linewidth=lw)
 
     # Set up color bar
     if plot_cbar:
@@ -668,20 +550,6 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
     psivals = np.linspace(0, 2*np.pi, 100)
     xvals, yvals = 2.*np.cos(psivals), np.sin(psivals)
     ax.plot(xvals, yvals, 'k', linewidth=1.3*lw_scaling)
-
-    # Label smoothing interval (if present)
-    #if 'smooth' in varname:
-    #    varname = varname.replace('smooth', '')
-    #    dphi = int(varname[:3])
-    #    ax.text(-1.96, 0.98, r'$\Delta\phi=%i^\circ$' %dphi, ha='left',\
-    #            va='top')
-
-    # Label avg values in each hemisphere (if showav = True)
-    if showav:
-        ax.text(-1.96, 0.98, 'avg North = ' + sci_format(av_north),\
-                ha='left', va='top')
-        ax.text(-1.96, -0.98, 'avg South = ' + sci_format(av_south),\
-                ha='left', va='bottom')
 
     if figwasNone: # user probably called plot_moll from the python 
         # command line, wanting to view the projection immediately
