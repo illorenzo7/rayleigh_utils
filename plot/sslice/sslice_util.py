@@ -382,7 +382,7 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
     saturate_array(field, minmax[0], minmax[1])    
             
     # Get the Mollweide projection coordinates associated with costheta
-    xs, ys, llon, llat, beta = mollweide_transform(costheta)
+    xs, ys = mollweide_transform(costheta)
 
     # Create a default fig/ax pair, if calling routine didn't specify
     # them
@@ -453,8 +453,9 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
     
     # Make sure the plotted meridians take into account the shift
     # in the phi-coordinate of the data: data that was at phi = 0. --> 
-    # data at phi = -difflon,
+    # data at phi = -difflon, difflon = clon - 180.
     # i.e, our phi = 0. line should appear at -difflon
+    difflon = clon - 180.
     meridians = np.arange(-difflon, -difflon + 360., 30.)
     
     npoints = 100

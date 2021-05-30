@@ -13,7 +13,7 @@ def mollweide_transform(costheta, clon=0., shrinkage=1., precision=1.e-3):
     lon = np.linspace(0., 2.*np.pi, nphi, endpoint=False)
 
     # shift the lons 
-    lon = np.mod(lon-lon0,2*np.pi)-np.pi
+    lon = np.mod(lon - clon , 2.*np.pi) - np.pi
 
     # make each array 2D
 
