@@ -15,16 +15,6 @@ def mollweide_transform(costheta, clon=0., shrinkage=1., precision=1.e-3):
     # shift the lons 
     lon = np.mod(lon - clon , 2.*np.pi) - np.pi
 
-    # make each array 2D
-
-    #i = np.where(np.abs(lat)<np.pi/2)
-    #print (
-    #new_ts = lat[i]
-    #old_ts = np.zeros_like(lat[i])
-    #while(np.max(np.abs(new_ts-old_ts))>precision):
-    #    old_ts = new_ts
-    #    new_ts = old_ts - (2*old_ts + np.sin(2*old_ts) - np.pi*np.sin(lat[i]))/(2+2*np.cos(2*old_ts))
-    #lat[i] = new_ts
     # compute the beta-angle for the projection 
     # (related to latitude by transcendental equation, which we need
     # to solve iteratively
