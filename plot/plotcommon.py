@@ -536,49 +536,17 @@ def update_kwargs(kwargs_supplied, kwargs_allowed):
             print (tostr(key) + " = " + tostr(val))
     return kwargs
 
+def make_vars(di):
+    globals().update(di)
+
 def my_contourf(xx, yy, field, **kwargs_supplied):
     # get local variables from "kwargs_contourf" (unless specified by user)
     kwargs_allowed = {**kwargs_contourf}
     kwargs = update_kwargs(kwargs_supplied, kwargs_allowed)
-    kwargs = dotdict(kwargs)
+    make_vars(kwargs)
 
-    fig = kwargs.fig
-    ax = kwargs.ax
-    minmax = kwargs.minmax
-    fullrange = kwargs.fullrange
-    posdef = kwargs.posdef
-    logscale = kwargs.logscale
-    symlog = kwargs.symlog
-    linthresh = kwargs.linthresh
-    linscale = kwargs.linscale 
-    showplot = kwargs.showplot
-    plotfield = kwargs.plotfield
-    nlevelsfield = kwargs.nlevelsfield
-    levels = kwargs.levels
-    plotcontours=kwargs.plotcontours
-    ncontours = kwargs.ncontours
-    contourlevels = kwargs.contourlevels
-    contourlw = kwargs.contourlw
-    contourcolor = kwargs.contourcolor
-    plotcbar = kwargs.plotcbar
-    cbar_thick = kwargs.cbar_thick
-    cbar_aspect = kwargs.cbar_aspect
-    cbar_prec = kwargs.cbar_prec
-    cbar_no = kwargs.cbar_no
-    cmap = kwargs.cmap
-    units = kwargs.units
-    nosci = kwargs.nosci
-    fontsize = kwargs.fontsize
-    vals1 = kwargs.vals1
-    func1 = kwargs.func1
-    linestyles1
-
-    
-            'plotcbar': True, 'cbar_thick': 1./8., 'cbar_aspect':1/15, 'cbar_prec': 2, 'cbar_no': 1, 'cmap': None, 'units': '', 'nosci': False, 'fontsize': default_labelsize,\
-            # coordinate line stuff; do up to two "types"
-            'vals1': np.array([]), 'func1': None, 'linestyles1':[], 'colors1':[], 'lw1': 1.0, 'vals2': np.array([]), 'func2': None, 'linestyles2': [], 'colors2': [], 'lw2': 1.0,\
-            'plotboundary': True})
-
+    print ("kwargs = ", kwargs)
+    print ("minmax = ", minmax)
     # Create a default set of figure axes if they weren't specified
     if fig is None or ax is None:
         showplot = True # probably in this case the user just
