@@ -1359,3 +1359,9 @@ def arr_to_str(a, fmt):
     for ele in a:
         st += (fmt + ' ') %ele
     return '[' + st[:-1] + ']'
+
+class dotdict(dict):
+    """dot.notation access to dictionary attributes"""
+    __getattr__ = dict.get
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__

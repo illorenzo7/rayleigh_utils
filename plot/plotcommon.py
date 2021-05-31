@@ -514,18 +514,70 @@ def lineplot(xx, yy, ax=None, axtwin=None, xlabel=None, ylabel=None, title=None,
         plt.show()
         return fig, ax
 
-def my_contourf(xx, yy, field, fig=None, ax=None,\
+kwargs_contourf = dict({'fig': None, 'ax': None,\
         # saturation of field values stuff
-        minmax=None, fullrange=False, posdef=False, logscale=False, symlog=False, linthresh=None, linscale=None,\
+        'minmax': None, 'fullrange': False, 'posdef': False, 'logscale': False, 'symlog': False, 'linthresh': None, 'linscale': None,\
         # basic flags:
-        showplot=False, plotfield=True, nlevelsfield=160, levels=None,\
-        plotcontours=True, ncontours=8, contourlevels=None, contourlw=1.0, contourcolor=None,\
+        'showplot': False, 'plotfield': True, 'nlevelsfield': 160, 'levels': None,\
+        'plotcontours': True, 'ncontours': 8, 'contourlevels': None, 'contourlw': 1.0, 'contourcolor': None,\
         # colorbar stuff
-        plotcbar=True, cbar_thick=1./8., cbar_aspect=1/15, cbar_prec=2, cbar_no=1, cmap=None, units='', nosci=False, fontsize=default_labelsize,\
+        'plotcbar': True, 'cbar_thick': 1./8., 'cbar_aspect':1/15, 'cbar_prec': 2, 'cbar_no': 1, 'cmap': None, 'units': '', 'nosci': False, 'fontsize': default_labelsize,\
         # coordinate line stuff; do up to two "types"
-        vals1=np.array([]), func1=None, linestyles1=[], colors1=[], lw1=1.0,\
-        vals2=np.array([]), func2=None, linestyles2=[], colors2=[], lw2=1.0,\
-        plotboundary=True):
+        'vals1': np.array([]), 'func1': None, 'linestyles1':[], 'colors1':[], 'lw1': 1.0, 'vals2': np.array([]), 'func2': None, 'linestyles2': [], 'colors2': [], 'lw2': 1.0,\
+        'plotboundary': True})
+
+def update_kwargs(kwargs_supplied, kwargs_allowed):
+    kwargs = {**kwargs_allowed}
+    for key, val in kwargs_supplied.items():
+        if key in kwargs_allowed:
+            kwargs[key] = val
+        else:
+            print ("you specified an invalid keyword arg:")
+            print (tostr(key) + " = " + tostr(val))
+    return kwargs
+
+def my_contourf(xx, yy, field, **kwargs_supplied):
+    # get local variables from "kwargs_contourf" (unless specified by user)
+    kwargs_allowed = {**kwargs_contourf}
+    kwargs = update_kwargs(kwargs_supplied, kwargs_allowed)
+    kwargs = dotdict(kwargs)
+
+    fig = kwargs.fig
+    ax = kwargs.ax
+    minmax = kwargs.minmax
+    fullrange = kwargs.fullrange
+    posdef = kwargs.posdef
+    logscale = kwargs.logscale
+    symlog = kwargs.symlog
+    linthresh = kwargs.linthresh
+    linscale = kwargs.linscale 
+    showplot = kwargs.showplot
+    plotfield = kwargs.plotfield
+    nlevelsfield = kwargs.nlevelsfield
+    levels = kwargs.levels
+    plotcontours=kwargs.plotcontours
+    ncontours = kwargs.ncontours
+    contourlevels = kwargs.contourlevels
+    contourlw = kwargs.contourlw
+    contourcolor = kwargs.contourcolor
+    plotcbar = kwargs.plotcbar
+    cbar_thick = kwargs.cbar_thick
+    cbar_aspect = kwargs.cbar_aspect
+    cbar_prec = kwargs.cbar_prec
+    cbar_no = kwargs.cbar_no
+    cmap = kwargs.cmap
+    units = kwargs.units
+    nosci = kwargs.nosci
+    fontsize = kwargs.fontsize
+    vals1 = kwargs.vals1
+    func1 = kwargs.func1
+    linestyles1
+
+    
+            'plotcbar': True, 'cbar_thick': 1./8., 'cbar_aspect':1/15, 'cbar_prec': 2, 'cbar_no': 1, 'cmap': None, 'units': '', 'nosci': False, 'fontsize': default_labelsize,\
+            # coordinate line stuff; do up to two "types"
+            'vals1': np.array([]), 'func1': None, 'linestyles1':[], 'colors1':[], 'lw1': 1.0, 'vals2': np.array([]), 'func2': None, 'linestyles2': [], 'colors2': [], 'lw2': 1.0,\
+            'plotboundary': True})
 
     # Create a default set of figure axes if they weren't specified
     if fig is None or ax is None:
@@ -776,4 +828,8 @@ def my_contourf(xx, yy, field, fig=None, ax=None,\
     ax.set_ylim((ymin - lilbit*Dy, ymax + lilbit*Dy))
     ax.axis('off') 
 
-    return fig, ax
+    # reset globals to what they were before
+    out = fig, ax
+    #for key in kwargs:
+    #    del globals()[key]
+    return out

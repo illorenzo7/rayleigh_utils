@@ -86,7 +86,7 @@ def plot_azav(field, rr, cost, rbcz=None, minmaxrz=None, linthreshrz=None, linsc
             not 'ax' in kwargs.keys()): # in this case, need to use the
         # already-generated fig, ax from the RZ plot
         kwargs['fig'], kwargs['ax'] = out
-    fig, ax = my_contourf(xx, yy, field, func1=rr_cz, func2=tt_lat, **kwargs)
+    fig, ax = my_contourf(xx, yy, field, func1=rr_cz, func2=tt_lat)
 
     # potentially plot coordinate lines
     if plotlatlines:
