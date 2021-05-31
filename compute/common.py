@@ -1365,3 +1365,12 @@ class dotdict(dict):
     __getattr__ = dict.get
     __setattr__ = dict.__setitem__
     __delattr__ = dict.__delitem__
+
+def update_kwargs(kwargs_supplied, kwargs_allowed):
+    kwargs = {**kwargs_allowed}
+    for key, val in kwargs_supplied.items():
+        if key in kwargs_allowed:
+            kwargs[key] = val
+        else:
+            print ("you specified an invalid keyword arg: ", key)
+    return kwargs

@@ -19,8 +19,11 @@ sys.path.append(os.environ['raco'])
 from common import *
 from plotcommon import *
 
-def plot_azav(field, rr, cost, rbcz=None, minmaxrz=None, linthreshrz=None, linscalerz=None, cmaprz=None, rvals=np.array([]), rstyles=[], rcolors=[], rlw=1.0, plotlatlines=True, latvals=np.array([]), latstyles=[], latcolors=[], latlw=1.0, **kwargs):
-    # **kwargs corresponds to my_contourf
+def plot_azav(field, rr, cost, rbcz=None, minmaxrz=None, linthreshrz=None, linscalerz=None, cmaprz=None, rvals=np.array([]), rstyles=[], rcolors=[], rlw=1.0, plotlatlines=True, latvals=np.array([]), latstyles=[], latcolors=[], latlw=1.0, **kwargs_supplied):
+    # **kwargs_supplied corresponds to my_contourf
+    kwargs_allowed = {**kwargs_contourf}
+    kwargs = update_kwargs(kwargs_supplied, kwargs_allowed)
+    kwargs = dotdict(kwargs)
 
     # make copy of field
     field = np.copy(field)

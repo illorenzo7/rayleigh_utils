@@ -526,24 +526,39 @@ kwargs_contourf = dict({'fig': None, 'ax': None,\
         'vals1': np.array([]), 'func1': None, 'vals2': np.array([]), 'func2': None,\
         'plotboundary': True, 'lw': 1.})
 
-def update_kwargs(kwargs_supplied, kwargs_allowed):
-    kwargs = {**kwargs_allowed}
-    for key, val in kwargs_supplied.items():
-        if key in kwargs_allowed:
-            kwargs[key] = val
-        else:
-            print ("you specified an invalid keyword arg: ", key)
-    return kwargs
-
 def my_contourf(xx, yy, field, **kwargs_supplied):
     # get local variables from "kwargs_contourf" (unless specified by user)
     kwargs_allowed = {**kwargs_contourf}
     kwargs = update_kwargs(kwargs_supplied, kwargs_allowed)
     kwargs = dotdict(kwargs)
+    # assign the local vars one by one (annoying)
+    fig = kwargs.fig
+    ax = kwargs.ax
+    minmax = kwargs.minmax
+    posdef = kwargs.posdef
+    plotfield = kwargs.plotfield
+    plotcontours = kwargs.plotcontours
+    ncontours = kwargs.ncontours
+    contourlevels = kwargs.contourlevels
+    plotcbar = kwargs.plotcbar
+    cbar_thick = kwargs.cbar_thick
+    cbar_aspect = kwargs.cbar_aspect
+    cbar_prec = kwargs.cbar_prec
+    cbar_no = kwargs.cbar_no
+    cmap = kwargs.cmap
+    units = kwargs.units
+    nosci = kwargs.nosci
+    fontsize = kwargs.fontsize
+    vals1 = kwargs.vals1
+    func1 = kwargs.func1
+    vals2 = kwargs.vals2
+    func2 = kwargs.func2
+    plotboundary = kwargs.plotboundary 
+    lw = kwargs.lw
 
     # Create a default set of figure axes if they weren't specified
     showplot = False
-    if kwargs.fig is None or kwargs.ax is None:
+    if fig is None or ax is None:
         showplot = True # probably in this case the user just
         # ran plot_azav from the command line
         
@@ -554,55 +569,55 @@ def my_contourf(xx, yy, field, **kwargs_supplied):
         sub_width_inches = 4.0
         sub_aspect = delta_y/delta_x
         sub_margin_bottom_inches = 1.0
-        kwargs.fig, axs, fpar = make_figure(nplots, sub_width_inches, sub_aspect, sub_margin_bottom_inches=sub_margin_bottom_inches)
-        kwargs.ax = axs[0, 0]
+        fig, axs, fpar = make_figure(nplots, sub_width_inches, sub_aspect, sub_margin_bottom_inches=sub_margin_bottom_inches)
+        ax = axs[0, 0]
 
     # First things first, make sure Python does not modify any of the 
     # arrays it was passed
     field = np.copy(field)
 
     # Get default bounds if not specified
-    if kwargs.minmax is None:
-        kwargs.minmax = get_satvals(field, posdef=kwargs.posdef)
+    if minmax is None:
+        minmax = get_satvals(field, posdef=posdef)
     elif minmax == 'fullrange':
-        kwargs.minmax = get_satvals(field, posdef=kwargs.posdef, fullrange=True)
+        minmax = get_satvals(field, posdef=posdef, fullrange=True)
 
     # plot the field, maybe
     # By default,
     # Factor out the exponent on the field and put it on the color bar
     # can turn this behavior off with "nosci=True"
-    if not kwargs.nosci:
-        maxabs = max(np.abs(kwargs.minmax[0]), np.abs(kwargs.minmax[1]))
+    if not nosci:
+        maxabs = max(np.abs(minmax[0]), np.abs(minmax[1]))
         exp = get_exp(maxabs)
         divisor = 10.0**exp
         field /= divisor
-        kwargs.minmax = kwargs.minmax[0]/divisor, kwargs.minmax[1]/divisor
+        minmax = minmax[0]/divisor, minmax[1]/divisor
 
     # Saturate the array (otherwise contourf will show white areas)
-    saturate_array(field, kwargs.minmax[0], kwargs.minmax[1])
+    saturate_array(field, minmax[0], minmax[1])
 
     nlevelsfield = 160
-    levels = np.linspace(kwargs.minmax[0], kwargs.minmax[1], nlevelsfield + 1)
-    if kwargs.cmap is None:
-        if kwargs.posdef:
-            kwargs.cmap = 'plasma'
+    levels = np.linspace(minmax[0], minmax[1], nlevelsfield + 1)
+    if cmap is None:
+        if posdef:
+            cmap = 'plasma'
         else:
-            kwargs.cmap = 'RdYlBu_r'
+            cmap = 'RdYlBu_r'
 
     # finally we make the contour plot!
-    if kwargs.plotfield:
-        im = kwargs.ax.contourf(xx, yy, field, cmap=kwargs.cmap, levels=levels)
+    if plotfield:
+        im = ax.contourf(xx, yy, field, cmap=cmap, levels=levels)
 
     # now deal with color bar, if one is desired
-    if kwargs.plotfield and kwargs.plotcbar:
+    if plotfield and plotcbar:
         # get cbar dimensions
-        fig_width_inches, fig_height_inches = kwargs.fig.get_size_inches()
+        fig_width_inches, fig_height_inches = fig.get_size_inches()
         fig_aspect = fig_height_inches/fig_width_inches
-        cbar_height = kwargs.cbar_thick/fig_height_inches
-        cbar_width = cbar_height/kwargs.cbar_aspect*fig_aspect
+        cbar_height = cbar_thick/fig_height_inches
+        cbar_width = cbar_height/cbar_aspect*fig_aspect
 
         # centrally position colorbar underneath the axes
-        ax_left, ax_right, ax_bottom, ax_top = axis_range(kwargs.ax)
+        ax_left, ax_right, ax_bottom, ax_top = axis_range(ax)
         ax_width = ax_right - ax_left
         ax_height = ax_top - ax_bottom
         line_height = 3/8/fig_height_inches # needs to contain
@@ -610,77 +625,77 @@ def my_contourf(xx, yy, field, **kwargs_supplied):
         lilbit = 1.0/16.0/fig_height_inches
         cbar_left = ax_left + 0.5*ax_width - 0.5*cbar_width
         cbar_bottom = ax_bottom - lilbit - cbar_height -\
-                (kwargs.cbar_no - 1)*(line_height + cbar_height)
-        cax = kwargs.fig.add_axes((cbar_left, cbar_bottom, cbar_width,\
+                (cbar_no - 1)*(line_height + cbar_height)
+        cax = fig.add_axes((cbar_left, cbar_bottom, cbar_width,\
                 cbar_height))        
         cbar = plt.colorbar(im, cax=cax, orientation='horizontal')
             
         # font size for the tick labels
-        cax.tick_params(labelsize=kwargs.fontsize)
+        cax.tick_params(labelsize=fontsize)
         #cbar.ax.tick_params(labelsize=fontsize)   
 
-        if kwargs.nosci:
-            cbar_label = kwargs.units
+        if nosci:
+            cbar_label = units
         else:
-            cbar_label = (r'$\times10^{%i}\ $' %exp) + kwargs.units
+            cbar_label = (r'$\times10^{%i}\ $' %exp) + units
         # ticklabel format
-        fmt = '%.' + str(kwargs.cbar_prec) + 'f'
-        if kwargs.posdef:
-            tickvals = [kwargs.minmax[0], kwargs.minmax[1]]
+        fmt = '%.' + str(cbar_prec) + 'f'
+        if posdef:
+            tickvals = [minmax[0], minmax[1]]
         else:
-            tickvals = [kwargs.minmax[0], 0., kwargs.minmax[1]]
+            tickvals = [minmax[0], 0., minmax[1]]
         ticklabels = []
         for tickval in tickvals:
             ticklabels.append(fmt %tickval)
         cbar.set_ticks(tickvals)
         cbar.set_ticklabels(ticklabels)
-        kwargs.fig.text(cbar_left + cbar_width + lilbit/fig_aspect,\
+        fig.text(cbar_left + cbar_width + lilbit/fig_aspect,\
                 cbar_bottom + 0.5*cbar_height, cbar_label,\
-                ha='left', va='center', **csfont, fontsize=kwargs.fontsize) 
+                ha='left', va='center', **csfont, fontsize=fontsize) 
 
     # Plot contours if desired
-    if kwargs.plotcontours:
+    if plotcontours:
         # Determine the contour levels
-        if kwargs.contourlevels is None:
+        if contourlevels is None:
             # just thin out the field levels
-            nskip = nlevelsfield//kwargs.ncontours
-            kwargs.contourlevels = levels[::nskip]
+            nskip = nlevelsfield//ncontours
+            contourlevels = levels[::nskip]
                     # contourf whitespace, I think. Not sure why)
 
         # Determine how to color the contours
-        if kwargs.posdef:
+        if posdef:
             contourcolor = 'w'
         else:
             contourcolor = 'k'
-        contourlw = kwargs.lw
+        contourlw = lw
 
         # plot the contours
-        kwargs.ax.contour(xx, yy, field, kwargs.contourlevels,\
+        ax.contour(xx, yy, field, contourlevels,\
                 colors=contourcolor, linewidths=contourlw)
 
     # finally, plot some lines!
 
     # need to check if user provided the appropriate functions
     # if plotboundary == True
-    if kwargs.plotboundary:
-        if kwargs.func1 is None or kwargs.func2 is None:
+    if plotboundary:
+        if func1 is None or func2 is None:
             print ("my_contourf(): plotboundary = True, but either ")
             print ("func1 or func2 was not provided. Setting plotboundary=False")
             plotboundary = False
 
     for ind in [1, 2]:
         if ind == 1:
-            vals = list(kwargs.vals1)
-            func = kwargs.func1
+            vals = list(vals1)
+            func = func1
         if ind == 2:
-            vals = list(kwargs.vals2)
-            func = kwargs.func2
+            vals = list(vals2)
+            func = func2
 
-        linewidths = [kwargs.lw]*len(vals)
-        if kwargs.plotboundary:
+        linewidths = [lw]*len(vals)
+        if plotboundary:
             vals = [np.min(func)] + vals + [np.max(func)]
             vals = np.array(vals)
-            linewidths = [2*kwargs.lw] + linewidths + [2*kwargs.lw] # make boundary
+            linewidths = [2*lw] + linewidths + [2*lw] # make boundary
             # lines a a bit thicker
 
         if len(vals) > 0:
@@ -696,7 +711,7 @@ def my_contourf(xx, yy, field, **kwargs_supplied):
                     vals[i] = vmax - maxabs*1.0e-15 
                     # need to do this (same issue with
                     # contourf whitespace, I think. Not sure why)
-            kwargs.ax.contour(xx, yy, func, vals, colors='k', linestyles='-', linewidths=linewidths)
+            ax.contour(xx, yy, func, vals, colors='k', linestyles='-', linewidths=linewidths)
 
     # Set ax ranges to be just outside the boundary lines
     # avoid weird whitespace cutoffs
@@ -705,8 +720,8 @@ def my_contourf(xx, yy, field, **kwargs_supplied):
     ymin, ymax = np.min(yy), np.max(yy)
     Dx = xmax - xmin
     Dy = ymax - ymin
-    kwargs.ax.set_xlim((xmin - lilbit*Dx, xmax + lilbit*Dx))
-    kwargs.ax.set_ylim((ymin - lilbit*Dy, ymax + lilbit*Dy))
-    kwargs.ax.axis('off') 
+    ax.set_xlim((xmin - lilbit*Dx, xmax + lilbit*Dx))
+    ax.set_ylim((ymin - lilbit*Dy, ymax + lilbit*Dy))
+    ax.axis('off') 
 
-    return  kwargs.fig, kwargs.ax
+    return  fig, ax
