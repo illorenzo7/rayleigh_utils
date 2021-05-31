@@ -516,15 +516,15 @@ def lineplot(xx, yy, ax=None, axtwin=None, xlabel=None, ylabel=None, title=None,
 
 kwargs_contourf = dict({'fig': None, 'ax': None,\
         # saturation of field values stuff
-        'minmax': None, 'fullrange': False, 'posdef': False, 'logscale': False, 'symlog': False, 'linthresh': None, 'linscale': None,\
+        'minmax': None, 'posdef': False,         
         # basic flags:
-        'showplot': False, 'plotfield': True, 'nlevelsfield': 160, 'levels': None,\
-        'plotcontours': True, 'ncontours': 8, 'contourlevels': None, 'contourlw': 1.0, 'contourcolor': None,\
+         'plotfield': True,\
+        'plotcontours': True, 'ncontours': 8, 'contourlevels': None,\
         # colorbar stuff
         'plotcbar': True, 'cbar_thick': 1./8., 'cbar_aspect':1/15, 'cbar_prec': 2, 'cbar_no': 1, 'cmap': None, 'units': '', 'nosci': False, 'fontsize': default_labelsize,\
         # coordinate line stuff; do up to two "types"
-        'vals1': np.array([]), 'func1': None, 'linestyles1':[], 'colors1':[], 'lw1': 1.0, 'vals2': np.array([]), 'func2': None, 'linestyles2': [], 'colors2': [], 'lw2': 1.0,\
-        'plotboundary': True})
+        'vals1': np.array([]), 'func1': None, 'vals2': np.array([]), 'func2': None,\
+        'plotboundary': True, 'lw': 1.})
 
 def update_kwargs(kwargs_supplied, kwargs_allowed):
     kwargs = {**kwargs_allowed}
@@ -532,23 +532,18 @@ def update_kwargs(kwargs_supplied, kwargs_allowed):
         if key in kwargs_allowed:
             kwargs[key] = val
         else:
-            print ("you specified an invalid keyword arg:")
-            print (tostr(key) + " = " + tostr(val))
+            print ("you specified an invalid keyword arg: ", key)
     return kwargs
-
-def make_vars(di):
-    globals().update(di)
 
 def my_contourf(xx, yy, field, **kwargs_supplied):
     # get local variables from "kwargs_contourf" (unless specified by user)
     kwargs_allowed = {**kwargs_contourf}
     kwargs = update_kwargs(kwargs_supplied, kwargs_allowed)
-    make_vars(kwargs)
+    kwargs = dotdict(kwargs)
 
-    print ("kwargs = ", kwargs)
-    print ("minmax = ", minmax)
     # Create a default set of figure axes if they weren't specified
-    if fig is None or ax is None:
+    showplot = False
+    if kwargs.fig is None or kwargs.ax is None:
         showplot = True # probably in this case the user just
         # ran plot_azav from the command line
         
@@ -559,91 +554,55 @@ def my_contourf(xx, yy, field, **kwargs_supplied):
         sub_width_inches = 4.0
         sub_aspect = delta_y/delta_x
         sub_margin_bottom_inches = 1.0
-        fig, axs, fpar = make_figure(nplots, sub_width_inches, sub_aspect, sub_margin_bottom_inches=sub_margin_bottom_inches)
-        ax = axs[0, 0]
+        kwargs.fig, axs, fpar = make_figure(nplots, sub_width_inches, sub_aspect, sub_margin_bottom_inches=sub_margin_bottom_inches)
+        kwargs.ax = axs[0, 0]
 
     # First things first, make sure Python does not modify any of the 
     # arrays it was passed
     field = np.copy(field)
 
-    # If using logscale, you better have positive values!
-    if logscale:
-        posdef = True
-
     # Get default bounds if not specified
-    if minmax is None:
-        minmax = get_satvals(field, posdef=posdef, logscale=logscale, symlog=symlog, fullrange=fullrange)
+    if kwargs.minmax is None:
+        kwargs.minmax = get_satvals(field, posdef=kwargs.posdef)
+    elif minmax == 'fullrange':
+        kwargs.minmax = get_satvals(field, posdef=kwargs.posdef, fullrange=True)
 
     # plot the field, maybe
-    # By default (for the linear-scaled default and posdef),
+    # By default,
     # Factor out the exponent on the field and put it on the color bar
     # can turn this behavior off with "nosci=True"
-    if not (logscale or symlog or nosci):
-        maxabs = max(np.abs(minmax[0]), np.abs(minmax[1]))
+    if not kwargs.nosci:
+        maxabs = max(np.abs(kwargs.minmax[0]), np.abs(kwargs.minmax[1]))
         exp = get_exp(maxabs)
         divisor = 10.0**exp
         field /= divisor
-        minmax = minmax[0]/divisor, minmax[1]/divisor
+        kwargs.minmax = kwargs.minmax[0]/divisor, kwargs.minmax[1]/divisor
 
     # Saturate the array (otherwise contourf will show white areas)
-    saturate_array(field, minmax[0], minmax[1])
+    saturate_array(field, kwargs.minmax[0], kwargs.minmax[1])
 
-    norm = None
-    if logscale:
-        if cmap is None:
-            cmap = 'Greys'
-        log_min, log_max = np.log10(minmax[0]), np.log10(minmax[1])
-        if levels is None:
-            levels = np.logspace(log_min, log_max, nlevelsfield + 1)
-        norm=colors.LogNorm(vmin=minmax[0], vmax=minmax[1])
-    elif posdef:
-        if cmap is None:
-            cmap = 'plasma'
-        if levels is None:
-            levels = np.linspace(minmax[0], minmax[1], nlevelsfield + 1)
-    elif symlog:
-        if cmap is None:
-            cmap = 'RdYlBu_r'
-        linthresh_default, linscale_default =\
-            get_symlog_params(field, field_max=minmax[1])
-        if linthresh is None:
-            linthresh = linthresh_default
-        if linscale is None:
-            linscale = linscale_default
-        if levels is None:
-            log_thresh = np.log10(linthresh)
-            log_max = np.log10(minmax[1])
-            nlevels_per_interval = nlevelsfield//4
-            levels_neg = -np.logspace(log_max, log_thresh,\
-                    nlevels_per_interval,\
-                    endpoint=False)
-            levels_mid = np.linspace(-linthresh, linthresh,\
-                    2*nlevels_per_interval, endpoint=False)
-            levels_pos = np.logspace(log_thresh, log_max,\
-                    nlevels_per_interval + 1)
-            levels = np.hstack((levels_neg, levels_mid, levels_pos))
-        norm = colors.SymLogNorm(linthresh=linthresh,\
-            linscale=linscale, vmin=minmax[0], vmax=minmax[1], base=10)
-    else: # this is the default...just do linear scaled pos/neg values
-        if cmap is None:
-            cmap = 'RdYlBu_r'
-        if levels is None:
-            levels = np.linspace(minmax[0], minmax[1], nlevelsfield + 1)
+    nlevelsfield = 160
+    levels = np.linspace(kwargs.minmax[0], kwargs.minmax[1], nlevelsfield + 1)
+    if kwargs.cmap is None:
+        if kwargs.posdef:
+            kwargs.cmap = 'plasma'
+        else:
+            kwargs.cmap = 'RdYlBu_r'
 
     # finally we make the contour plot!
-    if plotfield:
-        im = ax.contourf(xx, yy, field, cmap=cmap, levels=levels, norm=norm)
+    if kwargs.plotfield:
+        im = kwargs.ax.contourf(xx, yy, field, cmap=kwargs.cmap, levels=levels)
 
-    # now deal with color bar
-    if plotfield and plotcbar:
+    # now deal with color bar, if one is desired
+    if kwargs.plotfield and kwargs.plotcbar:
         # get cbar dimensions
-        fig_width_inches, fig_height_inches = fig.get_size_inches()
+        fig_width_inches, fig_height_inches = kwargs.fig.get_size_inches()
         fig_aspect = fig_height_inches/fig_width_inches
-        cbar_height = cbar_thick/fig_height_inches
-        cbar_width = cbar_height/cbar_aspect*fig_aspect
+        cbar_height = kwargs.cbar_thick/fig_height_inches
+        cbar_width = cbar_height/kwargs.cbar_aspect*fig_aspect
 
         # centrally position colorbar underneath the axes
-        ax_left, ax_right, ax_bottom, ax_top = axis_range(ax)
+        ax_left, ax_right, ax_bottom, ax_top = axis_range(kwargs.ax)
         ax_width = ax_right - ax_left
         ax_height = ax_top - ax_bottom
         line_height = 3/8/fig_height_inches # needs to contain
@@ -651,127 +610,82 @@ def my_contourf(xx, yy, field, **kwargs_supplied):
         lilbit = 1.0/16.0/fig_height_inches
         cbar_left = ax_left + 0.5*ax_width - 0.5*cbar_width
         cbar_bottom = ax_bottom - lilbit - cbar_height -\
-                (cbar_no - 1)*(line_height + cbar_height)
-        cax = fig.add_axes((cbar_left, cbar_bottom, cbar_width,\
+                (kwargs.cbar_no - 1)*(line_height + cbar_height)
+        cax = kwargs.fig.add_axes((cbar_left, cbar_bottom, cbar_width,\
                 cbar_height))        
         cbar = plt.colorbar(im, cax=cax, orientation='horizontal')
             
         # font size for the tick labels
-        cax.tick_params(labelsize=fontsize)
+        cax.tick_params(labelsize=kwargs.fontsize)
         #cbar.ax.tick_params(labelsize=fontsize)   
 
-        if logscale:
-            locator = ticker.LogLocator(subs='all')
-            cbar.set_ticks(locator)
-            cbar_label = units
-        elif posdef:
-            cbar_label = (r'$\times10^{%i}\ $' %exp) + units
-            cbar.set_ticks([minmax[0], minmax[1]])
-            fmt = '%.' + str(cbar_prec) + 'f'
-            cbar.set_ticklabels([fmt %minmax[0],\
-                    fmt %minmax[1]])
-        elif symlog:
-            cbar_label = units
-            nlin = 5
-            nlog = 6
-            lin_ticks = np.linspace(-linthresh, linthresh, nlin)
-            log_ticks1 = np.linspace(minmax[0], -linthresh, nlog,\
-                    endpoint=False)
-            log_ticks2 = -log_ticks1[::-1]
-            ticks = np.hstack((log_ticks1, lin_ticks, log_ticks2))
-            nticks = nlin + 2*nlog
-            cbar.set_ticks(ticks)
-            ticklabels = []
-            for i in range(nticks):
-                ticklabels.append(r'')
-#                ticklabels[0] = sci_format(minmax[0])
-            ticklabels[nlog] = sci_format(-linthresh, ndec=cbar_prec)
-#                ticklabels[nticks//2] = r'$0$'
-#                ticklabels[nlog + nlin - 1] = sci_format(linthresh)
-            ticklabels[nticks - 1] = sci_format(minmax[1], ndec=cbar_prec)
-            cbar.set_ticklabels(ticklabels)
+        if kwargs.nosci:
+            cbar_label = kwargs.units
         else:
-            if nosci:
-                cbar_label = units
-            else:
-                cbar_label = (r'$\times10^{%i}\ $' %exp) + units
-            cbar.set_ticks([minmax[0], 0, minmax[1]])
-            fmt = '%.' + str(cbar_prec) + 'f'
-            cbar.set_ticklabels([fmt %minmax[0], '0', fmt\
-                    %minmax[1]])
-            #cbar.set_ticklabels(['%.1f' %minmax[0], '0', '%.1f'\
-            #        %minmax[1]])
-
-        # Title the colorbar based on the field's units
-        fig.text(cbar_left + cbar_width + lilbit/fig_aspect,\
+            cbar_label = (r'$\times10^{%i}\ $' %exp) + kwargs.units
+        # ticklabel format
+        fmt = '%.' + str(kwargs.cbar_prec) + 'f'
+        if kwargs.posdef:
+            tickvals = [kwargs.minmax[0], kwargs.minmax[1]]
+        else:
+            tickvals = [kwargs.minmax[0], 0., kwargs.minmax[1]]
+        ticklabels = []
+        for tickval in tickvals:
+            ticklabels.append(fmt %tickval)
+        cbar.set_ticks(tickvals)
+        cbar.set_ticklabels(ticklabels)
+        kwargs.fig.text(cbar_left + cbar_width + lilbit/fig_aspect,\
                 cbar_bottom + 0.5*cbar_height, cbar_label,\
-                ha='left', va='center', **csfont, fontsize=fontsize) 
+                ha='left', va='center', **csfont, fontsize=kwargs.fontsize) 
 
     # Plot contours if desired
-    if plotcontours:
+    if kwargs.plotcontours:
         # Determine the contour levels
-        if contourlevels is None:
+        if kwargs.contourlevels is None:
             # just thin out the field levels
-            nskip = nlevelsfield//ncontours
-            contourlevels = levels[::nskip]
+            nskip = nlevelsfield//kwargs.ncontours
+            kwargs.contourlevels = levels[::nskip]
                     # contourf whitespace, I think. Not sure why)
 
         # Determine how to color the contours
-        if contourcolor is None:
-            if logscale:
-                contourcolor = 'r'
-            elif posdef:
-                contourcolor = 'w'
-            else:
-                contourcolor = 'k'
+        if kwargs.posdef:
+            contourcolor = 'w'
+        else:
+            contourcolor = 'k'
+        contourlw = kwargs.lw
 
         # plot the contours
-        ax.contour(xx, yy, field, contourlevels,\
+        kwargs.ax.contour(xx, yy, field, kwargs.contourlevels,\
                 colors=contourcolor, linewidths=contourlw)
 
     # finally, plot some lines!
 
     # need to check if user provided the appropriate functions
     # if plotboundary == True
-    if plotboundary:
-        if func1 is None or func2 is None:
+    if kwargs.plotboundary:
+        if kwargs.func1 is None or kwargs.func2 is None:
             print ("my_contourf(): plotboundary = True, but either ")
             print ("func1 or func2 was not provided. Setting plotboundary=False")
             plotboundary = False
 
     for ind in [1, 2]:
         if ind == 1:
-            vals = vals1
-            func = func1
-            linestyles = linestyles1
-            colors_loc = colors1 # need to be careful with this one!
-            lw = lw1
+            vals = list(kwargs.vals1)
+            func = kwargs.func1
         if ind == 2:
-            vals = vals2
-            func = func2
-            linestyles = linestyles2
-            colors_loc = colors2
-            lw = lw2
+            vals = list(kwargs.vals2)
+            func = kwargs.func2
 
-        vals = list(vals)
-        linestyles = list(linestyles)
-        colors_loc = list(colors_loc)
-        if linestyles == []:
-            linestyles = ['--']*len(vals)
-        if colors_loc == []:
-            colors_loc = ['k']*len(vals)
-        linewidths = [lw]*len(vals)
-
-        if plotboundary:
-            vals = [np.min(func)] + list(vals) + [np.max(func)]
+        linewidths = [kwargs.lw]*len(vals)
+        if kwargs.plotboundary:
+            vals = [np.min(func)] + vals + [np.max(func)]
             vals = np.array(vals)
-            linestyles = ['-'] + linestyles + ['-']
-            colors_loc = ['k'] + colors_loc + ['k']
-            linewidths = [2*lw] + linewidths + [2*lw]
+            linewidths = [2*kwargs.lw] + linewidths + [2*kwargs.lw] # make boundary
+            # lines a a bit thicker
 
         if len(vals) > 0:
-            # check to make sure values are within (strictly) the func's range
-            # (otherwise they can't be plotted)
+            # check to make sure values are within (strictly) 
+            # the func's range (otherwise they can't be plotted)
             vmin, vmax = np.min(func), np.max(func)
             maxabs = np.max(np.abs(func))
             for i in range(len(vals)):
@@ -782,8 +696,7 @@ def my_contourf(xx, yy, field, **kwargs_supplied):
                     vals[i] = vmax - maxabs*1.0e-15 
                     # need to do this (same issue with
                     # contourf whitespace, I think. Not sure why)
-            ax.contour(xx, yy, func, vals,\
-                    linestyles=linestyles, colors=colors_loc, linewidths=linewidths)
+            kwargs.ax.contour(xx, yy, func, vals, colors='k', linestyles='-', linewidths=linewidths)
 
     # Set ax ranges to be just outside the boundary lines
     # avoid weird whitespace cutoffs
@@ -792,12 +705,8 @@ def my_contourf(xx, yy, field, **kwargs_supplied):
     ymin, ymax = np.min(yy), np.max(yy)
     Dx = xmax - xmin
     Dy = ymax - ymin
-    ax.set_xlim((xmin - lilbit*Dx, xmax + lilbit*Dx))
-    ax.set_ylim((ymin - lilbit*Dy, ymax + lilbit*Dy))
-    ax.axis('off') 
+    kwargs.ax.set_xlim((xmin - lilbit*Dx, xmax + lilbit*Dx))
+    kwargs.ax.set_ylim((ymin - lilbit*Dy, ymax + lilbit*Dy))
+    kwargs.ax.axis('off') 
 
-    # reset globals to what they were before
-    out = fig, ax
-    #for key in kwargs:
-    #    del globals()[key]
-    return out
+    return  kwargs.fig, kwargs.ax
