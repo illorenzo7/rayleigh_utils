@@ -19,7 +19,7 @@ sys.path.append(os.environ['raco'])
 from common import *
 from plotcommon import *
 
-def plot_azav(field, rr, cost, rbcz=None, minmaxrz=None, linthreshrz=None, linscalerz=None, cmaprz=None, rvals=np.array([]), rstyles=[], rcolors=[], rlw=1.0, plotlatlines=True, latvals=np.array([]), latstyles=[], latcolors=[], latlw=1.0, **kwargs_supplied):
+def plot_azav(field, rr, cost, rbcz=None, minmaxrz=None, linthreshrz=None, linscalerz=None, cmaprz=None, rvals=np.array([]), plotlatlines=True, latvals=np.array([]), lw=1.0, **kwargs_supplied):
     # **kwargs_supplied corresponds to my_contourf
     kwargs_allowed = {**kwargs_contourf}
     kwargs = update_kwargs(kwargs_supplied, kwargs_allowed)
@@ -63,33 +63,27 @@ def plot_azav(field, rr, cost, rbcz=None, minmaxrz=None, linthreshrz=None, linsc
         tt_lat_rz = tt_lat[:, irbcz+1:]
         tt_lat = tt_lat[:, :irbcz+1]
 
-    if not rbcz is None: # plot the RZ field first (before "showing"
-        # the plot, potentially)
+    if not rbcz is None: # plot the RZ field first
         # will need to change some kwargs:
         kwargsrz = dict(kwargs)
-        kwargsrz['showplot'] = False
         kwargsrz['minmax'] = minmaxrz
-        kwargsrz['linthresh'] = linthreshrz
-        kwargsrz['linscale'] = linscalerz
         if cmaprz is None:
-            if 'logscale' in kwargs.keys() or 'posdef' in kwargs.keys():
-                if kwargs['logscale']:
-                    cmaprz = 'Blues'
-                elif kwargs['posdef']:
-                    cmaprz = 'cividis'
-                else: # this is the default, and symlog
-                    cmaprz = 'PuOr_r'    
+            if posdef:
+                cmaprz = 'cividis'
             else:
                 cmaprz = 'PuOr_r'    
         kwargsrz['cmap'] = cmaprz
-        out = my_contourf(xxrz, yyrz, fieldrz, func1=rr_rz, func2=tt_lat_rz, cbar_no=2, **kwargsrz)
+        kwargsrz['func1'] = rr_rz
+        kwargsrz['func2'] = tt_lat_rz
+        kwargsrz['cbar_no'] = 2
+        kwargs.fig, kwargs.ax = my_contourf(xxrz, yyrz, fieldrz, **kwargsrz)
+        # NOTE: if user has already specified fig, ax, they will be in 
+        # kwargsrz and not be modified here
 
     # regardless, plot the CZ field
-    if not rbcz is None and (not 'fig' in kwargs.keys() or\
-            not 'ax' in kwargs.keys()): # in this case, need to use the
-        # already-generated fig, ax from the RZ plot
-        kwargs['fig'], kwargs['ax'] = out
-    fig, ax = my_contourf(xx, yy, field, func1=rr_cz, func2=tt_lat)
+    kwargs.func1 = rr_cz
+    kwargs.func2 = tt_lat
+    fig, ax = my_contourf(xx, yy, field, **kwargs)
 
     # potentially plot coordinate lines
     if plotlatlines:
@@ -98,7 +92,7 @@ def plot_azav(field, rr, cost, rbcz=None, minmaxrz=None, linthreshrz=None, linsc
     else:
         latvals = []
 
-    my_contourf(xx_full, yy_full, field_full, fig=fig, ax=ax, plotfield=False, plotcontours=False, func1=rr_full, vals1=rvals, linestyles1=rstyles, colors1=rcolors, lw1=rlw, func2=tt_lat_full, vals2=latvals, linestyles2=latstyles, colors2=latcolors, lw2=latlw)
+    my_contourf(xx_full, yy_full, field_full, fig=fig, ax=ax, plotfield=False, plotcontours=False, func1=rr_full, vals1=rvals, func2=tt_lat_full, vals2=latvals, lw=lw)
 
 def plot_azav_half(field, rr, cost, sym='even', fig=None, ax=None,\
         cmap='RdYlBu_r', units='', minmax=None, posdef=False, logscale=False,\

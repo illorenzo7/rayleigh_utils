@@ -557,9 +557,7 @@ def my_contourf(xx, yy, field, **kwargs_supplied):
     lw = kwargs.lw
 
     # Create a default set of figure axes if they weren't specified
-    showplot = False
     if fig is None or ax is None:
-        showplot = True # probably in this case the user just
         # ran plot_azav from the command line
         
         # get default axes with correct axis ratio
@@ -723,5 +721,5 @@ def my_contourf(xx, yy, field, **kwargs_supplied):
     ax.set_xlim((xmin - lilbit*Dx, xmax + lilbit*Dx))
     ax.set_ylim((ymin - lilbit*Dy, ymax + lilbit*Dy))
     ax.axis('off') 
-
+    
     return  fig, ax
