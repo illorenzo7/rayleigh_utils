@@ -10,10 +10,10 @@ def mollweide_transform(costheta, clon=0., shrinkage=1., precision=1.e-3):
     nphi = 2*ntheta
     tt = np.arccos(costheta)
     lat = np.pi/2. - tt # these "latitudes" are in radians...
-    lon = np.linspace(0., 2.*np.pi, nphi, endpoint=False)
+    lon = np.linspace(-np.pi., np.pi, nphi, endpoint=False)
 
     # shift the lons 
-    lon = np.mod(lon - clon , 2.*np.pi) - np.pi
+    #lon = np.mod(lon - clon , 2.*np.pi) - np.pi
 
     # compute the beta-angle for the projection 
     # (related to latitude by transcendental equation, which we need

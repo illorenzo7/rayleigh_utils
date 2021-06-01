@@ -384,16 +384,12 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
     # Get the Mollweide projection coordinates associated with costheta
     xs, ys = mollweide_transform(costheta)
 
-    # Create a default fig/ax pair, if calling routine didn't specify
-    # them
-    figwasNone = False
-    if fig is None and ax is None:
-        fig, ax = default_axes_2by1()
-        figwasNone = True
-
-    ax.set_xlim((-2.02, 2.02)) # deal with annoying whitespace cutoff issue
-    ax.set_ylim((-1.01, 1.01))
-    ax.axis('off') # get rid of x/y axis coordinates
+    # shift the field so that the clon is in the ~center of the array
+    difflon = 180. - clon # basically difflon is the amount the clon
+    # must be shifted to arrive at 180, which is near the center of array
+    nphi = 2*len(costheta)
+    iphi_shift = int(difflon/360.*nphi)
+    field = np.roll(field, iphi_shift, axis=0)
 
     # Set the colormap if unspecified
     if cmap is None:
@@ -405,6 +401,11 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
             cmap = 'RdYlBu_r'
         else:
             cmap = 'RdYlBu_r'
+
+    # see if we should show plot later
+    figwasNone = False
+    if fig is None and ax is None:
+        figwasNone = True
 
     # Make the Mollweide projection
     if logscale:
@@ -441,6 +442,12 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
     else:
         im = ax.contourf(xs, ys, field, cmap=cmap,\
                 levels=np.linspace(minmax[0], minmax[1], 150))
+
+    ax.set_xlim((-2.02, 2.02)) # deal with annoying whitespace cutoff issue
+    ax.set_ylim((-1.01, 1.01))
+    ax.axis('off') # get rid of x/y axis coordinates
+
+
       
     # Draw parallels and meridians, evenly spaced by 30 degrees
     # need some derivative grid info
