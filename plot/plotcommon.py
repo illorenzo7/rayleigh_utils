@@ -723,3 +723,23 @@ def my_contourf(xx, yy, field, **kwargs_supplied):
     ax.axis('off') 
     
     return  fig, ax
+
+default_latvals = np.array([-85., -75., -60., -45., -30., -15., 0., 15., 30., 45., 60., 75., 85.])
+
+def get_default_rvals(dirname):
+    ncheby, domain_bounds = get_domain_bounds(dirname)
+    ndomains = len(ncheby)
+    ri, rm, ro = domain_bounds
+    basedepths = np.array([0.05, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 0.95, 1.0])
+    rvals = np.array([], dtype='float')
+    for idomain in range(ndomains):
+        rbot = domain_bounds[ndomains - idomain - 1]
+        rtop = domain_bounds[ndomains - idomain]
+        if idomain == ndomains - 1:
+            rvals_to_add = rtop - (rtop - rbot)*basedepths[:-1]
+        else:
+            rvals_to_add = rtop - (rtop - rbot)*basedepths
+        rvals = np.hstack((rvals, rvals_to_add))
+    return rvals/rsun
+
+

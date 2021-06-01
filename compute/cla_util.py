@@ -7,62 +7,6 @@ import numpy as np
 from common import *
 from varprops import get_quantity_group
 
-# set default CLAs
-clas_default = dict({})
-clas_default['dirname'] = '.'
-
-clas_default['radtype'] = 'azav'
-clas_default['tag'] = ''
-clas_default['qvals'] = None
-
-clas_default['nlevs'] = 20
-clas_default['rbcz'] = None
-clas_default['rvals'] = np.array([])
-
-clas_default['minmax'] = None
-clas_default['minmaxrz'] = None
-clas_default['ymin'] = None
-clas_default['ymax'] = None
-clas_default['xminmax'] = None
-clas_default['xmin'] = None
-clas_default['xmax'] = None
-
-clas_default['the_file'] = None
-clas_default['linthresh'] = None
-clas_default['linscale'] = None
-clas_default['linthreshrz'] = None
-clas_default['linscalerz'] = None
-clas_default['symlog'] = False
-clas_default['plotcontours'] = True
-clas_default['plotlatlines'] = True
-clas_default['plotboundary'] = True
-clas_default['saveplot'] = True
-clas_default['showplot'] = True
-clas_default['latvals'] = None
-
-clas_default['fig_width_inches'] = None
-clas_default['sub_width_inches'] = None
-clas_default['ncol'] = None
-clas_default['totsig'] = None
-
-default_latvals = np.array([-85., -75., -60., -45., -30., -15., 0., 15., 30., 45., 60., 75., 85.])
-
-def get_default_rvals(dirname):
-    ncheby, domain_bounds = get_domain_bounds(dirname)
-    ndomains = len(ncheby)
-    ri, rm, ro = domain_bounds
-    basedepths = np.array([0.05, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 0.95, 1.0])
-    rvals = np.array([], dtype='float')
-    for idomain in range(ndomains):
-        rbot = domain_bounds[ndomains - idomain - 1]
-        rtop = domain_bounds[ndomains - idomain]
-        if idomain == ndomains - 1:
-            rvals_to_add = rtop - (rtop - rbot)*basedepths[:-1]
-        else:
-            rvals_to_add = rtop - (rtop - rbot)*basedepths
-        rvals = np.hstack((rvals, rvals_to_add))
-    return rvals/rsun
-
 def read_cla_vals(args, i, dtype='float'):
     args_after = args[i+1:]
     nafter = len(args_after)
