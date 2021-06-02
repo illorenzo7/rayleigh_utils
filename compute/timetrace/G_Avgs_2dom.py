@@ -150,18 +150,6 @@ for i in range(my_nfiles):
     a = reading_func(radatadir + str(my_files[i]).zfill(8), '')
     for j in range(a.niter):
         vals_loc = np.copy(a.vals[:, 0, :, j])
-        # add in internal energy
-        inte_loc = rhot*vals_loc[:, a.lut[501]]
-        # top S subtracted
-        inte_loc_subt = rhot*(vals_loc[:, a.lut[501]] -\
-                vals_loc[0, a.lut[501]])
-        # bottom S subtracted
-        inte_loc_subb = rhot*(vals_loc[:, a.lut[501]] -\
-                vals_loc[-1, a.lut[501]])
-
-        # add in the three energies
-        vals_loc = np.hstack((vals_loc, inte_loc.T, inte_loc_subt.T,\
-                inte_loc_subb.T))
 
         # Get the values in the CZ/RZ separately
         vals_cz_loc = vals_loc[:ir_bcz + 1]
@@ -174,6 +162,7 @@ for i in range(my_nfiles):
         my_vals.append(gav)
         my_vals_cz.append(gav_cz)
         my_vals_rz.append(gav_rz)
+
         my_times.append(a.time[j])
         my_iters.append(a.iters[j])
     if rank == 0:
@@ -228,12 +217,6 @@ if rank == 0:
     savefile = datadir + savename
 
     # save the data
-    # append the lut (making the inte, inte_subt, and inte_subb quantities
-    # (4000, 4001, 4002)
-    lut_app = np.array([a.nq, a.nq + 1, a.nq + 2])
-    lut = np.hstack((a.lut, lut_app))
-    qv_app = np.array([4000, 4001, 4002])
-    qv = np.hstack((a.qv, qv_app))
     f = open(savefile, 'wb')
     # convert everything to arrays
     vals = np.array(vals)
@@ -241,7 +224,7 @@ if rank == 0:
     vals_rz = np.array(vals_rz)
     times = np.array(times)
     iters = np.array(iters)
-    pickle.dump({'vals': vals, 'vals_cz': vals_cz, 'vals_rz': vals_rz, 'times': times, 'iters': iters, 'lut': lut, 'qv': qv}, f, protocol=4)
+    pickle.dump({'vals': vals, 'vals_cz': vals_cz, 'vals_rz': vals_rz, 'times': times, 'iters': iters, 'lut': a.lut, 'qv': a.qv}, f, protocol=4)
     f.close()
     t2 = time.time()
     print (format_time(t2 - t1))
