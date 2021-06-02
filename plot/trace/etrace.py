@@ -16,12 +16,9 @@ from rayleigh_diagnostics import GridInfo
 
 # Get the run directory on which to perform the analysis
 args = sys.argv
-clas = read_clas(args)
-dirname = clas['dirname']
+clas0, clas = read_clas(args)
+dirname = clas0['dirname']
 dirname_stripped = strip_dirname(dirname)
-
-# Data and plot directories
-datadir = dirname + '/data/'
 
 # Read command-line arguments (CLAs)
 minmax_user = clas['minmax']
@@ -35,58 +32,33 @@ except:
     magnetism = False # if magnetism wasn't specified, it must be "off"
 
 # SPECIFIC ARGS for etrace:
-coords = read_cla_arbitrary(args, 'coords', None, 'int') 
-if not coords is None:
+if 'coords' in clas:
+    coords = clas['coords']
     numpanels = len(coords)//2
     acopy = np.copy(coords)
     coords = []
     for i in range(numpanels):
         coords.append((acopy[2*i], acopy[2*i + 1]))
 
-# choose one panel (or panels) to apply minmax to
-ntot = read_cla_arbitrary(args, 'ntot', 500, 'int') 
-# total no. points to use (thin out really long arrays)
-xiter = read_cla_arbitrary(args, 'xiter', False)
-plottimes = read_cla_arbitrary(args, 'times')
-from0 = read_cla_arbitrary(args, 'from0', False)
-ylog = read_cla_arbitrary(args, 'log', False)
-nodyn = read_cla_arbitrary(args, 'nodyn', False)
-# by default don't adjust the min val to ignore super small 
-# magnetic energies during dynamo growth when ylog=True (i.e., plot
-# the dynamo growth phase by default)
-# to change, use --nodyn / --dynfrac [val=0.5] to ignore the ME values over
-# the last dynfrac of the simulation
-dyn_frac = read_cla_arbitrary(args, 'dynfrac', 0.5)
-leak_frac = read_cla_arbitrary(args, 'leakfrac', 0.25)
-
-plot_inte = read_cla_arbitrary(args, 'inte', False)
-plot_tote = read_cla_arbitrary(args, 'tote', False)
-subinte = True # by default shift the internal energies by a constant
-    # so they aren't so huge
-if read_cla_arbitrary(args, 'nosub', False):
-    subinte = False
-inte_subt = read_cla_arbitrary(args, 'subt', False)
-# subtracts top value of S for inte
-inte_subb = read_cla_arbitrary(args, 'subb', False)
-# subtracts bot value of S for inte
-sep_czrz = read_cla_arbitrary(args, 'czrz', False)
+kwargs_default = dict({'coords': None, 'ntot': 500, 'xiter': False, 'from0': False, 'log': False, 'nodyn': False, 'times': None, 'czrz': False, 
 # plots two more columns with energies in CZ and RZ separately 
-inte_gtr2 = read_cla_arbitrary(args, 'gtr2', False)
-# plots just the regular inte but using the 
-# G_Avgs_trace_2dom file 
-if inte_subb or inte_subt or inte_gtr2: 
-    plot_inte = True
+# update these defaults from command-line
+
+kwargs_default['thefile'] = None
+kwargs = update_kwargs(clas, kwargs_default)
+
+
+sep_czrz = kwargs['czrz']
 
 # Might need to use 2dom trace instead of regular trace
-the_file = clas['the_file']
-if inte_gtr2 or inte_subt or inte_subb or sep_czrz:
-    if the_file is None:
+if thefile is None:
+    if sep_czrz:
         the_file = get_widest_range_file(datadir, 'G_Avgs_trace_2dom')
-    print ('Using 2dom trace from ' + the_file)
-    di = get_dict(the_file) 
-    vals_gav = di['vals']
-    vals_cz = di['vals_cz']
-    vals_rz = di['vals_rz']
+        print ('Using 2dom trace from ' + the_file)
+        di = get_dict(the_file) 
+        vals_gav = di['vals']
+        vals_cz = di['vals_cz']
+        vals_rz = di['vals_rz']
 else: 
     if the_file is None:
         the_file = get_widest_range_file(datadir, 'G_Avgs_trace')
