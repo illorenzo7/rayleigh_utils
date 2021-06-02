@@ -528,8 +528,8 @@ kwargs_contourf = dict({'fig': None, 'ax': None,\
 
 def my_contourf(xx, yy, field, **kwargs_supplied):
     # get local variables from "kwargs_contourf" (unless specified by user)
-    kwargs_allowed = {**kwargs_contourf}
-    kwargs = update_kwargs(kwargs_supplied, kwargs_allowed)
+    kwargs_default = {**kwargs_contourf}
+    kwargs = update_kwargs(kwargs_supplied, kwargs_default)
     kwargs = dotdict(kwargs)
     # assign the local vars one by one (annoying)
     fig = kwargs.fig

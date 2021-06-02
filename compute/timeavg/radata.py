@@ -50,8 +50,13 @@ from rayleigh_diagnostics import AZ_Avgs, Shell_Avgs, G_Avgs,\
 
 # Broadcast the desired datatype (azav by default)
 if rank == 0:
-    args = sys.argv[2:]
-    radtype = read_cla_arbitrary(args, 'radtype', 'azav', 'str')
+    # get the CLAs
+    args = sys.argv
+    clas0, clas = read_clas(args)
+    if 'radtype' in clas:
+        radtype = clas['radtype']
+    else:
+        radtype = 'azav' # default
 else:
     radtype = None
 radtype = comm.bcast(radtype, root=0)
@@ -93,11 +98,7 @@ if rank == 0:
 
 # proc 0 reads the file lists and distributes them
 if rank == 0:
-    # get the name of the run directory + CLAs
-    args = sys.argv
-    nargs = len(args)
-    clas = read_clas(args)
-    dirname = clas['dirname']
+    dirname = clas0['dirname']
 
     # Get the Rayleigh data directory
     radatadir = dirname + '/' + dataname + '/'
@@ -231,7 +232,7 @@ comm.Barrier()
 # proc 0 saves the data
 if rank == 0:
     # create data directory if it doesn't already exist
-    datadir = clas['datadir']
+    datadir = clas0['datadir']
     if datadir is None:
         datadir = dirname + '/data/'
     if not os.path.isdir(datadir):
