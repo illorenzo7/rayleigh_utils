@@ -39,19 +39,11 @@ if 'the_file' in clas:
     the_file = clas['the_file']
 else:
     the_file = get_widest_range_file(clas0['datadir'], 'AZ_Avgs')
-# Read in AZ_Avgs data
 print ('Getting data from ' + the_file)
 di = get_dict(the_file)
 vals = di['vals']
 lut = di['lut']
 vp_av = vals[:, :, lut[3]]
-
-# make the main title
-iter1, iter2 = get_iters_from_file(the_file)
-time_string = get_time_info(dirname, iter1, iter2)
-maintitle = dirname_stripped + '\n' +\
-        'Torque balance (zonally averaged)' + '\n' +\
-        time_string
 
 # Get necessary grid info
 di_grid = get_grid_info(dirname)
@@ -81,7 +73,9 @@ if 'rbcz' in clas:
 fig, axs, fpar = make_figure(nplots=1, sub_aspect=sub_aspect, margin_top_inches=margin_top_inches, margin_bottom_inches=margin_bottom_inches, width_inches=width_inches)
 plot_azav (diffrot, rr, cost, fig=fig, ax=axs[0,0], units='nHz', plotlatlines=False, nosci=True, cbar_prec=1, **clas)
         
-# ake title 
+# make title 
+iter1, iter2 = get_iters_from_file(the_file)
+time_string = get_time_info(dirname, iter1, iter2) 
 line_height = 1/4/fpar['height_inches']
 margin_x = fpar['margin_left'] + fpar['sub_margin_left']
 margin_y = default_margin/fpar['height_inches']
