@@ -79,7 +79,7 @@ if 'rbcz' in clas:
 
 # make plot
 fig, axs, fpar = make_figure(nplots=1, sub_aspect=sub_aspect, margin_top_inches=margin_top_inches, margin_bottom_inches=margin_bottom_inches, width_inches=width_inches)
-plot_azav (diffrot, rr, cost, fig=fig, ax=axs[0,0], units='nHz', **clas)
+plot_azav (diffrot, rr, cost, fig=fig, ax=axs[0,0], units='nHz', plotlatlines=False, nosci=True, cbar_prec=1, **clas)
         
 # ake title 
 line_height = 1/4/fpar['height_inches']
@@ -91,7 +91,7 @@ fig.text(margin_x, 1 - margin_y - 2*line_height, r'$\Omega - \Omega_0$',\
          ha='left', va='top', fontsize=default_titlesize, **csfont)
 fig.text(margin_x, 1 - margin_y - 3*line_height, time_string,\
          ha='left', va='top', fontsize=default_titlesize, **csfont)
-fig.text(margin_x, 1 - margin_y - 5*line_height,\
+fig.text(margin_x, 1 - margin_y - 5.5*line_height,\
          r'$\Delta\Omega_{\rm{60}} = %.1f\ nHz$' %Delta_Om,\
          ha='left', va='top', fontsize=default_titlesize, **csfont)
 

@@ -66,12 +66,10 @@ def plot_azav(field, rr, cost, rbcz=None, minmaxrz=None, rvals=np.array([]), plo
         # will need to change some kwargs:
         kwargsrz = dict(kwargs)
         kwargsrz['minmax'] = minmaxrz
-        if cmaprz is None:
-            if posdef:
-                cmaprz = 'cividis'
-            else:
-                cmaprz = 'PuOr_r'    
-        kwargsrz['cmap'] = cmaprz
+        if kwargs['posdef']:
+            kwargsrz['cmap'] = 'cividis'
+        else:
+            kwargsrz['cmap'] = 'PuOr_r'    
         kwargsrz['func1'] = rr_rz
         kwargsrz['func2'] = tt_lat_rz
         kwargsrz['cbar_no'] = 2

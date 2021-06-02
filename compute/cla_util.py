@@ -52,6 +52,7 @@ def read_clas(args):
     for i in range(nargs):
         # some arguments get treated differently
         # basic args first
+        arg = args[i]
         if arg == '--noshow':
             clas0['showplot'] = False
         elif arg == '--nosave':
