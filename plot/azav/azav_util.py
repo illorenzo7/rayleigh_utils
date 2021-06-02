@@ -6,7 +6,6 @@
 
 import numpy as np
 import matplotlib as mpl
-from matplotlib import ticker
 mpl.use('TkAgg')
 import matplotlib.pyplot as plt
 from matplotlib import colors
@@ -19,10 +18,10 @@ sys.path.append(os.environ['raco'])
 from common import *
 from plotcommon import *
 
-def plot_azav(field, rr, cost, rbcz=None, minmaxrz=None, linthreshrz=None, linscalerz=None, cmaprz=None, rvals=np.array([]), plotlatlines=True, latvals=np.array([]), lw=1.0, **kwargs_supplied):
+def plot_azav(field, rr, cost, rbcz=None, minmaxrz=None, rvals=np.array([]), plotlatlines=True, latvals=np.array([]), lw=1.0, **kwargs_supplied):
     # **kwargs_supplied corresponds to my_contourf
-    kwargs_allowed = {**kwargs_contourf}
-    kwargs = update_kwargs(kwargs_supplied, kwargs_allowed)
+    kwargs_default = {**kwargs_contourf}
+    kwargs = update_kwargs(kwargs_supplied, kwargs_default)
     kwargs = dotdict(kwargs)
 
     # make copy of field
@@ -87,10 +86,10 @@ def plot_azav(field, rr, cost, rbcz=None, minmaxrz=None, linthreshrz=None, linsc
 
     # potentially plot coordinate lines
     if plotlatlines:
-        if latvals == []:
-            latvals = np.arange(-60.0, 89.0, 30.0)
+        if len(latvals) == 0:
+            latvals = default_latvals
     else:
-        latvals = []
+        latvals = np.array([])
 
     my_contourf(xx_full, yy_full, field_full, fig=fig, ax=ax, plotfield=False, plotcontours=False, func1=rr_full, vals1=rvals, func2=tt_lat_full, vals2=latvals, lw=lw)
 

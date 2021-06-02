@@ -22,11 +22,11 @@ from common import *
 from plotcommon import *
 from cla_util import *
 
-# Get directory name and stripped_dirname for plotting purposes
+# Get CLAs
 args = sys.argv
-clas = read_clas(args)
-dirname = clas['dirname']
-dirname_stripped = strip_dirname(dirname)
+clas0, clas = read_clas(args)
+dirname = clas0['dirname']
+dirname_stripped = strip_dirname(dirname, wrap=True)
 
 # domain bounds
 ncheby, domain_bounds = get_domain_bounds(dirname)
@@ -34,43 +34,24 @@ ri = np.min(domain_bounds)
 ro = np.max(domain_bounds)
 d = ro - ri
 
-# Split dirname_stripped into two lines if it is very long
-if len(dirname_stripped) > 25:
-    dirname_stripped_title = dirname_stripped[:25] + '\n' +\
-            dirname_stripped[25:]
+# get data
+if 'the_file' in clas: 
+    the_file = clas['the_file']
 else:
-    dirname_stripped_title = dirname_stripped
-
-# Directory with data and plots, make the plotting directory if it doesn't
-# already exist    
-datadir = dirname + '/data/'
-clas = read_clas(args)
-
-the_file = clas['the_file']
-if the_file is None:
-    the_file = get_widest_range_file(datadir, 'AZ_Avgs')
+    the_file = get_widest_range_file(clas0['datadir'], 'AZ_Avgs')
 # Read in AZ_Avgs data
 print ('Getting data from ' + the_file)
 di = get_dict(the_file)
 vals = di['vals']
 lut = di['lut']
+vp_av = vals[:, :, lut[3]]
 
-# Get the time range in sec
+# make the main title
 iter1, iter2 = get_iters_from_file(the_file)
-t1 = translate_times(iter1, dirname, translate_from='iter')['val_sec']
-t2 = translate_times(iter2, dirname, translate_from='iter')['val_sec']
-
-# Get the baseline time unit
-rotation = get_parameter(dirname, 'rotation')
-if rotation:
-    time_unit = compute_Prot(dirname)
-    time_label = r'$\rm{P_{rot}}$'
-else:
-    time_unit = compute_tdt(dirname)
-    time_label = r'$\rm{TDT}$'
-
-vr_av, vt_av, vp_av = vals[:, :, lut[1]], vals[:, :, lut[2]],\
-        vals[:, :, lut[3]]
+time_string = get_time_info(dirname, iter1, iter2)
+maintitle = dirname_stripped + '\n' +\
+        'Torque balance (zonally averaged)' + '\n' +\
+        time_string
 
 # Get necessary grid info
 di_grid = get_grid_info(dirname)
@@ -91,27 +72,20 @@ Delta_Om = diffrot[it0, 0] - diffrot[it60, 0]
 width_inches = 3.25
 sub_aspect = 2
 margin_top_inches = 1.5 # larger top margin to make room for titles
-margin_bottom_inches = 0.7*(2 - (clas['rbcz'] is None)) 
-    # larger bottom margin to make room for colorbar(s)
-fig, axs, fpar = make_figure(nplots=1, sub_aspect=sub_aspect, margin_top_inches=margin_top_inches, margin_bottom_inches=margin_bottom_inches, width_inches=width_inches)
-ax = axs[0, 0]
+margin_bottom_inches = 0.7
+# larger bottom margin to make room for colorbar(s)
+if 'rbcz' in clas:
+    margin_bottom_inches *= 2
 
-plot_azav (diffrot, rr, cost, fig=fig, ax=ax, units='nHz',\
-        ncontours=clas['nlevs'], minmax=clas['minmax'], rvals=clas['rvals'])
-# Make title + label diff. rot. contrast and no. contours
-# Label averaging interval
-if rotation:
-    time_string = ('t = %.1f to %.1f ' %(t1/time_unit, t2/time_unit))\
-            + time_label + '\n' + (r'$\ (\Delta t = %.1f\ $'\
-            %((t2 - t1)/time_unit)) + time_label + ')'
-else:
-    time_string = ('t = %.3f to %.3f ' %(t1/time_unit, t2/time_unit))\
-            + time_label + (r'$\ (\Delta t = %.3f\ $'\
-            %((t2 - t1)/time_unit)) + time_label + ')'
+# make plot
+fig, axs, fpar = make_figure(nplots=1, sub_aspect=sub_aspect, margin_top_inches=margin_top_inches, margin_bottom_inches=margin_bottom_inches, width_inches=width_inches)
+plot_azav (diffrot, rr, cost, fig=fig, ax=axs[0,0], units='nHz', **clas)
+        
+# ake title 
 line_height = 1/4/fpar['height_inches']
 margin_x = fpar['margin_left'] + fpar['sub_margin_left']
 margin_y = default_margin/fpar['height_inches']
-fig.text(margin_x, 1 - margin_y, dirname_stripped_title,\
+fig.text(margin_x, 1 - margin_y, dirname_stripped,\
          ha='left', va='top', fontsize=default_titlesize, **csfont)
 fig.text(margin_x, 1 - margin_y - 2*line_height, r'$\Omega - \Omega_0$',\
          ha='left', va='top', fontsize=default_titlesize, **csfont)
@@ -120,17 +94,14 @@ fig.text(margin_x, 1 - margin_y - 3*line_height, time_string,\
 fig.text(margin_x, 1 - margin_y - 5*line_height,\
          r'$\Delta\Omega_{\rm{60}} = %.1f\ nHz$' %Delta_Om,\
          ha='left', va='top', fontsize=default_titlesize, **csfont)
-fig.text(margin_x, 1 - margin_y - 6*line_height,\
-         'nlevs = %i' %clas['nlevs'],
-         ha='left', va='top', fontsize=default_titlesize, **csfont)
 
 # save the figure
-plotdir = my_mkdir(clas['plotdir'] + 'azav/')
-savefile = plotdir + clas['routinename'] + clas['tag'] + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
+plotdir = my_mkdir(clas0['plotdir'] + 'azav/')
+savefile = plotdir + clas0['routinename'] + clas0['tag'] + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
 
-if clas['saveplot']:
+if clas0['saveplot']:
     print ('saving figure at ' + savefile)
     plt.savefig(savefile, dpi=300)
-if clas['showplot']:
+if clas0['showplot']:
     plt.show()
 plt.close()

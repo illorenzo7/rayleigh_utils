@@ -15,6 +15,8 @@ def how_to_treat_numberstring(string):
         return 'float'    
     elif all (char in int_chars for char in string):
         return 'int'
+    else: # just a string!
+        return 'string'
 
 def trim_arraystring(string):
     # Ignore possible enclosing braces. Note that this will screw up things
@@ -66,3 +68,5 @@ def string_to_number_or_array(string):
             mylist.append(member_val)
         
         return np.array(mylist)
+    elif number_type == 'string':
+        return string

@@ -7,7 +7,7 @@ import numpy as np
 from common import *
 from varprops import get_quantity_group
 
-def read_cla_vals(args, i, dtype='float'):
+def read_cla_vals(args, i):
     args_after = args[i+1:]
     nafter = len(args_after)
     iend_found = False
@@ -18,129 +18,81 @@ def read_cla_vals(args, i, dtype='float'):
             iend_found = True
     if not iend_found:
         iend = nafter
-    val_args = args_after[:iend]
-    if dtype == 'float':
-        convert = float
-    if dtype == 'int':
-        convert = int
-    if dtype == 'str':
-        convert = str
-
-    # store the cla value in the "vals" list
+    vals_string = args_after[:iend]
     vals = []
-    for val_arg in val_args:
-        for st in val_arg.split():
-            vals.append(convert(st))
+    for st_full in vals_string:
+        for st in st_full.split():
+            vals.append(string_to_number_or_array(st))
     vals = np.array(vals)
 
-    # if the list has only one value, make it not a list
+    # if the array has only one value, make it not an array
     if len(vals) == 1:
         vals = vals[0]
     return vals
 
-def read_cla_arbitrary(args, key, default=None, dtype='float'):
-    nargs = len(args)
-    out = default
-    for i in range(nargs):
-        arg = args[i]
-        if arg == '--' + key:
-            if i == nargs - 1: # must be boolean if appearing at end
-                out = True
-            else:
-                if '--' in args[i+1]: # must be boolean if no following val
-                    out = True
-                else:
-                    out = read_cla_vals(args, i, dtype=dtype)
-    return out
-
 def read_clas(args):
-    # start with default CLAs, then change them
-    clas = clas_default.copy()
-    
-    clas['routinename'] = args[0].split('/')[-1][:-3]
-    clas['dirname'] = args[1]
-    clas['datadir'] = clas['dirname'] + '/data/'
-    clas['plotdir'] = clas['dirname'] + '/plots/'
+    # first get basic info
+    clas0 = dict({})
+    clas0['routinename'] = args[0].split('/')[-1][:-3]
+    clas0['dirname'] = args[1]
+    clas0['datadir'] = clas0['dirname'] + '/data/'
+    clas0['plotdir'] = clas0['dirname'] + '/plots/'
+    clas0['saveplot'] = True
+    clas0['showplot'] = True
+    clas0['tag'] = ''
 
     # see if magnetism is on
-    magnetism = get_parameter(clas['dirname'], 'magnetism')
+    magnetism = get_parameter(clas0['dirname'], 'magnetism')
 
+    # get the other arguments
+    # tag is default to make things easy
+    clas = dict({})
     args = args[2:]
     nargs = len(args)
     for i in range(nargs):
-        arg = args[i]
-        if arg == '--datadir':
-            clas['datadir'] = args[i+1]
-        if arg == '--radtype':
-            clas['radtype'] = args[i+1]
-        if arg == '--plotdir':
-            clas['plotdir'] = args[i+1]
-        if arg == '--minmax':
-            clas['minmax'] = read_cla_vals(args, i)
-        if arg == '--ymin':
-            clas['ymin'] = read_cla_vals(args, i)
-        if arg == '--ymax':
-            clas['ymax'] = read_cla_vals(args, i)
-        if arg == '--xminmax':
-            clas['xminmax'] = read_cla_vals(args, i)
-        if arg == '--xmin':
-            clas['xmin'] = read_cla_vals(args, i)
-        if arg == '--xmax':
-            clas['xmax'] = read_cla_vals(args, i)
-        if arg == '-minmaxrz':
-            minmaxrz = read_cla_vals(args, i)
-        if arg == '--rbcz':
-            clas['rbcz'] = float(args[i+1])
-        if arg == '--nlevs':
-            clas['nlevs'] = int(args[i+1])
-        if arg == '--ncol':
-            clas['ncol'] = int(args[i+1])
-        if arg == '--width':
+        # some arguments get treated differently
+        # basic args first
+        if arg == '--noshow':
+            clas0['showplot'] = False
+        elif arg == '--nosave':
+            clas0['saveplot'] = False
+        # then the rest of the args
+        elif arg == '--width':
             clas['fig_width_inches'] = float(args[i+1])
-        if arg == '--subwidth':
+        elif arg == '--subwidth':
             clas['sub_width_inches'] = float(args[i+1])
-        if arg == '--usefile':
+        elif arg == '--usefile':
             clas['the_file'] = args[i+1]
-        if arg == '--nocontour':
+        elif arg == '--nocontour':
             clas['plotcontours'] = False
-        if arg == '--nobound':
+        elif arg == '--nobound':
             clas['plotboundary'] = False
-        if arg == '--nolat':
+        elif arg == '--nolat':
             clas['plotlatlines'] = False
-        if arg == '--symlog':
-            clas['symlog'] = True
-        if arg == '--linthresh':
-            clas['linthresh'] = float(args[i+1])
-        if arg == '--linscale':
-            clas['linscale'] = float(args[i+1])
-        if arg == '--linthreshrz':
-            clas['linthreshrz'] = float(args[i+1])
-        if arg == '--linscalerz':
-            clas['linscalerz'] = float(args[i+1])
-        if arg == '--tag':
+        elif arg == '--tag':
             clas['tag'] = '_' + args[i+1]
-        if arg == '--depths':
+        elif arg == '--depths':
             clas['rvals'] = ro - read_cla_vals(args, i)*d
-        if arg == '--depthscz':
+        elif arg == '--depthscz':
             dcz = ro - rm
             clas['rvals'] = ro - read_cla_vals(args, i)*dcz
-        if arg == '--depthirz':
+        elif arg == '--depthirz':
             drz = rm - ri
             clas['rvals'] = rm - read_cla_vals(args, i)*drz
-        if arg == '--rvals':
+        elif arg == '--rvals':
             if args[i+1] == 'default':
-                clas['rvals'] = get_default_rvals(clas['dirname'])*rsun
+                clas['rvals'] = get_default_rvals(clas0['dirname'])*rsun
             else:
                 clas['rvals'] = read_cla_vals(args, i)*rsun
-        if arg == '--rvalscm':
+        elif arg == '--rvalscm':
             clas['rvals'] = read_cla_vals(args, i)
-        if arg == '--rrange':
+        elif arg == '--rrange':
             rbot, rtop, nrvals = read_cla_vals(args, i)
             rbot *= rsun
             rtop *= rsun
             nrvals = int(nrvals)
             clas['rvals'] = np.linspace(rtop, rbot, nrvals)
-        if arg == '--nrperzone':
+        elif arg == '--nrperzone':
             rvals = np.array([], dtype='float')
             nrperzone = int(args[i+1])
             basedepths = np.arange(1.0/(nperzone+1.0), 1.0,\
@@ -154,7 +106,7 @@ def read_clas(args):
                     rvals_to_add = rtop - (rtop - rbot)*basedepths
                 rvals = np.hstack((rvals, rvals_to_add))
             clas['rvals'] = rvals
-        if arg == '--qvals':
+        elif arg == '--qvals':
             argvals = read_cla_vals(args, i, 'str')
             if np.isscalar(argvals): # either group or one int
                 if is_an_int(argvals):
@@ -174,20 +126,18 @@ def read_clas(args):
                 clas['qvals'] = read_cla_vals(args, i, 'int')
                 clas['titles'] = array_of_strings(clas['qvals'])
                 clas['units'] = 'cgs'
-        if arg == '--latvals':
-            clas['latvals'] = read_cla_vals(args, i)
-        if arg == '--latrange':
+        elif arg == '--latrange':
             latmin, latmax, nlatvals = read_cla_vals(args, i)
             nlatvals = int(nlatvals)
             clas['latvals'] = np.linspace(latmin, latmax, nlatvals)
-        if arg == '--noshow':
-            clas['showplot'] = False
-        if arg == '--nosave':
-            clas['saveplot'] = False
+        # everyone else is easy...
+        elif '--' in arg:
+            key = arg[2:]
+            clas[key] = read_cla_vals(args, i)
 
-    if not clas['rvals'] is None:
+    if 'rvals' in clas:
         clas['rvals'] /= rsun # always keep rvals in solar radius units
         if np.isscalar(clas['rvals']):
             clas['rvals'] = np.array([clas['rvals']]) 
             # rvals should always be an array
-    return clas
+    return clas0, clas

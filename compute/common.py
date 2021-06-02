@@ -191,17 +191,22 @@ def get_file_lists(radatadir, args):
     nfiles = index_last - index_first + 1
     return file_list, int_file_list, nfiles
 
-def strip_dirname(dirname):
+def strip_dirname(dirname, wrap=False):
     dirname_stripped = dirname.split('/')[-1]
-    if (dirname_stripped == ''):
+    if dirname_stripped == '':
         dirname_stripped = dirname.split('/')[-2]
-    if (dirname == '.'):
+    if dirname == '.':
         dirname_stripped = os.getcwd().split('/')[-1]
-    if (dirname == '..'):
+    if dirname == '..':
         orig_dir = os.getcwd()
         os.chdir('..')
         dirname_stripped = os.getcwd().split('/')[-1]
         os.chdir(orig_dir)
+
+    if wrap and len(dirname_stripped) > 25:
+        # Split dirname_stripped into two lines if it is very long
+        dirname_stripped = dirname_stripped[:25] + '\n' +\
+                dirname_stripped[25:]
     return dirname_stripped
 
 def is_an_int(string):
@@ -1366,10 +1371,11 @@ class dotdict(dict):
     __setattr__ = dict.__setitem__
     __delattr__ = dict.__delitem__
 
-def update_kwargs(kwargs_supplied, kwargs_allowed):
-    kwargs = {**kwargs_allowed}
+def update_kwargs(kwargs_supplied, kwargs_default):
+    kwargs = {**kwargs_default} # start with default kwargs
     for key, val in kwargs_supplied.items():
-        if key in kwargs_allowed:
+        if key in kwargs_default: # only update arguments that are
+            # specified in the default set
             kwargs[key] = val
         else:
             print ("you specified an invalid keyword arg: ", key)
