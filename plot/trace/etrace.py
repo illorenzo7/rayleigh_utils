@@ -20,11 +20,6 @@ clas0, clas = read_clas(args)
 dirname = clas0['dirname']
 dirname_stripped = strip_dirname(dirname)
 
-# Read command-line arguments (CLAs)
-minmax_user = clas['minmax']
-ymin = clas['ymin']
-ymax = clas['ymax']
-
 # See if magnetism is "on"
 try:
     magnetism = get_parameter(dirname, 'magnetism')
@@ -32,40 +27,50 @@ except:
     magnetism = False # if magnetism wasn't specified, it must be "off"
 
 # SPECIFIC ARGS for etrace:
-if 'coords' in clas:
-    coords = clas['coords']
+kwargs_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'from0': False, 'log': False, 'nodyn': False, 'dynfrac': 0.5, 'times': None, 'czrz': False, 'inte': False})
+# plots two more columns with energies in CZ and RZ separately 
+# update these defaults from command-line
+kwargs = dotdict(update_kwargs(clas, kwargs_default))
+
+the_file = kwargs.the_file
+xminmax = kwargs.xminmax
+xmin = kwargs.xmin
+xmax = kwargs.xmax
+minmax = kwargs.minmax
+ymin = kwargs.min
+ymax = kwargs.max
+coords = kwargs.coords
+ntot = kwargs.ntot
+xiter = kwargs.xiter
+from0 = kwargs.from0
+logscale = kwargs.log
+nodyn = kwargs.nodyn
+dynfrac = kwargs.dynfrac
+plottimes = kwargs.times
+sep_czrz = kwargs.czrz
+plot_inte = kwargs.inte
+
+# deal with coords (if user wants minmax to only apply to certain subplots)
+if not coords is None:
     numpanels = len(coords)//2
     acopy = np.copy(coords)
     coords = []
     for i in range(numpanels):
         coords.append((acopy[2*i], acopy[2*i + 1]))
 
-kwargs_default = dict({'coords': None, 'ntot': 500, 'xiter': False, 'from0': False, 'log': False, 'nodyn': False, 'times': None, 'czrz': False, 
-# plots two more columns with energies in CZ and RZ separately 
-# update these defaults from command-line
-
-kwargs_default['thefile'] = None
-kwargs = update_kwargs(clas, kwargs_default)
-
-
-sep_czrz = kwargs['czrz']
-
 # Might need to use 2dom trace instead of regular trace
-if thefile is None:
+if the_file is None:
     if sep_czrz:
-        the_file = get_widest_range_file(datadir, 'G_Avgs_trace_2dom')
-        print ('Using 2dom trace from ' + the_file)
-        di = get_dict(the_file) 
-        vals_gav = di['vals']
-        vals_cz = di['vals_cz']
-        vals_rz = di['vals_rz']
-else: 
-    if the_file is None:
-        the_file = get_widest_range_file(datadir, 'G_Avgs_trace')
-    print ('Using G_Avgs trace from ' + the_file)
-    di = get_dict(the_file)
-    vals_gav = di['vals']
-# get lut, times, iters no matter the file type
+        the_file = get_widest_range_file(clas0['datadir'], 'G_Avgs_trace_2dom')
+    else: 
+        the_file = get_widest_range_file(clas0['datadir'], 'G_Avgs_trace')
+
+print ('Getting data from ' + the_file)
+di = get_dict(the_file)
+vals_gav = di['vals']
+if sep_czrz:
+    vals_cz = di['vals_cz']
+    vals_rz = di['vals_rz']
 lut = di['lut']
 times = di['times']
 iters = di['iters']
@@ -78,9 +83,6 @@ else:
     xaxis = iters
 
 # set xminmax if not set by user
-xminmax = clas['xminmax']
-xmin = clas['xmin']
-xmax = clas['xmax']
 if xminmax is None:
     # set xmin possibly
     if xmin is None:
@@ -101,69 +103,21 @@ xaxis = xaxis[ixmin:ixmax+1]
 times = times[ixmin:ixmax+1]
 iters = iters[ixmin:ixmax+1]
 tmin, tmax = times[0], times[-1]
-
 vals_gav = vals_gav[ixmin:ixmax+1, :]
 if sep_czrz:
     vals_cz = vals_cz[ixmin:ixmax+1, :]
     vals_rz = vals_rz[ixmin:ixmax+1, :]
 
-# Check what internal energies we might need (sometimes CZ/RZ separated ones
-# too just in case) these will always be available for some options)
-if inte_subt:
-    inte_gav = vals_gav[:, lut[4001]]
-    inte_cz = vals_cz[:, lut[4001]]
-    inte_rz = vals_rz[:, lut[4001]]
-    print("Got SUBT internal energy trace from trace_2dom_G_Avgs")
-    inte_label = "IE SUBT"
-elif inte_subb:
-    inte_gav = vals_gav[:, lut[4002]]
-    inte_cz = vals_cz[:, lut[4002]]
-    inte_rz = vals_rz[:, lut[4002]]
-    print("Got SUBB internal energy trace from trace_2dom_G_Avgs")
-    inte_label = "IE SUBB"
-elif inte_gtr2 or ((plot_inte or plot_tote) and sep_czrz): 
-    # inte not from trace_G_Avgs
-    inte_gav = vals_gav[:, lut[4000]]
-    inte_cz = vals_cz[:, lut[4000]]
-    inte_rz = vals_rz[:, lut[4000]]
-    print("Got internal energy trace from trace_2dom_G_Avgs")
-    inte_label = "IE W/ DRIFT"
-elif plot_inte or plot_tote: 
-    # try to get inte from trace_G_Avgs
-    try:
-        inte_gav = vals_gav[:, lut[701]]
-        print("Got internal energy trace from trace_G_Avgs")
-        inte_label = "IE W/ DRIFT"
-    except:
-        # if not available in trace_G_Avgs, set inte to zero 
-        print ("Internal energy trace not available; setting to 0")
-        inte_gav = np.zeros_like(times)
-        inte_label = "IE NOT FOUND"
-
-# Get rho*T and integrate it, + get volume
-eq = get_eq(dirname)
-rhot = eq.density*eq.temperature
-integs = integrate_in_r(rhot, dirname)
-volumes = get_volumes(dirname)
-# get luminosity
-lstar = get_lum(dirname)
-
-# deal with x axis
+# deal with x axis, maybe thinning data
 print ("ntot = %i" %ntot)
 print ("before thin_data: len(xaxis) = %i" %len(xaxis))
 xaxis = thin_data(xaxis, ntot)
 times = thin_data(times, ntot)
 iters = thin_data(iters, ntot)
 vals_gav = thin_data(vals_gav, ntot)
-if plot_inte or plot_tote:
-    inte_gav = thin_data(inte_gav, ntot)
 if sep_czrz:
     vals_cz = thin_data(vals_cz, ntot)
     vals_rz = thin_data(vals_rz, ntot)
-    if plot_inte or plot_tote:
-        inte_cz = thin_data(inte_cz, ntot)
-        inte_rz = thin_data(inte_rz, ntot)
-
 print ("after thin_data: len(xaxis) = %i" %len(xaxis))
 
 # create figure with 3-panel columns (total, mean and fluctuating energy)
@@ -183,8 +137,8 @@ lw = 0.5
 lw_ke = 1. # bit thicker for KE to differentiate between ME
 
 # See if y-axis should be on log scale (must do this before setting limits)
-# Make all axes use scientific notation (except for y if ylog=True)
-if ylog:
+# Make all axes use scientific notation (except for y if logscale=True)
+if logscale:
     for ax in axs.flatten():
         ax.set_yscale('log')
         ax.ticklabel_format(axis='x', scilimits=(-3,4), useMathText=True)
@@ -199,25 +153,18 @@ if sep_czrz:
     vals_list.append(vals_rz)
     vals_list.append(vals_cz)
 
-if plot_inte or plot_tote:
-    inte_list = [inte_gav]
-    if sep_czrz:
-        inte_list.append(inte_rz)
-        inte_list.append(inte_cz)
-
-
 # specialized function to get axis limits
 # take into account buffer for legend and leak labels
-def get_minmax(ax, ylog=False, withleg=False, nodyn=False, mes=None):
+def get_minmax(ax, logscale=False, withleg=False, nodyn=False, mes=None):
     ymin, ymax = ax.get_ylim()
     # possibly adjust ymin
     if nodyn:
-        # Get minimum mag energy over last dyn_frac of dynamo
+        # Get minimum mag energy over last dynfrac of dynamo
         rme_loc, tme_loc, pme_loc = mes
         ntimes_loc = len(rme_loc)
-        it_frac = int(ntimes_loc*(1.0 - dyn_frac))
+        it_frac = int(ntimes_loc*(1.0 - dynfrac))
         minme = min(np.min(rme_loc[it_frac:]),\
-                np.min(rme_loc[it_frac:]), np.min(rme_loc[it_frac:]))
+                np.min(tme_loc[it_frac:]), np.min(pme_loc[it_frac:]))
         ymin = minme
         buff = 0.05
     if withleg:
@@ -225,7 +172,7 @@ def get_minmax(ax, ylog=False, withleg=False, nodyn=False, mes=None):
 
     # only need to adjust things for nodyn or withleg
     if nodyn or withleg:
-        if ylog:
+        if logscale:
             yratio = ymax/ymin
             ymin = ymin/(yratio**buff)
         else:
@@ -236,14 +183,13 @@ def get_minmax(ax, ylog=False, withleg=False, nodyn=False, mes=None):
 for irow in range(3): # tot, fluc, mean
     for icol in range(ncol):
         vals = vals_list[icol]
-        if plot_inte or plot_tote:
-            inte = inte_list[icol]
-            if irow == 1: # fluc, no inte for fluctuating S'
-                inte = np.zeros(len(xaxis))
+        # KINETIC ENERGY
         if irow == 0: # tot
             rke = vals[:, lut[402]]
             tke = vals[:, lut[403]]
             pke = vals[:, lut[404]]
+            if plot_inte:
+                inte = vals[:, lut[701]]
         if irow == 1: # fluc
             rke = vals[:, lut[410]]
             tke = vals[:, lut[411]]
@@ -253,6 +199,15 @@ for irow in range(3): # tot, fluc, mean
             tke = vals[:, lut[403]] - vals[:, lut[411]]
             pke = vals[:, lut[404]] - vals[:, lut[412]]
         ke = rke + tke + pke
+
+        # INTERNAL ENERGY
+        if plot_inte:
+            if irow == 1: # fluc, no inte for fluctuating S'
+                inte = np.zeros(len(xaxis))
+            else:
+                inte = vals[:, lut[701]]
+        
+        # MAGNETIC ENERGY
         if magnetism:
             if irow == 0: # tot
                 rme = vals[:, lut[1102]]
@@ -268,33 +223,8 @@ for irow in range(3): # tot, fluc, mean
                 pme = vals[:, lut[1104]] - vals[:, lut[1112]]
             me = rme + tme + pme
 
-        # possibly shift inte values to lie just above max ke
-        if plot_inte and subinte:
-            min_inte = np.min(inte)
-            max_ke = np.max(ke)
-            diff = min_inte - max_ke
-            buff = max_ke*0.05
-            sub = diff - buff
-            if icol == 0: # full domain
-                inte -= sub*integs[icol]/integs[0]
-         
-        # Get total energy if desired
-        if plot_tote:
-            tote = ke + inte
-            if magnetism:
-                tote += me
-
-            # Will need to compute "energy leaks":
-            it_leak = np.argmin(np.abs((times - tmin) - (1.0 - leak_frac)*(tmax - tmin)))
-            times_leak = np.copy(times[it_leak:])
-            tote_leak = np.copy(tote[it_leak:])
-           
-            m_leak, b_leak = np.polyfit(times_leak, tote_leak, 1)
-
-            # m_leak represents leak in energy DENSITY (multiply by volume)
-            dEdt = m_leak*volumes[icol]/lstar 
-
         # make line plots
+        # KINETIC
         ax = axs[irow, icol]
         ax.plot(xaxis, ke, color_order[0],\
                 linewidth=lw_ke, label=r'$\rm{KE_{tot}}$')
@@ -304,7 +234,11 @@ for irow in range(3): # tot, fluc, mean
                 linewidth=lw_ke, label=r'$\rm{KE_\theta}$')
         ax.plot(xaxis, pke, color_order[3],\
                 linewidth=lw_ke, label=r'$\rm{KE_\phi}$')
-        # If magnetic, plot magnetic energies!
+        # INTERNAL
+        if plot_inte:
+            ax.plot(xaxis, inte, color_order[4], linewidth=lw_ke,\
+                    label='INTE')
+        # MAGNETIC
         if magnetism:
             ax.plot(xaxis, me, color_order[0] + '--',\
                     linewidth=lw, label=r'$\rm{ME_{tot}}$')
@@ -315,45 +249,29 @@ for irow in range(3): # tot, fluc, mean
             ax.plot(xaxis, pme, color_order[3] + '--',\
                     linewidth=lw, label=r'$\rm{ME_\phi}$')
 
-        # See if various internal/total energies should be plotted
-        if plot_inte:
-            ax.plot(xaxis, inte, color_order[4],\
-                    linewidth=lw_ke, label=inte_label)
-        if plot_tote:
-            ax.plot(xaxis, tote, color_order[5],\
-                    linewidth=lw_ke, label=r'$\rm{TE}$')
-
-            # Label energy leak with rate of leak and dashed red line
-            leak_label = r'$\rm{(\overline{dE/dt})/L_* = %09.3e}$'
-            leak_label_x = 0.99
-            leak_label_y = 0.01
-            ax.text(leak_label_x, leak_label_y,\
-                    leak_label %dEdt,\
-                    va='bottom', ha='right', transform=ax.transAxes)
-            ax.plot(xaxis[it_leak:], m_leak*times_leak + b_leak, 'r--') 
-
         if irow == 0 and icol == 0: # put a legend on the upper left axis
+            withleg = True
             ax.legend(loc='lower left', ncol=3, fontsize=8, columnspacing=1)
+        else:
+            withleg = False
 
         # set the y limits
-        if coords is None:
-            minmax = minmax_user
-        else:
-            if (irow, icol) in coords:
-                minmax = minmax_user
-            else: 
-                minmax = None
-        if minmax is None:
+        minmax_loc = minmax
+        if not coords is None:
+            if not (irow, icol) in coords: # reset minmax_loc to None
+                # (will become default) if not in desired coordinates
+                minmax_loc = None
+        if minmax_loc is None:
             if nodyn: 
                 mes = rme, tme, pme
             else:
                 mes = None
-            minmax = get_minmax(ax, ylog=ylog, withleg=True, nodyn=nodyn, mes=mes)
+            minmax_loc = get_minmax(ax, logscale=logscale, withleg=withleg, nodyn=nodyn, mes=mes)
         if not ymin is None:
-            minmax = ymin, minmax[1]
+            minmax_loc = ymin, minmax_loc[1]
         if not ymax is None:
-            minmax = minmax[0], ymax
-        ax.set_ylim((minmax[0], minmax[1]))
+            minmax_loc = minmax_loc[0], ymax
+        ax.set_ylim((minmax_loc[0], minmax_loc[1]))
 
 # Set some parameters defining all subplots
 # x limits and label
@@ -368,7 +286,7 @@ else:
     axs[2,icol_mid].set_xlabel(r'$t\ ($' + time_label + r'$)$')
 
 # y labels
-fs = 14
+fs = default_titlesize
 axs[0,0].set_ylabel('full energy', fontsize=fs)
 axs[1,0].set_ylabel('fluc energy', fontsize=fs)
 axs[2,0].set_ylabel('mean energy', fontsize=fs)
@@ -403,14 +321,17 @@ plt.tight_layout()
 # Save the plot
 iter1, iter2 = get_iters_from_file(the_file)
 # Tag the plot by whether or not the x axis is in "time" or "iteration"
-tag = clas['tag']
+tag = clas0['tag']
 if xiter and tag == '':
     tag = '_xiter'
-plotdir = my_mkdir(clas['plotdir']) 
+plotdir = my_mkdir(clas0['plotdir']) 
 savename = 'etrace' + tag + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
 
-print ('Saving the etrace plot at ' + plotdir + savename)
-plt.savefig(plotdir + savename, dpi=300)
+if clas0['saveplot']:
+    print ('Saving the etrace plot at ' + plotdir + savename)
+    plt.savefig(plotdir + savename, dpi=300)
 
 # Show the plot
-plt.show()
+if clas0['showplot']:
+    plt.show()
+plt.close()

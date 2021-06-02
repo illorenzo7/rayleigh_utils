@@ -19,7 +19,10 @@ def read_cla_vals(args, i):
     if not iend_found:
         iend = nafter
     vals_string = args_after[:iend]
+
     vals = []
+    if len(vals_string) == 0: # must be a boolean set to True
+        vals.append(True)
     for st_full in vals_string:
         for st in st_full.split():
             vals.append(string_to_number_or_array(st))
