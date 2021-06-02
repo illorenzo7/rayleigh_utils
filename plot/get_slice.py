@@ -79,7 +79,7 @@ var_indices = {\
     'jp'    :       1003}
 
 rootlabels = {'v': r'$v$', 'b': r'$B$', 'om': r'$\omega$', 'j': r'$\mathcal{J}$'}
-dirlabels = {'r': r'$_r$', 't': r'$_\theta$', 'p': r'$_\phi$', 'l': r'$_\lambda$', 'z': r'$_z$', 'T': r'$_\Theta$', 'P': r'$_\Phi$'}
+direclabels = {'r': r'$_r$', 't': r'$_\theta$', 'p': r'$_\phi$', 'l': r'$_\lambda$', 'z': r'$_z$', 'T': r'$_\Theta$', 'P': r'$_\Phi$'}
 
 def get_varprops(varname):
     # get boolean values deriv, prime (az average subtracted), and sph

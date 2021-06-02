@@ -111,7 +111,7 @@ def read_clas(args):
                 rvals = np.hstack((rvals, rvals_to_add))
             clas['rvals'] = rvals
         elif arg == '--qvals':
-            argvals = read_cla_vals(args, i, 'str')
+            argvals = read_cla_vals(args, i)
             if np.isscalar(argvals): # either group or one int
                 if is_an_int(argvals):
                     clas['qvals'] = np.array([int(argvals)])
@@ -127,7 +127,7 @@ def read_clas(args):
                     clas['totsig'] = the_qgroup['totsig']
             else:
                 # this was a list of integers
-                clas['qvals'] = read_cla_vals(args, i, 'int')
+                clas['qvals'] = read_cla_vals(args, i)
                 clas['titles'] = array_of_strings(clas['qvals'])
                 clas['units'] = 'cgs'
         elif arg == '--latrange':
