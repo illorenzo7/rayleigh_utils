@@ -164,7 +164,7 @@ def plot_azav_half(field, rr, cost, sym='even', fig=None, ax=None,\
     lw = 1
     contour_lw = .2
     
-    if (plotfield):
+    if plotfield:
         plt.sca(ax)
 #        levs = np.linspace(minmax[0], minmax[1], 100)
 #        im = ax.contourf(xx, zz, field, cmap='RdYlBu_r',\

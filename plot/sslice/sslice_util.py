@@ -346,43 +346,21 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
     del field # free up memory
     return im
 
-def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
-        clon=0., posdef=False, logscale=False, symlog=False,\
-        lw_scaling=1., plot_cbar=True, cbar_fs=10, linscale=None,\
-        linthresh=None, units='', cmap=None, showav=False, nosci=False,\
-        cbar_scaling=1.): 
-    
-    if logscale:
-        posdef = True # for self-consistency
+def plot_moll(field_orig, costheta, clon=0., **kwargs_supplied): 
+    # **kwargs_supplied corresponds to my_contourf
+    kwargs_default = {**kwargs_contourf}
+    kwargs = update_kwargs(kwargs_supplied, kwargs_default)
+    kwargs = dotdict(kwargs)
+    # some things we need to change (no contours and boundary + 
+    # coordinate lines are dealt with separately
+    kwargs.plotboundary = False
+    kwargs.plotcontours = False
         
-    # Shouldn't have to do this but Python is stupid with arrays ...
+    # Shouldn't have to do this but Python is stupid with arrays
     field = np.copy(field_orig)    
 
-    # Set tick label sizes (for colorbar)
-    mpl.rcParams['xtick.labelsize'] = cbar_fs
-    mpl.rcParams['ytick.labelsize'] = cbar_fs
-    
-    # Get default bounds if not specified
-    if minmax is None:
-        minmax = get_satvals(field, posdef=posdef, logscale=logscale,\
-                symlog=symlog)
-
-    # Get the exponent to use for scientific notation
-    # (turn off by setting nosci=True)
-    if not (logscale or symlog or nosci):
-        maxabs = max(np.abs(minmax[0]), np.abs(minmax[1]))
-        maxabs_exp = int(np.floor(np.log10(maxabs)))
-        divisor = 10**maxabs_exp
-        
-        # Normalize field by divisor
-        field /= divisor
-        minmax = minmax[0]/divisor, minmax[1]/divisor
-    
-    # Saturate the array (otherwise contourf will show white areas)
-    saturate_array(field, minmax[0], minmax[1])    
-            
     # Get the Mollweide projection coordinates associated with costheta
-    xs, ys = mollweide_transform(costheta)
+    xx, yy = mollweide_transform(costheta)
 
     # shift the field so that the clon is in the ~center of the array
     difflon = 180. - clon # basically difflon is the amount the clon
@@ -391,176 +369,41 @@ def plot_moll(field_orig, costheta, fig=None, ax=None, minmax=None,\
     iphi_shift = int(difflon/360.*nphi)
     field = np.roll(field, iphi_shift, axis=0)
 
-    # Set the colormap if unspecified
-    if cmap is None:
-        if logscale:
-            cmap = 'Greys'
-        elif posdef:
-            cmap = 'plasma'
-        elif symlog:
-            cmap = 'RdYlBu_r'
-        else:
-            cmap = 'RdYlBu_r'
+    # make the Mollweide plot
+    fig, ax = my_contourf(xx, yy, field, **kwargs)
 
-    # see if we should show plot later
-    figwasNone = False
-    if fig is None and ax is None:
-        figwasNone = True
-
-    # Make the Mollweide projection
-    if logscale:
-        log_min, log_max = np.log10(minmax[0]), np.log10(minmax[1])
-        levels = np.logspace(log_min, log_max, 150)
-        im = ax.contourf(xs, ys, field, cmap=cmap,\
-            norm=colors.LogNorm(vmin=minmax[0], vmax=minmax[1]),\
-            levels=levels)  
-    elif posdef:
-        levels = np.linspace(minmax[0], minmax[1])
-        im = ax.contourf(xs, ys, field, cmap=cmap, levels=levels)
-    elif symlog:
-        linthresh_default, linscale_default =\
-            get_symlog_params(field, field_max=minmax[1])
-        if linthresh is None:
-            linthresh = linthresh_default
-        if linscale is None:
-            linscale = linscale_default
-        log_thresh = np.log10(linthresh)
-        log_max = np.log10(minmax[1])
-        nlevs_per_interval = 100
-        levels_neg = -np.logspace(log_max, log_thresh,\
-                nlevs_per_interval,\
-                endpoint=False)
-        levels_mid = np.linspace(-linthresh, linthresh,\
-                nlevs_per_interval, endpoint=False)
-        levels_pos = np.logspace(log_thresh, log_max,\
-                nlevs_per_interval)
-        levels = np.hstack((levels_neg, levels_mid, levels_pos))
-        im = ax.contourf(xs, ys, field, cmap=cmap,\
-            norm=colors.SymLogNorm(linthresh=linthresh,\
-            linscale=linscale, vmin=minmax[0], vmax=minmax[1]),\
-            levels=levels)
-    else:
-        im = ax.contourf(xs, ys, field, cmap=cmap,\
-                levels=np.linspace(minmax[0], minmax[1], 150))
-
-    ax.set_xlim((-2.02, 2.02)) # deal with annoying whitespace cutoff issue
-    ax.set_ylim((-1.01, 1.01))
-    ax.axis('off') # get rid of x/y axis coordinates
-
-
-      
     # Draw parallels and meridians, evenly spaced by 30 degrees
     # need some derivative grid info
     tt = np.arccos(costheta)
     lat = np.pi/2. - tt # these "latitudes" are in radians...
     lon = np.linspace(0., 2.*np.pi, 2*len(tt), endpoint=False)
-
-    default_lw = 0.5*lw_scaling # default linewidth bit thinner
     parallels = np.arange(-60., 90., 30.)
-    
-    # Make sure the plotted meridians take into account the shift
-    # in the phi-coordinate of the data: data that was at phi = 0. --> 
-    # data at phi = -difflon, difflon = clon - 180.
-    # i.e, our phi = 0. line should appear at -difflon
-    difflon = clon - 180.
-    meridians = np.arange(-difflon, -difflon + 360., 30.)
+    meridians = np.arange(0., 360., 30.)
     
     npoints = 100
-    lw = default_lw
+
     for meridian in meridians:
+        if meridian == 0.: # keep track of where 0-th meridian is
+            lw = 1.5*kwargs.lw
+        else:
+            lw = kwargs.lw
+        # Make sure the plotted meridians take into account the shift
+        # in the phi-coordinate of the data from clon
+        # keep everything in the -180, 180 range
+        lon_loc = (meridian - clon) % 360. - 180.
+        lon_loc *= (np.pi/180.)
         imer = np.argmin(np.abs(lon - meridian*np.pi/180.))
-        ax.plot(xs[imer, :], ys[imer, :], 'k', linewidth=lw)
+        ax.plot(xx[imer, :], yy[imer, :], 'k', linewidth=lw)
     
     for parallel in parallels:
         if parallel == 0.: 
-            lw = 1.3*lw_scaling # make equator thicker
+            lw = 1.5*kwargs.lw
         else:
-            lw = default_lw        
+            lw = kwargs.lw
         ilat = np.argmin(np.abs(lat - parallel*np.pi/180.))
-        ax.plot(xs[:, ilat], ys[:, ilat], 'k', linewidth=lw)
-
-    # Set up color bar
-    if plot_cbar:
-        ax_xmin, ax_xmax, ax_ymin, ax_ymax = axis_range(ax)
-        ax_delta_x = ax_xmax - ax_xmin
-        if symlog:
-            cbar_aspect = 1./40.
-            cbar_width = 0.5*ax_delta_x*cbar_scaling # make cbar one half 
-                            # as long as plot is wide            
-        else:
-            cbar_aspect = 1./20.
-            cbar_width = 0.25*ax_delta_x*cbar_scaling
-            # make cbar one quarter as long as plot is wide            
-        fig_width_inches, fig_height_inches = fig.get_size_inches()
-        fig_aspect = fig_height_inches/fig_width_inches
-        cbar_height = cbar_width*cbar_aspect/fig_aspect
-        cbar_bottom = ax_ymin - 2.5*cbar_height
-        cbar_left = ax_xmin + 0.5*ax_delta_x - 0.5*cbar_width
-        
-        cax = fig.add_axes((cbar_left, cbar_bottom, cbar_width, cbar_height))        
-        cbar = plt.colorbar(im, cax=cax, orientation='horizontal')
-        
-        # make a "title" (label "m/s" to the right of the colorbar by default)
-        # If user wants to manually specify units (instead of getting them
-        # from the variable name), change that now
-        #if units is None:
-            #base_units = texunits.get(varname, 'cgs')
-        #else:
-            #base_units = units
-        if logscale:
-            locator = ticker.LogLocator(subs='all')
-            cbar.set_ticks(locator)
-            cbar_units = ' ' + units
-            #cbar_units = ' ' + base_units
-        elif posdef:
-            cbar_units = ' ' + (r'$\times10^{%i}$' %maxabs_exp) + ' ' + units#\
-                #texunits.get(varname, 'cgs')
-            cbar.set_ticks([minmax[0], minmax[1]])
-            cbar.set_ticklabels(['%1.2f' %minmax[0], '%1.2f' %minmax[1]])
-        elif symlog:
-            cbar_units = ' ' + units #base_units
-            nlin = 5
-            nlog = 6
-            lin_ticks = np.linspace(-linthresh, linthresh, nlin)
-            log_ticks1 = np.linspace(minmax[0], -linthresh, nlog,\
-                    endpoint=False)
-            log_ticks2 = -log_ticks1[::-1]
-            ticks = np.hstack((log_ticks1, lin_ticks, log_ticks2))
-            nticks = nlin + 2*nlog
-            cbar.set_ticks(ticks)
-            ticklabels = []
-            for i in range(nticks):
-                ticklabels.append(r'')
-            ticklabels[0] = sci_format(minmax[0])
-            ticklabels[nlog] = sci_format(-linthresh)
-            ticklabels[nticks//2] = r'$0$'
-            ticklabels[nlog + nlin - 1] = sci_format(linthresh)
-            ticklabels[nticks - 1] = sci_format(minmax[1])
-            cbar.set_ticklabels(ticklabels)
-        else:
-            if nosci:
-                cbar_units = ' '  + units
-            else:
-                cbar_units = ' ' + (r'$\times10^{%i}$' %maxabs_exp) + units
-            cbar.set_ticks([minmax[0], 0, minmax[1]])
-            cbar.set_ticklabels(['%.2f' %minmax[0], '0', '%.2f'\
-                    %minmax[1]])
-
-        # Title the colorbar based on the field's units
-        fig.text(cbar_left + cbar_width, cbar_bottom + 0.5*cbar_height,\
-                 cbar_units, verticalalignment='center', **csfont,\
-                 fontsize=cbar_fs) 
-        plt.sca(cax)
-        plt.xticks(fontsize=cbar_fs) # change the fontsize 
-                            # on the tick labels too
+        ax.plot(xx[:, ilat], yy[:, ilat], 'k', linewidth=lw)
 
     # Plot outer boundary
     psivals = np.linspace(0, 2*np.pi, 100)
     xvals, yvals = 2.*np.cos(psivals), np.sin(psivals)
-    ax.plot(xvals, yvals, 'k', linewidth=1.3*lw_scaling)
-
-    if figwasNone: # user probably called plot_moll from the python 
-        # command line, wanting to view the projection immediately
-        plt.show()
-    del field # free up memory
-    return im
+    ax.plot(xvals, yvals, 'k', linewidth=1.5*kwargs.lw)
