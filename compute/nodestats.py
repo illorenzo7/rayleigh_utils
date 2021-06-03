@@ -92,6 +92,17 @@ for header in headers:
 
 print (whole_header)
 
+# combine both the broadwell types, since they are interchanged freely
+# in #PBS requests
+rmkey = 'Broadwell (Electra)'
+keys.remove(rmkey)
+req['Broadwell'] += req[rmkey]
+del req[rmkey]
+use['Broadwell'] += use[rmkey]
+del use[rmkey]
+total['Broadwell'] += total[rmkey]
+del total[rmkey]
+
 for key in keys:
     rowdata = [key, '%i' %req[key], '%i' %use[key], '%i' %total[key],\
             '%.3f' %(req[key]/total[key]), '%.3f' %(use[key]/total[key])]
