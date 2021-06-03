@@ -5,7 +5,7 @@
 import numpy as np
 #from common import get_parameter, get_domain_bounds, array_of_strings, is_an_int, rsun
 from common import *
-from varprops import get_quantity_group
+from varprops import *
 
 def read_cla_vals(args, i):
     args_after = args[i+1:]
@@ -112,10 +112,14 @@ def read_clas(args):
             clas['rvals'] = rvals
         elif arg == '--qvals':
             argvals = read_cla_vals(args, i)
-            if np.isscalar(argvals): # either group or one int
+            if np.isscalar(argvals): # either group or one int/basic name
                 if is_an_int(argvals):
                     clas['qvals'] = np.array([int(argvals)])
                     clas['titles'] = array_of_strings(clas['qvals'])
+                    clas['units'] = 'cgs'
+                elif argvals in var_indices: # it's a shorthand name
+                    clas['qvals'] = argvals
+                    clas['titles'] = argvals
                     clas['units'] = 'cgs'
                 else:
                     the_qgroup = get_quantity_group(argvals, magnetism)
@@ -141,7 +145,4 @@ def read_clas(args):
 
     if 'rvals' in clas:
         clas['rvals'] /= rsun # always keep rvals in solar radius units
-        if np.isscalar(clas['rvals']):
-            clas['rvals'] = np.array([clas['rvals']]) 
-            # rvals should always be an array
     return clas0, clas

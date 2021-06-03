@@ -15,7 +15,6 @@ from sslice_util import plot_moll
 from rayleigh_diagnostics import Shell_Slices
 #from get_sslice import get_sslice
 from get_slice import get_slice, get_label
-from varprops import texlabels
 
 # Get CLAs
 args = sys.argv
@@ -99,7 +98,7 @@ if rotation:
     time_string = ('t = %.1f ' %(t_loc/time_unit)) + time_label
 else:
     time_string = ('t = %.3f ' %(t_loc/time_unit)) + time_label
-varlabel = texlabels[qval]
+varlabel = get_label(qval)
 
 title = dirname_stripped +\
         '\n' + varlabel + '     '  + time_string +\
