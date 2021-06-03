@@ -97,12 +97,12 @@ def get_varprops(varname):
         varname = varname[:-4]
     return varname, deriv, prime, sph
 
-def get_basic_label(varname):
+def get_label(varname):
     varname, deriv, prime, sph = get_varprops(varname)
     if deriv:
         derivdir = varname[-1]
-        varname = varname[1:]
-        varname = varname[:-2]
+        varname = varname[1:] # remove prepending d
+        varname = varname[:-2] # remove appending d?
 
     # now get root label
     # start with thermal vars
@@ -110,62 +110,22 @@ def get_basic_label(varname):
         label = r'$P$'
     elif varname == 's':
         label = r'$S$'
-    elif varname == 't':
-        label = r'$T$'
-    elif varname == 'rho':
-        label = r'$\rho$'
-    elif varname == 'cost':
-        label = r'$\cos\theta$'
-    elif varname == 'sint':
-        label = r'$\sin\theta$'
-    elif varname == 'cott':
-        label = r'$\cot\theta$'
-    elif varname == 'rr':
-        label = r'$r$'
     # now field variables, with a vector component
     if 'v' in varname or 'b' in varname or 'om' in varname or 'j' in varname:
         rootname = varname[:-1]
         direction = varname[-1]
-        label = rootlabels[rootname] + dirlabels[direction]
+        label = rootlabels[rootname] + r'$_$' + dirlabels[direction]
     if prime:
         label += r'$^\prime$'
     elif sph:
         label += r'$^{\prime\prime}$'
     if deriv:
-        label = r'$\partial$' + label + r'$/$' + r'$\partial$' + dirlabels[derivdir]
-    return label
-
-def get_label(varname):
-    varname, deriv, prime, sph = get_varprops(varname)
-    label = r''
-    # get locations of all the operators
-    lenvar = len(varname)
-    iop = []
-    op_symbols = {'+': r'$\ +\ $', '-': r'$\ -\ $', '*': r'', '/': r'/',\
-                    '(': r'(', ')': r')'}
-    op_keys = op_symbols.keys()
-    for i in range(lenvar):
-        if i in op_keys:
-            iop.append(i)
-    basic_vars = re.split('\(|\)|\+|\-|\*|/', varname)
-    for i in range(len(iop) - 1):
-        i_firstop = iop[i]
-        i_nextop = iop[i+1]
-        if i == 0 and i_firstop > 0:
-            label += get_basic_label(varname[:i_firstop])
-        else:
-            label += op_symbols[varname[i_firstop]]
-        if i_nextop - i_firstop > 1:
-            label += get_basic_label(varname[i_firstop+1:i_nextop])
-    if prime:
-        label += r'$^\prime$'
-    elif sph:
-        label += r'$^{\prime\prime}$'
-    return label
+        label = r'${\partial}$' + label + r'$/$' + r'${\partial}$' + dirlabels[derivdir]
+    return label.replace('$$', '')
 
 def prime(field): # mean along first axis (phi axis)
     shape = np.shape(field)
-    shape_collapsed = np.hstack((np.array([1]),shape[1:]))
+    shape_collapsed = np.hstack((np.array([1]), shape[1:]))
     return field - np.mean(field, axis=0).reshape(shape_collapsed)
 
 def prime_sph(field, tw): # doesn't work on equatorial slices
@@ -240,8 +200,7 @@ var_indices = {\
     'jp'    :       1003}
 
 rootlabels = {'v': r'$v$', 'b': r'$B$', 'om': r'$\omega$', 'j': r'$\mathcal{J}$'}
-dirlabels = {'r': r'$_r$', 't': r'$_\theta$', 'p': r'$_\phi$', 'l': r'$_\lambda$', 'z': r'$_z$', 'T': r'$_\Theta$', 'P': r'$_\Phi$'}
-operator_symbols = ['+', '-', '*', '/', '(', ')']
+dirlabels = {'r': r'$r$', 't': r'$\theta$', 'p': r'$\phi$', 'l': r'$\lambda$', 'z': r'$z$', 'T': r'$\Theta$', 'P': r'$\Phi$'}
 
 def compute_texlabel(varname):
     deriv = False
@@ -276,7 +235,7 @@ def compute_texlabel(varname):
     if 'v' in varname or 'b' in varname or 'om' in varname or 'j' in varname:
         rootname = varname[:-1]
         direction = varname[-1]
-        label = rootlabels[rootname] + dirlabels[direction]
+        label = rootlabels[rootname] + r'$_$' + dirlabels[direction]
 
     if prime:
         label += r'$^\prime$'
@@ -284,7 +243,9 @@ def compute_texlabel(varname):
         label += r'$^{\prime\prime}$'
     if deriv:
         label = r'$\partial$' + label + r'$/$' + r'$\partial$' + dirlabels[derivdir]
-    return label
+
+    # delete repeating '$$'
+    return label.replace('$$', '')
 
 def smooth(field, dlon):
     nphi, nt, nr = np.shape(field)
