@@ -58,9 +58,6 @@ print ("done reading")
 # get the desired field variable
 vals = get_slice(a, qval, dirname=dirname)
 
-# Get local time (in seconds)
-t_loc = a.time[0]
-
 # Find desired radius (by default ir=0--near outer surface)
 if not rval is None:
     rval = rval[0] # this was a 1D array
@@ -86,10 +83,11 @@ ax = axs[0, 0]
 plot_moll(field, a.costheta, fig, ax, **kwargs_moll)
 
 # make title
-if rotation:
-    time_string = ('t = %.1f ' %(t_loc/time_unit)) + time_label
-else:
-    time_string = ('t = %.3f ' %(t_loc/time_unit)) + time_label
+#if rotation:
+#    time_string = ('t = %.1f ' %(t_loc/time_unit)) + time_label
+#else:
+#    time_string = ('t = %.3f ' %(t_loc/time_unit)) + time_label
+time_string = get_time_string(dirname, a.iters[0])
 varlabel = get_label(qval)
 
 title = dirname_stripped +\

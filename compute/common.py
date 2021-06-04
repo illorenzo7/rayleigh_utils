@@ -1335,23 +1335,26 @@ def get_time_unit(dirname):
         time_label = r'${\rm{TDT}}$'
     return time_unit, time_label, rotation
 
-def get_time_info(dirname, iter1, iter2):
+def get_time_string(dirname, iter1, iter2=None):
     # Get the time range in sec
     t1 = translate_times(iter1, dirname, translate_from='iter')['val_sec']
-    t2 = translate_times(iter2, dirname, translate_from='iter')['val_sec']
+    if not iter2 == None:
+        t2 = translate_times(iter2, dirname, translate_from='iter')['val_sec']
 
     # Get the baseline time unit
     time_unit, time_label, rotation = get_time_unit(dirname)
 
     # set the averaging-interval label
     if rotation:
-        time_string = ('t = %.1f to %.1f ' %(t1/time_unit, t2/time_unit))\
-                + time_label + '\n' + (r'$\Delta t = %.1f\ $'\
-                %((t2 - t1)/time_unit)) + time_label
+        fmt = '%.0f' # measure rotations
     else:
-        time_string = ('t = %.3f to %.3f ' %(t1/time_unit, t2/time_unit))\
-                + time_label + '\n' + (r'$\Delta t = %.3f\ $'\
-                %((t2 - t1)/time_unit)) + time_label
+        fmt = '%.3f'
+
+    if not iter2 is None:
+        time_string = (('t = ' + fmt + ' to ' + fmt) %(t1/time_unit, t2/time_unit)) + time_label + '\n' + (r'$\Delta t = ' + fmt + '\ $' %((t2 - t1)/time_unit)) + time_label
+    else:
+        time_string = (('t = ' + fmt + ' ') %(t1/time_unit)) + time_label
+
     return time_string
 
 def my_mkdir(dirname):
