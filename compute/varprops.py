@@ -9,45 +9,6 @@
 import numpy as np
 from common import array_of_strings
 
-def make_unit(st, exp=1):
-    the_unit = r'$\rm{%s}$' %st
-    if exp != 1:
-        the_unit += r'$^{%i}$' %exp
-    return the_unit
-
-# basic units
-utype = dict({})
-space = ' '
-# field variables
-utype['v'] = make_unit('cm') + make_unit('s', -1)
-utype['om'] = make_unit('s', -1)
-utype['b'] = make_unit('G')
-utype['j'] = make_unit('G') + make_unit('cm', -1)
-utype['s'] = make_unit('erg') + make_unit('g', -1) + make_unit('K', -1)
-utype['p'] = make_unit('dyn') + make_unit('cm', -2)
-utype['rho'] = make_unit('g') + make_unit('cm', -3)
-utype['t'] = make_unit('K')
-
-# derived units
-utype['energy'] = make_unit('erg') + space + make_unit('cm', -3)
-utype['eprod'] = utype['energy'] + space + make_unit('s', -1)
-utype['power'] = make_unit('erg') + make_unit('s', -1)
-utype['eflux'] = make_unit('erg') + make_unit('cm', -2) +\
-        make_unit('s', -1)
-utype['dsdt'] = make_unit('erg') + make_unit('g', -1) +\
-        make_unit('K', -1) + make_unit('s', -1)
-utype['dsdr'] = make_unit('erg') + make_unit('g', -1) +\
-        make_unit('K', -1) + make_unit('cm', -1)
-utype['amom'] = make_unit('g') + make_unit('cm', -1) +\
-        make_unit('s', -1)
-utype['aflux'] = make_unit('g') + make_unit('cm', -3) +\
-        make_unit('s', -2)
-utype['force'] = make_unit('g') + make_unit('cm', -2) +\
-        make_unit('s', -2)
-utype['torque'] = make_unit('g') + make_unit('cm', -1) +\
-        make_unit('s', -2)
-utype['induct'] = make_unit('G') + make_unit('s', -1)
-
 # basic variable indices
 var_indices = {\
     'vr'    :       1, 

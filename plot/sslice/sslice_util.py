@@ -1,15 +1,10 @@
-import matplotlib as mpl
-#mpl.use('TkAgg')
 from matplotlib import ticker, colors
 import matplotlib.pyplot as plt
-plt.rcParams['mathtext.fontset'] = 'dejavuserif'
-csfont = {'fontname':'DejaVu Serif'}
 import numpy as np
 import sys, os
 sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['rapl'])
-#from varprops import texunits
 from common import *
 from plotcommon import *
 from transform_coordinates import mollweide_transform
@@ -18,7 +13,7 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
         minmax=None, clon=0, clat=20, posdef=False, logscale=False,\
         lw_scaling=1., plot_cbar=True, cbar_fs=10,\
         symlog=False, linscale=None, linthresh=None, cmap=None,\
-        bold_patch=None, thickcenter=True, units='', cbar_scaling=1.):
+        bold_patch=None, thickcenter=True, cbar_scaling=1.):
     
     if logscale:
         posdef = True
@@ -329,7 +324,7 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
                     %minmax[1]])
         # Title the colorbar based on the field's units
         fig.text(cbar_left + cbar_width, cbar_bottom + 0.5*cbar_height,\
-                 cbar_units, verticalalignment='center', **csfont,\
+                 cbar_units, verticalalignment='center',\
                  fontsize=cbar_fs)     
         plt.sca(cax)
         plt.xticks(fontsize=cbar_fs) # change the fontsize 

@@ -4,10 +4,6 @@ import numpy as np
 from matplotlib import colors, ticker
 import matplotlib.pyplot as plt
 from common import *
-plt.rcParams['mathtext.fontset'] = 'dejavuserif'
-csfont = {'fontname':'DejaVu Serif'}
-#from matplotlib import ticker
-#sys.path.append(os.environ['raco'])
 
 color_order = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
 style_order = ['-', '--', '-.', ':']
@@ -33,14 +29,6 @@ def axis_range(ax): # gets subplot coordinates on a figure in "normalized"
     xmin, xmax = bottom_left[0], top_right[0]
     ymin, ymax = bottom_left[1], top_right[1]
     return xmin, xmax, ymin, ymax
-
-def my_set_title(fig, ax, title, fontsize=default_titlesize, ha='center', va='bottom', pad=1./8.):
-    ax_left, ax_right, ax_bottom, ax_top = axis_range(ax)
-    ax_width = ax_right - ax_left
-    ax_height = ax_top - ax_bottom
-    fig_width_inches, fig_height_inches = fig.get_size_inches()
-    margin_y = pad/fig_height_inches
-    fig.text(ax_left + 0.5*ax_width, ax_top + margin_y, title, fontsize=fontsize, ha=ha, va=va, **csfont)
 
 def xy_grid(X, Y):
     """
@@ -280,7 +268,7 @@ def lineplot(xx, yy, ax=None, axtwin=None, xlabel=None, ylabel=None, title=None,
         plt.tick_params(top=True, right=True, direction='in',\
                 which='both')
         if not ylabel is None:
-            plt.ylabel(ylabel, **csfont, fontsize=default_labelsize)
+            plt.ylabel(ylabel, fontsize=default_labelsize)
     else:
         plt.sca(ax_right)
         plt.minorticks_on()
@@ -291,7 +279,7 @@ def lineplot(xx, yy, ax=None, axtwin=None, xlabel=None, ylabel=None, title=None,
         plt.tick_params(top=True, left=True, right=False, direction='in',\
                 which='both')
         if not ylabel is None:
-            ax_left.set_ylabel(ylabel, **csfont, fontsize=default_labelsize)
+            ax_left.set_ylabel(ylabel, fontsize=default_labelsize)
             ax_left.yaxis.set_label_position('left')
         ax_left.yaxis.tick_left()
 
@@ -365,11 +353,10 @@ def lineplot(xx, yy, ax=None, axtwin=None, xlabel=None, ylabel=None, title=None,
                     ax_loc.plot(xpoints, yval + np.zeros(npoints), 'k--', linewidth=lw)
 
     if not xlabel is None:
-        ax.set_xlabel(xlabel, **csfont, fontsize=default_labelsize)
-
+        ax.set_xlabel(xlabel, fontsize=default_labelsize)
 
     if not title is None:
-        ax.set_title(title, **csfont, fontsize=default_titlesize)
+        ax.set_title(title, fontsize=default_titlesize)
 
     # set the tick label size
     for ax_loc in axs:
@@ -503,7 +490,7 @@ def my_contourf(xx, yy, field, fig, ax, **kwargs_supplied):
         cbar.set_ticklabels(ticklabels)
         fig.text(cbar_left + cbar_width + lilbit/fig_aspect,\
                 cbar_bottom + 0.5*cbar_height, cbar_label,\
-                ha='left', va='center', **csfont, fontsize=fontsize) 
+                ha='left', va='center', fontsize=fontsize) 
 
     # Plot contours if desired
     if plotcontours:

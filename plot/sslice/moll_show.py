@@ -1,8 +1,4 @@
-import matplotlib as mpl
-mpl.use('TkAgg')
 import matplotlib.pyplot as plt
-plt.rcParams['mathtext.fontset'] = 'dejavuserif'
-csfont = {'fontname':'DejaVu Serif'}
 import numpy as np
 import sys, os
 sys.path.append(os.environ['raco'])
@@ -99,7 +95,7 @@ varlabel = get_label(qval)
 title = dirname_stripped +\
         '\n' + varlabel + '     '  + time_string + '     ' +\
         (r'$r/R_\odot\ =\ %0.3f$' %rval)
-ax.set_title(title, va='bottom', fontsize=default_titlesize, **csfont)
+ax.set_title(title, va='bottom', fontsize=default_titlesize)
 
 # always show
 plt.show()   
