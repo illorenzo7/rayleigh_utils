@@ -371,7 +371,7 @@ def plot_moll(field_orig, costheta, fig, ax, clon=0., **kwargs_supplied):
     # need some derivative grid info
     tt = np.arccos(costheta)
     lat = np.pi/2. - tt # these "latitudes" are in radians...
-    lon = np.linspace(0., 2.*np.pi, 2*len(tt), endpoint=False)
+    lon = np.linspace(-np.pi, np.pi, 2*len(tt), endpoint=False)
     parallels = np.arange(-60., 90., 30.)
     meridians = np.arange(0., 360., 30.)
     
@@ -379,20 +379,23 @@ def plot_moll(field_orig, costheta, fig, ax, clon=0., **kwargs_supplied):
 
     for meridian in meridians:
         if meridian == 0.: # keep track of where 0-th meridian is
-            lw = 1.5*kwargs.lw
+            lw = 2*kwargs.lw
         else:
             lw = kwargs.lw
-        # Make sure the plotted meridians take into account the shift
-        # in the phi-coordinate of the data from clon
+        # Make sure the plotted meridians are with respect to the clon
         # keep everything in the -180, 180 range
-        lon_loc = (meridian - clon) % 360. - 180.
+        lon_loc = meridian - clon
+        if lon_loc > 180.:
+            lon_loc -= 360.
+        elif lon_loc < -180.:
+            lon_loc += 360.
         lon_loc *= (np.pi/180.)
-        imer = np.argmin(np.abs(lon - meridian*np.pi/180.))
+        imer = np.argmin(np.abs(lon - lon_loc))
         ax.plot(xx[imer, :], yy[imer, :], 'k', linewidth=lw)
     
     for parallel in parallels:
         if parallel == 0.: 
-            lw = 1.5*kwargs.lw
+            lw = 2*kwargs.lw
         else:
             lw = kwargs.lw
         ilat = np.argmin(np.abs(lat - parallel*np.pi/180.))

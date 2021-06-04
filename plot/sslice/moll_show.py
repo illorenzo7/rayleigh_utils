@@ -94,7 +94,8 @@ varlabel = get_label(qval)
 
 title = dirname_stripped +\
         '\n' + varlabel + '     '  + time_string + '     ' +\
-        (r'$r/R_\odot\ =\ %0.3f$' %rval)
+        (r'$r/R_\odot\ =\ %0.3f$' %rval) + '\n' +\
+        ('clon = %4.0f' %kwargs_moll['clon'])
 ax.set_title(title, va='bottom', fontsize=default_titlesize)
 
 # always show
