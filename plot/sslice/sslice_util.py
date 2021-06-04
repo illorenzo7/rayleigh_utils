@@ -346,7 +346,7 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
     del field # free up memory
     return im
 
-def plot_moll(field_orig, costheta, clon=0., **kwargs_supplied): 
+def plot_moll(field_orig, costheta, fig, ax, clon=0., **kwargs_supplied): 
     # **kwargs_supplied corresponds to my_contourf
     kwargs_default = {**kwargs_contourf}
     kwargs = update_kwargs(kwargs_supplied, kwargs_default)
@@ -370,7 +370,7 @@ def plot_moll(field_orig, costheta, clon=0., **kwargs_supplied):
     field = np.roll(field, iphi_shift, axis=0)
 
     # make the Mollweide plot
-    fig, ax = my_contourf(xx, yy, field, **kwargs)
+    my_contourf(xx, yy, field, fig, ax, **kwargs)
 
     # Draw parallels and meridians, evenly spaced by 30 degrees
     # need some derivative grid info

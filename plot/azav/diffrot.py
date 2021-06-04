@@ -60,7 +60,8 @@ diffrot = Om*1.0e9/2/np.pi # rad/s --> nHz
 it0, it60 = np.argmin(np.abs(tt_lat)), np.argmin(np.abs(tt_lat - 60))
 Delta_Om = diffrot[it0, 0] - diffrot[it60, 0]
 
-# Create plot
+# create plot
+nplots = 1
 sub_width_inches = 2.
 sub_aspect = 2
 margin_top_inches = 1 # larger top margin to make room for titles
@@ -70,7 +71,9 @@ if 'rbcz' in clas:
     margin_bottom_inches *= 2
 
 # make plot
-fig, axs, fpar = make_figure(nplots=1, sub_width_inches=sub_width_inches, sub_aspect=sub_aspect, margin_top_inches=margin_top_inches, margin_bottom_inches=margin_bottom_inches)
+fig, axs, fpar = make_figure(nplots=nplots, sub_width_inches=sub_width_inches, sub_aspect=sub_aspect, margin_top_inches=margin_top_inches, margin_bottom_inches=margin_bottom_inches)
+ax = axs[0, 0]
+
 plot_azav (diffrot, rr, cost, fig, axs[0, 0], units='nHz', plotlatlines=False, nosci=True, cbar_prec=1, **clas)
         
 # make title 
