@@ -61,32 +61,25 @@ it0, it60 = np.argmin(np.abs(tt_lat)), np.argmin(np.abs(tt_lat - 60))
 Delta_Om = diffrot[it0, 0] - diffrot[it60, 0]
 
 # Create plot
-width_inches = 3.25
+sub_width_inches = 2.
 sub_aspect = 2
-margin_top_inches = 1.5 # larger top margin to make room for titles
-margin_bottom_inches = 0.7
+margin_top_inches = 1 # larger top margin to make room for titles
+margin_bottom_inches = 1/2
 # larger bottom margin to make room for colorbar(s)
 if 'rbcz' in clas:
     margin_bottom_inches *= 2
 
 # make plot
-fig, axs, fpar = make_figure(nplots=1, sub_aspect=sub_aspect, margin_top_inches=margin_top_inches, margin_bottom_inches=margin_bottom_inches, width_inches=width_inches)
-plot_azav (diffrot, rr, cost, fig=fig, ax=axs[0,0], units='nHz', plotlatlines=False, nosci=True, cbar_prec=1, **clas)
+fig, axs, fpar = make_figure(nplots=1, sub_width_inches=sub_width_inches, sub_aspect=sub_aspect, margin_top_inches=margin_top_inches, margin_bottom_inches=margin_bottom_inches)
+plot_azav (diffrot, rr, cost, fig, axs[0, 0], units='nHz', plotlatlines=False, nosci=True, cbar_prec=1, **clas)
         
 # make title 
 iter1, iter2 = get_iters_from_file(the_file)
 time_string = get_time_info(dirname, iter1, iter2) 
-line_height = 1/4/fpar['height_inches']
 margin_x = fpar['margin_left'] + fpar['sub_margin_left']
 margin_y = default_margin/fpar['height_inches']
-fig.text(margin_x, 1 - margin_y, dirname_stripped,\
-         ha='left', va='top', fontsize=default_titlesize, **csfont)
-fig.text(margin_x, 1 - margin_y - 2*line_height, r'$\Omega - \Omega_0$',\
-         ha='left', va='top', fontsize=default_titlesize, **csfont)
-fig.text(margin_x, 1 - margin_y - 3*line_height, time_string,\
-         ha='left', va='top', fontsize=default_titlesize, **csfont)
-fig.text(margin_x, 1 - margin_y - 5.5*line_height,\
-         r'$\Delta\Omega_{\rm{60}} = %.1f\ nHz$' %Delta_Om,\
+the_title = dirname_stripped + '\n' +  r'$\Omega - \Omega_0$' + '\n' + time_string + '\n' + (r'$\Delta\Omega_{\rm{60}} = %.1f\ \rm{nHz}$' %Delta_Om)
+fig.text(margin_x, 1 - margin_y, the_title,\
          ha='left', va='top', fontsize=default_titlesize, **csfont)
 
 # save the figure

@@ -18,7 +18,7 @@ sys.path.append(os.environ['raco'])
 from common import *
 from plotcommon import *
 
-def plot_azav(field, rr, cost, rbcz=None, minmaxrz=None, rvals=np.array([]), plotlatlines=True, latvals=np.array([]), lw=1.0, **kwargs_supplied):
+def plot_azav(field, rr, cost, fig, ax, rbcz=None, minmaxrz=None, rvals=np.array([]), plotlatlines=True, latvals=np.array([]), lw=1.0, **kwargs_supplied):
     # **kwargs_supplied corresponds to my_contourf
     kwargs_default = {**kwargs_contourf}
     kwargs = update_kwargs(kwargs_supplied, kwargs_default)
@@ -73,23 +73,21 @@ def plot_azav(field, rr, cost, rbcz=None, minmaxrz=None, rvals=np.array([]), plo
         kwargsrz['func1'] = rr_rz
         kwargsrz['func2'] = tt_lat_rz
         kwargsrz['cbar_no'] = 2
-        kwargs.fig, kwargs.ax = my_contourf(xxrz, yyrz, fieldrz, **kwargsrz)
-        # NOTE: if user has already specified fig, ax, they will be in 
-        # kwargsrz and not be modified here
+        my_contourf(xxrz, yyrz, fieldrz, fig, ax, **kwargsrz)
 
     # regardless, plot the CZ field
     kwargs.func1 = rr_cz
     kwargs.func2 = tt_lat
-    fig, ax = my_contourf(xx, yy, field, **kwargs)
+    my_contourf(xx, yy, field, fig, ax, **kwargs)
 
     # potentially plot coordinate lines
     if plotlatlines:
         if len(latvals) == 0:
-            latvals = default_latvals
+            latvals = np.arange(-60., 90., 30.)
     else:
         latvals = np.array([])
 
-    my_contourf(xx_full, yy_full, field_full, fig=fig, ax=ax, plotfield=False, plotcontours=False, func1=rr_full, vals1=rvals, func2=tt_lat_full, vals2=latvals, lw=lw)
+    my_contourf(xx_full, yy_full, field_full, fig, ax, plotfield=False, plotcontours=False, func1=rr_full, vals1=rvals, func2=tt_lat_full, vals2=latvals, lw=lw)
 
 def plot_azav_half(field, rr, cost, sym='even', fig=None, ax=None,\
         cmap='RdYlBu_r', units='', minmax=None, posdef=False, logscale=False,\

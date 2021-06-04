@@ -77,136 +77,6 @@ def testtex(label):
     plt.title(label)
     plt.show()
 
-def make_cbar(fig, ax, im, aspect=1./20., length=0.75, orientation='horizontal', units='', fs=10., posdef=False, logscale=False, symlog=False, linthresh=None, linscale=None):
-
-    # get figure and axis dimensions
-    ax_xmin, ax_xmax, ax_ymin, ax_ymax = axis_range(ax)
-    ax_delta_x = ax_xmax - ax_xmin
-    ax_delta_y = ax_ymax - ax_ymin
-    width_inches, height_inches = fig.get_size_inches()
-    aspect = height_inches/width_inches
-
-    # make colorbar axes and colorbar itself
-    default_margin = 1./8.
-    margin_x = default_margin/width_inches
-    margin_y = default_margin/height_inches
-    if orientation == 'horizontal':
-        cbar_width = length*ax_delta_x
-        cbar_height = cbar_width*aspect/aspect
-        cbar_left = ax_xmin + 0.5*ax_delta_x - 0.5*cbar_width
-        cbar_bottom = ax_ymin - margin_y - cbar_height
-    if orientation == 'vertical':
-        cbar_height = length*ax_delta_y
-        cbar_width = cbar_height*aspect*aspect
-        cbar_left = ax_xmax + margin_x
-        cbar_bottom = ax_ymin + 0.5*ax_delta_y - 0.5*cbar_height
-    cax = fig.add_axes((cbar_left, cbar_bottom, cbar_width, cbar_height))   
-    cbar = plt.colorbar(im, cax=cax, orientation=orientation)
-        
-    # font size for the ticks
-    cax.tick_params(labelsize=fs)
-    cbar.ax.tick_params(labelsize=fs)   
-
-    # location of the ticks
-    if logscale:
-        locator = ticker.LogLocator(subs='all')
-        cbar.set_ticks(locator)
-        cbar_label = units
-    elif posdef:
-        cbar_label = (r'$\times10^{%i}\ $' %exp) + units
-        cbar.set_ticks([minmax[0], minmax[1]])
-        cbar.set_ticklabels(['%1.1f' %minmax[0],\
-                '%1.1f' %minmax[1]])
-    elif symlog:
-        cbar_label = units
-        nlin = 5
-        nlog = 6
-        lin_ticks = np.linspace(-linthresh, linthresh, nlin)
-        log_ticks1 = np.linspace(minmax[0], -linthresh, nlog,\
-                endpoint=False)
-        log_ticks2 = -log_ticks1[::-1]
-        ticks = np.hstack((log_ticks1, lin_ticks, log_ticks2))
-        nticks = nlin + 2*nlog
-        cbar.set_ticks(ticks)
-        ticklabels = []
-        for i in range(nticks):
-            ticklabels.append(r'')
-#                ticklabels[0] = sci_format(minmax[0])
-        ticklabels[nlog] = sci_format(-linthresh)
-#                ticklabels[nticks//2] = r'$0$'
-#                ticklabels[nlog + nlin - 1] = sci_format(linthresh)
-        ticklabels[nticks - 1] = sci_format(minmax[1])
-        cbar.set_ticklabels(ticklabels)
-    else:
-        if nosci:
-            cbar_label = units
-        else:
-            cbar_label = (r'$\times10^{%i}\ $' %exp) + units
-        cbar.set_ticks([minmax[0], 0, minmax[1]])
-        cbar.set_ticklabels(['%.1f' %minmax[0], '0', '%.1f'\
-                %minmax[1]])
-
-    # Title the colorbar based on the field's units
-    line_height = 1./4./height_inches
-    fig.text(cbar_left + 0.5*cbar_width, cbar_bottom - line_height,\
-             cbar_label, ha='center', va='top', **csfont,\
-             fontsize=cbar_fs) 
-    #fig.text(cbax_left - 0.3*cbax_width, cbax_center_y,\
-    #        cbar_label, ha='right', va='center', rotation=90,\
-    #        fontsize=cbar_fs)
-
-    if not rbcz is None: # Make a colorbar for the RZ
-        cbar_bottom = ax_ymin - 2.5*cbar_height - 3*line_height
-        cbar_left = ax_xmin + 0.5*ax_delta_x - 0.5*cbar_width
-        cax = fig.add_axes((cbar_left, cbar_bottom, cbar_width,\
-                cbar_height))        
-        cbar = plt.colorbar(imrz, cax=cax, orientation='horizontal')
-            
-        cax.tick_params(labelsize=cbar_fs)
-        cbar.ax.tick_params(labelsize=cbar_fs)   
-        # font size for the ticks
-
-        if logscale:
-            locator = ticker.LogLocator(subs='all')
-            cbar.set_ticks(locator)
-            cbar_label = units
-        elif posdef:
-            cbar_label = (r'$\times10^{%i}\ $' %exprz) + units
-            cbar.set_ticks([minmaxrz[0], minmaxrz[1]])
-            cbar.set_ticklabels(['%1.1f' %minmaxrz[0],\
-                    '%1.1f' %minmaxrz[1]])
-        elif symlog:
-            cbar_label = units
-            nlin = 5
-            nlog = 6
-            lin_ticks = np.linspace(-linthreshrz, linthreshrz, nlin)
-            log_ticks1 = np.linspace(minmaxrz[0], -linthreshrz,\
-                    nlog, endpoint=False)
-            log_ticks2 = -log_ticks1[::-1]
-            ticks = np.hstack((log_ticks1, lin_ticks, log_ticks2))
-            nticks = nlin + 2*nlog
-            cbar.set_ticks(ticks)
-            ticklabels = []
-            for i in range(nticks):
-                ticklabels.append(r'')
-#                ticklabels[0] = sci_format(minmax[0])
-            ticklabels[nlog] = sci_format(-linthreshrz)
-#                ticklabels[nticks//2] = r'$0$'
-#                ticklabels[nlog + nlin - 1] = sci_format(linthresh)
-            ticklabels[nticks - 1] = sci_format(minmaxrz[1])
-            cbar.set_ticklabels(ticklabels)
-        else:
-            cbar_label = (r'$\times10^{%i}\ $' %exprz) + units
-            cbar.set_ticks([minmaxrz[0], 0, minmaxrz[1]])
-            cbar.set_ticklabels(['%1.1f' %minmaxrz[0], '0', '%1.1f'\
-                    %minmaxrz[1]])
-
-        # Title the colorbar based on the field's units
-        line_height = 1./4./height_inches
-        fig.text(cbar_left + 0.5*cbar_width, cbar_bottom -\
-                line_height, cbar_label, ha='center', va='top',\
-                **csfont, fontsize=cbar_fs) 
-
 def make_figure(nplots=None, sub_width_inches=None, sub_aspect=None, sub_height_inches=None, nrow=None, ncol=None, margin_left_inches=None, margin_right_inches=None, margin_bottom_inches=None, margin_top_inches=None, sub_margin_left_inches=None, sub_margin_right_inches=None, sub_margin_bottom_inches=None, sub_margin_top_inches=None, width_inches=None, height_inches=None, aspect=None):
 
     # first, if any margin is unspecified, then it equals the default
@@ -514,26 +384,24 @@ def lineplot(xx, yy, ax=None, axtwin=None, xlabel=None, ylabel=None, title=None,
         plt.show()
         return fig, ax
 
-kwargs_contourf = dict({'fig': None, 'ax': None,\
+kwargs_contourf = dict({
         # saturation of field values stuff
         'minmax': None, 'posdef': False,         
         # basic flags:
          'plotfield': True,\
         'plotcontours': True, 'ncontours': 8, 'contourlevels': None,\
         # colorbar stuff
-        'plotcbar': True, 'cbar_thick': 1./8., 'cbar_aspect':1/15, 'cbar_prec': 2, 'cbar_no': 1, 'cmap': None, 'units': '', 'nosci': False, 'fontsize': default_labelsize,\
+        'plotcbar': True, 'cbar_thick': 1/8, 'cbar_aspect': 1/10, 'cbar_prec': 2, 'cbar_no': 1, 'cmap': None, 'units': '', 'nosci': False, 'fontsize': default_labelsize,\
         # coordinate line stuff; do up to two "types"
         'vals1': np.array([]), 'func1': None, 'vals2': np.array([]), 'func2': None,\
         'plotboundary': True, 'lw': 1.})
 
-def my_contourf(xx, yy, field, **kwargs_supplied):
+def my_contourf(xx, yy, field, fig, ax, **kwargs_supplied):
     # get local variables from "kwargs_contourf" (unless specified by user)
     kwargs_default = {**kwargs_contourf}
     kwargs = update_kwargs(kwargs_supplied, kwargs_default)
     kwargs = dotdict(kwargs)
     # assign the local vars one by one (annoying)
-    fig = kwargs.fig
-    ax = kwargs.ax
     minmax = kwargs.minmax
     posdef = kwargs.posdef
     plotfield = kwargs.plotfield
@@ -555,20 +423,6 @@ def my_contourf(xx, yy, field, **kwargs_supplied):
     func2 = kwargs.func2
     plotboundary = kwargs.plotboundary 
     lw = kwargs.lw
-
-    # Create a default set of figure axes if they weren't specified
-    if fig is None or ax is None:
-        # ran plot_azav from the command line
-        
-        # get default axes with correct axis ratio
-        delta_x = np.max(xx) - np.min(xx)
-        delta_y = np.max(yy) - np.min(yy)
-        nplots = 1
-        sub_width_inches = 4.0
-        sub_aspect = delta_y/delta_x
-        sub_margin_bottom_inches = 1.0
-        fig, axs, fpar = make_figure(nplots, sub_width_inches, sub_aspect, sub_margin_bottom_inches=sub_margin_bottom_inches)
-        ax = axs[0, 0]
 
     # First things first, make sure Python does not modify any of the 
     # arrays it was passed
@@ -633,9 +487,9 @@ def my_contourf(xx, yy, field, **kwargs_supplied):
         #cbar.ax.tick_params(labelsize=fontsize)   
 
         if nosci:
-            cbar_label = units
+            cbar_label = ' ' + units
         else:
-            cbar_label = (r'$\times10^{%i}\ $' %exp) + units
+            cbar_label = (r'$\ \times10^{%i}\ $' %exp) + units
         # ticklabel format
         fmt = '%.' + str(cbar_prec) + 'f'
         if posdef:
@@ -741,5 +595,3 @@ def get_default_rvals(dirname):
             rvals_to_add = rtop - (rtop - rbot)*basedepths
         rvals = np.hstack((rvals, rvals_to_add))
     return rvals/rsun
-
-
