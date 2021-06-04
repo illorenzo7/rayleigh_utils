@@ -65,7 +65,7 @@ print ("done reading")
 
 # figure dimensions
 nplots = 1
-sub_width_inches = 10.
+sub_width_inches = 8.
 sub_aspect = 1/2
 margin_top_inches = 3/4 # larger top margin to make room for titles
 margin_bottom_inches = 3/4

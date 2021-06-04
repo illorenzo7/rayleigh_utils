@@ -54,9 +54,6 @@ def get_slice(a, varname, dirname=None, j=0):
     # return the basic field based on the variable name
     if varname in var_indices:
         the_slice = vals[..., lut[var_indices[varname]]]
-        print ("varn = ", varname)
-        print ("var ind = ", var_indices[varname])
-        print ("q = ", lut[var_indices[varname]])
     elif varname[-1] in ['l', 'z']: # cylindrical variable
         the_slice_r = vals[..., lut[var_indices[varname[:-1] + 'r']]]
         if deriv:
