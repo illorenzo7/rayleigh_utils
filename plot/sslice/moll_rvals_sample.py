@@ -18,7 +18,7 @@ dirname = clas0['dirname']
 dirname_stripped = strip_dirname(dirname)
 
 # SPECIFIC ARGS for moll_show:
-kwargs = dict({'val_iter': 1e9, 'irvals': np.array([0]), 'rvals': None, 'varname': 'vr'})
+kwargs = dict({'val_iter': 1e9, 'irvals': None, 'rvals': None, 'varnames': np.array(['vr'])})
 kwargs_moll = {**kwargs_contourf}
 kwargs_moll['clon'] = 0.
 kwargs_moll = dotdict(update_kwargs(clas, kwargs_moll))
@@ -27,9 +27,9 @@ kwargs_moll = dotdict(update_kwargs(clas, kwargs_moll))
 if 'di_trans' in clas:
     clas['val_iter'] = clas['di_trans']['val_iter']
 kwargs = dotdict(update_kwargs(clas, kwargs))
-irval = kwargs.irvals[0] # these are going to be 1D arrays
+irvals = kwargs.irvals
 rvals = kwargs.rvals
-varname = kwargs.varname
+varname = kwargs.varnames[0] # this will be 1D array
 
 # make plot directory if nonexistent
 plotdir = my_mkdir(clas0['plotdir'] + 'moll/rvals/')
@@ -59,16 +59,17 @@ margin_bottom_inches = 1/2
 # larger bottom margin to make room for colorbar
 
 # Loop over rvals and make plots
-if rvals is None:
-    irvals = np.arange(a.nr) # loop over everything
-else:
-    irvals = np.zeros_like(rvals, dtype='int')
-    for i in range(len(rvals)):
-        irvals[i] = np.argmin(np.abs(a.radius/rsun - rvals[i]))
+if irvals is None: # irvals hasn't been set yet
+    if rvals is None:
+        irvals = np.arange(a.nr) # loop over everything
+    else: # get irvals from rvals
+        irvals = np.zeros_like(rvals, dtype='int')
+        for i in range(len(rvals)):
+            irvals[i] = np.argmin(np.abs(a.radius/rsun - rvals[i]))
 
-for ir in irvals:
-    rval = a.radius[ir]/rsun
-    field = vals[:, :, ir]
+for irval in irvals:
+    rval = a.radius[irval]/rsun
+    field = vals[:, :, irval]
 
     savename = 'moll_' + varname + '_iter' + str(a.iters[0]).zfill(8) +\
             ('_rval%0.3f' %rval) + '.png'

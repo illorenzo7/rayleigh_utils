@@ -46,6 +46,7 @@ def read_clas(args):
 
     # see if magnetism is on
     magnetism = get_parameter(clas0['dirname'], 'magnetism')
+    clas0['magnetism'] = magnetism
 
     # get the other arguments
     clas = dict({})

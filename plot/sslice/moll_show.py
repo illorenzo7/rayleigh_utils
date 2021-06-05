@@ -18,7 +18,7 @@ dirname = clas0['dirname']
 dirname_stripped = strip_dirname(dirname)
 
 # SPECIFIC ARGS for moll_show:
-kwargs = dict({'val_iter': 1e9, 'irvals': np.array([0]), 'rvals': None, 'varname': 'vr'})
+kwargs = dict({'val_iter': 1e9, 'irvals': np.array([0]), 'rvals': None, 'varnames': np.array(['vr'])})
 kwargs_moll = {**kwargs_contourf}
 kwargs_moll['clon'] = 0.
 kwargs_moll = dotdict(update_kwargs(clas, kwargs_moll))
@@ -29,7 +29,7 @@ if 'di_trans' in clas:
 kwargs = dotdict(update_kwargs(clas, kwargs))
 irval = kwargs.irvals[0] # these are going to be 1D arrays
 rval = kwargs.rvals
-varname = kwargs.varname
+varname = kwargs.varnames[0]
 
 # Read in desired shell slice or average
 # Data with Shell_Slices
