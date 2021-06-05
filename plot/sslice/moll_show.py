@@ -87,9 +87,7 @@ print ("========================")
 
 for varname in varnames:
     # get the desired field variable
-    print ("varname = ", varname)
     vals = get_slice(a, varname, dirname=dirname)
-    print ("varname = ", varname)
     for irval in irvals:
         field = vals[:, :, irval]
         rval = a.radius[irval]/rsun 

@@ -586,7 +586,7 @@ def get_default_rvals(dirname):
 def get_default_varnames(dirname):
     magnetism = get_parameter(dirname, 'magnetism')
     varnames_default = ['vr', 'vt', 'vp', 'omr',\
-                'omt', 'omp', 's', 'p', 's_prime_sph']
+                'omt', 'omp', 'sprime', 'pprime', 'ssph', 'psph']
     if magnetism:
         varnames_default += ['br', 'bt', 'bp', 'jr', 'jt', 'jp']
     varnames_default = np.array(varnames_default)    

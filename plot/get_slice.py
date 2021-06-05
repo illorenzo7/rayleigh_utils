@@ -42,9 +42,7 @@ def get_slice(a, varname, dirname=None, j=0):
         cost = cost.reshape((nt, nt))
 
     # first get root variable name and store any modifiers
-    print ("varname = ", varname)
     varname, deriv, primevar, sphvar = get_varprops(varname)
-    print ("varname = ", varname)
 
     # get sine/cotangent from cosine
     sint = np.sin(np.arccos(cost))

@@ -67,8 +67,8 @@ var_indices = {\
     'dbpdP' :       848,
 
     'jr'    :       1001,
-    'jt'    :       1002,
-    'jp'    :       1003}
+    'jt'    :       1004,
+    'jp'    :       1007}
 
 rootlabels = {'v': r'$v$', 'b': r'$B$', 'om': r'$\omega$', 'j': r'$\mathcal{J}$'}
 direclabels = {'r': r'$r$', 't': r'$\theta$', 'p': r'$\phi$', 'l': r'$\lambda$', 'z': r'$z$', 'T': r'$\Theta$', 'P': r'$\Phi$'}
@@ -81,12 +81,12 @@ def get_varprops(varname):
     sphvar = False
     if 'dr' in varname or 'dt' in varname or 'dp' in varname or 'dT' in varname or 'dP' in varname:
         deriv = True
-    if varname[-6:] == '_prime': # prime appears at end to modify varname
+    if varname[-5:] == 'prime': # prime appears at end to modify varname
         primevar = True
-        varname = varname[:-6]
-    elif varname[-4:] == '_sph':
+        varname = varname[:-5]
+    elif varname[-3:] == 'sph':
         sphvar = True
-        varname = varname[:-4]
+        varname = varname[:-3]
     return varname, deriv, primevar, sphvar
 
 def get_label(varname):
