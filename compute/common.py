@@ -301,12 +301,9 @@ def get_satvals(field, posdef=False, logscale=False, fullrange=False, ignore1=No
     # Get good boundaries to saturate array [field], assuming either
     # posdef (True or False) and/or logscale (True or False)
     # first, possibly cut the array (ignore boundary vals)
-    print ("ignore1 = ", ignore1)
     if not ignore1 is None:
         n1, dummy = np.shape(field)
         icut = int(n1*ignore1)
-        print ("n1 = ", n1)
-        print ("icut = ", icut)
         field = np.copy(field[icut:n1-icut, :])
     if not ignore2 is None:
         dummy, n2 = np.shape(field)
