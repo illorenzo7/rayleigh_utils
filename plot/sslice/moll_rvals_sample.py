@@ -5,10 +5,11 @@ sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapl'])
 sys.path.append(os.environ['rapp'])
 from common import *
+from plotcommon import *
 from sslice_util import plot_moll
-from get_sslice import get_sslice
 from rayleigh_diagnostics import Shell_Slices
 from get_slice import get_slice, get_label
+from cla_util import *
 
 # Get CLAs
 args = sys.argv 
@@ -16,186 +17,79 @@ clas0, clas = read_clas(args)
 dirname = clas0['dirname']
 dirname_stripped = strip_dirname(dirname)
 
-# domain bounds
-ncheby, domain_bounds = get_domain_bounds(dirname)
-ri = np.min(domain_bounds)
-ro = np.max(domain_bounds)
-d = ro - ri
+# SPECIFIC ARGS for moll_show:
+kwargs = dict({'val_iter': 1e9, 'irvals': np.array([0]), 'rvals': None, 'varname': 'vr'})
+kwargs_moll = {**kwargs_contourf}
+kwargs_moll['clon'] = 0.
+kwargs_moll = dotdict(update_kwargs(clas, kwargs_moll))
 
+# update these defaults from command-line
+if 'di_trans' in clas:
+    clas['val_iter'] = clas['di_trans']['val_iter']
+kwargs = dotdict(update_kwargs(clas, kwargs))
+irval = kwargs.irvals[0] # these are going to be 1D arrays
+rvals = kwargs.rvals
+varname = kwargs.varname
+
+# make plot directory if nonexistent
+plotdir = my_mkdir(clas0['plotdir'] + 'moll/rvals/')
+
+# Read in desired shell slice or average
 # Data with Shell_Slices
 radatadir = dirname + '/Shell_Slices/'
-args = sys.argv[2:]
-nargs = len(args)
-file_list, int_file_list, nfiles = get_file_lists(radatadir, args)
+fname = get_closest_file(radatadir, kwargs.val_iter)
+print ("reading " + fname)
+a = Shell_Slices(fname, '')
+if 'the_file' in clas:
+    the_file = clas['the_file']
+    print ("getting an averaged sslice from " + the_file)
+    di = get_dict(the_file)
+    a.vals = di['vals'][..., np.newaxis]
+print ("done reading")
 
-minmax = None
-iiter = nfiles - 1 # by default plot the last iteration
-varname = 'vr' # by default plot the radial velocity
-clon = 0.
-rvals = []
+# get the desired field variable
+vals = get_slice(a, varname, dirname=dirname)
 
-plotdir = None
-
-for i in range(nargs):
-    arg = args[i]
-    if arg == '-plotdir':
-        plotdir = args[i+1]
-    if arg == '-minmax':
-        minmax = float(args[i+1]), float(args[i+2])
-    elif arg == '-var' or arg == '-qval':
-        varname = args[i+1]
-    elif arg == '-iter':
-        desired_iter = int(args[i+1])
-        iiter = np.argmin(np.abs(int_file_list - desired_iter))
-    elif arg == '-sec':
-        time = float(args[i+1])
-        di_trans = translate_times(time, dirname, translate_from='sec')
-        desired_iter = di_trans['val_iter']
-        iiter = np.argmin(np.abs(int_file_list - desired_iter))
-    elif arg == '-day':
-        time = float(args[i+1])
-        di_trans = translate_times(time, dirname, translate_from='day')
-        desired_iter = di_trans['val_iter']
-        iiter = np.argmin(np.abs(int_file_list - desired_iter))
-    elif arg == '-prot':
-        time = float(args[i+1])
-        di_trans = translate_times(time, dirname, translate_from='prot')
-        desired_iter = di_trans['val_iter']
-        iiter = np.argmin(np.abs(int_file_list - desired_iter))
-    elif arg == '-clon':
-        clon = float(args[i+1])
-    elif arg == '-depths':
-        strings = args[i+1].split()
-        for st in strings:
-            rval = ro - float(st)*d
-            rvals.append(rval)
-    elif arg == '-depthscz':
-        rm = domain_bounds[1]
-        dcz = ro - rm
-        strings = args[i+1].split()
-        for st in strings:
-            rval = ro - float(st)*dcz
-            rvals.append(rval)
-    elif arg == '-depthsrz':
-        rm = domain_bounds[1]
-        drz = rm - ri
-        strings = args[i+1].split()
-        for st in strings:
-            rval = rm - float(st)*drz
-            rvals.append(rval)
-    elif arg == '-rvals':
-        rvals = []
-        strings = args[i+1].split()
-        for st in strings:
-            rval = float(st)*rsun
-            rvals.append(rval)
-    elif arg == '-rvalscm':
-        rvals = []
-        strings = args[i+1].split()
-        for st in strings:
-            rval = float(st)
-            rvals.append(rval)
-    elif arg == '-rrange':
-        r1 = float(args[i+1])
-        r2 = float(args[i+2])
-        n = int(args[i+3])
-        rvals = np.linspace(r1, r2, n)*rsun
-
-# Get the baseline time unit
-rotation = get_parameter(dirname, 'rotation')
-if rotation:
-    time_unit = compute_Prot(dirname)
-    time_label = r'$\rm{P_{rot}}$'
-else:
-    time_unit = compute_tdt(dirname)
-    time_label = r'$\rm{TDT}$'
-
-if plotdir is None:
-    plotdir = dirname + '/plots/moll/rvals_sample/'
-    if not os.path.isdir(plotdir):
-        os.makedirs(plotdir)
-
-# File name to read
-iter_val = int_file_list[iiter]
-fname = file_list[iiter]
-
-# Read in desired shell slice
-a = Shell_Slices(radatadir + fname, '')
-
-# Get local time (in seconds)
-t_loc = a.time[0]
-
-# Create the plot using subplot axes
-# Offset axes slightly (at the end) to deal with annoying white space cutoff
-fig_width_inches = 6.
-
-# General parameters for main axis/color bar
-margin_bottom_inches = 1./2.
-margin_top_inches = 5./8.
-margin_inches = 1./8.
-
-subplot_width_inches = fig_width_inches - 2*margin_inches
-subplot_height_inches = 0.5*subplot_width_inches
-fig_height_inches = margin_bottom_inches + subplot_height_inches +\
-    margin_top_inches
-fig_aspect = fig_height_inches/fig_width_inches
-
-# "Non-dimensional" figure parameters
-margin_x = margin_inches/fig_width_inches
-margin_y = margin_inches/fig_height_inches
-margin_bottom = margin_bottom_inches/fig_height_inches
-margin_top = margin_top_inches/fig_height_inches
-
-subplot_width = subplot_width_inches/fig_width_inches
-subplot_height = subplot_height_inches/fig_height_inches
+# plot dimensions
+nplots = 1
+sub_width_inches = 6
+sub_aspect = 1/2
+margin_top_inches = 3/8 # larger top margin to make room for titles
+margin_bottom_inches = 1/2
+# larger bottom margin to make room for colorbar
 
 # Loop over rvals and make plots
-if rvals == []:
+if rvals is None:
     irvals = np.arange(a.nr) # loop over everything
 else:
     irvals = np.zeros_like(rvals, dtype='int')
     for i in range(len(rvals)):
-        irvals[i] = np.argmin(np.abs(a.radius - rvals[i]))
+        irvals[i] = np.argmin(np.abs(a.radius/rsun - rvals[i]))
 
 for ir in irvals:
     rval = a.radius[ir]/rsun
-    vals = get_sslice(a, varname, dirname=dirname)
     field = vals[:, :, ir]
 
-    savename = 'moll_' + varname + '_iter' + fname +\
+    savename = 'moll_' + varname + '_iter' + str(a.iters[0]).zfill(8) +\
             ('_rval%0.3f' %rval) + '.png'
     # Display at terminal what we are plotting
-    print('Plotting moll: ' + varname + (', r/rsun = %0.3f (ir = %02i), '\
-            %(rval, ir)) + 'iter ' + fname)
+    # Display at terminal what we are plotting
+    print('Plotting moll: ' + varname + (', rval = %0.3f (irval = %02i), ' %(rval, irval)) + 'iter %08i' %a.iters[0])
 
-    fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
-    ax = fig.add_axes([margin_x, margin_bottom, subplot_width,\
-            subplot_height])
-    
-    plot_moll(field, a.costheta, fig=fig, ax=ax,\
-            minmax=minmax, clon=clon) 
+    # make plot
+    fig, axs, fpar = make_figure(nplots=nplots, sub_width_inches=sub_width_inches, sub_aspect=sub_aspect, margin_top_inches=margin_top_inches, margin_bottom_inches=margin_bottom_inches)
+    ax = axs[0, 0]
+    plot_moll(field, a.costheta, fig, ax, **kwargs_moll)
 
-    # Make title
-    ax_xmin, ax_xmax, ax_ymin, ax_ymax = axis_range(ax)
-    ax_delta_x = ax_xmax - ax_xmin
-    ax_delta_y = ax_ymax - ax_ymin
-    ax_center_x = ax_xmin + 0.5*ax_delta_x    
-    
-    if rotation:
-        time_string = ('t = %.1f ' %(t_loc/time_unit)) + time_label +\
-                ' (1 ' + time_label + (' = %.2f days)'\
-                %(time_unit/86400.))
-    else:
-        time_string = ('t = %.3f ' %(t_loc/time_unit)) + time_label +\
-                ' (1 ' + time_label + (' = %.1f days)'\
-                %(time_unit/86400.))
-    varlabel = texlabels.get(varname, 'qval = ' + varname)
+    # make title
+    time_string = get_time_string(dirname, a.iters[0])
+    varlabel = get_label(varname)
 
     title = dirname_stripped +\
-        '\n' + r'$\rm{Mollweide}$' + '     '  + time_string +\
-        '\n' + varlabel + '     ' + (r'$r/R_\odot\ =\ %0.3f$' %rval)
-    fig.text(ax_center_x, ax_ymax + 0.02*ax_delta_y, title,\
-         verticalalignment='bottom', horizontalalignment='center',\
-         fontsize=10, **csfont)   
+            '\n' + varlabel + '     '  + time_string + '     ' +\
+            (r'$r/R_\odot\ =\ %0.3f$' %rval) + '\n' +\
+            ('clon = %4.0f' %kwargs_moll['clon'])
+    ax.set_title(title, va='bottom', fontsize=default_titlesize)
+
     plt.savefig(plotdir + savename, dpi=300)
     plt.close()

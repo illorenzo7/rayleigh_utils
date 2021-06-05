@@ -17,12 +17,6 @@ clas0, clas = read_clas(args)
 dirname = clas0['dirname']
 dirname_stripped = strip_dirname(dirname)
 
-# domain bounds
-ncheby, domain_bounds = get_domain_bounds(dirname)
-ri = np.min(domain_bounds)
-ro = np.max(domain_bounds)
-d = ro - ri
-
 # SPECIFIC ARGS for moll_show:
 kwargs = dict({'val_iter': 1e9, 'irvals': np.array([0]), 'rvals': None, 'varname': 'vr'})
 kwargs_moll = {**kwargs_contourf}
@@ -61,10 +55,9 @@ field = vals[:, :, irval]
 rval = a.radius[irval]/rsun # in any case, this is the actual rvalue we get
 
 # Display at terminal what we are plotting
-print('Plotting moll: ' + varname + (', rval = %0.3f (irval = %02i), '\
-        %(rval, irval)) + 'iter %08i' %a.iters[0])
+print('Plotting moll: ' + varname + (', rval = %0.3f (irval = %02i), ' %(rval, irval)) + 'iter %08i' %a.iters[0])
 
-# Create plot
+# plot dimensions
 nplots = 1
 sub_width_inches = 8
 sub_aspect = 1/2
