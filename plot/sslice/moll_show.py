@@ -32,6 +32,8 @@ rvals = kwargs.rvals
 varnames = kwargs.varnames
 if np.isscalar(varnames): # this is length 1
     varnames = np.array([varnames])
+if np.isscalar(irvals): # this is length 1
+    irvals = np.array([irvals])
 
 # make plot directory if nonexistent
 plotdir = my_mkdir(clas0['plotdir'] + 'moll/')
