@@ -203,10 +203,11 @@ def strip_dirname(dirname, wrap=False):
         dirname_stripped = os.getcwd().split('/')[-1]
         os.chdir(orig_dir)
 
-    if wrap and len(dirname_stripped) > 25:
+    ncut = 20
+    if wrap and len(dirname_stripped) > ncut:
         # Split dirname_stripped into two lines if it is very long
-        dirname_stripped = dirname_stripped[:25] + '\n' +\
-                dirname_stripped[25:]
+        dirname_stripped = dirname_stripped[:ncut] + '\n' +\
+                dirname_stripped[ncut:]
     return dirname_stripped
 
 def is_an_int(string):
@@ -1299,7 +1300,7 @@ def get_time_string(dirname, iter1, iter2=None):
         fmt = '%.3f'
 
     if not iter2 is None:
-        time_string = (('t = ' + fmt + ' to ' + fmt) %(t1/time_unit, t2/time_unit)) + time_label + '\n' + (r'$\Delta t = ' + fmt + '\ $' %((t2 - t1)/time_unit)) + time_label
+        time_string = (('t = ' + fmt + ' to ' + fmt) %(t1/time_unit, t2/time_unit)) + ' ' + time_label + '\n' + r'$\Delta t$' + ' = ' + (fmt %((t2 - t1)/time_unit)) + ' ' + time_label
     else:
         time_string = (('t = ' + fmt + ' ') %(t1/time_unit)) + time_label
 

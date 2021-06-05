@@ -9,12 +9,7 @@
 # [dirname]_diffrot_[first iter]_[last iter].npy
 
 import numpy as np
-import pickle
-import matplotlib as mpl
-mpl.use('TkAgg')
 import matplotlib.pyplot as plt
-plt.rcParams['mathtext.fontset'] = 'dejavuserif'
-csfont = {'fontname':'DejaVu Serif'}
 import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
@@ -69,42 +64,39 @@ psi = streamfunction(rho*vr_av, rho*vt_av, rr, cost)
 # Make CCW negative and CW positive
 rhovm *= np.sign(psi)
 
-# Create plot
-width_inches = 3.25
+# create plot
+nplots = 1
+sub_width_inches = 2.
 sub_aspect = 2
-margin_top_inches = 1.25 # larger top margin to make room for titles
-margin_bottom_inches = 0.7
+margin_top_inches = 3/4 # larger top margin to make room for titles
+margin_bottom_inches = 1/2
 # larger bottom margin to make room for colorbar(s)
 if 'rbcz' in clas:
     margin_bottom_inches *= 2
 
-fig, axs, fpar = make_figure(nplots=1, sub_aspect=sub_aspect, margin_top_inches=margin_top_inches, margin_bottom_inches=margin_bottom_inches, width_inches=width_inches)
+# make plot
+fig, axs, fpar = make_figure(nplots=nplots, sub_width_inches=sub_width_inches, sub_aspect=sub_aspect, margin_top_inches=margin_top_inches, margin_bottom_inches=margin_bottom_inches)
+ax = axs[0, 0]
 
 # Plot mass flux
-plot_azav (rhovm, rr, cost, fig=fig, ax=axs[0,0], cbar_prec=1, nosci=True,\
-    units=r'$\rm{g}\ \rm{cm}^{-2}\ \rm{s}^{-1}$', plotcontours=False,\
-    **clas)
+plot_azav (rhovm, rr, cost, fig, ax=ax, cbar_prec=1, nosci=True,\
+    plotcontours=False, **clas)
 
 # Plot streamfunction contours
 lilbit = 0.01
 maxabs = np.max(np.abs(psi))
 contourlevels = (-maxabs/2., -maxabs/4., -lilbit*maxabs, 0.,\
         lilbit*maxabs, maxabs/4., maxabs/2.)
-plot_azav (psi, rr, cost, fig=fig, ax=axs[0,0], plotfield=False,\
+plot_azav (psi, rr, cost, fig, ax, plotfield=False,\
     contourlevels=contourlevels, **clas)
 
 # make title 
 iter1, iter2 = get_iters_from_file(the_file) 
-time_string = get_time_info(dirname, iter1, iter2)
+time_string = get_time_string(dirname, iter1, iter2)
 margin_x = fpar['margin_left'] + fpar['sub_margin_left']
 margin_y = default_margin/fpar['height_inches']
-line_height = 1/4/fpar['height_inches']
-fig.text(margin_x, 1 - margin_y, dirname_stripped,\
-         ha='left', va='top', fontsize=default_titlesize, **csfont)
-fig.text(margin_x, 1 - margin_y - 2*line_height, 'Mass flux (circulation)',\
-         ha='left', va='top', fontsize=default_titlesize, **csfont)
-fig.text(margin_x, 1 - margin_y - 3*line_height, time_string,\
-         ha='left', va='top', fontsize=default_titlesize, **csfont)
+the_title = dirname_stripped + '\n' + 'Mass flux (circulation)\n' + time_string
+ax.set_title(the_title, fontsize=default_titlesize)
 
 # save the figure
 plotdir = my_mkdir(clas0['plotdir'] + 'azav/')

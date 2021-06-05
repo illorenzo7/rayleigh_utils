@@ -76,7 +76,7 @@ times = di['times']
 iters = di['iters']
 
 # get the x axis
-time_unit, time_label, rotation = get_time_unit(dirname)
+time_unit, time_label, rotation, simple_label = get_time_unit(dirname)
 if not xiter:
     xaxis = times/time_unit
 else:

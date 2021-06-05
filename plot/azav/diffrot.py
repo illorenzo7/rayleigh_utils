@@ -8,12 +8,7 @@
 # [dirname]_diffrot_[first iter]_[last iter].npy
 
 import numpy as np
-import pickle
-import matplotlib as mpl
-mpl.use('TkAgg')
 import matplotlib.pyplot as plt
-plt.rcParams['mathtext.fontset'] = 'dejavuserif'
-csfont = {'fontname':'DejaVu Serif'}
 import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
@@ -78,12 +73,12 @@ plot_azav (diffrot, rr, cost, fig, axs[0, 0], units='nHz', plotlatlines=False, n
         
 # make title 
 iter1, iter2 = get_iters_from_file(the_file)
-time_string = get_time_info(dirname, iter1, iter2) 
+time_string = get_time_string(dirname, iter1, iter2) 
 margin_x = fpar['margin_left'] + fpar['sub_margin_left']
 margin_y = default_margin/fpar['height_inches']
-the_title = dirname_stripped + '\n' +  r'$\Omega - \Omega_0$' + '\n' + time_string + '\n' + (r'$\Delta\Omega_{\rm{60}} = %.1f\ \rm{nHz}$' %Delta_Om)
+the_title = dirname_stripped + '\n' +  r'$\Omega - \Omega_0$' + '\n' + time_string + '\n' + r'$\Delta\Omega_{\rm{60}}$' + (' = %.1f nHz' %Delta_Om)
 fig.text(margin_x, 1 - margin_y, the_title,\
-         ha='left', va='top', fontsize=default_titlesize, **csfont)
+         ha='left', va='top', fontsize=default_titlesize)
 
 # save the figure
 plotdir = my_mkdir(clas0['plotdir'] + 'azav/')
