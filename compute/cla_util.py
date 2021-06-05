@@ -48,7 +48,6 @@ def read_clas(args):
     magnetism = get_parameter(clas0['dirname'], 'magnetism')
 
     # get the other arguments
-    # tag is default to make things easy
     clas = dict({})
     args = args[2:]
     nargs = len(args)
@@ -75,6 +74,8 @@ def read_clas(args):
             clas['plotlatlines'] = False
         elif arg == '--tag':
             clas['tag'] = '_' + args[i+1]
+
+        # now complex args (like specifying clas['rvals'])
         elif arg == '--depths':
             clas['rvals'] = ro - read_cla_vals(args, i)*d
         elif arg == '--depthscz':
@@ -110,6 +111,14 @@ def read_clas(args):
                     rvals_to_add = rtop - (rtop - rbot)*basedepths
                 rvals = np.hstack((rvals, rvals_to_add))
             clas['rvals'] = rvals
+
+        # specify a desired time
+        elif arg in ['--iter', '--prot', '--tdt', '--sec']:
+            t_loc = float(args[i+1])
+            di_trans = translate_times(t_loc, clas0['dirname'], arg[2:])
+            clas['di_trans'] = di_trans
+        
+        # desired quantity list (or group)
         elif arg == '--qvals':
             argvals = read_cla_vals(args, i)
             if np.isscalar(argvals): # either group or one int/basic name

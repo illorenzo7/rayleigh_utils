@@ -685,94 +685,40 @@ def compute_Prot(dirname):
 
 def translate_times(time, dirname, translate_from='iter'):
     # Get the baseline time unit
-    rotation = get_parameter(dirname, 'rotation')
-    if rotation:
-        time_unit = compute_Prot(dirname)
-        time_label = 'prot'
-    else:
-        time_unit = compute_tdt(dirname)
-        time_label = 'tdt'
+    time_unit, time_label, rotation, simple_label = get_time_unit(dirname)
 
-    # First, if translating from an iter, just use an individual data file
-    if translate_from == 'iter': # just read in individual G_Avgs file
-        file_list, int_file_list, nfiles = get_file_lists_all(dirname + '/G_Avgs')
-        if nfiles > 0: # first see if we can use the G_Avgs data
-            #print ("translate_times(): translating using G_Avgs data")
-            funct = G_Avgs
-            radatadir = dirname + '/G_Avgs'
-            iiter = np.argmin(np.abs(int_file_list - time))
-            a = funct(radatadir + '/' + file_list[iiter], '')
-            jiter = np.argmin(np.abs(a.iters - time))
-            val_sec = a.time[jiter]
-            val_iter = a.iters[jiter]
-            val_day = val_sec/86400.
-            val_unit = val_sec/time_unit
-        else:
-            file_list, int_file_list, nfiles = get_file_lists_all(dirname +\
-                    '/Shell_Slices')
-            if nfiles > 0: # next see if we can use Shell_Slices data
-                #print ("translate_times(): translating using Shell_Slices data")
-                funct = Shell_Slices
-                radatadir = dirname + '/Shell_Slices'
-                iiter = np.argmin(np.abs(int_file_list - time))
-                a = funct(radatadir + '/' + file_list[iiter], '')
-                jiter = np.argmin(np.abs(a.iters - time))
-                val_sec = a.time[jiter]
-                val_iter = a.iters[jiter]
-                val_day = val_sec/86400.
-                val_unit = val_sec/time_unit
-            else: # Finally use G_Avgs_trace or time-latitude data
-                datadir = dirname + '/data/'
-                try:        
-                    the_file = get_widest_range_file(datadir, 'G_Avgs_trace')
-                    di = get_dict(the_file)
-                    #print ("translate_times(): translating using G_Avgs_trace file")
-                except:
-                    the_file = get_widest_range_file(datadir, 'time-latitude')
-                    di = get_dict(the_file)
-                    print ("translate_times(): translating using time-latitude file")
+    # Get the G_Avgs trace
+    datadir = dirname + '/data/'
+    the_file = get_widest_range_file(datadir, 'G_Avgs_trace')
+    try:
+        di = get_dict(the_file)
+    except:
+        print ("translate_times(): you need to have G_Avgs_trace file")
+        print ("to use me! Exiting.")
+        sys.exit()
 
-                # Get times and iters from trace file
-                times = di['times']
-                iters = di['iters']
-                ind = np.argmin(np.abs(iters - time))
-                val_sec = times[ind]
-                val_iter = iters[ind]
-                val_day = times[ind]/86400.
-                val_unit = times[ind]/time_unit
+    # Get times and iters from trace file
+    times = di['times']
+    iters = di['iters']
 
-    else: # otherwise, hopefully you computed some time traces beforehand!
-        # Get the data directory
-        datadir = dirname + '/data/'
-     
-        try:        
-            the_file = get_widest_range_file(datadir, 'G_Avgs_trace')
-            di = get_dict(the_file)
-            #print ("translate_times(): translating using G_Avgs_trace file")
-        except:
-            the_file = get_widest_range_file(datadir, 'time-latitude')
-            di = get_dict(the_file)
-            #print ("translate_times(): translating using time-latitude file")
+    if translate_from == 'iter':
+        ind = np.argmin(np.abs(iters - time))
+    elif translate_from in ['unit', 'prot', 'tdt']:
+        ind = np.argmin(np.abs(times/time_unit - time))
+    elif translate_from == 'sec':
+        ind = np.argmin(np.abs(times - time))
 
-        # Get times and iters from trace file
-        times = di['times']
-        iters = di['iters']
-
-        if translate_from in ['prot', 'tdt', 'unit']:
-            ind = np.argmin(np.abs(times/time_unit - time))
-        elif translate_from == 'day':
-            ind = np.argmin(np.abs(times/86400. - time))
-        elif translate_from == 'sec':
-            ind = np.argmin(np.abs(times - time))
-
-        val_sec = times[ind]
-        val_iter = iters[ind]
-        val_day = times[ind]/86400.
-        val_unit = times[ind]/time_unit
+    val_sec = times[ind]
+    val_iter = iters[ind]
+    val_unit = times[ind]/time_unit
 
     return dict({'val_sec': val_sec,'val_iter': val_iter,\
-            'val_day': val_day, 'val_unit': val_unit,\
-            'time_unit': time_unit, 'time_label': time_label})
+            'val_unit': val_unit, 'simple_label': simple_label})
+
+def get_closest_file(radatadir, val_iter):
+    file_list, int_file_list, nfiles = get_file_lists_all(radatadir)
+    iiter = np.argmin(np.abs(int_file_list - val_iter))
+    return radatadir + file_list[iiter]
 
 def drad(arr, rr): # this works for any dimension array, as long as
     # the radial index is the last one
@@ -1330,10 +1276,12 @@ def get_time_unit(dirname):
     if rotation:
         time_unit = compute_Prot(dirname)
         time_label = r'${\rm{P_{rot}}}$'
+        simple_label = 'rotations'
     else:
         time_unit = compute_tdt(dirname)
         time_label = r'${\rm{TDT}}$'
-    return time_unit, time_label, rotation
+        simple_label = 'TDT'
+    return time_unit, time_label, rotation, simple_label
 
 def get_time_string(dirname, iter1, iter2=None):
     # Get the time range in sec
@@ -1342,7 +1290,7 @@ def get_time_string(dirname, iter1, iter2=None):
         t2 = translate_times(iter2, dirname, translate_from='iter')['val_sec']
 
     # Get the baseline time unit
-    time_unit, time_label, rotation = get_time_unit(dirname)
+    time_unit, time_label, rotation, simple_label = get_time_unit(dirname)
 
     # set the averaging-interval label
     if rotation:
@@ -1380,6 +1328,4 @@ def update_kwargs(kwargs_supplied, kwargs_default):
         if key in kwargs_default: # only update arguments that are
             # specified in the default set
             kwargs[key] = val
-        else:
-            print ("you specified an invalid keyword arg: ", key)
     return kwargs

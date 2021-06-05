@@ -13,7 +13,7 @@ from rayleigh_diagnostics import Shell_Slices
 from get_slice import get_slice, get_label
 
 # Get CLAs
-args = sys.argv
+args = sys.argv 
 clas0, clas = read_clas(args)
 dirname = clas0['dirname']
 dirname_stripped = strip_dirname(dirname)
@@ -24,30 +24,26 @@ ri = np.min(domain_bounds)
 ro = np.max(domain_bounds)
 d = ro - ri
 
-# Data with Shell_Slices
-radatadir = dirname + '/Shell_Slices/'
-file_list, int_file_list, nfiles = get_file_lists(radatadir, args)
-
 # SPECIFIC ARGS for moll_show:
-kwargs = dict({'iiter': nfiles - 1, 'irvals': np.array([0]), 'rvals': None, 'qvals': 'vr'})
+kwargs = dict({'val_iter': 1e9, 'irvals': np.array([0]), 'rvals': None, 'qvals': 'vr'})
 kwargs_moll = {**kwargs_contourf}
 kwargs_moll['clon'] = 0.
 kwargs_moll = dotdict(update_kwargs(clas, kwargs_moll))
 
 # update these defaults from command-line
+if 'di_trans' in clas:
+    clas['val_iter'] = clas['di_trans']['val_iter']
 kwargs = dotdict(update_kwargs(clas, kwargs))
-iiter = kwargs.iiter
 irval = kwargs.irvals[0] # these are going to be 1D arrays
 rval = kwargs.rvals
 qval = kwargs.qvals
 
-# Get the baseline time unit
-time_unit, time_label, rotation = get_time_unit(dirname)
-
 # Read in desired shell slice or average
-fname = file_list[iiter]
-print ("reading sslice from " + radatadir + fname)
-a = Shell_Slices(radatadir + fname, '')
+# Data with Shell_Slices
+radatadir = dirname + '/Shell_Slices/'
+fname = get_closest_file(radatadir, kwargs.val_iter)
+print ("reading " + fname)
+a = Shell_Slices(fname, '')
 if 'the_file' in clas:
     the_file = clas['the_file']
     print ("getting an averaged sslice from " + the_file)
@@ -83,10 +79,6 @@ ax = axs[0, 0]
 plot_moll(field, a.costheta, fig, ax, **kwargs_moll)
 
 # make title
-#if rotation:
-#    time_string = ('t = %.1f ' %(t_loc/time_unit)) + time_label
-#else:
-#    time_string = ('t = %.3f ' %(t_loc/time_unit)) + time_label
 time_string = get_time_string(dirname, a.iters[0])
 varlabel = get_label(qval)
 

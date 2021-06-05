@@ -7,54 +7,16 @@
 import sys
 import numpy as np
 from common import *
+from cla_util import *
 
-# Get the run directory on which to perform the analysis
-dirname = sys.argv[1]
-args = sys.argv[2:]
-nargs = len(args)
+# Get CLAs
+args = sys.argv 
+clas0, clas = read_clas(args)
+di_trans = clas['di_trans']
 
-# See if user wants to work in frame where a time (in Prot or TDT)
-# has been subtracted from time
-sub = False
-for i in range(nargs):
-    arg = args[i]
-    if arg == '-sub':
-        sub = True
-        start_time = float(args[i+1])
+val_iter = di_trans['val_iter']
+val_unit = di_trans['val_unit']
+simple_label = di_trans['simple_label']
+val_sec = di_trans['val_sec']
 
-for i in range(nargs):
-    arg = args[i]
-    if arg == '-sec': 
-        time = float(args[i+1])
-        di = translate_times(time, dirname, translate_from='sec')
-        val_sec = di['val_sec']; val_iter = di['val_iter']
-        val_day = di['val_day']; val_unit = di['val_unit']
-        time_unit = di['time_unit']; time_label = di['time_label']
-    elif arg == '-iter': 
-        time = int(args[i+1])
-        di = translate_times(time, dirname, translate_from='iter')
-        val_sec = di['val_sec']; val_iter = di['val_iter']
-        val_day = di['val_day']; val_unit = di['val_unit']
-        time_unit = di['time_unit']; time_label = di['time_label']
-    elif arg == '-day':
-        time = float(args[i+1])
-        di = translate_times(time, dirname, translate_from='day')
-        val_sec = di['val_sec']; val_iter = di['val_iter']
-        val_day = di['val_day']; val_unit = di['val_unit']
-        time_unit = di['time_unit']; time_label = di['time_label']
-    elif arg in ['-prot', '-tdt', '-unit']:
-        time = float(args[i+1])
-        if sub:
-            time += start_time
-        di = translate_times(time, dirname, translate_from='unit')
-        val_sec = di['val_sec']; val_iter = di['val_iter']
-        val_day = di['val_day']; val_unit = di['val_unit']
-        time_unit = di['time_unit']; time_label = di['time_label']
-
-if sub:
-    val_sec -= (start_time*time_unit)
-    val_day -= (start_time*time_unit/86400.)
-    val_unit -= start_time
-
-print ('%1.6e sec   = %08i iter   = %.2f day    = %.3f %s'\
-        %(val_sec, val_iter, val_day, val_unit, time_label))
+print ('%08i iter =\n%.3f %s' %(val_iter, val_unit, simple_label))
