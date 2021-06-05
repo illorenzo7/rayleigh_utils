@@ -9,7 +9,6 @@ from plotcommon import *
 from cla_util import *
 from sslice_util import plot_moll
 from rayleigh_diagnostics import Shell_Slices
-#from get_sslice import get_sslice
 from get_slice import get_slice, get_label
 
 # Get CLAs
@@ -25,7 +24,7 @@ ro = np.max(domain_bounds)
 d = ro - ri
 
 # SPECIFIC ARGS for moll_show:
-kwargs = dict({'val_iter': 1e9, 'irvals': np.array([0]), 'rvals': None, 'qvals': 'vr'})
+kwargs = dict({'val_iter': 1e9, 'irvals': np.array([0]), 'rvals': None, 'varname': 'vr'})
 kwargs_moll = {**kwargs_contourf}
 kwargs_moll['clon'] = 0.
 kwargs_moll = dotdict(update_kwargs(clas, kwargs_moll))
@@ -36,7 +35,7 @@ if 'di_trans' in clas:
 kwargs = dotdict(update_kwargs(clas, kwargs))
 irval = kwargs.irvals[0] # these are going to be 1D arrays
 rval = kwargs.rvals
-qval = kwargs.qvals
+varname = kwargs.varname
 
 # Read in desired shell slice or average
 # Data with Shell_Slices
@@ -52,7 +51,7 @@ if 'the_file' in clas:
 print ("done reading")
 
 # get the desired field variable
-vals = get_slice(a, qval, dirname=dirname)
+vals = get_slice(a, varname, dirname=dirname)
 
 # Find desired radius (by default ir=0--near outer surface)
 if not rval is None:
@@ -62,8 +61,8 @@ field = vals[:, :, irval]
 rval = a.radius[irval]/rsun # in any case, this is the actual rvalue we get
 
 # Display at terminal what we are plotting
-print('Plotting moll: ' + qval + (', rval = %0.3f (irval = %02i), '\
-        %(rval, irval)) + 'iter ' + fname)
+print('Plotting moll: ' + varname + (', rval = %0.3f (irval = %02i), '\
+        %(rval, irval)) + 'iter %08i' %a.iters[0])
 
 # Create plot
 nplots = 1
@@ -80,7 +79,7 @@ plot_moll(field, a.costheta, fig, ax, **kwargs_moll)
 
 # make title
 time_string = get_time_string(dirname, a.iters[0])
-varlabel = get_label(qval)
+varlabel = get_label(varname)
 
 title = dirname_stripped +\
         '\n' + varlabel + '     '  + time_string + '     ' +\

@@ -1,22 +1,19 @@
-import matplotlib as mpl
-mpl.use('TkAgg')
 import matplotlib.pyplot as plt
-plt.rcParams['mathtext.fontset'] = 'dejavuserif'
-csfont = {'fontname':'DejaVu Serif'}
 import numpy as np
 import sys, os
 sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapl'])
 sys.path.append(os.environ['rapp'])
 from common import *
-from plotcommon import axis_range
 from sslice_util import plot_moll
 from get_sslice import get_sslice
 from rayleigh_diagnostics import Shell_Slices
-from varprops import texlabels
+from get_slice import get_slice, get_label
 
-# Get command line arguments
-dirname = sys.argv[1]
+# Get CLAs
+args = sys.argv 
+clas0, clas = read_clas(args)
+dirname = clas0['dirname']
 dirname_stripped = strip_dirname(dirname)
 
 # domain bounds
