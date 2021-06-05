@@ -373,7 +373,7 @@ def lineplot(xx, yy, ax=None, axtwin=None, xlabel=None, ylabel=None, title=None,
 
 kwargs_contourf = dict({
         # saturation of field values stuff
-        'minmax': None, 'posdef': False,         
+        'minmax': None, 'posdef': False, 'ignore1': None, 'ignore2': None,\
         # basic flags:
          'plotfield': True,\
         'plotcontours': True, 'ncontours': 8, 'contourlevels': None,\
@@ -381,7 +381,7 @@ kwargs_contourf = dict({
         'plotcbar': True, 'cbar_thick': 1/8, 'cbar_aspect': 1/10, 'cbar_prec': 2, 'cbar_no': 1, 'cmap': None, 'units': '', 'nosci': False, 'fontsize': default_labelsize,\
         # coordinate line stuff; do up to two "types"
         'vals1': np.array([]), 'func1': None, 'vals2': np.array([]), 'func2': None,\
-        'plotboundary': True, 'lw': 1.})
+                'plotboundary': True, 'lw': 1.})
 
 def my_contourf(xx, yy, field, fig, ax, **kwargs_supplied):
     # get local variables from "kwargs_contourf" (unless specified by user)
@@ -410,6 +410,8 @@ def my_contourf(xx, yy, field, fig, ax, **kwargs_supplied):
     func2 = kwargs.func2
     plotboundary = kwargs.plotboundary 
     lw = kwargs.lw
+    ignore1 = kwargs.ignore1
+    ignore2 = kwargs.ignore2
 
     # First things first, make sure Python does not modify any of the 
     # arrays it was passed
@@ -417,9 +419,9 @@ def my_contourf(xx, yy, field, fig, ax, **kwargs_supplied):
 
     # Get default bounds if not specified
     if minmax is None:
-        minmax = get_satvals(field, posdef=posdef)
+        minmax = get_satvals(field, posdef=posdef, ignore1=ignore1, ignore2=ignore2)
     elif minmax == 'fullrange':
-        minmax = get_satvals(field, posdef=posdef, fullrange=True)
+        minmax = get_satvals(field, posdef=posdef, fullrange=True, ignore1=ignore1, ignore2=ignore2)
 
     # plot the field, maybe
     # By default,

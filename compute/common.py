@@ -297,11 +297,21 @@ def rms(array):
     else:
         return np.sqrt(np.mean(array**2))
 
-def get_satvals(field, posdef=False, logscale=False, symlog=False,\
-        fullrange=False):
-    # Get good place to saturate array [field], assuming either
+def get_satvals(field, posdef=False, logscale=False, fullrange=False, ignore1=None, ignore2=None):
+    # Get good boundaries to saturate array [field], assuming either
     # posdef (True or False) and/or logscale (True or False)
-    # and/or symlog (True or False)
+    # first, possibly cut the array (ignore boundary vals)
+    print ("ignore1 = ", ignore1)
+    if not ignore1 is None:
+        n1, dummy = np.shape(field)
+        icut = int(n1*ignore1)
+        print ("n1 = ", n1)
+        print ("icut = ", icut)
+        field = np.copy(field[icut:n1-icut, :])
+    if not ignore2 is None:
+        dummy, n2 = np.shape(field)
+        icut = int(n2*ignore2)
+        field = np.copy(field[:, icut:n2-icut])
     if logscale:
         logfield = np.log(field)
         medlog = np.median(logfield)
@@ -318,7 +328,7 @@ def get_satvals(field, posdef=False, logscale=False, symlog=False,\
     elif posdef:
         sig = rms(field)
         minmax = 0., 3.*sig        
-    elif symlog or fullrange:
+    elif fullrange:
         maxabs = np.max(np.abs(field))
         minmax = -maxabs, maxabs       
     else:

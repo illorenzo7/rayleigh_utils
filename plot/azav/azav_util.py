@@ -21,6 +21,7 @@ from plotcommon import *
 def plot_azav(field, rr, cost, fig, ax, rbcz=None, minmaxrz=None, rvals=np.array([]), plotlatlines=True, latvals=np.array([]), lw=1.0, **kwargs_supplied):
     # **kwargs_supplied corresponds to my_contourf
     kwargs_default = {**kwargs_contourf}
+    kwargs_default['ignore1'] = 0.05 # ignore the boundaries in latitude
     kwargs = update_kwargs(kwargs_supplied, kwargs_default)
     kwargs = dotdict(kwargs)
 
