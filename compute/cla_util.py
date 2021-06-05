@@ -37,9 +37,10 @@ def read_clas(args):
     # first get basic info
     clas0 = dict({})
     clas0['routinename'] = args[0].split('/')[-1][:-3]
-    clas0['dirname'] = args[1]
-    clas0['datadir'] = clas0['dirname'] + '/data/'
-    clas0['plotdir'] = clas0['dirname'] + '/plots/'
+    dirname = args[1]
+    clas0['dirname'] = dirname
+    clas0['datadir'] = dirname + '/data/'
+    clas0['plotdir'] = dirname + '/plots/'
     clas0['saveplot'] = True
     clas0['showplot'] = True
     clas0['tag'] = ''
@@ -47,6 +48,16 @@ def read_clas(args):
     # see if magnetism is on
     magnetism = get_parameter(clas0['dirname'], 'magnetism')
     clas0['magnetism'] = magnetism
+
+    # get the spherical domain
+    ncheby, domain_bounds = get_domain_bounds(dirname)
+    rMIN = domain_bounds[0]/rsun
+    rMAX = domain_bounds[-1]/rsun
+    shell_depth = rMAX - rMIN
+    if ncheby == 2:
+        rBCZ = domain_bounds[1]/rsun
+        shell_depth_cz = rMAX - rBCZ
+        shell_depth_rz = rBCZ - rMIN
 
     # get the other arguments
     clas = dict({})
@@ -76,42 +87,25 @@ def read_clas(args):
         elif arg == '--tag':
             clas['tag'] = '_' + args[i+1]
 
-        # now complex args (like specifying clas['rvals'])
         elif arg == '--depths':
-            clas['rvals'] = ro - read_cla_vals(args, i)*d
+            clas['rvals'] = rMAX - read_cla_vals(args, i)*d
         elif arg == '--depthscz':
-            dcz = ro - rm
-            clas['rvals'] = ro - read_cla_vals(args, i)*dcz
+            clas['rvals'] = rMAX - read_cla_vals(args, i)*shell_depth_cz
         elif arg == '--depthirz':
-            drz = rm - ri
-            clas['rvals'] = rm - read_cla_vals(args, i)*drz
+            clas['rvals'] = rBCZ - read_cla_vals(args, i)*shell_depth_rz
         elif arg == '--rvals':
             if args[i+1] == 'default':
-                clas['rvals'] = get_default_rvals(clas0['dirname'])*rsun
+                clas['rvals'] = get_default_rvals(clas0['dirname'])
+            elif args[i+1] == 'all':
+                clas['rvals'] = 'all'
             else:
-                clas['rvals'] = read_cla_vals(args, i)*rsun
+                clas['rvals'] = read_cla_vals(args, i)
         elif arg == '--rvalscm':
-            clas['rvals'] = read_cla_vals(args, i)
+            clas['rvals'] = read_cla_vals(args, i)/rsun
         elif arg == '--rrange':
             rbot, rtop, nrvals = read_cla_vals(args, i)
-            rbot *= rsun
-            rtop *= rsun
             nrvals = int(nrvals)
             clas['rvals'] = np.linspace(rtop, rbot, nrvals)
-        elif arg == '--nrperzone':
-            rvals = np.array([], dtype='float')
-            nrperzone = int(args[i+1])
-            basedepths = np.arange(1.0/(nperzone+1.0), 1.0,\
-                    1.0/(nperzone+1.0))
-            for idomain in range(ndomains):
-                rbot = domain_bounds[ndomains - idomain - 1]
-                rtop = domain_bounds[ndomains - idomain]
-                if idomain == ndomains - 1:
-                    rvals_to_add = rtop - (rtop - rbot)*basedepths[:-1]
-                else:
-                    rvals_to_add = rtop - (rtop - rbot)*basedepths
-                rvals = np.hstack((rvals, rvals_to_add))
-            clas['rvals'] = rvals
 
         # specify a desired time
         elif arg in ['--iter', '--prot', '--tdt', '--sec']:
@@ -153,6 +147,4 @@ def read_clas(args):
             key = arg[2:]
             clas[key] = read_cla_vals(args, i)
 
-    if 'rvals' in clas:
-        clas['rvals'] /= rsun # always keep rvals in solar radius units
     return clas0, clas

@@ -58,7 +58,7 @@ margin_top_inches = 3/8 # larger top margin to make room for titles
 margin_bottom_inches = 1/2
 # larger bottom margin to make room for colorbar
 
-# Loop over rvals and make plots
+# get the rvals we want
 if irvals is None: # irvals hasn't been set yet
     if rvals is None:
         irvals = np.arange(a.nr) # loop over everything
@@ -66,6 +66,13 @@ if irvals is None: # irvals hasn't been set yet
         irvals = np.zeros_like(rvals, dtype='int')
         for i in range(len(rvals)):
             irvals[i] = np.argmin(np.abs(a.radius/rsun - rvals[i]))
+
+print ("varnames = ", varnames)
+
+# loop over rvals/vars and make plots
+for varname in varnames:
+    # get the desired field variable
+    vals = get_slice(a, varname, dirname=dirname)
 
 for irval in irvals:
     rval = a.radius[irval]/rsun

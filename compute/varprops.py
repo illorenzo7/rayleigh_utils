@@ -77,20 +77,20 @@ def get_varprops(varname):
     # get boolean values deriv, prime (az average subtracted), and sph
     # (sph average subtracted)
     deriv = False
-    prime = False
-    sph = False
+    primevar = False
+    sphvar = False
     if 'dr' in varname or 'dt' in varname or 'dp' in varname or 'dT' in varname or 'dP' in varname:
         deriv = True
     if varname[-6:] == '_prime': # prime appears at end to modify varname
-        prime = True
+        primevar = True
         varname = varname[:-6]
     elif varname[-4:] == '_sph':
-        sph = True
+        sphvar = True
         varname = varname[:-4]
-    return varname, deriv, prime, sph
+    return varname, deriv, primevar, sphvar
 
 def get_label(varname):
-    varname, deriv, prime, sph = get_varprops(varname)
+    varname, deriv, primevar, sphvar = get_varprops(varname)
     if deriv:
         derivdir = varname[-1]
         varname = varname[1:] # remove prepending d
@@ -107,9 +107,9 @@ def get_label(varname):
         rootname = varname[:-1]
         direction = varname[-1]
         label = rootlabels[rootname] + r'$_$' + direclabels[direction]
-    if prime:
+    if primevar:
         label += r'$^\prime$'
-    elif sph:
+    elif sphvar:
         label += r'$^{\prime\prime}$'
     if deriv:
         label = r'${\partial}$' + label + r'$/$' + r'${\partial}$' + direclabels[derivdir]

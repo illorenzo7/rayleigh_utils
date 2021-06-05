@@ -42,7 +42,9 @@ def get_slice(a, varname, dirname=None, j=0):
         cost = cost.reshape((nt, nt))
 
     # first get root variable name and store any modifiers
-    varname, deriv, prime, sph = get_varprops(varname)
+    print ("varname = ", varname)
+    varname, deriv, primevar, sphvar = get_varprops(varname)
+    print ("varname = ", varname)
 
     # get sine/cotangent from cosine
     sint = np.sin(np.arccos(cost))
@@ -66,9 +68,9 @@ def get_slice(a, varname, dirname=None, j=0):
             the_slice = cost*the_slice_r - sint*the_slice_t
     elif is_an_int(varname):
         the_slice = vals[..., lut[int(varname)]]
-    if prime:
+    if primevar:
         the_slice = prime(the_slice)
-    elif sph:
+    elif sphvar:
         gi = GridInfo(dirname + '/grid_info')
         tw = gi.tweights
         the_slice = prime_sph(the_slice, tw)

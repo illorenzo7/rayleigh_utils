@@ -582,3 +582,12 @@ def get_default_rvals(dirname):
             rvals_to_add = rtop - (rtop - rbot)*basedepths
         rvals = np.hstack((rvals, rvals_to_add))
     return rvals/rsun
+
+def get_default_varnames(dirname):
+    magnetism = get_parameter(dirname, 'magnetism')
+    varnames_default = ['vr', 'vt', 'vp', 'omr',\
+                'omt', 'omp', 's', 'p', 's_prime_sph']
+    if magnetism:
+        varnames_default += ['br', 'bt', 'bp', 'jr', 'jt', 'jp']
+    varnames_default = np.array(varnames_default)    
+    return varnames_default
