@@ -5,12 +5,8 @@
 # First modified by Loren Matilsky, 03/09/2018
 
 import numpy as np
-import matplotlib as mpl
-mpl.use('TkAgg')
 import matplotlib.pyplot as plt
 from matplotlib import colors
-plt.rcParams['mathtext.fontset'] = 'dejavuserif'
-csfont = {'fontname':'DejaVu Serif'}
 plt.rcParams['contour.negative_linestyle'] = 'solid'
 import sys, os
 sys.path.append(os.environ['rapl'])
@@ -18,7 +14,7 @@ sys.path.append(os.environ['raco'])
 from common import *
 from plotcommon import *
 
-def plot_azav(field, rr, cost, fig, ax, rbcz=None, minmaxrz=None, rvals=np.array([]), plotlatlines=True, latvals=np.array([]), lw=1.0, **kwargs_supplied):
+def plot_azav(field, rr, cost, fig, ax, rbcz=None, minmaxrz=None, rvals=np.array([]), plotlatlines=True, latvals=np.array([]), **kwargs_supplied):
     # **kwargs_supplied corresponds to my_contourf
     kwargs_default = {**kwargs_contourf}
     kwargs_default['ignore1'] = 0.05 # ignore the boundaries in latitude
@@ -88,7 +84,7 @@ def plot_azav(field, rr, cost, fig, ax, rbcz=None, minmaxrz=None, rvals=np.array
     else:
         latvals = np.array([])
 
-    my_contourf(xx_full, yy_full, field_full, fig, ax, plotfield=False, plotcontours=False, func1=rr_full, vals1=rvals, func2=tt_lat_full, vals2=latvals, lw=lw)
+    my_contourf(xx_full, yy_full, field_full, fig, ax, plotfield=False, plotcontours=False, func1=rr_full, vals1=rvals, func2=tt_lat_full, vals2=latvals, plotboundary=kwargs['plotboundary'])
 
 def plot_azav_half(field, rr, cost, sym='even', fig=None, ax=None,\
         cmap='RdYlBu_r', units='', minmax=None, posdef=False, logscale=False,\
@@ -468,14 +464,18 @@ def streamfunction(vr,vt,r,cost,order=0):
             
     return psi
 
-def plot_azav_grid(terms, rr, cost, maintitle=None, titles=None, fig_width_inches=None, sub_width_inches=None, ncol=6, cmap='RdYlBu_r', units='', minmax=None, posdef=False, logscale=False, symlog=False, plotcontours=True, plotfield=True, nlevs=10, levels=None, plotlatlines=False, rvals=[], fontsize=default_labelsize, cbar_aspect=1.0/20.0, showplot=False, plot_cbar=True, lw_scaling=1.0, cbar_scaling=1.0, linthresh=None, linscale=None, plotboundary=True, rbcz=None, minmaxrz=None, linthreshrz=None, linscalerz=None, nosci=False, cbar_prec=1, latav=False, tw=None, totsig=None):
+def plot_azav_grid(terms, rr, cost, maintitle=None, ncol=6, titles=None, sub_width_inches=2., rbcz=None, minmaxrz=None, rvals=np.array([]), plotlatlines=True, latvals=np.array([]), lw=1.0, latav=False, tw=None, totsig=None, **kwargs_supplied):
 
-    # may need to make units an array
-    nplots = len(terms)
-    if isinstance(units, str): # units is just one label for everybody
-        units = np.array([units]*nplots)
+    # **kwargs_supplied corresponds to my_contourf
+    kwargs_default = {**kwargs_contourf}
+    kwargs_default['ignore1'] = 0.05 # ignore the boundaries in latitude
+    kwargs = update_kwargs(kwargs_supplied, kwargs_default)
+    kwargs = dotdict(kwargs)
 
     # possibly sum some terms, based on totsig
+    nplots = len(terms)
+    if ncol > nplots:
+        ncol = nplots
     if not totsig is None:
         if totsig == 'sumrow':
             ncol_loc = ncol
@@ -486,7 +486,6 @@ def plot_azav_grid(terms, rr, cost, maintitle=None, titles=None, fig_width_inche
 
         iterm = 0
         titles = titles.tolist()
-        units = units.tolist()
         for irow in range(nrow_loc):
             tot_term = np.zeros_like(terms[0])
             for icol in range(ncol_loc):
@@ -496,20 +495,23 @@ def plot_azav_grid(terms, rr, cost, maintitle=None, titles=None, fig_width_inche
             # insert the tot_term at the correct place
             terms.insert(iterm, tot_term)
             titles.insert(iterm, 'tot')
-            units.insert(iterm, units[iterm - 2])
             iterm += 1
             nplots += 1
         # need to made ncol 1 bigger to include the tot term
         ncol += 1
 
-    # set up figure + axes
-    sub_margin_bottom_inches = 0.75*(2.0 - (rbcz is None)) 
-    if fig_width_inches is None and sub_width_inches is None:
-        sub_width_inches = 2.0
-    sub_aspect = 2.0
+    # figure parameters
+    sub_width_inches = 2.
+    sub_aspect = 2
+    margin_top_inches = 1 # larger top margin to make room for titles
+    margin_bottom_inches = 1/2
+    sub_margin_right_inches = 1/4
+    # larger bottom margin to make room for colorbar(s)
+    if not rbcz is None:
+        margin_bottom_inches *= 2
 
-    # Generate the figure of the correct dimensions
-    fig, axs, fpar = make_figure(nplots, sub_width_inches, sub_aspect, ncol=ncol, sub_margin_bottom_inches=sub_margin_bottom_inches)
+    # make plot
+    fig, axs, fpar = make_figure(nplots=nplots, ncol=ncol, sub_width_inches=sub_width_inches, sub_aspect=sub_aspect, margin_top_inches=margin_top_inches, margin_bottom_inches=margin_bottom_inches, sub_margin_right_inches=sub_margin_right_inches)
 
     # possibly latitudinal average figure as well
     if latav:
@@ -529,13 +531,13 @@ def plot_azav_grid(terms, rr, cost, maintitle=None, titles=None, fig_width_inche
         icol = iplot%fpar['ncol']
         irow = iplot//fpar['ncol']
         ax = axs[irow, icol]
-        plot_azav(terms[iplot], rr, cost, fig=fig, ax=ax, cmap=cmap, units=units[iplot], minmax=minmax, posdef=posdef, logscale=logscale, symlog=symlog, plotcontours=plotcontours, plotfield=plotfield, nlevs=nlevs, levels=levels, plotlatlines=plotlatlines, rvals=rvals, fontsize=fontsize, cbar_aspect=cbar_aspect, showplot=showplot, plot_cbar=plot_cbar, lw_scaling=lw_scaling, cbar_scaling=cbar_scaling, linthresh=linthresh, linscale=linscale, plotboundary=plotboundary, rbcz=rbcz, minmaxrz=minmaxrz, linthreshrz=linthreshrz, linscalerz=linscalerz, nosci=nosci, cbar_prec=cbar_prec)
+        plot_azav(terms[iplot], rr, cost, fig, ax, rbcz=rbcz, minmaxrz=minmaxrz, rvals=rvals, plotlatlines=plotlatlines, latvals=latvals, **kwargs)
 
         if not titles is None:
             title_loc = '(' + letters[iplot] + ') ' + titles[iplot]
         else:
             title_loc = '(' + letters[iplot] + ')'
-        ax.set_title(title_loc, loc='left', va='bottom', **csfont, fontsize=fontsize)
+        ax.set_title(title_loc, loc='left', va='bottom', fontsize=default_titlesize)
 
         # possibly plot the lat. average
         if latav:
@@ -544,10 +546,10 @@ def plot_azav_grid(terms, rr, cost, maintitle=None, titles=None, fig_width_inche
             lineplot(rr/rsun, av_term, ax=av_ax, xlabel=xlabel, ylabel=units[iplot], title=titles[iplot], xcut=rbcz, xvals=rvals, yminmax=minmax, yminmax2=minmaxrz)
 
     # Put the main title in upper left
-    fig.text(fpar['margin_left'] + fpar['sub_margin_left'], 1.0 - fpar['margin_top'], maintitle, ha='left', va='bottom', fontsize=fontsize, **csfont)
+    fig.text(fpar['margin_left'] + fpar['sub_margin_left'], 1.0 - fpar['margin_top'], maintitle, ha='left', va='bottom', fontsize=default_titlesize)
 
     if latav:
-        av_fig.text(av_fpar['margin_left'] + av_fpar['sub_margin_left'], 1.0 - av_fpar['margin_top'], maintitle + ' (lat. avg.)', ha='left', va='bottom', fontsize=fontsize, **csfont)
+        av_fig.text(av_fpar['margin_left'] + av_fpar['sub_margin_left'], 1.0 - av_fpar['margin_top'], maintitle + ' (lat. avg.)', ha='left', va='bottom', fontsize=default_titlesize)
 
     if latav:
         return fig, av_fig

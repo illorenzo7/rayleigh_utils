@@ -476,9 +476,9 @@ def my_contourf(xx, yy, field, fig, ax, **kwargs_supplied):
         #cbar.ax.tick_params(labelsize=fontsize)   
 
         if nosci:
-            cbar_label = ' ' + units
+            cbar_label = units
         else:
-            cbar_label = (r'$\ \times10^{%i}\ $' %exp) + units
+            cbar_label = (r'$\times10^{%i}\ $' %exp) + units
         # ticklabel format
         fmt = '%.' + str(cbar_prec) + 'f'
         if posdef:

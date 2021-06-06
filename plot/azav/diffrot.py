@@ -55,7 +55,7 @@ diffrot = Om*1.0e9/2/np.pi # rad/s --> nHz
 it0, it60 = np.argmin(np.abs(tt_lat)), np.argmin(np.abs(tt_lat - 60))
 Delta_Om = diffrot[it0, 0] - diffrot[it60, 0]
 
-# create plot
+# figure parameters
 nplots = 1
 sub_width_inches = 2.
 sub_aspect = 2

@@ -85,7 +85,7 @@ def read_clas(args):
         elif arg == '--nolat':
             clas['plotlatlines'] = False
         elif arg == '--tag':
-            clas['tag'] = '_' + args[i+1]
+            clas0['tag'] = '_' + args[i+1]
 
         elif arg == '--depths':
             clas['rvals'] = rMAX - read_cla_vals(args, i)*d
@@ -120,24 +120,20 @@ def read_clas(args):
                 if is_an_int(argvals):
                     clas['qvals'] = np.array([int(argvals)])
                     clas['titles'] = array_of_strings(clas['qvals'])
-                    clas['units'] = 'cgs'
                 elif argvals in var_indices: # it's a shorthand name
                     clas['qvals'] = argvals
                     clas['titles'] = argvals
-                    clas['units'] = 'cgs'
                 else:
                     the_qgroup = get_quantity_group(argvals, magnetism)
                     clas['qvals'] = the_qgroup['qvals']
                     clas['titles'] = the_qgroup['titles']
-                    clas['units'] = the_qgroup['units']
                     clas['ncol'] = the_qgroup['ncol']
-                    clas['tag'] = '_' + argvals
+                    clas0['tag'] = '_' + argvals
                     clas['totsig'] = the_qgroup['totsig']
             else:
                 # this was a list of integers
                 clas['qvals'] = read_cla_vals(args, i)
                 clas['titles'] = array_of_strings(clas['qvals'])
-                clas['units'] = 'cgs'
         elif arg == '--latrange':
             latmin, latmax, nlatvals = read_cla_vals(args, i)
             nlatvals = int(nlatvals)
