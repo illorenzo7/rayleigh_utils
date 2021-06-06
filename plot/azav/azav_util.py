@@ -477,9 +477,10 @@ def plot_azav_grid(terms, rr, cost, maintitle=None, ncol=6, titles=None, sub_wid
     if ncol > nplots:
         ncol = nplots
     if not totsig is None:
-        if totsig == 'sumrow':
-            ncol_loc = ncol
-            totsig = np.ones(ncol)
+        if np.isscalar(totsig):
+            if totsig == 'sumrow':
+                ncol_loc = ncol
+                totsig = np.ones(ncol)
         else:
             ncol_loc = len(totsig)
         nrow_loc = len(terms)//ncol_loc
