@@ -16,7 +16,6 @@ import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from common import *
-from cla_util import *
 
 # Find the relevant place to store the data, and create the directory if it
 # doesn't already exist
@@ -24,22 +23,16 @@ files = []
 dirname = sys.argv[1]
 datadir = dirname + '/data/' # data subdirectory of output directory
 
-# CLAs
-args = sys.argv
+delete_old_files = True # delete the partial files by default
+args = sys.argv[2:]
 nargs = len(args)
-clas0, clas = read_clas(args)
-dirname = clas0['dirname']
-tag = clas0['tag']
-if 'nodel' in clas:
-    nodel = True
-else:
-    nodel = False
 for i in range(nargs):
     arg = args[i]
+    if arg == '--nodel':
+        delete_old_files = False
     if arg[-4:] == '.pkl':
         files.append(arg)
 nfiles = len(files)
-
 dataname = get_dataname_from_file(files[0])
 print(make_bold('starting joined %s with' %dataname))
 print(files[0])
@@ -88,7 +81,7 @@ di_all['iters'] = iters
 di_all['iter1'] = iter1
 di_all['iter2'] = iter2
 
-savename = dataname + tag + '-' + str(iter1).zfill(8) +\
+savename = dataname + '-' + str(iter1).zfill(8) +\
         '_' + str(iter2).zfill(8) + '.pkl'
 savefile = datadir + savename
 f = open(savefile, 'wb')
@@ -98,7 +91,7 @@ print ("Saved joined trace in")
 print (make_bold(savefile))
 
 # only do this after proper save
-if not nodel:
+if delete_old_files:
     print (make_bold("deleting"))
     for i in range(nfiles):
         fname = files[i]

@@ -28,7 +28,6 @@ from common import *
 files = []
 dirname = sys.argv[1]
 datadir = dirname + '/data/'
-dirname_stripped = strip_dirname(dirname)
 
 delete_old_files = True # delete the partial files by default
 args = sys.argv[2:]
