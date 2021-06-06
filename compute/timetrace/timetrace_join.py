@@ -27,14 +27,15 @@ datadir = dirname + '/data/' # data subdirectory of output directory
 # CLAs
 args = sys.argv
 nargs = len(args)
-clas = read_clas(args)
-dirname = clas['dirname']
-tag = clas['tag']
-delete_old_files = True # delete the partial files by default
+clas0, clas = read_clas(args)
+dirname = clas0['dirname']
+tag = clas0['tag']
+if 'nodel' in clas:
+    nodel = True
+else:
+    nodel = False
 for i in range(nargs):
     arg = args[i]
-    if arg == '--nodel':
-        delete_old_files = False
     if arg[-4:] == '.pkl':
         files.append(arg)
 nfiles = len(files)
@@ -97,7 +98,7 @@ print ("Saved joined trace in")
 print (make_bold(savefile))
 
 # only do this after proper save
-if delete_old_files:
+if not nodel:
     print (make_bold("deleting"))
     for i in range(nfiles):
         fname = files[i]
