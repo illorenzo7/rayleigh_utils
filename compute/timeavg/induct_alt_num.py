@@ -66,9 +66,8 @@ if rank == 0:
 if rank == 0:
     # get the name of the run directory + CLAs
     args = sys.argv
-    nargs = len(args)
-    clas = read_clas(args)
-    dirname = clas['dirname']
+    clas0, clas = read_clas(args)
+    dirname = clas0['dirname']
 
     # Get the Rayleigh data directory
     radatadir1 = dirname + '/' + dataname1 + '/'
@@ -162,7 +161,7 @@ for i in range(my_nfiles):
         omr = mer.vals[:, :, :, mer.lut[301], j]
         omt = mer.vals[:, :, :, mer.lut[302], j]
         jr = mer.vals[:, :, :, mer.lut[1001], j]
-        jt = mer.vals[:, :, :, mer.lut[1002], j]
+        jt = mer.vals[:, :, :, mer.lut[1004], j]
 
         # mean v
         vr_m = a.vals[:, :, a.lut[1], j].reshape((1, nt, nr))
@@ -178,7 +177,7 @@ for i in range(my_nfiles):
         omr_m = a.vals[:, :, a.lut[301], j].reshape((1, nt, nr))
         omt_m = a.vals[:, :, a.lut[302], j].reshape((1, nt, nr))
         jr_m = a.vals[:, :, a.lut[1001], j].reshape((1, nt, nr))
-        jt_m = a.vals[:, :, a.lut[1002], j].reshape((1, nt, nr))
+        jt_m = a.vals[:, :, a.lut[1004], j].reshape((1, nt, nr))
 
         # full (poloidal) derivatives v
         dvrdr = drad(vr, rr)
