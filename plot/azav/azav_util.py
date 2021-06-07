@@ -505,14 +505,14 @@ def plot_azav_grid(terms, rr, cost, maintitle=None, ncol=6, titles=None, sub_wid
     sub_width_inches = 2.
     sub_aspect = 2
     margin_top_inches = 1 # larger top margin to make room for titles
-    margin_bottom_inches = 1/2
+    sub_margin_bottom_inches = 1/2
     sub_margin_right_inches = 1/4
     # larger bottom margin to make room for colorbar(s)
     if not rbcz is None:
-        margin_bottom_inches *= 2
+        sub_margin_bottom_inches *= 2
 
     # make plot
-    fig, axs, fpar = make_figure(nplots=nplots, ncol=ncol, sub_width_inches=sub_width_inches, sub_aspect=sub_aspect, margin_top_inches=margin_top_inches, margin_bottom_inches=margin_bottom_inches, sub_margin_right_inches=sub_margin_right_inches)
+    fig, axs, fpar = make_figure(nplots=nplots, ncol=ncol, sub_width_inches=sub_width_inches, sub_aspect=sub_aspect, margin_top_inches=margin_top_inches, sub_margin_bottom_inches=sub_margin_bottom_inches, sub_margin_right_inches=sub_margin_right_inches)
 
     # possibly latitudinal average figure as well
     if latav:
