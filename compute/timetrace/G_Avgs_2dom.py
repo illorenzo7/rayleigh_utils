@@ -13,6 +13,10 @@
 
 # initialize communication
 from mpi4py import MPI
+import sys, os
+sys.path.append(os.environ['raco'])
+from cla_util import *
+from common import rsun
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 
@@ -65,8 +69,9 @@ if rank == 0:
 # proc 0 reads the file lists and distributes them
 if rank == 0:
     # read the arguments
-    dirname = sys.argv[1]
-    args = sys.argv[2:]
+    args = sys.argv
+    clas0, clas = read_clas(args)
+    dirname = clas0['dirname']
 
     # Get the Rayleigh data directory
     radatadir = dirname + '/' + dataname + '/'
@@ -82,7 +87,11 @@ if rank == 0:
     gi = GridInfo(dirname + '/grid_info', '')
     rw = gi.rweights
     nr = gi.nr
-    ir_bcz = get_parameter(dirname, 'ncheby')[1] - 1
+    if 'rbcz' in clas:
+        rr = gi.radius
+        ir_bcz = np.argmin(np.abs(rr/rsun - clas['rbcz']))
+    else: # by default, separate the zones by domain_bounds
+        ir_bcz = get_parameter(dirname, 'ncheby')[1] - 1
     nr_cz = ir_bcz + 1
     nr_rz = nr - nr_cz
 
