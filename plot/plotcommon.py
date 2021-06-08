@@ -378,7 +378,7 @@ kwargs_contourf = dict({
          'plotfield': True,\
         'plotcontours': True, 'ncontours': 8, 'contourlevels': None,\
         # colorbar stuff
-        'plotcbar': True, 'cbar_thick': 1/8, 'cbar_aspect': 1/10, 'cbar_prec': 2, 'cbar_no': 1, 'cmap': None, 'units': '', 'nosci': False, 'fontsize': default_labelsize,\
+        'plotcbar': True, 'cbar_thick': 1/16, 'cbar_aspect': 1/20, 'cbar_prec': 2, 'cbar_no': 1, 'cmap': None, 'units': '', 'nosci': False, 'fontsize': default_labelsize,\
         # coordinate line stuff; do up to two "types"
         'vals1': np.array([]), 'func1': None, 'vals2': np.array([]), 'func2': None,\
                 'plotboundary': True, 'lw': 1.})
@@ -456,6 +456,8 @@ def my_contourf(xx, yy, field, fig, ax, **kwargs_supplied):
         fig_aspect = fig_height_inches/fig_width_inches
         cbar_height = cbar_thick/fig_height_inches
         cbar_width = cbar_height/cbar_aspect*fig_aspect
+        if cbar_width > 1: # don't let cbar be thicker than plot!
+            cbar_width = 1
 
         # centrally position colorbar underneath the axes
         ax_left, ax_right, ax_bottom, ax_top = axis_range(ax)
@@ -512,7 +514,7 @@ def my_contourf(xx, yy, field, fig, ax, **kwargs_supplied):
 
         # plot the contours
         ax.contour(xx, yy, field, contourlevels,\
-                colors=contourcolor, linewidths=contourlw)
+                colors=contourcolor, linewidths=contourlw, linestyles='--')
 
     # finally, plot some lines!
 
@@ -536,8 +538,8 @@ def my_contourf(xx, yy, field, fig, ax, **kwargs_supplied):
         if plotboundary:
             vals = [np.min(func)] + vals + [np.max(func)]
             vals = np.array(vals)
-            linewidths = [2*lw] + linewidths + [2*lw] # make boundary
-            # lines a a bit thicker
+            linewidths = [lw] + linewidths + [lw] # make boundary
+            # lines a a bit thicker... but not
 
         if len(vals) > 0:
             # check to make sure values are within (strictly) 
