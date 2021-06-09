@@ -1,17 +1,13 @@
 # Author: Loren Matilsky
 # Date created: 03/02/2019
-import matplotlib as mpl
-mpl.use('TkAgg')
 import matplotlib.pyplot as plt
-plt.rcParams['mathtext.fontset'] = 'dejavuserif'
-csfont = {'fontname':'DejaVu Serif'}
 import numpy as np
 import sys, os
 sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapl'])
 from common import *
 from plotcommon import axis_range
-from tl_util import plot_tl
+from tl_util import plot_tlr
 
 # Get the run and data directories
 dirname = sys.argv[1]
@@ -26,7 +22,7 @@ datadir = dirname + '/data/'
 
 # Find the time/latitude file(s) the data directory. If there are 
 # multiple, by default choose the one with widest range in the trace.
-the_file = get_widest_range_file(datadir, 'timelat')
+the_file = get_widest_range_file(datadir, 'timelat_default')
 
 # more defaults
 minmax = None
@@ -46,8 +42,8 @@ irvals = None # user can also specify -irvals '2 3 9', etc.
 navg = 1 # by default average over 1 AZ_Avgs instance (no average)
 # for navg > 1, a "sliding average" will be used.
 tag = '' # optional way to tag save directory
-lats = [0.]
-plottimes = None
+lats = np.array([0.])
+timevals = np.array([])
 
 # Get command-line arguments
 plotdir = None
@@ -65,7 +61,6 @@ for i in range(nargs):
             minmax.append(float(st))
     elif arg == '-usefile':
         the_file = args[i+1]
-        the_file = the_file.split('/')[-1]
     elif arg == '-rvals':
         strings = args[i+1].split()
         rvals = []
@@ -100,9 +95,9 @@ for i in range(nargs):
             lats.append(float(string))
     elif arg == '-times':
         strings = args[i+1].split()
-        plottimes = []
+        timevals = []
         for string in strings:
-            plottimes.append(float(string))
+            timevals.append(float(string))
 
 # Get plot directory and create if not already there
 if plotdir is None:
@@ -123,7 +118,7 @@ qvals = np.array(di['qvals'])
 
 # baseline time unit
 iter1, iter2 = get_iters_from_file(the_file)
-time_unit, time_label, rotation = get_time_unit(dirname)
+time_unit, time_label, rotation, simple_label = get_time_unit(dirname)
 
 br_index = np.argmin(np.abs(qvals - 801))
 bt_index = np.argmin(np.abs(qvals - 802))
@@ -144,8 +139,6 @@ if saveplot is None:
         saveplot = False
     else:
         saveplot = True
-if len(irvals) == 1:
-    showplot = True
 
 # Get raw traces of br, btheta, bphi
 br = vals[:, :, :, br_index]
@@ -254,15 +247,15 @@ for i in range(len(irvals)):
             subplot_width, subplot_height))
 
     # Plot evolution of each (zonally averaged) field component
-    plot_tl(br_loc, times, di_grid['tt_lat'], fig=fig, ax=ax1, navg=navg,\
+    plot_tlr(br_loc, times, di_grid['tt_lat'], fig, ax1, navg=navg,\
             minmax=minmax_br, units=units, xminmax=xminmax, yvals=lats,\
-            plottimes=plottimes)
-    plot_tl(bt_loc, times, di_grid['tt_lat'], fig=fig, ax=ax2, navg=navg,\
+            timevals=timevals)
+    plot_tlr(bt_loc, times, di_grid['tt_lat'], fig, ax2, navg=navg,\
             minmax=minmax_bt, units=units, xminmax=xminmax, yvals=lats,\
-            plottimes=plottimes)
-    plot_tl(bp_loc, times, di_grid['tt_lat'], fig=fig, ax=ax3, navg=navg,\
+            timevals=timevals)
+    plot_tlr(bp_loc, times, di_grid['tt_lat'], fig, ax3, navg=navg,\
             minmax=minmax_bp, units=units, xminmax=xminmax, yvals=lats,\
-            plottimes=plottimes)
+            timevals=timevals)
 
     # Label with the field components
     for irow in range(nrow):
@@ -277,9 +270,9 @@ for i in range(len(irvals)):
     ax2.set_xticklabels([])
 
     # Label x (time) axis
-    ax3.set_xlabel('time (' + time_label + ')', **csfont)
+    ax3.set_xlabel('time (' + time_label + ')')
     # Label y-axis (latitude in degrees)
-    ax2.set_ylabel('latitude (deg)', **csfont)
+    ax2.set_ylabel('latitude (deg)')
 
     # Put some useful information on the title
     averaging_time = (times[-1] - times[0])/len(times)*navg
@@ -288,7 +281,7 @@ for i in range(len(irvals)):
         title += '     ' + ('t_avg = %.1f Prot' %averaging_time)
     else:
         title += '     t_avg = none'
-    ax1.set_title(title, **csfont)
+    ax1.set_title(title)
 
     # Save the plot
     if saveplot:
@@ -298,6 +291,6 @@ for i in range(len(irvals)):
         plt.savefig(plotdir + savename, dpi=200)
 
     # Show the plot if only plotting at one latitude
-    if showplot:
-        plt.show()
+    #if clas0['showplot'] and len(irvals) == 1:
+    plt.show()
     plt.close()

@@ -27,7 +27,7 @@ except:
     magnetism = False # if magnetism wasn't specified, it must be "off"
 
 # SPECIFIC ARGS for etrace:
-kwargs_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'from0': False, 'log': False, 'nodyn': False, 'dynfrac': 0.5, 'times': None, 'czrz': False, 'inte': False})
+kwargs_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'nodyn': False, 'dynfrac': 0.5, 'times': None, 'czrz': False, 'inte': False})
 # plots two more columns with energies in CZ and RZ separately 
 # update these defaults from command-line
 kwargs = dotdict(update_kwargs(clas, kwargs_default))
@@ -42,7 +42,6 @@ ymax = kwargs.max
 coords = kwargs.coords
 ntot = kwargs.ntot
 xiter = kwargs.xiter
-from0 = kwargs.from0
 logscale = kwargs.log
 nodyn = kwargs.nodyn
 dynfrac = kwargs.dynfrac
@@ -86,10 +85,7 @@ else:
 if xminmax is None:
     # set xmin possibly
     if xmin is None:
-        if from0:
-            xmin = 0.0
-        else:
-            xmin = np.min(xaxis)
+        xmin = np.min(xaxis)
     # set xmax possibly
     if xmax is None:
         xmax = np.max(xaxis)

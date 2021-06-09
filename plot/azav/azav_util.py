@@ -22,7 +22,6 @@ def plot_azav(field, rr, cost, fig, ax, rbcz=None, minmaxrz=None, rvals=np.array
     kwargs = dotdict(kwargs)
 
     # make copy of field
-    field = np.copy(field)
     field_full = np.copy(field)
 
     # grid info
