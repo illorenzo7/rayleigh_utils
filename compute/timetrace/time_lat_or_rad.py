@@ -64,7 +64,8 @@ if rank == 0:
     # get CLAS
     args = sys.argv
     if not '--qvals' in args:
-        args += ['--qvals', 'default'] # clas will deal with --qvals
+        args += ['--qvals', 'b'] # clas will deal with --qvals
+        # default trace the magnetic field
     clas0, clas = read_clas(args)
     dirname = clas0['dirname']
     kwargs_default = dict({'rad': False, 'latvals': default_latvals, 'rvals': get_default_rvals(dirname)})
