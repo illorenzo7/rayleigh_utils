@@ -10,11 +10,7 @@
 # Import relevant modules
 import numpy as np
 import pickle
-import matplotlib as mpl
-mpl.use('TkAgg')
 import matplotlib.pyplot as plt
-plt.rcParams['mathtext.fontset'] = 'dejavuserif'
-csfont = {'fontname':'DejaVu Serif'}
 import sys, os
 sys.path.append(os.environ['raco'])
 from common import *
@@ -22,8 +18,8 @@ from cla_util import *
 
 # Get directory name and stripped_dirname for plotting purposes
 args = sys.argv
-clas = read_clas(args)
-dirname = clas['dirname']
+clas0, clas = read_clas(args)
+dirname = clas0['dirname']
 dirname_stripped = strip_dirname(dirname)
 
 # domain bounds
@@ -43,15 +39,10 @@ lats = [0., 15., 30., 45., 60., 75.]
 the_file = get_widest_range_file(datadir, 'AZ_Avgs')
 rvals = []
 
-# Read command-line arguments (CLAs)
-plotdir = None
-
 args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
-    if arg == '-plotdir':
-        plotdir = args[i+1]
     if arg == '-lats':
         lats_str = args[i+1].split()
         lats = []
@@ -169,8 +160,8 @@ mmax = np.max(maxes)
 mmin = np.min(mins)
 
 # Label the axes
-plt.xlabel(xlabel, fontsize=12, **csfont)
-plt.ylabel(r'$\Omega/2\pi \ \rm{(nHz)}$',fontsize=12, **csfont)
+plt.xlabel(xlabel, fontsize=12)
+plt.ylabel(r'$\Omega/2\pi \ \rm{(nHz)}$',fontsize=12)
 
 # Set the axis limits
 # x axis
@@ -198,7 +189,7 @@ time_string = ('t = %.1f to %.1f ' %(t1/time_unit, t2/time_unit))\
 
 plt.title(dirname_stripped + '\n' +\
         r'$\Omega(r,\theta),\ \rm{rslice},\ $' +\
-          time_string, **csfont)
+          time_string)
 plt.legend(title='latitude')
 
 # Get ticks everywhere
@@ -207,12 +198,12 @@ plt.tick_params(top=True, right=True, direction='in', which='both')
 plt.tight_layout()
 
 # save the figure
-plotdir = my_mkdir(clas['plotdir'] + 'azav/')
-savefile = plotdir + 'diffrot_rslice' + clas['tag'] + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
+plotdir = my_mkdir(clas0['plotdir'] + 'azav/')
+savefile = plotdir + 'diffrot_rslice' + clas0['tag'] + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
 
-if clas['saveplot']:
+if clas0['saveplot']:
     print ('saving figure at ' + savefile)
     plt.savefig(savefile, dpi=300)
-if clas['showplot']:
+if clas0['showplot']:
     plt.show()
 plt.close()
