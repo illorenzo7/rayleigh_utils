@@ -11,7 +11,7 @@ from common import *
 from plotcommon import *
 
 # plot time "lat or rad"
-def plot_tlr(field, times, yy, fig, ax, ycut=None, tminmax=None, tmin=None, tmax=None, minmax2=None, timevals=np.array([]), yvals=np.array([]), navg=None, **kwargs_supplied):
+def plot_tlr(field, times, yy, fig, ax, ycut=None, xminmax=None, xmin=None, xmax=None, minmax2=None, timevals=np.array([]), yvals=np.array([]), navg=None, **kwargs_supplied):
     # **kwargs_supplied corresponds to my_contourf
     kwargs_default = {**kwargs_contourf}
     kwargs = dotdict(update_kwargs(kwargs_supplied, kwargs_default))
@@ -33,22 +33,22 @@ def plot_tlr(field, times, yy, fig, ax, ycut=None, tminmax=None, tmin=None, tmax
         field_full = field_timeavg/navg
         times = times[over2:ntimes - over2]
 
-    # set tminmax if not set by user
-    if tminmax is None:
+    # set xminmax if not set by user
+    if xminmax is None:
         # set xmin possibly
-        if tmin is None:
-            tmin = np.min(times)
-        # set tmax possibly
-        if tmax is None:
-            tmax = np.max(times)
-        tminmax = tmin, tmax
+        if xmin is None:
+            xmin = np.min(times)
+        # set xmax possibly
+        if xmax is None:
+            xmax = np.max(times)
+        xminmax = xmin, xmax
 
-    itmin = np.argmin(np.abs(times - tminmax[0]))
-    itmax = np.argmin(np.abs(times - tminmax[1]))
+    ixmin = np.argmin(np.abs(times - xminmax[0]))
+    ixmax = np.argmin(np.abs(times - xminmax[1]))
 
     # Now shorten all the "x" arrays
-    times = times[itmin:itmax + 1]
-    field = field[itmin:itmax + 1]
+    times = times[ixmin:ixmax + 1]
+    field = field[ixmin:ixmax + 1]
 
     # Make 2D grids from times/yy
     times_2d_full, yy_2d_full = np.meshgrid(times, yy, indexing='ij')

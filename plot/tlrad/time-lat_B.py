@@ -8,104 +8,19 @@ sys.path.append(os.environ['rapl'])
 from common import *
 from plotcommon import axis_range
 from tl_util import plot_tlr
+from cla_util import *
 
-# Get the run and data directories
-dirname = sys.argv[1]
+# Get CLAs
+args = sys.argv
+clas0, clas = read_clas(args)
+dirname = clas0['dirname']
 dirname_stripped = strip_dirname(dirname)
 
-# domain bounds
-ncheby, domain_bounds = get_domain_bounds(dirname)
-ri = np.min(domain_bounds)
-ro = np.max(domain_bounds)
-d = ro - ri
-datadir = dirname + '/data/'
-
-# Find the time/latitude file(s) the data directory. If there are 
-# multiple, by default choose the one with widest range in the trace.
-the_file = get_widest_range_file(datadir, 'timelat_default')
-
-# more defaults
-minmax = None
-xminmax = None
-xmin = None
-xmax = None
-saveplot = None # turned off by default if saving one figure, can change
-# with -save option
-showplot = False # only show if plotting one figure
-labelbytime = False # by default label by first/last iteration number
-# not first/last time
-
-rvals = 'all'  # by default, plot all available time-lat levels
-    # user specifies another choice via -rvals '[val1] [val2] ... [valn]'
-    # where 'vals' have dimensional units in cm: 4.8e10, 5e10, etc.
-irvals = None # user can also specify -irvals '2 3 9', etc.
-navg = 1 # by default average over 1 AZ_Avgs instance (no average)
-# for navg > 1, a "sliding average" will be used.
-tag = '' # optional way to tag save directory
-lats = np.array([0.])
-timevals = np.array([])
-
-# Get command-line arguments
-plotdir = None
-
-args = sys.argv[2:]
-nargs = len(args)
-for i in range(nargs):
-    arg = args[i]
-    if arg == '-plotdir':
-        plotdir = args[i+1]
-    if arg == '-minmax':
-        strings = args[i+1].split()
-        minmax = []
-        for st in strings:
-            minmax.append(float(st))
-    elif arg == '-usefile':
-        the_file = args[i+1]
-    elif arg == '-rvals':
-        strings = args[i+1].split()
-        rvals = []
-        for j in range(len(strings)):
-            rvals.append(float(strings[j]))
-    elif arg == '-irvals':
-        irvals = []
-        strings = args[i+1].split()
-        for j in range(len(strings)):
-            irvals.append(int(strings[j]))
-    elif arg == '-navg':
-        navg = int(args[i+1])
-        if navg % 2 == 0:
-            print ("Please don't enter even values for navg!")
-            print ("Replacing navg = %i with navg = %i" %(navg, navg + 1))
-            navg += 1
-    elif arg == '-xminmax':
-        xminmax = float(args[i+1]), float(args[i+2])
-    elif arg == '-xmin':
-        xmin = float(args[i+1])
-    elif arg == '-xmax':
-        xmax = float(args[i+1])
-    elif arg == '-save':
-        saveplot = True
-    elif arg == '-tlabel':
-        labelbytime = True
-    elif arg == '-tag':
-        tag = '_' + args[i+1]
-    elif arg == '-lats':
-        strings = args[i+1].split()
-        for string in strings:
-            lats.append(float(string))
-    elif arg == '-times':
-        strings = args[i+1].split()
-        timevals = []
-        for string in strings:
-            timevals.append(float(string))
-
-# Get plot directory and create if not already there
-if plotdir is None:
-    plotdir = dirname + '/plots/time-lat' + tag + '_B/'
-    if labelbytime:
-        plotdir = dirname + '/plots/time-lat' + tag + '_B_tlabel/'
-    if not os.path.isdir(plotdir):
-        os.makedirs(plotdir)
+# get data
+if 'the_file' in clas: 
+    the_file = clas['the_file']
+else:
+    the_file = get_widest_range_file(clas0['datadir'], 'timelat_b')
 
 # Read in the time-latitude data (dictionary form)
 print ('Getting time-latitude trace from ' + the_file)
@@ -114,7 +29,7 @@ vals = di['vals']
 times = di['times']
 iters = di['iters']
 rvals_avail = di['samplevals']
-qvals = np.array(di['qvals'])
+qvals_avail = np.array(di['qvals'])
 
 # baseline time unit
 iter1, iter2 = get_iters_from_file(the_file)
@@ -125,20 +40,19 @@ bt_index = np.argmin(np.abs(qvals - 802))
 bp_index = np.argmin(np.abs(qvals - 803))
 
 # determine desired levels to plot
-if irvals is None:
-    if rvals == 'all':
-        irvals = np.arange(len(rvals_avail))
-    else:
-        irvals = []
-        for rval in rvals:
-            ir = np.argmin(np.abs(rvals_avail - rval))
-            irvals.append(ir)
-
-if saveplot is None:
-    if len(irvals) == 1:
-        saveplot = False
-    else:
-        saveplot = True
+if not 'irvals' in clas:
+    if not 'rvals' in clas:
+        irvals = np.array([0]) # just plot the top radius by default
+    else: # get irvals from rvals
+        rvals = clas['rvals']
+        if rvals == 'all':
+            irvals = np.arange(a.nr)
+        else:
+            irvals = np.zeros_like(rvals, dtype='int')
+            for i in range(len(rvals)):
+                irvals[i] = np.argmin(np.abs(rvals_avail - rvals[i]))
+else:
+    irvals = clas['irvals']
 
 # Get raw traces of br, btheta, bphi
 br = vals[:, :, :, br_index]
@@ -147,20 +61,6 @@ bp = vals[:, :, :, bp_index]
 
 # Normalize the time 
 times /= time_unit
-
-# Take into account if user specified xmin, xmax
-if xminmax is None:
-    xminmax = np.min(times), np.max(times)
-# Change JUST xmin or xmax, if desired
-if not xmin is None:
-    xminmax = xmin, xminmax[1]
-if not xmax is None:
-    xminmax = xminmax[0], xmax
-
-it1 = np.argmin(np.abs(times - xminmax[0]))
-it2 = np.argmin(np.abs(times - xminmax[1]))
-t1, t2 = times[it1], times[it2] # These begin times and end times
-        # will be used for labeling the plots
 
 # set figure dimensions
 subplot_width_inches = 6.5
@@ -205,15 +105,13 @@ for i in range(len(irvals)):
     bp_loc = bp[:, :, ir]
     
     # Make appropriate file name to save
-    if labelbytime:
-        savename = dirname_stripped + '_time-lat_B_' +\
-                ('Prot%05.0f-to-%05.0f_' %(t1, t2)) +\
-            ('rval%0.3f' %rval) + '.png'
-    else:
-        savename = dirname_stripped + '_time-lat_B_' +\
-                ('%08i_%08i_' %(iter1, iter2)) +\
-            ('rval%0.3f' %rval) + '.png'
+    savename = 'timelat_B_' + ('%08i_%08i_' %(iter1, iter2)) +\
+        ('rval%0.3f' %rval) + '.png'
 
+    if 'minmax' in clas:
+        minmax = clas['minmax']
+    else:
+        minmax = None
     if minmax is None:
         minmax_br = None
         minmax_bt = None
@@ -247,15 +145,12 @@ for i in range(len(irvals)):
             subplot_width, subplot_height))
 
     # Plot evolution of each (zonally averaged) field component
-    plot_tlr(br_loc, times, di_grid['tt_lat'], fig, ax1, navg=navg,\
-            minmax=minmax_br, units=units, xminmax=xminmax, yvals=lats,\
-            timevals=timevals)
-    plot_tlr(bt_loc, times, di_grid['tt_lat'], fig, ax2, navg=navg,\
-            minmax=minmax_bt, units=units, xminmax=xminmax, yvals=lats,\
-            timevals=timevals)
-    plot_tlr(bp_loc, times, di_grid['tt_lat'], fig, ax3, navg=navg,\
-            minmax=minmax_bp, units=units, xminmax=xminmax, yvals=lats,\
-            timevals=timevals)
+    plot_tlr(br_loc, times, di_grid['tt_lat'], fig, ax1,\
+            minmax=minmax_br)
+    plot_tlr(bt_loc, times, di_grid['tt_lat'], fig, ax2,\
+            minmax=minmax_bt)
+    plot_tlr(bp_loc, times, di_grid['tt_lat'], fig, ax3,\
+            minmax=minmax_bp)
 
     # Label with the field components
     for irow in range(nrow):
@@ -275,20 +170,23 @@ for i in range(len(irvals)):
     ax2.set_ylabel('latitude (deg)')
 
     # Put some useful information on the title
-    averaging_time = (times[-1] - times[0])/len(times)*navg
     title = dirname_stripped + '     ' + (r'$r/R_\odot\ =\ %0.3f$' %rval)
-    if navg > 1:
+    if 'navg' in clas:
+        navg = clas['navg']
+        averaging_time = (times[-1] - times[0])/len(times)*navg
         title += '     ' + ('t_avg = %.1f Prot' %averaging_time)
-    else:
+    else: 
         title += '     t_avg = none'
     ax1.set_title(title)
 
     # Save the plot
-    if saveplot:
+    if clas0['saveplot']:
+        # save the figure
+        plotdir = my_mkdir(clas0['plotdir'] + 'timelat/')
         print ('Saving the time-latitude plot at ')
         print (plotdir + savename)
         print ("=======================================")
-        plt.savefig(plotdir + savename, dpi=200)
+        #plt.savefig(plotdir + savename, dpi=200)
 
     # Show the plot if only plotting at one latitude
     #if clas0['showplot'] and len(irvals) == 1:
