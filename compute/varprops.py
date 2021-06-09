@@ -252,7 +252,7 @@ def get_quantity_group(tag, magnetism):
             r'$\left\langle B_r\right\rangle$']
         ncol = 3
         totsig = np.zeros(len(titles))
-        totsig[3] = tosig[4] = 1
+        totsig[3] = totsig[4] = 1
         di_out['totsig'] = totsig
 
     if tag == 'indrmean': # energy fluxes, r, mean
@@ -265,7 +265,7 @@ def get_quantity_group(tag, magnetism):
     r'$\left\langleB_r\right\rangle$']
         ncol = 3
         totsig = np.zeros(len(titles))
-        totsig[3] = tosig[4] = 1
+        totsig[3] = totsig[4] = 1
         di_out['totsig'] = totsig
 
     if tag == 'indt': # energy fluxes, theta
@@ -278,7 +278,7 @@ def get_quantity_group(tag, magnetism):
             r'$\left\langle B_\theta\right\rangle$']
         ncol = 3
         totsig = np.zeros(len(titles))
-        totsig[3] = tosig[4] = 1
+        totsig[3] = totsig[4] = 1
         di_out['totsig'] = totsig
 
     if tag == 'indtmean': # energy fluxes, theta, mean
@@ -291,7 +291,7 @@ def get_quantity_group(tag, magnetism):
             r'$\left\langleB_\theta\right\rangle$']
         ncol = 3
         totsig = np.zeros(len(titles))
-        totsig[3] = tosig[4] = 1
+        totsig[3] = totsig[4] = 1
         di_out['totsig'] = totsig
 
     if tag == 'indp': # energy fluxes, phi
@@ -305,7 +305,7 @@ def get_quantity_group(tag, magnetism):
         r'$\left\langle B_\phi\right\rangle$']
         ncol = 3
         totsig = np.zeros(len(titles))
-        totsig[3] = tosig[4] = 1
+        totsig[3] = totsig[4] = 1
         di_out['totsig'] = totsig
 
     if tag == 'indpmean': # energy fluxes, phi, mean
@@ -318,7 +318,7 @@ def get_quantity_group(tag, magnetism):
             r'$\left\langleB_\phi\right\rangle$']
         ncol = 3
         totsig = np.zeros(len(titles))
-        totsig[3] = tosig[4] = 1
+        totsig[3] = totsig[4] = 1
         di_out['totsig'] = totsig
 
     if tag == 'ke':

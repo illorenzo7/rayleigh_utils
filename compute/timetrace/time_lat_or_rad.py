@@ -61,18 +61,15 @@ if rank == 0:
 
 # proc 0 reads the file lists and distributes them, also the meta data
 if rank == 0:
-    # get the name of the run directory + CLAs
+    # get CLAS
     args = sys.argv
-    nargs = len(args)
-    clas = read_clas(args)
-    dirname = clas['dirname']
-
-    # get whether we are doing a lat. or rad. trace
-    rad = False
-    for i in range(nargs):
-        arg = args[i]
-        if arg == '--rad':
-            rad = True
+    if not '--qvals' in args:
+        args += ['--qvals', 'default'] # clas will deal with --qvals
+    clas0, clas = read_clas(args)
+    dirname = clas0['dirname']
+    kwargs_default = dict({'rad': False, 'latvals': default_latvals, 'rvals': get_default_rvals(dirname)})
+    kwargs = update_kwargs(clas, kwargs_default)
+    rad = kwargs['rad']
 
     # get the Rayleigh data directory
     radatadir = dirname + '/' + dataname + '/'
@@ -91,19 +88,13 @@ if rank == 0:
 
     # get desired quantities
     qvals = clas['qvals']
-    if qvals is None:
-        qvals = np.array([801, 802, 803])
 
     # get indices associated with desired sample vals
     if rad:
-        samplevals = clas['latvals']
-        if samplevals is None:
-            samplevals = default_latvals
+        samplevals = kwargs['latvals']
         sampleaxis = tt_lat
     else:
-        samplevals = clas['rvals']
-        if samplevals is None:
-            samplevals = get_default_rvals(dirname)
+        samplevals = kwargs['rvals']
         sampleaxis = rr/rsun
 
     isamplevals = []
@@ -227,7 +218,7 @@ if rank == 0:
         basename = 'timerad'
     else:
         basename = 'timelat'
-    savename = basename + clas['tag'] + '-' +\
+    savename = basename + clas0['tag'] + '-' +\
             file_list[0] + '_' + file_list[-1] + '.pkl'
     savefile = datadir + savename
 
