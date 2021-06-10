@@ -14,6 +14,7 @@ from plotcommon import *
 def plot_timey(field, times, yy, fig, ax, ycut=None, xminmax=None, xmin=None, xmax=None, minmax2=None, timevals=np.array([]), yvals=np.array([]), navg=None, **kwargs_supplied):
     # **kwargs_supplied corresponds to my_contourf
     kwargs_default = {**kwargs_contourf}
+    kwargs_default['plotcontours'] = False
     kwargs = dotdict(update_kwargs(kwargs_supplied, kwargs_default))
 
     # Work with copy of field (not actual field)

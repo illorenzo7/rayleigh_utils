@@ -16,10 +16,33 @@ args = sys.argv
 if not '--qvals' in args:
     args += ['--qvals', 'b'] # make default qvals = B field
 clas0, clas = read_clas(args)
+clas['plotcbar'] = False
 dirname = clas0['dirname']
 dirname_stripped = strip_dirname(dirname)
 
+# get grid info
+di_grid = get_grid_info(dirname)
+
 datatype = 'timelat'
+sampleaxis = di_grid['tt_lat']
+axislabel = 'latitude (deg)'
+samplelabel =  r'$r/R_\odot$' + ' = %.3f'
+rad = False
+lon = False
+if 'rad' in clas:
+    rad = True
+    datatype = 'timerad'
+    sampleaxis = di['rr']/rsun
+    axislabel = r'$r/R_\odot$'
+    samplelabel = 'lat = %.0f'
+elif 'lon' in clas:
+    lon = True
+    clat = clas['clat']
+    datatype = 'timelon_clatN%02i' %clat
+    sampleaxis = di_grid['lons']
+    axislabel = 'longitude (deg)'
+    samplelabel = 'lat = %.0f ' +  r'$r/R_\odot$' + ' = %.3f'
+
 dataname = datatype + clas0['tag']
 
 # get data
@@ -29,7 +52,7 @@ else:
     the_file = get_widest_range_file(clas0['datadir'], dataname)
 
 # Read in the data
-print ('Getting time-latitude trace from ' + the_file)
+print ('reading ' + the_file)
 di = get_dict(the_file)
 vals = di['vals']
 times = di['times']
@@ -52,16 +75,13 @@ for qval in make_array(clas['qvals']):
 sub_width_inches = 7.5
 sub_height_inches = 2.0
 margin_inches = 1./4.
-sub_margin_bottom_inches = 1 # space for x-axis label + colorbar
-margin_top_inches = 1./2.
-margin_left_inches = 5./8. # space for latitude label
+sub_margin_bottom_inches = 1/2 # space for x-axis label + colorbar
+margin_top_inches = 3/4
+margin_left_inches = 1/2 # space for latitude label
 nplots = len(terms)
 
 # make plot
 #fig, axs, fpar = make_figure(nplots=nplots, sub_width_inches=sub_width_inches, sub_height_inches=sub_height_inches, margin_left_inches=margin_left_inches, margin_top_inches=margin_top_inches, margin_bottom_inches=margin_bottom_inches)
-
-# get grid info
-di_grid = get_grid_info(dirname)
 
 # determine desired levels to plot
 if not 'isamplevals' in clas:
@@ -94,7 +114,7 @@ for isampleval in isamplevals:
     for iplot in range(nplots):
         ax = axs[iplot, 0]
         field = terms[iplot][:, :, isampleval]
-        plot_timey(field, times, di_grid['tt_lat'], fig, ax, **clas)
+        plot_timey(field, times, sampleaxis, fig, ax, **clas)
                 
         #  title the plot
         ax.set_title(clas['titles'][iplot], fontsize=default_titlesize)
@@ -111,14 +131,16 @@ for isampleval in isamplevals:
             ax.set_ylabel('latitude (deg)')
 
     # Put some useful information on the title
-    title = dirname_stripped + '     ' + (r'$r/R_\odot\ =\ %0.3f$' %sampleval)
+    if lon:
+        sampleval = (clat, sampleval)
+    maintitle = dirname_stripped + '\n' + (samplelabel %sampleval)
     if 'navg' in clas:
         navg = clas['navg']
         averaging_time = (times[-1] - times[0])/len(times)*navg
-        title += '     ' + ('t_avg = %.1f Prot' %averaging_time)
+        maintitle += '\n' + ('t_avg = %.1f Prot' %averaging_time)
     else: 
-        title += '     t_avg = none'
-    axs[0,0].set_title(title)
+        maintitle += '\nt_avg = none'
+    fig.text(fpar['margin_left'], 1 - fpar['margin_top'], maintitle, fontsize=default_titlesize, ha='left', va='bottom')
 
     # Save the plot
     if clas0['saveplot']:
