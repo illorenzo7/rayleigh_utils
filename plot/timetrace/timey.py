@@ -11,6 +11,9 @@ from cla_util import *
 from plotcommon import *
 from timey_util import plot_timey
 
+# Set fontsize
+fontsize = default_titlesize
+
 # Get CLAs
 args = sys.argv
 if not '--qvals' in args:
@@ -25,23 +28,17 @@ di_grid = get_grid_info(dirname)
 
 datatype = 'timelat'
 sampleaxis = di_grid['tt_lat']
-axislabel = 'latitude (deg)'
-samplelabel =  r'$r/R_\odot$' + ' = %.3f'
 rad = False
 lon = False
 if 'rad' in clas:
     rad = True
     datatype = 'timerad'
-    sampleaxis = di['rr']/rsun
-    axislabel = r'$r/R_\odot$'
-    samplelabel = 'lat = %.0f'
+    sampleaxis = di_grid['rr']/rsun
 elif 'lon' in clas:
     lon = True
     clat = clas['clat']
-    datatype = 'timelon_clatN%02i' %clat
+    datatype = 'timelon_clat' + lat_format(clat)
     sampleaxis = di_grid['lons']
-    axislabel = 'longitude (deg)'
-    samplelabel = 'lat = %.0f ' +  r'$r/R_\odot$' + ' = %.3f'
 
 dataname = datatype + clas0['tag']
 
@@ -94,62 +91,78 @@ if not 'isamplevals' in clas:
             samplevals = make_array(samplevals)
             isamplevals = np.zeros_like(samplevals, dtype='int')
             for i in range(len(samplevals)):
-                isamplevals[i] = np.argmin(np.abs(samplevals_avail - rsamplevals[i]))
+                isamplevals[i] = np.argmin(np.abs(samplevals_avail - samplevals[i]))
 else:
     isamplevals = make_array(clas['isamplevals'])
 
 # Loop over the desired levels and save plots
 for isampleval in isamplevals:
     sampleval = samplevals_avail[isampleval]
-    print('plotting sampleval = %0.3f (i = %02i)' %(sampleval, isampleval))
-   
-    # Make appropriate file name to save
-    savename = dataname + ('_%08i_%08i_' %(iter1, iter2)) +\
-        ('sampleval%0.3f' %sampleval) + '.png'
 
-    # make plot
-    fig, axs, fpar = make_figure(nplots=nplots, ncol=1, sub_width_inches=sub_width_inches, sub_height_inches=sub_height_inches, margin_left_inches=margin_left_inches, margin_right_inches=margin_right_inches, margin_top_inches=margin_top_inches, margin_bottom_inches=margin_bottom_inches)
-
-    for iplot in range(nplots):
-        ax = axs[iplot, 0]
-        field = terms[iplot][:, :, isampleval]
-        plot_timey(field, times, sampleaxis, fig, ax, **clas)
-                
-        #  title the plot
-        ax.set_title(clas['titles'][iplot], fontsize=default_titlesize)
-
-        # Turn the x tick labels off for the top strips
-        #if iplot < nplots - 1:
-        #    ax.set_xticklabels([])
-        # Put time label on bottom strip        
-        if iplot == nplots - 1:
-            ax.set_xlabel('time (' + time_label + ')')
-        # Put ylabel on middle strip
-        if iplot == nplots//2:
-            ax.set_ylabel(axislabel)
+    # set some labels 
+    axislabel = 'latitude (deg)'
+    samplelabel =  r'$r/R_\odot$' + ' = %.3f' %sampleval
+    position_tag = 'rval%.3f' %sampleval
+    if rad:
+        axislabel = r'$r/R_\odot$'
+        samplelabel = 'lat = ' + lat_format(sampleval)
+        position_tag = 'lat' + lat_format(sampleval)
+    elif lon:
+        axislabel = 'longitude (deg)'
+        samplelabel = 'lat = ' + lat_format(sampleval) + ' ' +  r'$r/R_\odot$' + ' = %.3f' %sampleval
+        position_tag = 'clat' + lat_format(clat) + '_rval%.3f' %sampleval
 
     # Put some useful information on the title
-    if lon:
-        sampleval = (clat, sampleval)
-    maintitle = dirname_stripped + '\n' + (samplelabel %sampleval)
+    maintitle = dirname_stripped + '\n' + samplelabel
     if 'navg' in clas:
         navg = clas['navg']
         averaging_time = (times[-1] - times[0])/len(times)*navg
         maintitle += '\n' + ('t_avg = %.1f Prot' %averaging_time)
     else: 
         maintitle += '\nt_avg = none'
-    fig.text(fpar['margin_left'], 1 - fpar['margin_top'], maintitle, fontsize=default_titlesize, ha='left', va='bottom')
+
+    print('plotting sampleval = %0.3f (i = %02i)' %(sampleval, isampleval))
+   
+    # Make appropriate file name to save
+    savename = dataname + ('_%08i_%08i_' %(iter1, iter2)) + position_tag + '.png'
+
+    # make plot
+    fig, axs, fpar = make_figure(nplots=nplots, ncol=1, sub_width_inches=sub_width_inches, sub_height_inches=sub_height_inches, margin_left_inches=margin_left_inches, margin_right_inches=margin_right_inches, margin_top_inches=margin_top_inches, margin_bottom_inches=margin_bottom_inches)
+
+    for iplot in range(nplots):
+        ax = axs[iplot, 0]
+        if rad:
+            field = terms[iplot][:, isampleval, :]
+        else:
+            field = terms[iplot][:, :, isampleval]
+        plot_timey(field, times, sampleaxis, fig, ax, fontsize=fontsize, **clas)
+                
+        #  title the plot
+        ax.set_title(clas['titles'][iplot], fontsize=fontsize)
+
+        # Turn the x tick labels off for the top strips
+        #if iplot < nplots - 1:
+        #    ax.set_xticklabels([])
+        # Put time label on bottom strip        
+        if iplot == nplots - 1:
+            ax.set_xlabel('time (' + time_label + ')', fontsize=fontsize)
+        # Put ylabel on middle strip
+        if iplot == nplots//2:
+            ax.set_ylabel(axislabel, fontsize=fontsize)
+
+    fig.text(fpar['margin_left'], 1 - fpar['margin_top'], maintitle, fontsize=fontsize, ha='left', va='bottom')
 
     # Save the plot
     if clas0['saveplot']:
         # save the figure
-        plotdir = my_mkdir(clas0['plotdir'] + 'timelat/')
+        plotdir = my_mkdir(clas0['plotdir'] + 'timey/')
         print ('Saving the time-latitude plot at ')
         print (plotdir + savename)
         print ("=======================================")
-        #plt.savefig(plotdir + savename, dpi=200)
+        plt.savefig(plotdir + savename, dpi=200)
 
     # Show the plot if only plotting at one latitude
-    #if clas0['showplot'] and len(isamplevals) == 1:
-    plt.show()
-    plt.close()
+    if clas0['showplot'] and len(isamplevals) == 1:
+        plt.show()
+    else:
+        plt.close()

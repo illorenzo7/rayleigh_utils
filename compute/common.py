@@ -1370,3 +1370,10 @@ def make_array(arr):
         return np.array([arr])
     else:
         return np.array(arr)
+
+def lat_format(latval):
+    if latval < 0:
+        hemisphere = 'S'
+    else:
+        hemisphere = 'N'
+    return hemisphere + '%02.0f' %np.abs(latval)
