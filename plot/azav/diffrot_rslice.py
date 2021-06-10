@@ -198,7 +198,7 @@ plt.tick_params(top=True, right=True, direction='in', which='both')
 plt.tight_layout()
 
 # save the figure
-plotdir = my_mkdir(clas0['plotdir'] + 'azav/')
+plotdir = my_mkdir(clas0['plotdir'])
 savefile = plotdir + 'diffrot_rslice' + clas0['tag'] + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
 
 if clas0['saveplot']:

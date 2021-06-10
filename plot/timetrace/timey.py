@@ -23,6 +23,9 @@ clas0, clas = read_clas(args)
 dirname = clas0['dirname']
 dirname_stripped = strip_dirname(dirname)
 
+# baseline time unit
+time_unit, time_label, rotation, simple_label = get_time_unit(dirname)
+
 # get grid info
 di_grid = get_grid_info(dirname)
 
@@ -44,6 +47,12 @@ elif 'lon' in clas:
         dlat = clas['dlat']
     else:
         dlat = 0
+    if 'om' in clas: # plot in frame rotating at om [nHz]
+        om = clas['om']
+        om0 = 1/time_unit*1e9 # frame rate, nHz
+    else:
+        om = None
+
     datatype = 'timelon_clat' + lat_format(clat) + '_dlat%03.0f' %dlat
     sampleaxis = di_grid['lons']
 
@@ -64,10 +73,21 @@ iters = di['iters']
 samplevals_avail = di['samplevals']
 qvals_avail = np.array(di['qvals'])
 
-# baseline time unit
+# time range
 iter1, iter2 = get_iters_from_file(the_file)
-time_unit, time_label, rotation, simple_label = get_time_unit(dirname)
 times /= time_unit
+
+# Subtract DR, if desired
+if lon:
+    if not om is None:
+        print ("plotting in rotating frame om = %.1f nHz" %om)
+        print ("compare this to frame rate    = %.1f nHz" %om0)
+        phi_deflections = (times*(om - om0)) % 1 # between zero and one
+        nphi = len(sampleaxis)
+        for it in range(len(times)):
+            phi_deflection = phi_deflections[it]
+            nroll = int(phi_deflection*nphi)
+            vals[it] = np.roll(vals[it], -nroll, axis=0)
 
 # get raw traces of desired variables
 terms = []
@@ -80,6 +100,8 @@ sub_width_inches = 7.5
 sub_height_inches = 2.0
 margin_bottom_inches = 1/2 # space for x-axis label
 margin_top_inches = 3/4
+if lon:
+    margin_top_inches =  1 + 1/4
 margin_left_inches = 5/8 # space for latitude label
 margin_right_inches = 7/8 # space for colorbar
 if 'ycut' in clas:
@@ -116,7 +138,12 @@ for isampleval in isamplevals:
         position_tag = 'lat' + lat_format(sampleval)
     elif lon:
         axislabel = 'longitude (deg)'
-        samplelabel = 'clat = ' + lat_format(clat) + ' ' +  r'$r/R_\odot$' + ' = %.3f' %sampleval
+        samplelabel = 'clat = ' + lat_format(clat) + '\n' +  r'$r/R_\odot$' + ' = %.3f' %sampleval
+        if not om is None:
+            samplelabel += '\n' + (r'$\Omega_{\rm{frame}}$' + ' = %.1f nHz ' + '\n' + r'$\Omega_{\rm{frame}} - \Omega_0$' + ' = %.2f nHz') %(om, om - om0)
+        else:
+            samplelabel += '\n' + r'$\Omega_{\rm{frame}} = \Omega_0$'
+
         position_tag = 'clat' + lat_format(clat) + '_rval%.3f' %sampleval
 
     # Put some useful information on the title
@@ -130,9 +157,6 @@ for isampleval in isamplevals:
 
     print('plotting sampleval = %0.3f (i = %02i)' %(sampleval, isampleval))
    
-    # Make appropriate file name to save
-    savename = dataname + ('_%08i_%08i_' %(iter1, iter2)) + position_tag + '.png'
-
     # make plot
     fig, axs, fpar = make_figure(nplots=nplots, ncol=1, sub_width_inches=sub_width_inches, sub_height_inches=sub_height_inches, margin_left_inches=margin_left_inches, margin_right_inches=margin_right_inches, margin_top_inches=margin_top_inches, margin_bottom_inches=margin_bottom_inches)
 
@@ -161,10 +185,19 @@ for isampleval in isamplevals:
 
     # Save the plot
     if clas0['saveplot']:
+        # Make appropriate file name to save
+
         # save the figure
-        plotdir = my_mkdir(clas0['plotdir'] + 'timey/')
-        print ('Saving the time-latitude plot at ')
-        print (plotdir + savename)
+        if lon:
+            plotdir = my_mkdir(clas0['plotdir'] + 'timelon/')
+            basename = datatype
+            if not om is None:
+                basename += '_om%.0f' %om
+        else:
+            plotdir = my_mkdir(clas0['plotdir'] + datatype + '/')
+            basename = datatype
+        savename = basename + ('_%08i_%08i_' %(iter1, iter2)) + position_tag + '.png'
+        print ("saving", plotdir + savename)
         print ("=======================================")
         plt.savefig(plotdir + savename, dpi=200)
 

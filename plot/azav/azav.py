@@ -69,10 +69,10 @@ if dataname == 'AZ_Avgs':
     lut = di['lut']
 
 # see if the user wants a separate plot of lat. averaged quantities
-if 'latav' in clas:
-    latav = True
+if 'shav' in clas:
+    shav = True
 else:
-    latav = False
+    shav = False
 
 terms = []
 for qval in qvals:
@@ -95,20 +95,23 @@ maintitle = dirname_stripped + '\n' +\
 # Generate the figure using standard routine
 di_grid = get_grid_info(dirname)
 figs = plot_azav_grid (terms, di_grid['rr'], di_grid['cost'], maintitle=maintitle, tw=di_grid['tw'], **clas)
-if latav:
+if shav:
     fig, av_fig = figs
 else:
     fig = figs
 
 # save the figure if tag was specified
-plotdir = my_mkdir(clas0['plotdir'] + 'azav/')
+if clas0['tag'] in ['v', 'b']: # these go in main directory
+    plotdir = my_mkdir(clas0['plotdir']):
+else:
+    plotdir = my_mkdir(clas0['plotdir'] + 'azav/')
 if not clas0['tag'] == '':
-    savefile = plotdir + clas0['tag'] + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
+    savefile = plotdir + clas0['tag'] + '_azav-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
     print ('saving figure at ' + savefile)
     fig.savefig(savefile, dpi=300)
 
-    if latav:
-        av_savefile = plotdir + clas0['tag'] + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '-latav' + '.png'
+    if shav:
+        av_savefile = plotdir + clas0['tag'] + '_shav-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
         print ('saving lat. avg. figure at ' + av_savefile)
         av_fig.savefig(av_savefile, dpi=300)
 
@@ -116,5 +119,5 @@ if clas0['showplot']:
     plt.show()
 
 plt.close(fig)
-if latav:
+if shav:
     plt.close(av_fig)

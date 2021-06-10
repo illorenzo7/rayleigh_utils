@@ -275,9 +275,8 @@ fig.text(margin_x, 1 - 0.5*margin_top, time_string,\
          ha='left', va='top', fontsize=fsize, **csfont)
 
 # save the figure
-plotdir = my_mkdir(clas['plotdir'] + 'azav/')
-savefile = plotdir + 'Bm' + clas['tag'] + '-' + str(iter1).zfill(8) +\
-    '_' + str(iter2).zfill(8) + '.png'
+plotdir = my_mkdir(clas['plotdir'])
+savefile = plotdir + 'diffrot_derivs' + clas['tag'] + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
 
 if clas['saveplot']:
     print ('saving figure at ' + savefile)
