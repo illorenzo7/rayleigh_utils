@@ -16,7 +16,7 @@ args = sys.argv
 if not '--qvals' in args:
     args += ['--qvals', 'b'] # make default qvals = B field
 clas0, clas = read_clas(args)
-clas['plotcbar'] = False
+#clas['plotcbar'] = False
 dirname = clas0['dirname']
 dirname_stripped = strip_dirname(dirname)
 
@@ -74,14 +74,13 @@ for qval in make_array(clas['qvals']):
 # set figure dimensions
 sub_width_inches = 7.5
 sub_height_inches = 2.0
-margin_inches = 1./4.
-sub_margin_bottom_inches = 1/2 # space for x-axis label + colorbar
+margin_bottom_inches = 1/2 # space for x-axis label
 margin_top_inches = 3/4
-margin_left_inches = 1/2 # space for latitude label
+margin_left_inches = 5/8 # space for latitude label
+margin_right_inches = 7/8 # space for colorbar
+if 'ycut' in clas:
+    margin_right_inches *= 2
 nplots = len(terms)
-
-# make plot
-#fig, axs, fpar = make_figure(nplots=nplots, sub_width_inches=sub_width_inches, sub_height_inches=sub_height_inches, margin_left_inches=margin_left_inches, margin_top_inches=margin_top_inches, margin_bottom_inches=margin_bottom_inches)
 
 # determine desired levels to plot
 if not 'isamplevals' in clas:
@@ -109,7 +108,7 @@ for isampleval in isamplevals:
         ('sampleval%0.3f' %sampleval) + '.png'
 
     # make plot
-    fig, axs, fpar = make_figure(nplots=nplots, ncol=1, sub_width_inches=sub_width_inches, sub_height_inches=sub_height_inches, margin_left_inches=margin_left_inches, margin_top_inches=margin_top_inches, sub_margin_bottom_inches=sub_margin_bottom_inches)
+    fig, axs, fpar = make_figure(nplots=nplots, ncol=1, sub_width_inches=sub_width_inches, sub_height_inches=sub_height_inches, margin_left_inches=margin_left_inches, margin_right_inches=margin_right_inches, margin_top_inches=margin_top_inches, margin_bottom_inches=margin_bottom_inches)
 
     for iplot in range(nplots):
         ax = axs[iplot, 0]
@@ -119,16 +118,15 @@ for isampleval in isamplevals:
         #  title the plot
         ax.set_title(clas['titles'][iplot], fontsize=default_titlesize)
 
-    # Turn the x tick labels off for the top strips
-    for iax in range(nplots):
-        ax = axs[iax, 0]
-        if iax < nplots - 1:
-            ax.set_xticklabels([])
-        if iax == nplots - 1:
+        # Turn the x tick labels off for the top strips
+        #if iplot < nplots - 1:
+        #    ax.set_xticklabels([])
+        # Put time label on bottom strip        
+        if iplot == nplots - 1:
             ax.set_xlabel('time (' + time_label + ')')
-        if iax == nplots//2:
-            # Label y-axis (latitude in degrees)
-            ax.set_ylabel('latitude (deg)')
+        # Put ylabel on middle strip
+        if iplot == nplots//2:
+            ax.set_ylabel(axislabel)
 
     # Put some useful information on the title
     if lon:

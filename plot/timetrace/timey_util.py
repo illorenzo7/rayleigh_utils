@@ -14,7 +14,11 @@ from plotcommon import *
 def plot_timey(field, times, yy, fig, ax, ycut=None, xminmax=None, xmin=None, xmax=None, minmax2=None, timevals=np.array([]), yvals=np.array([]), navg=None, **kwargs_supplied):
     # **kwargs_supplied corresponds to my_contourf
     kwargs_default = {**kwargs_contourf}
+    kwargs_default['plotboundary'] = False 
     kwargs_default['plotcontours'] = False
+    kwargs_default['cbar_pos'] = 'right'
+    kwargs_default['cbar_thick'] = 1/8
+    kwargs_default['allticksoff'] = False
     kwargs = dotdict(update_kwargs(kwargs_supplied, kwargs_default))
 
     # Work with copy of field (not actual field)
@@ -49,30 +53,27 @@ def plot_timey(field, times, yy, fig, ax, ycut=None, xminmax=None, xmin=None, xm
 
     # Now shorten all the "x" arrays
     times = times[ixmin:ixmax + 1]
-    field = field[ixmin:ixmax + 1]
+    field_full = field_full[ixmin:ixmax + 1]
 
     # Make 2D grids from times/yy
     times_2d_full, yy_2d_full = np.meshgrid(times, yy, indexing='ij')
 
     if ycut is None: # just plotting 1 domain
-        kwargs1 = dict(kwargs)
-        kwargs1['plotboundary'] = False 
         field1 = field_full
         times_2d1 = times_2d_full
         yy_2d1 = yy_2d_full
     else:
         iycut = np.argmin(np.abs(yy - ycut))
-        field1 = field[:, :iycut+1]
-        field2 = field[:, iycut+1:]
-        times_2d1 = times_2d[:, :iycut+1]
-        times_2d2 = times_2d[:, iycut+1:]
-        yy_2d1 = yy_2d[:, :iycut+1]
-        yy_2d2 = yy_2d[:, iycut+1:]
+        field1 = field_full[:, :iycut+1]
+        field2 = field_full[:, iycut+1:]
+        times_2d1 = times_2d_full[:, :iycut+1]
+        times_2d2 = times_2d_full[:, iycut+1:]
+        yy_2d1 = yy_2d_full[:, :iycut+1]
+        yy_2d2 = yy_2d_full[:, iycut+1:]
 
         # plot second field first
         # will need to change some kwargs:
         kwargs2 = dict(kwargs)
-        kwargs2['plotboundary'] = False 
         kwargs2['minmax'] = minmax2
         if kwargs.posdef:
             kwargs2['cmap'] = 'cividis'
@@ -82,10 +83,10 @@ def plot_timey(field, times, yy, fig, ax, ycut=None, xminmax=None, xmin=None, xm
         my_contourf(times_2d2, yy_2d2, field2, fig, ax, **kwargs2)
 
     # regardless, plot the first field
-    my_contourf(times_2d1, yy_2d1, field1, fig, ax, **kwargs1)
+    my_contourf(times_2d1, yy_2d1, field1, fig, ax, **kwargs)
 
     # potentially plot coordinate lines
-    my_contourf(times_2d_full, yy_2d_full, field_full, fig, ax, plotfield=False, plotcontours=False, func1=times_2d_full, vals1=timevals, func2=yy_2d_full, vals2=yvals, plotboundary=kwargs['plotboundary'])
+    my_contourf(times_2d_full, yy_2d_full, field_full, fig, ax, plotfield=False, plotcontours=False, func1=times_2d_full, vals1=timevals, func2=yy_2d_full, vals2=yvals, plotboundary=kwargs['plotboundary'], allticksoff=kwargs['allticksoff'])
 
     # Get ticks everywhere
     plt.sca(ax)
