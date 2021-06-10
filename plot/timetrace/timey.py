@@ -36,12 +36,19 @@ if 'rad' in clas:
     sampleaxis = di_grid['rr']/rsun
 elif 'lon' in clas:
     lon = True
-    clat = clas['clat']
-    datatype = 'timelon_clat' + lat_format(clat)
+    if 'clat' in clas:
+        clat = clas['clat']
+    else:
+        clat = 10
+    if 'dlat' in clas:
+        dlat = clas['dlat']
+    else:
+        dlat = 0
+    datatype = 'timelon_clat' + lat_format(clat) + '_dlat%03.0f' %dlat
     sampleaxis = di_grid['lons']
 
 dataname = datatype + clas0['tag']
-
+print ('dataname = ', dataname)
 # get data
 if 'the_file' in clas: 
     the_file = clas['the_file']
@@ -109,7 +116,7 @@ for isampleval in isamplevals:
         position_tag = 'lat' + lat_format(sampleval)
     elif lon:
         axislabel = 'longitude (deg)'
-        samplelabel = 'lat = ' + lat_format(sampleval) + ' ' +  r'$r/R_\odot$' + ' = %.3f' %sampleval
+        samplelabel = 'clat = ' + lat_format(clat) + ' ' +  r'$r/R_\odot$' + ' = %.3f' %sampleval
         position_tag = 'clat' + lat_format(clat) + '_rval%.3f' %sampleval
 
     # Put some useful information on the title

@@ -67,11 +67,13 @@ if rank == 0:
 
 # proc 0 reads the file lists and distributes them, also the meta data
 if rank == 0:
-    # read the arguments
+    # get CLAS
     args = sys.argv
-    clas = read_clas(args)
-    dirname = clas['dirname']
-    nargs = len(args)
+    if not '--qvals' in args:
+        args += ['--qvals', 'b'] # clas will deal with --qvals
+        # default trace the magnetic field
+    clas0, clas = read_clas(args)
+    dirname = clas0['dirname']
 
     # Get the Rayleigh data directory
     radatadir = dirname + '/' + dataname + '/'
@@ -80,30 +82,28 @@ if rank == 0:
     file_list, int_file_list, nfiles = get_file_lists(radatadir, args)
 
     # Set other defaults
-    clat = 10.
-    dlat = 0. # by default do NOT average over latitude
-
-    # reset parameters with CLAs
-    for i in range(nargs):
-        arg = args[i]
-        if arg == '--clat':
-            clat = float(args[i+1])
-        if arg == '--dlat':
-            dlat = float(args[i+1])
+    kwargs_default = dict({'clat': 10, 'dlat': 0, 'rvals': 'all', 'irvals': None})
+    kwargs = dotdict(update_kwargs(clas, kwargs_default))
+    clat = kwargs.clat
+    dlat = kwargs.dlat
+    rvals = kwargs.rvals
+    irvals = kwargs.irvals
 
     # Get metadata
     a0 = reading_func(radatadir + file_list[0], '')
     qvals = clas['qvals']
     nq = len(qvals)
-    rvals = clas['rvals']
-    if rvals is None:
-        rvals = a0.radius/rsun
-    nrvals = len(rvals)
-    irvals = []
-    for rval in rvals:
-        irvals.append(np.argmin(np.abs(a0.radius/rsun - rval)))
-    irvals = np.array(irvals)
-    # recompute the actual sample values we get
+
+    if irvals is None:
+        if np.isscalar(rvals):
+            if rvals == 'all':
+                rvals = a0.radius/rsun
+        nrvals = len(rvals)
+        irvals = []
+        for rval in rvals:
+            irvals.append(np.argmin(np.abs(a0.radius/rsun - rval)))
+        irvals = np.array(irvals)
+        # recompute the actual sample values we get
     rvals = a0.radius[irvals]/rsun
 
     # didn't put this earlier because it got messed up by the message
@@ -115,6 +115,9 @@ if rank == 0:
     di_grid = get_grid_info(dirname)
     ith1 = np.argmin(np.abs(di_grid['tt_lat'] - (clat - dlat/2.)))
     ith2 = np.argmin(np.abs(di_grid['tt_lat'] - (clat + dlat/2.)))
+    # recompute the actual clat and dlat
+    clat = (di_grid['tt_lat'][ith2] + di_grid['tt_lat'][ith2])/2
+    dlat = di_grid['tt_lat'][ith2] - di_grid['tt_lat'][ith2]
     tw_strip = di_grid['tw'][ith1:ith2+1]
     tw_strip /= np.sum(tw_strip)
     tw_strip = tw_strip.reshape((1, ith2 - ith1 + 1, 1, 1))
@@ -166,7 +169,7 @@ if rank == 0:
         %(nfiles, dataname, file_list[0], file_list[-1]))
     print ("clat = %+.1f" %clat)
     if ith2 - ith1 + 1 > 1:
-        print("dlat = %+.2f in latitude" %dlat)
+        print("dlat = %.2f in latitude" %dlat)
     else:
         print("dlat = 0.00 (not averaging in latitude)")
     print ("lat1 = %+.1f" %(clat - dlat/2.0))
@@ -234,20 +237,13 @@ comm.Barrier()
 # proc 0 saves the data
 if rank == 0:
     # create data directory if it doesn't already exist
-    datadir = dirname + '/data/'
+    datadir = clas0['datadir']
     if not os.path.isdir(datadir):
         os.makedirs(datadir)
 
     # Set the timetrace savename by the directory, what we are saving, 
     # and first and last iteration files for the trace (and optional tag)
-    if clat >= 0.:
-        hemisphere = 'N'
-    else:
-        hemisphere = 'S'
-        
-    savename = 'time_lon' + clas['tag'] + '_' +\
-            ('clat%s%02.0f_dlat%03.0f' %(hemisphere, np.abs(clat), dlat)) +\
-            '-' + file_list[0] + '_' + file_list[-1] + '.pkl'
+    savename = 'timelon' + '_clat' + lat_format(clat) + '_dlat%03.0f' %dlat + clas0['tag'] + '-' + file_list[0] + '_' + file_list[-1] + '.pkl'
     savefile = datadir + savename    
 
     # save the data
@@ -256,7 +252,7 @@ if rank == 0:
     vals = np.array(vals)
     times = np.array(times)
     iters = np.array(iters)
-    pickle.dump({'vals': vals, 'times': times, 'iters': iters, 'rvals': rvals, 'qvals': qvals, 'clat': clat, 'dlat': dlat}, f, protocol=4)
+    pickle.dump({'vals': vals, 'times': times, 'iters': iters, 'samplevals': rvals, 'qvals': qvals, 'clat': clat, 'dlat': dlat}, f, protocol=4)
     f.close()
     t2 = time.time()
     print (format_time(t2 - t1))
