@@ -1364,3 +1364,9 @@ def get_default_varnames(dirname):
         varnames_default += ['br', 'bt', 'bp', 'jr', 'jt', 'jp']
     varnames_default = np.array(varnames_default)    
     return varnames_default
+
+def make_array(arr):
+    if np.isscalar(arr):
+        return np.array([arr])
+    else:
+        return np.array(arr)

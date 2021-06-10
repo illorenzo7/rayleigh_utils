@@ -11,7 +11,7 @@ from common import *
 from plotcommon import *
 
 # plot time "lat or rad"
-def plot_ty(field, times, yy, fig, ax, ycut=None, xminmax=None, xmin=None, xmax=None, minmax2=None, timevals=np.array([]), yvals=np.array([]), navg=None, **kwargs_supplied):
+def plot_timey(field, times, yy, fig, ax, ycut=None, xminmax=None, xmin=None, xmax=None, minmax2=None, timevals=np.array([]), yvals=np.array([]), navg=None, **kwargs_supplied):
     # **kwargs_supplied corresponds to my_contourf
     kwargs_default = {**kwargs_contourf}
     kwargs = dotdict(update_kwargs(kwargs_supplied, kwargs_default))
