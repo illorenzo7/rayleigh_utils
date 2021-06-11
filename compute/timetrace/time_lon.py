@@ -187,7 +187,7 @@ my_iters = []
 my_vals = []
 
 for i in range(my_nfiles):
-    print ("rank ", rank, ": reading ", str(my_files[i]).zfill(8))
+    #print ("rank ", rank, ": reading ", str(my_files[i]).zfill(8))
     ta = time.time()
     a = reading_func(radatadir + str(my_files[i]).zfill(8), '')
     print ("rank ", rank, ": done reading ", str(my_files[i]).zfill(8))
