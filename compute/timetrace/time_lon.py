@@ -17,6 +17,7 @@
 ############################################################################
 
 # initialize communication
+import time
 from mpi4py import MPI
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
@@ -25,7 +26,6 @@ rank = comm.Get_rank()
 comm.Barrier()
 if rank == 0:
     # timing module
-    import time
     # info for print messages
     import sys, os
     sys.path.append(os.environ['raco'])
@@ -187,7 +187,12 @@ my_iters = []
 my_vals = []
 
 for i in range(my_nfiles):
+    print ("rank ", rank, ": reading ", str(my_files[i]).zfill(8))
+    ta = time.time()
     a = reading_func(radatadir + str(my_files[i]).zfill(8), '')
+    print ("rank ", rank, ": done reading ", str(my_files[i]).zfill(8))
+    tb = time.time()
+    print ("took %.3f" %(tb - ta))
     for j in range(a.niter):
         # space in the arrays
         # get desired values in the strip, careful not to change 
