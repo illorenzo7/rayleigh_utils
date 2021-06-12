@@ -407,9 +407,9 @@ def my_contourf(xx, yy, field, fig, ax, **kwargs_supplied):
     units = kwargs.units
     nosci = kwargs.nosci
     fontsize = kwargs.fontsize
-    vals1 = kwargs.vals1
+    vals1 = make_array(kwargs.vals1)
     func1 = kwargs.func1
-    vals2 = kwargs.vals2
+    vals2 = make_array(kwargs.vals2)
     func2 = kwargs.func2
     plotboundary = kwargs.plotboundary 
     allticksoff = kwargs.allticksoff
