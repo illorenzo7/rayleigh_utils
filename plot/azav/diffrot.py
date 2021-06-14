@@ -3,9 +3,9 @@
 # This script generates differential rotation plotted in the meridional plane 
 # for the Rayleigh run directory indicated by [dirname]. To use an AZ_Avgs file
 # different than the one associated with the longest averaging range, use
-# -usefile [complete name of desired AZ_Avgs file]
+# --usefile [complete name of desired AZ_Avgs file]
 # Saves plot in
-# [dirname]_diffrot_[first iter]_[last iter].npy
+# [dirname]_Om_[first iter]_[last iter].npy
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -22,12 +22,6 @@ args = sys.argv
 clas0, clas = read_clas(args)
 dirname = clas0['dirname']
 dirname_stripped = strip_dirname(dirname, wrap=True)
-
-# domain bounds
-ncheby, domain_bounds = get_domain_bounds(dirname)
-ri = np.min(domain_bounds)
-ro = np.max(domain_bounds)
-d = ro - ri
 
 # get data
 if 'the_file' in clas: 
@@ -49,11 +43,11 @@ xx = di_grid['xx']
 
 # Get differential rotation in the rotating frame. 
 Om = vp_av/xx
-diffrot = Om*1.0e9/2/np.pi # rad/s --> nHz
+Om *= 1.0e9/2/np.pi # rad/s --> nHz
 
 # DR contrast between 0 and 60 degrees
-it0, it60 = np.argmin(np.abs(tt_lat)), np.argmin(np.abs(tt_lat - 60))
-Delta_Om = diffrot[it0, 0] - diffrot[it60, 0]
+it0, it60_N, it60_S = np.argmin(np.abs(tt_lat)), np.argmin(np.abs(tt_lat - 60)), np.argmin(np.abs(tt_lat + 60))
+Delta_Om = Om[it0, 0] - (Om[it60_N, 0] + Om[it60_S, 0])/2
 
 # figure parameters
 nplots = 1
@@ -69,7 +63,7 @@ if 'rbcz' in clas:
 fig, axs, fpar = make_figure(nplots=nplots, sub_width_inches=sub_width_inches, sub_aspect=sub_aspect, margin_top_inches=margin_top_inches, margin_bottom_inches=margin_bottom_inches)
 ax = axs[0, 0]
 
-plot_azav (diffrot, rr, cost, fig, axs[0, 0], units='nHz', plotlatlines=False, nosci=True, cbar_prec=1, **clas)
+plot_azav (Om, rr, cost, fig, axs[0, 0], units='nHz', plotlatlines=False, nosci=True, cbar_prec=1, **clas)
         
 # make title 
 iter1, iter2 = get_iters_from_file(the_file)

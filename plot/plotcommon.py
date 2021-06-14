@@ -226,12 +226,7 @@ def make_figure(nplots=None, sub_width_inches=None, sub_aspect=None, sub_height_
 
     return fig, axs, fpar
 
-def lineplot(xx, yy, ax=None, axtwin=None, xlabel=None, ylabel=None, title=None, xvals=None, yvals=None, label=None, xlog=False, ylog=False, xminmax=None, yminmax=None, yminmax2=None, scatter=False, xcut=None, color=color_order[0], linestyle=style_order[0], marker=marker_order[0], lw=default_lw, s=default_s, showplot=False):
-
-    if ax is None: # probably called from command line
-        fig, axs, fpar = make_figure()
-        ax = axs[0,0]
-        showplot = True
+def lineplot(xx, yy, ax, xlabel=None, ylabel=None, title=None, xvals=None, yvals=None, label=None, xlog=False, ylog=False, xminmax=None, minmax=None, minmax2=None, scatter=False, xcut=None, color=color_order[0], linestyle=style_order[0], marker=marker_order[0], lw=default_lw, s=default_s, showplot=False):
 
     axs = [ax]
 
@@ -290,43 +285,21 @@ def lineplot(xx, yy, ax=None, axtwin=None, xlabel=None, ylabel=None, title=None,
             ax.set_yscale('log')
 
     if xminmax is None:
-        xminmax = ax.get_xlim()
-    else:
-        ax.set_xlim(xminmax)
+        xminmax = np.min(xx), np.max(xx)
+    ax.set_xlim(xminmax)
 
-    if xcut is None:
-        if yminmax is None:
-            yminmax = ax.get_ylim()
-    else:
-        if yminmax is None:
-            yminmax = ax.get_ylim()
-            maxabs = max(np.abs(yminmax[0]), np.abs(yminmax[1]))
-            yminmax = -maxabs, maxabs
-        if yminmax2 is None:
-            yminmax2 = ax2.get_ylim()
-            maxabs = max(np.abs(yminmax2[0]), np.abs(yminmax2[1]))
-            yminmax2 = -maxabs, maxabs
-    
-    ax.set_ylim(yminmax)
-    if not xcut is None:
-        ax2.set_ylim(yminmax2)
+    if not minmax is None:
+        ax.set_ylim(minmax)
+    if not minmax2 is None:
+        ax2.set_ylim(minmax)
 
-    # possibly append to xvals and yvals (0 point and xcut)
-    xvals_to_add = []
-    if xminmax[0] < 0.0 < xminmax[1]:
-        xvals_to_add.append(0.0)
+    xvals = make_array(xvals, tolist=True)
     if not xcut is None:
-        xvals_to_add.append(xx[ixcut])
-    xvals_to_add = np.array(xvals_to_add)
-    if xvals is None:
-        xvals = xvals_to_add
-    else:
-        xvals = np.array(xvals)
-        xvals = np.hstack((xvals, xvals_to_add))
-    if yvals is None:
-        yvals = np.array([0.0])
-    else:
-        yvals = np.hstack((yvals, np.array([0.0])))
+        xvals.append(xx[ixcut])
+        yvals = make_array(yvals, tolist=True)
+        yvals.append(0)
+        yvals = make_array(yvals)
+    xvals = make_array(xvals)
  
     npoints = 100
     xpoints = np.linspace(xminmax[0], xminmax[1], npoints)
@@ -366,10 +339,6 @@ def lineplot(xx, yy, ax=None, axtwin=None, xlabel=None, ylabel=None, title=None,
 
         # Get the y-axis in scientific notation
         plt.ticklabel_format(useMathText=True, axis='y', scilimits=(0,0))
-
-    if showplot:
-        plt.show()
-        return fig, ax
 
 kwargs_contourf = dict({
         # saturation of field values stuff

@@ -13,189 +13,89 @@ import pickle
 import matplotlib.pyplot as plt
 import sys, os
 sys.path.append(os.environ['raco'])
+sys.path.append(os.environ['rapl'])
 from common import *
+from plotcommon import *
 from cla_util import *
 
-# Get directory name and stripped_dirname for plotting purposes
+# Get CLAs
+kwargs = dict({'the_file': None, 'minmax': None, 'rvals': None, 'latvals': np.array([0., 15., 30., 45., 60., 75.])})
 args = sys.argv
 clas0, clas = read_clas(args)
+kwargs = dotdict(update_kwargs(clas, kwargs))
+
 dirname = clas0['dirname']
 dirname_stripped = strip_dirname(dirname)
+the_file = kwargs.the_file
+minmax = kwargs.minmax
+rvals = kwargs.rvals
+latvals = kwargs.latvals
 
-# domain bounds
-ncheby, domain_bounds = get_domain_bounds(dirname)
-ri = np.min(domain_bounds)
-ro = np.max(domain_bounds)
-d = ro - ri
-
-# Directory with data and plots, make the plotting directory if it doesn't
-# already exist    
-datadir = dirname + '/data/'
-
-# Set defaults
-rnorm = None
-minmax = None
-lats = [0., 15., 30., 45., 60., 75.]
-the_file = get_widest_range_file(datadir, 'AZ_Avgs')
-rvals = []
-
-args = sys.argv[2:]
-nargs = len(args)
-for i in range(nargs):
-    arg = args[i]
-    if arg == '-lats':
-        lats_str = args[i+1].split()
-        lats = []
-        for j in range(len(lats_str)):
-            lats.append(float(lats_str[j]))
-    elif arg == '-usefile':
-        the_file = args[i+1]
-        the_file = the_file.split('/')[-1]
-    elif arg == '-rnorm':
-        rnorm = float(args[i+1])
-    elif arg == '-minmax':
-        minmax = float(args[i+1]), float(args[i+2])
-    elif arg == '-depths':
-        strings = args[i+1].split()
-        for st in strings:
-            rval = ro - float(st)*d
-            rvals.append(rval)
-    elif arg == '-depthscz':
-        rm = domain_bounds[1]
-        dcz = ro - rm
-        strings = args[i+1].split()
-        for st in strings:
-            rval = ro - float(st)*dcz
-            rvals.append(rval)
-    elif arg == '-depthsrz':
-        rm = domain_bounds[1]
-        drz = rm - ri
-        strings = args[i+1].split()
-        for st in strings:
-            rval = rm - float(st)*drz
-            rvals.append(rval)
-    elif arg == '-rvals':
-        rvals = []
-        strings = args[i+1].split()
-        for st in strings:
-            rval = float(st)*rsun
-            rvals.append(rval)
-    elif arg == '-rvalscm':
-        rvals = []
-        strings = args[i+1].split()
-        for st in strings:
-            rval = float(st)
-            rvals.append(rval)
-
-# Get the spherical theta values associated with [lats]       
-lats = np.array(lats)
-colats = 90. - lats
-theta_vals = colats*np.pi/180.
-
-# Read in vavg data
-print ('Reading AZ_Avgs data from ' + the_file)
+# get data
+if the_file is None:
+    the_file = get_widest_range_file(clas0['datadir'], 'AZ_Avgs')
+print ('Getting data from ' + the_file)
 di = get_dict(the_file)
-
 vals = di['vals']
 lut = di['lut']
-iter1, iter2 = get_iters_from_file(the_file)
+vp_av = vals[:, :, lut[3]]
+
 # Get necessary grid info
 di_grid = get_grid_info(dirname)
-rr = di_grid['rr']
-cost = di_grid['cost']
+rr = di_grid['rr']/rsun
 tt_lat = di_grid['tt_lat']
-tt = di_grid['tt']
 xx = di_grid['xx']
-
-vr_av, vt_av, vp_av = vals[:, :, lut[1]], vals[:, :, lut[2]],\
-        vals[:, :, lut[3]]
-
-# Get the time range in sec
-t1 = translate_times(iter1, dirname, translate_from='iter')['val_sec']
-t2 = translate_times(iter2, dirname, translate_from='iter')['val_sec']
-
-# Get the baseline time unit
-time_unit = compute_Prot(dirname)
-time_label = r'$\rm{P_{rot}}$'
 
 # Get frame rate rotation and compute differential rotation in the 
 # lab frame. 
-Om0 = 2.*np.pi/time_unit
+Om0 = 2*np.pi/compute_Prot(dirname)
 Om = vp_av/xx + Om0
-Om *= 1.0e9/2/np.pi # convert from rad/s --> nHz
-Om0 *= 1.0e9/2/np.pi # convert from rad/s --> nHz
+Om *= 1e9/2/np.pi # convert from rad/s --> nHz
+Om0 *= 1e9/2/np.pi # convert from rad/s --> nHz
 
-# Create the plot
-fig = plt.figure()
-ax = fig.add_subplot(111)
+# DR contrast between 0 and 60 degrees
+it0, it60_N, it60_S = np.argmin(np.abs(tt_lat)), np.argmin(np.abs(tt_lat - 60)), np.argmin(np.abs(tt_lat + 60))
+Delta_Om = Om[it0, 0] - (Om[it60_N, 0] + Om[it60_S, 0])/2
 
-# Get extrema values for diff. rot.
-maxes = [] # Get the max-value of Omega for plotting purposes
-mins = []  # ditto for the min-value
-                                               
-# User can specify what to normalize the radius by
-# By default, normalize by the solar radius
-if rnorm is None:
-    rnorm = rsun
-    xlabel = r'$r/R_\odot$'
-else:
-    xlabel = r'r/(%.1e cm)' %rnorm
-rr_n = rr/rnorm
+# figure dimensions
+nplots = 1
+sub_width_inches = 4.5
+sub_height_inches = 3
+margin_top_inches = 1 # larger top margin to make room for title
+margin_bottom_inches = 1/2
+margin_right_inches = 2 # make room for legend
+
+fig, axs, fpar = make_figure(nplots=nplots, sub_width_inches=sub_width_inches, sub_height_inches=sub_height_inches, margin_top_inches=margin_top_inches, margin_left_inches=default_margin_ylabel, margin_right_inches=margin_right_inches, margin_bottom_inches=default_margin_xlabel)
+ax = axs[0, 0]
 
 # Plot rotation vs radius at the desired latitudes
-for theta_val in theta_vals:
-    diffs = np.abs(tt - theta_val)
-    index = np.argmin(diffs)
-    latitude = 90 - theta_val*180/np.pi
-    ax.plot(rr_n, Om[index,:],\
-            label=r'$\rm{%2.1f}$' %latitude + r'$^\circ$')
-    maxes.append(np.max(Om[index,:]))
-    mins.append(np.min(Om[index,:]))
+count = 0
+for latval in latvals:
+    ilat_N = np.argmin(np.abs(tt_lat - latval))
+    ilat_S = np.argmin(np.abs(tt_lat + latval))
+    latitude = (tt_lat[ilat_N] - tt_lat[ilat_S])/2 
+    # (this is the actual value we get)
+    Om_vs_r = (Om[ilat_N, :] + Om[ilat_S, :])/2
+    lineplot(rr, Om_vs_r, ax, label=r'$\rm{%2.1f}$' %latitude + r'$^\circ$', color=color_order[count], minmax=minmax)
+    count += 1
+
+# adjust y axis
+if minmax is None:
+    minmax = ax.get_ylim()
+    ax.set_ylim(minmax)
 
 # show the frame rotation rate
-plt.plot(rr_n, Om0 + np.zeros_like(rr_n), 'k--', label=r'$\Omega_0=%.1f\ \rm{nHz}$' %Om0)
+lineplot(rr, Om0 + np.zeros_like(rr), ax, color='k', linestyle='--', label=r'$\Omega_0=%.1f$' %Om0, xlabel=r'$r/R_\odot$', ylabel=r'$\Omega/2\pi$' + ' [nHz]', minmax=minmax, xvals=rvals)
 
-# Global extrema
-mmax = np.max(maxes)
-mmin = np.min(mins)
-
-# Label the axes
-plt.xlabel(xlabel, fontsize=12)
-plt.ylabel(r'$\Omega/2\pi \ \rm{(nHz)}$',fontsize=12)
-
-# Set the axis limits
-# x axis
-xmin, xmax = np.min(rr_n), np.max(rr_n)
-plt.xlim((xmin, xmax))
-# y axis
-if minmax is None:
-    ydiff = mmax - mmin
-    ybuffer = ydiff*0.05 # "Guard" the yrange of the plot with whitespace
-    minmax = mmin - ybuffer, mmax + ybuffer
-plt.ylim((minmax[0], minmax[1]))
-
-# Mark radii if desired
-if not rvals is None:
-    yvals = np.linspace(minmax[0], minmax[1], 100)
-    for rval in rvals:
-        rval_n = rval/rnorm
-        plt.plot(rval_n + np.zeros(100), yvals, 'k--')
-
-# Create a title    
-# Label averaging interval
-time_string = ('t = %.1f to %.1f ' %(t1/time_unit, t2/time_unit))\
-        + time_label + '\n' + (r'$\ (\Delta t = %.1f\ $'\
-        %((t2 - t1)/time_unit)) + time_label + ')'
-
-plt.title(dirname_stripped + '\n' +\
-        r'$\Omega(r,\theta),\ \rm{rslice},\ $' +\
-          time_string)
-plt.legend(title='latitude')
-
-# Get ticks everywhere
-plt.minorticks_on()
-plt.tick_params(top=True, right=True, direction='in', which='both')
-plt.tight_layout()
+# make title 
+fontsize = default_titlesize
+iter1, iter2 = get_iters_from_file(the_file)
+time_string = get_time_string(dirname, iter1, iter2) 
+the_title = dirname_stripped + '\n' +  r'$\Omega(r,\theta)$' + '\n' + time_string + '\n' + r'$\Delta\Omega_{\rm{60}}$' + (' = %.1f nHz' %Delta_Om)
+margin_x = fpar['margin_left'] + fpar['sub_margin_left']
+margin_y = default_margin/fpar['height_inches']
+fig.text(margin_x, 1 - margin_y, the_title, ha='left', va='top', fontsize=fontsize)
+plt.legend(title='latitude', fontsize=fontsize, loc='upper left', bbox_to_anchor=(1.02, 1))
 
 # save the figure
 plotdir = my_mkdir(clas0['plotdir'])

@@ -1365,11 +1365,17 @@ def get_default_varnames(dirname):
     varnames_default = np.array(varnames_default)    
     return varnames_default
 
-def make_array(arr):
-    if np.isscalar(arr):
-        return np.array([arr])
+def make_array(arr, tolist=False):
+    if arr is None: # don't change a None value
+        return None
+    elif np.isscalar(arr):
+        out = np.array([arr])
     else:
-        return np.array(arr)
+        out = np.array(arr)
+    if tolist:
+        return list(out)
+    else:
+        return out
 
 def lat_format(latval):
     if latval < 0:
