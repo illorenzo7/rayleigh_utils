@@ -23,6 +23,11 @@ clas0, clas = read_clas(args)
 dirname = clas0['dirname']
 dirname_stripped = strip_dirname(dirname)
 
+if 'ntot' in clas:
+    ntot = clas['ntot']
+else:
+    ntot = 2000
+
 # baseline time unit
 time_unit, time_label, rotation, simple_label = get_time_unit(dirname)
 
@@ -88,6 +93,15 @@ if lon:
             phi_deflection = phi_deflections[it]
             nroll = int(phi_deflection*nphi)
             vals[it] = np.roll(vals[it], -nroll, axis=0)
+
+# maybe thin data
+if not ntot == 'full':
+    print ("ntot = %i" %ntot)
+    print ("before thin_data: len(times) = %i" %len(times))
+    times = thin_data(times, ntot)
+    iters = thin_data(iters, ntot)
+    vals = thin_data(vals, ntot)
+    print ("after thin_data: len(times) = %i" %len(times))
 
 # get raw traces of desired variables
 terms = []
