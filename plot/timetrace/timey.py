@@ -131,11 +131,11 @@ for isampleval in isamplevals:
     # set some labels 
     axislabel = 'latitude (deg)'
     samplelabel =  r'$r/R_\odot$' + ' = %.3f' %sampleval
-    position_tag = 'rval%.3f' %sampleval
+    position_tag = '_rval%.3f' %sampleval
     if rad:
         axislabel = r'$r/R_\odot$'
         samplelabel = 'lat = ' + lat_format(sampleval)
-        position_tag = 'lat' + lat_format(sampleval)
+        position_tag = '_lat' + lat_format(sampleval)
     elif lon:
         axislabel = 'longitude (deg)'
         samplelabel = 'clat = ' + lat_format(clat) + '\n' +  r'$r/R_\odot$' + ' = %.3f' %sampleval
@@ -144,7 +144,7 @@ for isampleval in isamplevals:
         else:
             samplelabel += '\n' + r'$\Omega_{\rm{frame}} = \Omega_0$'
 
-        position_tag = 'clat' + lat_format(clat) + '_rval%.3f' %sampleval
+        position_tag = '_clat' + lat_format(clat) + '_rval%.3f' %sampleval
 
     # Put some useful information on the title
     maintitle = dirname_stripped + '\n' + samplelabel
@@ -190,13 +190,13 @@ for isampleval in isamplevals:
         # save the figure
         if lon:
             plotdir = my_mkdir(clas0['plotdir'] + 'timelon/')
-            basename = dataname
+            basename = 'timelon_%08i_%08i' %(iter1, iter2)
             if not om is None:
                 basename += '_om%.0f' %om
         else:
             plotdir = my_mkdir(clas0['plotdir'] + datatype + '/')
-            basename = dataname
-        savename = basename + ('_%08i_%08i_' %(iter1, iter2)) + position_tag + '.png'
+            basename = datatype + '_%08i_%08i' %(iter1, iter2)
+        savename = basename + clas0['tag'] + position_tag + '.png'
         print ("saving", plotdir + savename)
         print ("=======================================")
         plt.savefig(plotdir + savename, dpi=200)
