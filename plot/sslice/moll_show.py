@@ -95,7 +95,7 @@ for varname in varnames:
         rval = a.radius[irval]/rsun 
 
         # Display at terminal what we are plotting
-        savename = str(a.iters[0]).zfill(8) + '_' + varname + ('_rval%0.3f' %rval) + '.png' 
+        savename = 'moll_' + str(a.iters[0]).zfill(8) + '_' + varname + ('_rval%0.3f' %rval) + '.png' 
 
         # make plot
         fig, axs, fpar = make_figure(nplots=nplots, sub_width_inches=sub_width_inches, sub_aspect=sub_aspect, margin_top_inches=margin_top_inches, margin_bottom_inches=margin_bottom_inches)

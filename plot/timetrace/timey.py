@@ -190,12 +190,12 @@ for isampleval in isamplevals:
         # save the figure
         if lon:
             plotdir = my_mkdir(clas0['plotdir'] + 'timelon/')
-            basename = datatype
+            basename = dataname
             if not om is None:
                 basename += '_om%.0f' %om
         else:
             plotdir = my_mkdir(clas0['plotdir'] + datatype + '/')
-            basename = datatype
+            basename = dataname
         savename = basename + ('_%08i_%08i_' %(iter1, iter2)) + position_tag + '.png'
         print ("saving", plotdir + savename)
         print ("=======================================")
