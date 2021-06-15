@@ -336,9 +336,26 @@ def get_satvals(field, posdef=False, logscale=False, fullrange=False, ignore1=No
     minmax = minmax[0] - tinybit, minmax[1] + tinybit
     return minmax
 
-def buff_minmax(minval, maxval):
-    buff = buff_frac*(maxval - minval)
-    return minval - buff, maxval + buff
+def lineplot_minmax(profiles, logscale=False, legfrac=None):
+    mmin = np.infty
+    mmax = -np.infty
+    for profile in profiles:
+        mmin = min(np.min(profile), mmin)
+        mmax = max(np.max(profile), mmax)
+    if not legfrac is None: # legfrac is how much of plot (y dimensions)
+        # the legend should take up
+        buff_frac_min = legfrac/(1 - legfrac) + buff_frac
+    else:
+        buff_frac_min = buff_frac
+    if logscale:
+        yratio = mmax/mmin
+        ymin = mmin/(yratio**buff_frac_min)
+        ymax = mmax*(yratio**buff_frac)
+    else:
+        ydiff = mmax - mmin
+        ymin = mmin - buff_frac_min*ydiff
+        ymax = mmax + buff_frac*ydiff
+    return ymin, ymax
 
 def get_symlog_params(field, field_max=None):
     if field_max is None:

@@ -1,9 +1,6 @@
 # Author: Loren Matilsky
 # Date created: 06/08/2017
-import matplotlib as mpl
-mpl.use('TkAgg')
 import matplotlib.pyplot as plt
-import pickle
 import numpy as np
 import sys, os
 sys.path.append(os.environ['raco'])
@@ -31,6 +28,8 @@ kwargs_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': 
 # plots two more columns with energies in CZ and RZ separately 
 # update these defaults from command-line
 kwargs = dotdict(update_kwargs(clas, kwargs_default))
+
+fontsize = default_titlesize
 
 the_file = kwargs.the_file
 xminmax = kwargs.xminmax
@@ -149,33 +148,6 @@ if sep_czrz:
     vals_list.append(vals_rz)
     vals_list.append(vals_cz)
 
-# specialized function to get axis limits
-# take into account buffer for legend and leak labels
-def get_minmax(ax, logscale=False, withleg=False, nodyn=False, mes=None):
-    ymin, ymax = ax.get_ylim()
-    # possibly adjust ymin
-    if nodyn:
-        # Get minimum mag energy over last dynfrac of dynamo
-        rme_loc, tme_loc, pme_loc = mes
-        ntimes_loc = len(rme_loc)
-        it_frac = int(ntimes_loc*(1.0 - dynfrac))
-        minme = min(np.min(rme_loc[it_frac:]),\
-                np.min(tme_loc[it_frac:]), np.min(pme_loc[it_frac:]))
-        ymin = minme
-        buff = 0.05
-    if withleg:
-        buff = 0.3
-
-    # only need to adjust things for nodyn or withleg
-    if nodyn or withleg:
-        if logscale:
-            yratio = ymax/ymin
-            ymin = ymin/(yratio**buff)
-        else:
-            ydiff = ymax - ymin
-            ymin = ymin - buff*ydiff
-    return ymin, ymax
-
 for irow in range(3): # tot, fluc, mean
     for icol in range(ncol):
         vals = vals_list[icol]
@@ -221,6 +193,9 @@ for irow in range(3): # tot, fluc, mean
 
         # make line plots
         # KINETIC
+        # collect all the total energies together for min/max vals
+        all_e = [rke, tke, pke, ke]
+
         ax = axs[irow, icol]
         ax.plot(xaxis, ke, color_order[0],\
                 linewidth=lw_ke, label=r'$\rm{KE_{tot}}$')
@@ -232,10 +207,19 @@ for irow in range(3): # tot, fluc, mean
                 linewidth=lw_ke, label=r'$\rm{KE_\phi}$')
         # INTERNAL
         if plot_inte:
+            all_e += [inte]
             ax.plot(xaxis, inte, color_order[4], linewidth=lw_ke,\
                     label='INTE')
+
         # MAGNETIC
         if magnetism:
+            if nodyn:
+                tcut = tmin + dynfrac*(tmax - tmin)
+                itcut = np.argmin(np.abs(times - tcut))
+            else:
+                itcut = 0
+            all_e += [rme[itcut:], tme[itcut:], pme[itcut:], me[itcut:]]
+
             ax.plot(xaxis, me, color_order[0] + '--',\
                     linewidth=lw, label=r'$\rm{ME_{tot}}$')
             ax.plot(xaxis, rme, color_order[1] + '--',\
@@ -246,10 +230,10 @@ for irow in range(3): # tot, fluc, mean
                     linewidth=lw, label=r'$\rm{ME_\phi}$')
 
         if irow == 0 and icol == 0: # put a legend on the upper left axis
-            withleg = True
-            ax.legend(loc='lower left', ncol=3, fontsize=8, columnspacing=1)
+            legfrac = 1/4
+            ax.legend(loc='lower left', ncol=4, fontsize=0.8*fontsize, columnspacing=1)
         else:
-            withleg = False
+            legfrac = None
 
         # set the y limits
         minmax_loc = minmax
@@ -258,11 +242,7 @@ for irow in range(3): # tot, fluc, mean
                 # (will become default) if not in desired coordinates
                 minmax_loc = None
         if minmax_loc is None:
-            if nodyn: 
-                mes = rme, tme, pme
-            else:
-                mes = None
-            minmax_loc = get_minmax(ax, logscale=logscale, withleg=withleg, nodyn=nodyn, mes=mes)
+            minmax_loc = lineplot_minmax(all_e, logscale=logscale, legfrac=legfrac)
         if not ymin is None:
             minmax_loc = ymin, minmax_loc[1]
         if not ymax is None:
@@ -279,13 +259,12 @@ axs[0,icol_mid].set_xlim((xminmax[0], xminmax[1]))
 if xiter:
     axs[2,icol_mid].set_xlabel('iteration #')
 else:
-    axs[2,icol_mid].set_xlabel(r'$t\ ($' + time_label + r'$)$')
+    axs[2,icol_mid].set_xlabel('time [' + time_label + ']')
 
 # y labels
-fs = default_titlesize
-axs[0,0].set_ylabel('full energy', fontsize=fs)
-axs[1,0].set_ylabel('fluc energy', fontsize=fs)
-axs[2,0].set_ylabel('mean energy', fontsize=fs)
+axs[0,0].set_ylabel('full energy', fontsize=fontsize)
+axs[1,0].set_ylabel('fluc energy', fontsize=fontsize)
+axs[2,0].set_ylabel('mean energy', fontsize=fontsize)
 
 # Make titles
 titles = ["ALL ZONES", "RZ", "CZ"]
