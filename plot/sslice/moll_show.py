@@ -59,8 +59,9 @@ if kw.irvals is None: # irvals hasn't been set yet
 if kw.varnames is None: # varnames not specified yet
     kw.varnames = np.array(['vr'])
 else:
-    if kw.varnames[0] == 'all': # remember varnames is an array now
-        kw.varnames = get_default_varnames(dirname)
+    if np.isscalar(kw.varnames):
+        if kw.varnames == 'all': # remember varnames is an array now
+            kw.varnames = get_default_varnames(dirname)
 
 # plot dimensions
 nplots = 1

@@ -342,18 +342,15 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
     return im
 
 plot_moll_kwargs_default = dict({'clon': 0.})
+# change default plotcontours --> False in my_contourf
+my_contourf_kwargs_default['plotcontours'] = False
 plot_moll_kwargs_default.update(my_contourf_kwargs_default)
-# some things we need to change (no contours and boundary + 
-# coordinate lines are dealt with separately)
-plot_moll_kwargs_default['plotboundary'] = False
-plot_moll_kwargs_default['plotcontours'] = False
 
 def plot_moll(field_orig, costheta, fig, ax, **kwargs):
     kw = update_dict(plot_moll_kwargs_default, kwargs)
     find_bad_keys(plot_moll_kwargs_default, kwargs, 'plot_moll')
-    kw_my_contourf = {**plot_moll_kwargs_default}
-    del kw_my_contourf['clon']
-    kw_my_contourf = update_dict(kw_my_contourf, kwargs)
+    kw_my_contourf = update_dict(my_contourf_kwargs_default, kwargs)
+    kw_my_contourf.plotboundary = False # plot_moll handles the boundary
         
     # Shouldn't have to do this but Python is stupid with arrays
     field = np.copy(field_orig)    
@@ -405,7 +402,8 @@ def plot_moll(field_orig, costheta, fig, ax, **kwargs):
         ilat = np.argmin(np.abs(lat - parallel*np.pi/180.))
         ax.plot(xx[:, ilat], yy[:, ilat], 'k', linewidth=kw.lw)
 
-    # Plot outer boundary
-    psivals = np.linspace(0, 2*np.pi, 100)
-    xvals, yvals = 2.*np.cos(psivals), np.sin(psivals)
-    ax.plot(xvals, yvals, 'k', linewidth=1.5*kw.lw)
+    if kw.plotboundary:
+        # Plot outer boundary
+        psivals = np.linspace(0, 2*np.pi, 100)
+        xvals, yvals = 2.*np.cos(psivals), np.sin(psivals)
+        ax.plot(xvals, yvals, 'k', linewidth=1.5*kw.lw)

@@ -113,7 +113,7 @@ def read_clas(args):
         elif arg in ['--iter', '--prot', '--tdt', '--sec']:
             t_loc = float(args[i+1])
             di_trans = translate_times(t_loc, dirname, arg[2:])
-            clas['di_trans'] = di_trans
+            clas['val_iter'] = di_trans['val_iter']
         
         # desired quantity list (or group)
         elif arg == '--qvals':
