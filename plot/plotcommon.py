@@ -513,7 +513,7 @@ def my_contourf(xx, yy, field, fig, ax, **kwargs):
         if kw.plotboundary:
             vals = [np.min(func)] + vals + [np.max(func)]
             vals = np.array(vals)
-            linewidths = [lw] + linewidths + [lw] # make boundary
+            linewidths = [kw.lw] + linewidths + [kw.lw] # make boundary
             # lines a a bit thicker... maybe
             linestyles = ['-'] + linestyles + ['-'] # make boundary line 
             # solid

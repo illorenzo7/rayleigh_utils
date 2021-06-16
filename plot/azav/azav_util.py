@@ -14,12 +14,13 @@ sys.path.append(os.environ['raco'])
 from common import *
 from plotcommon import *
 
-def plot_azav(field, rr, cost, fig, ax, rbcz=None, minmaxrz=None, rvals=np.array([]), plotlatlines=True, latvals=np.array([]), **kwargs_supplied):
-    # **kwargs_supplied corresponds to my_contourf
-    kwargs_default = {**kwargs_contourf}
-    kwargs_default['ignore1'] = 0.05 # ignore the boundaries in latitude
-    kwargs = update_kwargs(kwargs_supplied, kwargs_default)
-    kwargs = dotdict(kwargs)
+plot_azav_kwargs_default = dict({'rbcz': None, 'minmaxrz': None, 'rvals': np.array([]), 'plotlatlines': True, 'latvals': np.array([])})
+plot_azav_kwargs_default.update(my_contourf_kwargs_default)
+
+def plot_azav(field, rr, cost, fig, ax,  **kwargs):
+    kw = update_dict(plot_azav_kwargs_default, kwargs)
+    find_bad_keys(plot_azav_kwargs_default, kwargs, 'plot_azav')
+    kw_my_contourf = update_dict(my_contourf_kwargs_default, kwargs)
 
     # make copy of field
     field_full = np.copy(field)
@@ -40,50 +41,50 @@ def plot_azav(field, rr, cost, fig, ax, rbcz=None, minmaxrz=None, rvals=np.array
     rr_full = rr_2d/rsun
     tt_lat_full = np.copy(tt_lat)
 
-    if rbcz is None: # just plotting 1 domain
+    if kw.rbcz is None: # just plotting 1 domain
         xx = xx_full
         yy = yy_full
         field = field_full
         rr_cz = rr_full
     else: # plotting two domains
-        irbcz = np.argmin(np.abs(rr/rsun - rbcz))
+        irbcz = np.argmin(np.abs(rr/rsun - kw.rbcz))
         fieldrz = field[:, irbcz+1:]
         field = field[:, :irbcz+1]
-        xx = (rr_2d*sint_2d)[:, :irbcz+1]/ro
-        yy = (rr_2d*cost_2d)[:, :irbcz+1]/ro
-        xxrz = (rr_2d*sint_2d)[:, irbcz+1:]/ro
-        yyrz = (rr_2d*cost_2d)[:, irbcz+1:]/ro
+        xx = (rr_2d*sint_2d)[:, :irbcz+1]/rmax
+        yy = (rr_2d*cost_2d)[:, :irbcz+1]/rmax
+        xxrz = (rr_2d*sint_2d)[:, irbcz+1:]/rmax
+        yyrz = (rr_2d*cost_2d)[:, irbcz+1:]/rmax
         rr_cz = rr_full[:, :irbcz+1]
         rr_rz = rr_full[:, irbcz+1:]
         tt_lat_rz = tt_lat[:, irbcz+1:]
         tt_lat = tt_lat[:, :irbcz+1]
 
-    if not rbcz is None: # plot the RZ field first
-        # will need to change some kwargs:
-        kwargsrz = dict(kwargs)
-        kwargsrz['minmax'] = minmaxrz
+    if not kw.rbcz is None: # plot the RZ field first
+        # will need to change some contourf kwargs:
+        kw_my_contourf_rz = dotdict({**kw_my_contourf})
+        kw_my_contourf_rz.minmax = kw.minmaxrz
         if kwargs['posdef']:
-            kwargsrz['cmap'] = 'cividis'
+            kw_my_contourf_rz.cmap = 'cividis'
         else:
-            kwargsrz['cmap'] = 'PuOr_r'    
-        kwargsrz['func1'] = rr_rz
-        kwargsrz['func2'] = tt_lat_rz
-        kwargsrz['cbar_no'] = 2
-        my_contourf(xxrz, yyrz, fieldrz, fig, ax, **kwargsrz)
+            kw_my_contourf_rz.cmap = 'PuOr_r'    
+        kw_my_contourf_rz.func1 = rr_rz
+        kw_my_contourf_rz.func2 = tt_lat_rz
+        kw_my_contourf_rz.cbar_no = 2
+        my_contourf(xxrz, yyrz, fieldrz, fig, ax, **kw_my_contourf_rz)
 
     # regardless, plot the CZ field
-    kwargs.func1 = rr_cz
-    kwargs.func2 = tt_lat
-    my_contourf(xx, yy, field, fig, ax, **kwargs)
+    kw_my_contourf.func1 = rr_cz
+    kw_my_contourf.func2 = tt_lat
+    my_contourf(xx, yy, field, fig, ax, **kw_my_contourf)
 
     # potentially plot coordinate lines
-    if plotlatlines:
-        if len(latvals) == 0:
-            latvals = np.arange(-60., 90., 30.)
+    if kw.plotlatlines:
+        if len(kw.latvals) == 0:
+            kw.latvals = np.arange(-60., 90., 30.)
     else:
-        latvals = np.array([])
+        kw.latvals = np.array([])
 
-    my_contourf(xx_full, yy_full, field_full, fig, ax, plotfield=False, plotcontours=False, func1=rr_full, vals1=rvals, func2=tt_lat_full, vals2=latvals, plotboundary=kwargs['plotboundary'])
+    my_contourf(xx_full, yy_full, field_full, fig, ax, plotfield=False, plotcontours=False, func1=rr_full, vals1=kw.rvals, func2=tt_lat_full, vals2=kw.latvals, plotboundary=kw.plotboundary)
 
 def plot_azav_half(field, rr, cost, sym='even', fig=None, ax=None,\
         cmap='RdYlBu_r', units='', minmax=None, posdef=False, logscale=False,\

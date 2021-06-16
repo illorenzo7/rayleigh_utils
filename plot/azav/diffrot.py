@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
-from azav_util import plot_azav
+from azav_util import *
 from common import *
 from plotcommon import *
 from cla_util import *
@@ -23,13 +23,26 @@ clas0, clas = read_clas(args)
 dirname = clas0['dirname']
 dirname_stripped = strip_dirname(dirname, wrap=True)
 
+# allowed args + defaults (mostly fig params)
+diffrot_kwargs_default = dict({'the_file': None, 'nplots': 1, 'sub_width_inches': 2, 'sub_aspect': 2, 'margin_top_inches': 1, 'margin_bottom_inches': 1/2})
+
+plot_azav_kwargs_default['plotlatlines'] = False
+plot_azav_kwargs_default['units'] = 'nHz'
+plot_azav_kwargs_default['nosci'] = True
+plot_azav_kwargs_default['cbar_prec'] = 1
+
+diffrot_kwargs_default.update(plot_azav_kwargs_default)
+kw = update_dict(diffrot_kwargs_default, clas)
+find_bad_keys(diffrot_kwargs_default, clas, 'diffrot', justwarn=True)
+kw_plot_azav = update_dict(plot_azav_kwargs_default, clas)
+if not kw.rbcz is None:  # need room for two colorbars
+    kw.margin_bottom_inches *= 2
+
 # get data
-if 'the_file' in clas: 
-    the_file = clas['the_file']
-else:
-    the_file = get_widest_range_file(clas0['datadir'], 'AZ_Avgs')
-print ('Getting data from ' + the_file)
-di = get_dict(the_file)
+if kw.the_file is None:
+    kw.the_file = get_widest_range_file(clas0['datadir'], 'AZ_Avgs')
+print ('Getting data from ' + kw.the_file)
+di = get_dict(kw.the_file)
 vals = di['vals']
 lut = di['lut']
 vp_av = vals[:, :, lut[3]]
@@ -49,24 +62,14 @@ Om *= 1.0e9/2/np.pi # rad/s --> nHz
 it0, it60_N, it60_S = np.argmin(np.abs(tt_lat)), np.argmin(np.abs(tt_lat - 60)), np.argmin(np.abs(tt_lat + 60))
 Delta_Om = Om[it0, 0] - (Om[it60_N, 0] + Om[it60_S, 0])/2
 
-# figure parameters
-nplots = 1
-sub_width_inches = 2.
-sub_aspect = 2
-margin_top_inches = 1 # larger top margin to make room for titles
-margin_bottom_inches = 1/2
-# larger bottom margin to make room for colorbar(s)
-if 'rbcz' in clas:
-    margin_bottom_inches *= 2
-
 # make plot
-fig, axs, fpar = make_figure(nplots=nplots, sub_width_inches=sub_width_inches, sub_aspect=sub_aspect, margin_top_inches=margin_top_inches, margin_bottom_inches=margin_bottom_inches)
+fig, axs, fpar = make_figure(nplots=kw.nplots, sub_width_inches=kw.sub_width_inches, sub_aspect=kw.sub_aspect, margin_top_inches=kw.margin_top_inches, margin_bottom_inches=kw.margin_bottom_inches)
 ax = axs[0, 0]
 
-plot_azav (Om, rr, cost, fig, axs[0, 0], units='nHz', plotlatlines=False, nosci=True, cbar_prec=1, **clas)
-        
+plot_azav (Om, rr, cost, fig, ax, **kw_plot_azav)
+
 # make title 
-iter1, iter2 = get_iters_from_file(the_file)
+iter1, iter2 = get_iters_from_file(kw.the_file)
 time_string = get_time_string(dirname, iter1, iter2) 
 margin_x = fpar['margin_left'] + fpar['sub_margin_left']
 margin_y = default_margin/fpar['height_inches']
