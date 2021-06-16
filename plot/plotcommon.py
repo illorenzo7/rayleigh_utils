@@ -226,11 +226,16 @@ def make_figure(nplots=None, sub_width_inches=None, sub_aspect=None, sub_height_
 
     return fig, axs, fpar
 
-def lineplot(xx, yy, ax, xlabel=None, ylabel=None, title=None, xvals=None, yvals=None, label=None, xlog=False, ylog=False, xminmax=None, minmax=None, minmax2=None, scatter=False, xcut=None, color=color_order[0], linestyle=style_order[0], marker=marker_order[0], lw=default_lw, s=default_s, showplot=False):
+def lineplot(xx, yy, ax, xlabel=None, ylabel=None, title=None, xvals=np.array([]), yvals=np.array([]), label=None, xlog=False, logscale=False, xminmax=None, minmax=None, minmax2=None, scatter=False, xcut=None, color=color_order[0], linestyle=style_order[0], marker=marker_order[0], lw=default_lw, s=default_s, showplot=False):
 
     axs = [ax]
 
+    # convert xvals, yvals to lists
+    xvals = make_array(xvals, tolist=True)
+    yvals = make_array(yvals, tolist=True)
+
     if not xcut is None:
+        symmetrize = True
         ax2 = ax.twinx()
         axs.append(ax2)
         ixcut = np.argmin(np.abs(xx - xcut))
@@ -241,6 +246,7 @@ def lineplot(xx, yy, ax, xlabel=None, ylabel=None, title=None, xvals=None, yvals
             ax_left = ax2
             ax_right = ax
     else:
+        symmetrize = False
         ax_left = ax
    
     if xcut is None:
@@ -280,7 +286,7 @@ def lineplot(xx, yy, ax, xlabel=None, ylabel=None, title=None, xvals=None, yvals
 
     if xlog:
         ax.set_xscale('log')
-    if ylog:
+    if logscale:
         for ax in axs:
             ax.set_yscale('log')
 
@@ -288,42 +294,39 @@ def lineplot(xx, yy, ax, xlabel=None, ylabel=None, title=None, xvals=None, yvals
         xminmax = np.min(xx), np.max(xx)
     ax.set_xlim(xminmax)
 
-    if not minmax is None:
-        ax.set_ylim(minmax)
-    if not minmax2 is None:
-        ax2.set_ylim(minmax)
+    if minmax is None:
+        minmax = lineplot_minmax(yy[:ixcut], logscale=logscale, symmetrize=symmetrize)
+    ax.set_ylim(minmax)
 
-    xvals = make_array(xvals, tolist=True)
+    if minmax2 is None:
+        minmax2 = lineplot_minmax(yy[ixcut:], logscale=logscale, symmetrize=symmetrize)
+    ax2.set_ylim(minmax2)
+
     if not xcut is None:
         xvals.append(xx[ixcut])
-        yvals = make_array(yvals, tolist=True)
         yvals.append(0)
-        yvals = make_array(yvals)
-    xvals = make_array(xvals)
  
     npoints = 100
     xpoints = np.linspace(xminmax[0], xminmax[1], npoints)
 
     # possibly mark x/y - values
-    if not xvals is None:
-        for xval in xvals:
-            if xcut is None:
-                ax_loc = ax
+    for xval in xvals:
+        if xcut is None:
+            ax_loc = ax
+        else:
+            if xval <= xcut:
+                ax_loc = ax_left
             else:
-                if xval <= xcut:
-                    ax_loc = ax_left
-                else:
-                    ax_loc = ax_right
+                ax_loc = ax_right
+        y1, y2 = ax_loc.get_ylim()
+        ypoints = np.linspace(y1, y2, npoints)
+        ax_loc.plot(xval + np.zeros(npoints), ypoints, 'k--', linewidth=lw)
+    for yval in yvals:
+        for ax_loc in axs:
+            # only plot if the line is within the range
             y1, y2 = ax_loc.get_ylim()
-            ypoints = np.linspace(y1, y2, npoints)
-            ax_loc.plot(xval + np.zeros(npoints), ypoints, 'k--', linewidth=lw)
-    if not yvals is None:
-        for yval in yvals:
-            for ax_loc in axs:
-                # only plot if the line is within the range
-                y1, y2 = ax_loc.get_ylim()
-                if y1 < yval < y2:
-                    ax_loc.plot(xpoints, yval + np.zeros(npoints), 'k--', linewidth=lw)
+            if y1 < yval < y2:
+                ax_loc.plot(xpoints, yval + np.zeros(npoints), 'k--', linewidth=lw)
 
     if not xlabel is None:
         ax.set_xlabel(xlabel, fontsize=default_labelsize)

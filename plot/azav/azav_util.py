@@ -463,13 +463,14 @@ def streamfunction(vr,vt,r,cost,order=0):
             
     return psi
 
-def plot_azav_grid(terms, rr, cost, maintitle=None, ncol=6, titles=None, sub_width_inches=2., rbcz=None, minmaxrz=None, rvals=np.array([]), plotlatlines=True, latvals=np.array([]), lw=1.0, latav=False, tw=None, totsig=None, **kwargs_supplied):
+def plot_azav_grid(terms, rr, cost, maintitle=None, ncol=6, titles=None, sub_width_inches=2., rbcz=None, minmaxrz=None, rvals=np.array([]), plotlatlines=True, latvals=np.array([]), lw=1.0, shav=False, tw=None, totsig=None, **kwargs_supplied):
 
     # **kwargs_supplied corresponds to my_contourf
     kwargs_default = {**kwargs_contourf}
     kwargs_default['ignore1'] = 0.05 # ignore the boundaries in latitude
     kwargs = update_kwargs(kwargs_supplied, kwargs_default)
     kwargs = dotdict(kwargs)
+    minmax = kwargs.minmax
 
     # possibly sum some terms, based on totsig
     nplots = len(terms)
@@ -514,7 +515,7 @@ def plot_azav_grid(terms, rr, cost, maintitle=None, ncol=6, titles=None, sub_wid
     fig, axs, fpar = make_figure(nplots=nplots, ncol=ncol, sub_width_inches=sub_width_inches, sub_aspect=sub_aspect, margin_top_inches=margin_top_inches, sub_margin_bottom_inches=sub_margin_bottom_inches, sub_margin_right_inches=sub_margin_right_inches)
 
     # possibly latitudinal average figure as well
-    if latav:
+    if shav:
         if rbcz is None:
             sub_margin_right_inches = None
         else:
@@ -540,18 +541,18 @@ def plot_azav_grid(terms, rr, cost, maintitle=None, ncol=6, titles=None, sub_wid
         ax.set_title(title_loc, loc='left', va='bottom', fontsize=default_titlesize)
 
         # possibly plot the lat. average
-        if latav:
+        if shav:
             av_term = np.sum(terms[iplot]*tw_2d, axis=0)
             av_ax = av_axs[irow, icol]
-            lineplot(rr/rsun, av_term, ax=av_ax, xlabel=xlabel, ylabel=units[iplot], title=titles[iplot], xcut=rbcz, xvals=rvals, yminmax=minmax, yminmax2=minmaxrz)
+            lineplot(rr/rsun, av_term, av_ax, xlabel=xlabel, title=titles[iplot], xcut=rbcz, xvals=rvals, minmax=minmax, minmax2=minmaxrz)
 
     # Put the main title in upper left
     fig.text(fpar['margin_left'] + fpar['sub_margin_left'], 1.0 - fpar['margin_top'], maintitle, ha='left', va='bottom', fontsize=default_titlesize)
 
-    if latav:
+    if shav:
         av_fig.text(av_fpar['margin_left'] + av_fpar['sub_margin_left'], 1.0 - av_fpar['margin_top'], maintitle + ' (lat. avg.)', ha='left', va='bottom', fontsize=default_titlesize)
 
-    if latav:
+    if shav:
         return fig, av_fig
     else:
         return fig

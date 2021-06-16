@@ -336,7 +336,7 @@ def get_satvals(field, posdef=False, logscale=False, fullrange=False, ignore1=No
     minmax = minmax[0] - tinybit, minmax[1] + tinybit
     return minmax
 
-def lineplot_minmax(profiles, logscale=False, legfrac=None):
+def lineplot_minmax(profiles, logscale=False, legfrac=None, symmetrize=False):
     mmin = np.infty
     mmax = -np.infty
     for profile in profiles:
@@ -355,6 +355,10 @@ def lineplot_minmax(profiles, logscale=False, legfrac=None):
         ydiff = mmax - mmin
         ymin = mmin - buff_frac_min*ydiff
         ymax = mmax + buff_frac*ydiff
+
+    if symmetrize:
+        maxabs = max(abs(ymin), abs(ymax))
+        ymin, ymax = -maxabs, maxabs
     return ymin, ymax
 
 def get_symlog_params(field, field_max=None):
@@ -1381,10 +1385,8 @@ def get_default_varnames(dirname):
     varnames_default = np.array(varnames_default)    
     return varnames_default
 
-def make_array(arr, tolist=False):
-    if arr is None: # don't change a None value
-        return None
-    elif np.isscalar(arr):
+def make_array(arr, tolist=False): # arr is scalar, list, or array
+    if np.isscalar(arr):
         out = np.array([arr])
     else:
         out = np.array(arr)
