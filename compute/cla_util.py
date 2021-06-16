@@ -54,7 +54,7 @@ def read_clas(args):
     rMIN = domain_bounds[0]/rsun
     rMAX = domain_bounds[-1]/rsun
     shell_depth = rMAX - rMIN
-    if ncheby == 2:
+    if len(ncheby) == 2:
         rBCZ = domain_bounds[1]/rsun
         shell_depth_cz = rMAX - rBCZ
         shell_depth_rz = rBCZ - rMIN

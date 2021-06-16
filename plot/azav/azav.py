@@ -94,7 +94,8 @@ maintitle = dirname_stripped + '\n' +\
 
 # Generate the figure using standard routine
 di_grid = get_grid_info(dirname)
-figs = plot_azav_grid (terms, di_grid['rr'], di_grid['cost'], maintitle=maintitle, tw=di_grid['tw'], **clas)
+ncheby, domain_bounds = get_domain_bounds(dirname)
+figs = plot_azav_grid (terms, di_grid['rr'], di_grid['cost'], maintitle=maintitle, tw=di_grid['tw'], domain_bounds=domain_bounds/rsun, **clas)
 if shav:
     fig, av_fig = figs
 else:

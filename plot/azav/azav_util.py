@@ -463,7 +463,7 @@ def streamfunction(vr,vt,r,cost,order=0):
             
     return psi
 
-def plot_azav_grid(terms, rr, cost, maintitle=None, ncol=6, titles=None, sub_width_inches=2., rbcz=None, minmaxrz=None, rvals=np.array([]), plotlatlines=True, latvals=np.array([]), lw=1.0, shav=False, tw=None, totsig=None, **kwargs_supplied):
+def plot_azav_grid(terms, rr, cost, maintitle=None, ncol=6, titles=None, sub_width_inches=2., rbcz=None, minmaxrz=None, rvals=np.array([]), plotlatlines=True, latvals=np.array([]), lw=1.0, shav=False, tw=None, totsig=None, domain_bounds=None, **kwargs_supplied):
 
     # **kwargs_supplied corresponds to my_contourf
     kwargs_default = {**kwargs_contourf}
@@ -519,8 +519,8 @@ def plot_azav_grid(terms, rr, cost, maintitle=None, ncol=6, titles=None, sub_wid
         if rbcz is None:
             sub_margin_right_inches = None
         else:
-            sub_margin_right_inches = default_margin_xlabel
-        av_fig, av_axs, av_fpar = make_figure(nplots, ncol=ncol, sub_margin_top_inches=default_margin_label, sub_margin_left_inches=default_margin_ylabel, sub_margin_right_inches=sub_margin_right_inches, sub_margin_bottom_inches=default_margin_xlabel)
+            sub_margin_right_inches = default_margin_ylabel
+        av_fig, av_axs, av_fpar = make_figure(nplots=nplots, ncol=ncol, margin_top_inches=margin_top_inches, sub_margin_left_inches=default_margin_ylabel, sub_margin_right_inches=sub_margin_right_inches, sub_margin_bottom_inches=default_margin_xlabel)
         xlabel = r'$r/R_\odot$'
         nt = len(cost)
         if tw is None: # just average everything unweighted
@@ -544,13 +544,13 @@ def plot_azav_grid(terms, rr, cost, maintitle=None, ncol=6, titles=None, sub_wid
         if shav:
             av_term = np.sum(terms[iplot]*tw_2d, axis=0)
             av_ax = av_axs[irow, icol]
-            lineplot(rr/rsun, av_term, av_ax, xlabel=xlabel, title=titles[iplot], xcut=rbcz, xvals=rvals, minmax=minmax, minmax2=minmaxrz)
+            lineplot(rr/rsun, av_term, av_ax, xlabel=xlabel, title=titles[iplot], xcut=rbcz, xvals=rvals, minmax=minmax, minmax2=minmaxrz, domain_bounds=domain_bounds)
 
     # Put the main title in upper left
     fig.text(fpar['margin_left'] + fpar['sub_margin_left'], 1.0 - fpar['margin_top'], maintitle, ha='left', va='bottom', fontsize=default_titlesize)
 
     if shav:
-        av_fig.text(av_fpar['margin_left'] + av_fpar['sub_margin_left'], 1.0 - av_fpar['margin_top'], maintitle + ' (lat. avg.)', ha='left', va='bottom', fontsize=default_titlesize)
+        av_fig.text(av_fpar['margin_left'] + av_fpar['sub_margin_left'], 1.0 - av_fpar['margin_top'], maintitle + ' (Shell Averaged)', ha='left', va='bottom', fontsize=default_titlesize)
 
     if shav:
         return fig, av_fig

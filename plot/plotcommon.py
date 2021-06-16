@@ -15,7 +15,7 @@ default_titlesize = 12
 default_ticksize = 12
 default_margin = 1/16
 default_margin_label = 3/8
-default_margin_xlabel = 3/8
+default_margin_xlabel = 1/2
 default_margin_ylabel = 3/4
 # ylabels take up more space because floating
 # point numbers are longer than they are tall
@@ -226,7 +226,7 @@ def make_figure(nplots=None, sub_width_inches=None, sub_aspect=None, sub_height_
 
     return fig, axs, fpar
 
-def lineplot(xx, yy, ax, xlabel=None, ylabel=None, title=None, xvals=np.array([]), yvals=np.array([]), label=None, xlog=False, logscale=False, xminmax=None, minmax=None, minmax2=None, scatter=False, xcut=None, color=color_order[0], linestyle=style_order[0], marker=marker_order[0], lw=default_lw, s=default_s, showplot=False):
+def lineplot(xx, yy, ax, xlabel=None, ylabel=None, title=None, xvals=np.array([]), yvals=np.array([]), label=None, xlog=False, logscale=False, xminmax=None, minmax=None, minmax2=None, scatter=False, xcut=None, color=color_order[0], linestyle=style_order[0], marker=marker_order[0], lw=default_lw, s=default_s, showplot=False, domain_bounds=None):
 
     axs = [ax]
 
@@ -247,6 +247,7 @@ def lineplot(xx, yy, ax, xlabel=None, ylabel=None, title=None, xvals=np.array([]
             ax_right = ax
     else:
         symmetrize = False
+        ixcut = len(xx)
         ax_left = ax
    
     if xcut is None:
@@ -295,12 +296,13 @@ def lineplot(xx, yy, ax, xlabel=None, ylabel=None, title=None, xvals=np.array([]
     ax.set_xlim(xminmax)
 
     if minmax is None:
-        minmax = lineplot_minmax(yy[:ixcut], logscale=logscale, symmetrize=symmetrize)
+        minmax = lineplot_minmax([yy[:ixcut]], logscale=logscale, symmetrize=symmetrize, domain_bounds=domain_bounds, xx=xx[:ixcut])
     ax.set_ylim(minmax)
 
-    if minmax2 is None:
-        minmax2 = lineplot_minmax(yy[ixcut:], logscale=logscale, symmetrize=symmetrize)
-    ax2.set_ylim(minmax2)
+    if not xcut is None:
+        if minmax2 is None:
+            minmax2 = lineplot_minmax([yy[ixcut:]], logscale=logscale, symmetrize=symmetrize, domain_bounds=domain_bounds, xx=xx[ixcut:])
+        ax2.set_ylim(minmax2)
 
     if not xcut is None:
         xvals.append(xx[ixcut])

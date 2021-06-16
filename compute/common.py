@@ -336,7 +336,29 @@ def get_satvals(field, posdef=False, logscale=False, fullrange=False, ignore1=No
     minmax = minmax[0] - tinybit, minmax[1] + tinybit
     return minmax
 
-def lineplot_minmax(profiles, logscale=False, legfrac=None, symmetrize=False):
+def lineplot_minmax(profiles, logscale=False, legfrac=None, symmetrize=False, domain_bounds=None, xx=None):
+
+    # possibly ignore nastiness around domain bounds
+    # x axis (xx) must also be provided
+    if not domain_bounds is None:
+        buff_ignore = 0.03
+        delta_x = np.max(xx) - np.min(xx)
+        profiles_old = profiles.copy()
+        profiles = []
+        for profile_old in profiles_old:
+            tmp = []
+            for ix in range(len(xx)):
+                x_loc = xx[ix]
+                # check if x_loc is in a "bad" location 
+                # (near the domain_bounds)
+                add_it = True
+                for domain_bound in domain_bounds:
+                    if abs(x_loc - domain_bound) < buff_ignore*delta_x:
+                        add_it = False
+                if add_it:
+                    tmp.append(profile_old[ix])
+            profiles.append(np.array(tmp))
+                
     mmin = np.infty
     mmax = -np.infty
     for profile in profiles:
@@ -790,11 +812,11 @@ def get_domain_bounds(dirname):
         rmin, rmax = get_parameter(dirname, 'rmin'),\
                 get_parameter(dirname, 'rmax')
         nr = get_parameter(dirname, 'n_r')
-        domain_bounds = (rmin, rmax)
-        ncheby = (nr,)
+        domain_bounds = np.array([rmin, rmax])
+        ncheby = np.array([nr])
     except:
-        domain_bounds = tuple(get_parameter(dirname, 'domain_bounds'))
-        ncheby = tuple(get_parameter(dirname, 'ncheby'))
+        domain_bounds = get_parameter(dirname, 'domain_bounds')
+        ncheby = get_parameter(dirname, 'ncheby')
     return ncheby, domain_bounds
 
 def field_amp(dirname):
