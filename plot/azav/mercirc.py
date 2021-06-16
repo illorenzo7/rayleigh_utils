@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
-from azav_util import plot_azav, streamfunction
+from azav_util import *
 from common import *
 from plotcommon import *
 from cla_util import *
@@ -24,11 +24,18 @@ clas0, clas = read_clas(args)
 dirname = clas0['dirname']
 dirname_stripped = strip_dirname(dirname, wrap=True)
 
-# domain bounds
-ncheby, domain_bounds = get_domain_bounds(dirname)
-ri = np.min(domain_bounds)
-ro = np.max(domain_bounds)
-d = ro - ri
+# allowed args + defaults
+kwargs_default = {**script_azav_kwargs_default}
+
+plot_azav_kwargs_default['nosci'] = True
+plot_azav_kwargs_default['cbar_prec'] = 1
+
+kwargs_default.update(plot_azav_kwargs_default)
+kw = update_dict(kwargs_default, clas)
+find_bad_keys(kwargs_default, clas, clas0['routinename'], justwarn=True)
+kw_plot_azav = update_dict(plot_azav_kwargs_default, clas)
+if not kw.rbcz is None:  # need room for two colorbars
+    kw.margin_bottom_inches *= 2
 
 # Get density
 eq = get_eq(dirname)
@@ -38,12 +45,10 @@ rho = eq.density
 # already exist    
 
 # get data
-if 'the_file' in clas: 
-    the_file = clas['the_file']
-else:
-    the_file = get_widest_range_file(clas0['datadir'], 'AZ_Avgs')
-print ('Getting data from ' + the_file)
-di = get_dict(the_file)
+if kw.the_file is None:
+    kw.the_file = get_widest_range_file(clas0['datadir'], 'AZ_Avgs')
+print ('Getting data from ' + kw.the_file)
+di = get_dict(kw.the_file)
 vals = di['vals']
 lut = di['lut']
 
@@ -64,34 +69,26 @@ psi = streamfunction(rho*vr_av, rho*vt_av, rr, cost)
 # Make CCW negative and CW positive
 rhovm *= np.sign(psi)
 
-# create plot
-nplots = 1
-sub_width_inches = 2.
-sub_aspect = 2
-margin_top_inches = 3/4 # larger top margin to make room for titles
-margin_bottom_inches = 1/2
-# larger bottom margin to make room for colorbar(s)
-if 'rbcz' in clas:
-    margin_bottom_inches *= 2
-
 # make plot
-fig, axs, fpar = make_figure(nplots=nplots, sub_width_inches=sub_width_inches, sub_aspect=sub_aspect, margin_top_inches=margin_top_inches, margin_bottom_inches=margin_bottom_inches)
+fig, axs, fpar = make_figure(nplots=1, sub_width_inches=kw.sub_width_inches, sub_aspect=kw.sub_aspect, margin_top_inches=kw.margin_top_inches, margin_bottom_inches=kw.margin_bottom_inches)
 ax = axs[0, 0]
 
 # Plot mass flux
-plot_azav (rhovm, rr, cost, fig, ax=ax, cbar_prec=1, nosci=True,\
-    plotcontours=False, **clas)
+kw_plot_azav.plotcontours = False
+plot_azav (rhovm, rr, cost, fig, ax, **kw_plot_azav)
 
 # Plot streamfunction contours
 lilbit = 0.01
 maxabs = np.max(np.abs(psi))
 contourlevels = (-maxabs/2., -maxabs/4., -lilbit*maxabs, 0.,\
         lilbit*maxabs, maxabs/4., maxabs/2.)
-plot_azav (psi, rr, cost, fig, ax, plotfield=False,\
-    contourlevels=contourlevels, **clas)
+kw_plot_azav.plotcontours = True
+kw_plot_azav.plotfield = False
+kw_plot_azav.contourlevels = contourlevels
+plot_azav (psi, rr, cost, fig, ax, **kw_plot_azav)
 
 # make title 
-iter1, iter2 = get_iters_from_file(the_file) 
+iter1, iter2 = get_iters_from_file(kw.the_file) 
 time_string = get_time_string(dirname, iter1, iter2)
 margin_x = fpar['margin_left'] + fpar['sub_margin_left']
 margin_y = default_margin/fpar['height_inches']

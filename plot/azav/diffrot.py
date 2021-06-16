@@ -23,17 +23,17 @@ clas0, clas = read_clas(args)
 dirname = clas0['dirname']
 dirname_stripped = strip_dirname(dirname, wrap=True)
 
-# allowed args + defaults (mostly fig params)
-diffrot_kwargs_default = dict({'the_file': None, 'nplots': 1, 'sub_width_inches': 2, 'sub_aspect': 2, 'margin_top_inches': 1, 'margin_bottom_inches': 1/2})
+# allowed args + defaults
+kwargs_default = {**script_azav_kwargs_default}
 
 plot_azav_kwargs_default['plotlatlines'] = False
 plot_azav_kwargs_default['units'] = 'nHz'
 plot_azav_kwargs_default['nosci'] = True
 plot_azav_kwargs_default['cbar_prec'] = 1
 
-diffrot_kwargs_default.update(plot_azav_kwargs_default)
-kw = update_dict(diffrot_kwargs_default, clas)
-find_bad_keys(diffrot_kwargs_default, clas, 'diffrot', justwarn=True)
+kwargs_default.update(plot_azav_kwargs_default)
+kw = update_dict(kwargs_default, clas)
+find_bad_keys(kwargs_default, clas, 'diffrot', justwarn=True)
 kw_plot_azav = update_dict(plot_azav_kwargs_default, clas)
 if not kw.rbcz is None:  # need room for two colorbars
     kw.margin_bottom_inches *= 2
@@ -63,7 +63,7 @@ it0, it60_N, it60_S = np.argmin(np.abs(tt_lat)), np.argmin(np.abs(tt_lat - 60)),
 Delta_Om = Om[it0, 0] - (Om[it60_N, 0] + Om[it60_S, 0])/2
 
 # make plot
-fig, axs, fpar = make_figure(nplots=kw.nplots, sub_width_inches=kw.sub_width_inches, sub_aspect=kw.sub_aspect, margin_top_inches=kw.margin_top_inches, margin_bottom_inches=kw.margin_bottom_inches)
+fig, axs, fpar = make_figure(nplots=1, sub_width_inches=kw.sub_width_inches, sub_aspect=kw.sub_aspect, margin_top_inches=kw.margin_top_inches, margin_bottom_inches=kw.margin_bottom_inches)
 ax = axs[0, 0]
 
 plot_azav (Om, rr, cost, fig, ax, **kw_plot_azav)
