@@ -71,27 +71,51 @@ def testtex(label):
     plt.title(label)
     plt.show()
 
-def make_figure(nplots=None, sub_width_inches=None, sub_aspect=None, sub_height_inches=None, nrow=None, ncol=None, margin_left_inches=None, margin_right_inches=None, margin_bottom_inches=None, margin_top_inches=None, sub_margin_left_inches=None, sub_margin_right_inches=None, sub_margin_bottom_inches=None, sub_margin_top_inches=None, width_inches=None, height_inches=None, aspect=None):
+make_figure_kwargs_default =\
+dict({'nplots': None, 'nrow': None, 'ncol': None,\
 
-    # first, if any margin is unspecified, then it equals the default
-    # "default_margin"
-    # subplot margins are above and beyond figure margins
-    if margin_left_inches is None:
-        margin_left_inches = default_margin
-    if margin_right_inches is None:
-        margin_right_inches = default_margin
-    if margin_bottom_inches is None:
-        margin_bottom_inches = default_margin
-    if margin_top_inches is None:
-        margin_top_inches = default_margin_title
-    if sub_margin_left_inches is None:
-        sub_margin_left_inches = default_margin
-    if sub_margin_right_inches is None:
-        sub_margin_right_inches = default_margin
-    if sub_margin_bottom_inches is None:
-        sub_margin_bottom_inches = default_margin
-    if sub_margin_top_inches is None:
-        sub_margin_top_inches = default_margin_label
+    'sub_width_inches': None,\
+    'sub_height_inches': None,\
+    'sub_aspect': None,\
+    
+    'sub_margin_left_inches': default_margin_label, 
+    'sub_margin_right_inches': default_margin_label,\
+    'sub_margin_bottom_inches': default_margin_label,\
+    'sub_margin_top_inches': default_margin_label,\
+
+    'margin_left_inches': default_margin,\
+    'margin_right_inches': default_margin,\
+    'margin_bottom_inches': default_margin,\
+    'margin_top_inches': default_margin_title,\
+
+    'width_inches': None,\
+    'height_inches': None,\
+    'aspect': None})
+
+def make_figure(**kwargs):
+    kw = update_dict(make_figure_kwargs_default, kwargs)
+    find_bad_keys(make_figure_kwargs_default, kwargs, 'make_figure')
+
+    # unpack everything (annoying)
+    nplots = kw.nplots; nrow = kw.nrow; ncol = kw.ncol
+
+    sub_width_inches = kw.sub_width_inches
+    sub_height_inches = kw.sub_height_inches
+    sub_aspect = kw.sub_aspect
+        
+    sub_margin_left_inches = kw.sub_margin_left_inches
+    sub_margin_right_inches = kw.sub_margin_right_inches
+    sub_margin_bottom_inches = kw.sub_margin_bottom_inches
+    sub_margin_top_inches = kw.sub_margin_top_inches
+
+    margin_left_inches = kw.margin_left_inches
+    margin_right_inches = kw.margin_right_inches
+    margin_bottom_inches = kw.margin_bottom_inches
+    margin_top_inches = kw.margin_top_inches
+
+    width_inches = kw.width_inches
+    height_inches = kw.height_inches
+    aspect = kw.aspect
 
     # figure out nplots, nrow, ncol
     # default values are nplots = nrow = ncol = 1
@@ -153,13 +177,14 @@ def make_figure(nplots=None, sub_width_inches=None, sub_aspect=None, sub_height_
         elif not sub_aspect is None:
             sub_width_inches = sub_width_inches_default
             sub_height_inches = sub_aspect*sub_width_inches
-    elif sub_nspec == 2:
+
+    elif sub_nspec >= 2:
         which_spec = 'sub'
         if sub_width_inches is None:
             sub_width_inches = sub_height_inches/sub_aspect
-        if sub_height_inches is None:
+        elif sub_height_inches is None:
             sub_height_inches = sub_width_inches*sub_aspect
-        if sub_aspect is None:
+        else: # width and height --> aspect in overdetermined problem
             sub_aspect = sub_height_inches/sub_width_inches
 
     elif nspec == 1:
@@ -173,13 +198,13 @@ def make_figure(nplots=None, sub_width_inches=None, sub_aspect=None, sub_height_
         elif not aspect is None:
             width_inches = width_inches_default
             height_inches = aspect*width_inches
-    elif nspec == 2:
+    elif nspec >= 2:
         which_spec = 'fig'
         if width_inches is None:
             width_inches = height_inches/aspect
-        if height_inches is None:
+        elif height_inches is None:
             height_inches = width_inches*aspect
-        if aspect is None:
+        else:
             aspect = height_inches/width_inches
 
     # set the "other" parameters based on if fig or sub dimensions were set
