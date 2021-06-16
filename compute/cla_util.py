@@ -45,9 +45,11 @@ def read_clas(args):
     clas0['showplot'] = True
     clas0['tag'] = ''
 
-    # see if magnetism is on
-    magnetism = get_parameter(clas0['dirname'], 'magnetism')
+    # see if magnetism/rotation are on
+    magnetism = get_parameter(dirname, 'magnetism')
     clas0['magnetism'] = magnetism
+    rotation = get_parameter(dirname, 'rotation')
+    clas0['rotation'] = rotation
 
     # get the spherical domain
     ncheby, domain_bounds = get_domain_bounds(dirname)
@@ -110,7 +112,7 @@ def read_clas(args):
         # specify a desired time
         elif arg in ['--iter', '--prot', '--tdt', '--sec']:
             t_loc = float(args[i+1])
-            di_trans = translate_times(t_loc, clas0['dirname'], arg[2:])
+            di_trans = translate_times(t_loc, dirname, arg[2:])
             clas['di_trans'] = di_trans
         
         # desired quantity list (or group)
@@ -120,9 +122,6 @@ def read_clas(args):
                 if is_an_int(argvals):
                     clas['qvals'] = np.array([int(argvals)])
                     clas['titles'] = array_of_strings(clas['qvals'])
-                elif argvals in var_indices: # it's a shorthand name
-                    clas['qvals'] = argvals
-                    clas['titles'] = argvals
                 else:
                     the_qgroup = get_quantity_group(argvals, magnetism)
                     clas['qvals'] = the_qgroup['qvals']

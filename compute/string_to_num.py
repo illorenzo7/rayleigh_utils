@@ -5,13 +5,14 @@
 import numpy as np
 
 def how_to_treat_numberstring(string):
-    int_chars = ['+', '-', ' ', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+    int_chars = ['+', '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+    float_chars = int_chars + ['.', 'e', 'd', 'E', 'D']
     bool_strings = ['true', 'false', 't', 'f', '.true.', '.false.']
     if string.lower() in bool_strings:
         return 'bool'
     elif ',' in string:
         return 'array'
-    elif '.' in string:
+    elif all (char in float_chars for char in string):
         return 'float'    
     elif all (char in int_chars for char in string):
         return 'int'

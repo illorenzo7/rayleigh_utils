@@ -518,8 +518,8 @@ def get_parameter(dirname, parameter):
                 line = lines[i]
         line = line[:] # test if line was assigned
     except:
-        if parameter == 'magnetism' or parameter == 'use_extrema':
-            return False # if magnetism wasn't specified, it is "False"
+        if parameter in ['magnetism', 'use_extrema', 'rotation']:
+            return False # if these weren't specified, they are false
         else:
             raise Exception('The parameter ' + parameter + ' was not\n' +\
                             'specified in run: ' + dirname + '. \n' +\
