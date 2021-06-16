@@ -24,13 +24,12 @@ except:
     magnetism = False # if magnetism wasn't specified, it must be "off"
 
 # SPECIFIC ARGS for etrace:
-kwargs_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'nodyn': False, 'dynfrac': 0.5, 'times': None, 'czrz': False, 'inte': False})
+kwargs_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'nodyn': False, 'dynfrac': 0.5, 'xvals': np.array([]), 'czrz': False, 'inte': False})
 # plots two more columns with energies in CZ and RZ separately 
 # update these defaults from command-line
 kwargs = dotdict(update_kwargs(clas, kwargs_default))
 
 fontsize = default_titlesize
-
 the_file = kwargs.the_file
 xminmax = kwargs.xminmax
 xmin = kwargs.xmin
@@ -44,7 +43,7 @@ xiter = kwargs.xiter
 logscale = kwargs.log
 nodyn = kwargs.nodyn
 dynfrac = kwargs.dynfrac
-plottimes = kwargs.times
+xvals = make_array(kwargs.xvals)
 sep_czrz = kwargs.czrz
 plot_inte = kwargs.inte
 
@@ -276,12 +275,11 @@ for icol in range(ncol):
     axs[0, icol].set_title(title)
 
 # mark times if desired
-if not plottimes is None:
-    for ax in axs.flatten():
-        y1, y2 = ax.get_ylim()
-        yvals = np.linspace(y1, y2, 100)
-        for time in plottimes:
-            ax.plot(time + np.zeros(100), yvals,'k--')
+for ax in axs.flatten():
+    y1, y2 = ax.get_ylim()
+    yvals = np.linspace(y1, y2, 100)
+    for time in xvals:
+        ax.plot(time + np.zeros(100), yvals,'k--')
 
 # Get ticks everywhere
 for ax in axs.flatten():
