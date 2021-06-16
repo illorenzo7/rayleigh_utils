@@ -226,7 +226,14 @@ def make_figure(nplots=None, sub_width_inches=None, sub_aspect=None, sub_height_
 
     return fig, axs, fpar
 
-def lineplot(xx, yy, ax, xlabel=None, ylabel=None, title=None, xvals=np.array([]), yvals=np.array([]), label=None, xlog=False, logscale=False, xminmax=None, minmax=None, minmax2=None, scatter=False, xcut=None, color=color_order[0], linestyle=style_order[0], marker=marker_order[0], lw=default_lw, s=default_s, showplot=False, domain_bounds=None):
+lineplot_kwargs_default = dict({'xlabel': None, 'ylabel': None, 'title': None, 'xvals': np.array([]), 'yvals': np.array([]), 'label': None, 'xlogscale': False, 'xminmax': None, 'minmax': None, 'xcut': None, 'minmax2': None, 'scatter': False, 'color': color_order[0], 'linestyle': style_order[0], 'marker': marker_order[0], 'lw': default_lw, 's': default_s})
+lineplot_kwargs_default.update(lineplot_minmax_kwargs_default)
+
+def lineplot(xx, yy, ax, **kwargs):
+    kw = update_dict(lineplot_kwargs_default, kwargs)
+    kw_contourf_minmax = update_dict(contourf_minmax_kwargs_default, kwargs)
+    find_bad_keys(my_contourf_kwargs_default, kwargs, 'my_contourf')
+
 
     axs = [ax]
 

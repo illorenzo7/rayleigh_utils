@@ -5,11 +5,6 @@
 # This script plots the radial energy fluxes as functions of
 # radius using from the Shell_Avgs data
 
-import matplotlib as mpl
-mpl.use('TkAgg')
-import matplotlib.pyplot as plt
-plt.rcParams['mathtext.fontset'] = 'dejavuserif'
-csfont = {'fontname':'DejaVu Serif'}
 import numpy as np
 import sys, os
 sys.path.append(os.environ['rapp'])
@@ -57,65 +52,6 @@ plotdir = None
 
 args = sys.argv[2:]
 nargs = len(args)
-for i in range(nargs):
-    arg = args[i]
-    if arg == '-plotdir':
-        plotdir = args[i+1]
-    if arg == '-usefile':
-        the_file = args[i+1]
-        the_file = the_file.split('/')[-1]
-    elif arg == '-minmax':
-        minmax = float(args[i+1]), float(args[i+2])
-    elif arg == '-xminmax':
-        xminmax = float(args[i+1]), float(args[i+2])
-    elif arg == '-rnorm':
-        rnorm = float(args[i+1])
-    elif arg == '-fluc':
-        plot_enth_fluc = True
-    elif arg == '-depths':
-        strings = args[i+1].split()
-        for st in strings:
-            rval = ro - float(st)*d
-            rvals.append(rval)
-    elif arg == '-depthscz':
-        rm = domain_bounds[1]
-        dcz = ro - rm
-        strings = args[i+1].split()
-        for st in strings:
-            rval = ro - float(st)*dcz
-            rvals.append(rval)
-    elif arg == '-depthsrz':
-        rm = domain_bounds[1]
-        drz = rm - ri
-        strings = args[i+1].split()
-        for st in strings:
-            rval = rm - float(st)*drz
-            rvals.append(rval)
-    elif arg == '-rvals':
-        rvals = []
-        strings = args[i+1].split()
-        for st in strings:
-            rval = float(st)*rsun
-            rvals.append(rval)
-    elif arg == '-rvalscm':
-        rvals = []
-        strings = args[i+1].split()
-        for st in strings:
-            rval = float(st)
-            rvals.append(rval)
-    elif arg == '-bcz': # try to estimate the real BCZ (and mark it)
-                        # from where the enthalpy flux first goes negative
-        mark_bcz = True
-    elif arg == '-lw':
-        lw = float(args[i+1])
-    elif arg == '-dpi':
-        dpi = float(args[i+1])
-    elif arg == '-rminw':
-        rminwindow = float(args[i+1])
-    elif arg == '-rmaxw':
-        rmaxwindow = float(args[i+1])
-
-#Create the plot
 
 # Read in the flux data
 print ('Getting radial fluxes from ' + the_file)
@@ -305,9 +241,9 @@ plt.ylim(minmax[0], minmax[1])
 
 # Label the axes
 if rnorm is None:
-    plt.xlabel(r'$r/R_\odot$',fontsize=12, **csfont)
+    plt.xlabel(r'$r/R_\odot$',fontsize=kw.fontsize)
 else:
-    plt.xlabel(r'r/(%.1e cm)' %rnorm, fontsize=12, **csfont)
+    plt.xlabel(r'r/(%.1e cm)' %rnorm, fontsize=kw.fontsize)
 
 # Try to find the BCZ from where enthalpy flux goes negative, if desired
 # avoid the outer boundary
