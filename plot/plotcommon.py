@@ -19,7 +19,13 @@ default_margin_xlabel = 1/2
 default_margin_ylabel = 3/4
 # ylabels take up more space because floating
 # point numbers are longer than they are tall
-default_margin_title = 3.0/4.0
+default_margin_title = 3/4
+
+# default figure sizes 
+sub_width_inches_default, sub_height_inches_default = 3.5, 2.5
+width_inches_default, height_inches_default = 7.0, 4.0
+
+script_lineplot_kwargs_default = dict({'the_file': None, 'sub_width_inches': sub_width_inches_default, 'sub_height_inches': sub_height_inches_default, 'margin_top_inches': default_margin_title, 'margin_bottom_inches': 1/2, 'margin_left_inches': default_margin_xlabel})
 
 def axis_range(ax): # gets subplot coordinates on a figure in "normalized"
         # coordinates
@@ -123,12 +129,6 @@ def make_figure(nplots=None, sub_width_inches=None, sub_aspect=None, sub_height_
         else:
             nrow = int(np.ceil(nplots/ncol))
 
-    # figure out aspect, width, height
-    # need to specify TWO of these (other gets determined) for EITHER
-    # the figure or the subplots; check subplots first (defaults set here)
-    sub_width_inches_default, sub_height_inches_default = 3.5, 2.5
-    width_inches_default, height_inches_default = 7.0, 4.0
-
     sub_nspec = 0
     for val in [sub_width_inches, sub_height_inches, sub_aspect]:
         sub_nspec += not val is None
@@ -226,58 +226,202 @@ def make_figure(nplots=None, sub_width_inches=None, sub_aspect=None, sub_height_
 
     return fig, axs, fpar
 
-lineplot_kwargs_default = dict({'xlabel': None, 'ylabel': None, 'title': None, 'xvals': np.array([]), 'yvals': np.array([]), 'label': None, 'xlogscale': False, 'xminmax': None, 'minmax': None, 'xcut': None, 'minmax2': None, 'scatter': False, 'color': color_order[0], 'linestyle': style_order[0], 'marker': marker_order[0], 'lw': default_lw, 's': default_s})
+contourf_minmax_kwargs_default = dict({'posdef': False, 'logscale': False, 'fullrange': False, 'buff_ignore1': buff_frac, 'buff_ignore2': buff_frac}) 
+def contourf_minmax(field, **kwargs):
+    # Get good boundaries to saturate array [field], assuming either
+    # posdef (True or False) and/or logscale (True or False)
+    # first, possibly cut the array (ignore boundary vals)
+    kw = update_dict(contourf_minmax_kwargs_default, kwargs)
+    find_bad_keys(contourf_minmax_kwargs_default, kwargs, 'contourf_minmax')
+
+    if not kw.buff_ignore1 is None:
+        n1, dummy = np.shape(field)
+        icut = int(n1*kw.buff_ignore1)
+        field = np.copy(field[icut:n1-icut, :])
+    if not kw.buff_ignore2 is None:
+        dummy, n2 = np.shape(field)
+        icut = int(n2*kw.buff_ignore2)
+        field = np.copy(field[:, icut:n2-icut])
+    if kw.logscale:
+        logfield = np.log(field)
+        medlog = np.median(logfield)
+        shiftlog = logfield - medlog
+        std_plus =\
+            np.std(shiftlog[np.where(shiftlog > 0.)].flatten())
+        std_minus =\
+            np.std(shiftlog[np.where(shiftlog <= 0.)].flatten())
+        av_std = (std_plus + std_minus)/2.
+
+        minexp = medlog - 5.*av_std
+        maxexp = medlog + 5.*av_std
+        minmax = np.exp(minexp), np.exp(maxexp)        
+    elif kw.posdef:
+        sig = rms(field)
+        minmax = 0., 3.*sig        
+    elif kw.fullrange:
+        maxabs = np.max(np.abs(field))
+        minmax = -maxabs, maxabs       
+    else:
+        sig = np.std(field)
+        minmax = -3.*sig, 3.*sig
+    # Make sure minmax isn't 0, 0
+    tinybit = 1.0e-100
+    minmax = minmax[0] - tinybit, minmax[1] + tinybit
+    return minmax
+
+lineplot_minmax_kwargs_default = dict({'logscale': False, 'buff_ignore': buff_frac, 'legfrac': None, 'symmetrize': False, 'domain_bounds': None, 'xx': None})
+def lineplot_minmax(profiles, **kwargs):
+    kw = update_dict(lineplot_minmax_kwargs_default, kwargs)
+    find_bad_keys(lineplot_minmax_kwargs_default, kwargs)
+
+    # possibly ignore nastiness around domain bounds
+    # x axis (xx) must also be provided
+    if not kw.domain_bounds is None:
+        delta_x = np.max(kw.xx) - np.min(kw.xx)
+        profiles_old = profiles.copy()
+        profiles = []
+        for profile_old in profiles_old:
+            tmp = []
+            for ix in range(len(kw.xx)):
+                x_loc = xx[ix]
+                # check if x_loc is in a "bad" location 
+                # (near the domain_bounds)
+                add_it = True
+                for domain_bound in kw.domain_bounds:
+                    if abs(x_loc - domain_bound) < kw.buff_ignore*delta_x:
+                        add_it = False
+                if add_it:
+                    tmp.append(profile_old[ix])
+            profiles.append(np.array(tmp))
+                
+    mmin = np.infty
+    mmax = -np.infty
+    for profile in profiles:
+        mmin = min(np.min(profile), mmin)
+        mmax = max(np.max(profile), mmax)
+    if not kw.legfrac is None: # legfrac is how much of plot (y dimensions)
+        # the legend should take up
+        buff_frac_min = kw.legfrac/(1 - kw.legfrac) + buff_frac
+    else:
+        buff_frac_min = buff_frac
+    if logscale:
+        yratio = mmax/mmin
+        ymin = mmin/(yratio**buff_frac_min)
+        ymax = mmax*(yratio**buff_frac)
+    else:
+        ydiff = mmax - mmin
+        ymin = mmin - buff_frac_min*ydiff
+        ymax = mmax + buff_frac*ydiff
+
+    if symmetrize:
+        maxabs = max(abs(ymin), abs(ymax))
+        ymin, ymax = -maxabs, maxabs
+    return ymin, ymax
+
+def get_symlog_params(field, field_max=None):
+    if field_max is None:
+        maxabs = np.max(np.abs(field))
+        maxabs_exp = np.floor(np.log10(maxabs))
+        field_max = 10.**maxabs_exp
+    sig = np.std(field)
+    linthresh = 0.15*sig
+    dynamic_range = field_max/linthresh
+    dynamic_range_decades = np.log10(dynamic_range)
+    linscale = dynamic_range_decades
+    return linthresh, linscale
+    
+def saturate_array(arr, my_min, my_max):
+    arr[np.where(arr < my_min)] = my_min
+    arr[np.where(arr > my_max)] = my_max
+
+def get_exp(num):
+    if num != 0.:
+        return int(np.floor(np.log10(np.abs(num))))
+    else:
+        return 1
+
+def sci_format(num, ndec=1):
+    exponent = get_exp(num)
+    mantissa = num/10.**exponent
+    return ((r'$%1.' + (r'%i' %ndec) + r'f\times10^{%i}$')\
+            %(mantissa, exponent))
+
+lineplot_kwargs_default = dict({'xlabel': None, 'ylabel': None, 'title': None, 'xvals': np.array([]), 'yvals': np.array([]), 'labels': None, 'xlogscale': False, 'xminmax': None, 'minmax': None, 'xcut': None, 'minmax2': None, 'scatter': False, 'colors': color_order, 'linestyles': style_order, 'markers': marker_order[0], 'lw': default_lw, 's': default_s})
 lineplot_kwargs_default.update(lineplot_minmax_kwargs_default)
 
-def lineplot(xx, yy, ax, **kwargs):
+def lineplot(xx, profiles, ax, **kwargs):
     kw = update_dict(lineplot_kwargs_default, kwargs)
-    kw_contourf_minmax = update_dict(contourf_minmax_kwargs_default, kwargs)
-    find_bad_keys(my_contourf_kwargs_default, kwargs, 'my_contourf')
+    kw_lineplot_minmax = update_dict(lineplot_minmax_kwargs_default, kwargs)
+    find_bad_keys(lineplot_kwargs_default, kwargs, 'lineplot')
 
-
+    # need to have a list of axes
     axs = [ax]
 
     # convert xvals, yvals to lists
-    xvals = make_array(xvals, tolist=True)
-    yvals = make_array(yvals, tolist=True)
+    kw.xvals = make_array(kw.xvals, tolist=True)
+    kw.yvals = make_array(kw.yvals, tolist=True)
 
-    if not xcut is None:
-        symmetrize = True
+    if not kw.xcut is None:
+        kw_lineplot_minmax.symmetrize = True
         ax2 = ax.twinx()
         axs.append(ax2)
-        ixcut = np.argmin(np.abs(xx - xcut))
+        ixcut = np.argmin(np.abs(xx - kw.xcut))
         if xx[0] < xx[-1]: # x axis goes in "correct" direction
             ax_left = ax
             ax_right = ax2
         else: # x axis is reversed, so the second one is on the left
             ax_left = ax2
             ax_right = ax
+        profiles2 = []
+        for profile in profiles:
+            profiles2.append(profile[ixcut:])
     else:
-        symmetrize = False
+        kw_lineplot_minmax.symmetrize = False
         ixcut = len(xx)
         ax_left = ax
-   
-    if xcut is None:
-        if scatter:
-            ax.scatter(xx, yy, label=label, marker=marker, s=s, color=color)
+
+    # reset profiles based on ixcut
+    profiles_old = profiles.copy()
+    profiles = []
+    for profile in profiles_old:
+        profiles.append(profile[:ixcut])
+
+    # get ylimits 
+    if kw.minmax is None:
+        kw.minmax = lineplot_minmax(profiles, xx=xx[:ixcut], **kw_lineplot_minmax)
+    ax.set_ylim(kw.minmax)
+
+    if not kw.xcut is None:
+        if kw.minmax2 is None:
+            kw.minmax2 = lineplot_minmax(profiles2, xx=xx[ixcut:], **kw_lineplot_minmax)
+        ax2.set_ylim(kw.minmax2)
+  
+    # loop over profiles and make plots
+    nprofiles = len(profiles)
+    for iprof in range(nprofiles):
+        profile = profiles[iprof]
+        if kw.xcut is None:
+            if kw.scatter:
+                ax.scatter(xx, profile, label=kw.label, marker=kw.marker, s=kw.s, color=kw.color)
+            else:
+                ax.plot(xx, profile, label=kw.label, linestyle=kw.linestyle, linewidth=kw.lw, color=kw.color)
         else:
-            ax.plot(xx, yy, label=label, linestyle=linestyle, linewidth=lw, color=color)
-    else:
-        if scatter:
-            ax.scatter(xx[:ixcut], yy[:ixcut], marker=marker, s=s, color=color)
-            ax2.scatter(xx[ixcut:], yy[ixcut:], marker=marker, s=s, color=color)
-        else:
-            ax.plot(xx[:ixcut], yy[:ixcut], linestyle=linestyle, linewidth=lw, color=color)
-            ax2.plot(xx[ixcut:], yy[ixcut:], linestyle=linestyle, linewidth=lw, color=color)
+            profile2 = profiles2[iprof]
+            if kw.scatter:
+                ax.scatter(xx[:ixcut], profile, label=kw.label, marker=kw.marker, s=kw.s, color=kw.color)
+                ax2.scatter(xx[ixcut:], profile2, label=kw.label, marker=kw.marker, s=kw.s, color=kw.color)
+            else:
+                ax.plot(xx[:ixcut], profile, label=kw.label, linestyle=kw.linestyle, linewidth=kw.lw, color=kw.color)
+                ax2.plot(xx[ixcut:], profile2, label=kw.label, linestyle=kw.linestyle, linewidth=kw.lw, color=kw.color)
 
     # ticks (mostly everywhere, deal with split axes)
-    if xcut is None:
+    if kw.xcut is None:
         plt.sca(ax)
         plt.minorticks_on()
         plt.tick_params(top=True, right=True, direction='in',\
                 which='both')
-        if not ylabel is None:
-            plt.ylabel(ylabel, fontsize=default_labelsize)
+        if not kw.ylabel is None:
+            plt.ylabel(kw.ylabel, fontsize=kw.fontsize)
     else:
         plt.sca(ax_right)
         plt.minorticks_on()
@@ -287,40 +431,31 @@ def lineplot(xx, yy, ax, **kwargs):
         plt.minorticks_on()
         plt.tick_params(top=True, left=True, right=False, direction='in',\
                 which='both')
-        if not ylabel is None:
-            ax_left.set_ylabel(ylabel, fontsize=default_labelsize)
+        if not kw.ylabel is None:
+            ax_left.set_ylabel(ylabel, fontsize=kw.fontsize)
             ax_left.yaxis.set_label_position('left')
         ax_left.yaxis.tick_left()
 
-    if xlog:
+    if kw.xlogscale:
         ax.set_xscale('log')
-    if logscale:
+    if kw.logscale:
         for ax in axs:
             ax.set_yscale('log')
 
-    if xminmax is None:
-        xminmax = np.min(xx), np.max(xx)
+    if kw.xminmax is None:
+        kw.xminmax = np.min(xx), np.max(xx)
     ax.set_xlim(xminmax)
 
-    if minmax is None:
-        minmax = lineplot_minmax([yy[:ixcut]], logscale=logscale, symmetrize=symmetrize, domain_bounds=domain_bounds, xx=xx[:ixcut])
-    ax.set_ylim(minmax)
-
-    if not xcut is None:
-        if minmax2 is None:
-            minmax2 = lineplot_minmax([yy[ixcut:]], logscale=logscale, symmetrize=symmetrize, domain_bounds=domain_bounds, xx=xx[ixcut:])
-        ax2.set_ylim(minmax2)
-
-    if not xcut is None:
-        xvals.append(xx[ixcut])
-        yvals.append(0)
+    if not kw.xcut is None:
+        kw.xvals.append(xx[ixcut])
+        kw.yvals.append(0)
  
     npoints = 100
-    xpoints = np.linspace(xminmax[0], xminmax[1], npoints)
+    xpoints = np.linspace(kw.xminmax[0], kw.xminmax[1], npoints)
 
     # possibly mark x/y - values
-    for xval in xvals:
-        if xcut is None:
+    for xval in kw.xvals:
+        if kw.xcut is None:
             ax_loc = ax
         else:
             if xval <= xcut:
@@ -329,25 +464,25 @@ def lineplot(xx, yy, ax, **kwargs):
                 ax_loc = ax_right
         y1, y2 = ax_loc.get_ylim()
         ypoints = np.linspace(y1, y2, npoints)
-        ax_loc.plot(xval + np.zeros(npoints), ypoints, 'k--', linewidth=lw)
-    for yval in yvals:
+        ax_loc.plot(xval + np.zeros(npoints), ypoints, 'k--', linewidth=kw.lw)
+    for yval in kw.yvals:
         for ax_loc in axs:
             # only plot if the line is within the range
             y1, y2 = ax_loc.get_ylim()
             if y1 < yval < y2:
-                ax_loc.plot(xpoints, yval + np.zeros(npoints), 'k--', linewidth=lw)
+                ax_loc.plot(xpoints, yval + np.zeros(npoints), 'k--', linewidth=kw.lw)
 
-    if not xlabel is None:
-        ax.set_xlabel(xlabel, fontsize=default_labelsize)
+    if not kw.xlabel is None:
+        ax.set_xlabel(kw.xlabel, fontsize=kw.fontsize)
 
-    if not title is None:
-        ax.set_title(title, fontsize=default_titlesize)
+    if not kw.title is None:
+        ax.set_title(kw.title, fontsize=kw.fontsize)
 
     # set the tick label size
     for ax_loc in axs:
         plt.sca(ax_loc)
-        plt.xticks(fontsize=default_ticksize)
-        plt.yticks(fontsize=default_ticksize)
+        plt.xticks(fontsize=kw.fontsize)
+        plt.yticks(fontsize=kw.fontsize)
 
         # Get the y-axis in scientific notation
         plt.ticklabel_format(useMathText=True, axis='y', scilimits=(0,0))

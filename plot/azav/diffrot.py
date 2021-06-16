@@ -33,7 +33,7 @@ plot_azav_kwargs_default['cbar_prec'] = 1
 
 kwargs_default.update(plot_azav_kwargs_default)
 kw = update_dict(kwargs_default, clas)
-find_bad_keys(kwargs_default, clas, 'diffrot', justwarn=True)
+find_bad_keys(kwargs_default, clas, clas0['routinename'], justwarn=True)
 kw_plot_azav = update_dict(plot_azav_kwargs_default, clas)
 if not kw.rbcz is None:  # need room for two colorbars
     kw.margin_bottom_inches *= 2

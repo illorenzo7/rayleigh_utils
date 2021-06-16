@@ -18,76 +18,23 @@ from reference_tools import equation_coefficients
 dirname = sys.argv[1]
 dirname_stripped = strip_dirname(dirname)
 
-# domain bounds
-ncheby, domain_bounds = get_domain_bounds(dirname)
-ri = np.min(domain_bounds)
-ro = np.max(domain_bounds)
-d = ro - ri
+# allowed args + defaults
+kwargs_default = {**script_lineplot_kwargs_default}
+kwargs_default.update(lineplot_kwargs_default)
+kw = update_dict(kwargs_default, clas)
+find_bad_keys(kwargs_default, clas, clas0['routinename'], justwarn=True)
 
-# Directory with data and plots, make the plotting directory if it doesn't
-# already exist    
-datadir = dirname + '/data/'
-plotdir = dirname + '/plots/'
-if (not os.path.isdir(plotdir)):
-    os.makedirs(plotdir)
-
-# Find the Shell_Avgs file(s) in the data directory. If there are multiple, by
-# default choose the one with widest range in the average
-the_file = get_widest_range_file(datadir, 'Shell_Avgs')
-
-# Get command-line arguments to adjust the interval of averaging files
-minmax = None
-xminmax = None
-rnorm = None
-rvals = []
-plot_enth_fluc = False
-mark_bcz = False
-lw = 1.0 # regular width lines
-dpi = 300.
-rmaxwindow = None # If present, set the bounds to zoom in on the boundaries
-        # with a window of a particular size
-rminwindow = None
-
-plotdir = None
-
-args = sys.argv[2:]
-nargs = len(args)
-
-# Read in the flux data
-print ('Getting radial fluxes from ' + the_file)
-di = get_dict(the_file)
+# get data
+if kw.the_file is None:
+    kw.the_file = get_widest_range_file(clas0['datadir'], 'Shell_Avgs')
+print ('Getting data from ' + kw.the_file)
+di = get_dict(kw.the_file)
 vals = di['vals']
 lut = di['lut']
 qv = di['qv']
 di_grid = get_grid_info(dirname)
 rr = di_grid['rr']
 nr = di_grid['nr']
-
-# Get the time range in sec
-iter1, iter2 = get_iters_from_file(the_file)
-t1 = translate_times(iter1, dirname, translate_from='iter')['val_sec']
-t2 = translate_times(iter2, dirname, translate_from='iter')['val_sec']
-
-# Get the baseline time unit
-rotation = get_parameter(dirname, 'rotation')
-if rotation:
-    time_unit = compute_Prot(dirname)
-    time_label = r'$\rm{P_{rot}}$'
-else:
-    time_unit = compute_tdt(dirname)
-    time_label = r'$\rm{TDT}$'
-
-if plotdir is None:
-    plotdir = dirname + '/plots/'
-    if not os.path.isdir(plotdir):
-        os.makedirs(plotdir)
-
-# Determine the simulation is magnetic
-magnetism = get_parameter(dirname, 'magnetism')
-
-# Make the plot name, labelling the first/last iterations we average over
-savename = dirname_stripped + '_eflux_radial_' +\
-    str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
 
 eflux = vals[:, 0, lut[1455]]
 hflux = vals[:, 0, lut[1433]]
@@ -114,133 +61,69 @@ if True in np.isnan(hflux):
 
 cflux = vals[:, 0, lut[1470]]
 kflux = vals[:, 0, lut[1923]]
-vflux = -vals[:, 0, lut[1935]]
+vflux = -vals[:, 0, lut[1935]] # remember the minus sign in vflux
 tflux = hflux + eflux + cflux + kflux + vflux # compute the total flux
 
-if plot_enth_fluc:
-    if 1458 in qv:
-        eflux_fluc = vals[:, 0, lut[1458]]
-        eflux_mean = eflux - eflux_fluc
-    else: # do the Reynolds decomposition "by hand"
-        # Compute the enthalpy flux from mean flows (MER. CIRC.)
-        eq = get_eq(dirname)
-        nt = get_parameter(dirname, 'n_theta')
-        tt, tw = compute_theta_grid(nt)
-        tw_2d = tw.reshape((nt, 1))
+# break the enthalpy flux into mean and fluctuating
+if 1458 in qv:
+    print ("getting enthaly flux (pp) from q = 1458")
+    eflux_fluc = vals[:, 0, lut[1458]]
+    eflux_mean = eflux - eflux_fluc
+else: # do the decomposition "by hand"
+    eq = get_eq(dirname)
+    nt = di_grid['ntheta']
+    tt, tw = di_grid['tt'], di_grid['tw'] 
+    tw_2d = tw.reshape((nt, 1))
+    rho = (eq.density).reshape((1, nr))
+    ref_prs = (eq.pressure).reshape((1, nr))
+    ref_temp = (eq.temperature).reshape((1, nr))
 
-        AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
-        rho = (eq.density).reshape((1, nr))
-        ref_prs = (eq.pressure).reshape((1, nr))
-        ref_temp = (eq.temperature).reshape((1, nr))
-        prs_spec_heat = 3.5e8
-        gamma = 5./3.
+    print ("getting enthaly flux (pp) indirectly from the AZ_Avgs file")
+    print ('Getting data from ' + AZ_Avgs_file)
+    AZ_Avgs_file = get_widest_range_file(clas0['datadir'], 'AZ_Avgs')
+    di_az = get_dict(AZ_Avgs_file)
+    vals_az = di_az['vals']
+    lut_az = di_az['lut']
 
-        di_az = get_dict(datadir + AZ_Avgs_file)
-        vals_az = di_az['vals']
-        lut_az = di_az['lut']
+    vr_av = vals_az[:, :, lut_az[1]]
+    entropy_av = vals_az[:, :, lut_az[501]]
+    prs_av = vals_az[:, :, lut_az[502]]
 
-        vr_av = vals_az[:, :, lut_az[1]]
-        entropy_av = vals_az[:, :, lut_az[501]]
-        prs_av = vals_az[:, :, lut_az[502]]
+    # Calculate mean temp. from EOS
+    temp_av = ref_temp*((1.-1./thermo_gamma)*(prs_av/ref_prs) +\
+            entropy_av/c_P)
 
-        # Calculate mean temp. from EOS
-        temp_av = ref_temp*((1.-1./gamma)*(prs_av/ref_prs) +\
-                entropy_av/prs_spec_heat)
+    # And, finally, the enthalpy flux from mean/fluc flows
+    eflux_mean_az = rho*c_P*vr_av*temp_av
+    
+    eflux_mean = np.sum(eflux_mean_az*tw_2d, axis=0)
+    eflux_fluc = eflux - eflux_mean
 
-        # And, finally, the enthalpy flux from mean/fluc flows
-        eflux_mean_az = rho*prs_spec_heat*vr_av*temp_av
-        
-        eflux_mean = np.sum(eflux_mean_az*tw_2d, axis=0)
-        eflux_fluc = eflux - eflux_mean
-
-if magnetism:
+if clas0['magnetism']
     # A Space Oddysey is actually (-4*pi) TIMES the correct Poynting flux
     mflux = -vals[:, 0, lut[2001]]/(4*np.pi)
     tflux += mflux
 
 fpr = 4*np.pi*rr**2
 
-# Compute the integrated fluxes
-hflux_int = hflux*fpr
-eflux_int = eflux*fpr
-if plot_enth_fluc:
-    eflux_mean_int = eflux_mean*fpr
-    eflux_fluc_int = eflux_fluc*fpr
-cflux_int = cflux*fpr
-kflux_int = kflux*fpr
-vflux_int = vflux*fpr
-tflux_int = tflux*fpr
-
-if magnetism:
-    mflux_int = mflux*fpr
-
 # Create the plot; start with plotting all the energy fluxes
-
-# User can specify what to normalize the radius by
-# By default, normalize by the solar radius
-if rnorm is None:
-    rr_n = rr/rsun
-else:
-    rr_n = rr/rnorm                                           
-
 lstar = get_lum(dirname)
 
-plt.plot(rr_n, hflux_int/lstar, label=r'$\rm{F}_{heat}$', linewidth=lw)
-plt.plot(rr_n, eflux_int/lstar, 'm', label = r'$\rm{F}_{enth}$',\
+plt.plot(rr_n, hflux*fpr/lstar, label=r'$\rm{F}_{heat}$', linewidth=lw)
+plt.plot(rr_n, eflux*fpr/lstar, 'm', label = r'$\rm{F}_{enth}$',\
         linewidth=lw)
-plt.plot(rr_n, cflux_int/lstar, label = r'$\rm{F}_{cond}$', linewidth=lw)
-plt.plot(rr_n, kflux_int/lstar, label = r'$\rm{F}_{KE}$', linewidth=lw)
-plt.plot(rr_n, vflux_int/lstar, label = r'$\rm{F}_{visc}$', linewidth=lw)
-plt.plot(rr_n, tflux_int/lstar, label= r'$\rm{F}_{total}$',\
+plt.plot(rr_n, cflux*fpr/lstar, label = r'$\rm{F}_{cond}$', linewidth=lw)
+plt.plot(rr_n, kflux*fpr/lstar, label = r'$\rm{F}_{KE}$', linewidth=lw)
+plt.plot(rr_n, vflux*fpr/lstar, label = r'$\rm{F}_{visc}$', linewidth=lw)
+plt.plot(rr_n, tflux*fpr/lstar, label= r'$\rm{F}_{total}$',\
         linewidth=lw, color='black')
 if magnetism:
-    plt.plot(rr_n, mflux_int/lstar, label=r'$\rm{F}_{Poynting}$',\
+    plt.plot(rr_n, mflux*fpr/lstar, label=r'$\rm{F}_{Poynting}$',\
         linewidth=lw)
-if plot_enth_fluc:
-    plt.plot(rr_n, eflux_fluc_int/lstar, 'm--',\
-            label=r'$\rm{F}_{enth,\ pp}$', linewidth=lw)
-    plt.plot(rr_n, eflux_mean_int/lstar, 'm:',\
-            label=r'$\rm{F}_{enth,\ mm}$', linewidth=lw)
-
-# Mark zero line
-plt.plot(rr_n, np.zeros_like(rr_n), 'k--', linewidth=lw)
-
-# Get the y-axis in scientific notation
-plt.ticklabel_format(useMathText=True, axis='y', scilimits=(0,0))
-
-# Get ticks everywhere
-plt.minorticks_on()
-plt.tick_params(top=True, right=True, direction='in', which='both')
-
-# Set the x limits
-if xminmax is None:
-    xminmax = np.min(rr_n), np.max(rr_n)
-# If user set -rminwindow or -rmaxwindow, this trumps the bounds
-if not rminwindow is None:
-    rmin = np.min(rr_n)
-    rmax = np.max(rr_n)
-    Delta_r = rmax - rmin
-    xminmax = rmin - rminwindow*Delta_r, rmin + rminwindow*Delta_r
-if not rmaxwindow is None:
-    rmin = np.min(rr_n)
-    rmax = np.max(rr_n)
-    Delta_r = rmax - rmin
-    xminmax = rmax - rmaxwindow*Delta_r, rmax + rmaxwindow*Delta_r
-plt.xlim(xminmax[0], xminmax[1])
-
-# Set the y-limits (the following values seem to "work well" for my models
-# so far...perhaps adjust this in the future. 
-
-if minmax is None:
-    minmax = -0.7, 1.3
-if not rminwindow is None:
-    minmax = -rminwindow, rminwindow
-if not rmaxwindow is None:
-    minmax = -rmaxwindow, rmaxwindow
-plt.ylim(minmax[0], minmax[1])
-
-# Label the axes
-if rnorm is None:
+plt.plot(rr_n, eflux_fluc*fpr/lstar, 'm--',\
+        label=r'$\rm{F}_{enth,\ pp}$', linewidth=lw)
+plt.plot(rr_n, eflux_mean*fpr/lstar, 'm:',\
+        label=r'$\rm{F}_{enth,\ mm}$', linewidth=lw)
     plt.xlabel(r'$r/R_\odot$',fontsize=kw.fontsize)
 else:
     plt.xlabel(r'r/(%.1e cm)' %rnorm, fontsize=kw.fontsize)
