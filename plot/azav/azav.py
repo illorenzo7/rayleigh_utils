@@ -102,7 +102,7 @@ else:
 
 # save the figure if tag was specified
 if clas0['tag'] in ['v', 'b']: # these go in main directory
-    plotdir = my_mkdir(clas0['plotdir']):
+    plotdir = my_mkdir(clas0['plotdir'])
 else:
     plotdir = my_mkdir(clas0['plotdir'] + 'azav/')
 if not clas0['tag'] == '':
