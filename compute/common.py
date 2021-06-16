@@ -297,19 +297,23 @@ def rms(array):
     else:
         return np.sqrt(np.mean(array**2))
 
-def get_satvals(field, posdef=False, logscale=False, fullrange=False, ignore1=None, ignore2=None):
+contourf_minmax_kwargs_default = dict({'posdef': False, 'logscale': False, 'fullrange': False, 'buff_ignore1': buff_frac, 'buff_ignore2': buff_frac}) 
+def contourf_minmax(field, **kwargs):
     # Get good boundaries to saturate array [field], assuming either
     # posdef (True or False) and/or logscale (True or False)
     # first, possibly cut the array (ignore boundary vals)
-    if not ignore1 is None:
+    kw = update_dict(contourf_minmax_kwargs_default, kwargs)
+    find_bad_keys(contourf_minmax_kwargs_default, kwargs, 'contourf_minmax')
+
+    if not kw.buff_ignore1 is None:
         n1, dummy = np.shape(field)
-        icut = int(n1*ignore1)
+        icut = int(n1*kw.buff_ignore1)
         field = np.copy(field[icut:n1-icut, :])
-    if not ignore2 is None:
+    if not kw.buff_ignore2 is None:
         dummy, n2 = np.shape(field)
-        icut = int(n2*ignore2)
+        icut = int(n2*kw.buff_ignore2)
         field = np.copy(field[:, icut:n2-icut])
-    if logscale:
+    if kw.logscale:
         logfield = np.log(field)
         medlog = np.median(logfield)
         shiftlog = logfield - medlog
@@ -322,10 +326,10 @@ def get_satvals(field, posdef=False, logscale=False, fullrange=False, ignore1=No
         minexp = medlog - 5.*av_std
         maxexp = medlog + 5.*av_std
         minmax = np.exp(minexp), np.exp(maxexp)        
-    elif posdef:
+    elif kw.posdef:
         sig = rms(field)
         minmax = 0., 3.*sig        
-    elif fullrange:
+    elif kw.fullrange:
         maxabs = np.max(np.abs(field))
         minmax = -maxabs, maxabs       
     else:
@@ -336,24 +340,26 @@ def get_satvals(field, posdef=False, logscale=False, fullrange=False, ignore1=No
     minmax = minmax[0] - tinybit, minmax[1] + tinybit
     return minmax
 
-def lineplot_minmax(profiles, logscale=False, legfrac=None, symmetrize=False, domain_bounds=None, xx=None):
+lineplot_minmax_kwargs_default = dict({'logscale': False, 'buff_ignore': buff_frac, 'legfrac': None, 'symmetrize': False, 'domain_bounds': None, 'xx': None})
+def lineplot_minmax(profiles, **kwargs):
+    kw = update_dict(lineplot_minmax_kwargs_default, kwargs)
+    find_bad_keys(lineplot_minmax_kwargs_default, kwargs)
 
     # possibly ignore nastiness around domain bounds
     # x axis (xx) must also be provided
-    if not domain_bounds is None:
-        buff_ignore = 0.03
-        delta_x = np.max(xx) - np.min(xx)
+    if not kw.domain_bounds is None:
+        delta_x = np.max(kw.xx) - np.min(kw.xx)
         profiles_old = profiles.copy()
         profiles = []
         for profile_old in profiles_old:
             tmp = []
-            for ix in range(len(xx)):
+            for ix in range(len(kw.xx)):
                 x_loc = xx[ix]
                 # check if x_loc is in a "bad" location 
                 # (near the domain_bounds)
                 add_it = True
-                for domain_bound in domain_bounds:
-                    if abs(x_loc - domain_bound) < buff_ignore*delta_x:
+                for domain_bound in kw.domain_bounds:
+                    if abs(x_loc - domain_bound) < kw.buff_ignore*delta_x:
                         add_it = False
                 if add_it:
                     tmp.append(profile_old[ix])
@@ -364,9 +370,9 @@ def lineplot_minmax(profiles, logscale=False, legfrac=None, symmetrize=False, do
     for profile in profiles:
         mmin = min(np.min(profile), mmin)
         mmax = max(np.max(profile), mmax)
-    if not legfrac is None: # legfrac is how much of plot (y dimensions)
+    if not kw.legfrac is None: # legfrac is how much of plot (y dimensions)
         # the legend should take up
-        buff_frac_min = legfrac/(1 - legfrac) + buff_frac
+        buff_frac_min = kw.legfrac/(1 - kw.legfrac) + buff_frac
     else:
         buff_frac_min = buff_frac
     if logscale:
@@ -1373,13 +1379,29 @@ class dotdict(dict):
     __setattr__ = dict.__setitem__
     __delattr__ = dict.__delitem__
 
-def update_kwargs(kwargs_supplied, kwargs_default):
-    kwargs = {**kwargs_default} # start with default kwargs
-    for key, val in kwargs_supplied.items():
-        if key in kwargs_default: # only update arguments that are
+def update_dict(dict_orig, dict_update):
+    dict_out = {**dict_orig} # start with original dict
+    for key, val in dict_update.items():
+        if key in dict_orig: # only update arguments that are
             # specified in the default set
-            kwargs[key] = val
-    return kwargs
+            dict_out[key] = val
+    return dotdict(dict_out)
+
+def find_bad_keys(dict_orig, dict_update, funcname, justwarn=False):
+    bad_keys = []
+    for key, val in dict_update.items():
+        if not key in dict_orig: 
+            bad_keys.append(key)
+    if len (bad_keys) > 0:
+        if justwarn:
+            print ("WARNING!")
+        else:
+            print ("ERROR!")
+        print (funcname + '() got bad keyword args:')
+        print (bad_keys)
+        if not justwarn:
+            print ("exiting")
+            sys.exit()
 
 default_latvals = np.array([-85., -75., -60., -45., -30., -15., 0., 15., 30., 45., 60., 75., 85.])
 

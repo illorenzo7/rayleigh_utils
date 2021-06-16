@@ -7,7 +7,7 @@ sys.path.append(os.environ['rapl'])
 from common import *
 from plotcommon import *
 from cla_util import *
-from sslice_util import plot_moll
+from sslice_util import *
 from rayleigh_diagnostics import Shell_Slices
 from get_slice import get_slice, get_label
 
@@ -18,22 +18,14 @@ dirname = clas0['dirname']
 dirname_stripped = strip_dirname(dirname)
 
 # SPECIFIC ARGS for moll_show:
-kwargs = dict({'val_iter': 1e9, 'irvals': None, 'rvals': None, 'varnames': None})
-kwargs_moll = {**kwargs_contourf}
-kwargs_moll['clon'] = 0.
-kwargs_moll = dotdict(update_kwargs(clas, kwargs_moll))
+moll_show_kwargs_default = dict({'val_iter': 1e9, 'irvals': None, 'rvals': None, 'varnames': None})
+moll_show_kwargs_default.update(plot_moll_kwargs_default)
+kw = update_dict(moll_show_kwargs_default, clas)
+find_bad_keys(moll_show_kwargs_default, clas, 'moll_show', justwarn=True)
+kw_plot_moll = update_dict(plot_moll_kwargs_default, clas)
 
-# update these defaults from command-line
-if 'di_trans' in clas:
-    clas['val_iter'] = clas['di_trans']['val_iter']
-kwargs = dotdict(update_kwargs(clas, kwargs))
-irvals = kwargs.irvals
-rvals = kwargs.rvals
-varnames = kwargs.varnames
-if np.isscalar(varnames): # this is length 1
-    varnames = np.array([varnames])
-if np.isscalar(irvals): # this is length 1
-    irvals = np.array([irvals])
+make_array(kw.varnames)
+make_array(kw.irvals)
 
 # make plot directory if nonexistent
 plotdir = my_mkdir(clas0['plotdir'] + 'moll/')
@@ -41,7 +33,7 @@ plotdir = my_mkdir(clas0['plotdir'] + 'moll/')
 # Read in desired shell slice or average
 # Data with Shell_Slices
 radatadir = dirname + '/Shell_Slices/'
-fname = get_closest_file(radatadir, kwargs.val_iter)
+fname = get_closest_file(radatadir, kw.val_iter)
 print ("reading " + fname)
 a = Shell_Slices(fname, '')
 if 'the_file' in clas:
@@ -52,23 +44,23 @@ if 'the_file' in clas:
 print ("done reading")
 
 # get the rvals we want
-if irvals is None: # irvals hasn't been set yet
-    if rvals is None:
-        irvals = np.array([0]) # just plot the top radius by default
+if kw.irvals is None: # irvals hasn't been set yet
+    if kw.rvals is None:
+        kw.irvals = np.array([0]) # just plot the top radius by default
     else: # get irvals from rvals
-        if rvals == 'all':
-            irvals = np.arange(a.nr)
+        if kw.rvals == 'all':
+            kw.irvals = np.arange(a.nr)
         else:
-            irvals = np.zeros_like(rvals, dtype='int')
-            for i in range(len(rvals)):
-                irvals[i] = np.argmin(np.abs(a.radius/rsun - rvals[i]))
+            kw.irvals = np.zeros_like(kw.rvals, dtype='int')
+            for i in range(len(kw.rvals)):
+                kw.irvals[i] = np.argmin(np.abs(a.radius/rsun - kw.rvals[i]))
 
 # get the vars we want
-if varnames is None: # varnames not specified yet
-    varnames = np.array(['vr'])
+if kw.varnames is None: # varnames not specified yet
+    kw.varnames = np.array(['vr'])
 else:
-    if varnames[0] == 'all': # remember varnames is an array now
-        varnames = get_default_varnames(dirname)
+    if kw.varnames[0] == 'all': # remember varnames is an array now
+        kw.varnames = get_default_varnames(dirname)
 
 # plot dimensions
 nplots = 1
@@ -81,16 +73,16 @@ margin_bottom_inches = 1/2
 # loop over rvals/vars and make plots
 print ("========================")
 print ("about to plot:")
-print ("irvals = ", irvals)
-print ("varnames = ", varnames)
-nfigures = len(irvals)*len(varnames)
+print ("irvals = ", kw.irvals)
+print ("varnames = ", kw.varnames)
+nfigures = len(kw.irvals)*len(kw.varnames)
 print ("nfigures = ", nfigures)
 print ("========================")
 
-for varname in varnames:
+for varname in kw.varnames:
     # get the desired field variable
     vals = get_slice(a, varname, dirname=dirname)
-    for irval in irvals:
+    for irval in kw.irvals:
         field = vals[:, :, irval]
         rval = a.radius[irval]/rsun 
 
@@ -100,7 +92,7 @@ for varname in varnames:
         # make plot
         fig, axs, fpar = make_figure(nplots=nplots, sub_width_inches=sub_width_inches, sub_aspect=sub_aspect, margin_top_inches=margin_top_inches, margin_bottom_inches=margin_bottom_inches)
         ax = axs[0, 0]
-        plot_moll(field, a.costheta, fig, ax, **kwargs_moll)
+        plot_moll(field, a.costheta, fig, ax, **kw_plot_moll)
 
         # make title
         time_string = get_time_string(dirname, a.iters[0])
@@ -109,7 +101,7 @@ for varname in varnames:
         title = dirname_stripped +\
                 '\n' + varlabel + '     '  + time_string + '     ' +\
                 (r'$r/R_\odot\ =\ %0.3f$' %rval) + '\n' +\
-                ('clon = %4.0f' %kwargs_moll['clon'])
+                ('clon = %4.0f' %kw.clon)
         ax.set_title(title, va='bottom', fontsize=default_titlesize)
 
         # save by default

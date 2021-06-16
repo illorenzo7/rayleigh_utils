@@ -341,15 +341,19 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
     del field # free up memory
     return im
 
-def plot_moll(field_orig, costheta, fig, ax, clon=0., **kwargs_supplied): 
-    # **kwargs_supplied corresponds to my_contourf
-    kwargs_default = {**kwargs_contourf}
-    kwargs = update_kwargs(kwargs_supplied, kwargs_default)
-    kwargs = dotdict(kwargs)
-    # some things we need to change (no contours and boundary + 
-    # coordinate lines are dealt with separately
-    kwargs.plotboundary = False
-    kwargs.plotcontours = False
+plot_moll_kwargs_default = dict({'clon': 0.})
+plot_moll_kwargs_default.update(my_contourf_kwargs_default)
+# some things we need to change (no contours and boundary + 
+# coordinate lines are dealt with separately)
+plot_moll_kwargs_default['plotboundary'] = False
+plot_moll_kwargs_default['plotcontours'] = False
+
+def plot_moll(field_orig, costheta, fig, ax, **kwargs):
+    kw = update_dict(plot_moll_kwargs_default, kwargs)
+    find_bad_keys(plot_moll_kwargs_default, kwargs, 'plot_moll')
+    kw_my_contourf = {**plot_moll_kwargs_default}
+    del kw_my_contourf['clon']
+    kw_my_contourf = update_dict(kw_my_contourf, kwargs)
         
     # Shouldn't have to do this but Python is stupid with arrays
     field = np.copy(field_orig)    
@@ -358,14 +362,14 @@ def plot_moll(field_orig, costheta, fig, ax, clon=0., **kwargs_supplied):
     xx, yy = mollweide_transform(costheta)
 
     # shift the field so that the clon is in the ~center of the array
-    difflon = 180. - clon # basically difflon is the amount the clon
+    difflon = 180. - kw.clon # basically difflon is the amount the clon
     # must be shifted to arrive at 180, which is near the center of array
     nphi = 2*len(costheta)
     iphi_shift = int(difflon/360.*nphi)
     field = np.roll(field, iphi_shift, axis=0)
 
     # make the Mollweide plot
-    my_contourf(xx, yy, field, fig, ax, **kwargs)
+    my_contourf(xx, yy, field, fig, ax, **kw_my_contourf)
 
     # Draw parallels and meridians, evenly spaced by 30 degrees
     # need some derivative grid info
@@ -379,29 +383,29 @@ def plot_moll(field_orig, costheta, fig, ax, clon=0., **kwargs_supplied):
 
     for meridian in meridians:
         if meridian == 0.: # keep track of where 0-th meridian is
-            lw = 2*kwargs.lw
+            lw = 2*kw.lw
         else:
-            lw = kwargs.lw
+            lw = kw.lw
         # Make sure the plotted meridians are with respect to the clon
         # keep everything in the -180, 180 range
-        lon_loc = meridian - clon
+        lon_loc = meridian - kw.clon
         if lon_loc > 180.:
             lon_loc -= 360.
         elif lon_loc < -180.:
             lon_loc += 360.
         lon_loc *= (np.pi/180.)
         imer = np.argmin(np.abs(lon - lon_loc))
-        ax.plot(xx[imer, :], yy[imer, :], 'k', linewidth=lw)
+        ax.plot(xx[imer, :], yy[imer, :], 'k', linewidth=kw.lw)
     
     for parallel in parallels:
         if parallel == 0.: 
-            lw = 2*kwargs.lw
+            lw = 2*kw.lw
         else:
-            lw = kwargs.lw
+            lw = kw.lw
         ilat = np.argmin(np.abs(lat - parallel*np.pi/180.))
-        ax.plot(xx[:, ilat], yy[:, ilat], 'k', linewidth=lw)
+        ax.plot(xx[:, ilat], yy[:, ilat], 'k', linewidth=kw.lw)
 
     # Plot outer boundary
     psivals = np.linspace(0, 2*np.pi, 100)
     xvals, yvals = 2.*np.cos(psivals), np.sin(psivals)
-    ax.plot(xvals, yvals, 'k', linewidth=1.5*kwargs.lw)
+    ax.plot(xvals, yvals, 'k', linewidth=1.5*kw.lw)
