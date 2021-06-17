@@ -27,7 +27,7 @@ except:
 kwargs_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'nodyn': False, 'dynfrac': 0.5, 'xvals': np.array([]), 'czrz': False, 'inte': False})
 # plots two more columns with energies in CZ and RZ separately 
 # update these defaults from command-line
-kwargs = dotdict(update_kwargs(clas, kwargs_default))
+kwargs = update_dict(kwargs_default, clas)
 
 fontsize = default_titlesize
 the_file = kwargs.the_file

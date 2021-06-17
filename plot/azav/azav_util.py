@@ -471,10 +471,9 @@ def streamfunction(vr,vt,r,cost,order=0):
 def plot_azav_grid(terms, rr, cost, maintitle=None, ncol=6, titles=None, sub_width_inches=2., rbcz=None, minmaxrz=None, rvals=np.array([]), plotlatlines=True, latvals=np.array([]), lw=1.0, shav=False, tw=None, totsig=None, domain_bounds=None, **kwargs_supplied):
 
     # **kwargs_supplied corresponds to my_contourf
-    kwargs_default = {**kwargs_contourf}
-    kwargs_default['ignore1'] = 0.05 # ignore the boundaries in latitude
-    kwargs = update_kwargs(kwargs_supplied, kwargs_default)
-    kwargs = dotdict(kwargs)
+    kwargs_default = {**my_contourf_kwargs_default}
+    kwargs_default['buff_ignore1'] = 0.05 # ignore the boundaries in latitude
+    kwargs = update_dict(kwargs_default, kwargs_supplied)
     minmax = kwargs.minmax
 
     # possibly sum some terms, based on totsig
@@ -549,7 +548,7 @@ def plot_azav_grid(terms, rr, cost, maintitle=None, ncol=6, titles=None, sub_wid
         if shav:
             av_term = np.sum(terms[iplot]*tw_2d, axis=0)
             av_ax = av_axs[irow, icol]
-            lineplot(rr/rsun, av_term, av_ax, xlabel=xlabel, title=titles[iplot], xcut=rbcz, xvals=rvals, minmax=minmax, minmax2=minmaxrz, domain_bounds=domain_bounds)
+            lineplot(rr/rsun, [av_term], av_ax, xlabel=xlabel, title=titles[iplot], xcut=rbcz, xvals=rvals, minmax=minmax, minmax2=minmaxrz, domain_bounds=domain_bounds)
 
     # Put the main title in upper left
     fig.text(fpar['margin_left'] + fpar['sub_margin_left'], 1.0 - fpar['margin_top'], maintitle, ha='left', va='bottom', fontsize=default_titlesize)

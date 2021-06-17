@@ -294,7 +294,7 @@ def lineplot_minmax(profiles, **kwargs):
         for profile_old in profiles_old:
             tmp = []
             for ix in range(len(kw.xx)):
-                x_loc = xx[ix]
+                x_loc = kw.xx[ix]
                 # check if x_loc is in a "bad" location 
                 # (near the domain_bounds)
                 add_it = True
@@ -382,6 +382,8 @@ def lineplot(xx, profiles, ax, **kwargs):
         kw.markers = [kw.markers]*nprofiles
     if np.isscalar(kw.linestyles):
         kw.linestyles = [kw.linestyles]*nprofiles
+    if kw.labels is None:
+        kw.labels = [None]*nprofiles
 
     if not kw.xcut is None:
         kw_lineplot_minmax.symmetrize = True
