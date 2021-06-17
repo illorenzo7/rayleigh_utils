@@ -19,30 +19,38 @@ from plotcommon import *
 from cla_util import *
 
 # Get CLAs
-kwargs = dict({'the_file': None, 'minmax': None, 'rvals': None, 'latvals': np.array([0., 15., 30., 45., 60., 75.])})
 args = sys.argv
 clas0, clas = read_clas(args)
-kwargs = dotdict(update_kwargs(clas, kwargs))
-
 dirname = clas0['dirname']
 dirname_stripped = strip_dirname(dirname)
-the_file = kwargs.the_file
-minmax = kwargs.minmax
-rvals = kwargs.rvals
-latvals = kwargs.latvals
+
+# allowed args + defaults
+kwargs_default = dict({'the_file': None, 'latvals': np.array([0., 15., 30., 45., 60., 75.])})
+kwargs_default.update(make_figure_kwargs_default)
+lineplot_kwargs_default['legfrac'] = 1/5
+kwargs_default.update(lineplot_kwargs_default)
+kw = update_dict(kwargs_default, clas)
+kw_make_figure = update_dict(make_figure_kwargs_default, clas)
+kw_lineplot = update_dict(lineplot_kwargs_default, clas)
+
+if not kw.xcut is None: # make room for label on right
+    kw_make_figure.sub_margin_right_inches = default_margin_xlabel
+kw_make_figure.margin_top_inches += default_line_height 
+# room for diffrot label
+find_bad_keys(kwargs_default, clas, clas0['routinename'], justwarn=True)
 
 # get data
-if the_file is None:
-    the_file = get_widest_range_file(clas0['datadir'], 'AZ_Avgs')
-print ('Getting data from ' + the_file)
-di = get_dict(the_file)
+if kw.the_file is None:
+    kw.the_file = get_widest_range_file(clas0['datadir'], 'AZ_Avgs')
+print ('Getting data from ' + kw.the_file)
+di = get_dict(kw.the_file)
 vals = di['vals']
 lut = di['lut']
 vp_av = vals[:, :, lut[3]]
 
 # Get necessary grid info
 di_grid = get_grid_info(dirname)
-rr = di_grid['rr']/rsun
+rr = di_grid['rr']
 tt_lat = di_grid['tt_lat']
 xx = di_grid['xx']
 
@@ -57,45 +65,33 @@ Om0 *= 1e9/2/np.pi # convert from rad/s --> nHz
 it0, it60_N, it60_S = np.argmin(np.abs(tt_lat)), np.argmin(np.abs(tt_lat - 60)), np.argmin(np.abs(tt_lat + 60))
 Delta_Om = Om[it0, 0] - (Om[it60_N, 0] + Om[it60_S, 0])/2
 
-# figure dimensions
-nplots = 1
-sub_width_inches = 4.5
-sub_height_inches = 3
-margin_top_inches = 1 # larger top margin to make room for title
-margin_bottom_inches = 1/2
-margin_right_inches = 2 # make room for legend
-
-fig, axs, fpar = make_figure(nplots=nplots, sub_width_inches=sub_width_inches, sub_height_inches=sub_height_inches, margin_top_inches=margin_top_inches, margin_left_inches=default_margin_ylabel, margin_right_inches=margin_right_inches, margin_bottom_inches=default_margin_xlabel)
+fig, axs, fpar = make_figure(**kw_make_figure)
 ax = axs[0, 0]
 
 # Plot rotation vs radius at the desired latitudes
-count = 0
-for latval in latvals:
+profiles = []
+kw_lineplot.labels = []
+for latval in kw.latvals:
     ilat_N = np.argmin(np.abs(tt_lat - latval))
     ilat_S = np.argmin(np.abs(tt_lat + latval))
     latitude = (tt_lat[ilat_N] - tt_lat[ilat_S])/2 
     # (this is the actual value we get)
     Om_vs_r = (Om[ilat_N, :] + Om[ilat_S, :])/2
-    lineplot(rr, Om_vs_r, ax, label=r'$\rm{%2.1f}$' %latitude + r'$^\circ$', color=color_order[count], minmax=minmax)
-    count += 1
-
-# adjust y axis
-if minmax is None:
-    minmax = ax.get_ylim()
-    ax.set_ylim(minmax)
-
+    profiles.append(Om_vs_r)
+    kw_lineplot.labels.append(r'$\rm{%2.1f}$' %latitude + r'$^\circ$')
+   
 # show the frame rotation rate
-lineplot(rr, Om0 + np.zeros_like(rr), ax, color='k', linestyle='--', label=r'$\Omega_0=%.1f$' %Om0, xlabel=r'$r/R_\odot$', ylabel=r'$\Omega/2\pi$' + ' [nHz]', minmax=minmax, xvals=rvals)
+kw_lineplot.yvals = make_array(kw_lineplot.yvals, tolist=True)
+kw_lineplot.yvals.append(Om0)
+lineplot(rr/rsun, profiles, ax, **kw_lineplot)
 
 # make title 
-fontsize = default_titlesize
-iter1, iter2 = get_iters_from_file(the_file)
+iter1, iter2 = get_iters_from_file(kw.the_file)
 time_string = get_time_string(dirname, iter1, iter2) 
 the_title = dirname_stripped + '\n' +  r'$\Omega(r,\theta)$' + '\n' + time_string + '\n' + r'$\Delta\Omega_{\rm{60}}$' + (' = %.1f nHz' %Delta_Om)
 margin_x = fpar['margin_left'] + fpar['sub_margin_left']
 margin_y = default_margin/fpar['height_inches']
-fig.text(margin_x, 1 - margin_y, the_title, ha='left', va='top', fontsize=fontsize)
-plt.legend(title='latitude', fontsize=fontsize, loc='upper left', bbox_to_anchor=(1.02, 1))
+fig.text(margin_x, 1 - margin_y, the_title, ha='left', va='top', fontsize=default_titlesize)
 
 # save the figure
 plotdir = my_mkdir(clas0['plotdir'])

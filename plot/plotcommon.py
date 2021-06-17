@@ -14,7 +14,7 @@ default_labelsize = 12
 default_titlesize = 12
 default_ticksize = 12
 default_margin = 1/16
-default_line_height = 3/16 # height of a line of text
+default_line_height = 1/4 # height of a line of text
 default_margin_xlabel = 1/2
 default_margin_ylabel = 3/4
 # ylabels take up more space because floating
@@ -359,10 +359,13 @@ def sci_format(num, ndec=1):
 
 lineplot_kwargs_default = dict({'xlabel': None, 'ylabel': None, 'title': None, 'xvals': np.array([]), 'yvals': np.array([]), 'labels': None, 'xlogscale': False, 'xminmax': None, 'minmax': None, 'xcut': None, 'minmax2': None, 'scatter': False, 'colors': color_order, 'linestyles': style_order[0], 'markers': marker_order[0], 'lw': default_lw, 's': default_s})
 lineplot_kwargs_default.update(lineplot_minmax_kwargs_default)
+
 del lineplot_kwargs_default['xx']
 
 def lineplot(xx, profiles, ax, **kwargs):
     kw = update_dict(lineplot_kwargs_default, kwargs)
+    # make room for legend by default
+    lineplot_minmax_kwargs_default['legfrac'] = 1/3
     kw_lineplot_minmax = update_dict(lineplot_minmax_kwargs_default, kwargs)
     find_bad_keys(lineplot_kwargs_default, kwargs, 'lineplot')
 
@@ -372,9 +375,6 @@ def lineplot(xx, profiles, ax, **kwargs):
     # convert xvals, yvals to lists
     kw.xvals = make_array(kw.xvals, tolist=True)
     kw.yvals = make_array(kw.yvals, tolist=True)
-
-    # make room for legend by default
-    kw_lineplot_minmax.legfrac = 1/3
 
     # deal with scalar "lists"
     nprofiles = len(profiles)
