@@ -5,7 +5,7 @@ from matplotlib import colors, ticker
 import matplotlib.pyplot as plt
 from common import *
 
-color_order = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
+color_order = ['b', 'g', 'r', 'c', 'm', 'y', 'k']*2
 style_order = ['-', '--', '-.', ':']
 marker_order = [".", "o", "v","s", "*", "x", "^", "<", ">"]
 default_lw = 1.0
@@ -14,7 +14,7 @@ default_labelsize = 12
 default_titlesize = 12
 default_ticksize = 12
 default_margin = 1/16
-default_margin_label = 3/8
+default_line_height = 3/16 # height of a line of text
 default_margin_xlabel = 1/2
 default_margin_ylabel = 3/4
 # ylabels take up more space because floating
@@ -23,9 +23,6 @@ default_margin_title = 3/4
 
 # default figure sizes 
 sub_width_inches_default, sub_height_inches_default = 3.5, 2.5
-width_inches_default, height_inches_default = 7.0, 4.0
-
-script_lineplot_kwargs_default = dict({'the_file': None, 'sub_width_inches': sub_width_inches_default, 'sub_height_inches': sub_height_inches_default, 'margin_top_inches': default_margin_title, 'margin_bottom_inches': 1/2, 'margin_left_inches': default_margin_xlabel})
 
 def axis_range(ax): # gets subplot coordinates on a figure in "normalized"
         # coordinates
@@ -78,10 +75,10 @@ dict({'nplots': None, 'nrow': None, 'ncol': None,\
     'sub_height_inches': None,\
     'sub_aspect': None,\
     
-    'sub_margin_left_inches': default_margin_label, 
-    'sub_margin_right_inches': default_margin_label,\
-    'sub_margin_bottom_inches': default_margin_label,\
-    'sub_margin_top_inches': default_margin_label,\
+    'sub_margin_left_inches': default_margin_ylabel, \
+    'sub_margin_right_inches': default_margin,\
+    'sub_margin_bottom_inches': default_margin_xlabel,\
+    'sub_margin_top_inches': default_line_height,\
 
     'margin_left_inches': default_margin,\
     'margin_right_inches': default_margin,\
@@ -187,17 +184,6 @@ def make_figure(**kwargs):
         else: # width and height --> aspect in overdetermined problem
             sub_aspect = sub_height_inches/sub_width_inches
 
-    elif nspec == 1:
-        which_spec = 'fig'
-        if not width_inches is None:
-            height_inches = height_inches_default
-            aspect = height_inches/width_inches
-        elif not height_inches is None:
-            width_inches = width_inches_default
-            aspect = height_inches/width_inches
-        elif not aspect is None:
-            width_inches = width_inches_default
-            height_inches = aspect*width_inches
     elif nspec >= 2:
         which_spec = 'fig'
         if width_inches is None:
@@ -297,7 +283,7 @@ def contourf_minmax(field, **kwargs):
 lineplot_minmax_kwargs_default = dict({'logscale': False, 'buff_ignore': buff_frac, 'legfrac': None, 'symmetrize': False, 'domain_bounds': None, 'xx': None})
 def lineplot_minmax(profiles, **kwargs):
     kw = update_dict(lineplot_minmax_kwargs_default, kwargs)
-    find_bad_keys(lineplot_minmax_kwargs_default, kwargs)
+    find_bad_keys(lineplot_minmax_kwargs_default, kwargs, 'lineplot_minmax')
 
     # possibly ignore nastiness around domain bounds
     # x axis (xx) must also be provided
@@ -329,7 +315,7 @@ def lineplot_minmax(profiles, **kwargs):
         buff_frac_min = kw.legfrac/(1 - kw.legfrac) + buff_frac
     else:
         buff_frac_min = buff_frac
-    if logscale:
+    if kw.logscale:
         yratio = mmax/mmin
         ymin = mmin/(yratio**buff_frac_min)
         ymax = mmax*(yratio**buff_frac)
@@ -338,7 +324,7 @@ def lineplot_minmax(profiles, **kwargs):
         ymin = mmin - buff_frac_min*ydiff
         ymax = mmax + buff_frac*ydiff
 
-    if symmetrize:
+    if kw.symmetrize:
         maxabs = max(abs(ymin), abs(ymax))
         ymin, ymax = -maxabs, maxabs
     return ymin, ymax
@@ -371,8 +357,9 @@ def sci_format(num, ndec=1):
     return ((r'$%1.' + (r'%i' %ndec) + r'f\times10^{%i}$')\
             %(mantissa, exponent))
 
-lineplot_kwargs_default = dict({'xlabel': None, 'ylabel': None, 'title': None, 'xvals': np.array([]), 'yvals': np.array([]), 'labels': None, 'xlogscale': False, 'xminmax': None, 'minmax': None, 'xcut': None, 'minmax2': None, 'scatter': False, 'colors': color_order, 'linestyles': style_order, 'markers': marker_order[0], 'lw': default_lw, 's': default_s})
+lineplot_kwargs_default = dict({'xlabel': None, 'ylabel': None, 'title': None, 'xvals': np.array([]), 'yvals': np.array([]), 'labels': None, 'xlogscale': False, 'xminmax': None, 'minmax': None, 'xcut': None, 'minmax2': None, 'scatter': False, 'colors': color_order, 'linestyles': style_order[0], 'markers': marker_order[0], 'lw': default_lw, 's': default_s})
 lineplot_kwargs_default.update(lineplot_minmax_kwargs_default)
+del lineplot_kwargs_default['xx']
 
 def lineplot(xx, profiles, ax, **kwargs):
     kw = update_dict(lineplot_kwargs_default, kwargs)
@@ -385,6 +372,16 @@ def lineplot(xx, profiles, ax, **kwargs):
     # convert xvals, yvals to lists
     kw.xvals = make_array(kw.xvals, tolist=True)
     kw.yvals = make_array(kw.yvals, tolist=True)
+
+    # make room for legend by default
+    kw_lineplot_minmax.legfrac = 1/3
+
+    # deal with scalar "lists"
+    nprofiles = len(profiles)
+    if np.isscalar(kw.markers):
+        kw.markers = [kw.markers]*nprofiles
+    if np.isscalar(kw.linestyles):
+        kw.linestyles = [kw.linestyles]*nprofiles
 
     if not kw.xcut is None:
         kw_lineplot_minmax.symmetrize = True
@@ -413,31 +410,34 @@ def lineplot(xx, profiles, ax, **kwargs):
 
     # get ylimits 
     if kw.minmax is None:
-        kw.minmax = lineplot_minmax(profiles, xx=xx[:ixcut], **kw_lineplot_minmax)
+        kw_lineplot_minmax.xx = xx[:ixcut]
+        kw.minmax = lineplot_minmax(profiles, **kw_lineplot_minmax)
     ax.set_ylim(kw.minmax)
 
     if not kw.xcut is None:
         if kw.minmax2 is None:
-            kw.minmax2 = lineplot_minmax(profiles2, xx=xx[ixcut:], **kw_lineplot_minmax)
+            kw_lineplot_minmax.xx = xx[ixcut:]
+            kw.minmax2 = lineplot_minmax(profiles2, **kw_lineplot_minmax)
         ax2.set_ylim(kw.minmax2)
   
     # loop over profiles and make plots
-    nprofiles = len(profiles)
     for iprof in range(nprofiles):
         profile = profiles[iprof]
+        kw_scatter = dict({'label': kw.labels[iprof], 'marker': kw.markers[iprof], 'color': kw.colors[iprof], 's': kw.s})
+        kw_plot = dict({'label': kw.labels[iprof], 'linestyle': kw.linestyles[iprof], 'color': kw.colors[iprof], 'linewidth': kw.lw})
         if kw.xcut is None:
             if kw.scatter:
-                ax.scatter(xx, profile, label=kw.label, marker=kw.marker, s=kw.s, color=kw.color)
+                ax.scatter(xx, profile, **kw_scatter)
             else:
-                ax.plot(xx, profile, label=kw.label, linestyle=kw.linestyle, linewidth=kw.lw, color=kw.color)
+                ax.plot(xx, profile, **kw_plot)
         else:
             profile2 = profiles2[iprof]
             if kw.scatter:
-                ax.scatter(xx[:ixcut], profile, label=kw.label, marker=kw.marker, s=kw.s, color=kw.color)
-                ax2.scatter(xx[ixcut:], profile2, label=kw.label, marker=kw.marker, s=kw.s, color=kw.color)
+                ax.scatter(xx[:ixcut], profile2, **kw_scatter)
+                ax2.scatter(xx[ixcut:], profile2, **kw_scatter)
             else:
-                ax.plot(xx[:ixcut], profile, label=kw.label, linestyle=kw.linestyle, linewidth=kw.lw, color=kw.color)
-                ax2.plot(xx[ixcut:], profile2, label=kw.label, linestyle=kw.linestyle, linewidth=kw.lw, color=kw.color)
+                ax.plot(xx[:ixcut], profile, **kw_plot)
+                ax2.plot(xx[ixcut:], profile2, **kw_plot)
 
     # ticks (mostly everywhere, deal with split axes)
     if kw.xcut is None:
@@ -457,7 +457,7 @@ def lineplot(xx, profiles, ax, **kwargs):
         plt.tick_params(top=True, left=True, right=False, direction='in',\
                 which='both')
         if not kw.ylabel is None:
-            ax_left.set_ylabel(ylabel, fontsize=kw.fontsize)
+            ax_left.set_ylabel(kw.ylabel, fontsize=kw.fontsize)
             ax_left.yaxis.set_label_position('left')
         ax_left.yaxis.tick_left()
 
@@ -469,7 +469,7 @@ def lineplot(xx, profiles, ax, **kwargs):
 
     if kw.xminmax is None:
         kw.xminmax = np.min(xx), np.max(xx)
-    ax.set_xlim(xminmax)
+    ax.set_xlim(kw.xminmax)
 
     if not kw.xcut is None:
         kw.xvals.append(xx[ixcut])
@@ -483,7 +483,7 @@ def lineplot(xx, profiles, ax, **kwargs):
         if kw.xcut is None:
             ax_loc = ax
         else:
-            if xval <= xcut:
+            if xval <= kw.xcut:
                 ax_loc = ax_left
             else:
                 ax_loc = ax_right
@@ -511,6 +511,9 @@ def lineplot(xx, profiles, ax, **kwargs):
 
         # Get the y-axis in scientific notation
         plt.ticklabel_format(useMathText=True, axis='y', scilimits=(0,0))
+
+    # make the legend
+    ax.legend(loc='lower left', ncol=3, fontsize=0.8*default_labelsize)
 
 my_contourf_kwargs_default = dict({
         # saturation of field values stuff

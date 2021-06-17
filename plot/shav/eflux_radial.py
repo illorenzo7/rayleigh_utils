@@ -9,19 +9,28 @@ import numpy as np
 import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
+sys.path.append(os.environ['rapl'])
 from common import *
-from compute_grid_info import compute_theta_grid
-from rayleigh_diagnostics import GridInfo
-from reference_tools import equation_coefficients
+from plotcommon import *
+from cla_util import *
 
-# Get the run directory on which to perform the analysis
-dirname = sys.argv[1]
+# Get CLAs
+args = sys.argv
+clas0, clas = read_clas(args)
+dirname = clas0['dirname']
 dirname_stripped = strip_dirname(dirname)
 
 # allowed args + defaults
-kwargs_default = {**script_lineplot_kwargs_default}
+kwargs_default = dict({'the_file': None, 'mark_bcz': False})
+kwargs_default.update(make_figure_kwargs_default)
 kwargs_default.update(lineplot_kwargs_default)
 kw = update_dict(kwargs_default, clas)
+kw_make_figure = update_dict(make_figure_kwargs_default, clas)
+kw_lineplot = update_dict(lineplot_kwargs_default, clas)
+if not kw.xcut is None: # make room for label on right
+    kw_make_figure.sub_margin_right_inches = default_margin_xlabel
+if kw.mark_bcz: # make room for the bcz label
+    kw_make_figure.margin_top_inches += default_line_height
 find_bad_keys(kwargs_default, clas, clas0['routinename'], justwarn=True)
 
 # get data
@@ -39,8 +48,10 @@ nr = di_grid['nr']
 eflux = vals[:, 0, lut[1455]]
 hflux = vals[:, 0, lut[1433]]
 if True in np.isnan(hflux):
+    print (buffer_line)
     print ("OUTPUT HEAT FLUX (1433, vol_heat_flux) HAS NANs!!!!")
     print ("Computing manually from discrete integral")
+    print (buffer_line)
     hflux = np.zeros_like(eflux)
     eq = get_eq(dirname)
     rr = eq.radius
@@ -99,89 +110,66 @@ else: # do the decomposition "by hand"
     eflux_mean = np.sum(eflux_mean_az*tw_2d, axis=0)
     eflux_fluc = eflux - eflux_mean
 
-if clas0['magnetism']
+profiles = [eflux, eflux_mean, eflux_fluc, hflux, cflux, vflux]
+kw_lineplot.labels = ['eflux', 'eflux (mm)', 'eflux (pp)', 'hflux', 'cflux', 'vflux']
+
+if clas0['magnetism']:
     # A Space Oddysey is actually (-4*pi) TIMES the correct Poynting flux
     mflux = -vals[:, 0, lut[2001]]/(4*np.pi)
+    profiles.append(mflux)
+    kw_lineplot.labels.append('mflux')
     tflux += mflux
+profiles.append(tflux)
+kw_lineplot.labels.append('total')
 
+# integrate and normalize
+lstar = get_lum(dirname)
 fpr = 4*np.pi*rr**2
+profiles_int = []
+for profile in profiles:
+    profiles_int.append(fpr*profile/lstar)
 
 # Create the plot; start with plotting all the energy fluxes
-lstar = get_lum(dirname)
+fig, axs, fpar = make_figure(**kw_make_figure)
+ax = axs[0,0]
 
-plt.plot(rr_n, hflux*fpr/lstar, label=r'$\rm{F}_{heat}$', linewidth=lw)
-plt.plot(rr_n, eflux*fpr/lstar, 'm', label = r'$\rm{F}_{enth}$',\
-        linewidth=lw)
-plt.plot(rr_n, cflux*fpr/lstar, label = r'$\rm{F}_{cond}$', linewidth=lw)
-plt.plot(rr_n, kflux*fpr/lstar, label = r'$\rm{F}_{KE}$', linewidth=lw)
-plt.plot(rr_n, vflux*fpr/lstar, label = r'$\rm{F}_{visc}$', linewidth=lw)
-plt.plot(rr_n, tflux*fpr/lstar, label= r'$\rm{F}_{total}$',\
-        linewidth=lw, color='black')
-if magnetism:
-    plt.plot(rr_n, mflux*fpr/lstar, label=r'$\rm{F}_{Poynting}$',\
-        linewidth=lw)
-plt.plot(rr_n, eflux_fluc*fpr/lstar, 'm--',\
-        label=r'$\rm{F}_{enth,\ pp}$', linewidth=lw)
-plt.plot(rr_n, eflux_mean*fpr/lstar, 'm:',\
-        label=r'$\rm{F}_{enth,\ mm}$', linewidth=lw)
-    plt.xlabel(r'$r/R_\odot$',fontsize=kw.fontsize)
-else:
-    plt.xlabel(r'r/(%.1e cm)' %rnorm, fontsize=kw.fontsize)
+# x and y labels
+kw_lineplot.xlabel = r'$r/R_\odot$'
+kw_lineplot.ylabel = r'$4\pi r^2$' + '(flux)/' + r'$L_*$'
 
 # Try to find the BCZ from where enthalpy flux goes negative, if desired
 # avoid the outer boundary
-yvals = np.linspace(minmax[0], minmax[1], 100)
-if mark_bcz:
+if kw.mark_bcz:
     irneg = np.argmin(eflux[20:] > 0) + 20
     irpos = np.argmin(eflux[20:] > 0) + 19
-    rrneg = rr_n[irneg]
-    rrpos = rr_n[irpos]
+    rrneg = rr[irneg]/rsun
+    rrpos = rr[irpos]/rsun
     efluxneg = eflux[irneg]
     efluxpos = eflux[irpos]
     slope =  (efluxpos - efluxneg)/(rrpos - rrneg)
-    rbcz = rrpos - efluxpos/slope
-    plt.plot(rbcz + np.zeros(100), yvals, 'k--', linewidth=lw)
+    rbcz_est = rrpos - efluxpos/slope
+    kw_lineplot.xvals = make_array(kw_lineplot.xvals, tolist=True)
+    kw_lineplot.xvals.append(rbcz_est)
 
-# Mark radii if desired
-if not rvals is None:
-    for rval in rvals:
-        if rnorm is None:
-            rval_n = rval/rsun
-        else:
-            rval_n = rval/rnorm
-#        plt.ylim(ymin, ymax)
-        plt.plot(rval_n + np.zeros(100), yvals, 'k--', linewidth=lw)
+lineplot(rr/rsun, profiles_int, ax, **kw_lineplot)
 
+# make title 
+iter1, iter2 = get_iters_from_file(kw.the_file)
+time_string = get_time_string(dirname, iter1, iter2) 
+the_title = dirname_stripped + '\n' +  'radial energy flux' + '\n' + time_string
+if kw.mark_bcz:
+    the_title += ('\n' + r'$r_{BCZ}/R_\odot = %.3f$' %rbcz_est)
+margin_x = fpar['margin_left'] + fpar['sub_margin_left']
+margin_y = default_margin/fpar['height_inches']
+fig.text(margin_x, 1 - margin_y, the_title,\
+         ha='left', va='top', fontsize=default_titlesize)
 
-plt.ylabel(r'$4\pi r^2\ \rm{\times \ (energy \ flux)}\ /\ L_*$',\
-        fontsize=12, **csfont)
+# save the figure
+plotdir = my_mkdir(clas0['plotdir'])
+savefile = plotdir + clas0['routinename'] + clas0['tag'] + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
 
-# Label trace interval
-if rotation:
-    time_string = ('t = %.1f to %.1f ' %(t1/time_unit, t2/time_unit))\
-            + time_label + (r'$\ (\Delta t = %.1f\ $'\
-            %((t2 - t1)/time_unit)) + time_label + ')'
-else:
-    time_string = ('t = %.3f to %.3f ' %(t1/time_unit, t2/time_unit))\
-            + time_label + (r'$\ (\Delta t = %.3f\ $'\
-            %((t2 - t1)/time_unit)) + time_label + ')'
-
-# Make title
-the_title = dirname_stripped + '\n' + 'radial energy flux, ' + time_string
-if mark_bcz:
-    the_title += ('\n' + r'$r_{BCZ}/\rm{rnorm} = %.3f$' %rbcz)
-
-plt.title(the_title, **csfont)
-
-# Create a see-through legend
-plt.legend(loc='lower left', shadow=True, ncol=3, fontsize=10)
-
-# Last command
-plt.tight_layout()
-
-# Save the plot
-print ('Saving the eflux plot at ' + plotdir + savename)
-plt.savefig(plotdir + savename, dpi=dpi)
-
-# Show the plot
-plt.show()
+if clas0['saveplot']:
+    print ('saving figure at ' + savefile)
+    plt.savefig(savefile, dpi=300)
+if clas0['showplot']:
+    plt.show()
