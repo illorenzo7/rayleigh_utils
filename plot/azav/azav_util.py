@@ -15,7 +15,7 @@ from common import *
 from plotcommon import *
 
 # mostly default fig dimensions
-script_azav_kwargs_default = dict({'the_file': None, 'sub_width_inches': 2, 'sub_aspect': 2, 'margin_top_inches': 1, 'margin_bottom_inches': 1/2})
+azav_fig_dimensions = dict({'sub_width_inches': 2, 'sub_aspect': 2, 'margin_top_inches': 1, 'margin_bottom_inches': 1/2, 'sub_margin_left_inches': default_margin})
 
 # plot_azav needs my_contourf args, then some
 plot_azav_kwargs_default = dict({'rbcz': None, 'minmaxrz': None, 'rvals': np.array([]), 'plotlatlines': True, 'latvals': np.array([])})

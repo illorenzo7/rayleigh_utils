@@ -24,7 +24,10 @@ dirname = clas0['dirname']
 dirname_stripped = strip_dirname(dirname, wrap=True)
 
 # allowed args + defaults
-kwargs_default = {**script_azav_kwargs_default}
+kwargs_default = dict({'the_file': None})
+make_figure_kwargs_default.update(azav_fig_dimensions)
+kw_make_figure = update_dict(make_figure_kwargs_default, clas)
+kw_lineplot = update_dict(lineplot_kwargs_default, clas)
 
 plot_azav_kwargs_default['plotlatlines'] = False
 plot_azav_kwargs_default['units'] = 'nHz'
@@ -63,7 +66,7 @@ it0, it60_N, it60_S = np.argmin(np.abs(tt_lat)), np.argmin(np.abs(tt_lat - 60)),
 Delta_Om = Om[it0, 0] - (Om[it60_N, 0] + Om[it60_S, 0])/2
 
 # make plot
-fig, axs, fpar = make_figure(nplots=1, sub_width_inches=kw.sub_width_inches, sub_aspect=kw.sub_aspect, margin_top_inches=kw.margin_top_inches, margin_bottom_inches=kw.margin_bottom_inches)
+fig, axs, fpar = make_figure(**kw_make_figure)
 ax = axs[0, 0]
 
 plot_azav (Om, rr, cost, fig, ax, **kw_plot_azav)

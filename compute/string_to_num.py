@@ -12,10 +12,10 @@ def how_to_treat_numberstring(string):
         return 'bool'
     elif ',' in string:
         return 'array'
-    elif all (char in float_chars for char in string):
-        return 'float'    
     elif all (char in int_chars for char in string):
         return 'int'
+    elif all (char in float_chars for char in string):
+        return 'float'    
     else: # just a string!
         return 'string'
 
