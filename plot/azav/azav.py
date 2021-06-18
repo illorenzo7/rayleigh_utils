@@ -37,6 +37,7 @@ for ext in ['mm', 'ms']:
     dataname_list['magtorque' + ext] = 'mag_torque'
 for ext in ['tot', 'mmm', 'mpp']:
     dataname_list['meprodmean' + ext] = 'me_prod_mean'
+dataname_list['ferraro'] = 'ferraro'
 
 # See if magnetism is "on"
 magnetism = clas0['magnetism']
@@ -50,7 +51,7 @@ if not clas0['tag'] == '': # the "tag" represents a quantity group
     clas0['tag'] = clas0['tag'][1:] # remove the prepending _
 
 if clas0['tag'] in dataname_list.keys():
-    dataname = dataname_list[clas['tag']]
+    dataname = dataname_list[clas0['tag']]
 else:
     dataname = 'AZ_Avgs'
 

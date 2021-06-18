@@ -497,6 +497,18 @@ def get_quantity_group(tag, magnetism):
         ncol = 5
         di_out['totsig'] = np.array([1, 0, 0, 0, 1])
 
+    if tag == 'ferraro':
+        ncol = 5
+        qvals = np.arange(15)
+        # order: flux_r, flux_t, torque_r, torque_t, torque
+        # x tot, mm, pp
+        titles = []
+        bases = ['flux_r', 'flux_t', 'torque_r', 'torque_t', 'torque']
+        suffixes = [' (full)', ' (mm)', ' (pp)']
+        for j in range(3):
+            for k in range(5):
+                titles.append(bases[k] + suffixes[j])
+
     di_out['qvals'] = np.array(qvals)
     di_out['titles'] = np.array(titles)
     di_out['ncol'] = ncol
