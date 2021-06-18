@@ -103,9 +103,8 @@ if rank == 0:
     nu = eq.nu.reshape((1, 1, nr))
     rho = eq.rho.reshape((1, 1, nr))
     mu = rho*nu
-    prefactor = -1/(rho*nu*rr_3d**2*sint_3d**2)
-    geofactor = rr_3d**2*sint_3d**2/(4*np.pi) # for the angular momentum
-    # fluxes
+    prefactor = -1/(rho*nu*rr_3d**2*sint_3d**2) # visc flux --> DOm/dr
+    geofactor = rr_3d**2*sint_3d**2/(4*np.pi) # for the angular momentum fluxes
 
     # Distribute file lists to each process
     for k in range(nproc - 1, -1, -1):
@@ -130,12 +129,11 @@ else: # recieve my_files
 
 # Broadcast dirname, radatadir, nq, etc.
 if rank == 0:
-    meta = [dirname, radatadir1, radatadir2, nt, nr, rr, tt,\
-            rr_2d,  sint_2d, cott_2d, rr_3d, sint_3d, prefactor, geofactor, nfiles]
+    meta =[\
+dirname, radatadir1, radatadir2, nt, nr, rr, tt, rr_2d, sint_2d, cott_2d, rr_3d, sint_3d, prefactor, geofactor, nfiles]
 else:
     meta = None
-dirname, radatadir1, radatadir2, nt, nr, rr, tt, rr_2d,\
-    sint_2d, cott_2d, rr_3d, sint_3d, prefactor, geofactor, nfiles = comm.bcast(meta, root=0)
+dirname, radatadir1, radatadir2, nt, nr, rr, tt, rr_2d, sint_2d, cott_2d, rr_3d, sint_3d, prefactor, geofactor, nfiles = comm.bcast(meta, root=0)
 
 # Checkpoint and time
 comm.Barrier()
@@ -212,11 +210,11 @@ for i in range(my_nfiles):
         my_vals[:, :, indstart + 3] += torque_t_m
         my_vals[:, :, indstart + 4] += torque_m
 
-        # fluc terms
-        indstart += nset
-        for k in range(nset):
-            my_vals[:, :, indstart + k] +=\
-                    my_vals[:, :, k] - my_vals[:, :, k + nset]
+# fluc terms
+indstart = 2*nset
+for k in range(nset):
+    my_vals[:, :, indstart + k] +=\
+            my_vals[:, :, k] - my_vals[:, :, k + nset]
 
     if rank == 0:
         pcnt_done = (i + 1)/my_nfiles*100.
