@@ -12,7 +12,9 @@ from cla_util import *
 # Get CLAs
 args = sys.argv 
 clas0, clas = read_clas(args)
-di_trans = clas['di_trans']
+dirname = clas0['dirname']
+val_iter = clas['val_iter']
+di_trans = translate_times(val_iter, dirname)
 
 val_iter = di_trans['val_iter']
 val_unit = di_trans['val_unit']
