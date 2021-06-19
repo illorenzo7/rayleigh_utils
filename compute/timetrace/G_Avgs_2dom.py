@@ -89,7 +89,10 @@ if rank == 0:
     nr = gi.nr
     if 'rbcz' in clas:
         rr = gi.radius
-        ir_bcz = np.argmin(np.abs(rr/rsun - clas['rbcz']))
+        rbcz = clas['rbcz']
+        ir_bcz = np.argmin(np.abs(rr/rsun - rbcz))
+        rbcz = rr[ir_bcz]/rsun
+        clas0['tag'] = 'rbcz%.3f-' %rbcz
     else: # by default, separate the zones by domain_bounds
         ir_bcz = get_parameter(dirname, 'ncheby')[1] - 1
     nr_cz = ir_bcz + 1
@@ -221,7 +224,7 @@ if rank == 0:
         os.makedirs(datadir)
 
     # Set the timetrace savename
-    savename = 'G_Avgs_trace_2dom-' + file_list[0] + '_' +\
+    savename = 'G_Avgs_trace_2dom-' + clas0['tag'] + file_list[0] + '_' +\
             file_list[-1] + '.pkl'
     savefile = datadir + savename
 
