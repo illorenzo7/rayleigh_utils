@@ -65,9 +65,8 @@ if rank == 0:
 if rank == 0:
     # get the name of the run directory + CLAs
     args = sys.argv
-    nargs = len(args)
-    clas = read_clas(args)
-    dirname = clas['dirname']
+    clas0, clas = read_clas(args)
+    dirname = clas0['dirname']
 
     # Get the Rayleigh data directory
     radatadir1 = dirname + '/' + dataname1 + '/'
@@ -143,8 +142,11 @@ for i in range(my_nfiles):
     a = reading_func1(radatadir1 + str(my_files[i]).zfill(8), '')
     mer = reading_func2(radatadir2 + str(my_files[i]).zfill(8), '')
 
-    my_weight = 1.0/(nfiles*a.niter)
-    for j in range(a.niter):
+    # take mean along the time axis;
+    niter = min(a.niter, mer.niter)
+    my_weight = 1.0/(nfiles*niter)
+    for j in range(niter -1, -1, -1): # go last to first in case "niters" 
+        # don't agree
         # full B
         br = mer.vals[:, :, :, mer.lut[801], j]
         bt = mer.vals[:, :, :, mer.lut[802], j]

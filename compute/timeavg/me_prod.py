@@ -144,13 +144,16 @@ nq = 72
 my_vals = np.zeros((nt, nr, nq))
 
 my_nfiles = len(my_files)
+bad_jt = False # first assume we have J_theta = 1004 (not 1002)
 for i in range(my_nfiles):
     a = reading_func1(radatadir1 + str(my_files[i]).zfill(8), '')
     mer = reading_func2(radatadir2 + str(my_files[i]).zfill(8), '')
-    # take mean along the time axis;
 
-    my_weight = 1.0/(nfiles*a.niter)
-    for j in range(a.niter):
+    # take mean along the time axis;
+    niter = min(a.niter, mer.niter)
+    my_weight = 1.0/(nfiles*niter)
+    for j in range(niter -1, -1, -1): # go last to first in case "niters" 
+        # don't agree
         # full v
         vr = mer.vals[:, :, :, mer.lut[1], j]
         vt = mer.vals[:, :, :, mer.lut[2], j]
@@ -165,7 +168,11 @@ for i in range(my_nfiles):
         omr = mer.vals[:, :, :, mer.lut[301], j]
         omt = mer.vals[:, :, :, mer.lut[302], j]
         jr = mer.vals[:, :, :, mer.lut[1001], j]
-        jt = mer.vals[:, :, :, mer.lut[1004], j]
+        try: # had 1002 for a while...which was bad :-(
+            jt = mer.vals[:, :, :, mer.lut[1004], j]
+        except:
+            jt = np.zeros_like(jr)
+            bad_jt = True
 
         # mean v
         vr_m = a.vals[:, :, a.lut[1], j].reshape((1, nt, nr))
@@ -181,7 +188,10 @@ for i in range(my_nfiles):
         omr_m = a.vals[:, :, a.lut[301], j].reshape((1, nt, nr))
         omt_m = a.vals[:, :, a.lut[302], j].reshape((1, nt, nr))
         jr_m = a.vals[:, :, a.lut[1001], j].reshape((1, nt, nr))
-        jt_m = a.vals[:, :, a.lut[1004], j].reshape((1, nt, nr))
+        if not bad_jt:
+            jt_m = a.vals[:, :, a.lut[1004], j].reshape((1, nt, nr))
+        else:
+            jt_m = np.zeros_like(jr_m)
 
         # full (poloidal) derivatives v
         dvrdr = drad(vr, rr)
@@ -345,17 +355,17 @@ for i in range(my_nfiles):
                 # total induction
                 ind_tot = ind_shear + ind_adv + ind_comp
 
-                my_vals[:, :, count] = np.mean(bb1_loc[l]*ind_tot, axis=0)*my_weight
+                my_vals[:, :, count] += np.mean(bb1_loc[l]*ind_tot, axis=0)*my_weight
                 count += 1
-                my_vals[:, :, count] = np.mean(bb1_loc[l]*ind_shear, axis=0)*my_weight
+                my_vals[:, :, count] += np.mean(bb1_loc[l]*ind_shear, axis=0)*my_weight
                 count += 1
-                my_vals[:, :, count] = np.mean(bb1_loc[l]*ind_adv, axis=0)*my_weight
+                my_vals[:, :, count] += np.mean(bb1_loc[l]*ind_adv, axis=0)*my_weight
                 count += 1
-                my_vals[:, :, count] = np.mean(bb1_loc[l]*ind_comp, axis=0)*my_weight
+                my_vals[:, :, count] += np.mean(bb1_loc[l]*ind_comp, axis=0)*my_weight
                 count += 1
 
     if rank == 0:
-        pcnt_done = (i + 1)/my_nfiles*100.
+        pcnt_done = (i + 1)/my_nfiles*100
         print(fill_str('computing', lent, char) +\
                 ('rank 0 %5.1f%% done' %pcnt_done), end='\r')
 
@@ -409,5 +419,11 @@ if rank == 0:
     print (format_time(t2 - t1))
     print(make_bold(fill_str('total time', lent, char)), end='')
     print (make_bold(format_time(t2 - t1_glob)))
+    if bad_jt:
+        print (buff_line)
+        print ("J_theta = 1004 was not given and so was set to zero! ")
+        print("dBr/dphi is WRONG!!!")
+        print ("so radial advection and total induction terms are WRONG!!!")
+        print (buff_line)
     print ('data saved at ')
     print (make_bold(savefile))

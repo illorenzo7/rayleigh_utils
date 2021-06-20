@@ -135,10 +135,12 @@ my_vals = np.zeros((nt, nr, nq))
 for i in range(my_nfiles):
     a = reading_func1(radatadir1 + str(my_files[i]).zfill(8), '')
     mer = reading_func2(radatadir2 + str(my_files[i]).zfill(8), '')
-    # take mean along the time axis;
 
-    my_weight = 1.0/(nfiles*a.niter)
-    for j in range(a.niter):
+    # take mean along the time axis;
+    niter = min(a.niter, mer.niter)
+    my_weight = 1.0/(nfiles*niter)
+    for j in range(niter -1, -1, -1): # go last to first in case "niters" 
+        # don't agree
         # full v
         vr = mer.vals[:, :, :, mer.lut[1], j]
         vt = mer.vals[:, :, :, mer.lut[2], j]

@@ -146,8 +146,10 @@ for i in range(my_nfiles):
     a = reading_func1(radatadir1 + str(my_files[i]).zfill(8), '')
     mer = reading_func2(radatadir2 + str(my_files[i]).zfill(8), '')
 
-    my_weight = 1.0/(nfiles*a.niter)
-    for j in range(a.niter):
+    niter = min(a.niter, mer.niter)
+    my_weight = 1.0/(nfiles*niter)
+    for j in range(niter -1, -1, -1): # go last to first in case "niters" 
+        # don't agree
         # mean fields
         br_m = a.vals[:, :, a.lut[801], 0].reshape((1, nt, nr))
         bt_m = a.vals[:, :, a.lut[802], 0].reshape((1, nt, nr))
