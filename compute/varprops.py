@@ -495,7 +495,7 @@ def get_quantity_group(tag, magnetism):
             titles += ['shear' + app, 'comp' + app, 'advec' + app,
                     'induct' + app, 'diff' + app]
         ncol = 5
-        di_out['totsig'] = np.array([1, 0, 0, 0, 1])
+        di_out['totsig'] = np.array([0, 0, 0, 1, 1])
 
     if tag == 'ferraro':
         ncol = 5
