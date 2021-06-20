@@ -52,14 +52,8 @@ if use_gav:
     gavg_dir = dirname + '/G_Avgs/'
     file_list, int_file_list, nfiles = get_file_lists_all(gavg_dir)
 
-    the_tuple = get_desired_range(int_file_list, args)
-    if the_tuple is None:
-        index_first, index_last = 0, -1 # by default get the WHOLE sim time
-    else:
-        index_first, index_last = the_tuple
-
-    f1 = file_list[index_first]
-    f2 = file_list[index_last]
+    f1 = file_list[0]
+    f2 = file_list[-1]
 
     a1 = G_Avgs(gavg_dir + f1, '')
     a2 = G_Avgs(gavg_dir + f2, '')
@@ -76,14 +70,8 @@ elif use_sslice:
     sslice_dir = dirname + '/Shell_Slices/'
     file_list, int_file_list, nfiles = get_file_lists_all(sslice_dir)
 
-    the_tuple = get_desired_range(int_file_list, args)
-    if the_tuple is None:
-        index_first, index_last = 0, -1 # by default get the WHOLE sim time
-    else:
-        index_first, index_last = the_tuple
-
-    f1 = file_list[index_first]
-    f2 = file_list[index_last]
+    f1 = file_list[0]
+    f2 = file_list[-1]
 
     a1 = Shell_Slices(sslice_dir + f1, '')
     a2 = Shell_Slices(sslice_dir + f2, '')
