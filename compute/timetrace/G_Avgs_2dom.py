@@ -224,7 +224,7 @@ if rank == 0:
         os.makedirs(datadir)
 
     # Set the timetrace savename
-    savename = 'G_Avgs_trace_2dom' + clas0['tag'] + '- ' + file_list[0] + '_' +\
+    savename = 'G_Avgs_trace_2dom' + clas0['tag'] + '-' + file_list[0] + '_' +\
             file_list[-1] + '.pkl'
     savefile = datadir + savename
 
