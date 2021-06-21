@@ -38,6 +38,7 @@ datatype = 'timelat'
 sampleaxis = di_grid['tt_lat']
 rad = False
 lon = False
+shav = False
 if 'rad' in clas:
     rad = True
     datatype = 'timerad'
@@ -60,6 +61,12 @@ elif 'lon' in clas:
 
     datatype = 'timelon_clat' + lat_format(clat) + '_dlat%03.0f' %dlat
     sampleaxis = di_grid['lons']
+elif 'shav' in clas:
+    shav = True
+    datatype = 'timeshav'
+    sampleaxis = di_grid['rr']/rsun
+    # just a loop placeholder...
+    isamplevals = [0]
 
 dataname = datatype + clas0['tag']
 print ('dataname = ', dataname)
@@ -75,8 +82,9 @@ di = get_dict(the_file)
 vals = di['vals']
 times = di['times']
 iters = di['iters']
-samplevals_avail = di['samplevals']
 qvals_avail = np.array(di['qvals'])
+if not shav:
+    samplevals_avail = di['samplevals']
 
 # time range
 iter1, iter2 = get_iters_from_file(the_file)
@@ -123,24 +131,26 @@ if 'ycut' in clas:
 nplots = len(terms)
 
 # determine desired levels to plot
-if not 'isamplevals' in clas:
-    if not 'samplevals' in clas:
-        isamplevals = np.array([0]) # just plot the top radius by default
-    else: # get isamplevals from samplevals
-        samplevals = clas['samplevals']
-        if samplevals == 'all':
-            isamplevals = np.arange(len(samplevals_avail))
-        else:
-            samplevals = make_array(samplevals)
-            isamplevals = np.zeros_like(samplevals, dtype='int')
-            for i in range(len(samplevals)):
-                isamplevals[i] = np.argmin(np.abs(samplevals_avail - samplevals[i]))
-else:
-    isamplevals = make_array(clas['isamplevals'])
+if not shav:
+    if not 'isamplevals' in clas:
+        if not 'samplevals' in clas:
+            isamplevals = np.array([0]) # just plot the top radius by default
+        else: # get isamplevals from samplevals
+            samplevals = clas['samplevals']
+            if samplevals == 'all':
+                isamplevals = np.arange(len(samplevals_avail))
+            else:
+                samplevals = make_array(samplevals)
+                isamplevals = np.zeros_like(samplevals, dtype='int')
+                for i in range(len(samplevals)):
+                    isamplevals[i] = np.argmin(np.abs(samplevals_avail - samplevals[i]))
+    else:
+        isamplevals = make_array(clas['isamplevals'])
 
 # Loop over the desired levels and save plots
 for isampleval in isamplevals:
-    sampleval = samplevals_avail[isampleval]
+    if not shav:
+        sampleval = samplevals_avail[isampleval]
 
     # set some labels 
     axislabel = 'latitude (deg)'
@@ -159,9 +169,15 @@ for isampleval in isamplevals:
             samplelabel += '\n' + r'$\Omega_{\rm{frame}} = \Omega_0$'
 
         position_tag = '_clat' + lat_format(clat) + '_rval%.3f' %sampleval
+    elif shav:
+        axislabel = r'$r/R_\odot$'
+        samplelabel = ''
+        position_tag = ''
 
     # Put some useful information on the title
-    maintitle = dirname_stripped + '\n' + samplelabel
+    maintitle = dirname_stripped 
+    if not shav:
+        maintitle += '\n' + samplelabel
     if 'navg' in clas:
         navg = clas['navg']
         averaging_time = (times[-1] - times[0])/len(times)*navg
@@ -169,7 +185,8 @@ for isampleval in isamplevals:
     else: 
         maintitle += '\nt_avg = none'
 
-    print('plotting sampleval = %0.3f (i = %02i)' %(sampleval, isampleval))
+    if not shav:
+        print('plotting sampleval = %0.3f (i = %02i)' %(sampleval, isampleval))
    
     # make plot
     fig, axs, fpar = make_figure(nplots=nplots, ncol=1, sub_width_inches=sub_width_inches, sub_height_inches=sub_height_inches, margin_left_inches=margin_left_inches, margin_right_inches=margin_right_inches, margin_top_inches=margin_top_inches, margin_bottom_inches=margin_bottom_inches)
