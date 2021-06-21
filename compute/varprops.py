@@ -423,6 +423,33 @@ def get_quantity_group(tag, magnetism):
                     'comp' + app]
         ncol = 4
 
+    if tag[:11] == 'meprodtheta':
+        nq = 5 # theta (t): (ind, shear, adv, comp, diff)
+        baselen = 11
+        ext = tag[baselen:baselen + 3]
+        if ext == 'tot':
+            iqstart = 0
+        if ext == 'pmp':
+            iqstart = nq
+        if ext == 'ppm':
+            iqstart = 2*nq
+        if ext == 'mmm':
+            iqstart = 3*nq
+        if ext == 'mpp':
+            iqstart = 4*nq
+        if ext == 'ppp':
+            iqstart = 5*nq
+        qvals = np.arange(iqstart, iqstart + nq)
+        titles = []
+        direc = 'th'
+        app = ' (' + direc + ')'
+        titles += ['induct' + app, 'shear' + app, 'advec' + app,\
+                    'comp' + app, 'diff' + app]
+        ncol = 5
+        totsig = np.zeros(len(titles))
+        totsig[0] = totsig[4] = 1
+        di_out['totsig'] = totsig
+
     if tag[:11] == 'meprodshear':
         nq = 15 # (r, t, p) x (br (d/dr), bt (d/dt), bp (d/dp), curv1, curv2
         baselen = 11
