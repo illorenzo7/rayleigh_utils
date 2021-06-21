@@ -69,9 +69,8 @@ if rank == 0:
 if rank == 0:
     # get the name of the run directory + CLAs
     args = sys.argv
-    nargs = len(args)
-    clas = read_clas(args)
-    dirname = clas['dirname']
+    clas0, clas = read_clas(args)
+    dirname = clas0['dirname']
 
     # Get the Rayleigh data directory
     radatadir1 = dirname + '/' + dataname1 + '/'

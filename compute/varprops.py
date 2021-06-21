@@ -345,80 +345,8 @@ def get_quantity_group(tag, magnetism):
         ncol = 3
         totsig = 'sumrow'
 
-    baselen = 9
-    if tag[:baselen] == 'meprodnum':
-        nq = 12 # (r, t, p) x (ind, shear, adv, comp)
-        ext = tag[baselen:baselen + 3]
-        if ext == 'tot':
-            iqstart = 0
-        if ext == 'pmp':
-            iqstart = nq
-        if ext == 'ppm':
-            iqstart = 2*nq
-        if ext == 'mmm':
-            iqstart = 3*nq
-        if ext == 'mpp':
-            iqstart = 4*nq
-        if ext == 'ppp':
-            iqstart = 5*nq
-        qvals = np.arange(iqstart, iqstart + nq)
-        titles = []
-        for direc in ['r', 'th', 'ph']:
-            app = ' (' + direc + ')'
-            titles += ['induct' + app, 'shear' + app, 'advec' + app,\
-                    'comp' + app]
-        ncol = 4
-        if len(tag) == baselen + 4: # another extension, 
-            # indicating one direction only
-            ext2 = tag[-1]
-            if ext2 == 'r':
-                qvals = qvals[:ncol]
-                titles = titles[:ncol]
-            if ext2 == 't':
-                qvals = qvals[ncol:2*ncol]
-                titles = titles[ncol:2*ncol]
-            if ext2 == 'p':
-                qvals = qvals[2*ncol:3*ncol]
-                titles = titles[2*ncol:3*ncol]
-
-    baselen = 11
-    if tag[:baselen] == 'meprodshear':
-        nq = 15 # (r, t, p) x (br (d/dr), bt (d/dt), bp (d/dp), curv1, curv2
-        ext = tag[baselen:baselen + 3]
-        if ext == 'tot':
-            iqstart = 0
-        if ext == 'pmp':
-            iqstart = nq
-        if ext == 'ppm':
-            iqstart = 2*nq
-        if ext == 'mmm':
-            iqstart = 3*nq
-        if ext == 'mpp':
-            iqstart = 4*nq
-        if ext == 'ppp':
-            iqstart = 5*nq
-        qvals = np.arange(iqstart, iqstart + nq)
-        titles = []
-        for direc in ['r', 'th', 'ph']:
-            app = ' (' + direc + ')'
-            titles += ['br (d/dr)' + app, 'bt (d/dT)' + app, 'bp (d/dP)' + app, 'curv1' + app, 'curv2' + app]
-        ncol = 5
-        di_out['totsig'] = 'sumrow'
-        if len(tag) == baselen + 4: # another extension, 
-            # indicating one direction only
-            ext2 = tag[-1]
-            if ext2 == 'r':
-                qvals = qvals[:ncol]
-                titles = titles[:ncol]
-            if ext2 == 't':
-                qvals = qvals[ncol:2*ncol]
-                titles = titles[ncol:2*ncol]
-            if ext2 == 'p':
-                qvals = qvals[2*ncol:3*ncol]
-                titles = titles[2*ncol:3*ncol]
-
-    baselen = 6
     if 'meprod' in [tag[:-3], tag[:-4]]: # this is the exact stuff
+        baselen = 6
         ext = tag[baselen:baselen + 3]
         basetitles = ['induct', 'shear', 'advec', 'comp', 'diff']
 
@@ -470,9 +398,59 @@ def get_quantity_group(tag, magnetism):
             totsig[4] = 1
         di_out['totsig'] = totsig
 
-    if 'meprodmean' in tag:
+
+    if tag[:9] == 'meprodnum':
+        nq = 12 # (r, t, p) x (ind, shear, adv, comp)
+        baselen = 9
+        ext = tag[baselen:baselen + 3]
+        if ext == 'tot':
+            iqstart = 0
+        if ext == 'pmp':
+            iqstart = nq
+        if ext == 'ppm':
+            iqstart = 2*nq
+        if ext == 'mmm':
+            iqstart = 3*nq
+        if ext == 'mpp':
+            iqstart = 4*nq
+        if ext == 'ppp':
+            iqstart = 5*nq
+        qvals = np.arange(iqstart, iqstart + nq)
+        titles = []
+        for direc in ['r', 'th', 'ph']:
+            app = ' (' + direc + ')'
+            titles += ['induct' + app, 'shear' + app, 'advec' + app,\
+                    'comp' + app]
+        ncol = 4
+
+    if tag[:11] == 'meprodshear':
+        nq = 15 # (r, t, p) x (br (d/dr), bt (d/dt), bp (d/dp), curv1, curv2
+        baselen = 11
+        ext = tag[baselen:baselen + 3]
+        if ext == 'tot':
+            iqstart = 0
+        if ext == 'pmp':
+            iqstart = nq
+        if ext == 'ppm':
+            iqstart = 2*nq
+        if ext == 'mmm':
+            iqstart = 3*nq
+        if ext == 'mpp':
+            iqstart = 4*nq
+        if ext == 'ppp':
+            iqstart = 5*nq
+        qvals = np.arange(iqstart, iqstart + nq)
+        titles = []
+        for direc in ['r', 'th', 'ph']:
+            app = ' (' + direc + ')'
+            titles += ['br (d/dr)' + app, 'bt (d/dT)' + app, 'bp (d/dP)' + app, 'curv1' + app, 'curv2' + app]
+        ncol = 5
+        di_out['totsig'] = 'sumrow'
+
+    if tag[:10] == 'meprodmean':
         nq = 15 # (shear, adv, comp, ind, diff) x (r, th, ph)
-        ext = tag[-3:]
+        baselen = 10
+        ext = tag[baselen:baselen + 3]
         if ext == 'tot':
             iqstart = 0
         if ext == 'mmm':
@@ -487,6 +465,8 @@ def get_quantity_group(tag, magnetism):
                     'induct' + app, 'diff' + app]
         ncol = 5
         di_out['totsig'] = np.array([0, 0, 0, 1, 1])
+
+    if tag[:6] == 'meprod':
         if len(tag) == baselen + 4: # another extension, 
             # indicating one direction only
             ext2 = tag[-1]
@@ -499,7 +479,6 @@ def get_quantity_group(tag, magnetism):
             if ext2 == 'p':
                 qvals = qvals[2*ncol:3*ncol]
                 titles = titles[2*ncol:3*ncol]
-
 
     if tag in ['indralt', 'indraltnum']:
         ind_off = 0

@@ -69,7 +69,6 @@ if rank == 0:
 if rank == 0:
     # get the name of the run directory + CLAs
     args = sys.argv
-    nargs = len(args)
     clas0, clas = read_clas(args)
     dirname = clas0['dirname']
 
