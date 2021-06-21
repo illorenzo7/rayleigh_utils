@@ -358,11 +358,10 @@ for i in range(my_nfiles):
             # now diffusion, will show up in a few different places...
             # hopefully some terms will be zero, for sanity check!
             l = 1 # just a reminder l = 1 corresponds to theta
-            jp = dbdx_loc[l][0] + bb_loc[1]/rr_3d - dbdx_loc[0][l]
             d2btdr2 = drad(dbdx_loc[l][0], rr)
-            d2btdT2 = dth(dbdx_loc[l][0], tt)/rr_3d
+            d2btdt2 = dth(dbdx_loc[l][l], tt)/rr_3d
 
-            ind_diff = d2btdr2 + d2btdT2 + (2/rr_3d)*dbdx_loc[l][0] +\
+            ind_diff = d2btdr2 + d2btdt2 + (2/rr_3d)*dbdx_loc[l][0] +\
                 (2*cott_3d/rr_3d)*dbdx_loc[l][l] +\
                 (2*cott_3d/rr_3d)*dbdx_loc[0][0] + (2/rr_3d)*dbdx_loc[0][l] +\
                 (1/rr_3d**2)*(cott_3d - 1/sint_3d**2 + 2*cott_3d**2)*bb_loc[l] +\
@@ -370,7 +369,9 @@ for i in range(my_nfiles):
 
             
             ind_diff = ind_diff*bb_loc[l] # turn this into work term
-            ind_diff = ind_diff - dbdx_loc[l][2]*dbdx1_loc[l][2]
+            ind_diff = ind_diff - dbdx1_loc[l][2]*dbdx_loc[l][2]
+
+            jp = dbdx_loc[l][0] + bb_loc[1]/rr_3d - dbdx_loc[0][l]
             ind_diff = ind_diff + dlneta*jp*bb_loc[l]
             ind_diff = eta*ind_diff
 
