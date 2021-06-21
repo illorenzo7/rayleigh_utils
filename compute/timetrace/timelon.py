@@ -83,7 +83,7 @@ if rank == 0:
 
     # Set other defaults
     kwargs_default = dict({'clat': 10, 'dlat': 0, 'rvals': 'all', 'irvals': None})
-    kwargs = dotdict(update_kwargs(clas, kwargs_default))
+    kwargs = update_dict(kwargs_default, clas)
     clat = kwargs.clat
     dlat = kwargs.dlat
     rvals = kwargs.rvals

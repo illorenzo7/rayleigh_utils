@@ -69,7 +69,7 @@ if rank == 0:
     clas0, clas = read_clas(args)
     dirname = clas0['dirname']
     kwargs_default = dict({'rad': False, 'latvals': default_latvals, 'rvals': get_default_rvals(dirname)})
-    kwargs = update_kwargs(clas, kwargs_default)
+    kwargs = update_dict(kwargs_default, clas)
     rad = kwargs['rad']
 
     # get the Rayleigh data directory
