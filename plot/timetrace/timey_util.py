@@ -13,13 +13,13 @@ from plotcommon import *
 # plot time "lat or rad"
 def plot_timey(field, times, yy, fig, ax, ycut=None, xminmax=None, xmin=None, xmax=None, minmax2=None, timevals=np.array([]), yvals=np.array([]), navg=None, fontsize=default_titlesize, **kwargs_supplied):
     # **kwargs_supplied corresponds to my_contourf
-    kwargs_default = {**kwargs_contourf}
+    kwargs_default = {**my_contourf_kwargs_default}
     kwargs_default['plotboundary'] = False 
     kwargs_default['plotcontours'] = False
     kwargs_default['cbar_pos'] = 'right'
     kwargs_default['cbar_thick'] = 1/8
     kwargs_default['allticksoff'] = False
-    kwargs = dotdict(update_kwargs(kwargs_supplied, kwargs_default))
+    kwargs = update_dict(kwargs_default, kwargs_supplied)
 
     # Work with copy of field (not actual field)
     field_full = np.copy(field)

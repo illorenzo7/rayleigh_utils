@@ -94,20 +94,21 @@ if rank == 0:
     qvals = clas['qvals']
 
     # get indices associated with desired sample vals
-    if rad:
-        samplevals = kwargs['latvals']
-        sampleaxis = tt_lat
-    else:
-        samplevals = kwargs['rvals']
-        sampleaxis = rr/rsun
+    if not shav:
+        if rad:
+            samplevals = kwargs['latvals']
+            sampleaxis = tt_lat
+        else:
+            samplevals = kwargs['rvals']
+            sampleaxis = rr/rsun
 
-    isamplevals = []
-    for sampleval in samplevals:
-        isamplevals.append(np.argmin(np.abs(sampleaxis - sampleval)))
-    isamplevals = np.array(isamplevals)
-    # recompute the actual sample values we get
-    samplevals = sampleaxis[isamplevals]
-    nsamplevals = len(samplevals)
+        isamplevals = []
+        for sampleval in samplevals:
+            isamplevals.append(np.argmin(np.abs(sampleaxis - sampleval)))
+        isamplevals = np.array(isamplevals)
+        # recompute the actual sample values we get
+        samplevals = sampleaxis[isamplevals]
+        nsamplevals = len(samplevals)
 
     # Distribute file_list to each process
     for k in range(nproc - 1, -1, -1):
@@ -132,10 +133,15 @@ else: # recieve appropriate file info if rank > 1
 
 # broadcast meta data
 if rank == 0:
-    meta = [dirname, radatadir, qvals, isamplevals, nsamplevals, rad]
+    meta = [dirname, radatadir, qvals, rad, shav]
+    if not shav:
+        meta += [isamplevals, nsamplevals]
 else:
     meta = None
-dirname, radatadir, qvals, isamplevals, nsamplevals, rad = comm.bcast(meta, root=0)
+    the_bcast = comm.bcast(meta, root=0)
+    dirname, radatadir, qvals, rad, shav = the_bcast[:5]
+    if not shav:
+        isamplevals, nsamplevals = the_bcast[5:]
 
 # Checkpoint and time
 comm.Barrier()
@@ -144,17 +150,18 @@ if rank == 0:
     print (format_time(t2 - t1))
     print ('Considering %i %s files for the trace: %s through %s'\
         %(nfiles, dataname, file_list[0], file_list[-1]))
-    print ("sampling values:")
-    print ("qvals = " + arr_to_str(qvals, "%i"))
-    st = "sampling locations:"
-    if rad:
-        st2 = "lats = "
-        fmt = '%.1f'
-    else:
-        st2 = "rvals = "
-        fmt = '%1.3f'
-    print(st)
-    print (st2 + arr_to_str(samplevals, fmt))
+    if not shav:
+        print ("sampling values:")
+        print ("qvals = " + arr_to_str(qvals, "%i"))
+        st = "sampling locations:"
+        if rad:
+            st2 = "lats = "
+            fmt = '%.1f'
+        else:
+            st2 = "rvals = "
+            fmt = '%1.3f'
+        print(st)
+        print (st2 + arr_to_str(samplevals, fmt))
     print(fill_str('computing', lent, char), end='\r')
     t1 = time.time()
 
@@ -173,6 +180,8 @@ for i in range(my_nfiles):
     for j in range(a.niter):
         if rad:
             my_vals.append(a.vals[:, :, :, j][isamplevals, :,  :][:, :, a.lut[qvals]])
+        elif shav:
+            my_vals.append(a.vals[:, :, :, j][:, :, a.lut[qvals]])
         else:
             my_vals.append(a.vals[:, :, :, j][:, isamplevals, :][:, :, a.lut[qvals]])
         my_times.append(a.time[j])
@@ -225,6 +234,8 @@ if rank == 0:
     # and first and last iteration files for the trace
     if rad:
         basename = 'timerad'
+    elif shav:
+        basename = 'timeshav'
     else:
         basename = 'timelat'
     savename = basename + clas0['tag'] + '-' +\
@@ -237,8 +248,9 @@ if rank == 0:
     vals = np.array(vals)
     times = np.array(times)
     iters = np.array(iters)
-    di_sav = {'vals': vals, 'times': times, 'iters': iters,\
-    'samplevals': samplevals, 'qvals': qvals}
+    di_sav = dict({'vals': vals, 'times': times, 'iters': iters, 'qvals': qvals})
+    if not shav:
+        di_sav['samplevals'] = samplevals
     pickle.dump(di_sav, f, protocol=4)
     f.close()
     t2 = time.time()
