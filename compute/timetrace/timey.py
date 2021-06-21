@@ -42,9 +42,7 @@ import numpy as np
 # data type and reading function
 import sys, os
 sys.path.append(os.environ['rapp'])
-from rayleigh_diagnostics import AZ_Avgs
-reading_func = AZ_Avgs
-dataname = 'AZ_Avgs'
+from rayleigh_diagnostics import AZ_Avgs, Shell_Avgs
 
 if rank == 0:
     # modules needed only by proc 0 
@@ -68,11 +66,16 @@ if rank == 0:
         # default trace the magnetic field
     clas0, clas = read_clas(args)
     dirname = clas0['dirname']
-    kwargs_default = dict({'rad': False, 'latvals': default_latvals, 'rvals': get_default_rvals(dirname)})
+    kwargs_default = dict({'rad': False, 'shav': False,  'latvals': default_latvals, 'rvals': get_default_rvals(dirname)})
     kwargs = update_dict(kwargs_default, clas)
     rad = kwargs['rad']
+    shav = kwargs['shav']
 
     # get the Rayleigh data directory
+    if shav:
+        dataname = 'Shell_Avgs'
+    else: 
+        dataname = 'AZ_Avgs'
     radatadir = dirname + '/' + dataname + '/'
 
     # get desired analysis range
@@ -159,6 +162,11 @@ if rank == 0:
 my_times = []
 my_iters = []
 my_vals = []
+
+if shav:
+    reading_func = Shell_Avgs
+else: 
+    reading_func = AZ_Avgs
 
 for i in range(my_nfiles):
     a = reading_func(radatadir + str(my_files[i]).zfill(8), '')
