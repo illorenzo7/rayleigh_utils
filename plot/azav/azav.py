@@ -28,8 +28,9 @@ dirname_stripped = strip_dirname(dirname)
 # get the data type we want; not all will be an AZ_Avgs file
 dataname_list = dict({})
 for ext in ['tot', 'pmp', 'ppm', 'mmm', 'mpp', 'ppp']:
-    dataname_list['meprodnum' + ext] = 'me_prod'
-    dataname_list['meprodshear' + ext] = 'me_prod_shear'
+    for ext2 in ['', 'r', 't', 'p']:
+        dataname_list['meprodnum' + ext + ext2] = 'me_prod'
+        dataname_list['meprodshear' + ext + ext2] = 'me_prod_shear'
 for direc in ['r', 't', 'p']:
     dataname_list['ind' + direc + 'alt'] = 'induct_alt'
     dataname_list['ind' + direc + 'altnum'] = 'induct_alt_num'
