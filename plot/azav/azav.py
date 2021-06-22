@@ -31,6 +31,7 @@ for ext in ['tot', 'pmp', 'ppm', 'mmm', 'mpp', 'ppp']:
     for ext2 in ['', 'r', 't', 'p']:
         dataname_list['meprodnum' + ext + ext2] = 'me_prod'
         dataname_list['meprodshear' + ext + ext2] = 'me_prod_shear'
+        dataname_list['meprodadvec' + ext + ext2] = 'me_prod_advec'
     dataname_list['meprodtheta' + ext] = 'me_prod_theta'
 for direc in ['r', 't', 'p']:
     dataname_list['ind' + direc + 'alt'] = 'induct_alt'

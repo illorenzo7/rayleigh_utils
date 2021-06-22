@@ -450,8 +450,9 @@ def get_quantity_group(groupname, magnetism):
         totsig[0] = totsig[4] = 1
         di_out['totsig'] = totsig
 
-    if groupname[:11] == 'meprodshear':
+    if groupname[:11] in ['meprodshear', 'meprodadvec']:
         nq = 15 # (r, t, p) x (br (d/dr), bt (d/dt), bp (d/dp), curv1, curv2
+        # (similar for adv)
         baselen = 11
         ext = groupname[baselen:baselen + 3]
         if ext == 'tot':
@@ -470,7 +471,10 @@ def get_quantity_group(groupname, magnetism):
         titles = []
         for direc in ['r', 'th', 'ph']:
             app = ' (' + direc + ')'
-            titles += ['br (d/dr)' + app, 'bt (d/dT)' + app, 'bp (d/dP)' + app, 'curv1' + app, 'curv2' + app]
+            if 'shear' in groupname:
+                titles += ['br (d/dr)' + app, 'bt (d/dT)' + app, 'bp (d/dP)' + app, 'curv1' + app, 'curv2' + app]
+            else:
+                titles += ['-vr (d/dr)' + app, '-vt (d/dT)' + app, '-vp (d/dP)' + app, 'curv1' + app, 'curv2' + app]
         ncol = 5
         di_out['totsig'] = 'sumrow'
 
