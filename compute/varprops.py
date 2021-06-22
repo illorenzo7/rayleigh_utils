@@ -477,6 +477,8 @@ def get_quantity_group(groupname, magnetism):
                 titles += ['-vr (d/dr)' + app, '-vt (d/dT)' + app, '-vp (d/dP)' + app, 'curv1' + app, 'curv2' + app]
         ncol = 5
         di_out['totsig'] = 'sumrow'
+        #di_out['totsig'] = np.array([1, 1, 1, 1, 0]) # ignore the big
+        # "curv 2" by default
 
     if groupname[:10] == 'meprodmean':
         nq = 15 # (shear, adv, comp, ind, diff) x (r, th, ph)
