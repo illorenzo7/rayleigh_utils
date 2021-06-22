@@ -632,7 +632,7 @@ def my_contourf(xx, yy, field, fig, ax, **kwargs):
         cbar.set_ticks(tickvals)
         cbar.set_ticklabels(ticklabels)
         if kw.cbar_pos == 'bottom':
-            fig.text(cbar_left + cbar_width + lilbit/fig_aspect,\
+            fig.text(cbar_left + cbar_width + lilbit*fig_aspect,\
                     cbar_bottom + 0.5*cbar_height, cbar_label,\
                     ha='left', va='center', fontsize=kw.fontsize) 
         elif kw.cbar_pos == 'right':
