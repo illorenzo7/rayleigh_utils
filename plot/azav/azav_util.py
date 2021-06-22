@@ -87,6 +87,7 @@ def plot_azav(field, rr, cost, fig, ax,  **kwargs):
             kw.latvals = np.arange(-60., 90., 30.)
     else:
         kw.latvals = np.array([])
+    kw.rvals = make_array(kw.rvals)
 
     my_contourf(xx_full, yy_full, field_full, fig, ax, plotfield=False, plotcontours=False, func1=rr_full, vals1=kw.rvals, func2=tt_lat_full, vals2=kw.latvals, plotboundary=kw.plotboundary)
 
