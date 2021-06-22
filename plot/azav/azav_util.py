@@ -521,7 +521,7 @@ def plot_azav_grid(terms, rr, cost, maintitle=None, ncol=6, titles=None, sub_wid
     # possibly latitudinal average figure as well
     if shav:
         if rbcz is None:
-            sub_margin_right_inches = None
+            sub_margin_right_inches = default_margin
         else:
             sub_margin_right_inches = default_margin_ylabel
         av_fig, av_axs, av_fpar = make_figure(nplots=nplots, ncol=ncol, margin_top_inches=margin_top_inches, sub_margin_left_inches=default_margin_ylabel, sub_margin_right_inches=sub_margin_right_inches, sub_margin_bottom_inches=default_margin_xlabel)
@@ -548,7 +548,7 @@ def plot_azav_grid(terms, rr, cost, maintitle=None, ncol=6, titles=None, sub_wid
         if shav:
             av_term = np.sum(terms[iplot]*tw_2d, axis=0)
             av_ax = av_axs[irow, icol]
-            lineplot(rr/rsun, [av_term], av_ax, xlabel=xlabel, title=titles[iplot], xcut=rbcz, xvals=rvals, minmax=minmax, minmax2=minmaxrz, domain_bounds=domain_bounds)
+            lineplot(rr/rsun, [av_term], av_ax, xlabel=xlabel, title=titles[iplot], xcut=rbcz, xvals=rvals, minmax=minmax, minmax2=minmaxrz, domain_bounds=domain_bounds, plotleg=False)
 
     # Put the main title in upper left
     fig.text(fpar['margin_left'] + fpar['sub_margin_left'], 1.0 - fpar['margin_top'], maintitle, ha='left', va='bottom', fontsize=default_titlesize)

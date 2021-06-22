@@ -49,11 +49,9 @@ qvals = clas['qvals']
 titles = clas['titles']
 ncol = clas['ncol']
 
-if not clas0['tag'] == '': # the "tag" represents a quantity group
-    clas0['tag'] = clas0['tag'][1:] # remove the prepending _
-
-if clas0['tag'] in dataname_list.keys():
-    dataname = dataname_list[clas0['tag']]
+groupname = clas0['groupname']
+if groupname in dataname_list.keys():
+    dataname = dataname_list[groupname]
 else:
     dataname = 'AZ_Avgs'
 
@@ -87,12 +85,12 @@ for qval in qvals:
 # make the main title
 iter1, iter2 = get_iters_from_file(the_file)
 time_string = get_time_string(dirname, iter1, iter2)
-if not clas0['tag'] == '':
-    mainlabel = clas0['tag']
+if groupname is None:
+    qlabel = array_of_strings(qvals)
 else:
-    mainlabel = 'quantities' 
+    qlabel = groupname
 maintitle = dirname_stripped + '\n' +\
-        mainlabel + ' (zonally averaged)' + '\n' +\
+        'qvals = ' + qlabel + '\n' +\
         time_string
 
 # Generate the figure using standard routine
@@ -104,18 +102,25 @@ if shav:
 else:
     fig = figs
 
-# save the figure if tag was specified
-if clas0['tag'] in ['v', 'b']: # these go in main directory
+# save the figure if tag (or qgroup) was specified
+if len(clas0['tag']) > 0 or not groupname is None:
+    basename = 'azav_'
+    if not groupname is None:
+        basename += groupname
+    basename += clas0['tag']
+
+if basename in ['azav_v', 'azav_b']: # these go in main directory
     plotdir = my_mkdir(clas0['plotdir'])
 else:
     plotdir = my_mkdir(clas0['plotdir'] + 'azav/')
-if not clas0['tag'] == '':
-    savefile = plotdir + clas0['tag'] + '_azav-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
+
+if clas0['saveplot']:
+    savefile = plotdir + basename + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
     print ('saving figure at ' + savefile)
     fig.savefig(savefile, dpi=300)
 
     if shav:
-        av_savefile = plotdir + clas0['tag'] + '_shav-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
+        av_savefile = savefile.replace('azav', 'shav')
         print ('saving lat. avg. figure at ' + av_savefile)
         av_fig.savefig(av_savefile, dpi=300)
 

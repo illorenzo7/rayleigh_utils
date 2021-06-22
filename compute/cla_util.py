@@ -44,6 +44,7 @@ def read_clas(args):
     clas0['saveplot'] = True
     clas0['showplot'] = True
     clas0['tag'] = ''
+    clas0['groupname'] = None
 
     # see if magnetism/rotation are on
     magnetism = get_parameter(dirname, 'magnetism')
@@ -123,11 +124,12 @@ def read_clas(args):
                     clas['qvals'] = np.array([int(argvals)])
                     clas['titles'] = array_of_strings(clas['qvals'])
                 else:
-                    the_qgroup = get_quantity_group(argvals, magnetism)
+                    groupname = argvals
+                    clas0['groupname'] = groupname
+                    the_qgroup = get_quantity_group(groupname, magnetism)
                     clas['qvals'] = the_qgroup['qvals']
                     clas['titles'] = the_qgroup['titles']
                     clas['ncol'] = the_qgroup['ncol']
-                    clas0['tag'] = '_' + argvals
                     clas['totsig'] = the_qgroup['totsig']
             else:
                 # this was a list of integers

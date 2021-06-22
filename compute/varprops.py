@@ -116,13 +116,13 @@ def get_label(varname):
     return label.replace('$$', '')
 
 # groups of quantities
-def get_quantity_group(tag, magnetism):
+def get_quantity_group(groupname, magnetism):
     di_out = dict({})
     di_out['totsig'] = None # the default
 
     # set default qvals: velocity + vorticity, Pressure/ entropy
     # then possibly B, del x B
-    if tag == 'default':
+    if groupname == 'default':
         qvals = [1, 2, 3, 301, 302, 303, 501, 502]
         titles = [r'$v_r$', r'$v_\theta$', r'$v_\phi$',\
                 r'$\omega_r$', r'$\omega_\theta$', r'$\omega_\phi$',\
@@ -134,7 +134,7 @@ def get_quantity_group(tag, magnetism):
                 r'$\mathcal{J}_r$', r'$\mathcal{J}_\theta$', r'$\mathcal{J}_\phi$']
         ncol = 4 + 3*magnetism
 
-    if tag == 'torque':
+    if groupname == 'torque':
         qvals = [3, 1801, 1802, 1803, 1804, 1819]
         titles = [r'$v_\phi$', r'$-\tau_{\rm{rs}}$', r'$-\tau_{\rm{mc,v_\phi}}$',r'$\tau_{\rm{mc,\Omega_0}}$', r'$\tau_{\rm{v}}$',\
           r'$\mathcal{L}_z$']
@@ -147,24 +147,24 @@ def get_quantity_group(tag, magnetism):
         totsig[0] = totsig[5] = 0; totsig[1] = totsig[2] = -1
         di_out['totsig'] = totsig
 
-    if tag == 'induct':
+    if groupname == 'induct':
         qvals = [801, 802, 803]            
         for j in range(1, 31):
             qvals.append(1600 + j)
         titles = array_of_strings(qvals)
         ncol = 11
 
-    if tag == 'v':
+    if groupname == 'v':
         qvals = [1, 2, 3]            
         titles = [get_label('vr'), get_label('vt'), get_label('vp')]
         ncol = 3
 
-    if tag == 'b':
+    if groupname == 'b':
         qvals = [801, 802, 803]            
         titles = [get_label('br'), get_label('bt'), get_label('bp')]
         ncol = 3
 
-    if tag == 'forcer': # linear forces, radial
+    if groupname == 'forcer': # linear forces, radial
         qvals = [1201, 1219, 1237, 1216, 1228]
         titles= [r'$-(\mathbf{f}_{\rm{adv}})_r$', r'$(\mathbf{f}_{\rm{cor}})_r$',  r'$(\mathbf{f}_{\rm{p}})_r$', r'$(\mathbf{f}_{\rm{buoy}})_r$', r'$(\mathbf{f}_{\rm{v}})_r$']
         if magnetism:
@@ -175,7 +175,7 @@ def get_quantity_group(tag, magnetism):
         totsig[0] = -1
         di_out['totsig'] = totsig
 
-    if tag == 'forcet': # linear forces, theta
+    if groupname == 'forcet': # linear forces, theta
         qvals = [1202, 1220, 1238, 1229]
         titles= [r'$-(\mathbf{f}_{\rm{adv}})_\theta$', r'$(\mathbf{f}_{\rm{cor}})_\theta$',  r'$(\mathbf{f}_{\rm{p}})_\theta$',  r'$(\mathbf{f}_{\rm{v}})_\theta$']
         if magnetism:
@@ -186,7 +186,7 @@ def get_quantity_group(tag, magnetism):
         totsig[0] = -1
         di_out['totsig'] = totsig
 
-    if tag == 'forcep': # linear forces, phi
+    if groupname == 'forcep': # linear forces, phi
         qvals = [1203, 1221, 1239, 1230]
         titles= [r'$-(\mathbf{f}_{\rm{adv}})_\phi$', r'$(\mathbf{f}_{\rm{cor}})_\phi$',  r'$(\mathbf{f}_{\rm{p}})_\phi$',  r'$(\mathbf{f}_{\rm{v}})_\phi$']
         if magnetism:
@@ -197,7 +197,7 @@ def get_quantity_group(tag, magnetism):
         totsig[0] = -1
         di_out['totsig'] = totsig
 
-    if tag == 'efr': # energy fluxes, r
+    if groupname == 'efr': # energy fluxes, r
         qvals = [1455, 1458, 1470, 1935, 1923]
         titles = [r'$(\mathbf{\mathcal{F}}_{\rm{enth}})_r$',\
           r'$(\mathbf{\mathcal{F}}_{\rm{enth,pp}})_r$',\
@@ -212,7 +212,7 @@ def get_quantity_group(tag, magnetism):
         totsig[3] = -1
         di_out['totsig'] = totsig
 
-    if tag == 'eft': # energy fluxes, theta
+    if groupname == 'eft': # energy fluxes, theta
         qvals = [1456, 1459, 1471, 1936, 1924]
         titles = [r'$(\mathbf{\mathcal{F}}_{\rm{enth}})_\theta$',\
           r'$(\mathbf{\mathcal{F}}_{\rm{enth,pp}})_\theta$',\
@@ -228,7 +228,7 @@ def get_quantity_group(tag, magnetism):
         totsig[3] = -1
         di_out['totsig'] = totsig
 
-    if tag == 'efp': # energy fluxes, phi
+    if groupname == 'efp': # energy fluxes, phi
         qvals = [1457, 1460, 1937, 1925]
         titles = [r'$(\mathbf{\mathcal{F}}_{\rm{enth}})_\phi$',\
           r'$(\mathbf{\mathcal{F}}_{\rm{enth,pp}})_\phi$',\
@@ -242,7 +242,7 @@ def get_quantity_group(tag, magnetism):
         totsig[3] = -1
         di_out['totsig'] = totsig
 
-    if tag == 'indr': # induction, r
+    if groupname == 'indr': # induction, r
         qvals = [1601, 1602, 1603, 1604, 1605, 801]
         titles = [r'$[\left\langle\mathbf{B}\cdot\nabla\mathbf{v}\right\rangle]_r$',\
             r'$-\left\langleB_r(\nabla\cdot\mathbf{v})\right\rangle$',\
@@ -255,7 +255,7 @@ def get_quantity_group(tag, magnetism):
         totsig[3] = totsig[4] = 1
         di_out['totsig'] = totsig
 
-    if tag == 'indrmean': # energy fluxes, r, mean
+    if groupname == 'indrmean': # energy fluxes, r, mean
         qvals = [1616, 1617, 1618, 1619, 1620, 801]
         titles = [r'$[\left\langle\mathbf{B}\right\rangle\cdot\nabla\left\langle\mathbf{v}\right\rangle]_r$',\
     r'$-\left\langleB_r\right\rangle(\nabla\cdot\left\langle\mathbf{v}\right\rangle)$',\
@@ -268,7 +268,7 @@ def get_quantity_group(tag, magnetism):
         totsig[3] = totsig[4] = 1
         di_out['totsig'] = totsig
 
-    if tag == 'indt': # energy fluxes, theta
+    if groupname == 'indt': # energy fluxes, theta
         qvals = [1606, 1607, 1608, 1609, 1610, 802]
         titles = [r'$[\left\langle\mathbf{B}\cdot\nabla\mathbf{v}\right\rangle]_\theta$',\
             r'$-\left\langleB_\theta(\nabla\cdot\mathbf{v})\right\rangle$',\
@@ -281,7 +281,7 @@ def get_quantity_group(tag, magnetism):
         totsig[3] = totsig[4] = 1
         di_out['totsig'] = totsig
 
-    if tag == 'indtmean': # energy fluxes, theta, mean
+    if groupname == 'indtmean': # energy fluxes, theta, mean
         qvals = [1621, 1622, 1623, 1624, 1625, 802]
         titles = [r'$[\left\langle\mathbf{B}\right\rangle\cdot\nabla\left\langle\mathbf{v}\right\rangle]_\theta$',\
             r'$-\left\langleB_\theta\right\rangle(\nabla\cdot\left\langle\mathbf{v}\right\rangle)$',\
@@ -294,7 +294,7 @@ def get_quantity_group(tag, magnetism):
         totsig[3] = totsig[4] = 1
         di_out['totsig'] = totsig
 
-    if tag == 'indp': # energy fluxes, phi
+    if groupname == 'indp': # energy fluxes, phi
         qvals = [1611, 1612, 1613, 1614, 1615, 803]
 
         titles = [r'$[\left\langle\mathbf{B}\cdot\nabla\mathbf{v}\right\rangle]_\phi$',\
@@ -308,7 +308,7 @@ def get_quantity_group(tag, magnetism):
         totsig[3] = totsig[4] = 1
         di_out['totsig'] = totsig
 
-    if tag == 'indpmean': # energy fluxes, phi, mean
+    if groupname == 'indpmean': # energy fluxes, phi, mean
         qvals = [1626, 1627, 1628, 1629, 1630, 803]
         titles = [r'$[\left\langle\mathbf{B}\right\rangle\cdot\nabla\left\langle\mathbf{v}\right\rangle]_\phi$',\
             r'$-\left\langleB_\phi\right\rangle(\nabla\cdot\left\langle\mathbf{v}\right\rangle)$',\
@@ -321,7 +321,7 @@ def get_quantity_group(tag, magnetism):
         totsig[3] = totsig[4] = 1
         di_out['totsig'] = totsig
 
-    if tag == 'ke':
+    if groupname == 'ke':
         qvals = [402, 403, 404, 410, 411, 412]
         titles =\
             [r'$\overline{\rm{KE}}_{\rm{r}}$',\
@@ -333,7 +333,7 @@ def get_quantity_group(tag, magnetism):
         ncol = 3
         totsig = 'sumrow'
     
-    if tag == 'me':
+    if groupname == 'me':
         qvals = [1102, 1103, 1104, 1110, 1111, 1112]
         titles =\
             [r'$\overline{\rm{ME}}_{\rm{r}}$',\
@@ -345,9 +345,9 @@ def get_quantity_group(tag, magnetism):
         ncol = 3
         totsig = 'sumrow'
 
-    if 'meprod' in [tag[:-3], tag[:-4]]: # this is the exact stuff
+    if 'meprod' in [groupname[:-3], groupname[:-4]]: # this is the exact stuff
         baselen = 6
-        ext = tag[baselen:baselen + 3]
+        ext = groupname[baselen:baselen + 3]
         basetitles = ['induct', 'shear', 'advec', 'comp', 'diff']
 
         custom_offset = 2200
@@ -399,10 +399,10 @@ def get_quantity_group(tag, magnetism):
         di_out['totsig'] = totsig
 
 
-    if tag[:9] == 'meprodnum':
+    if groupname[:9] == 'meprodnum':
         nq = 12 # (r, t, p) x (ind, shear, adv, comp)
         baselen = 9
-        ext = tag[baselen:baselen + 3]
+        ext = groupname[baselen:baselen + 3]
         if ext == 'tot':
             iqstart = 0
         if ext == 'pmp':
@@ -423,10 +423,10 @@ def get_quantity_group(tag, magnetism):
                     'comp' + app]
         ncol = 4
 
-    if tag[:11] == 'meprodtheta':
+    if groupname[:11] == 'meprodtheta':
         nq = 5 # theta (t): (ind, shear, adv, comp, diff)
         baselen = 11
-        ext = tag[baselen:baselen + 3]
+        ext = groupname[baselen:baselen + 3]
         if ext == 'tot':
             iqstart = 0
         if ext == 'pmp':
@@ -450,10 +450,10 @@ def get_quantity_group(tag, magnetism):
         totsig[0] = totsig[4] = 1
         di_out['totsig'] = totsig
 
-    if tag[:11] == 'meprodshear':
+    if groupname[:11] == 'meprodshear':
         nq = 15 # (r, t, p) x (br (d/dr), bt (d/dt), bp (d/dp), curv1, curv2
         baselen = 11
-        ext = tag[baselen:baselen + 3]
+        ext = groupname[baselen:baselen + 3]
         if ext == 'tot':
             iqstart = 0
         if ext == 'pmp':
@@ -474,10 +474,10 @@ def get_quantity_group(tag, magnetism):
         ncol = 5
         di_out['totsig'] = 'sumrow'
 
-    if tag[:10] == 'meprodmean':
+    if groupname[:10] == 'meprodmean':
         nq = 15 # (shear, adv, comp, ind, diff) x (r, th, ph)
         baselen = 10
-        ext = tag[baselen:baselen + 3]
+        ext = groupname[baselen:baselen + 3]
         if ext == 'tot':
             iqstart = 0
         if ext == 'mmm':
@@ -493,10 +493,10 @@ def get_quantity_group(tag, magnetism):
         ncol = 5
         di_out['totsig'] = np.array([0, 0, 0, 1, 1])
 
-    if tag[:6] == 'meprod':
-        if len(tag) == baselen + 4: # another extension, 
+    if groupname[:6] == 'meprod':
+        if len(groupname) == baselen + 4: # another extension, 
             # indicating one direction only
-            ext2 = tag[-1]
+            ext2 = groupname[-1]
             if ext2 == 'r':
                 qvals = qvals[:ncol]
                 titles = titles[:ncol]
@@ -507,22 +507,22 @@ def get_quantity_group(tag, magnetism):
                 qvals = qvals[2*ncol:3*ncol]
                 titles = titles[2*ncol:3*ncol]
 
-    if tag in ['indralt', 'indraltnum']:
+    if groupname in ['indralt', 'indraltnum']:
         ind_off = 0
         qvals = np.arange(15) + ind_off
         titles = ['(d/dT)(vr*bt)', '-(d/dT)(vt*br)', '-(d/dP)(vp*br)', '(d/dP)(vr*bp)', 'curv.']
 
-    if tag in ['indtalt', 'indtaltnum']:
+    if groupname in ['indtalt', 'indtaltnum']:
         ind_off = 15
         qvals = np.arange(15) + ind_off
         titles = ['(d/dP)(vt*bp)', '-(d/dP)(vp*bt)', '-(d/dr)(vr*bt)', '(d/dr)(vt*br)', 'curv.']
 
-    if tag in ['indpalt', 'indpaltnum']:
+    if groupname in ['indpalt', 'indpaltnum']:
         ind_off = 30
         qvals = np.arange(15) + ind_off
         titles = ['(d/dr)(vp*br)', '-(d/dr)(vr*bp)', '-(d/dT)(vt*bp)', '(d/dT)(vp*bt)', 'curv.']
 
-    if 'ind' in tag and 'alt' in tag:
+    if 'ind' in groupname and 'alt' in groupname:
         for ext in ['mm', 'pp']:
             more_titles = []
             for j in range(5):
@@ -531,19 +531,19 @@ def get_quantity_group(tag, magnetism):
         ncol = 5 
         di_out['totsig'] = 'sumrow'
 
-    if tag == 'magtorquemm':
+    if groupname == 'magtorquemm':
         titles = [r'$\tau_{\rm{mm,r}}$', r'$\frac{r\sin\theta}{4\pi}\left\langle B_r\right\rangle\left\langle\frac{\partial B_\phi}{\partial r}\right\rangle$', r'$\frac{r\sin\theta}{4\pi}\left\langle B_\phi\right\rangle\left\langle\frac{\partial B_r}{\partial r}\right\rangle$', r'$\frac{3\sin\theta}{4\pi}\langle B_r\rangle\langle B_\phi\rangle$',\
         r'$\tau_{\rm{mm,\theta}}$', r'$\frac{\sin\theta}{4\pi}\left\langle B_\theta\right\rangle \left\langle\frac{\partial B_\phi}{\partial \theta}\right\rangle$', r'$\frac{\sin\theta}{4\pi}\left\langle B_\phi\right\rangle\left\langle\frac{\partial B_\theta}{\partial \theta}\right\rangle$', r'$\frac{2\cos\theta}{4\pi}\langle B_\theta\rangle\langle B_\phi\rangle$']
         qvals = [2, 6, 7, 8, 3, 9, 10, 11]
         ncol = 4
 
-    if tag == 'magtorquems':
+    if groupname == 'magtorquems':
         titles = [r'$\tau_{\rm{ms,r}}$', r'$\frac{r\sin\theta}{4\pi}\left\langle B_r^\prime\frac{\partial B_\phi^\prime}{\partial r}\right\rangle$', r'$\frac{r\sin\theta}{4\pi}\left\langle B_\phi^\prime\frac{\partial B_r^\prime}{\partial r}\right\rangle$', r'$\frac{3\sin\theta}{4\pi}\langle B_r^\prime B_\phi^\prime\rangle$',\
         r'$\tau_{\rm{ms,\theta}}$', r'$\frac{\sin\theta}{4\pi}\left\langle B_\theta^\prime\frac{\partial B_\phi^\prime}{\partial \theta}\right\rangle$', r'$\frac{\sin\theta}{4\pi}\left\langle B_\phi^\prime\frac{\partial B_\theta^\prime}{\partial \theta}\right\rangle$', r'$\frac{2\cos\theta}{4\pi}\langle B_\theta^\prime B_\phi^\prime\rangle$']
         qvals = [4, 12, 13, 14, 5, 15, 16, 17]
         ncol = 4
 
-    if tag == 'ferraro':
+    if groupname == 'ferraro':
         ncol = 5
         qvals = np.arange(15)
         # order: flux_r, flux_t, torque_r, torque_t, torque

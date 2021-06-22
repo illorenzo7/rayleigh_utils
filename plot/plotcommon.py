@@ -357,7 +357,7 @@ def sci_format(num, ndec=1):
     return ((r'$%1.' + (r'%i' %ndec) + r'f\times10^{%i}$')\
             %(mantissa, exponent))
 
-lineplot_kwargs_default = dict({'xlabel': None, 'ylabel': None, 'title': None, 'xvals': np.array([]), 'yvals': np.array([]), 'labels': None, 'xlogscale': False, 'xminmax': None, 'minmax': None, 'xcut': None, 'minmax2': None, 'scatter': False, 'colors': color_order, 'linestyles': style_order[0], 'markers': marker_order[0], 'lw': default_lw, 's': default_s})
+lineplot_kwargs_default = dict({'xlabel': None, 'ylabel': None, 'title': None, 'xvals': np.array([]), 'yvals': np.array([]), 'labels': None, 'xlogscale': False, 'xminmax': None, 'minmax': None, 'xcut': None, 'minmax2': None, 'scatter': False, 'colors': color_order, 'linestyles': style_order[0], 'markers': marker_order[0], 'lw': default_lw, 's': default_s, 'plotleg': True})
 lineplot_kwargs_default.update(lineplot_minmax_kwargs_default)
 
 del lineplot_kwargs_default['xx']
@@ -365,7 +365,8 @@ del lineplot_kwargs_default['xx']
 def lineplot(xx, profiles, ax, **kwargs):
     kw = update_dict(lineplot_kwargs_default, kwargs)
     # make room for legend by default
-    lineplot_minmax_kwargs_default['legfrac'] = 1/3
+    if kw['plotleg']:
+        lineplot_minmax_kwargs_default['legfrac'] = 1/3
     kw_lineplot_minmax = update_dict(lineplot_minmax_kwargs_default, kwargs)
     find_bad_keys(lineplot_kwargs_default, kwargs, 'lineplot')
 
@@ -515,7 +516,8 @@ def lineplot(xx, profiles, ax, **kwargs):
         plt.ticklabel_format(useMathText=True, axis='y', scilimits=(0,0))
 
     # make the legend
-    ax.legend(loc='lower left', ncol=3, fontsize=0.8*default_labelsize)
+    if kw.plotleg:
+        ax.legend(loc='lower left', ncol=3, fontsize=0.8*default_labelsize)
 
 my_contourf_kwargs_default = dict({
         # saturation of field values stuff
