@@ -21,9 +21,9 @@ fname = None
 verbose = False
 for i in range(nargs):
     arg = args[i]
-    if arg == '-fname':
+    if arg == '--fname':
         fname = args[i+1]
-    elif arg == '-v':
+    elif arg == '--v':
         verbose = True
 
 lognames = []
@@ -80,3 +80,6 @@ if verbose:
             %(mean_iters_per_sec*3600.*24.))
     print ("Simulation rate = %1.2e iters/(5 days)"\
             %(mean_iters_per_sec*3600.*24.*5.))
+    print ("===============================")
+    print ("Min. time step = %1.2e s" %np.min(di['delta_t']))
+    print ("Max. time step = %1.2e s" %np.max(di['delta_t']))
