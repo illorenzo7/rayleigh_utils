@@ -9,77 +9,38 @@
 # specified
 
 import numpy as np
-import pickle
-import matplotlib as mpl
-mpl.use('TkAgg')
 import matplotlib.pyplot as plt
-plt.rcParams['mathtext.fontset'] = 'dejavuserif'
-csfont = {'fontname':'DejaVu Serif'}
 import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
-from azav_util import plot_azav
+from azav_util import plot_azav_grid
 from common import *
+from plotcommon import *
+from cla_util import *
 
-# Get directory name and stripped_dirname for plotting purposes
-dirname = sys.argv[1]
+# Read command-line arguments (CLAs)
+args = sys.argv
+clas0, clas = read_clas(args)
+dirname = clas0['dirname']
 dirname_stripped = strip_dirname(dirname)
 
-# domain bounds
-ncheby, domain_bounds = get_domain_bounds(dirname)
-ri = np.min(domain_bounds)
-ro = np.max(domain_bounds)
-d = ro - ri
+# get data
+if 'the_file' in clas: 
+    the_file = clas['the_file']
+else:
+    the_file = get_widest_range_file(clas0['datadir'], dataname)
 
-# Directory with data and plots, make the plotting directory if it doesn't
-# already exist    
-datadir = dirname + '/data/'
-plotdir = dirname + '/plots/'
-if (not os.path.isdir(plotdir)):
-    os.makedirs(plotdir)
+print ('Getting quantities from ' + the_file)
+di = get_dict(the_file)
+vals = di['vals']
+if dataname == 'AZ_Avgs':
+    lut = di['lut']
 
-radatadir = dirname + '/AZ_Avgs/'
-
-# Get all the file names in datadir and their integer counterparts
-file_list, int_file_list, nfiles = get_file_lists(radatadir)
-
-# Set defaults
-save = True
-plotcontours = True
-my_nlevs = 20
-AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
-rbcz = None
-
-# Read in CLAs (if any) to change default variable ranges and other options
-minmax = None
-
-plotdir = None
-
-args = sys.argv[2:]
-nargs = len(args)
-
-# Change other defaults
-for i in range(nargs):
-    arg = args[i]
-    if arg == '-plotdir':
-        plotdir = args[i+1]
-    if arg == '-minmax':
-        minmax = float(args[i+1]), float(args[i+2])
-    elif arg == '-rbcz':
-        rbcz = float(args[i+1])
-    elif arg == '-nosave':
-        save = False
-    elif arg == '-nlevs':
-        my_nlevs = int(args[i+1])
-    elif arg == '-nocontour':
-        plotcontours = False
-    elif (arg == '-usefile'):
-        AZ_Avgs_file = args[i+1]
-        AZ_Avgs_file = AZ_Avgs_file.split('/')[-1]
-        
-# Read in AZ_Avgs data
-print ('Getting data from ' + datadir + AZ_Avgs_file + ' ...')
-di = get_dict(datadir + AZ_Avgs_file)
+# see if the user wants a separate plot of lat. averaged quantities
+if 'shav' in clas:
+    shav = True
+else:
+    shav = False
 
 iter1, iter2 = di['iter1'], di['iter2']
 vals = di['vals']
