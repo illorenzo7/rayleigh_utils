@@ -120,7 +120,8 @@ if clas0['saveplot']:
     fig.savefig(savefile, dpi=300)
 
     if shav:
-        av_savefile = savefile.replace('azav', 'shav')
+        basename = basename.replace('azav', 'shav')
+        av_savefile = plotdir + basename + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
         print ('saving lat. avg. figure at ' + av_savefile)
         av_fig.savefig(av_savefile, dpi=300)
 
