@@ -18,14 +18,16 @@ dirname = clas0['dirname']
 dirname_stripped = strip_dirname(dirname)
 
 # SPECIFIC ARGS for moll_show:
-moll_show_kwargs_default = dict({'val_iter': 1e9, 'irvals': None, 'rvals': None, 'varnames': None})
+moll_show_kwargs_default = dict({'val_iter': 1e9, 'irvals': np.array([0]), 'rvals': None, 'varnames': np.array(['vr'])})
 moll_show_kwargs_default.update(plot_moll_kwargs_default)
 kw = update_dict(moll_show_kwargs_default, clas)
 find_bad_keys(moll_show_kwargs_default, clas, 'moll_show', justwarn=True)
 kw_plot_moll = update_dict(plot_moll_kwargs_default, clas)
 
-make_array(kw.varnames)
-make_array(kw.irvals)
+# needs to be arrays
+kw.irvals = make_array(kw.irvals)
+kw.rvals = make_array(kw.rvals)
+kw.varnames = make_array(kw.varnames)
 
 # make plot directory if nonexistent
 plotdir = my_mkdir(clas0['plotdir'] + 'moll/')
@@ -44,24 +46,17 @@ if 'the_file' in clas:
 print ("done reading")
 
 # get the rvals we want
-if kw.irvals is None: # irvals hasn't been set yet
-    if kw.rvals is None:
-        kw.irvals = np.array([0]) # just plot the top radius by default
-    else: # get irvals from rvals
-        if kw.rvals == 'all':
-            kw.irvals = np.arange(a.nr)
-        else:
-            kw.irvals = np.zeros_like(kw.rvals, dtype='int')
-            for i in range(len(kw.rvals)):
-                kw.irvals[i] = np.argmin(np.abs(a.radius/rsun - kw.rvals[i]))
+if not kw.rvals is None: # irvals haven't been set directly
+    if kw.rvals == np.array(['all']):
+        kw.irvals = np.arange(a.nr)
+    else:
+        kw.irvals = np.zeros_like(kw.rvals, dtype='int')
+        for i in range(len(kw.rvals)):
+            kw.irvals[i] = np.argmin(np.abs(a.radius/rsun - kw.rvals[i]))
 
 # get the vars we want
-if kw.varnames is None: # varnames not specified yet
-    kw.varnames = np.array(['vr'])
-else:
-    if np.isscalar(kw.varnames):
-        if kw.varnames == 'all': # remember varnames is an array now
-            kw.varnames = get_default_varnames(dirname)
+if kw.varnames == np.array(['all']): # remember varnames is an array now
+    kw.varnames = get_default_varnames(dirname)
 
 # plot dimensions
 nplots = 1
