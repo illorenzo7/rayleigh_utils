@@ -90,12 +90,16 @@ prs = prs_az - prs_sph
 temp = temp_az - temp_sph
 rho = rho_az - rho_sph
 
+# set the plot name (base of it) here
+basename = 'azav_thermo'
 if kw.nond:
     terms = [entropy, prs, temp, rho]
     titles = [r'$S/c_P$', r'$P/\overline{P}$', r'$T/\overline{T}$', r'$\rho/\overline{\rho}$']
+    basename += '_nond'
 else:
     terms = [entropy*c_P, prs*ref_prs, temp*ref_temp, rho*ref_rho]
     titles = ['S', 'P', 'T', r'$\rho$']
+    basename += '_dim'
 
 # make the main title
 iter1, iter2 = get_iters_from_file(kw.the_file)
@@ -109,12 +113,6 @@ fig = plot_azav_grid (terms, rr, cost, maintitle=maintitle, titles=titles, **kw_
 
 # save the figure
 plotdir = my_mkdir(clas0['plotdir'] + 'azav/')
-basename = 'azav_thermo'
-if kw.nond:
-    basename += '_dim'
-else:
-    basename += '_nond'
-
 savefile = plotdir + basename + clas0['tag'] + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
 
 if clas0['saveplot']:
