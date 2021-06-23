@@ -7,18 +7,17 @@
 
 # Import relevant modules
 import numpy as np
-import matplotlib as mpl
-mpl.use('TkAgg')
 import matplotlib.pyplot as plt
-plt.rcParams['mathtext.fontset'] = 'dejavuserif'
-csfont = {'fontname':'DejaVu Serif'}
 import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from common import *
+from cla_util import *
 
-# Get directory name and stripped_dirname for plotting purposes
-dirname = sys.argv[1]
+# Get CLAs
+args = sys.argv
+clas0, clas = read_clas(args)
+dirname = clas0['dirname']
 dirname_stripped = strip_dirname(dirname)
 
 # domain bounds
@@ -118,12 +117,12 @@ ax.plot(rr_n, N2)
 
 # Label the axes
 if rnorm is None:
-    plt.xlabel(r'$r/R_\odot$',fontsize=12, **csfont)
+    plt.xlabel(r'$r/R_\odot$',fontsize=12)
 else:
-    plt.xlabel(r'r/(%.1e cm)' %rnorm, fontsize=12, **csfont)
+    plt.xlabel(r'r/(%.1e cm)' %rnorm, fontsize=12)
 
 plt.ylabel(r'${\rm{N^2}} = g\ (d\overline{S}/dr)/c_p\ [s^{-2}]$',\
-        fontsize=12, **csfont)
+        fontsize=12)
 
 # Set the axis limits
 xmin, xmax = np.min(rr_n), np.max(rr_n)
@@ -168,12 +167,13 @@ N_max = np.sqrt(val_max)
 dtlimit = 1./N_max
 plt.title(dirname_stripped + '\n' +'Brunt-Vaisala Frequency' +\
         '\n' + r'$N_{\rm{max}} = %1.1e\ s^{-1},\ (\Delta t)_N = %1.1e\ s$'\
-        %(N_max, dtlimit), **csfont)
+        %(N_max, dtlimit))
 
 # Get ticks everywhere
 plt.minorticks_on()
 plt.tick_params(top=True, right=True, direction='in', which='both')
 plt.tight_layout()
+plotdir = my_mkdir(clas0['plotdir'])
 
 savefile = plotdir + dirname_stripped + '_Brunt' + tag + '.png'
 print('Saving plot at ' + savefile + ' ...')
