@@ -1,11 +1,8 @@
 # Author: Loren Matilsky
 # Created: 05/14/2018
-# This script generates differential rotation plotted in the meridional plane 
-# for the Rayleigh run directory indicated by [dirname]. To use an AZ_Avgs file
-# different than the one associated with the longest averaging range, use
-# --usefile [complete name of desired AZ_Avgs file]
-# Saves plot in
-# [dirname]_Om_[first iter]_[last iter].npy
+# Updated: 2021
+# prototype for AZ_Avgs scripts. Savename:
+# diffrot-[first iter]_[last iter].npy
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -24,22 +21,29 @@ dirname = clas0['dirname']
 dirname_stripped = strip_dirname(dirname, wrap=True)
 
 # allowed args + defaults
+# key unique to this script
 kwargs_default = dict({'the_file': None})
-make_figure_kwargs_default.update(azav_fig_dimensions)
-kw_make_figure = update_dict(make_figure_kwargs_default, clas)
-kw_lineplot = update_dict(lineplot_kwargs_default, clas)
 
+# also need make figure kwargs
+make_figure_kwargs_default.update(azav_fig_dimensions)
+kwargs_default.update(make_figure_kwargs_default)
+
+# of course, plot_azav kwargs, but need to change a few
 plot_azav_kwargs_default['plotlatlines'] = False
 plot_azav_kwargs_default['units'] = 'nHz'
 plot_azav_kwargs_default['nosci'] = True
 plot_azav_kwargs_default['cbar_prec'] = 1
-
 kwargs_default.update(plot_azav_kwargs_default)
+
+# overwrite defaults
 kw = update_dict(kwargs_default, clas)
-find_bad_keys(kwargs_default, clas, clas0['routinename'], justwarn=True)
 kw_plot_azav = update_dict(plot_azav_kwargs_default, clas)
+kw_make_figure = update_dict(make_figure_kwargs_default, clas)
+
+# check for bad keys
+find_bad_keys(kwargs_default, clas, clas0['routinename'], justwarn=True)
 if not kw.rbcz is None:  # need room for two colorbars
-    kw.margin_bottom_inches *= 2
+    kw_make_figure.margin_bottom_inches *= 2
 
 # get data
 if kw.the_file is None:

@@ -1,299 +1,125 @@
 # Author: Loren Matilsky
 # Created: 01/29/2019
-# This script plots the average thermodynamic state in the meridional plane:
-# pressure, density, temperature, and entropy
-# with the spherically symmetric part subtracted out
-# ...for the Rayleigh run directory indicated by [dirname]. 
-# To use an AZ_Avgs file
-# different than the one assosciated with the longest averaging range, use
-# -usefile [complete name of desired AZ_Avgs file]
-# Saves plot in
-# [dirname]_eflux_radial_merplane_[first iter]_[last iter].png
+# plots <P>, <S> (spherical average subtracted) 
+# and derives <rho>, <T>
+# to normalize by the background reference state, select
+# --nond
 
 import numpy as np
-import pickle
-import matplotlib as mpl
-mpl.use('TkAgg')
 import matplotlib.pyplot as plt
-plt.rcParams['mathtext.fontset'] = 'dejavuserif'
-csfont = {'fontname':'DejaVu Serif'}
 import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
-sys.path.append(os.environ['rapl'])
-from azav_util import plot_azav
+from azav_util import *
 from common import *
+from plotcommon import *
 from cla_util import *
 
-# Get directory name and stripped_dirname for plotting purposes
+# Get CLAs
 args = sys.argv
-clas = read_clas(args)
-dirname = clas['dirname']
+clas0, clas = read_clas(args)
+dirname = clas0['dirname']
 dirname_stripped = strip_dirname(dirname)
 
-# Get directory name and stripped_dirname for plotting purposes
-# domain bounds
-ncheby, domain_bounds = get_domain_bounds(dirname)
-ri = np.min(domain_bounds)
-ro = np.max(domain_bounds)
-d = ro - ri
+# allowed args + defaults
+# key unique to this script
+kwargs_default = dict({'the_file': None, 'the_file2': None, 'nond': False})
 
-# Directory with data and plots, make the plotting directory if it doesn't
-# already exist    
-datadir = dirname + '/data/'
-plotdir = dirname + '/plots/'
-if (not os.path.isdir(plotdir)):
-    os.makedirs(plotdir)
+# also need make figure kwargs
+make_figure_kwargs_default.update(azav_fig_dimensions)
+kwargs_default.update(make_figure_kwargs_default)
 
-# Read command-line arguments (CLAs)
-showplot = True
-saveplot = True
-plotcontours = True
-plotlatlines = True
-plotboundary = True
-minmax = None
-linthresh = None
-linscale = None
-minmaxrz = None
-linthreshrz = None
-linscalerz = None
-the_file = get_widest_range_file(datadir, 'AZ_Avgs')
-the_file2 = get_widest_range_file(datadir, 'Shell_Avgs') 
-forced = False
-rvals = []
-rbcz = None
-symlog = False
+# of course, plot_azav kwargs
+kwargs_default.update(plot_azav_kwargs_default)
 
-plotdir = None
+# overwrite defaults
+kw = update_dict(kwargs_default, clas)
+kw_plot_azav = update_dict(plot_azav_kwargs_default, clas)
+kw_make_figure = update_dict(make_figure_kwargs_default, clas)
 
-args = sys.argv[2:]
-nargs = len(args)
-for i in range(nargs):
-    arg = args[i]
-    if arg == '-plotdir':
-        plotdir = args[i+1]
-    if arg == '-minmax':
-        minmax = float(args[i+1]), float(args[i+2])
-    elif arg == '-minmaxrz':
-        minmaxrz = float(args[i+1]), float(args[i+2])
-    elif arg == '-rbcz':
-        rbcz = float(args[i+1])
-    elif arg == '-noshow':
-        showplot = False
-    elif arg == '-nosave':
-        saveplot = False
-    elif arg == '-nocontour':
-        plotcontours = False
-    elif arg == '-nobound':
-        plotboundary = False
-    elif arg == '-nolat':
-        plotlatlines = False
-    elif arg == '-usefile':
-        the_file = args[i+1]
-        the_file = the_file.split('/')[-1]
-    elif arg == '-usefiles':
-        the_file = args[i+1]
-        the_file = the_file.split('/')[-1]
-        the_file2 = args[i+2]
-        the_file2 = the_file2.split('/')[-1]
-    elif arg == '-forced':
-        forced = True
-    elif arg == '-depths':
-        strings = args[i+1].split()
-        for st in strings:
-            rval = ro - float(st)*d
-            rvals.append(rval)
-    elif arg == '-depthscz':
-        rm = domain_bounds[1]
-        dcz = ro - rm
-        strings = args[i+1].split()
-        for st in strings:
-            rval = ro - float(st)*dcz
-            rvals.append(rval)
-    elif arg == '-depthsrz':
-        rm = domain_bounds[1]
-        drz = rm - ri
-        strings = args[i+1].split()
-        for st in strings:
-            rval = rm - float(st)*drz
-            rvals.append(rval)
-    elif arg == '-rvals':
-        rvals = []
-        strings = args[i+1].split()
-        for st in strings:
-            rval = float(st)*rsun
-            rvals.append(rval)
-    elif arg == '-rvalscm':
-        rvals = []
-        strings = args[i+1].split()
-        for st in strings:
-            rval = float(st)
-            rvals.append(rval)
-    elif arg == '-symlog':
-        symlog = True
-    elif arg == '-linthresh':
-        linthresh = float(args[i+1])
-    elif arg == '-linscale':
-        linscale = float(args[i+1])
-    elif arg == '-linthreshrz':
-        linthreshrz = float(args[i+1])
-    elif arg == '-linscalerz':
-        linscalerz = float(args[i+1])
+# check for bad keys
+find_bad_keys(kwargs_default, clas, clas0['routinename'], justwarn=True)
+if not kw.rbcz is None:  # need room for two colorbars
+    kw_make_figure.margin_bottom_inches *= 2
 
-print ('Getting zonally averaged thermo. vars from ' + the_file)
-print ('and the spherically averaged thermo. vars from ' + datadir + the_file2)
-
-di = get_dict(the_file)
-di_sph = get_dict(the_file2)
-
-iter1, iter2 = get_iters_from_file(the_file)
+# get data
+if kw.the_file is None:
+    kw.the_file = get_widest_range_file(clas0['datadir'], 'AZ_Avgs')
+print ('reading ' + kw.the_file)
+di = get_dict(kw.the_file)
 vals = di['vals']
-vals_sph = di_sph['vals']
 lut = di['lut']
+
+if kw.the_file2 is None:
+    kw.the_file2 = get_widest_range_file(clas0['datadir'], 'Shell_Avgs')
+    
+print ('reading ' + kw.the_file2)
+di_sph = get_dict(kw.the_file2)
+vals_sph = di_sph['vals']
 lut_sph = di_sph['lut']
-
-# Get the time range in sec
-t1 = translate_times(iter1, dirname, translate_from='iter')['val_sec']
-t2 = translate_times(iter2, dirname, translate_from='iter')['val_sec']
-
-# Get the baseline time unit
-rotation = get_parameter(dirname, 'rotation')
-if rotation:
-    time_unit = compute_Prot(dirname)
-    time_label = r'$\rm{P_{rot}}$'
-else:
-    time_unit = compute_tdt(dirname)
-    time_label = r'$\rm{TDT}$'
 
 # Get necessary grid info
 di_grid = get_grid_info(dirname)
 rr = di_grid['rr']
+nr = di_grid['nr']
 cost = di_grid['cost']
-tt_lat = di_grid['tt_lat']
-tt = di_grid['tt']
-xx = di_grid['xx']
 
-# Compute the thermodynamic variables
-prs_spec_heat = get_parameter(dirname, 'pressure_specific_heat')
-
+# reference state variables
 eq = get_eq(dirname)
 ref_rho = (eq.density).reshape((1, nr))
 ref_prs = (eq.pressure).reshape((1, nr))
 ref_temp = (eq.temperature).reshape((1, nr))
 
-try:
-    poly_n = get_parameter(dirname, 'poly_n')
-except: # assume by default gamma is 5/3
-    poly_n = 1.5
+# Compute the NOND zonally averaged thermo. vars
+entropy_az = vals[:, :, lut[501]]/c_P
+prs_az = vals[:, :, lut[502]]/ref_prs
 
-# Compute the zonally averaged thermo. vars
-entropy_az = vals[:, :, lut[501]]
-prs_az = vals[:, :, lut[502]]
-
-# Calculate mean temp. from EOS
-temp_az = ref_temp*(prs_az/ref_prs/(poly_n + 1.) + entropy_az/prs_spec_heat)
-
-# Calculate mean density from Ideal Gas Law
-rho_az = ref_rho*(prs_az/ref_prs - temp_az/ref_temp)
+# Calculate temp, rho from EOS
+temp_az = (thermo_gamma - 1)/thermo_gamma*prs_az + entropy_az 
+rho_az = prs_az - temp_az
 
 # Compute the spherically averaged thermo. vars
-entropy_sph = (vals_sph[:, lut_sph[501]]).reshape((1, nr))
-prs_sph = (vals_sph[:, lut_sph[502]]).reshape((1, nr))
-temp_sph = ref_temp*(prs_sph/ref_prs/(poly_n + 1.) + entropy_sph/prs_spec_heat)
-rho_sph = ref_rho*(prs_sph/ref_prs - temp_sph/ref_temp)
+entropy_sph = (vals_sph[:, 0, lut_sph[501]]/c_P).reshape((1, nr))
+prs_sph = (vals_sph[:, 0, lut_sph[502]]/ref_prs).reshape((1, nr))
+temp_sph = (thermo_gamma - 1)/thermo_gamma*prs_sph + entropy_sph
+rho_sph = prs_sph - temp_sph
 
 # Now subtract the spherical mean from the zonal mean
-entropy_fluc = entropy_az - entropy_sph
-prs_fluc = prs_az - prs_sph
-temp_fluc = temp_az - temp_sph
-rho_fluc = rho_az - rho_sph
+entropy = entropy_az - entropy_sph
+prs = prs_az - prs_sph
+temp = temp_az - temp_sph
+rho = rho_az - rho_sph
 
-# Set up the actual figure from scratch
-fig_width_inches = 7 # TOTAL figure width, in inches
-    # (i.e., 8x11.5 paper with 1/2-inch margins)
-margin_inches = 1/8 # margin width in inches (for both x and y) and 
-    # horizontally in between figures
-margin_bottom_inches = 0.75*(2 - (rbcz is None)) 
-    # larger bottom margin to make room for colorbar(s)
-margin_top_inches = 1 # wider top margin to accommodate subplot titles AND metadata
-margin_subplot_top_inches = 1/4 # margin to accommodate just subplot titles
-nplots = 4
-ncol = 3 # put three plots per row
-nrow = np.int(np.ceil(nplots/3))
-
-subplot_width_inches = (fig_width_inches - (ncol + 1)*margin_inches)/ncol
-    # Make the subplot width so that ncol subplots fit together side-by-side
-    # with margins in between them and at the left and right.
-subplot_height_inches = 2*subplot_width_inches # Each subplot should have an
-    # aspect ratio of y/x = 2/1 to accommodate meridional planes. 
-fig_height_inches = margin_top_inches + nrow*(subplot_height_inches +\
-        margin_subplot_top_inches + margin_bottom_inches)
-fig_aspect = fig_height_inches/fig_width_inches
-
-# "Margin" in "figure units"; figure units extend from 0 to 1 in BOTH 
-# directions, so unitless dimensions of margin will be different in x and y
-# to force an equal physical margin
-margin_x = margin_inches/fig_width_inches
-margin_y = margin_inches/fig_height_inches
-margin_top = margin_top_inches/fig_height_inches
-margin_bottom = margin_bottom_inches/fig_height_inches
-margin_subplot_top = margin_subplot_top_inches/fig_height_inches
-
-# Subplot dimensions in figure units
-subplot_width = subplot_width_inches/fig_width_inches
-subplot_height = subplot_height_inches/fig_height_inches
-
-thermo_terms = [entropy_fluc, prs_fluc, temp_fluc, rho_fluc]
-
-titles = [r'$\langle S\rangle_{\rm{az}} - \langle S \rangle_{\rm{sph}}$',\
-        r'$\langle P\rangle_{\rm{az}} - \langle P \rangle_{\rm{sph}}$',\
-        r'$\langle T\rangle_{\rm{az}} - \langle T \rangle_{\rm{sph}}$',\
-        r'$\langle \rho\rangle_{\rm{az}} - \langle \rho \rangle_{\rm{sph}}$']
-units = [r'$\rm{erg}\ \rm{K}^{-1}\ \rm{g}^{-1}$',\
-        r'$\rm{dyn}\ \rm{cm}^{-2}$', r'$\rm{K}$', r'$\rm{g}\ \rm{cm}^{-3}$']
-
-# Generate the actual figure of the correct dimensions
-fig = plt.figure(figsize=(fig_width_inches, fig_height_inches))
-
-fsize = 12
-for iplot in range(nplots):
-    ax_left = margin_x + (iplot%ncol)*(subplot_width + margin_x)
-    ax_bottom = 1 - margin_top - subplot_height - margin_subplot_top -\
-            (iplot//ncol)*(subplot_height + margin_subplot_top +\
-            margin_bottom)
-    ax = fig.add_axes((ax_left, ax_bottom, subplot_width, subplot_height))
-    plot_azav (thermo_terms[iplot], rr, cost, fig=fig, ax=ax, units=units[iplot],\
-           minmax=minmax, plotcontours=plotcontours, rvals=rvals,\
-           minmaxrz=minmaxrz, rbcz=rbcz, symlog=symlog,\
-    linthresh=linthresh, linscale=linscale, linthreshrz=linthreshrz,\
-    linscalerz=linscalerz, plotlatlines=plotlatlines, plotboundary=plotboundary)
-    ax.set_title(titles[iplot], va='bottom', **csfont)
-
-# Label averaging interval
-if rotation:
-    time_string = ('t = %.1f to %.1f ' %(t1/time_unit, t2/time_unit))\
-            + time_label + (r'$\ (\Delta t = %.1f\ $'\
-            %((t2 - t1)/time_unit)) + time_label + ')'
+if kw.nond:
+    terms = [entropy, prs, temp, rho]
+    titles = [r'$S/c_P$', r'$P/\overline{P}$', r'$T/\overline{T}$', r'$\rho/\overline{\rho}$']
 else:
-    time_string = ('t = %.3f to %.3f ' %(t1/time_unit, t2/time_unit))\
-            + time_label + (r'$\ (\Delta t = %.3f\ $'\
-            %((t2 - t1)/time_unit)) + time_label + ')'
+    terms = [entropy*c_P, prs*ref_prs, temp*ref_temp, rho*ref_rho]
+    titles = ['S', 'P', 'T', r'$\rho$']
 
-# Put some metadata in upper left
-fig.text(margin_x, 1 - 0.1*margin_top, 'Thermodynamic state (zonally averaged)',\
-         ha='left', va='top', fontsize=fsize, **csfont)
-fig.text(margin_x, 1 - 0.3*margin_top, dirname_stripped,\
-         ha='left', va='top', fontsize=fsize, **csfont)
-fig.text(margin_x, 1 - 0.5*margin_top, time_string,\
-         ha='left', va='top', fontsize=fsize, **csfont)
+# make the main title
+iter1, iter2 = get_iters_from_file(kw.the_file)
+time_string = get_time_string(dirname, iter1, iter2)
+maintitle = dirname_stripped + '\n' +\
+        'Thermal variables: Az. Avg. - Sph. Avg.' + '\n' +\
+        time_string
+
+# make figure using usual routine
+fig = plot_azav_grid (terms, rr, cost, maintitle=maintitle, titles=titles, **kw_plot_azav)
 
 # save the figure
-plotdir = my_mkdir(clas['plotdir'] + 'azav/')
-savefile = plotdir + clas['routinename'] + clas['tag'] + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
+plotdir = my_mkdir(clas0['plotdir'] + 'azav/')
+basename = 'azav_thermo'
+if kw.nond:
+    basename += '_dim'
+else:
+    basename += '_nond'
 
-if clas['saveplot']:
+savefile = plotdir + basename + clas0['tag'] + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
+
+if clas0['saveplot']:
     print ('saving figure at ' + savefile)
     plt.savefig(savefile, dpi=300)
-if clas['showplot']:
+if clas0['showplot']:
     plt.show()
 plt.close()
