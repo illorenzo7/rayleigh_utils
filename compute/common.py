@@ -1311,15 +1311,23 @@ def get_default_varnames(dirname):
     varnames_default = np.array(varnames_default)    
     return varnames_default
 
-def make_array(arr, tolist=False): # arr is scalar, list, or array
+def make_array(arr, tolist=False, length=None): 
+    # arr is scalar, list, or array
+    # convert everything to a list
     if np.isscalar(arr):
-        out = np.array([arr])
+        out = [arr]
     else:
-        out = np.array(arr)
+        out = list(arr)
+
+    # if length was specified (only good if OG length was 1
+    # make the list that length
+    if not length is None and len(out) == 1:
+        out = out*length
+
     if tolist:
-        return list(out)
-    else:
         return out
+    else:
+        return (np.array(out))
 
 def lat_format(latval):
     if latval < 0:

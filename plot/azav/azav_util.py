@@ -18,7 +18,11 @@ from plotcommon import *
 azav_fig_dimensions = dict({'sub_width_inches': 2, 'sub_aspect': 2, 'margin_top_inches': 1, 'margin_bottom_inches': 1/2, 'sub_margin_left_inches': default_margin})
 
 # plot_azav needs my_contourf args, then some
-plot_azav_kwargs_default = dict({'rbcz': None, 'minmaxrz': None, 'rvals': np.array([]), 'plotlatlines': True, 'latvals': np.array([])})
+plot_azav_kwargs_default = dict({'rbcz': None, 'minmaxrz': None, 'rvals': np.array([]), 'plotlatlines': True, 'latvals': np.arange(-60., 90., 30.), 'plotboundary': True,\
+        'linestyles1': np.array([style_order[0]]), 'contourwidths1': np.array([default_lw]), 'linecolors1': np.array(['k']),\
+       'linestyles2': np.array([style_order[0]), 'contourwidths2': np.array([default_lw]), 'linecolors2': np.array(['k']})
+
+# add in my_contourf stuff
 plot_azav_kwargs_default.update(my_contourf_kwargs_default)
 
 def plot_azav(field, rr, cost, fig, ax,  **kwargs):
@@ -49,47 +53,75 @@ def plot_azav(field, rr, cost, fig, ax,  **kwargs):
         xx = xx_full
         yy = yy_full
         field = field_full
-        rr_cz = rr_full
     else: # plotting two domains
         irbcz = np.argmin(np.abs(rr/rsun - kw.rbcz))
-        fieldrz = field[:, irbcz+1:]
+
         field = field[:, :irbcz+1]
         xx = (rr_2d*sint_2d)[:, :irbcz+1]/rmax
         yy = (rr_2d*cost_2d)[:, :irbcz+1]/rmax
+
+        fieldrz = field[:, irbcz+1:]
         xxrz = (rr_2d*sint_2d)[:, irbcz+1:]/rmax
         yyrz = (rr_2d*cost_2d)[:, irbcz+1:]/rmax
-        rr_cz = rr_full[:, :irbcz+1]
-        rr_rz = rr_full[:, irbcz+1:]
-        tt_lat_rz = tt_lat[:, irbcz+1:]
-        tt_lat = tt_lat[:, :irbcz+1]
 
-    if not kw.rbcz is None: # plot the RZ field first
-        # will need to change some contourf kwargs:
-        kw_my_contourf_rz = dotdict({**kw_my_contourf})
-        kw_my_contourf_rz.minmax = kw.minmaxrz
-        if kwargs['posdef']:
-            kw_my_contourf_rz.cmap = 'cividis'
-        else:
-            kw_my_contourf_rz.cmap = 'PuOr_r'    
-        kw_my_contourf_rz.func1 = rr_rz
-        kw_my_contourf_rz.func2 = tt_lat_rz
-        kw_my_contourf_rz.cbar_no = 2
-        my_contourf(xxrz, yyrz, fieldrz, fig, ax, **kw_my_contourf_rz)
-
-    # regardless, plot the CZ field
-    kw_my_contourf.func1 = rr_cz
-    kw_my_contourf.func2 = tt_lat
+    # plot the CZ field
     my_contourf(xx, yy, field, fig, ax, **kw_my_contourf)
 
-    # potentially plot coordinate lines
-    if kw.plotlatlines:
-        if len(kw.latvals) == 0:
-            kw.latvals = np.arange(-60., 90., 30.)
-    else:
-        kw.latvals = np.array([])
-    kw.rvals = make_array(kw.rvals)
+    # possibly plot RZ field
+    if not kw.rbcz is None: 
+        # will need to change some contourf kwargs:
+        kw_my_contourf.minmax = kw.minmaxrz
+        if kw.posdef: 
+            kw_my_contourf.cmap = 'cividis'
+        else:
+            kw_my_contourf.cmap = 'PuOr_r'    
+        kw_my_contourf.cbar_no = 2
+        my_contourf(xxrz, yyrz, fieldrz, fig, ax, **kw_my_contourf)
 
-    my_contourf(xx_full, yy_full, field_full, fig, ax, plotfield=False, plotcontours=False, func1=rr_full, vals1=kw.rvals, func2=tt_lat_full, vals2=kw.latvals, plotboundary=kw.plotboundary)
+    # potentially plot coordinate lines
+    kw_my_contourf.plotfield = False
+    if nolat:
+        kw.latvals = []
+    for ind in [1, 2]:
+        if ind == 1:
+            vals = list(kw.rvals)
+            func = rr_full
+            linecolors = kw.linecolors1
+            linestyles = kw.linestyles1
+            linewidths = kw.linewidths1
+        if ind == 2:
+            vals = list(kw.latvals)
+            func = tt_lat_full
+            linecolors = kw.linecolors2
+            linestyles = kw.linestyles2
+            linewidths = kw.linewidths2
+
+        # make lists from everything that needs to be
+        linecolors = make_array(linecolors, tolist=True, length=len(vals))
+        linestyles = make_array(linestyles, tolist=True, length=len(vals))
+        linewidths = make_array(linewidths, tolist=True, length=len(vals))
+
+        if kw.plotboundary:
+            vals = [np.min(func)] + vals + [np.max(func)]
+            vals = np.array(vals)
+            linewidths = [default_lw] + linewidths + [default_lw] 
+            linestyles = ['-'] + linestyles + ['-'] # make boundary lines solid
+            linecolors = ['k'] + linecolors + ['k'] # make boundary lines black
+
+        if len(vals) > 0:
+            # check to make sure values are within (strictly) 
+            # the func's range (otherwise they can't be plotted)
+            vmin, vmax = np.min(func), np.max(func)
+            maxabs = np.max(np.abs(func))
+            for i in range(len(vals)):
+                val = vals[i]
+                if val <= vmin:
+                    vals[i] = vmin + maxabs*1.0e-15
+                if val >= vmax:
+                    vals[i] = vmax - maxabs*1.0e-15 
+                    # need to do this (same issue as with
+                    # contourf whitespace, I think. Not sure why)
+            my_contourf(xx_full, yy_full, tt_lat_full, fig, ax, **kw_my_contourf)
 
 def plot_azav_half(field, rr, cost, sym='even', fig=None, ax=None,\
         cmap='RdYlBu_r', units='', minmax=None, posdef=False, logscale=False,\

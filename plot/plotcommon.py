@@ -521,15 +521,12 @@ def lineplot(xx, profiles, ax, **kwargs):
 
 my_contourf_kwargs_default = dict({
         # saturation of field values stuff
-        'minmax': None,    
+        'minmax': None,\
         # basic flags:
          'plotfield': True,\
-        'plotcontours': True, 'ncontours': 8, 'contourlevels': None,\
+        'plotcontours': True, 'ncontours': 8, 'contourlevels': None, 'contourstyles': style_order[0], 'contourcolors': color_order[0], 'contourwidths': default_lw,\
         # colorbar stuff
         'plotcbar': True, 'cbar_thick': 1/16, 'cbar_aspect': 1/20, 'cbar_prec': 2, 'cbar_no': 1, 'cbar_pos': 'bottom', 'cmap': None, 'units': '', 'nosci': False, 'fontsize': default_labelsize,\
-        # coordinate line stuff; do up to two "types"
-        'vals1': np.array([]), 'func1': None, 'vals2': np.array([]), 'func2': None,\
-                'plotboundary': True, 'lw': 1.,\
         # only need this for time-lat plots or such, since need ticks there
         'allticksoff': True})
 my_contourf_kwargs_default.update(contourf_minmax_kwargs_default)
@@ -644,68 +641,18 @@ def my_contourf(xx, yy, field, fig, ax, **kwargs):
             cax.set_title(cbar_label, ha='left', fontsize=kw.fontsize)
 
     # Plot contours if desired
-    linestyle = '--'
     if kw.plotcontours:
         # Determine the contour levels
         if kw.contourlevels is None:
             # just thin out the field levels
             nskip = nlevelsfield//kw.ncontours
             kw.contourlevels = levels[::nskip]
-                    # contourf whitespace, I think. Not sure why)
-
-        # Determine how to color the contours
-        if kw.posdef:
-            contourcolor = 'w'
-        else:
-            contourcolor = 'k'
-        contourlw = kw.lw
+            # contourf whitespace, I think. Not sure why)
 
         # plot the contours
         ax.contour(xx, yy, field, kw.contourlevels,\
-                colors=contourcolor, linewidths=contourlw, linestyles=linestyle)
+                colors=kw.contourcolors, linewidths=kw.contourwidths, linestyles=kw.contourstyles)
 
-    # finally, plot some lines!
-
-    # need to check if user provided the appropriate functions
-    # if plotboundary == True
-    if kw.plotboundary:
-        if kw.func1 is None or kw.func2 is None:
-            print ("my_contourf(): plotboundary = True, but either ")
-            print ("func1 or func2 was not provided. Setting plotboundary=False")
-            kw.plotboundary = False
-
-    for ind in [1, 2]:
-        if ind == 1:
-            vals = list(kw.vals1)
-            func = kw.func1
-        if ind == 2:
-            vals = list(kw.vals2)
-            func = kw.func2
-
-        linewidths = [kw.lw]*len(vals)
-        linestyles = [linestyle]*len(vals)
-        if kw.plotboundary:
-            vals = [np.min(func)] + vals + [np.max(func)]
-            vals = np.array(vals)
-            linewidths = [kw.lw] + linewidths + [kw.lw] # make boundary
-            # lines a a bit thicker... maybe
-            linestyles = ['-'] + linestyles + ['-'] # make boundary line 
-            # solid
-
-        if len(vals) > 0:
-            # check to make sure values are within (strictly) 
-            # the func's range (otherwise they can't be plotted)
-            vmin, vmax = np.min(func), np.max(func)
-            maxabs = np.max(np.abs(func))
-            for i in range(len(vals)):
-                val = vals[i]
-                if val <= vmin:
-                    vals[i] = vmin + maxabs*1.0e-15
-                if val >= vmax:
-                    vals[i] = vmax - maxabs*1.0e-15 
-                    # need to do this (same issue with
-                    # contourf whitespace, I think. Not sure why)
-            ax.contour(xx, yy, func, vals, colors='k', linestyles=linestyles, linewidths=linewidths)
 
     if kw.allticksoff:
         # Set ax ranges to be just outside the boundary lines
