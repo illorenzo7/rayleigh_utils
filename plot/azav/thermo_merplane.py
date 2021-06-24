@@ -23,7 +23,7 @@ dirname_stripped = strip_dirname(dirname)
 
 # allowed args + defaults
 # key unique to this script
-kwargs_default = dict({'the_file': None, 'the_file2': None, 'nond': False})
+kwargs_default = dict({'the_file': None, 'the_file2': None, 'nond': False, 'poverrho': False})
 
 # also need make figure kwargs
 make_figure_kwargs_default.update(azav_fig_dimensions)
@@ -100,6 +100,10 @@ else:
     terms = [entropy*c_P, prs*ref_prs, temp*ref_temp, rho*ref_rho]
     titles = ['S', 'P', 'T', r'$\rho$']
     basename += '_dim'
+
+if kw.poverrho:
+    terms.append(prs*ref_prs/ref_rho)
+    titles.append(r'$P/\overline{\rho}$')
 
 # make the main title
 iter1, iter2 = get_iters_from_file(kw.the_file)
