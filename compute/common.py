@@ -1314,7 +1314,9 @@ def get_default_varnames(dirname):
 def make_array(arr, tolist=False, length=None): 
     # arr is scalar, list, or array
     # convert everything to a list
-    if np.isscalar(arr):
+    if arr is None:
+        return None
+    elif np.isscalar(arr):
         out = [arr]
     else:
         out = list(arr)

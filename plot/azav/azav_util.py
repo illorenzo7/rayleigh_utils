@@ -19,8 +19,8 @@ azav_fig_dimensions = dict({'sub_width_inches': 2, 'sub_aspect': 2, 'margin_top_
 
 # plot_azav needs my_contourf args, then some
 plot_azav_kwargs_default = dict({'rbcz': None, 'minmaxrz': None, 'rvals': np.array([]), 'plotlatlines': True, 'latvals': np.arange(-60., 90., 30.), 'plotboundary': True,\
-        'linestyles1': np.array([style_order[0]]), 'contourwidths1': np.array([default_lw]), 'linecolors1': np.array(['k']),\
-       'linestyles2': np.array([style_order[0]), 'contourwidths2': np.array([default_lw]), 'linecolors2': np.array(['k']})
+        'linestyles1': np.array([style_order[0]]), 'linewidths1': np.array([default_lw]), 'linecolors1': np.array(['k']),\
+       'linestyles2': np.array([style_order[0]]), 'linewidths2': np.array([default_lw]), 'linecolors2': np.array(['k'])})
 
 # add in my_contourf stuff
 plot_azav_kwargs_default.update(my_contourf_kwargs_default)
@@ -80,7 +80,7 @@ def plot_azav(field, rr, cost, fig, ax,  **kwargs):
 
     # potentially plot coordinate lines
     kw_my_contourf.plotfield = False
-    if nolat:
+    if not kw.plotlatlines:
         kw.latvals = []
     for ind in [1, 2]:
         if ind == 1:
@@ -121,6 +121,7 @@ def plot_azav(field, rr, cost, fig, ax,  **kwargs):
                     vals[i] = vmax - maxabs*1.0e-15 
                     # need to do this (same issue as with
                     # contourf whitespace, I think. Not sure why)
+            print ("vals = ", vals)
             my_contourf(xx_full, yy_full, tt_lat_full, fig, ax, **kw_my_contourf)
 
 def plot_azav_half(field, rr, cost, sym='even', fig=None, ax=None,\
