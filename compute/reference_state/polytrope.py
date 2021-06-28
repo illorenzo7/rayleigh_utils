@@ -1,5 +1,6 @@
 # Author: Loren Matilsky
-# Created: well before 05/06/2019
+# Created:t st
+`
 
 # Computes the polytropic thermodynamic stratification for an 
 # adiabatic atmosphere in a portion [ri, ro] of the solar CZ
@@ -39,5 +40,24 @@ def compute_polytrope(ri, ro, Nrho, nr, poly_n, rho_i):
     rho_nd = zeta**(poly_n)
     P_nd = zeta**(poly_n+1.)
     T_nd = zeta
-    return {'density': rho_c*rho_nd, 'pressure': P_c*P_nd,\
-            'temperature': T_c*T_nd, 'entropy': S_c*np.ones(nr)}
+    return dict({'density': rho_c*rho_nd, 'pressure': P_c*P_nd,\
+            'temperature': T_c*T_nd, 'entropy': S_c*np.ones(nr)})
+
+def compute_polytrope2(Nrho=5, r0=rm, ro=None, rho0=rhom, T0=Tm, mstar=msun, poly_n=1.5, gas_constant_star=thermo_R, nr=5000):
+    poly_a = G*mstar/((poly_n + 1)*gas_constant_star*T0*r0)
+    if ro is None:
+        rmax = r0*poly_a/(poly_a - 1) # at rmax, rho = 0
+        rtmp = np.linspace(r0, rmax, 100000) # make this grid super fine
+        rho_ratio = (poly_a*(r0/rtmp) + (1 - poly_a))**poly_n
+        Nrho_tmp = np.log(1/rho_ratio)
+        iro = np.argmin(np.abs(Nrho_tmp - Nrho))
+        ro = rtmp[iro]
+
+    r = np.linspace(ro, ri, nr)
+    temp = T0*(poly_a*(r0/r) + (1 - poly_a))
+    rho = rho0*(poly_a*(r0/r) + (1 - poly_a))**poly_n
+    prs = rho*gas_constant_star*temp
+    cv_star = gas_constant_star/(thermo_gamma - 1)
+    dsdr = cv_star*(poly_n/1.5 - 1)/(r + (1 - poly_a)*r**2/(poly_a*r0))
+    entropy = cv_star*(poly_n/1.5 - 1)*(np.log(r/r0) - np.log(poly_a + (1 - poly_a)*(r/r0)))
+    return dict({'rho': rho, 'prs': prs, 'temp': temp, 'dsdr': dsdr, 'entropy': entropy})
