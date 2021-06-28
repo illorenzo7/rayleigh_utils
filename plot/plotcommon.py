@@ -524,7 +524,7 @@ my_contourf_kwargs_default = dict({
         'minmax': None,\
         # basic flags:
          'plotfield': True,\
-        'plotcontours': True, 'ncontours': 8, 'contourlevels': None, 'contourstyles': style_order[0], 'contourcolors': color_order[0], 'contourwidths': default_lw,\
+        'plotcontours': True, 'ncontours': 8, 'contourlevels': None, 'contourstyles': '--', 'contourcolors': 'k', 'contourwidths': default_lw,\
         # colorbar stuff
         'plotcbar': True, 'cbar_thick': 1/16, 'cbar_aspect': 1/20, 'cbar_prec': 2, 'cbar_no': 1, 'cbar_pos': 'bottom', 'cmap': None, 'units': '', 'nosci': False, 'fontsize': default_labelsize,\
         # only need this for time-lat plots or such, since need ticks there
@@ -650,6 +650,7 @@ def my_contourf(xx, yy, field, fig, ax, **kwargs):
             # contourf whitespace, I think. Not sure why)
 
         # plot the contours
+        print ("contourlevels in my_contourf = ", kw.contourlevels)
         ax.contour(xx, yy, field, kw.contourlevels,\
                 colors=kw.contourcolors, linewidths=kw.contourwidths, linestyles=kw.contourstyles)
 
