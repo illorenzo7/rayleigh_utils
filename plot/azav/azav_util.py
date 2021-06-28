@@ -57,7 +57,7 @@ def plot_azav(field, rr, cost, fig, ax,  **kwargs):
         xx = (rr_2d*sint_2d)[:, :irbcz+1]/rmax
         yy = (rr_2d*cost_2d)[:, :irbcz+1]/rmax
 
-        fieldrz = field[:, irbcz+1:]
+        fieldrz = field_full[:, irbcz+1:]
         xxrz = (rr_2d*sint_2d)[:, irbcz+1:]/rmax
         yyrz = (rr_2d*cost_2d)[:, irbcz+1:]/rmax
 
@@ -68,6 +68,7 @@ def plot_azav(field, rr, cost, fig, ax,  **kwargs):
     if not kw.rbcz is None: 
         # will need to change some contourf kwargs:
         kw_my_contourf.minmax = kw.minmaxrz
+        kw_my_contourf.allticksoff = False # no need to turn off ticks twice
         if kw.posdef: 
             kw_my_contourf.cmap = 'cividis'
         else:
