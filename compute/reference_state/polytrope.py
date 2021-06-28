@@ -6,7 +6,9 @@
 # after the formulation of Jones et al. (2011).
 
 import numpy as np
-import sys
+import sys, os
+sys.path.append(os.envrione['raco'])
+from common import *
 
 def compute_polytrope(ri, ro, Nrho, nr, poly_n, rho_i):
     d = ro - ri
