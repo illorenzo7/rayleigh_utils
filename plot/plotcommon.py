@@ -650,7 +650,6 @@ def my_contourf(xx, yy, field, fig, ax, **kwargs):
             # contourf whitespace, I think. Not sure why)
 
         # plot the contours
-        print ("contourlevels in my_contourf = ", kw.contourlevels)
         ax.contour(xx, yy, field, kw.contourlevels,\
                 colors=kw.contourcolors, linewidths=kw.contourwidths, linestyles=kw.contourstyles)
 

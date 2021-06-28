@@ -40,14 +40,11 @@ def plot_azav(field, rr, cost, fig, ax,  **kwargs):
     rmax = np.max(rr_2d)
     cost_2d = cost.reshape((nt, 1)) + zeros
     sint_2d = np.sqrt(1.0 - cost_2d**2.0)
-    tt_lat = 180.0/np.pi*(np.pi/2.0 - np.arccos(cost_2d))
-    # tt_lat is 2D here!
+    tt_lat = 180.0/np.pi*(np.pi/2.0 - np.arccos(cost))
 
     # use these to plot lines/boundaries
     xx_full = rr_2d*sint_2d/rmax
     yy_full = rr_2d*cost_2d/rmax
-    rr_full = rr_2d/rsun
-    tt_lat_full = np.copy(tt_lat)
 
     if kw.rbcz is None: # just plotting 1 domain
         xx = xx_full
@@ -79,19 +76,16 @@ def plot_azav(field, rr, cost, fig, ax,  **kwargs):
         my_contourf(xxrz, yyrz, fieldrz, fig, ax, **kw_my_contourf)
 
     # potentially plot coordinate lines
-    kw_my_contourf.plotfield = False
     if not kw.plotlatlines:
         kw.latvals = np.array([])
     for ind in [1, 2]:
         if ind == 1:
             vals = make_array(kw.rvals, tolist=True)
-            func = np.copy(rr_full)
             linecolors = kw.linecolors1
             linestyles = kw.linestyles1
             linewidths = kw.linewidths1
         if ind == 2:
             vals = make_array(kw.latvals, tolist=True)
-            func = np.copy(tt_lat_full)
             linecolors = kw.linecolors2
             linestyles = kw.linestyles2
             linewidths = kw.linewidths2
@@ -102,37 +96,25 @@ def plot_azav(field, rr, cost, fig, ax,  **kwargs):
         linewidths = make_array(linewidths, tolist=True, length=len(vals))
 
         if kw.plotboundary:
-            vals = [np.min(func)] + vals + [np.max(func)]
+            if ind == 1:
+                to_add = [np.min(rr/rsun), np.max(rr/rsun)]
+            if ind == 2:
+                to_add = [np.min(tt_lat), np.max(tt_lat)]
+            vals = [to_add[0]] + vals + [to_add[1]]
             linewidths = [default_lw] + linewidths + [default_lw] 
             linestyles = ['-'] + linestyles + ['-'] # make boundary lines solid
             linecolors = ['k'] + linecolors + ['k'] # make boundary lines black
 
         # make vals an array again
-        vals = np.array(vals)
-        if len(vals) > 0:
-            # check to make sure values are within (strictly) 
-            # the func's range (otherwise they can't be plotted)
-            vmin, vmax = np.min(func), np.max(func)
-            maxabs = np.max(np.abs(func))
-            for i in range(len(vals)):
-                val = vals[i]
-                if val <= vmin:
-                    vals[i] = vmin + maxabs*1.0e-10
-                if val >= vmax:
-                    vals[i] = vmax - maxabs*1.0e-10
-                    # need to do this (same issue as with
-                    # contourf whitespace, I think. Not sure why)
-            kw_my_contourf.contourlevels = vals
-            kw_my_contourf.contourstyles = linestyles
-            kw_my_contourf.contourwidths = linewidths
-            kw_my_contourf.contourcolors = linecolors
-            kw_my_contourf.plotcontours = True
-            print ("vals = ", vals)
-            print ("func = ", func)
-            print ("min func = ", np.min(func))
-            print ("max func = ", np.max(func))
-            print ("kw_my_contourf = ", kw_my_contourf)
-            my_contourf(xx_full, yy_full, func, fig, ax, **kw_my_contourf)
+        for i in range(len(vals)):
+            val = vals[i]
+            if ind == 1:
+                irval = np.argmin(np.abs(rr/rsun - val))
+                xline, yline = xx_full[:, irval], yy_full[:, irval]
+            if ind == 2:
+                ilatval = np.argmin(np.abs(tt_lat - val))
+                xline, yline = xx_full[ilatval, :], yy_full[ilatval, :]
+            ax.plot(xline, yline, linewidth=linewidths[i], linestyle=linestyles[i], color=linecolors[i])
 
 def plot_azav_half(field, rr, cost, sym='even', fig=None, ax=None,\
         cmap='RdYlBu_r', units='', minmax=None, posdef=False, logscale=False,\
