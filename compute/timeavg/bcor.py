@@ -165,7 +165,7 @@ for i in range(my_nfiles):
         ind_off_full = 0
         # diagonal pieces
         my_vals[:, :, ind_off_full + 0] += np.mean(br*br, axis=0)*my_weight
-        my_vals[:, :, ind_off_full + 1] += np.mean(br*bt, axis=0)*my_weight
+        my_vals[:, :, ind_off_full + 1] += np.mean(bt*bt, axis=0)*my_weight
         my_vals[:, :, ind_off_full + 2] += np.mean(bp*bp, axis=0)*my_weight
         # non-diag
         my_vals[:, :, ind_off_full + 3] += np.mean(br*bt, axis=0)*my_weight
@@ -176,7 +176,7 @@ for i in range(my_nfiles):
         ind_off_mean = 6
         # diagonal pieces
         my_vals[:, :, ind_off_mean + 0] += np.mean(br_m*br_m, axis=0)*my_weight
-        my_vals[:, :, ind_off_mean + 1] += np.mean(br_m*bt_m, axis=0)*my_weight
+        my_vals[:, :, ind_off_mean + 1] += np.mean(bt_m*bt_m, axis=0)*my_weight
         my_vals[:, :, ind_off_mean + 2] += np.mean(bp_m*bp_m, axis=0)*my_weight
         # non-diag
         my_vals[:, :, ind_off_mean + 3] += np.mean(br_m*bt_m, axis=0)*my_weight
@@ -185,7 +185,7 @@ for i in range(my_nfiles):
         # fluc terms
         ind_off_fluc = 12
         for k in range(6):
-            my_vals[:, :, ind_off_fluc + k] =\
+            my_vals[:, :, ind_off_fluc + k] +=\
                 my_vals[:, :, ind_off_full + k] -\
                 my_vals[:, :, ind_off_mean + k]
 
@@ -206,13 +206,15 @@ if rank == 0:
 
 # proc 0 now collects the results from each process
 if rank == 0:
-    vals = np.zeros((nt, nr, 18))
+    vals = np.zeros((nt, nr, nq))
 
     # Gather the results into this "master" array
     for j in range(nproc):
         if j >= 1:
             # Get my_ntimes, my_times, my_iters, my_vals from rank j
             my_vals = comm.recv(source=j)
+        # "my_vals" are all weighted: their sum equals the overall average
+        vals += my_vals 
     
 else: # other processes send their data
     comm.send(my_vals, dest=0)
