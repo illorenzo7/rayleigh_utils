@@ -526,7 +526,7 @@ my_contourf_kwargs_default = dict({
          'plotfield': True,\
         'plotcontours': True, 'ncontours': 8, 'contourlevels': None, 'contourstyles': '--', 'contourcolors': 'k', 'contourwidths': default_lw,\
         # colorbar stuff
-        'plotcbar': True, 'cbar_thick': 1/16, 'cbar_aspect': 1/20, 'cbar_prec': 2, 'cbar_no': 1, 'cbar_pos': 'bottom', 'cmap': None, 'units': '', 'nosci': False, 'fontsize': default_labelsize,\
+        'plotcbar': True, 'cbar_thick': 1/16, 'cbar_aspect': 1/20, 'cbar_prec': 2, 'cbar_no': 1, 'cbar_pos': 'bottom', 'cmap': None, 'norm': None, 'units': '', 'nosci': False, 'fontsize': default_labelsize,\
         # only need this for time-lat plots or such, since need ticks there
         'allticksoff': True})
 my_contourf_kwargs_default.update(contourf_minmax_kwargs_default)
@@ -569,7 +569,7 @@ def my_contourf(xx, yy, field, fig, ax, **kwargs):
 
     # finally we make the contour plot!
     if kw.plotfield:
-        im = ax.contourf(xx, yy, field, cmap=kw.cmap, levels=levels)
+        im = ax.contourf(xx, yy, field, cmap=kw.cmap, levels=levels, norm=kw.norm)
 
     # now deal with color bar, if one is desired
     if kw.plotfield and kw.plotcbar:
