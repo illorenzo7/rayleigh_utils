@@ -9,6 +9,72 @@ from common import *
 from plotcommon import *
 from transform_coordinates import mollweide_transform
 
+plot_moll_kwargs_default = dict({'clon': 0., 'plotlonlines': True, 'lonvals': None, 'plotlatlines': True, 'latvals': np.arange(-60., 90., 30.), 'linewidth': default_lw, 'plotboundary': True})
+# change default plotcontours --> False in my_contourf
+my_contourf_kwargs_default['plotcontours'] = False
+plot_moll_kwargs_default.update(my_contourf_kwargs_default)
+
+def plot_moll(field_orig, costheta, fig, ax, **kwargs):
+    kw = update_dict(plot_moll_kwargs_default, kwargs)
+    find_bad_keys(plot_moll_kwargs_default, kwargs, 'plot_moll')
+    kw_my_contourf = update_dict(my_contourf_kwargs_default, kwargs)
+        
+    # Shouldn't have to do this but Python is stupid with arrays
+    field = np.copy(field_orig)    
+
+    # Get the Mollweide projection coordinates associated with costheta
+    xx, yy = mollweide_transform(costheta)
+
+    # shift the field so that the clon is in the ~center of the array
+    difflon = 180. - kw.clon # basically difflon is the amount the clon
+    # must be shifted to arrive at 180, which is near the center of array
+    nphi = 2*len(costheta)
+    iphi_shift = int(difflon/360.*nphi)
+    field = np.roll(field, iphi_shift, axis=0)
+
+    # make the Mollweide plot
+    my_contourf(xx, yy, field, fig, ax, **kw_my_contourf)
+
+    # Draw parallels and meridians, evenly spaced by 30 degrees
+    # need some derivative grid info
+    tt = np.arccos(costheta)
+    lat = np.pi/2. - tt # these "latitudes" are in radians...
+    lon = np.linspace(-np.pi, np.pi, 2*len(tt), endpoint=False)
+    if kw.lonvals is None:
+        kw.lonvals = np.arange(0., 360., 30.)
+    
+    npoints = 100
+    if kw.plotlonlines:
+        for lonval in kw.lonvals:
+            if lonval == 0.:
+                linewidth = 2*kw.linewidth
+            else:
+                linewidth = kw.linewidth
+            # Make sure the plotted meridians are with respect to the clon
+            # keep everything in the -180, 180 range
+            lon_loc = lonval - kw.clon
+            if lon_loc > 180.:
+                lon_loc -= 360.
+            elif lon_loc < -180.:
+                lon_loc += 360.
+            lon_loc *= (np.pi/180.)
+            imer = np.argmin(np.abs(lon - lon_loc))
+            ax.plot(xx[imer, :], yy[imer, :], 'k', linewidth=linewidth)
+    if kw.plotlatlines:
+        for latval in kw.latvals:
+            if latval == 0.: 
+                linewidth = 2*kw.linewidth
+            else:
+                linewidth = kw.linewidth
+            ilat = np.argmin(np.abs(lat - latval*np.pi/180.))
+            ax.plot(xx[:, ilat], yy[:, ilat], 'k', linewidth=linewidth)
+
+    if kw.plotboundary:
+        # Plot outer boundary
+        psivals = np.linspace(0, 2*np.pi, 100)
+        xvals, yvals = 2.*np.cos(psivals), np.sin(psivals)
+        ax.plot(xvals, yvals, 'k', linewidth=1.5*kw.linewidth)
+
 def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
         minmax=None, clon=0, clat=20, posdef=False, logscale=False,\
         lw_scaling=1., plot_cbar=True, cbar_fs=10,\
@@ -159,10 +225,11 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
     # in the phi-coordinate of the data: data that was at phi = 0. --> 
     # data at phi = -difflon,
     # i.e, our phi = 0. line should appear at -difflon
-    meridians = np.arange(-difflon, -difflon + 360., 30.)
+    if lonvals is None:
+        lonvals = np.arange(-difflon, -difflon + 360., 30.)
 
     npoints = 100
-    for meridian in meridians:
+    for lonval in lonvals:
         if meridian == -difflon and thickcenter: 
             lw = 1.3*lw_scaling # make central longitude thicker
 
@@ -341,69 +408,4 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
     del field # free up memory
     return im
 
-plot_moll_kwargs_default = dict({'clon': 0.})
-# change default plotcontours --> False in my_contourf
-my_contourf_kwargs_default['plotcontours'] = False
-plot_moll_kwargs_default.update(my_contourf_kwargs_default)
 
-def plot_moll(field_orig, costheta, fig, ax, **kwargs):
-    kw = update_dict(plot_moll_kwargs_default, kwargs)
-    find_bad_keys(plot_moll_kwargs_default, kwargs, 'plot_moll')
-    kw_my_contourf = update_dict(my_contourf_kwargs_default, kwargs)
-    kw_my_contourf.plotboundary = False # plot_moll handles the boundary
-        
-    # Shouldn't have to do this but Python is stupid with arrays
-    field = np.copy(field_orig)    
-
-    # Get the Mollweide projection coordinates associated with costheta
-    xx, yy = mollweide_transform(costheta)
-
-    # shift the field so that the clon is in the ~center of the array
-    difflon = 180. - kw.clon # basically difflon is the amount the clon
-    # must be shifted to arrive at 180, which is near the center of array
-    nphi = 2*len(costheta)
-    iphi_shift = int(difflon/360.*nphi)
-    field = np.roll(field, iphi_shift, axis=0)
-
-    # make the Mollweide plot
-    my_contourf(xx, yy, field, fig, ax, **kw_my_contourf)
-
-    # Draw parallels and meridians, evenly spaced by 30 degrees
-    # need some derivative grid info
-    tt = np.arccos(costheta)
-    lat = np.pi/2. - tt # these "latitudes" are in radians...
-    lon = np.linspace(-np.pi, np.pi, 2*len(tt), endpoint=False)
-    parallels = np.arange(-60., 90., 30.)
-    meridians = np.arange(0., 360., 30.)
-    
-    npoints = 100
-
-    for meridian in meridians:
-        if meridian == 0.: # keep track of where 0-th meridian is
-            lw = 2*kw.lw
-        else:
-            lw = kw.lw
-        # Make sure the plotted meridians are with respect to the clon
-        # keep everything in the -180, 180 range
-        lon_loc = meridian - kw.clon
-        if lon_loc > 180.:
-            lon_loc -= 360.
-        elif lon_loc < -180.:
-            lon_loc += 360.
-        lon_loc *= (np.pi/180.)
-        imer = np.argmin(np.abs(lon - lon_loc))
-        ax.plot(xx[imer, :], yy[imer, :], 'k', linewidth=kw.lw)
-    
-    for parallel in parallels:
-        if parallel == 0.: 
-            lw = 2*kw.lw
-        else:
-            lw = kw.lw
-        ilat = np.argmin(np.abs(lat - parallel*np.pi/180.))
-        ax.plot(xx[:, ilat], yy[:, ilat], 'k', linewidth=kw.lw)
-
-    if kw.plotboundary:
-        # Plot outer boundary
-        psivals = np.linspace(0, 2*np.pi, 100)
-        xvals, yvals = 2.*np.cos(psivals), np.sin(psivals)
-        ax.plot(xvals, yvals, 'k', linewidth=1.5*kw.lw)
