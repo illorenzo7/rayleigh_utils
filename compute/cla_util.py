@@ -33,6 +33,25 @@ def read_cla_vals(args, i):
         vals = vals[0]
     return vals
 
+def read_clas_raw(args): # avoid get_parameter stuff
+    # and fancy argument designation stuff
+    clas0 = dict({})
+    clas0['routinename'] = args[0].split('/')[-1][:-3]
+    dirname = args[1]
+    clas0['dirname'] = dirname
+    clas0['tag'] = ''
+
+    # get the other arguments
+    clas = dict({})
+    args = args[2:]
+    nargs = len(args)
+    for i in range(nargs):
+        if '--' in arg:
+            key = arg[2:]
+            clas[key] = read_cla_vals(args, i)
+
+    return clas0, clas
+
 def read_clas(args):
     # first get basic info
     clas0 = dict({})

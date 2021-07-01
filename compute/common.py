@@ -1269,6 +1269,10 @@ def update_dict(dict_orig, dict_update):
             dict_out[key] = val
     return dotdict(dict_out)
 
+def print_dict(di):
+    for key, value in di.items():
+        print (key, '\t\t', value)
+
 def find_bad_keys(dict_orig, dict_update, funcname, justwarn=False):
     bad_keys = []
     for key, val in dict_update.items():

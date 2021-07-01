@@ -1,15 +1,11 @@
 # Author: Loren Matilsky
-# Created:t st
-`
-
-# Computes the polytropic thermodynamic stratification for an 
-# adiabatic atmosphere in a portion [ri, ro] of the solar CZ
-# after the formulation of Jones et al. (2011).
+# Updated: 06/30/2021
 
 import numpy as np
 import sys, os
-sys.path.append(os.envrione['raco'])
+sys.path.append(os.environ['raco'])
 from common import *
+from cla_util import *
 
 def compute_polytrope(ri, ro, Nrho, nr, poly_n, rho_i):
     d = ro - ri
@@ -40,24 +36,44 @@ def compute_polytrope(ri, ro, Nrho, nr, poly_n, rho_i):
     rho_nd = zeta**(poly_n)
     P_nd = zeta**(poly_n+1.)
     T_nd = zeta
-    return dict({'density': rho_c*rho_nd, 'pressure': P_c*P_nd,\
-            'temperature': T_c*T_nd, 'entropy': S_c*np.ones(nr)})
+    return dict({'rho': rho_c*rho_nd, 'P': P_c*P_nd,\
+            'T': T_c*T_nd, 'S': S_c*np.ones(nr)})
 
-def compute_polytrope2(Nrho=5, r0=rm, ro=None, rho0=rhom, T0=Tm, mstar=msun, poly_n=1.5, gas_constant_star=thermo_R, nr=5000):
-    poly_a = G*mstar/((poly_n + 1)*gas_constant_star*T0*r0)
-    if ro is None:
-        rmax = r0*poly_a/(poly_a - 1) # at rmax, rho = 0
-        rtmp = np.linspace(r0, rmax, 100000) # make this grid super fine
-        rho_ratio = (poly_a*(r0/rtmp) + (1 - poly_a))**poly_n
+compute_polytrope2_kwargs_default = dict({'Nrho': 3, 'r0': rm, 'r1': None, 'rho0': rhom, 'T0':Tm, 'mstar': msun, 'poly_n': 1.5, 'gas_constant_star': thermo_R})
+
+def compute_polytrope2(**kwargs):
+    # overwrite defaults
+    kw = update_dict(compute_polytrope2_kwargs_default, kwargs)
+    # check for bad keys
+    find_bad_keys(compute_polytrope2_kwargs_default, kwargs, 'compute_polytrope2()')
+
+    poly_a = G*kw.mstar/((kw.poly_n + 1)*kw.gas_constant_star*kw.T0*kw.r0)
+    nr = 100000 # make this grid super fine
+    if kw.r1 is None:
+        rmax = kw.r0*poly_a/(poly_a - 1) # at rmax, rho = 0
+        rtmp = np.linspace(kw.r0, rmax, nr)
+        rho_ratio = (poly_a*(kw.r0/rtmp) + (1 - poly_a))**kw.poly_n
         Nrho_tmp = np.log(1/rho_ratio)
-        iro = np.argmin(np.abs(Nrho_tmp - Nrho))
-        ro = rtmp[iro]
+        ir1 = np.argmin(np.abs(Nrho_tmp - kw.Nrho))
+        kw.r1 = rtmp[ir1]
 
-    r = np.linspace(ro, ri, nr)
-    temp = T0*(poly_a*(r0/r) + (1 - poly_a))
-    rho = rho0*(poly_a*(r0/r) + (1 - poly_a))**poly_n
-    prs = rho*gas_constant_star*temp
-    cv_star = gas_constant_star/(thermo_gamma - 1)
-    dsdr = cv_star*(poly_n/1.5 - 1)/(r + (1 - poly_a)*r**2/(poly_a*r0))
-    entropy = cv_star*(poly_n/1.5 - 1)*(np.log(r/r0) - np.log(poly_a + (1 - poly_a)*(r/r0)))
-    return dict({'rho': rho, 'prs': prs, 'temp': temp, 'dsdr': dsdr, 'entropy': entropy})
+    r = np.linspace(kw.r1, kw.r0, nr) 
+    # keep radii reversed in keeping with Rayleigh's convention
+
+    factor = poly_a*kw.r0/r + (1 - poly_a)
+    dfactor = -poly_a*kw.r0/r**2
+    d2factor = 2*kw.poly_n*kw.r0/r**3
+    T = kw.T0*factor
+    dlnT = 1/factor*dfactor
+    rho = kw.rho0*factor**kw.poly_n
+    dlnrho = kw.poly_n/factor*dfactor
+    d2lnrho = -kw.poly_n/factor**2 * dfactor**2*d2factor
+    
+    P = rho*kw.gas_constant_star*T
+    cv_star = kw.gas_constant_star/(thermo_gamma - 1)
+
+    # S and its derivative will be zero most of the time...
+    dSdr = cv_star*(kw.poly_n/1.5 - 1)/(r + (1 - poly_a)*r**2/(poly_a*kw.r0))
+    S = cv_star*(kw.poly_n/1.5 - 1)*(np.log(r/kw.r0) - np.log(poly_a + (1 - poly_a)*(r/kw.r0)))
+
+    return dict({'rr': r, 'rho': rho, 'dlnrho': dlnrho, 'd2lnrho': dlnrho, 'P': P, 'T': T,  'dlnT': dlnT, 'dSdr': dSdr, 'S': S})
