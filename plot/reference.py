@@ -4,15 +4,11 @@
 import matplotlib as mpl
 import numpy as np
 from scipy.integrate import cumtrapz
-mpl.use('TkAgg')
 import matplotlib.pyplot as plt
-plt.rcParams['mathtext.fontset'] = 'dejavuserif'
-csfont = {'fontname':'DejaVu Serif'}
 
 import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
-sys.path.append(os.environ['idref'])
 
 from common import *
 from plotref import plotref
@@ -20,74 +16,6 @@ from plotref import plotref
 # Get the run directory on which to perform the analysis
 dirname = sys.argv[1]
 dirname_stripped = strip_dirname(dirname)
-
-# domain bounds
-ncheby, domain_bounds = get_domain_bounds(dirname)
-ri = np.min(domain_bounds)
-ro = np.max(domain_bounds)
-d = ro - ri
-
-# Get other arguments
-xminmax = None
-rvals = []
-ylog = True
-
-plotdir = None
-
-args = sys.argv[2:]
-nargs = len(args)
-fname = 'equation_coefficients'
-for i in range(nargs):
-    arg = args[i]
-    if arg == '-plotdir':
-        plotdir = args[i+1]
-    if arg == '-xminmax':
-        xminmax = float(args[i+1]), float(args[i+2])
-    elif arg == '-depths':
-        strings = args[i+1].split()
-        for st in strings:
-            rval = ro - float(st)*d
-            rvals.append(rval)
-    elif arg == '-depthscz':
-        rm = domain_bounds[1]
-        dcz = ro - rm
-        strings = args[i+1].split()
-        for st in strings:
-            rval = ro - float(st)*dcz
-            rvals.append(rval)
-    elif arg == '-depthsrz':
-        rm = domain_bounds[1]
-        drz = rm - ri
-        strings = args[i+1].split()
-        for st in strings:
-            rval = rm - float(st)*drz
-            rvals.append(rval)
-    elif arg == '-rvals':
-        rvals = []
-        strings = args[i+1].split()
-        for st in strings:
-            rval = float(st)*rsun
-            rvals.append(rval)
-    elif arg == '-rvalscm':
-        rvals = []
-        strings = args[i+1].split()
-        for st in strings:
-            rval = float(st)
-            rvals.append(rval)
-    elif arg == '-fname':
-        fname = args[i+1]
-    elif arg == '-crb':
-        fname = 'custom_reference_binary'
-    elif arg == '-nolog':
-        ylog = False
-
-# Directory with data and plots, make the plotting directory if it doesn't
-# already exist    
-datadir = dirname + '/data/'
-if plotdir is None:
-    plotdir = dirname + '/plots/'
-    if not os.path.isdir(plotdir):
-        os.makedirs(plotdir)
 
 eq = get_eq(dirname, fname=fname)
 r = eq.radius
