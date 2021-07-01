@@ -213,6 +213,9 @@ def strip_dirname(dirname, wrap=False):
     return dirname_stripped
 
 def is_an_int(string):
+    # obviously, first check if it's actually an int
+    if isinstance(string, int):
+        return string
     len_str = len(string)
     bool_val = True
     for i in range(len_str):

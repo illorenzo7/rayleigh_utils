@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import sys, os
 sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapl'])
-from azav_util import plot_azav_grid
+from azav_util import *
 from common import *
 from plotcommon import *
 from cla_util import *
@@ -79,10 +79,14 @@ else:
 
 terms = []
 for qval in qvals:
-    if dataname == 'AZ_Avgs':
-        terms.append(vals[:, :, lut[qval]])
+    if is_an_int(qval):
+        qval = int(qval)
+        if dataname == 'AZ_Avgs':
+            terms.append(vals[:, :, lut[qval]])
+        else:
+            terms.append(vals[:, :, qval])
     else:
-        terms.append(vals[:, :, qval])
+        terms.append(azav_derived_qval(dirname, vals, lut, qval))
 
 # make the main title
 iter1, iter2 = get_iters_from_file(the_file)
