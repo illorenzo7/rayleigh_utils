@@ -57,7 +57,8 @@ else:
     dataname = 'AZ_Avgs'
 
 print ("plotting the following quantities:")
-print ("qvals = " + arr_to_str(qvals, "%i"))
+#print ("qvals = " + arr_to_str(qvals, "%i"))
+print ("qvals = ", qvals)
 # get data
 if 'the_file' in clas: 
     the_file = clas['the_file']
