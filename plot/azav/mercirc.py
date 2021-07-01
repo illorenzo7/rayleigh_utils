@@ -25,17 +25,27 @@ dirname = clas0['dirname']
 dirname_stripped = strip_dirname(dirname, wrap=True)
 
 # allowed args + defaults
-kwargs_default = {**script_azav_kwargs_default}
+# key unique to this script
+kwargs_default = dict({'the_file': None})
 
+# also need make figure kwargs
+make_figure_kwargs_default.update(azav_fig_dimensions)
+kwargs_default.update(make_figure_kwargs_default)
+
+# of course, plot_azav kwargs, but need to change a few
 plot_azav_kwargs_default['nosci'] = True
 plot_azav_kwargs_default['cbar_prec'] = 1
-
 kwargs_default.update(plot_azav_kwargs_default)
+
+# overwrite defaults
 kw = update_dict(kwargs_default, clas)
-find_bad_keys(kwargs_default, clas, clas0['routinename'], justwarn=True)
 kw_plot_azav = update_dict(plot_azav_kwargs_default, clas)
+kw_make_figure = update_dict(make_figure_kwargs_default, clas)
+
+# check for bad keys
+find_bad_keys(kwargs_default, clas, clas0['routinename'], justwarn=True)
 if not kw.rbcz is None:  # need room for two colorbars
-    kw.margin_bottom_inches *= 2
+    kw_make_figure.margin_bottom_inches *= 2
 
 # Get density
 eq = get_eq(dirname)
@@ -70,7 +80,8 @@ psi = streamfunction(rho*vr_av, rho*vt_av, rr, cost)
 rhovm *= np.sign(psi)
 
 # make plot
-fig, axs, fpar = make_figure(nplots=1, sub_width_inches=kw.sub_width_inches, sub_aspect=kw.sub_aspect, margin_top_inches=kw.margin_top_inches, margin_bottom_inches=kw.margin_bottom_inches)
+
+fig, axs, fpar = make_figure(**kw_make_figure)
 ax = axs[0, 0]
 
 # Plot mass flux
@@ -82,7 +93,7 @@ lilbit = 0.01
 maxabs = np.max(np.abs(psi))
 contourlevels = (-maxabs/2., -maxabs/4., -lilbit*maxabs, 0.,\
         lilbit*maxabs, maxabs/4., maxabs/2.)
-kw_plot_azav.plotcontours = True
+kw_plot_azav.plotcontours = kw.plotcontours
 kw_plot_azav.plotfield = False
 kw_plot_azav.contourlevels = contourlevels
 plot_azav (psi, rr, cost, fig, ax, **kw_plot_azav)
