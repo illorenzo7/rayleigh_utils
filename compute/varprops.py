@@ -561,6 +561,18 @@ def get_quantity_group(groupname, magnetism):
             for k in range(5):
                 titles.append(bases[k] + suffixes[j])
 
+    if groupname == 'teq': # thermal equation
+        ncol = 5
+        qvals = [1401, 1406, 1421, 1434, 1435]
+        titles = ['(-) adv (pert)', '(-) adv (ref)', 'cond', 'Q(r)', 'visc']
+        if magnetism:
+            ncol +=1
+            qvals.append(1436)
+            titles.append('joule')
+
+        di_out['totsig'] = np.ones(ncol)
+        di_out['totsig'][0] = di_out['totsig'][1] = -1
+
     di_out['qvals'] = np.array(qvals)
     di_out['titles'] = np.array(titles)
     di_out['ncol'] = ncol
