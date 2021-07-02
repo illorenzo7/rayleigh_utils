@@ -528,7 +528,10 @@ my_contourf_kwargs_default = dict({
         # colorbar stuff
         'plotcbar': True, 'cbar_thick': 1/16, 'cbar_aspect': 1/20, 'cbar_prec': 2, 'cbar_no': 1, 'cbar_pos': 'bottom', 'cmap': None, 'norm': None, 'units': '', 'nosci': False, 'fontsize': default_labelsize,\
         # only need this for time-lat plots or such, since need ticks there
-        'allticksoff': True})
+        'allticksoff': True,\
+        # symlog stuff (again)
+        'symlog': False, 'linthresh': None, 'linscale': None})
+
 my_contourf_kwargs_default.update(contourf_minmax_kwargs_default)
 
 def my_contourf(xx, yy, field, fig, ax, **kwargs):
@@ -559,8 +562,29 @@ def my_contourf(xx, yy, field, fig, ax, **kwargs):
     # Saturate the array (otherwise contourf will show white areas)
     saturate_array(field, kw.minmax[0], kw.minmax[1])
 
-    nlevelsfield = 160
-    levels = np.linspace(kw.minmax[0], kw.minmax[1], nlevelsfield + 1)
+    if kw.symlog:
+        linthresh_default, linscale_default =\
+            get_symlog_params(field, field_max=kw.minmax[1])
+        if kw.linthresh is None:
+            kw.linthresh = linthresh_default
+        if kw.linscale is None:
+            kw.linscale = linscale_default
+        log_thresh = np.log10(kw.linthresh)
+        log_max = np.log10(kw.minmax[1])
+        nlevs_per_interval = 64 # keep things divisible by four...
+        nlevelsfield = 3*nlevs_per_interval
+        levels_neg = -np.logspace(log_max, log_thresh,\
+                nlevs_per_interval, endpoint=False)
+        levels_mid = np.linspace(-kw.linthresh, kw.linthresh,\
+                nlevs_per_interval, endpoint=False)
+        levels_pos = np.logspace(log_thresh, log_max, nlevs_per_interval)
+        levels = np.hstack((levels_neg, levels_mid, levels_pos))
+        kw.norm = colors.SymLogNorm(linthresh=kw.linthresh,\
+            linscale=kw.linscale, vmin=kw.minmax[0], vmax=kw.minmax[1])
+    else:
+        nlevelsfield = 160
+        levels = np.linspace(kw.minmax[0], kw.minmax[1], nlevelsfield + 1)
+
     if kw.cmap is None:
         if kw.posdef:
             kw.cmap = 'plasma'
