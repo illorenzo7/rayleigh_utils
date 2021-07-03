@@ -15,7 +15,7 @@ from common import *
 from plotcommon import *
 
 # mostly default fig dimensions
-azav_fig_dimensions = dict({'sub_width_inches': 2, 'sub_aspect': 2, 'margin_top_inches': 1, 'margin_bottom_inches': 1/2, 'sub_margin_left_inches': default_margin})
+azav_fig_dimensions = dict({'sub_width_inches': 2, 'sub_aspect': 2, 'margin_left_inches': default_margin, 'sub_margin_top_inches': 1/4, 'sub_margin_bottom_inches': 1/2, 'margin_top_inches': 1})
 
 # plot_azav needs my_contourf args, then some
 plot_azav_kwargs_default = dict({'rbcz': None, 'minmaxrz': None, 'rvals': np.array([]), 'plotlatlines': True, 'latvals': np.arange(-60., 90., 30.), 'plotboundary': True,\
@@ -495,13 +495,19 @@ def streamfunction(vr,vt,r,cost,order=0):
             
     return psi
 
-def plot_azav_grid(terms, rr, cost, maintitle=None, ncol=6, titles=None, sub_width_inches=2., rbcz=None, minmaxrz=None, rvals=np.array([]), plotlatlines=True, latvals=np.array([]), lw=1.0, shav=False, tw=None, totsig=None, domain_bounds=None, **kwargs_supplied):
+azav_fig_dimensions = dict({'sub_width_inches': 2, 'sub_aspect': 2, 'sub_margin_top_inches': 1/4, 'sub_margin_bottom_inches': 1/2, 'margin_top_inches': 1})
 
-    # **kwargs_supplied corresponds to my_contourf
-    kwargs_default = {**my_contourf_kwargs_default}
-    kwargs_default['buff_ignore1'] = 0.05 # ignore the boundaries in latitude
-    kwargs = update_dict(kwargs_default, kwargs_supplied)
-    minmax = kwargs.minmax
+make_figure_kwargs_default.update(azav_fig_dimensions)
+
+plot_azav_grid_kwargs_default = dict({'maintitle': None, 'ncol': 6, 'titles': None, 'shav': False, 'tw': None, 'totsig': None})
+plot_azav_grid_kwargs_default.update(plot_azav_kwargs_default)
+plot_azav_grid_kwargs_default.update(azav_fig_dimensions)
+
+def plot_azav_grid(terms, rr, cost, **kwargs):
+    kw = update_dict(plot_azav_grid_kwargs_default, kwargs)
+    kw_plot_azav = update_dict(plot_azav_kwargs_default, kwargs)
+    kw_make_figure = update_dict(make_figure_kwargs_default, kwargs)
+    find_bad_keys(plot_azav_grid_kwargs_default, kwargs, 'plot_azav')
 
     # possibly sum some terms, based on totsig
     nplots = len(terms)
@@ -532,26 +538,20 @@ def plot_azav_grid(terms, rr, cost, maintitle=None, ncol=6, titles=None, sub_wid
         # need to made ncol 1 bigger to include the tot term
         ncol += 1
 
-    # figure parameters
-    sub_width_inches = 2.
-    sub_aspect = 2
-    margin_top_inches = 1 # larger top margin to make room for titles
-    sub_margin_bottom_inches = 1/2
-    sub_margin_right_inches = 1/4
-    # larger bottom margin to make room for colorbar(s)
-    if not rbcz is None:
-        sub_margin_bottom_inches *= 2
-
     # make plot
-    fig, axs, fpar = make_figure(nplots=nplots, ncol=ncol, sub_width_inches=sub_width_inches, sub_aspect=sub_aspect, margin_top_inches=margin_top_inches, sub_margin_bottom_inches=sub_margin_bottom_inches, sub_margin_right_inches=sub_margin_right_inches)
+    kw_make_figure.nplots = nplots
+    kw_make_figure.ncol = ncol
+    fig, axs, fpar = make_figure(**kw_make_figure)
 
     # possibly latitudinal average figure as well
     if shav:
         if rbcz is None:
-            sub_margin_right_inches = default_margin
+            kw_make_figure.sub_margin_right_inches = default_margin
         else:
-            sub_margin_right_inches = default_margin_ylabel
-        av_fig, av_axs, av_fpar = make_figure(nplots=nplots, ncol=ncol, margin_top_inches=margin_top_inches, sub_margin_left_inches=default_margin_ylabel, sub_margin_right_inches=sub_margin_right_inches, sub_margin_bottom_inches=default_margin_xlabel)
+            kw_make_figure.sub_margin_right_inches = default_margin_ylabel
+        kw_make_figure.sub_margin_left_inches=default_margin_ylabel
+        kw_make_figure.sub_margin_bottom_inches=default_margin_xlabel
+        av_fig, av_axs, av_fpar = make_figure(**kw_make_figure)
         xlabel = r'$r/R_\odot$'
         nt = len(cost)
         if tw is None: # just average everything unweighted
