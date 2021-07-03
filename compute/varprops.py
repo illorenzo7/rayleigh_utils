@@ -117,8 +117,7 @@ def get_label(varname):
 
 # groups of quantities
 def get_quantity_group(groupname, magnetism):
-    di_out = dict({})
-    di_out['totsig'] = None # the default
+    di_out = dict({'groupname': groupname, 'totsig': None})
 
     # set default qvals: velocity + vorticity, Pressure/ entropy
     # then possibly B, del x B

@@ -214,7 +214,7 @@ def strip_dirname(dirname, wrap=False):
 
 def is_an_int(string):
     # obviously, first check if it's actually an int
-    if isinstance(string, int):
+    if isinstance(string, int) or isinstance(string, np.int64):
         return string
     len_str = len(string)
     bool_val = True

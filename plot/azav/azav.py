@@ -4,7 +4,7 @@
 # Created: 01/28/2019
 ##################################################################
 # This script plots the quantitities specified by --qvals
-# (default set in common)
+# default is v
 ##################################################################
 
 import numpy as np
@@ -19,11 +19,23 @@ from cla_util import *
 
 # Read command-line arguments (CLAs)
 args = sys.argv
-if not '--qvals' in args:
-    args += ['--qvals', 'v'] # make default qvals = v
 clas0, clas = read_clas(args)
 dirname = clas0['dirname']
 dirname_stripped = strip_dirname(dirname)
+# See if magnetism is "on"
+magnetism = clas0['magnetism']
+
+# defaults
+kwargs_default = dict({'the_file': None})
+kwargs_default.update(get_quantity_group('v', magnetism))
+kwargs_default.update(plot_azav_grid_kwargs_default)
+
+# overwrite defaults
+kw = update_dict(kwargs_default, clas)
+kw_plot_azav_grid = update_dict(plot_azav_grid_kwargs_default, clas)
+
+# check for bad keys
+find_bad_keys(kwargs_default, clas, clas0['routinename'], justwarn=True)
 
 # get the data type we want; not all will be an AZ_Avgs file
 dataname_list = dict({})
@@ -42,43 +54,27 @@ for ext in ['tot', 'mmm', 'mpp']:
     dataname_list['meprodmean' + ext] = 'me_prod_mean'
 dataname_list['ferraro'] = 'ferraro'
 
-# See if magnetism is "on"
-magnetism = clas0['magnetism']
-
-# get desired quantities
-qvals = clas['qvals']
-titles = clas['titles']
-ncol = clas['ncol']
-
-groupname = clas0['groupname']
-if groupname in dataname_list.keys():
-    dataname = dataname_list[groupname]
+if kw.groupname in dataname_list.keys():
+    dataname = dataname_list[kw.groupname]
 else:
     dataname = 'AZ_Avgs'
 
-print ("plotting the following quantities:")
-#print ("qvals = " + arr_to_str(qvals, "%i"))
-print ("qvals = ", qvals)
 # get data
-if 'the_file' in clas: 
-    the_file = clas['the_file']
-else:
-    the_file = get_widest_range_file(clas0['datadir'], dataname)
+if kw.the_file is None:
+    kw.the_file = get_widest_range_file(clas0['datadir'], dataname)
 
-print ('Getting quantities from ' + the_file)
-di = get_dict(the_file)
+print ('Getting data from ' + kw.the_file)
+di = get_dict(kw.the_file)
 vals = di['vals']
 if dataname == 'AZ_Avgs':
     lut = di['lut']
 
-# see if the user wants a separate plot of lat. averaged quantities
-if 'shav' in clas:
-    shav = True
-else:
-    shav = False
+# collect terms to plot
+print ("plotting the following quantities:")
+print ("qvals = ", kw.qvals)
 
 terms = []
-for qval in qvals:
+for qval in kw.qvals:
     if is_an_int(qval):
         qval = int(qval)
         if dataname == 'AZ_Avgs':
@@ -89,30 +85,33 @@ for qval in qvals:
         terms.append(azav_derived_qval(dirname, vals, lut, qval))
 
 # make the main title
-iter1, iter2 = get_iters_from_file(the_file)
+iter1, iter2 = get_iters_from_file(kw.the_file)
 time_string = get_time_string(dirname, iter1, iter2)
-if groupname is None:
-    qlabel = array_of_strings(qvals)
+
+if kw.groupname is None:
+    qlabel = array_of_strings(kw.qvals)
 else:
-    qlabel = groupname
-maintitle = dirname_stripped + '\n' +\
-        'qvals = ' + qlabel + '\n' +\
-        time_string
+    qlabel = kw.groupname
+
+if kw_plot_azav_grid.maintitle is None:
+    kw_plot_azav_grid.maintitle = dirname_stripped + '\n' + 'qvals = ' + qlabel + '\n' + time_string
 
 # Generate the figure using standard routine
 di_grid = get_grid_info(dirname)
-ncheby, domain_bounds = get_domain_bounds(dirname)
-figs = plot_azav_grid (terms, di_grid['rr'], di_grid['cost'], maintitle=maintitle, tw=di_grid['tw'], domain_bounds=domain_bounds/rsun, **clas)
-if shav:
+if kw.shav:
+    kw_plot_azav_grid.tw = di_grid['tw']
+figs = plot_azav_grid (terms, di_grid['rr'], di_grid['cost'], **kw_plot_azav_grid)
+
+if kw.shav:
     fig, av_fig = figs
 else:
     fig = figs
 
 # save the figure if tag (or qgroup) was specified
-if len(clas0['tag']) > 0 or not groupname is None:
+if len(clas0['tag']) > 0 or not kw.groupname is None:
     basename = 'azav_'
-    if not groupname is None:
-        basename += groupname
+    if not kw.groupname is None:
+        basename += kw.groupname
     basename += clas0['tag']
 
 if basename in ['azav_v', 'azav_b']: # these go in main directory
@@ -125,7 +124,7 @@ if clas0['saveplot']:
     print ('saving figure at ' + savefile)
     fig.savefig(savefile, dpi=300)
 
-    if shav:
+    if kw.shav:
         basename = basename.replace('azav', 'shav')
         av_savefile = plotdir + basename + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
         print ('saving lat. avg. figure at ' + av_savefile)
@@ -135,5 +134,5 @@ if clas0['showplot']:
     plt.show()
 
 plt.close(fig)
-if shav:
+if kw.shav:
     plt.close(av_fig)
