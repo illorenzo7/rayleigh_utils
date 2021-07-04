@@ -29,8 +29,8 @@ plot_azav_kwargs_default = dict({'rbcz': None, 'minmaxrz': None, 'rvals': np.arr
 plot_azav_kwargs_default.update(my_contourf_kwargs_default)
 
 def plot_azav(field, rr, cost, fig, ax,  **kwargs):
-    kw = update_dict(plot_azav_kwargs_default, kwargs)
     find_bad_keys(plot_azav_kwargs_default, kwargs, 'plot_azav')
+    kw = update_dict(plot_azav_kwargs_default, kwargs)
     kw_my_contourf = update_dict(my_contourf_kwargs_default, kwargs)
 
     # make copy of field
@@ -550,7 +550,6 @@ def plot_azav_grid(terms, rr, cost, **kwargs):
         kw_make_figure.update(lineplot_fig_dimensions)
         kw_make_figure = update_dict(kw_make_figure, kwargs)
 
-        print (kw_make_figure)
         kw_make_figure.nplots = nplots
         kw_make_figure.ncol = kw.ncol
 
@@ -559,7 +558,6 @@ def plot_azav_grid(terms, rr, cost, **kwargs):
         else:
             kw_make_figure.sub_margin_right_inches = default_margin_ylabel
 
-        print (kw_make_figure)
         av_fig, av_axs, av_fpar = make_figure(**kw_make_figure)
         xlabel = r'$r/R_\odot$' 
         nt = len(cost)

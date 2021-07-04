@@ -9,24 +9,30 @@ sys.path.append(os.environ['rapl'] + '/timetrace')
 from common import *
 from cla_util import *
 from plotcommon import *
-from timey_util import plot_timey
+from timey_util import *
 
 # Set fontsize
 fontsize = default_titlesize
 
-# Get CLAs
+# Read command-line arguments (CLAs)
 args = sys.argv
-if not '--qvals' in args:
-    args += ['--qvals', 'b'] # make default qvals = B field
 clas0, clas = read_clas(args)
-#clas['plotcbar'] = False
 dirname = clas0['dirname']
 dirname_stripped = strip_dirname(dirname)
+# See if magnetism is "on"
+magnetism = clas0['magnetism']
 
-if 'ntot' in clas:
-    ntot = clas['ntot']
-else:
-    ntot = 2000
+# defaults
+kwargs_default = dict({'the_file': None, 'ntot': 2000, 'clat': 10, 'dlat': 0, 'om': None, 'rad': False, 'lon': False, 'shav': False})
+kwargs_default.update(get_quantity_group('b', magnetism))
+kwargs_default.update(plot_timey_kwargs_default)
+
+# check for bad keys
+find_bad_keys(kwargs_default, clas, clas0['routinename'], justwarn=True)
+
+# overwrite defaults
+kw = update_dict(kwargs_default, clas)
+kw_plot_timey = update_dict(plot_timey_kwargs_default, clas)
 
 # baseline time unit
 time_unit, time_label, rotation, simple_label = get_time_unit(dirname)
@@ -36,33 +42,15 @@ di_grid = get_grid_info(dirname)
 
 datatype = 'timelat'
 sampleaxis = di_grid['tt_lat']
-rad = False
-lon = False
-shav = False
-if 'rad' in clas:
-    rad = True
+if kw.rad:
     datatype = 'timerad'
     sampleaxis = di_grid['rr']/rsun
-elif 'lon' in clas:
-    lon = True
-    if 'clat' in clas:
-        clat = clas['clat']
-    else:
-        clat = 10
-    if 'dlat' in clas:
-        dlat = clas['dlat']
-    else:
-        dlat = 0
-    if 'om' in clas: # plot in frame rotating at om [nHz]
-        om = clas['om']
+elif kw.lon:
+    if not kw.om is None:
         om0 = 1/time_unit*1e9 # frame rate, nHz
-    else:
-        om = None
-
     datatype = 'timelon_clat' + lat_format(clat) + '_dlat%03.0f' %dlat
     sampleaxis = di_grid['lons']
-elif 'shav' in clas:
-    shav = True
+elif kw.shav:
     datatype = 'timeshav'
     sampleaxis = di_grid['rr']/rsun
     # just a loop placeholder...
@@ -70,32 +58,31 @@ elif 'shav' in clas:
 
 dataname = datatype + clas0['tag']
 print ('dataname = ', dataname)
+
 # get data
-if 'the_file' in clas: 
-    the_file = clas['the_file']
-else:
-    the_file = get_widest_range_file(clas0['datadir'], dataname)
+if kw.the_file is None:
+    kw.the_file = get_widest_range_file(clas0['datadir'], dataname)
 
 # Read in the data
-print ('reading ' + the_file)
-di = get_dict(the_file)
+print ('reading ' + kw.the_file)
+di = get_dict(kw.the_file)
 vals = di['vals']
 times = di['times']
 iters = di['iters']
 qvals_avail = np.array(di['qvals'])
-if not shav:
+if not kw.shav:
     samplevals_avail = di['samplevals']
 
 # time range
-iter1, iter2 = get_iters_from_file(the_file)
+iter1, iter2 = get_iters_from_file(kw.the_file)
 times /= time_unit
 
 # Subtract DR, if desired
-if lon:
-    if not om is None:
-        print ("plotting in rotating frame om = %.1f nHz" %om)
+if kw.lon:
+    if not kw.om is None:
+        print ("plotting in rotating frame om = %.1f nHz" %kw.om)
         print ("compare this to frame rate    = %.1f nHz" %om0)
-        phi_deflections = (times*(om - om0)) % 1 # between zero and one
+        phi_deflections = (times*(kw.om - om0)) % 1 # between zero and one
         nphi = len(sampleaxis)
         for it in range(len(times)):
             phi_deflection = phi_deflections[it]
@@ -103,17 +90,17 @@ if lon:
             vals[it] = np.roll(vals[it], -nroll, axis=0)
 
 # maybe thin data
-if not ntot == 'full':
-    print ("ntot = %i" %ntot)
+if not kw.ntot == 'full':
+    print ("ntot = %i" %kw.ntot)
     print ("before thin_data: len(times) = %i" %len(times))
-    times = thin_data(times, ntot)
-    iters = thin_data(iters, ntot)
-    vals = thin_data(vals, ntot)
+    times = thin_data(times, kw.ntot)
+    iters = thin_data(iters, kw.ntot)
+    vals = thin_data(vals, kw.ntot)
     print ("after thin_data: len(times) = %i" %len(times))
 
 # get raw traces of desired variables
 terms = []
-for qval in make_array(clas['qvals']):
+for qval in kw.qvals:
     qind = np.argmin(np.abs(qvals_avail - qval))
     terms.append(vals[:, :, :, qind])
 
@@ -122,7 +109,7 @@ sub_width_inches = 7.5
 sub_height_inches = 2.0
 margin_bottom_inches = 1/2 # space for x-axis label
 margin_top_inches = 3/4
-if lon:
+if kw.lon:
     margin_top_inches =  1 + 1/4
 margin_left_inches = 5/8 # space for latitude label
 margin_right_inches = 7/8 # space for colorbar
@@ -131,7 +118,7 @@ if 'ycut' in clas:
 nplots = len(terms)
 
 # determine desired levels to plot
-if not shav:
+if not kw.shav:
     if not 'isamplevals' in clas:
         if not 'samplevals' in clas:
             isamplevals = np.array([0]) # just plot the top radius by default
@@ -149,43 +136,42 @@ if not shav:
 
 # Loop over the desired levels and save plots
 for isampleval in isamplevals:
-    if not shav:
+    if not kw.shav:
         sampleval = samplevals_avail[isampleval]
 
     # set some labels 
     axislabel = 'latitude (deg)'
     samplelabel =  r'$r/R_\odot$' + ' = %.3f' %sampleval
     position_tag = '_rval%.3f' %sampleval
-    if rad:
+    if kw.rad:
         axislabel = r'$r/R_\odot$'
         samplelabel = 'lat = ' + lat_format(sampleval)
         position_tag = '_lat' + lat_format(sampleval)
-    elif lon:
+    elif kw.lon:
         axislabel = 'longitude (deg)'
         samplelabel = 'clat = ' + lat_format(clat) + '\n' +  r'$r/R_\odot$' + ' = %.3f' %sampleval
-        if not om is None:
+        if not kw.om is None:
             samplelabel += '\n' + (r'$\Omega_{\rm{frame}}$' + ' = %.1f nHz ' + '\n' + r'$\Omega_{\rm{frame}} - \Omega_0$' + ' = %.2f nHz') %(om, om - om0)
         else:
             samplelabel += '\n' + r'$\Omega_{\rm{frame}} = \Omega_0$'
 
         position_tag = '_clat' + lat_format(clat) + '_rval%.3f' %sampleval
-    elif shav:
+    elif kw.shav:
         axislabel = r'$r/R_\odot$'
         samplelabel = ''
         position_tag = ''
 
     # Put some useful information on the title
     maintitle = dirname_stripped 
-    if not shav:
+    if not kw.shav:
         maintitle += '\n' + samplelabel
-    if 'navg' in clas:
-        navg = clas['navg']
-        averaging_time = (times[-1] - times[0])/len(times)*navg
-        maintitle += '\n' + ('t_avg = %.1f Prot' %averaging_time)
-    else: 
+    if kw.navg is None:
         maintitle += '\nt_avg = none'
+    else:
+        averaging_time = (times[-1] - times[0])/len(times)*kw.navg
+        maintitle += '\n' + ('t_avg = %.1f Prot' %averaging_time)
 
-    if not shav:
+    if not kw.shav:
         print('plotting sampleval = %0.3f (i = %02i)' %(sampleval, isampleval))
    
     # make plot
@@ -193,14 +179,14 @@ for isampleval in isamplevals:
 
     for iplot in range(nplots):
         ax = axs[iplot, 0]
-        if rad:
+        if kw.rad:
             field = terms[iplot][:, isampleval, :]
         else:
             field = terms[iplot][:, :, isampleval]
-        plot_timey(field, times, sampleaxis, fig, ax, fontsize=fontsize, **clas)
+        plot_timey(field, times, sampleaxis, fig, ax, **kw_plot_timey)
                 
         #  title the plot
-        ax.set_title(clas['titles'][iplot], fontsize=fontsize)
+        ax.set_title(kw.titles[iplot], fontsize=fontsize)
 
         # Turn the x tick labels off for the top strips
         #if iplot < nplots - 1:
@@ -219,7 +205,7 @@ for isampleval in isamplevals:
         # Make appropriate file name to save
 
         # save the figure
-        if lon:
+        if kw.lon:
             plotdir = my_mkdir(clas0['plotdir'] + 'timelon/')
             basename = 'timelon_%08i_%08i' %(iter1, iter2)
             if not om is None:
