@@ -15,7 +15,7 @@ from common import *
 from plotcommon import *
 
 # mostly default fig dimensions
-azav_fig_dimensions = dict({'sub_width_inches': 2, 'sub_aspect': 2, 'sub_margin_top_inches': 1/4, 'sub_margin_bottom_inches': 1/2, 'margin_top_inches': 1})
+azav_fig_dimensions = dict({'sub_width_inches': 2, 'sub_aspect': 2, 'sub_margin_left_inches': default_margin, 'sub_margin_top_inches': 1/4, 'sub_margin_bottom_inches': 1/2, 'margin_top_inches': 1})
 
 lineplot_fig_dimensions = dict({'sub_width_inches': 3.5, 'sub_height_inches': 2.5, 'sub_margin_top_inches': 1/4, 'sub_margin_bottom_inches': default_margin_xlabel, 'sub_margin_left_inches': default_margin_ylabel, 'margin_top_inches': 1})
 
@@ -502,15 +502,15 @@ plot_azav_grid_kwargs_default = dict({'maintitle': None, 'titles': None, 'shav':
 plot_azav_grid_kwargs_default.update(plot_azav_kwargs_default)
 plot_azav_grid_kwargs_default.update(make_figure_kwargs_default)
 
+make_figure_kwargs_default.update(azav_fig_dimensions)
+plot_azav_grid_kwargs_default.update(make_figure_kwargs_default)
+
 def plot_azav_grid(terms, rr, cost, **kwargs):
     find_bad_keys(plot_azav_grid_kwargs_default, kwargs, 'plot_azav')
 
     kw = update_dict(plot_azav_grid_kwargs_default, kwargs)
     kw_plot_azav = update_dict(plot_azav_kwargs_default, kwargs)
-
-    kw_make_figure = {**make_figure_kwargs_default}
-    kw_make_figure.update(azav_fig_dimensions)
-    kw_make_figure = update_dict(kw_make_figure, kwargs)
+    kw_make_figure = update_dict(make_figure_kwargs_default, kwargs)
 
     # possibly sum some terms, based on totsig
     nplots = len(terms)
@@ -518,22 +518,22 @@ def plot_azav_grid(terms, rr, cost, **kwargs):
         if np.isscalar(kw.totsig):
             if kw.totsig == 'sumrow':
                 ncol_loc = kw.ncol
-                totsig = np.ones(ncol)
+                kw.totsig = np.ones(kw.ncol)
         else:
             ncol_loc = len(kw.totsig)
         nrow_loc = len(terms)//ncol_loc
 
         iterm = 0
-        titles = kw.titles.tolist()
+        kw.titles = kw.titles.tolist()
         for irow in range(nrow_loc):
             tot_term = np.zeros_like(terms[0])
             for icol in range(ncol_loc):
-                tot_term += terms[iterm]*totsig[icol]
+                tot_term += terms[iterm]*kw.totsig[icol]
                 iterm += 1
 
             # insert the tot_term at the correct place
             terms.insert(iterm, tot_term)
-            titles.insert(iterm, 'tot')
+            kw.titles.insert(iterm, 'tot')
             iterm += 1
             nplots += 1
         # need to made ncol 1 bigger to include the tot term
@@ -542,13 +542,14 @@ def plot_azav_grid(terms, rr, cost, **kwargs):
     # make plot
     kw_make_figure.nplots = nplots
     kw_make_figure.ncol = kw.ncol
+    if not kw.rbcz is None:
+        kw_make_figure.sub_margin_bottom_inches *= 2
     fig, axs, fpar = make_figure(**kw_make_figure)
 
     # possibly latitudinal average figure as well
     if kw.shav:
-        kw_make_figure = {**make_figure_kwargs_default}
-        kw_make_figure.update(lineplot_fig_dimensions)
-        kw_make_figure = update_dict(kw_make_figure, kwargs)
+        make_figure_kwargs_default.update(lineplot_fig_dimensions)
+        kw_make_figure = update_dict(make_figure_kwargs_default, kwargs)
 
         kw_make_figure.nplots = nplots
         kw_make_figure.ncol = kw.ncol

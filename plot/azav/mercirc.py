@@ -44,8 +44,10 @@ kw_make_figure = update_dict(make_figure_kwargs_default, clas)
 
 # check for bad keys
 find_bad_keys(kwargs_default, clas, clas0['routinename'], justwarn=True)
+print(kw_make_figure.sub_margin_bottom_inches)
 if not kw.rbcz is None:  # need room for two colorbars
-    kw_make_figure.margin_bottom_inches *= 2
+    kw_make_figure.sub_margin_bottom_inches *= 2
+    print(kw_make_figure.sub_margin_bottom_inches)
 
 # Get density
 eq = get_eq(dirname)
