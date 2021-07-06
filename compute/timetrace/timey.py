@@ -61,12 +61,11 @@ if rank == 0:
 if rank == 0:
     # get CLAS
     args = sys.argv
-    if not '--qvals' in args:
-        args += ['--qvals', 'b'] # clas will deal with --qvals
-        # default trace the magnetic field
     clas0, clas = read_clas(args)
     dirname = clas0['dirname']
+    magnetism = clas0['magnetism']
     kwargs_default = dict({'rad': False, 'shav': False,  'latvals': default_latvals, 'rvals': get_default_rvals(dirname)})
+    kwargs_default.update(get_quantity_group('b', magnetism))
     kwargs = update_dict(kwargs_default, clas)
     rad = kwargs['rad']
     shav = kwargs['shav']
@@ -91,7 +90,7 @@ if rank == 0:
     tt_lat = di_grid['tt_lat']
 
     # get desired quantities
-    qvals = clas['qvals']
+    qvals = kwargs['qvals']
 
     # get indices associated with desired sample vals
     if not shav:
@@ -138,10 +137,11 @@ if rank == 0:
         meta += [isamplevals, nsamplevals]
 else:
     meta = None
-    the_bcast = comm.bcast(meta, root=0)
-    dirname, radatadir, qvals, rad, shav = the_bcast[:5]
-    if not shav:
-        isamplevals, nsamplevals = the_bcast[5:]
+
+the_bcast = comm.bcast(meta, root=0)
+dirname, radatadir, qvals, rad, shav = the_bcast[:5]
+if not shav:
+    isamplevals, nsamplevals = the_bcast[5:]
 
 # Checkpoint and time
 comm.Barrier()
@@ -238,6 +238,8 @@ if rank == 0:
         basename = 'timeshav'
     else:
         basename = 'timelat'
+    if 'groupname' in kwargs:
+        basename += '_' + kwargs['groupname']
     savename = basename + clas0['tag'] + '-' +\
             file_list[0] + '_' + file_list[-1] + '.pkl'
     savefile = datadir + savename

@@ -56,8 +56,10 @@ elif kw.shav:
     # just a loop placeholder...
     isamplevals = [0]
 
-dataname = datatype + clas0['tag']
-print ('dataname = ', dataname)
+dataname = datatype
+if 'groupname' in kw:
+    dataname += '_' + kw.groupname
+dataname += clas0['tag']
 
 # get data
 if kw.the_file is None:
