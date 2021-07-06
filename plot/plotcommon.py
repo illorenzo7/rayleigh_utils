@@ -237,49 +237,6 @@ def make_figure(**kwargs):
 
     return fig, axs, fpar
 
-contourf_minmax_kwargs_default = dict({'posdef': False, 'logscale': False, 'fullrange': False, 'buff_ignore1': buff_frac, 'buff_ignore2': buff_frac}) 
-def contourf_minmax(field, **kwargs):
-    # Get good boundaries to saturate array [field], assuming either
-    # posdef (True or False) and/or logscale (True or False)
-    # first, possibly cut the array (ignore boundary vals)
-    kw = update_dict(contourf_minmax_kwargs_default, kwargs)
-    find_bad_keys(contourf_minmax_kwargs_default, kwargs, 'contourf_minmax')
-
-    if not kw.buff_ignore1 is None:
-        n1, dummy = np.shape(field)
-        icut = int(n1*kw.buff_ignore1)
-        field = np.copy(field[icut:n1-icut, :])
-    if not kw.buff_ignore2 is None:
-        dummy, n2 = np.shape(field)
-        icut = int(n2*kw.buff_ignore2)
-        field = np.copy(field[:, icut:n2-icut])
-    if kw.logscale:
-        logfield = np.log(field)
-        medlog = np.median(logfield)
-        shiftlog = logfield - medlog
-        std_plus =\
-            np.std(shiftlog[np.where(shiftlog > 0.)].flatten())
-        std_minus =\
-            np.std(shiftlog[np.where(shiftlog <= 0.)].flatten())
-        av_std = (std_plus + std_minus)/2.
-
-        minexp = medlog - 5.*av_std
-        maxexp = medlog + 5.*av_std
-        minmax = np.exp(minexp), np.exp(maxexp)        
-    elif kw.posdef:
-        sig = rms(field)
-        minmax = 0., 3.*sig        
-    elif kw.fullrange:
-        maxabs = np.max(np.abs(field))
-        minmax = -maxabs, maxabs       
-    else:
-        sig = np.std(field)
-        minmax = -3.*sig, 3.*sig
-    # Make sure minmax isn't 0, 0
-    tinybit = 1.0e-100
-    minmax = minmax[0] - tinybit, minmax[1] + tinybit
-    return minmax
-
 lineplot_minmax_kwargs_default = dict({'logscale': False, 'buff_ignore': buff_frac, 'legfrac': None, 'symmetrize': False, 'domain_bounds': None, 'xx': None})
 def lineplot_minmax(profiles, **kwargs):
     kw = update_dict(lineplot_minmax_kwargs_default, kwargs)
@@ -359,8 +316,6 @@ def sci_format(num, ndec=1):
 
 lineplot_kwargs_default = dict({'xlabel': None, 'ylabel': None, 'title': None, 'xvals': np.array([]), 'yvals': np.array([]), 'labels': None, 'xlogscale': False, 'xminmax': None, 'minmax': None, 'xcut': None, 'minmax2': None, 'scatter': False, 'colors': color_order, 'linestyles': style_order[0], 'markers': marker_order[0], 'lw': default_lw, 's': default_s, 'plotleg': True})
 lineplot_kwargs_default.update(lineplot_minmax_kwargs_default)
-
-del lineplot_kwargs_default['xx']
 
 def lineplot(xx, profiles, ax, **kwargs):
     kw = update_dict(lineplot_kwargs_default, kwargs)
@@ -519,6 +474,53 @@ def lineplot(xx, profiles, ax, **kwargs):
     if kw.plotleg:
         ax.legend(loc='lower left', ncol=3, fontsize=0.8*default_labelsize)
 
+contourf_minmax_kwargs_default = dict({'posdef': False, 'logscale': False, 'symlog': False, 'fullrange': False, 'fullrange2': False, 'buff_ignore1': buff_frac, 'buff_ignore2': buff_frac}) 
+def contourf_minmax(field, **kwargs):
+    # Get good boundaries to saturate array [field], assuming either
+    # posdef (True or False) and/or logscale (True or False)
+    # first, possibly cut the array (ignore boundary vals)
+    kw = update_dict(contourf_minmax_kwargs_default, kwargs)
+    find_bad_keys(contourf_minmax_kwargs_default, kwargs, 'contourf_minmax')
+
+    if not kw.buff_ignore1 is None:
+        n1, dummy = np.shape(field)
+        icut = int(n1*kw.buff_ignore1)
+        field = np.copy(field[icut:n1-icut, :])
+    if not kw.buff_ignore2 is None:
+        dummy, n2 = np.shape(field)
+        icut = int(n2*kw.buff_ignore2)
+        field = np.copy(field[:, icut:n2-icut])
+    if kw.fullrange or kw.symlog:
+        maxabs = np.max(np.abs(field))
+        minmax = -maxabs, maxabs       
+    elif kw.fullrange2:
+        mmin = np.min(field[np.where(field <= 0.0)])
+        mmax = np.max(field[np.where(field >= 0.0)])
+        minmax = mmin, mmax
+    elif kw.logscale:
+        logfield = np.log(field)
+        medlog = np.median(logfield)
+        shiftlog = logfield - medlog
+        std_plus =\
+            np.std(shiftlog[np.where(shiftlog > 0.)].flatten())
+        std_minus =\
+            np.std(shiftlog[np.where(shiftlog <= 0.)].flatten())
+        av_std = (std_plus + std_minus)/2.
+
+        minexp = medlog - 5.*av_std
+        maxexp = medlog + 5.*av_std
+        minmax = np.exp(minexp), np.exp(maxexp)        
+    elif kw.posdef:
+        sig = rms(field)
+        minmax = 0., 3.*sig        
+    else:
+        sig = np.std(field)
+        minmax = -3.*sig, 3.*sig
+    # Make sure minmax isn't 0, 0
+    tinybit = 1.0e-100
+    minmax = minmax[0] - tinybit, minmax[1] + tinybit
+    return minmax
+
 my_contourf_kwargs_default = dict({
         # saturation of field values stuff
         'minmax': None,\
@@ -530,8 +532,8 @@ my_contourf_kwargs_default = dict({
         # only need this for time-lat plots or such, since need ticks there
         'allticksoff': True,\
         # symlog stuff (again)
-        'symlog': False, 'linthresh': None, 'linscale': None})
-
+        'linthresh': None, 'linscale': None})
+# color map stuff: symlog, logscale, posdef, etc.
 my_contourf_kwargs_default.update(contourf_minmax_kwargs_default)
 
 def my_contourf(xx, yy, field, fig, ax, **kwargs):
@@ -544,9 +546,6 @@ def my_contourf(xx, yy, field, fig, ax, **kwargs):
 
     # get default bounds if not specified
     if kw.minmax is None:
-        kw.minmax = contourf_minmax(field, **kw_contourf_minmax)
-    elif kw.minmax == 'fullrange':
-        kw_contourf_minmax.fullrange = True
         kw.minmax = contourf_minmax(field, **kw_contourf_minmax)
 
     # plot the field, maybe
@@ -562,6 +561,7 @@ def my_contourf(xx, yy, field, fig, ax, **kwargs):
     # Saturate the array (otherwise contourf will show white areas)
     saturate_array(field, kw.minmax[0], kw.minmax[1])
 
+    nlevelsfield = 128
     if kw.symlog:
         linthresh_default, linscale_default =\
             get_symlog_params(field, field_max=kw.minmax[1])
@@ -571,19 +571,21 @@ def my_contourf(xx, yy, field, fig, ax, **kwargs):
             kw.linscale = linscale_default
         log_thresh = np.log10(kw.linthresh)
         log_max = np.log10(kw.minmax[1])
-        nlevs_per_interval = 64 # keep things divisible by four...
-        nlevelsfield = 3*nlevs_per_interval
+        nlevs_log = nlevelsfield//4
+        nlevs_lin = nlevelsfield//2
+
         levels_neg = -np.logspace(log_max, log_thresh,\
-                nlevs_per_interval, endpoint=False)
+                nlevs_log, endpoint=False)
         levels_mid = np.linspace(-kw.linthresh, kw.linthresh,\
-                nlevs_per_interval, endpoint=False)
-        levels_pos = np.logspace(log_thresh, log_max, nlevs_per_interval)
+                nlevs_lin, endpoint=False)
+        levels_pos = np.logspace(log_thresh, log_max, nlevs_log + 1)
         levels = np.hstack((levels_neg, levels_mid, levels_pos))
         kw.norm = colors.SymLogNorm(linthresh=kw.linthresh,\
             linscale=kw.linscale, vmin=kw.minmax[0], vmax=kw.minmax[1])
     else:
-        nlevelsfield = 160
         levels = np.linspace(kw.minmax[0], kw.minmax[1], nlevelsfield + 1)
+        if kw.fullrange2: # need equally spaced levels on each side of zero
+            kw.norm = colors.TwoSlopeNorm(vmin=kw.minmax[0], vcenter=0, vmax=kw.minmax[1])
 
     if kw.cmap is None:
         if kw.posdef:
@@ -648,7 +650,7 @@ def my_contourf(xx, yy, field, fig, ax, **kwargs):
         if kw.posdef:
             tickvals = [kw.minmax[0], kw.minmax[1]]
         else:
-            tickvals = [kw.minmax[0], 0., kw.minmax[1]]
+            tickvals = [kw.minmax[0], 0, kw.minmax[1]]
         ticklabels = []
         for tickval in tickvals:
             ticklabels.append(fmt %tickval)
@@ -671,10 +673,14 @@ def my_contourf(xx, yy, field, fig, ax, **kwargs):
             # just thin out the field levels
             nskip = nlevelsfield//kw.ncontours
             kw.contourlevels = levels[::nskip]
-            # contourf whitespace, I think. Not sure why)
+            if kw.fullrange2: # need equally spaced levels on 
+                # each side of zero separately
+                levels_neg = np.linspace(kw.minmax[0], 0, kw.ncontours//2 - 1, endpoint=False)
+                levels_pos = np.linspace(0, kw.minmax[1], kw.ncontours//2, endpoint=False)
+                kw.contourlevels = np.hstack((levels_neg, levels_pos))
 
         # plot the contours
-        ax.contour(xx, yy, field, kw.contourlevels,\
+        ax.contour(xx, yy, field, kw.contourlevels, norm=kw.norm,\
                 colors=kw.contourcolors, linewidths=kw.contourwidths, linestyles=kw.contourstyles)
 
 
