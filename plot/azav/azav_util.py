@@ -21,7 +21,7 @@ lineplot_fig_dimensions = dict({'sub_width_inches': 3.5, 'sub_height_inches': 2.
 
 
 # plot_azav needs my_contourf args, then some
-plot_azav_kwargs_default = dict({'rbcz': None, 'minmaxrz': None, 'rvals': np.array([]), 'plotlatlines': True, 'latvals': np.arange(-60., 90., 30.), 'plotboundary': True,\
+plot_azav_kwargs_default = dict({'rbcz': None, 'minmaxrz': None, 'cmaprz': None, 'rvals': np.array([]), 'plotlatlines': True, 'latvals': np.arange(-60., 90., 30.), 'plotboundary': True,\
         'linestyles1': np.array(['-']), 'linewidths1': np.array([default_lw]), 'linecolors1': np.array(['k']),\
        'linestyles2': np.array(['-']), 'linewidths2': np.array([default_lw]), 'linecolors2': np.array(['k'])})
 
@@ -72,10 +72,13 @@ def plot_azav(field, rr, cost, fig, ax,  **kwargs):
         # will need to change some contourf kwargs:
         kw_my_contourf.minmax = kw.minmaxrz
         kw_my_contourf.allticksoff = False # no need to turn off ticks twice
-        if kw.posdef: 
-            kw_my_contourf.cmap = 'cividis'
+        if kw.cmaprz is None:
+            if kw.posdef: 
+                kw_my_contourf.cmap = 'cividis'
+            else:
+                kw_my_contourf.cmap = 'PuOr_r'    
         else:
-            kw_my_contourf.cmap = 'PuOr_r'    
+            kw_my_contourf.cmap = kw.cmaprz
         kw_my_contourf.cbar_no = 2
         my_contourf(xxrz, yyrz, fieldrz, fig, ax, **kw_my_contourf)
 
