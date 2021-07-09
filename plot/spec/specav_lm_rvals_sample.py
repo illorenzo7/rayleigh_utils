@@ -19,8 +19,9 @@ csfont = {'fontname':'DejaVu Serif'}
 import numpy as np
 import sys, os
 sys.path.append(os.environ['raco'])
+sys.path.append(os.environ['rapl'])
 sys.path.append(os.environ['rapp'])
-from varprops import texunits, texlabels, var_indices
+from varprops import var_indices
 from common import *
 from plotcommon import axis_range, xy_grid
 
@@ -106,8 +107,8 @@ if not os.path.isdir(plotdir):
     os.makedirs(plotdir)
 
 # Read in spec data
-print ('Reading Shell_Spectra data from ' + datadir + the_file)
-di = get_dict(datadir + the_file)
+print ('Reading Shell_Spectra data from '+ the_file)
+di = get_dict(the_file)
 rvals = di['rvals']/rsun
 qv = di['qv']
 lut = di['lut']
@@ -201,8 +202,8 @@ desired_rvals = rvals[ir_vals]
 if not (varname == 'vtot' or varname == 'btot'):
     desired_qv = var_indices[varname]
     iq = np.argmin(np.abs(qv - desired_qv))
-    varlabel = texlabels.get(varname, 'qval = ' + varname)
-    units = texunits.get(varname, 'cgs') 
+    varlabel = varname
+    units = ''
 else:
     if varname == 'vtot':
         desired_qv_vals = [1, 2, 3]
