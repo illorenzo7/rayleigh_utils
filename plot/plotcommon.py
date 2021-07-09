@@ -521,21 +521,27 @@ def add_cbar(fig, ax, im, **kwargs):
     cax.tick_params(labelsize=kw.cbar_fs)
     #cbar.ax.tick_params(labelsize=fontsize)   
 
-    if kw.nosci:
+    if kw.nosci or kw.logscale:
         cbar_label = kw.units
     else:
         cbar_label = (r'$\times10^{%i}\ $' %kw.exp) + kw.units
+
     # ticklabel format
-    fmt = '%.' + str(kw.cbar_prec) + 'f'
-    if kw.posdef:
-        tickvals = [kw.minmax[0], kw.minmax[1]]
+    if kw.logscale:
+        locator = ticker.LogLocator(subs='all')
+        cbar.set_ticks(locator)
     else:
-        tickvals = [kw.minmax[0], 0, kw.minmax[1]]
-    ticklabels = []
-    for tickval in tickvals:
-        ticklabels.append(fmt %tickval)
-    cbar.set_ticks(tickvals)
-    cbar.set_ticklabels(ticklabels)
+        fmt = '%.' + str(kw.cbar_prec) + 'f'
+        if kw.posdef:
+            tickvals = [kw.minmax[0], kw.minmax[1]]
+        else:
+            tickvals = [kw.minmax[0], 0, kw.minmax[1]]
+        ticklabels = []
+        for tickval in tickvals:
+            ticklabels.append(fmt %tickval)
+        cbar.set_ticks(tickvals)
+        cbar.set_ticklabels(ticklabels)
+
     if kw.cbar_pos == 'bottom':
         fig.text(cbar_left + cbar_width + lilbit*fig_aspect,\
                 cbar_bottom + 0.5*cbar_height, cbar_label,\

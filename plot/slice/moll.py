@@ -17,12 +17,20 @@ clas0, clas = read_clas(args)
 dirname = clas0['dirname']
 dirname_stripped = strip_dirname(dirname)
 
-# SPECIFIC ARGS for moll_show:
-moll_show_kwargs_default = dict({'val_iter': 1e9, 'irvals': np.array([0]), 'rvals': None, 'varnames': np.array(['vr'])})
-moll_show_kwargs_default.update(plot_moll_kwargs_default)
-kw = update_dict(moll_show_kwargs_default, clas)
-find_bad_keys(moll_show_kwargs_default, clas, 'moll_show', justwarn=True)
+# default moll fig dimensions
+moll_fig_dimensions = dict({'sub_width_inches': 6, 'sub_aspect': 1/2, 'sub_margin_left_inches': default_margin, 'sub_margin_top_inches': 1/2, 'sub_margin_bottom_inches': 1/2, 'margin_top_inches': 1/4})
+
+# SPECIFIC ARGS for plot/slice/moll:
+kwargs_default = dict({'val_iter': 1e9, 'irvals': np.array([0]), 'rvals': None, 'varnames': np.array(['vr'])})
+kwargs_default.update(plot_moll_kwargs_default)
+make_figure_kwargs_default.update(moll_fig_dimensions)
+kwargs_default.update(make_figure_kwargs_default)
+
+find_bad_keys(kwargs_default, clas, 'plot/slice/moll', justwarn=True)
+
+kw = update_dict(kwargs_default, clas)
 kw_plot_moll = update_dict(plot_moll_kwargs_default, clas)
+kw_make_figure = update_dict(make_figure_kwargs_default, clas)
 
 # needs to be arrays
 kw.irvals = make_array(kw.irvals)
@@ -86,7 +94,7 @@ for varname in kw.varnames:
         savename = 'moll_' + str(a.iters[0]).zfill(8) + '_' + varname + ('_rval%0.3f' %rval) + '.png' 
 
         # make plot
-        fig, axs, fpar = make_figure(nplots=nplots, sub_width_inches=sub_width_inches, sub_aspect=sub_aspect, margin_top_inches=margin_top_inches, margin_bottom_inches=margin_bottom_inches)
+        fig, axs, fpar = make_figure(**kw_make_figure)
         ax = axs[0, 0]
         plot_moll(field, a.costheta, fig, ax, **kw_plot_moll)
 

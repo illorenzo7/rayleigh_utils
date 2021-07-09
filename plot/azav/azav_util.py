@@ -14,7 +14,7 @@ sys.path.append(os.environ['raco'])
 from common import *
 from plotcommon import *
 
-# mostly default fig dimensions
+# default azav fig dimensions
 azav_fig_dimensions = dict({'sub_width_inches': 2, 'sub_aspect': 2, 'sub_margin_left_inches': default_margin, 'sub_margin_top_inches': 1/4, 'sub_margin_bottom_inches': 1/2, 'margin_top_inches': 1})
 
 lineplot_fig_dimensions = dict({'sub_width_inches': 3.5, 'sub_height_inches': 2.5, 'sub_margin_top_inches': 1/4, 'sub_margin_bottom_inches': default_margin_xlabel, 'sub_margin_left_inches': default_margin_ylabel, 'margin_top_inches': 1})
@@ -503,8 +503,6 @@ def streamfunction(vr,vt,r,cost,order=0):
 
 plot_azav_grid_kwargs_default = dict({'maintitle': None, 'titles': None, 'shav': False, 'tw': None, 'totsig': None})
 plot_azav_grid_kwargs_default.update(plot_azav_kwargs_default)
-plot_azav_grid_kwargs_default.update(make_figure_kwargs_default)
-
 make_figure_kwargs_default.update(azav_fig_dimensions)
 plot_azav_grid_kwargs_default.update(make_figure_kwargs_default)
 
