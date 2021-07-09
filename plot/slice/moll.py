@@ -62,9 +62,10 @@ if kw.av: # use time-averaged file
     datadir = dirname + '/data/'
     if kw.the_file is None:
         kw.the_file = get_widest_range_file(datadir, 'Shell_Slices')
+        iter1, iter2 = get_iters_from_file(kw.the_file)
         print ("plotting average file: " + kw.the_file)
         di = get_dict(kw.the_file)
-        a.vals = di['vals'][..., np.newaxis]
+        a0.vals = di['vals'][..., np.newaxis]
 else:
     print ('plotting %i %s files: %s through %s'\
         %(nfiles, dataname, file_list[0], file_list[-1]))
@@ -105,7 +106,11 @@ for fname in file_list:
             rval = a.radius[irval]/rsun 
 
             # Display at terminal what we are plotting
-            savename = 'moll_' + str(a.iters[0]).zfill(8) + '_' + varname + ('_rval%0.3f' %rval) + '.png' 
+            if kw.av:
+                savename = 'mollav_' + str(iter1).zfill(8) + '_' + str(iter1).zfill(8)
+            else:
+                savename = 'moll_' + str(a.iters[0]).zfill(8)
+            savename += ('_' + varname + ('_rval%0.3f' %rval) + '.png')
 
             # make plot
             fig, axs, fpar = make_figure(**kw_make_figure)

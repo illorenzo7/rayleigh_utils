@@ -32,11 +32,14 @@ def get_slice(a, varname, dirname=None, j=0):
     rr = a.radius
     # first get the appropriate time slice
     vals = a.vals[..., j]
-    if vals.ndim == 4: # Shell_Slice or Meridional_Slice
+    if vals.ndim == 4 and not hasattr(a, 'lpower'): 
+        # Shell_Slice or Meridional_Slice
         cost = a.costheta
         nt = len(cost)
         cost = cost.reshape((1, nt, 1))
     else:
+        # note...don't do cylindrical projections for Shell_Spectra!
+        # they don't multiply well
         cost = 0.
         nt = 1
         cost = cost.reshape((nt, nt))
@@ -52,7 +55,8 @@ def get_slice(a, varname, dirname=None, j=0):
     zero = np.zeros(np.array(np.shape(vals[..., 0])))
 
     # return the basic field based on the variable name
-    if varname in var_indices:
+    if varname in var_indices: 
+        # this is really only option for Shell_Spectra...
         the_slice = vals[..., lut[var_indices[varname]]]
     elif varname[-1] in ['l', 'z']: # cylindrical variable
         the_slice_r = vals[..., lut[var_indices[varname[:-1] + 'r']]]
