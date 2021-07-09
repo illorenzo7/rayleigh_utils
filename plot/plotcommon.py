@@ -474,6 +474,78 @@ def lineplot(xx, profiles, ax, **kwargs):
     if kw.plotleg:
         ax.legend(loc='lower left', ncol=3, fontsize=0.8*default_labelsize)
 
+add_cbar_kwargs_default = dict({'minmax': None, 'cbar_thick': 1/16, 'cbar_aspect': 1/20, 'cbar_prec': 2, 'cbar_no': 1, 'cbar_pos': 'bottom', 'units': '', 'nosci': False, 'cbar_fs': default_labelsize, 'exp': 0})
+def add_cbar(fig, ax, im, **kwargs):
+    # deal with kwargs
+    kw = update_dict(add_cbar_kwargs_default, kwargs)
+    find_bad_keys(add_cbar_kwargs_default, kwargs, 'add_cbar')
+
+    # get fig dimensions
+    fig_width_inches, fig_height_inches = fig.get_size_inches()
+    fig_aspect = fig_height_inches/fig_width_inches
+    # get ax dimensions
+    ax_left, ax_right, ax_bottom, ax_top = axis_range(ax)
+    ax_width = ax_right - ax_left
+    ax_height = ax_top - ax_bottom
+    if kw.cbar_pos == 'bottom':
+        orientation = 'horizontal'
+        cbar_height = kw.cbar_thick/fig_height_inches
+        cbar_width = cbar_height/kw.cbar_aspect*fig_aspect
+        if cbar_width > ax_width: # don't let cbar be thicker than plot!
+            cbar_width = ax_width
+
+        # centrally position colorbar underneath the axes
+        label_buff = 3/8/fig_height_inches # needs to contain
+        # the colorbar ticklabels and little buffer space
+        lilbit = 1/16/fig_height_inches
+        cbar_left = ax_left + 0.5*ax_width - 0.5*cbar_width
+        cbar_bottom = ax_bottom - lilbit - cbar_height -\
+                (kw.cbar_no - 1)*(label_buff + cbar_height)
+    elif kw.cbar_pos == 'right':
+        orientation = 'vertical'
+        cbar_width = kw.cbar_thick/fig_width_inches
+        cbar_height = cbar_width/kw.cbar_aspect/fig_aspect
+        if cbar_height > ax_height: 
+            cbar_height = ax_height
+
+        # centrally position colorbar to right of axes
+        label_buff = 3/4/fig_width_inches # needs to contain
+        # the colorbar ticklabels and little buffer space
+        lilbit = 1/16/fig_width_inches
+        cbar_bottom = ax_bottom + 0.5*ax_height - 0.5*cbar_height
+        cbar_left = ax_right + lilbit + (kw.cbar_no - 1)*(label_buff + cbar_width)
+    cax = fig.add_axes((cbar_left, cbar_bottom, cbar_width, cbar_height))
+    cbar = plt.colorbar(im, cax=cax, orientation=orientation)
+        
+    # font size for the tick labels
+    cax.tick_params(labelsize=kw.cbar_fs)
+    #cbar.ax.tick_params(labelsize=fontsize)   
+
+    if kw.nosci:
+        cbar_label = kw.units
+    else:
+        cbar_label = (r'$\times10^{%i}\ $' %kw.exp) + kw.units
+    # ticklabel format
+    fmt = '%.' + str(kw.cbar_prec) + 'f'
+    if kw.posdef:
+        tickvals = [kw.minmax[0], kw.minmax[1]]
+    else:
+        tickvals = [kw.minmax[0], 0, kw.minmax[1]]
+    ticklabels = []
+    for tickval in tickvals:
+        ticklabels.append(fmt %tickval)
+    cbar.set_ticks(tickvals)
+    cbar.set_ticklabels(ticklabels)
+    if kw.cbar_pos == 'bottom':
+        fig.text(cbar_left + cbar_width + lilbit*fig_aspect,\
+                cbar_bottom + 0.5*cbar_height, cbar_label,\
+                ha='left', va='center', fontsize=kw.fontsize) 
+    elif kw.cbar_pos == 'right':
+        #fig.text(cbar_left + cbar_width + lilbit/fig_aspect,\
+        #        cbar_bottom + 0.5*cbar_height, cbar_label,\
+        #        ha='left', va='center', fontsize=kw.fontsize) 
+        cax.set_title(cbar_label, ha='left', fontsize=kw.fontsize)
+
 contourf_minmax_kwargs_default = dict({'posdef': False, 'logscale': False, 'symlog': False, 'fullrange': False, 'fullrange2': False, 'buff_ignore1': buff_frac, 'buff_ignore2': buff_frac}) 
 def contourf_minmax(field, **kwargs):
     # Get good boundaries to saturate array [field], assuming either
@@ -522,23 +594,24 @@ def contourf_minmax(field, **kwargs):
     return minmax
 
 my_contourf_kwargs_default = dict({
-        # saturation of field values stuff
-        'minmax': None,\
         # basic flags:
          'plotfield': True,\
         'plotcontours': True, 'ncontours': 8, 'contourlevels': None, 'contourstyles': '--', 'contourcolors': 'k', 'contourwidths': default_lw,\
-        # colorbar stuff
-        'plotcbar': True, 'cbar_thick': 1/16, 'cbar_aspect': 1/20, 'cbar_prec': 2, 'cbar_no': 1, 'cbar_pos': 'bottom', 'cmap': None, 'norm': None, 'units': '', 'nosci': False, 'fontsize': default_labelsize,\
+        # additional colorbar stuff
+        'plotcbar': True, 'cmap': None, 'norm': None, 'units': '',         
         # only need this for time-lat plots or such, since need ticks there
         'allticksoff': True,\
         # symlog stuff (again)
         'linthresh': None, 'linscale': None})
-# color map stuff: symlog, logscale, posdef, etc.
+
+# color map stuff: symlog, logscale, posdef, are here:
 my_contourf_kwargs_default.update(contourf_minmax_kwargs_default)
+my_contourf_kwargs_default.update(add_cbar_kwargs_default)
 
 def my_contourf(xx, yy, field, fig, ax, **kwargs):
     kw = update_dict(my_contourf_kwargs_default, kwargs)
     kw_contourf_minmax = update_dict(contourf_minmax_kwargs_default, kwargs)
+    kw_add_cbar = update_dict(add_cbar_kwargs_default, kwargs)
     find_bad_keys(my_contourf_kwargs_default, kwargs, 'my_contourf')
 
     # make sure Python does not modify any of the arrays it was passed
@@ -546,17 +619,17 @@ def my_contourf(xx, yy, field, fig, ax, **kwargs):
 
     # get default bounds if not specified
     if kw.minmax is None:
-        kw.minmax = contourf_minmax(field, **kw_contourf_minmax)
+        kw.minmax = kw_add_cbar.minmax = contourf_minmax(field, **kw_contourf_minmax)
 
     # plot the field, maybe
     # Factor out the exponent on the field and put it on the color bar
     # can turn this behavior off with "nosci=True"
     if not kw.nosci:
         maxabs = max(np.abs(kw.minmax[0]), np.abs(kw.minmax[1]))
-        exp = get_exp(maxabs)
-        divisor = 10.0**exp
+        kw_add_cbar.exp = get_exp(maxabs)
+        divisor = 10.0**kw_add_cbar.exp
         field /= divisor
-        kw.minmax = kw.minmax[0]/divisor, kw.minmax[1]/divisor
+        kw.minmax = kw_add_cbar.minmax = kw.minmax[0]/divisor, kw.minmax[1]/divisor
 
     # Saturate the array (otherwise contourf will show white areas)
     saturate_array(field, kw.minmax[0], kw.minmax[1])
@@ -599,72 +672,7 @@ def my_contourf(xx, yy, field, fig, ax, **kwargs):
 
     # now deal with color bar, if one is desired
     if kw.plotfield and kw.plotcbar:
-        # get fig dimensions
-        fig_width_inches, fig_height_inches = fig.get_size_inches()
-        fig_aspect = fig_height_inches/fig_width_inches
-        # get ax dimensions
-        ax_left, ax_right, ax_bottom, ax_top = axis_range(ax)
-        ax_width = ax_right - ax_left
-        ax_height = ax_top - ax_bottom
-        if kw.cbar_pos == 'bottom':
-            orientation = 'horizontal'
-            cbar_height = kw.cbar_thick/fig_height_inches
-            cbar_width = cbar_height/kw.cbar_aspect*fig_aspect
-            if cbar_width > ax_width: # don't let cbar be thicker than plot!
-                cbar_width = ax_width
-
-            # centrally position colorbar underneath the axes
-            label_buff = 3/8/fig_height_inches # needs to contain
-            # the colorbar ticklabels and little buffer space
-            lilbit = 1/16/fig_height_inches
-            cbar_left = ax_left + 0.5*ax_width - 0.5*cbar_width
-            cbar_bottom = ax_bottom - lilbit - cbar_height -\
-                    (kw.cbar_no - 1)*(label_buff + cbar_height)
-        elif kw.cbar_pos == 'right':
-            orientation = 'vertical'
-            cbar_width = kw.cbar_thick/fig_width_inches
-            cbar_height = cbar_width/kw.cbar_aspect/fig_aspect
-            if cbar_height > ax_height: 
-                cbar_height = ax_height
-
-            # centrally position colorbar to right of axes
-            label_buff = 3/4/fig_width_inches # needs to contain
-            # the colorbar ticklabels and little buffer space
-            lilbit = 1/16/fig_width_inches
-            cbar_bottom = ax_bottom + 0.5*ax_height - 0.5*cbar_height
-            cbar_left = ax_right + lilbit + (kw.cbar_no - 1)*(label_buff + cbar_width)
-        cax = fig.add_axes((cbar_left, cbar_bottom, cbar_width,\
-                cbar_height))        
-        cbar = plt.colorbar(im, cax=cax, orientation=orientation)
-            
-        # font size for the tick labels
-        cax.tick_params(labelsize=kw.fontsize)
-        #cbar.ax.tick_params(labelsize=fontsize)   
-
-        if kw.nosci:
-            cbar_label = kw.units
-        else:
-            cbar_label = (r'$\times10^{%i}\ $' %exp) + kw.units
-        # ticklabel format
-        fmt = '%.' + str(kw.cbar_prec) + 'f'
-        if kw.posdef:
-            tickvals = [kw.minmax[0], kw.minmax[1]]
-        else:
-            tickvals = [kw.minmax[0], 0, kw.minmax[1]]
-        ticklabels = []
-        for tickval in tickvals:
-            ticklabels.append(fmt %tickval)
-        cbar.set_ticks(tickvals)
-        cbar.set_ticklabels(ticklabels)
-        if kw.cbar_pos == 'bottom':
-            fig.text(cbar_left + cbar_width + lilbit*fig_aspect,\
-                    cbar_bottom + 0.5*cbar_height, cbar_label,\
-                    ha='left', va='center', fontsize=kw.fontsize) 
-        elif kw.cbar_pos == 'right':
-            #fig.text(cbar_left + cbar_width + lilbit/fig_aspect,\
-            #        cbar_bottom + 0.5*cbar_height, cbar_label,\
-            #        ha='left', va='center', fontsize=kw.fontsize) 
-            cax.set_title(cbar_label, ha='left', fontsize=kw.fontsize)
+        add_cbar(fig, ax, im, **kw_add_cbar)
 
     # Plot contours if desired
     if kw.plotcontours:
