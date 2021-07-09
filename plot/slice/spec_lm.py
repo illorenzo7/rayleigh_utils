@@ -99,6 +99,38 @@ for varname in kw.varnames:
         ax = axs[0, 0]
         plot_moll(field, a.costheta, fig, ax, **kw_plot_moll)
 
+    plt.sca(ax)
+    # set bounds
+#    plt.xlim(0.5, nell - 0.5)
+#    plt.ylim(0.5, nm - 0.5)
+
+    # label axes
+    plt.xlabel(r'${\rm{spherical\ harmonic\ degree}}\ \ell$', fontsize=kw.fontsize)
+    plt.ylabel(r'${\rm{azimuthal\ order}}\ m$', fontsize=kw.fontsize)
+
+    # Get ticks everywhere
+    plt.minorticks_on()
+    plt.tick_params(top=True, right=True, direction='in', which='both')
+
+    # Make title
+    # Compute l_rms and m_rms
+    l_rms = np.sum(field*lvals_2d)/np.sum(field)
+    m_rms = np.sum(field*mvals_2d)/np.sum(field)
+
+    # Make title
+    title = dirname_stripped +\
+        '\n' + r'$\rm{specav\_lm}$' + '     '  + time_string +\
+        '\n' + varlabel + '     ' + (r'$r/R_\odot\ =\ %0.3f$' %rval) +\
+        '\n' + (r'$\ell_{\rm{rms}} = %.1f$' %l_rms) + '     ' +\
+        (r'$m_{\rm{rms}} = %.1f$' %m_rms)
+    fig.text(ax_center_x, ax_ymax + 0.02*ax_delta_y, title,\
+         verticalalignment='bottom', horizontalalignment='center',\
+         fontsize=fs, **csfont)   
+
+    plt.savefig(plotdir + savename, dpi=300)
+    if showplot:
+        plt.show()
+    plt.close()
         # make title
         time_string = get_time_string(dirname, a.iters[0])
         varlabel = get_label(varname)

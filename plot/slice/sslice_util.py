@@ -435,5 +435,3 @@ def plot_ortho(field_orig, radius, costheta, fig=None, ax=None, ir=0,\
         plt.show()
     del field # free up memory
     return im
-
-
