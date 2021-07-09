@@ -55,7 +55,7 @@ if not kw.rvals is None: # irvals haven't been set directly
             kw.irvals[i] = np.argmin(np.abs(a.radius/rsun - kw.rvals[i]))
 
 # get the vars we want
-if kw.varnames == np.array(['all']): # remember varnames is an array now
+if np.all(kw.varnames == 'all'): # remember varnames is an array now
     kw.varnames = get_default_varnames(dirname)
 
 # plot dimensions
