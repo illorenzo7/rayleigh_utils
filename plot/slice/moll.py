@@ -7,7 +7,7 @@ sys.path.append(os.environ['rapl'])
 from common import *
 from plotcommon import *
 from cla_util import *
-from sslice_util import *
+from slice_util import *
 from rayleigh_diagnostics import Shell_Slices
 #from get_slice import get_slice, get_label
 
