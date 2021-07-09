@@ -107,6 +107,8 @@ def get_file_lists_all(radatadir):
     
     return file_list, int_file_list, nfiles
 
+range_options = ['--range', '--centerrange', '--leftrange', '--rightrange', '--iter', '--n', '--f', '--all']
+
 def get_desired_range(int_file_list, args):
     nargs = len(args)
     nfiles = len(int_file_list)
