@@ -50,7 +50,7 @@ def read_clas_raw(args): # avoid get_parameter stuff
             key = arg[2:]
             clas[key] = read_cla_vals(args, i)
 
-    return clas0, clas
+    return dotdict(clas0), dotdict(clas)
 
 def read_clas(args):
     # first get basic info
@@ -160,4 +160,4 @@ def read_clas(args):
             key = arg[2:]
             clas[key] = read_cla_vals(args, i)
 
-    return clas0, clas
+    return dotdict(clas0), dotdict(clas)

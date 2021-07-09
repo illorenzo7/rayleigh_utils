@@ -1227,7 +1227,7 @@ def get_time_unit(dirname):
         simple_label = 'TDT'
     return time_unit, time_label, rotation, simple_label
 
-def get_time_string(dirname, iter1, iter2=None):
+def get_time_string(dirname, iter1, iter2=None, oneline=False):
     # Get the time range in sec
     t1 = translate_times(iter1, dirname, translate_from='iter')['val_sec']
     if not iter2 == None:
@@ -1243,7 +1243,10 @@ def get_time_string(dirname, iter1, iter2=None):
         fmt = '%.3f'
 
     if not iter2 is None:
-        time_string = (('t = ' + fmt + ' to ' + fmt) %(t1/time_unit, t2/time_unit)) + ' ' + time_label + '\n' + r'$\Delta t$' + ' = ' + (fmt %((t2 - t1)/time_unit)) + ' ' + time_label
+        if oneline:
+            time_string = (('t = ' + fmt + ' to ' + fmt) %(t1/time_unit, t2/time_unit)) + ' ' + time_label + ' ' + r'$(\Delta t$' + ' = ' + (fmt %((t2 - t1)/time_unit)) + ' ' + time_label + ')'
+        else:
+            time_string = (('t = ' + fmt + ' to ' + fmt) %(t1/time_unit, t2/time_unit)) + ' ' + time_label + '\n' + r'$\Delta t$' + ' = ' + (fmt %((t2 - t1)/time_unit)) + ' ' + time_label
     else:
         time_string = (('t = ' + fmt + ' ') %(t1/time_unit)) + time_label
 
