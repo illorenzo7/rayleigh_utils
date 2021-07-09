@@ -101,22 +101,24 @@ if plotdir is None:
         os.makedirs(plotdir)
 
 # directory for plots 
-plotdir = dirname + '/plots/specav_lm/rvals_sample' + tag + '/'
+plotdir = dirname + '/plots/specav_lm/'
 
 if not os.path.isdir(plotdir):
     os.makedirs(plotdir)
 
 # Read in spec data
+if kw.the_file is None:
+    kw.the_file = get_widest_range_file(clas0['datadir'], 'Shell_Spectra')
 print ('Reading Shell_Spectra data from '+ the_file)
 di = get_dict(the_file)
-rvals = di['rvals']/rsun
+vals = di['vals']
 qv = di['qv']
 lut = di['lut']
-nr = di['nr']
-lvals = di['lvals']
-mvals = di['mvals']
-nell = di['nell']
-nm = di['nm']
+
+nell, nm, nr = np.shape(vals[:, :, :, 0])
+lvals = np.arange(nell)
+mvals = np.arange(nm)
+rvals = di['rvals']
 
 # Get time interval associated with averaging
 iter1, iter2 = di['iter1'], di['iter2']
