@@ -27,7 +27,10 @@ kwargs_default = dotdict(dict({'the_file': None, 'plottype': 'moll', 'av': False
 # this guy need to update right away to choose fig dimensions
 if 'plottype' in clas:
     kwargs_default.plottype = clas.plottype
-   
+
+print (buff_line)
+print ("PLOT TYPE: " + kwargs_default.plottype)
+
 if kwargs_default.plottype == 'moll':
     fig_dimensions = moll_fig_dimensions
     plotting_func = plot_moll 
@@ -163,3 +166,4 @@ for fname in file_list:
                 print ("displaying " + savename[:-4])
                 plt.show()   
             plt.close()
+print (buff_line)
