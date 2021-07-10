@@ -173,7 +173,7 @@ def plot_moll(field_orig, costheta, fig, ax, **kwargs):
         ax.plot(xvals, yvals, 'k', linewidth=1.5*kw.linewidth)
 
 # routine for (l, m) 2D spectra
-plot_spec_lm_kwargs_default = dict({'lvals': None, 'mvals': None, 'linewidth': default_lw, 'minmax': None, 'lminmax': None, 'mminmax': None,\
+plot_spec_lm_kwargs_default = dict({'lvals': None, 'mvals': None, 'linewidth': default_lw, 'minmax': None, 'lminmax': None, 'lmin': None, 'lmax': None, 'mminmax': None, 'mmin': None, 'mmax': None,
     # more cbar stuff
     'plotcbar': True, 'cmap': None, 'norm': None, 'linear': False, 'units': '', 'fontsize': default_labelsize})
 plot_spec_lm_kwargs_default.update(add_cbar_kwargs_default)
@@ -191,17 +191,28 @@ def plot_spec_lm(field, fig, ax, **kwargs):
     lvals_all = np.arange(nell)
     mvals_all = np.arange(nm)
 
+    # by default plot whole spectrum
+    il1, il2 = 0, nell - 1
+    im1, im2 = 0, nm - 1
     if not kw.lminmax is None:
         il1 = np.argmin(np.abs(lvals_all - kw.lminmax[0]))
         il2 = np.argmin(np.abs(lvals_all - kw.lminmax[1]))
-    else:
-        il1, il2 = 0, nell - 1
+    if not kw.lmin is None:
+        il1 = np.argmin(np.abs(lvals_all - kw.lmin))
+    if not kw.lmax is None:
+        il2 = np.argmin(np.abs(lvals_all - kw.lmax))
 
     if not kw.mminmax is None:
         im1 = np.argmin(np.abs(mvals_all - kw.mminmax[0]))
         im2 = np.argmin(np.abs(mvals_all - kw.mminmax[1]))
-    else:
-        im1, im2 = 0, nm - 1
+    if not kw.mmin is None:
+        il1 = np.argmin(np.abs(lvals_all - kw.mmin))
+    if not kw.mmax is None:
+        il2 = np.argmin(np.abs(lvals_all - kw.mmax))
+
+    # at end of the day, can't have m > l
+    if im2 > il2:
+        im2 = il2
 
     # now adjust everything by the (l, m) range we want
     lvals = lvals_all[il1:il2+1]
