@@ -179,7 +179,7 @@ plot_spec_lm_kwargs_default = dict({'lvals': None, 'mvals': None, 'linewidth': d
 plot_spec_lm_kwargs_default.update(add_cbar_kwargs_default)
 
 def plot_spec_lm(field, fig, ax, **kwargs):
-    kw = update_dict(my_contourf_kwargs_default, kwargs)
+    kw = update_dict(plot_spec_lm_kwargs_default, kwargs)
     kw_add_cbar = update_dict(add_cbar_kwargs_default, kwargs)
     find_bad_keys(plot_spec_lm_kwargs_default, kwargs, 'plot_spec_lm')
 
@@ -240,3 +240,17 @@ def plot_spec_lm(field, fig, ax, **kwargs):
     # now deal with color bar, if one is desired
     if kw.plotcbar:
         add_cbar(fig, ax, im, **kw_add_cbar)
+
+    plt.sca(ax)
+    # set bounds
+#    plt.xlim(0.5, nell - 0.5)
+#    plt.ylim(0.5, nm - 0.5)
+
+    # label axes
+    plt.xlabel(r'${\rm{spherical\ harmonic\ degree}}\ \ell$', fontsize=kw.fontsize)
+    plt.ylabel(r'${\rm{azimuthal\ order}}\ m$', fontsize=kw.fontsize)
+
+    # Get ticks everywhere
+    plt.minorticks_on()
+    plt.tick_params(top=True, right=True, direction='in', which='both')
+

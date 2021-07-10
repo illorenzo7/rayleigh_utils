@@ -23,21 +23,24 @@ moll_fig_dimensions = dict({'sub_width_inches': 6, 'sub_aspect': 1/2, 'sub_margi
 spec_lm_fig_dimensions = dict({'sub_width_inches': 6, 'sub_aspect': 1, 'sub_margin_left_inches': default_margin_ylabel, 'sub_margin_top_inches': 1/2, 'sub_margin_bottom_inches': 1/2, 'sub_margin_right_inches': 7/8, 'margin_top_inches': 1/4})
 
 # SPECIFIC ARGS
-kwargs_default = dotdict(dict({'the_file': None, 'plottype': 'moll', 'av': False, 'val_iter': int(1e9), 'irvals': np.array([0]), 'rvals': None, 'varnames': np.array(['vr'])}))
+kwargs_default = dotdict(dict({'the_file': None, 'av': False, 'val_iter': int(1e9), 'irvals': np.array([0]), 'rvals': None, 'varnames': np.array(['vr'])}))
 # this guy need to update right away to choose fig dimensions
 if 'type' in clas:
-    kwargs_default.plottype = clas.type
+    plottype = clas.type
+    del clas.type
+else:
+    plottype = 'moll', 
 
 print (buff_line)
-print ("PLOT TYPE: " + kwargs_default.plottype)
+print ("PLOT TYPE: " + plottype)
 
-if kwargs_default.plottype == 'moll':
+if plottype == 'moll':
     fig_dimensions = moll_fig_dimensions
     plotting_func = plot_moll 
     plotting_func_kwargs_default = plot_moll_kwargs_default
     dataname = 'Shell_Slices'
     reading_func = Shell_Slices
-if kwargs_default.plottype == 'speclm':
+if plottype == 'speclm':
     fig_dimensions = spec_lm_fig_dimensions
     plotting_func = plot_spec_lm
     plotting_func_kwargs_default = plot_spec_lm_kwargs_default
@@ -60,7 +63,7 @@ kw.rvals = make_array(kw.rvals)
 kw.varnames = make_array(kw.varnames)
 
 # make plot directory if nonexistent
-basename = kw.plottype
+basename = plottype
 if kw.av:
     basename += 'av'
 plotdir = my_mkdir(clas0['plotdir'] + basename + '/')
@@ -136,15 +139,15 @@ for fname in file_list:
             if kw.av:
                 savename = basename + '_' + str(iter1).zfill(8) + '_' + str(iter1).zfill(8)
             else:
-                savename = basename + str(a.iters[0]).zfill(8)
+                savename = basename + '_' + str(a.iters[0]).zfill(8)
             savename += ('_' + varname + ('_rval%0.3f' %rval) + '.png')
 
             # make plot
             fig, axs, fpar = make_figure(**kw_make_figure)
             ax = axs[0, 0]
-            if kw.plottype == 'moll':
+            if plottype == 'moll':
                 plotting_args = field, a.costheta, fig, ax
-            if kw.plottype == 'speclm':
+            if plottype == 'speclm':
                 plotting_args = field, fig, ax
                 kw_plotting_func.cbar_pos = 'right'
 
@@ -157,9 +160,9 @@ for fname in file_list:
                 time_string = get_time_string(dirname, a.iters[0])
             varlabel = get_label(varname)
 
-            if kw.plottype == 'moll':
+            if plottype == 'moll':
                 slice_info = varlabel + 5*' ' + (r'$r/R_\odot\ =\ %0.3f$' %rval) + 5*' ' + ('clon = %4.0f' %kw.clon)
-            if kw.plottype == 'speclm':
+            if plottype == 'speclm':
                 slice_info = varlabel + 5*' ' + (r'$r/R_\odot\ =\ %0.3f$' %rval)
 
             title = dirname_stripped + '\n' + slice_info + '\n' + time_string
