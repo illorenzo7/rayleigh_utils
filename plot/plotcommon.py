@@ -474,7 +474,7 @@ def lineplot(xx, profiles, ax, **kwargs):
     if kw.plotleg:
         ax.legend(loc='lower left', ncol=3, fontsize=0.8*default_labelsize)
 
-add_cbar_kwargs_default = dict({'minmax': None, 'cbar_thick': 1/16, 'cbar_aspect': 1/20, 'cbar_prec': 2, 'cbar_no': 1, 'cbar_pos': 'bottom', 'units': '', 'nosci': False, 'cbar_fs': default_labelsize, 'exp': 0})
+add_cbar_kwargs_default = dict({'minmax': None, 'cbar_thick': 1/8, 'cbar_aspect': 1/20, 'cbar_prec': 2, 'cbar_no': 1, 'cbar_pos': 'bottom', 'units': '', 'nosci': False, 'cbar_fs': default_labelsize, 'exp': 0, 'logscale': False})
 def add_cbar(fig, ax, im, **kwargs):
     # deal with kwargs
     kw = update_dict(add_cbar_kwargs_default, kwargs)
@@ -491,8 +491,8 @@ def add_cbar(fig, ax, im, **kwargs):
         orientation = 'horizontal'
         cbar_height = kw.cbar_thick/fig_height_inches
         cbar_width = cbar_height/kw.cbar_aspect*fig_aspect
-        if cbar_width > ax_width: # don't let cbar be thicker than plot!
-            cbar_width = ax_width
+        if cbar_width > 0.75*ax_width: # don't let cbar be thicker than plot!
+            cbar_width = 0.75*ax_width
 
         # centrally position colorbar underneath the axes
         label_buff = 3/8/fig_height_inches # needs to contain
@@ -505,8 +505,8 @@ def add_cbar(fig, ax, im, **kwargs):
         orientation = 'vertical'
         cbar_width = kw.cbar_thick/fig_width_inches
         cbar_height = cbar_width/kw.cbar_aspect/fig_aspect
-        if cbar_height > ax_height: 
-            cbar_height = ax_height
+        if cbar_height > 0.75*ax_height: 
+            cbar_height = 0.75*ax_height
 
         # centrally position colorbar to right of axes
         label_buff = 3/4/fig_width_inches # needs to contain
@@ -527,10 +527,7 @@ def add_cbar(fig, ax, im, **kwargs):
         cbar_label = (r'$\times10^{%i}\ $' %kw.exp) + kw.units
 
     # ticklabel format
-    if kw.logscale:
-        locator = ticker.LogLocator(subs='all')
-        cbar.set_ticks(locator)
-    else:
+    if not kw.logscale:
         fmt = '%.' + str(kw.cbar_prec) + 'f'
         if kw.posdef:
             tickvals = [kw.minmax[0], kw.minmax[1]]
@@ -553,6 +550,7 @@ def add_cbar(fig, ax, im, **kwargs):
         cax.set_title(cbar_label, ha='left', fontsize=kw.fontsize)
 
 contourf_minmax_kwargs_default = dict({'posdef': False, 'logscale': False, 'symlog': False, 'fullrange': False, 'fullrange2': False, 'buff_ignore1': buff_frac, 'buff_ignore2': buff_frac}) 
+
 def contourf_minmax(field, **kwargs):
     # Get good boundaries to saturate array [field], assuming either
     # posdef (True or False) and/or logscale (True or False)

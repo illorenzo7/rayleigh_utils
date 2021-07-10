@@ -25,8 +25,8 @@ spec_lm_fig_dimensions = dict({'sub_width_inches': 6, 'sub_aspect': 1, 'sub_marg
 # SPECIFIC ARGS
 kwargs_default = dotdict(dict({'the_file': None, 'plottype': 'moll', 'av': False, 'val_iter': int(1e9), 'irvals': np.array([0]), 'rvals': None, 'varnames': np.array(['vr'])}))
 # this guy need to update right away to choose fig dimensions
-if 'plottype' in clas:
-    kwargs_default.plottype = clas.plottype
+if 'type' in clas:
+    kwargs_default.plottype = clas.type
 
 print (buff_line)
 print ("PLOT TYPE: " + kwargs_default.plottype)
@@ -38,7 +38,7 @@ if kwargs_default.plottype == 'moll':
     dataname = 'Shell_Slices'
     reading_func = Shell_Slices
 if kwargs_default.plottype == 'speclm':
-    fig_dimensions = spec_fig_dimensions
+    fig_dimensions = spec_lm_fig_dimensions
     plotting_func = plot_spec_lm
     plotting_func_kwargs_default = plot_spec_lm_kwargs_default
     dataname = 'Shell_Spectra'
@@ -125,6 +125,9 @@ for fname in file_list:
     for varname in kw.varnames:
         # get the desired field variable
         vals = get_slice(a, varname, dirname=dirname)
+        if not kw.av:
+            vals = np.abs(vals)**2
+
         for irval in kw.irvals:
             field = vals[:, :, irval]
             rval = a.radius[irval]/rsun 
@@ -143,6 +146,8 @@ for fname in file_list:
                 plotting_args = field, a.costheta, fig, ax
             if kw.plottype == 'speclm':
                 plotting_args = field, fig, ax
+                kw_plotting_func.cbar_pos = 'right'
+
             plotting_func(*plotting_args, **kw_plotting_func)
 
             # make title
@@ -152,9 +157,12 @@ for fname in file_list:
                 time_string = get_time_string(dirname, a.iters[0])
             varlabel = get_label(varname)
 
-            title = dirname_stripped + '\n' +\
-                varlabel + 5*' ' + (r'$r/R_\odot\ =\ %0.3f$' %rval) + 5*' ' + ('clon = %4.0f' %kw.clon) + '\n' +\
-                time_string
+            if kw.plottype == 'moll':
+                slice_info = varlabel + 5*' ' + (r'$r/R_\odot\ =\ %0.3f$' %rval) + 5*' ' + ('clon = %4.0f' %kw.clon)
+            if kw.plottype == 'speclm':
+                slice_info = varlabel + 5*' ' + (r'$r/R_\odot\ =\ %0.3f$' %rval)
+
+            title = dirname_stripped + '\n' + slice_info + '\n' + time_string
             ax.set_title(title, va='bottom', fontsize=default_titlesize)
 
             # save by default
