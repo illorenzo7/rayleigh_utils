@@ -100,7 +100,7 @@ else:
 # get the rvals we want
 if not kw.rvals is None: # irvals haven't been set directly
     if np.all(kw.rvals == 'all'):
-        kw.irvals = np.arange(a.nr)
+        kw.irvals = np.arange(a0.nr)
     else:
         kw.irvals = np.zeros_like(kw.rvals, dtype='int')
         for i in range(len(kw.rvals)):
@@ -137,7 +137,7 @@ for fname in file_list:
 
             # Display at terminal what we are plotting
             if kw.av:
-                savename = basename + '_' + str(iter1).zfill(8) + '_' + str(iter1).zfill(8)
+                savename = basename + '_' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8)
             else:
                 savename = basename + '_' + str(a.iters[0]).zfill(8)
             savename += ('_' + varname + ('_rval%0.3f' %rval) + '.png')
