@@ -114,13 +114,13 @@ if rank == 0:
     # Distribute file_list and my_ntimes to each process
     for k in range(nproc - 1, -1, -1):
         # distribute the partial file list to other procs 
-        if k >= nproc_min: # last processes analyzes more files
+        if k < nproc_max: # first processes analyzes more files
             my_nfiles = np.copy(n_per_proc_max)
-            istart = nproc_min*n_per_proc_min + (k - nproc_min)*my_nfiles
-            iend = istart + my_nfiles
-        else: # first processes analyze fewer files
-            my_nfiles = np.copy(n_per_proc_min)
             istart = k*my_nfiles
+            iend = istart + my_nfiles
+        else: # last processes analyze fewer files
+            my_nfiles = np.copy(n_per_proc_min)
+            istart = nproc_max*n_per_proc_max + (k - nproc_max)*my_nfiles
             iend = istart + my_nfiles
 
         # Get the file list portion for rank k

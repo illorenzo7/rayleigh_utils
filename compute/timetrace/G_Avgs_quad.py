@@ -67,8 +67,8 @@ if rank == 0:
 if rank == 0:
     # read the arguments
     args = sys.argv
-    clas = read_clas(args)
-    dirname = clas['dirname']
+    clas0, clas = read_clas(args)
+    dirname = clas0['dirname']
 
     # Get the Rayleigh data directory
     radatadir = dirname + '/' + dataname + '/'
@@ -98,19 +98,19 @@ if rank == 0:
     # the domain bounds in radius and
     # [-45, 0, 45] in latitude
 
-    latvals = clas['latvals']
-    if latvals is None:
+    if 'latvals' in clas:
+        latvals = clas['latvals']
+    else:
         latvals = [-45., 0., 45.]
 
-    rvals = clas['rvals']
-    if rvals is None:
-        rvals = [] # by default don't separate domain in radius...
+    if 'rvals' in clas:
+        rvals = clas['rvals']
     else:
-        rvals = rvals.tolist()
+        rvals = [] # by default don't separate domain in radius...
 
     ncheby, domain_bounds = get_domain_bounds(dirname)
     domain_bounds = np.array(domain_bounds)/rsun # normalize by rsun
-    ri, ro = domain_bounds[0], domain_bounds[1]
+    ri, ro = domain_bounds[0], domain_bounds[-1]
     ndomains = len(ncheby)
     if rvals == [] and ndomains > 1: # 
         rvals = list(domain_bounds[1:-1][::-1])
@@ -163,13 +163,13 @@ if rank == 0:
     # Distribute file_list to each process
     for k in range(nproc - 1, -1, -1):
         # distribute the partial file list to other procs 
-        if k >= nproc_min: # last processes analyzes more files
+        if k < nproc_max: # first processes analyzes more files
             my_nfiles = np.copy(n_per_proc_max)
-            istart = nproc_min*n_per_proc_min + (k - nproc_min)*my_nfiles
-            iend = istart + my_nfiles
-        else: # first processes analyze fewer files
-            my_nfiles = np.copy(n_per_proc_min)
             istart = k*my_nfiles
+            iend = istart + my_nfiles
+        else: # last processes analyze fewer files
+            my_nfiles = np.copy(n_per_proc_min)
+            istart = nproc_max*n_per_proc_max + (k - nproc_max)*my_nfiles
             iend = istart + my_nfiles
 
         # Get the file list portion for rank k
