@@ -27,6 +27,8 @@ kwargs_default.update(lineplot_kwargs_default)
 kw = update_dict(kwargs_default, clas)
 kw_make_figure = update_dict(make_figure_kwargs_default, clas)
 kw_lineplot = update_dict(lineplot_kwargs_default, clas)
+
+print ("kw = ", kw_lineplot)
 if not kw.xcut is None: # make room for label on right
     kw_make_figure.sub_margin_right_inches = default_margin_xlabel
 if kw.mark_bcz: # make room for the bcz label

@@ -1,121 +1,49 @@
 # Author: Loren Matilsky
 # Created: 10/31/2019
-# This script generates the spherically averaged convective Reynolds 
-# number (Re), plotted along radial lines for
-# the Rayleigh run directory indicated by [dirname]. 
-# Computes contributions from v_r, v_theta, and v_phi separately 
-# To use  time-averaged 
-# AZ_Avgs file different than the one associated with the longest averaging 
-# range, use -usefile [complete name of desired vavg file]
-# Saves plot in
-# [dirname]_Re_rslice_[first iter]_[last iter].png
 
 # Import relevant modules
 import numpy as np
-import matplotlib as mpl
-mpl.use('TkAgg')
 import matplotlib.pyplot as plt
-plt.rcParams['mathtext.fontset'] = 'dejavuserif'
-csfont = {'fontname':'DejaVu Serif'}
 import sys, os
-sys.path.append(os.environ['rapp'])
+sys.path.append(os.environ['rapl'])
 sys.path.append(os.environ['raco'])
 from common import *
+from plotcommon import *
+from cla_util import *
 
-# Get directory name and stripped_dirname for plotting purposes
-dirname = sys.argv[1]
+# Get CLAs
+args = sys.argv
+clas0, clas = read_clas(args)
+dirname = clas0['dirname']
 dirname_stripped = strip_dirname(dirname)
 
-# domain bounds
-ncheby, domain_bounds = get_domain_bounds(dirname)
-ri = np.min(domain_bounds)
-ro = np.max(domain_bounds)
-d = ro - ri
+# allowed args + defaults
+kwargs_default = dict({'the_file': None, 'mark_bcz': False})
+kwargs_default.update(make_figure_kwargs_default)
+kwargs_default.update(lineplot_kwargs_default)
+kw = update_dict(kwargs_default, clas)
+kw_make_figure = update_dict(make_figure_kwargs_default, clas)
+kw_lineplot = update_dict(lineplot_kwargs_default, clas)
+if not kw.xcut is None: # make room for label on right
+    kw_make_figure.sub_margin_right_inches = default_margin_xlabel
+if kw.mark_bcz: # make room for the bcz label
+    kw_make_figure.margin_top_inches += default_line_height
+find_bad_keys(kwargs_default, clas, clas0['routinename'], justwarn=True)
 
-# get rho
-eq = get_eq(dirname)
-rho = eq.density
-
-# Directory with data and plots, make the plotting directory if it doesn't
-# already exist    
-datadir = dirname + '/data/'
-plotdir = dirname + '/plots/'
-if not os.path.isdir(plotdir):
-    os.makedirs(plotdir)
-
-# Set defaults
-rnorm = None
-minmax = None
-logscale = False
-rvals = [] # user can specify radii to mark by vertical lines
-tag = ''
-use_hrho = False
-the_file = get_widest_range_file(datadir, 'Shell_Avgs')
-
-# Read command-line arguments (CLAs)
-args = sys.argv[2:]
-nargs = len(args)
-for i in range(nargs):
-    arg = args[i]
-    if arg == '-usefile':
-        the_file = args[i+1]
-        the_file = the_file.split('/')[-1]
-    elif arg == '-rnorm':
-        rnorm = float(args[i+1])
-    elif arg == '-minmax':
-        minmax = float(args[i+1]), float(args[i+2])
-    elif arg == '-log':
-        logscale = True
-    elif arg == '-hrho':
-        use_hrho = True
-    elif arg == '-tag':
-        tag = '_' + args[i+1]
-    elif arg == '-depths':
-        strings = args[i+1].split()
-        for st in strings:
-            rval = ro - float(st)*d
-            rvals.append(rval)
-    elif arg == '-depthscz':
-        rm = domain_bounds[1]
-        dcz = ro - rm
-        strings = args[i+1].split()
-        for st in strings:
-            rval = ro - float(st)*dcz
-            rvals.append(rval)
-    elif arg == '-depthsrz':
-        rm = domain_bounds[1]
-        drz = rm - ri
-        strings = args[i+1].split()
-        for st in strings:
-            rval = rm - float(st)*drz
-            rvals.append(rval)
-    elif arg == '-rvals':
-        rvals = []
-        strings = args[i+1].split()
-        for st in strings:
-            rval = float(st)*rsun
-            rvals.append(rval)
-    elif arg == '-rvalscm':
-        rvals = []
-        strings = args[i+1].split()
-        for st in strings:
-            rval = float(st)
-            rvals.append(rval)
-
-# Read in vavg data
-print ('Reading Shell_Avgs data from ' + the_file + ' ...')
-di = get_dict(the_file)
+# get data and grid
+if kw.the_file is None:
+    kw.the_file = get_widest_range_file(clas0['datadir'], 'Shell_Avgs')
+print ('Getting data from ' + kw.the_file)
+di = get_dict(kw.the_file)
 vals = di['vals']
 lut = di['lut']
-iter1, iter2 = get_iters_from_file(the_file)
 di_grid = get_grid_info(dirname)
 rr = di_grid['rr']
 nr = di_grid['nr']
 
-# Derivative grid info
-nr = len(rr)
-ri, ro = np.min(rr), np.max(rr)
-shell_depth = ro - ri
+# get rho
+eq = get_eq(dirname)
+rho = eq.density
 
 # Convective velocity amplitudes, get these from KE
 frke = vals[:, 0, lut[410]]
@@ -136,88 +64,30 @@ amp_vp = np.sqrt(vsq_p)/100.
 fig = plt.figure()
 ax = fig.add_subplot(111)
 
-# Get extrema values for diff. rot.
-maxes = [] # Get the max-value of Omega for plotting purposes
-mins = []  # ditto for the min-value
-                                               
-# User can specify what to normalize the radius by
-# By default, normalize by the solar radius
-if rnorm is None:
-    rr_n = rr/rsun
-else:
-    rr_n = rr/rnorm                                           
+profiles = [amp_vr, amp_vt, amp_vp, amp_v]
+kw_lineplot.labels = ['r', r'$\theta$', r'$\phi$', 'tot']
 
-# Plot Re vs radius
-ax.plot(rr_n, amp_v, label= r'$(v^\prime)_{\rm{rms}}$')
-ax.plot(rr_n, amp_vr, label= r'$(v^\prime_r)_{\rm{rms}}$')
-ax.plot(rr_n, amp_vt, label = r'$(v^\prime_\theta)_{\rm{rms}}$')
-ax.plot(rr_n, amp_vp, label = r'$(v^\prime_\phi)_{\rm{rms}}$')
+# Create the plot; start with plotting all the energy fluxes
+fig, axs, fpar = make_figure(**kw_make_figure)
+ax = axs[0,0]
 
-# Label the axes
-if rnorm is None:
-    plt.xlabel(r'$r/R_\odot$',fontsize=12, **csfont)
-else:
-    plt.xlabel(r'r/(%.1e cm)' %rnorm, fontsize=12, **csfont)
+# x and y labels
+kw_lineplot.xlabel = r'$r/R_\odot$'
+kw_lineplot.ylabel = 'velocity (m/s)'
+lineplot(rr/rsun, profiles, ax, **kw_lineplot)
 
-plt.ylabel('velocity (m/s)',fontsize=12,\
-        **csfont)
+# make title 
+iter1, iter2 = get_iters_from_file(kw.the_file)
+time_string = get_time_string(dirname, iter1, iter2) 
+the_title = dirname_stripped + '\n' +  'radial energy flux' + '\n' + time_string
+ax.set_title(the_title, fontsize=default_titlesize)
 
-# Set the axis limits
-xmin, xmax = np.min(rr_n), np.max(rr_n)
-plt.xlim((xmin, xmax))
+# save the figure
+plotdir = my_mkdir(clas0['plotdir'])
+savefile = plotdir + clas0['routinename'] + clas0['tag'] + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
 
-# Compute maximum/minimum Reynolds numbers (ignore the upper/lower 5%
-# of the shell to avoid extreme values associated with boundary conditions
-rr_depth = (ro - rr)/shell_depth
-ir1, ir2 = np.argmin(np.abs(rr_depth - 0.05)),\
-        np.argmin(np.abs(rr_depth - 0.95))
-amp_min = min(np.min(amp_vr[ir1:ir2]), np.min(amp_vt[ir1:ir2]),\
-        np.min(amp_vp[ir1:ir2]))
-amp_max = np.max(amp_v[ir1:ir2])
-print (amp_min, amp_max)
-if minmax is None:
-    fact = 0.2
-    if logscale:
-        ratio = amp_max/amp_min
-        ybuffer = ratio**fact
-        ymin = amp_min/ybuffer
-        ymax = amp_max*ybuffer
-        print (ymin, ymax)
-    else:
-        difference = amp_max - amp_min
-        ybuffer = fact*difference
-        ymin, ymax = amp_min - ybuffer, amp_max + ybuffer
-else:
-    ymin, ymax = minmax
-
-plt.ylim((ymin, ymax))
-if logscale:
-    plt.yscale('log')
-
-xvals = np.linspace(xmin, xmax, 100)
-yvals = np.linspace(ymin, ymax, 100)
-
-# Mark radii if desired
-if not rvals is None:
-    for rval in rvals:
-        if rnorm is None:
-            rval_n = rval/rsun
-        else:
-            rval_n = rval/rnorm
-        plt.plot(rval_n + np.zeros(100), yvals, 'k--')
-
-# Create a title    
-plt.title(dirname_stripped + '\n' +'Velocity Amplitudes, ' +\
-          str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8), **csfont)
-plt.legend()
-
-# Get ticks everywhere
-plt.minorticks_on()
-plt.tick_params(top=True, right=True, direction='in', which='both')
-plt.tight_layout()
-
-savefile = plotdir + dirname_stripped + '_vamp_' +\
-    str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + tag + '.png'
-print('Saving plot at ' + savefile + ' ...')
-plt.savefig(savefile, dpi=300)
-plt.show()
+if clas0['saveplot']:
+    print ('saving figure at ' + savefile)
+    plt.savefig(savefile, dpi=300)
+if clas0['showplot']:
+    plt.show()
