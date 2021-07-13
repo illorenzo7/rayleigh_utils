@@ -38,11 +38,9 @@ if rank == 0:
 
 # modules needed by everyone
 import numpy as np
-import gc
 # data type and reading function
 import sys, os
-sys.path.append(os.environ['rapp'])
-from rayleigh_diagnostics import Shell_Spectra
+from rayleigh_diagnostics_alt import Shell_Spectra
 reading_func = Shell_Spectra
 dataname = 'Shell_Spectra'
 
@@ -67,11 +65,11 @@ if rank == 0:
     clas0, clas = read_clas(args)
     dirname = clas0['dirname']
 
-    # set default values for qval and ir
-    kwargs_default = dict({'ir': 0, 'qval': 1})
+    # set default values for qval and irval
+    kwargs_default = dict({'irval': 0, 'qval': 1})
     # overwrite defaults
     kw = update_dict(kwargs_default, clas)
-    ir = kw.ir
+    irval = kw.irval
     qval = kw.qval
 
     # Get the Rayleigh data directory
@@ -107,10 +105,10 @@ else: # recieve appropriate file info if rank > 1
 
 # Broadcast meta data
 if rank == 0:
-    meta = [dirname, radatadir, ir, qval]
+    meta = [dirname, radatadir, irval, qval]
 else:
     meta = None
-dirname, radatadir, ir, qval = comm.bcast(meta, root=0)
+dirname, radatadir, irval, qval = comm.bcast(meta, root=0)
 
 # Checkpoint and time
 comm.Barrier()
@@ -128,19 +126,16 @@ my_iters = []
 my_vals = []
 
 for i in range(my_nfiles):
-    a = reading_func(radatadir + str(my_files[i]).zfill(8), '')
+    a = reading_func(radatadir + str(my_files[i]).zfill(8), '', irvals=irval, qvals=qval)
     for j in range(a.niter):
-        my_vals.append(a.vals[:, :, ir, a.lut[qval], j])
+        my_vals.append(a.vals[:, :, 0, 0, j])
         my_times.append(a.time[j])
         my_iters.append(a.iters[j])
     if rank == 0:
         pcnt_done = i/my_nfiles*100.0
         print(fill_str('computing', lent, char) +\
                 ('rank 0 %5.1f%% done' %pcnt_done), end='\r')
-    # release the memory!
-    del a.vals
-    del a
-    gc.collect()
+
 # Checkpoint and time
 comm.Barrier()
 if rank == 0:
@@ -166,6 +161,20 @@ if rank == 0:
         times += my_times
         iters += my_iters
         vals += my_vals
+
+    # now perform an FFT
+    nfreq, nell, nm = np.shape(vals)
+    for il in range(nell):
+        for im in range(nm):
+            vals[:, il, im] = np.fft.fft(vals, il, im])
+            vals[:, il, im] = np.fft.fftshift(vals[:, il, im])
+            vals[:, il, im] = np.abs(vals[:, il, im])**2
+    
+    # and get the frequencies
+    delta_t = np.mean(np.diff(times))
+    freq = np.fft.fftfreq(len(times), delta_t)
+    freq = np.fft.fftshift(freq)
+
 else: # other processes send their data
     comm.send([my_times, my_iters, my_vals], dest=0)
 
@@ -180,7 +189,7 @@ if rank == 0:
         os.makedirs(datadir)
 
     # Set the timetrace savename
-    savename = ('Shell_Spectra_trace_qval%04i_ir%02i' %(qval, ir)) +\
+    savename = ('tspec_qval%04i_ir%02i' %(qval, ir)) +\
             clas0['tag'] + '-' + file_list[0] + '_' + file_list[-1] + '.pkl'
     savefile = datadir + savename
 
@@ -196,5 +205,7 @@ if rank == 0:
     print (format_time(t2 - t1))
     print(make_bold(fill_str('total time', lent, char)), end='')
     print (make_bold(format_time(t2 - t1_glob)))
+    print ("the following should be zero:")
+    print ("std(dt) = ", np.std(np.diff(times)))
     print ('data saved at ')
     print (make_bold(savefile))

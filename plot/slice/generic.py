@@ -29,7 +29,7 @@ if 'type' in clas:
     plottype = clas.type
     del clas.type
 else:
-    plottype = 'moll', 
+    plottype = 'moll'
 
 print (buff_line)
 print ("PLOT TYPE: " + plottype)
