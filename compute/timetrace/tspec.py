@@ -169,7 +169,8 @@ if rank == 0:
         for im in range(nm):
             vals[:, il, im] = np.fft.fft(vals[:, il, im])
             vals[:, il, im] = np.fft.fftshift(vals[:, il, im])
-            vals[:, il, im] = np.real(np.abs(vals[:, il, im])**2)
+            vals[:, il, im] = np.abs(vals[:, il, im])**2
+    vals = np.real(vals)
     
     # and get the frequencies
     delta_t = np.mean(np.diff(times))
