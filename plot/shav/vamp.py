@@ -20,6 +20,9 @@ dirname_stripped = strip_dirname(dirname)
 # allowed args + defaults
 kwargs_default = dict({'the_file': None, 'mark_bcz': False})
 kwargs_default.update(make_figure_kwargs_default)
+lineplot_kwargs_default['legfrac'] = 0.25
+lineplot_kwargs_default['buff_ignore'] = buff_frac # ignore nastiness 
+# at endpoints
 kwargs_default.update(lineplot_kwargs_default)
 kw = update_dict(kwargs_default, clas)
 kw_make_figure = update_dict(make_figure_kwargs_default, clas)
@@ -59,10 +62,6 @@ amp_v = np.sqrt(vsq)/100.
 amp_vr = np.sqrt(vsq_r)/100.
 amp_vt = np.sqrt(vsq_t)/100.
 amp_vp = np.sqrt(vsq_p)/100.
-
-# Create the plot
-fig = plt.figure()
-ax = fig.add_subplot(111)
 
 profiles = [amp_vr, amp_vt, amp_vp, amp_v]
 kw_lineplot.labels = ['r', r'$\theta$', r'$\phi$', 'tot']

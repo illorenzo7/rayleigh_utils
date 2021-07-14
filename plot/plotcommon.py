@@ -237,21 +237,22 @@ def make_figure(**kwargs):
 
     return fig, axs, fpar
 
-lineplot_minmax_kwargs_default = dict({'logscale': False, 'buff_ignore': buff_frac, 'legfrac': None, 'symmetrize': False, 'domain_bounds': None, 'xx': None})
-def lineplot_minmax(profiles, **kwargs):
+lineplot_minmax_kwargs_default = dict({'logscale': False, 'buff_ignore': None, 'legfrac': None, 'symmetrize': False, 'domain_bounds': None})
+def lineplot_minmax(xx, profiles, **kwargs):
     kw = update_dict(lineplot_minmax_kwargs_default, kwargs)
     find_bad_keys(lineplot_minmax_kwargs_default, kwargs, 'lineplot_minmax')
 
     # possibly ignore nastiness around domain bounds
-    # x axis (xx) must also be provided
-    if not kw.domain_bounds is None:
-        delta_x = np.max(kw.xx) - np.min(kw.xx)
+    if not kw.buff_ignore is None:
+        if kw.domain_bounds is None: # just look at the two ends
+            kw.domain_bounds = np.min(xx), np.max(xx)
+        delta_x = np.max(xx) - np.min(xx)
         profiles_old = profiles.copy()
         profiles = []
         for profile_old in profiles_old:
             tmp = []
-            for ix in range(len(kw.xx)):
-                x_loc = kw.xx[ix]
+            for ix in range(len(xx)):
+                x_loc = xx[ix]
                 # check if x_loc is in a "bad" location 
                 # (near the domain_bounds)
                 add_it = True
@@ -368,14 +369,12 @@ def lineplot(xx, profiles, ax, **kwargs):
 
     # get ylimits 
     if kw.minmax is None:
-        kw_lineplot_minmax.xx = xx[:ixcut]
-        kw.minmax = lineplot_minmax(profiles, **kw_lineplot_minmax)
+        kw.minmax = lineplot_minmax(xx[:ixcut], profiles, **kw_lineplot_minmax)
     ax.set_ylim(kw.minmax)
 
     if not kw.xcut is None:
         if kw.minmax2 is None:
-            kw_lineplot_minmax.xx = xx[ixcut:]
-            kw.minmax2 = lineplot_minmax(profiles2, **kw_lineplot_minmax)
+            kw.minmax2 = lineplot_minmax(xx[ixcut:], profiles2, **kw_lineplot_minmax)
         ax2.set_ylim(kw.minmax2)
   
     # loop over profiles and make plots
@@ -468,7 +467,8 @@ def lineplot(xx, profiles, ax, **kwargs):
         plt.yticks(fontsize=kw.fontsize)
 
         # Get the y-axis in scientific notation
-        plt.ticklabel_format(useMathText=True, axis='y', scilimits=(0,0))
+        if not kw.logscale:
+            plt.ticklabel_format(useMathText=True, axis='y', scilimits=(0,0))
 
     # make the legend
     if kw.plotleg:

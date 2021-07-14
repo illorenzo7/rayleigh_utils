@@ -23,12 +23,12 @@ dirname_stripped = strip_dirname(dirname)
 # allowed args + defaults
 kwargs_default = dict({'the_file': None, 'mark_bcz': False})
 kwargs_default.update(make_figure_kwargs_default)
+lineplot_kwargs_default['legfrac'] = 0.3
 kwargs_default.update(lineplot_kwargs_default)
 kw = update_dict(kwargs_default, clas)
 kw_make_figure = update_dict(make_figure_kwargs_default, clas)
 kw_lineplot = update_dict(lineplot_kwargs_default, clas)
 
-print ("kw = ", kw_lineplot)
 if not kw.xcut is None: # make room for label on right
     kw_make_figure.sub_margin_right_inches = default_margin_xlabel
 if kw.mark_bcz: # make room for the bcz label
@@ -79,7 +79,7 @@ tflux = hflux + eflux + cflux + kflux + vflux # compute the total flux
 
 # break the enthalpy flux into mean and fluctuating
 if 1458 in qv:
-    print ("getting enthaly flux (pp) from q = 1458")
+    print ("getting enthalpy flux (pp) from qval = 1458")
     eflux_fluc = vals[:, 0, lut[1458]]
     eflux_mean = eflux - eflux_fluc
 else: # do the decomposition "by hand"
