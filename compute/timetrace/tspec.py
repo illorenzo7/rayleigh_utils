@@ -1,5 +1,5 @@
 ##################################################################
-# Routine to trace Rayleigh Shell_Spectra data in time
+# Routine to make temporal spectra
 # Author: Loren Matilsky
 # Created: 06/12/2021
 ##################################################################
@@ -169,7 +169,7 @@ if rank == 0:
         for im in range(nm):
             vals[:, il, im] = np.fft.fft(vals[:, il, im])
             vals[:, il, im] = np.fft.fftshift(vals[:, il, im])
-            vals[:, il, im] = np.abs(vals[:, il, im])**2
+            vals[:, il, im] = np.real(np.abs(vals[:, il, im])**2)
     
     # and get the frequencies
     delta_t = np.mean(np.diff(times))
@@ -200,7 +200,7 @@ if rank == 0:
     vals = np.array(vals)
     times = np.array(times)
     iters = np.array(iters)
-    pickle.dump({'vals': vals, 'times': times, 'iters': iters}, f, protocol=4)
+    pickle.dump({'vals': vals, 'times': times, 'iters': iters, 'freq': freq}, f, protocol=4)
     f.close()
     t2 = time.time()
     print (format_time(t2 - t1))

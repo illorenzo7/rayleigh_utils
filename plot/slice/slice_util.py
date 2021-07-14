@@ -264,4 +264,3 @@ def plot_spec_lm(field, fig, ax, **kwargs):
     # Get ticks everywhere
     plt.minorticks_on()
     plt.tick_params(top=True, right=True, direction='in', which='both')
-
