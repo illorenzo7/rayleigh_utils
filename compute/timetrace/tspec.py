@@ -161,12 +161,13 @@ if rank == 0:
         times += my_times
         iters += my_iters
         vals += my_vals
-
+    vals = np.array(vals)
+    
     # now perform an FFT
     nfreq, nell, nm = np.shape(vals)
     for il in range(nell):
         for im in range(nm):
-            vals[:, il, im] = np.fft.fft(vals, il, im])
+            vals[:, il, im] = np.fft.fft(vals[:, il, im])
             vals[:, il, im] = np.fft.fftshift(vals[:, il, im])
             vals[:, il, im] = np.abs(vals[:, il, im])**2
     
@@ -189,7 +190,7 @@ if rank == 0:
         os.makedirs(datadir)
 
     # Set the timetrace savename
-    savename = ('tspec_qval%04i_ir%02i' %(qval, ir)) +\
+    savename = ('tspec_qval%04i_irval%02i' %(qval, irval)) +\
             clas0['tag'] + '-' + file_list[0] + '_' + file_list[-1] + '.pkl'
     savefile = datadir + savename
 
