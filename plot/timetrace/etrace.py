@@ -241,7 +241,7 @@ for irow in range(3): # tot, fluc, mean
                 # (will become default) if not in desired coordinates
                 minmax_loc = None
         if minmax_loc is None:
-            minmax_loc = lineplot_minmax(all_e, logscale=logscale, legfrac=legfrac)
+            minmax_loc = lineplot_minmax(xaxis, all_e, logscale=logscale, legfrac=legfrac)
         if not ymin is None:
             minmax_loc = ymin, minmax_loc[1]
         if not ymax is None:
