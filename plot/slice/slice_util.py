@@ -172,52 +172,63 @@ def plot_moll(field_orig, costheta, fig, ax, **kwargs):
         xvals, yvals = 2.*np.cos(psivals), np.sin(psivals)
         ax.plot(xvals, yvals, 'k', linewidth=1.5*kw.linewidth)
 
-# routine for (l, m) 2D spectra
-plot_spec_lm_kwargs_default = dict({'lvals': None, 'mvals': None, 'linewidth': default_lw, 'minmax': None, 'lminmax': None, 'lmin': None, 'lmax': None, 'mminmax': None, 'mmin': None, 'mmax': None,
+# routine for 2D spectra
+plot_spec_2D_kwargs_default = dict({'x': None, 'y': None, 'xvals': None, 'yvals': None, 'linewidth': default_lw, 'minmax': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'yminmax': None, 'ymin': None, 'ymax': None, 'xymin': None, 'xymax': None, 'xyminmax': None,\
     # more cbar stuff
     'plotcbar': True, 'cmap': None, 'norm': None, 'linear': False, 'units': '', 'fontsize': default_labelsize})
-plot_spec_lm_kwargs_default.update(add_cbar_kwargs_default)
+plot_spec_2D_kwargs_default.update(add_cbar_kwargs_default)
 
-def plot_spec_lm(field, fig, ax, **kwargs):
-    kw = update_dict(plot_spec_lm_kwargs_default, kwargs)
+def plot_spec_2D(field, fig, ax, **kwargs):
+    kw = update_dict(plot_spec_2D_kwargs_default, kwargs)
     kw_add_cbar = update_dict(add_cbar_kwargs_default, kwargs)
-    find_bad_keys(plot_spec_lm_kwargs_default, kwargs, 'plot_spec_lm')
+    find_bad_keys(plot_spec_2D_kwargs_default, kwargs, 'plot_spec_2D')
 
     # make sure Python does not modify any of the arrays it was passed
     field = np.copy(field)
 
-    # full (l, m) grid:
-    nell, nm = np.shape(field)
-    lvals_all = np.arange(nell)
-    mvals_all = np.arange(nm)
+    # use full integer grid if no specific axis was specified
+    nx, ny = np.shape(field)
+    if kw.x is None:
+        kw.x = np.arange(nx)
+    if kw.y is None:
+        kw.y = np.arange(ny)
 
     # by default plot whole spectrum
-    il1, il2 = 0, nell - 1
-    im1, im2 = 0, nm - 1
-    if not kw.lminmax is None:
-        il1 = np.argmin(np.abs(lvals_all - kw.lminmax[0]))
-        il2 = np.argmin(np.abs(lvals_all - kw.lminmax[1]))
-    if not kw.lmin is None:
-        il1 = np.argmin(np.abs(lvals_all - kw.lmin))
-    if not kw.lmax is None:
-        il2 = np.argmin(np.abs(lvals_all - kw.lmax))
+    ix1, ix2 = 0, nx - 1
+    iy1, iy2 = 0, ny - 1
 
-    if not kw.mminmax is None:
-        im1 = np.argmin(np.abs(mvals_all - kw.mminmax[0]))
-        im2 = np.argmin(np.abs(mvals_all - kw.mminmax[1]))
-    if not kw.mmin is None:
-        il1 = np.argmin(np.abs(lvals_all - kw.mmin))
-    if not kw.mmax is None:
-        il2 = np.argmin(np.abs(lvals_all - kw.mmax))
+    # might set both axis boundaries at once with "xy" min/max
+    if not kw.xymin is None:
+        kw.xmin = kw.xymin
+        kw.ymin = kw.xymin
+    if not kw.xymin is None:
+        kw.xmax = kw.xymax
+        kw.ymax = kw.xymax
+    if not kw.xyminmax is None:
+        kw.xminmax = kw.xyminmax
+        kw.yminmax = kw.xyminmax
 
-    # at end of the day, can't have m > l
-    if im2 > il2:
-        im2 = il2
+    # pick and choose part of spectrum to plot
+    if not kw.xminmax is None:
+        ix1 = np.argmin(np.abs(kw.x - kw.xminmax[0]))
+        ix2 = np.argmin(np.abs(kw.x - kw.xminmax[1]))
+    if not kw.xmin is None:
+        ix1 = np.argmin(np.abs(kw.x - kw.xmin))
+    if not kw.xmax is None:
+        ix2 = np.argmin(np.abs(kw.x - kw.xmax))
+
+    if not kw.yminmax is None:
+        iy1 = np.argmin(np.abs(kw.y - kw.yminmax[0]))
+        iy2 = np.argmin(np.abs(kw.y - kw.yminmax[1]))
+    if not kw.ymin is None:
+        ix1 = np.argmin(np.abs(kw.x - kw.ymin))
+    if not kw.ymax is None:
+        ix2 = np.argmin(np.abs(kw.x - kw.ymax))
 
     # now adjust everything by the (l, m) range we want
-    lvals = lvals_all[il1:il2+1]
-    mvals = mvals_all[im1:im2+1]
-    field = field[il1:il2+1, im1:im2+1]
+    lvals = kw.x[ix1:ix2+1]
+    mvals = kw.y[iy1:iy2+1]
+    field = field[ix1:ix2+1, iy1:iy2+1]
 
     lvals_2d, mvals_2d = np.meshgrid(lvals, mvals, indexing='ij')
     lvals_2d, mvals_2d = xy_grid(lvals_2d, mvals_2d)
@@ -227,9 +238,9 @@ def plot_spec_lm(field, fig, ax, **kwargs):
         field_not0 = np.copy(field)
         # power gets wierd (close to 0?) at the two
         # most extreme l-values
-        if il1 == 0: 
+        if ix1 == 0: 
             field_not0 = field_not0[1:, :]
-        if il2 == nell - 1: 
+        if ix2 == nx - 1: 
             field_not0 = field_not0[:-1, :]
         field_not0 = field_not0[field_not0 != 0.]
         if kw.linear: # NOT the default...
@@ -254,7 +265,7 @@ def plot_spec_lm(field, fig, ax, **kwargs):
 
     plt.sca(ax)
     # set bounds
-#    plt.xlim(0.5, nell - 0.5)
+#    plt.xlim(0.5, nx - 0.5)
 #    plt.ylim(0.5, nm - 0.5)
 
     # label axes
