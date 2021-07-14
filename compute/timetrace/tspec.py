@@ -65,18 +65,36 @@ if rank == 0:
     clas0, clas = read_clas(args)
     dirname = clas0['dirname']
 
-    # set default values for qval and irval
-    kwargs_default = dict({'irval': 0, 'qval': 1})
-    # overwrite defaults
-    kw = update_dict(kwargs_default, clas)
-    irval = kw.irval
-    qval = kw.qval
-
     # Get the Rayleigh data directory
     radatadir = dirname + '/' + dataname + '/'
 
     # Get all the file names in datadir and their integer counterparts
     file_list, int_file_list, nfiles = get_file_lists(radatadir, args)
+
+    # read first file for some metadata
+    a0 = reading_func(radatadir + file_list[0], '')
+
+    # set default values for qval and irval
+    kwargs_default = dict({'irvals': np.array([0]), 'rvals': None, 'qvals': np.array([1])})
+
+    # overwrite defaults
+    kw = update_dict(kwargs_default, clas)
+
+    # get the rvals we want
+    irvals = kw.irvals
+    if not kw.rvals is None: # irvals haven't been set directly
+        if np.all(kw.rvals == 'all'):
+            irvals = np.arange(a0.nr)
+        else:
+            irvals = np.zeros_like(kw.rvals, dtype='int')
+            for i in range(len(kw.rvals)):
+                irvals[i] = np.argmin(np.abs(a0.radius/rsun - kw.rvals[i]))
+
+    # and the qvals
+    qvals = make_array(kw.qvals)
+
+    # everything must be array
+    irvals = make_array(irvals)
 
     # Get the problem size
     nproc_min, nproc_max, n_per_proc_min, n_per_proc_max =\
@@ -105,109 +123,151 @@ else: # recieve appropriate file info if rank > 1
 
 # Broadcast meta data
 if rank == 0:
-    meta = [dirname, radatadir, irval, qval]
+    meta = [dirname, radatadir, irvals, qvals]
 else:
     meta = None
-dirname, radatadir, irval, qval = comm.bcast(meta, root=0)
+dirname, radatadir, irvals, qvals = comm.bcast(meta, root=0)
 
 # Checkpoint and time
 comm.Barrier()
 if rank == 0:
     t2 = time.time()
     print (format_time(t2 - t1))
+    print (buff_line)
+    print ("making %i data file(s)" %(len(irvals)*len(qvals)))
+    print ("irvals = ", irvals)
+    print ("qvals = ", qvals)
+    print ("buff_line")
     print ('Considering %i %s files for the trace: %s through %s'\
         %(nfiles, dataname, file_list[0], file_list[-1]))
-    print(fill_str('computing', lent, char), end='\r')
-    t1 = time.time()
 
-# Now analyze the data
-my_times = []
-my_iters = []
-my_vals = []
+count = 1
+for irval in irvals:
+    for qval in qvals:
+        if rank == 0:
+            print (buff_line)
+            print ("data file no. %02i" %count)
+            print ("irval = ", irval)
+            print ("qval = ", qval)
+            print (buff_line)
+            print(fill_str('collecting data', lent, char), end='\r')
+            t1 = time.time()
 
-for i in range(my_nfiles):
-    a = reading_func(radatadir + str(my_files[i]).zfill(8), '', irvals=irval, qvals=qval)
-    for j in range(a.niter):
-        my_vals.append(a.vals[:, :, 0, 0, j])
-        my_times.append(a.time[j])
-        my_iters.append(a.iters[j])
-    if rank == 0:
-        pcnt_done = i/my_nfiles*100.0
-        print(fill_str('computing', lent, char) +\
-                ('rank 0 %5.1f%% done' %pcnt_done), end='\r')
+        # Now collect the data
+        my_times = []
+        my_iters = []
+        my_vals = []
 
-# Checkpoint and time
-comm.Barrier()
-if rank == 0:
-    t2 = time.time()
-    print('\n' + fill_str('computing time', lent, char), end='')
-    print (format_time(t2 - t1))
-    print(fill_str('rank 0 collecting and saving the results',\
-            lent, char), end='')
-    t1 = time.time()
+        for i in range(my_nfiles):
+            a = reading_func(radatadir + str(my_files[i]).zfill(8), '', irvals=irval, qvals=qval)
+            for j in range(a.niter):
+                my_vals.append(a.vals[:, :, 0, 0, j])
+                my_times.append(a.time[j])
+                my_iters.append(a.iters[j])
 
-# proc 0 now collects the results from each process
-if rank == 0:
-    # initialize empty lists for the final arrays
-    times = []
-    iters = []
-    vals = []
+            if rank == 0:
+                if i == 0:
+                    t1_loc = time.time()
+                t2_loc = time.time()
+                pcnt_done = (i + 1)/my_nfiles*100.0
+                print(fill_str('reading data', lent, char) +\
+                        ('rank 0 %5.1f%% done' %pcnt_done) + ' ' +\
+                        format_time(t2_loc - t1_loc) + 3*' ', end='\r')
 
-    # Gather the results into these "master" arrays
-    for j in range(nproc):
-        if j >= 1:
-            # Get data from rank j
-            my_times, my_iters, my_vals = comm.recv(source=j)
-        times += my_times
-        iters += my_iters
-        vals += my_vals
-    vals = np.array(vals)
-    
-    # now perform an FFT
-    nfreq, nell, nm = np.shape(vals)
-    for il in range(nell):
-        for im in range(nm):
-            vals[:, il, im] = np.fft.fft(vals[:, il, im])
-            vals[:, il, im] = np.fft.fftshift(vals[:, il, im])
-            vals[:, il, im] = np.abs(vals[:, il, im])**2
-    vals = np.real(vals)
-    
-    # and get the frequencies
-    delta_t = np.mean(np.diff(times))
-    freq = np.fft.fftfreq(len(times), delta_t)
-    freq = np.fft.fftshift(freq)
+        # make sure everybody does their part and "gets there"!
+        # Checkpoint and time
+        comm.Barrier()
+        if rank == 0:
+            t2 = time.time()
 
-else: # other processes send their data
-    comm.send([my_times, my_iters, my_vals], dest=0)
+            print('\n' + fill_str('reading time', lent, char), end='')
+            print (format_time(t2 - t1))
+            print(fill_str('rank 0 collecting data', lent, char), end='')
+            t1 = time.time()
 
-# Make sure proc 0 collects all data
-comm.Barrier()
+        # proc 0 now collects the spectra (trace in time)
+        # from each process
+        if rank == 0:
+            # initialize empty lists for the final arrays
+            times = []
+            iters = []
+            vals = []
 
-# proc 0 saves the data
-if rank == 0:
-    # create data directory if it doesn't already exist
-    datadir = dirname + '/data/'
-    if not os.path.isdir(datadir):
-        os.makedirs(datadir)
+            # Gather the results into these "master" arrays
+            for j in range(nproc):
+                if j >= 1:
+                    # Get data from rank j
+                    my_times, my_iters, my_vals = comm.recv(source=j)
+                times += my_times
+                iters += my_iters
+                vals += my_vals
 
-    # Set the timetrace savename
-    savename = ('tspec_qval%04i_irval%02i' %(qval, irval)) +\
-            clas0['tag'] + '-' + file_list[0] + '_' + file_list[-1] + '.pkl'
-    savefile = datadir + savename
+                pcnt_done = (j + 1)/nproc*100
+                if j == 0:
+                    t1_loc = time.time()
+                t2_loc = time.time()
+                print(fill_str('rank 0 collecting data from rank %i' %j, lent, char) +\
+                        ('%5.1f%% done' %pcnt_done) + ' ' +\
+                        format_time(t2_loc - t1_loc) + 3*' ', end='\r')
 
-    # save the data
-    f = open(savefile, 'wb')
-    # convert everything to arrays
-    vals = np.array(vals)
-    times = np.array(times)
-    iters = np.array(iters)
-    pickle.dump({'vals': vals, 'times': times, 'iters': iters, 'freq': freq}, f, protocol=4)
-    f.close()
-    t2 = time.time()
-    print (format_time(t2 - t1))
-    print(make_bold(fill_str('total time', lent, char)), end='')
-    print (make_bold(format_time(t2 - t1_glob)))
-    print ("the following should be zero:")
-    print ("std(dt) = ", np.std(np.diff(times)))
-    print ('data saved at ')
-    print (make_bold(savefile))
+            vals = np.array(vals) # needs to be array
+        else: # other processes send their data
+            comm.send([my_times, my_iters, my_vals], dest=0)
+
+        # Checkpoint and time
+        comm.Barrier()
+        if rank == 0:
+            t2 = time.time()
+
+            print('\n' + fill_str('collection time', lent, char), end='')
+            print (format_time(t2 - t1))
+            print(fill_str('rank 0 doing FFT',\
+                    lent, char), end='')
+            t1 = time.time()
+
+            nfreq, nell, nm = np.shape(vals)
+            for il in range(nell):
+                for im in range(nm):
+                    vals[:, il, im] = np.fft.fft(vals[:, il, im])
+                    vals[:, il, im] = np.fft.fftshift(vals[:, il, im])
+                    vals[:, il, im] = np.abs(vals[:, il, im])**2
+            vals = np.real(vals)
+
+            # perform an FFT
+            delta_t = np.mean(np.diff(times))
+
+            # and get the frequencies
+            freq = np.fft.fftfreq(len(times), delta_t)
+            freq = np.fft.fftshift(freq)
+
+            # create data directory if it doesn't already exist
+            datadir = clas0['datadir']
+            if not os.path.isdir(datadir):
+                os.makedirs(datadir)
+
+            # Set the timetrace savename
+            savename = ('tspec_qval%04i_irval%02i' %(qval, irval)) +\
+                    clas0['tag'] + '-' + file_list[0] + '_' + file_list[-1] + '.pkl'
+            savefile = datadir + savename
+
+            # save the data
+            f = open(savefile, 'wb')
+            # convert everything to arrays
+            vals = np.array(vals)
+            times = np.array(times)
+            iters = np.array(iters)
+            pickle.dump({'vals': vals, 'times': times, 'iters': iters, 'freq': freq}, f, protocol=4)
+            f.close()
+            t2 = time.time()
+            print (format_time(t2 - t1))
+            print(make_bold(fill_str('total time', lent, char)), end='')
+            print (make_bold(format_time(t2 - t1_glob)))
+            print ("the following should be zero:")
+            print ("std(dt) = ", np.std(np.diff(times)))
+            print ('data saved at ')
+            print (make_bold(savefile))
+
+        count += 1
+
+        # make sure everyone waits on proc 0 before starting the loop again
+        comm.Barrier()

@@ -104,7 +104,7 @@ if not kw.rvals is None: # irvals haven't been set directly
     else:
         kw.irvals = np.zeros_like(kw.rvals, dtype='int')
         for i in range(len(kw.rvals)):
-            kw.irvals[i] = np.argmin(np.abs(a.radius/rsun - kw.rvals[i]))
+            kw.irvals[i] = np.argmin(np.abs(a0.radius/rsun - kw.rvals[i]))
 
 # get the vars we want
 if np.all(kw.varnames == 'all'): # remember varnames is an array now
