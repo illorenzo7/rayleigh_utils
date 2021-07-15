@@ -77,6 +77,19 @@ def format_time(seconds):
         seconds %= 60
         return "%02i:%02i:%02i" %(hours, minutes, seconds)
 
+def format_size(nbytes):
+    if nbytes < 1024: # output in B
+        return "%i B" %nbytes
+    elif nbytes < 1024**2:
+        # output K
+        return "%1.1f K" %(nbytes/1024)
+    elif nbytes < 1024**3:
+        # output M
+        return "%1.1f M" %(nbytes/1024**2)
+    else:
+        # output G
+        return "%1.1f G" %(nbytes/1024**3)
+
 def inds_from_vals(arr, arrvals):
     nind = len(arrvals)
     indarr = np.zeros(nind, 'int')

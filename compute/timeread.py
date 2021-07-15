@@ -28,11 +28,14 @@ clas0, clas = read_clas(args)
 dirname = clas0['dirname']
 
 # set default values for qval and irval
-kwargs_default = dict({'radtype': 'azav', 'irvals': np.array([0]), 'qvals': np.array([1])})
+kwargs_default = dict({'radtype': 'azav', 'irvals': None, 'qvals': None})
 
 # overwrite defaults
 kw = update_dict(kwargs_default, clas)
 radtype = kw.radtype
+
+kw.irvals = make_array(kw.irvals)
+kw.qvals = make_array(kw.qvals)
 
 lent = 50
 char = '.'
@@ -79,7 +82,7 @@ if radtype == 'specalt':
 print (buff_line)
 
 # now time the reading
-total_read = 0
+total_size = 0
 for i in range(nfiles):
     t1 = time.time()
     fname = radatadir + str(file_list[i]).zfill(8)
@@ -89,14 +92,14 @@ for i in range(nfiles):
     else:
         a = reading_func(fname, '')
     t2 = time.time()
-    size_in_M = sys.getsizeof(a.vals)/1024**2
-    total_read += size_in_M
-    print ('%.1f M' %size_in_M + 3*' ', end='')
+    the_size = sys.getsizeof(a.vals)
+    total_size += the_size
+    print (format_size(the_size) + 3*' ', end='')
     print (format_time(t2 - t1), end='')
-    io_rate = size_in_M/(t2 - t1)
-    print (5*' ' + '%.1f M/s' %io_rate)
+    io_rate = the_size/(t2 - t1)
+    print (5*' ' + format_size(io_rate) + '/s')
 
 t2 = time.time()
 print (fill_str("total time", lent, char) + format_time(t2 - t1_glob))
 print (fill_str("avg. time", lent, char) + format_time((t2 - t1_glob)/nfiles))
-print (fill_str("avg. I/O speed", lent, char) + "%.1f M/s" %(total_read/(t2 - t1_glob)))
+print (fill_str("avg. I/O speed", lent, char) + format_size(total_size/(t2 - t1_glob)) + '/s')
