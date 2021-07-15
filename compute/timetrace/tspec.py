@@ -150,10 +150,11 @@ for irval in irvals:
             print ("irval = ", irval)
             print ("qval = ", qval)
             print (buff_line)
-            print(fill_str('collecting data', lent, char), end='\r')
-            t1 = time.time()
+            print(fill_str('reading data', lent, char), end='\r')
+            t1_thisfile = time.time()
+            t1 = np.copy(t1_thisfile)
 
-        # Now collect the data
+        # Now read the data
         my_times = []
         my_iters = []
         my_vals = []
@@ -211,6 +212,8 @@ for irval in irvals:
                         format_time(t2_loc - t1_loc) + 3*' ', end='\r')
 
             vals = np.array(vals) # needs to be array
+            # get shape here
+            nfreq, nell, nm = np.shape(my_vals)
         else: # other processes send their data
             comm.send([my_times, my_iters, my_vals], dest=0)
 
@@ -221,22 +224,108 @@ for irval in irvals:
 
             print('\n' + fill_str('collection time', lent, char), end='')
             print (format_time(t2 - t1))
-            print(fill_str('rank 0 doing FFT',\
-                    lent, char), end='')
+
+            # now redistribute the data by l-value 
+            print(fill_str('proc 0 sending datacube by l-val', lent, char),\
+                    end='')
             t1 = time.time()
 
-            nfreq, nell, nm = np.shape(vals)
-            for il in range(nell):
-                for im in range(nm):
-                    vals[:, il, im] = np.fft.fft(vals[:, il, im])
-                    vals[:, il, im] = np.fft.fftshift(vals[:, il, im])
-                    vals[:, il, im] = np.abs(vals[:, il, im])**2
-            vals = np.real(vals)
+            nproc_min, nproc_max, n_per_proc_min, n_per_proc_max =\
+                    opt_workload(nell, nproc)
 
-            # perform an FFT
+            # Distribute ilvals to each process
+            for k in range(nproc - 1, -1, -1): # go in reverse so my_vals
+                # for rank 0 is correct
+                # distribute the partial file list to other procs 
+                if k < nproc_max: # first processes analyzes more files
+                    my_nell = np.copy(n_per_proc_max)
+                    ilstart = k*my_nell
+                    ilend = ilstart + my_nell
+                else: # last processes analyze fewer files
+                    my_nell = np.copy(n_per_proc_min)
+                    ilstart = nproc_max*n_per_proc_max + (k - nproc_max)*my_nell
+                    ilend = ilstart + my_nell
+
+                # Get the portion of vals for rank k
+                my_vals = np.copy(vals[:, ilstart:ilend, :])
+
+                # send appropriate file info if not rank 0
+                if k > 0:
+                    comm.send([my_vals, my_nell, nm], dest=k)
+        else: # recieve appropriate file info if rank > 1
+            my_vals, my_nell, nm = comm.recv(source=0)
+
+        # make sure everyone gets "their slice"
+        comm.Barrier()
+        if rank == 0:
+            t2 = time.time()
+            print (format_time(t2 - t1))
+
+            # everyone do their FFT
+            print(fill_str('doing FFT', lent, char), end='\r')
+            t1 = time.time()
+
+        count_loc = 0 
+        for il in range(my_nell):
+            for im in range(nm):
+                my_vals[:, il, im] = np.fft.fft(my_vals[:, il, im])
+                my_vals[:, il, im] = np.fft.fftshift(my_vals[:, il, im])
+                my_vals[:, il, im] = np.abs(my_vals[:, il, im])**2
+
+                if rank == 0:
+                    if count_loc == 0:
+                        t1_loc = time.time()
+                    t2_loc = time.time()
+                    pcnt_done = (count_loc + 1)/(my_nell*nm)*100
+                    print(fill_str('doing FFT', lent, char) +\
+                            ('rank 0 %5.1f%% done' %pcnt_done) + ' ' +\
+                            format_time(t2_loc - t1_loc) + 3*' ', end='\r')
+                count_loc += 1
+                
+        # make it an array
+        my_vals = np.real(my_vals)
+
+        # make sure everybody does their part and "gets there"!
+        comm.Barrier()
+
+        # rank 0 collects Fourier transform
+        if rank == 0:
+            t2 = time.time()
+
+            print('\n' + fill_str('FFT time', lent, char), end='')
+            print (format_time(t2 - t1))
+            print(fill_str('rank 0 collecting FFTs', lent, char), end='')
+            t1 = time.time()
+
+            # Gather the FFT results back into vals array
+            for k in range(nproc):
+                if k < nproc_max: # first processes have more l-values
+                    my_nell = np.copy(n_per_proc_max)
+                    ilstart = k*my_nell
+                    ilend = ilstart + my_nell
+                else: # last processes analyze fewer files
+                    my_nell = np.copy(n_per_proc_min)
+                    ilstart = nproc_max*n_per_proc_max + (k - nproc_max)*my_nell
+                    ilend = ilstart + my_nell
+
+                if k > 0:
+                    # Get my_vals from rank k
+                     my_vals = comm.recv(source=k, tag=0)
+                vals[:, ilstart:ilend, :] = my_vals
+
+        else: # other processes send their data
+            comm.send(my_vals, dest=0, tag=0)
+
+        # Make sure all data is collected
+        comm.Barrier()
+        if rank == 0:
+            t2 = time.time()
+            print (format_time(t2 - t1))
+            print(fill_str('rank 0 saving data', lent, char), end='')
+            t1 = time.time()
+
+            # get frequencies
             delta_t = np.mean(np.diff(times))
-
-            # and get the frequencies
             freq = np.fft.fftfreq(len(times), delta_t)
             freq = np.fft.fftshift(freq)
 
@@ -258,16 +347,23 @@ for irval in irvals:
             iters = np.array(iters)
             pickle.dump({'vals': vals, 'times': times, 'iters': iters, 'freq': freq}, f, protocol=4)
             f.close()
-            t2 = time.time()
-            print (format_time(t2 - t1))
-            print(make_bold(fill_str('total time', lent, char)), end='')
-            print (make_bold(format_time(t2 - t1_glob)))
             print ("the following should be zero:")
             print ("std(dt) = ", np.std(np.diff(times)))
             print ('data saved at ')
             print (make_bold(savefile))
 
+            t2 = time.time()
+            print (format_time(t2 - t1))
+            print(make_bold(fill_str('time for file no. %02i' %count, lent, char)), end='')
+            print (make_bold(format_time(t2 - t1_thisfile)))
+            print (buff_line)
+
         count += 1
 
         # make sure everyone waits on proc 0 before starting the loop again
         comm.Barrier()
+
+if rank == 0:
+    t2 = time.time()
+    print(make_bold(fill_str('total time', lent, char)), end='')
+    print (make_bold(format_time(t2 - t1_glob)))
