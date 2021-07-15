@@ -182,7 +182,7 @@ for irval in irvals:
 
             print('\n' + fill_str('reading time', lent, char), end='')
             print (format_time(t2 - t1))
-            print(fill_str('rank 0 collecting data', lent, char), end='')
+            print(fill_str('rank 0 collecting data', lent, char), end='\r')
             t1 = time.time()
 
         # proc 0 now collects the spectra (trace in time)
