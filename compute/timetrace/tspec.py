@@ -137,7 +137,7 @@ if rank == 0:
     print ("making %i data file(s)" %(len(irvals)*len(qvals)))
     print ("irvals = ", irvals)
     print ("qvals = ", qvals)
-    print ("buff_line")
+    print (buff_line)
     print ('Considering %i %s files for the trace: %s through %s'\
         %(nfiles, dataname, file_list[0], file_list[-1]))
 
@@ -367,3 +367,5 @@ if rank == 0:
     t2 = time.time()
     print(make_bold(fill_str('total time', lent, char)), end='')
     print (make_bold(format_time(t2 - t1_glob)))
+    print (buff_line)
+
