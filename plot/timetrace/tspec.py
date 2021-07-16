@@ -45,8 +45,6 @@ qvals = make_array(kw.qvals)
 
 # everything must be array
 irvals = make_array(irvals)
-rvals = radlevs.radius[irvals]/rsun
-
 modes = make_array(kw.modes)
 
 print (buff_line)
@@ -68,7 +66,7 @@ plotdir = my_mkdir(clas0['plotdir'] + 'tspec/')
 for qval in qvals:
     for irval in irvals:
         # get radial level
-        rval = rvals[irval]
+        rval = radlevs.radius[irval]/rsun
 
         # get data
         if kw.the_file is None:
@@ -124,7 +122,7 @@ for qval in qvals:
             fig, axs, fpar = make_figure(**kw_make_figure)
             ax = axs[0, 0]
 
-            #kw_plot_spec_2D.cbar_pos = 'right'
+            kw_plot_spec_2D.cbar_pos = 'right'
             if kw_plot_spec_2D.x is None:
                 kw_plot_spec_2D.x = x
             if kw_plot_spec_2D.y is None:
@@ -136,6 +134,9 @@ for qval in qvals:
             ylabel = 'freq (Hz)'
             ax.set_xlabel(xlabel, fontsize=default_labelsize)
             ax.set_ylabel(ylabel, fontsize=default_labelsize)
+
+            # get y axis to use scientific notation
+            ax.ticklabel_format(scilimits=(-3,4), useMathText=True)
 
             # make title
             time_string = get_time_string(dirname, iter1, iter2, oneline=True)
