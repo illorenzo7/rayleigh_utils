@@ -255,6 +255,9 @@ for irval in irvals:
         else: # recieve appropriate file info if rank > 1
             my_vals, my_nell, nm = comm.recv(source=0)
 
+        # need to make this a real array again
+        vals = np.zeros_like(vals, 'float')
+
         # make sure everyone gets "their slice"
         comm.Barrier()
         if rank == 0:
@@ -368,4 +371,3 @@ if rank == 0:
     print(make_bold(fill_str('total time', lent, char)), end='')
     print (make_bold(format_time(t2 - t1_glob)))
     print (buff_line)
-

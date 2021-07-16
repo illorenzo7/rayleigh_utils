@@ -45,6 +45,8 @@ qvals = make_array(kw.qvals)
 
 # everything must be array
 irvals = make_array(irvals)
+rvals = radlevs.radius[irvals]/rsun
+
 modes = make_array(kw.modes)
 
 print (buff_line)
@@ -60,8 +62,14 @@ print ("modes = ", modes)
 print ("nfigures = ", nfigures)
 print (buff_line)
 
+# get and make plotdir of non existent
+plotdir = my_mkdir(clas0['plotdir'] + 'tspec/')
+
 for qval in qvals:
     for irval in irvals:
+        # get radial level
+        rval = rvals[irval]
+
         # get data
         if kw.the_file is None:
             dataname = ('tspec_qval%04i_irval%02i' %(qval, irval)) + clas0['tag']
@@ -74,7 +82,7 @@ for qval in qvals:
         print ("plotting: " + kw.the_file)
         di = get_dict(kw.the_file)
         freq = di['freq']
-        vals = di['vals']
+        vals = np.real(di['vals'])
         nfreq, nell, nm = np.shape(vals)
 
         for mode in modes:
