@@ -2,14 +2,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sys, os
 sys.path.append(os.environ['raco'])
-sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['rapl'])
 from common import *
 from plotcommon import *
 from cla_util import *
-from slice_util import *
-from rayleigh_diagnostics import Shell_Slices, Shell_Spectra
-#from get_slice import get_slice, get_label
+from slice_util import spec_2D_fig_dimensions, plot_spec_2D
 
 # Get CLAs
 args = sys.argv 
@@ -18,38 +15,17 @@ dirname = clas0.dirname
 dirname_stripped = strip_dirname(dirname)
 
 # SPECIFIC ARGS
-kwargs_default = dotdict(dict({'the_file': None, 'av': False, 'val_iter': int(1e9), 'irvals': np.array([0]), 'rvals': None, 'varnames': np.array(['vr'])}))
-# this guy need to update right away to choose fig dimensions
-if 'type' in clas:
-    plottype = clas.type
-    del clas.type
-else:
-    plottype = 'moll'
+kwargs_default = dotdict(dict({'the_file': None, 'irvals': np.array([0]), 'rvals': None, 'varnames': np.array(['vr'])}, 'mode': 'lpower', 'lval': None, 'mval': None))
+# "mode" can be: lpower, mpower, l, m
 
-print (buff_line)
-print ("PLOT TYPE: " + plottype)
-
-if plottype == 'moll':
-    fig_dimensions = moll_fig_dimensions
-    plotting_func = plot_moll 
-    plotting_func_kwargs_default = plot_moll_kwargs_default
-    dataname = 'Shell_Slices'
-    reading_func = Shell_Slices
-if plottype == 'speclm':
-    fig_dimensions = spec_2D_fig_dimensions
-    plotting_func = plot_spec_2D
-    plotting_func_kwargs_default = plot_spec_2D_kwargs_default
-    dataname = 'Shell_Spectra'
-    reading_func = Shell_Spectra
-
-kwargs_default.update(plotting_func_kwargs_default)
-make_figure_kwargs_default.update(fig_dimensions)
+# many kwargs
+kwargs_default.update(plot_spec_2D_kwargs_default)
+make_figure_kwargs_default.update(spec_2D_fig_dimensions)
 kwargs_default.update(make_figure_kwargs_default)
-
-find_bad_keys(kwargs_default, clas, 'plot/slice/generic', justwarn=True)
+find_bad_keys(kwargs_default, clas, 'plot/timetrace/tspec', justwarn=True)
 
 kw = update_dict(kwargs_default, clas)
-kw_plotting_func = update_dict(plotting_func_kwargs_default, clas)
+kw_plot_spec_2D = update_dict(plotting_func_kwargs_default, clas)
 kw_make_figure = update_dict(make_figure_kwargs_default, clas)
 
 # needs to be arrays
@@ -57,30 +33,8 @@ kw.irvals = make_array(kw.irvals)
 kw.rvals = make_array(kw.rvals)
 kw.varnames = make_array(kw.varnames)
 
-# make plot directory if nonexistent
-basename = plottype
-if kw.av:
-    basename += 'av'
-plotdir = my_mkdir(clas0['plotdir'] + basename + '/')
+datatype = 'timelon_clat' + lat_format(clat) + '_dlat%03.0f' %dlat
 
-# get shell slice, range (for movie), or average
-onefile = True
-for arg in args:
-    if arg in range_options:
-        onefile = False
-if onefile:
-    args += ['--iter', str(kw.val_iter)]
-
-# Get desired file names in datadir and their integer counterparts
-radatadir = dirname + '/' + dataname + '/'
-file_list, int_file_list, nfiles = get_file_lists(radatadir, args)
-
-# need one of these no matter what
-print ("reading " + dataname + '/' + file_list[0])
-a0 = reading_func(radatadir + file_list[0], '')
-print ("done reading")
-
-if kw.av: # use time-averaged file
     datadir = dirname + '/data/'
     if kw.the_file is None:
         kw.the_file = get_widest_range_file(datadir, dataname)
@@ -88,9 +42,6 @@ if kw.av: # use time-averaged file
         print ("plotting average file: " + kw.the_file)
         di = get_dict(kw.the_file)
         a0.vals = di['vals'][..., np.newaxis]
-else:
-    print ('plotting %i %s files: %s through %s'\
-        %(nfiles, dataname, file_list[0], file_list[-1]))
 
 # get the rvals we want
 if not kw.rvals is None: # irvals haven't been set directly
