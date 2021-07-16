@@ -225,13 +225,13 @@ def plot_spec_2D(field, fig, ax, **kwargs):
     if not kw.ymax is None:
         ix2 = np.argmin(np.abs(kw.x - kw.ymax))
 
-    # now adjust everything by the (l, m) range we want
-    lvals = kw.x[ix1:ix2+1]
-    mvals = kw.y[iy1:iy2+1]
+    # now adjust everything by the (x, y) range we want
+    kw.x = kw.x[ix1:ix2+1]
+    kw.y = kw.y[iy1:iy2+1]
     field = field[ix1:ix2+1, iy1:iy2+1]
 
-    lvals_2d, mvals_2d = np.meshgrid(lvals, mvals, indexing='ij')
-    lvals_2d, mvals_2d = xy_grid(lvals_2d, mvals_2d)
+    xx, yy = np.meshgrid(kw.x, kw.y, indexing='ij')
+    xx, yy = xy_grid(xx, yy)
 
     # Get minmax, if not specified
     if kw.minmax is None:
@@ -257,7 +257,7 @@ def plot_spec_2D(field, fig, ax, **kwargs):
     
     if kw.cmap is None:
         kw.cmap = 'jet'
-    im = plt.pcolormesh(lvals_2d, mvals_2d, field, cmap=kw.cmap, norm=kw.norm)  
+    im = plt.pcolormesh(xx, yy, field, cmap=kw.cmap, norm=kw.norm)  
 
     # now deal with color bar, if one is desired
     if kw.plotcbar:

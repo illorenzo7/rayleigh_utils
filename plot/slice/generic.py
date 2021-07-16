@@ -42,8 +42,8 @@ if plottype == 'moll':
     reading_func = Shell_Slices
 if plottype == 'speclm':
     fig_dimensions = spec_lm_fig_dimensions
-    plotting_func = plot_spec_lm
-    plotting_func_kwargs_default = plot_spec_lm_kwargs_default
+    plotting_func = plot_spec_2D
+    plotting_func_kwargs_default = plot_spec_2D_kwargs_default
     dataname = 'Shell_Spectra'
     reading_func = Shell_Spectra
 
@@ -123,12 +123,14 @@ print (buff_line)
 for fname in file_list:
     if fname == file_list[0]:
         a = a0
+        print ("got here")
+        print ("maxabs vr = ", np.max(np.abs(a.vals[:,:,0,a.lut[1],0])))
     else:
         a = reading_func(radatadir + fname, '')
     for varname in kw.varnames:
         # get the desired field variable
         vals = get_slice(a, varname, dirname=dirname)
-        if not kw.av:
+        if plottype == 'speclm' and not kw.av:
             vals = np.abs(vals)**2
 
         for irval in kw.irvals:
@@ -152,6 +154,10 @@ for fname in file_list:
                 kw_plotting_func.cbar_pos = 'right'
 
             plotting_func(*plotting_args, **kw_plotting_func)
+
+            # make lebels
+            ax.set_xlabel('sph. harm. deg. (l)', fontsize=default_labelsize)
+            ax.set_ylabel('azimuthal wavenumber (m)', fontsize=default_labelsize)
 
             # make title
             if kw.av:
