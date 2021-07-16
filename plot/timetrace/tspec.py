@@ -72,13 +72,14 @@ for qval in qvals:
         if kw.the_file is None:
             dataname = ('tspec_qval%04i_irval%02i' %(qval, irval)) + clas0['tag']
            
-            kw.the_file = get_widest_range_file(clas0['datadir'], dataname)
+            the_file = get_widest_range_file(clas0['datadir'], dataname)
         else:
             dataname = get_dataname_from_file(kw.the_file)
-        iter1, iter2 = get_iters_from_file(kw.the_file)
+            the_file = kw.the_file
+        iter1, iter2 = get_iters_from_file(the_file)
 
-        print ("plotting: " + kw.the_file)
-        di = get_dict(kw.the_file)
+        print ("plotting: " + the_file)
+        di = get_dict(the_file)
         freq = di['freq']
         vals = np.real(di['vals'])
         nfreq, nell, nm = np.shape(vals)
