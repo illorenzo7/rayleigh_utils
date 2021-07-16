@@ -925,6 +925,39 @@ class Equatorial_Slices:
         self.lut = get_lut(self.qv)
         fd.close()
 
+class slicelevels:
+    """Rayleigh Structure just containing rvals (and inds) of a Shell_Spectra or Shell_Slice file
+    ----------------------------------
+    self.nr                                       : no. radial points
+    self.radius[0:nr-1]                           : radii of the output
+    self.inds[0:nr-1]                             : radial indices of the output
+    """
+
+    def __init__(self,filename='none',path='Shell_Slices/'):
+        """filename   : The reference state file to read.
+           path       : The directory where the file is located (if full path not in filename)
+        """
+        if (filename == 'none'):
+            the_file = path+'00000001'
+        else:
+            the_file = path+filename
+
+        fd = open(the_file,'rb')
+        # We read an integer to assess which endian the file was written in...
+        bs = check_endian(fd,314,'int32')
+        version = swapread(fd,dtype='int32',count=1,swap=bs)
+        nrec = swapread(fd,dtype='int32',count=1,swap=bs)
+
+        ntheta = swapread(fd,dtype='int32',count=1,swap=bs)
+        nr = swapread(fd,dtype='int32',count=1,swap=bs)
+        nq = swapread(fd,dtype='int32',count=1,swap=bs)
+        
+        qv = np.reshape(swapread(fd,dtype='int32',count=nq,swap=bs),(nq), order = 'F')
+
+        self.nr = nr
+        self.radius = np.reshape(swapread(fd,dtype='float64',count=nr,swap=bs),(nr), order = 'F')
+        self.inds = np.reshape(swapread(fd,dtype='int32',count=nr,swap=bs),(nr), order = 'F')
+
 class Shell_Slices:
     """Rayleigh Shell Slice Structure
     ----------------------------------

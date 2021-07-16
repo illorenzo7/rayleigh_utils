@@ -33,6 +33,10 @@ kw.irvals = make_array(kw.irvals)
 kw.rvals = make_array(kw.rvals)
 kw.varnames = make_array(kw.varnames)
 
+# get data
+if kw.the_file is None:
+    kw.the_file = get_widest_range_file(clas0['datadir'], dataname)
+
 datatype = 'timelon_clat' + lat_format(clat) + '_dlat%03.0f' %dlat
 
     datadir = dirname + '/data/'
