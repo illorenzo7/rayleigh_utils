@@ -953,11 +953,11 @@ class slicelevels:
         nq = swapread(fd,dtype='int32',count=1,swap=bs)
         
         qv = np.reshape(swapread(fd,dtype='int32',count=nq,swap=bs),(nq), order = 'F')
-        fd.close()
 
         self.nr = nr
         self.radius = np.reshape(swapread(fd,dtype='float64',count=nr,swap=bs),(nr), order = 'F')
         self.inds = np.reshape(swapread(fd,dtype='int32',count=nr,swap=bs),(nr), order = 'F')
+        fd.close()
 
 class Shell_Slices:
     """Rayleigh Shell Slice Structure

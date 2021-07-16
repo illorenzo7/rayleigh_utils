@@ -9,6 +9,7 @@ sys.path.append(os.environ['rapp'])
 from reference_tools import equation_coefficients
 from rayleigh_diagnostics import G_Avgs, Shell_Slices, ReferenceState,\
     TransportCoeffs, GridInfo
+from rayleigh_diagnostics_alt import slicelevels
 from compute_grid_info import compute_grid_info, compute_theta_grid,\
         compute_r_grid
 
@@ -1365,3 +1366,8 @@ def lat_format(latval):
     else:
         hemisphere = 'N'
     return hemisphere + '%02.0f' %np.abs(latval)
+
+def get_slice_levels(dirname, datatype='Shell_Slices'):
+    radatadir = dirname + '/' + datatype + '/'
+    file_list, int_file_list, nfiles = get_file_lists_all(radatadir)
+    return slicelevels(file_list[0], path=radatadir)

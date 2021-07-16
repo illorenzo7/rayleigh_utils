@@ -28,6 +28,22 @@ kw = update_dict(kwargs_default, clas)
 kw_plot_spec_2D = update_dict(plotting_func_kwargs_default, clas)
 kw_make_figure = update_dict(make_figure_kwargs_default, clas)
 
+# get the rvals we want
+irvals = kw.irvals
+if not kw.rvals is None: # irvals haven't been set directly
+    if np.all(kw.rvals == 'all'):
+        irvals = np.arange(a0.nr)
+    else:
+        irvals = np.zeros_like(kw.rvals, dtype='int')
+        for i in range(len(kw.rvals)):
+            irvals[i] = np.argmin(np.abs(a0.radius/rsun - kw.rvals[i]))
+
+# and the qvals
+qvals = make_array(kw.qvals)
+
+# everything must be array
+irvals = make_array(irvals)
+
 # needs to be arrays
 kw.irvals = make_array(kw.irvals)
 kw.rvals = make_array(kw.rvals)
@@ -39,6 +55,7 @@ if kw.the_file is None:
 
 datatype = 'timelon_clat' + lat_format(clat) + '_dlat%03.0f' %dlat
 
+for qval in 
     datadir = dirname + '/data/'
     if kw.the_file is None:
         kw.the_file = get_widest_range_file(datadir, dataname)
