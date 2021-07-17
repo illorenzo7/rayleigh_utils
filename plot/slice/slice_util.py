@@ -179,7 +179,7 @@ def plot_moll(field_orig, costheta, fig, ax, **kwargs):
         ax.plot(xvals, yvals, 'k', linewidth=1.5*kw.linewidth)
 
 # routine for 2D spectra
-plot_spec_2D_kwargs_default = dict({'x': None, 'y': None, 'xvals': None, 'yvals': None, 'linewidth': default_lw, 'minmax': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'yminmax': None, 'ymin': None, 'ymax': None, 'xymin': None, 'xymax': None, 'xyminmax': None,\
+plot_spec_2D_kwargs_default = dict({'x': None, 'y': None, 'xvals': [], 'yvals': [], 'linewidth': default_lw, 'minmax': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'yminmax': None, 'ymin': None, 'ymax': None, 'xymin': None, 'xymax': None, 'xyminmax': None,\
     # more cbar stuff
     'plotcbar': True, 'cmap': None, 'norm': None, 'linear': False, 'units': '', 'fontsize': default_labelsize})
 plot_spec_2D_kwargs_default.update(add_cbar_kwargs_default)
@@ -281,3 +281,16 @@ def plot_spec_2D(field, fig, ax, **kwargs):
     # Get ticks everywhere
     plt.minorticks_on()
     plt.tick_params(top=True, right=True, direction='in', which='both')
+
+    # possibly plot x and y vals
+    xvals = make_array(kw.xvals)
+    yvals = make_array(kw.yvals)
+    count = 1
+    for axisvals in xvals, yvals:
+        for axisval in axisvals:
+            if count == 1:
+                xline, yline = axisval + np.zeros_like(kw.y), kw.y
+            if count == 2:
+                xline, yline = kw.x, axisval + np.zeros_like(kw.x)
+            ax.plot(xline, yline, 'k--')
+        count += 1

@@ -118,8 +118,6 @@ print (buff_line)
 for fname in file_list:
     if fname == file_list[0]:
         a = a0
-        print ("got here")
-        print ("maxabs vr = ", np.max(np.abs(a.vals[:,:,0,a.lut[1],0])))
     else:
         a = reading_func(radatadir + fname, '')
     for varname in kw.varnames:
