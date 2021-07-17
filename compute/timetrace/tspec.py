@@ -255,9 +255,6 @@ for irval in irvals:
         else: # recieve appropriate file info if rank > 1
             my_vals, my_nell, nm = comm.recv(source=0)
 
-        # need to make this a real array again
-        vals = np.zeros_like(vals, 'float')
-
         # make sure everyone gets "their slice"
         comm.Barrier()
         if rank == 0:
@@ -299,6 +296,9 @@ for irval in irvals:
             print (format_time(t2 - t1))
             print(fill_str('rank 0 collecting FFTs', lent, char), end='')
             t1 = time.time()
+
+            # need to make this a real array again
+            vals = np.zeros_like(vals, 'float')
 
             # Gather the FFT results back into vals array
             for k in range(nproc):

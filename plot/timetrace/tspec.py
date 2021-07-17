@@ -70,15 +70,14 @@ for qval in qvals:
 
         # get data
         if kw.the_file is None:
-            dataname = ('tspec_qval%04i_irval%02i' %(qval, irval)) + clas0['tag']
-           
+            dataname = ('tspec_qval%04i_irval%02i' %(qval, irval))          
             the_file = get_widest_range_file(clas0['datadir'], dataname)
         else:
             dataname = get_dataname_from_file(kw.the_file)
             the_file = kw.the_file
         iter1, iter2 = get_iters_from_file(the_file)
 
-        print ("plotting: " + the_file)
+        print ("reading " + the_file)
         di = get_dict(the_file)
         freq = di['freq']
         vals = np.real(di['vals'])
@@ -117,7 +116,7 @@ for qval in qvals:
 
             # Display at terminal what we are plotting
              
-            savename = dataname + '_' + basename + '_' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8)
+            savename = dataname + '_' + basename + clas0['tag'] + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
 
             # make plot
             fig, axs, fpar = make_figure(**kw_make_figure)
