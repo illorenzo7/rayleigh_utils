@@ -51,23 +51,28 @@ if fname is None:
 print ("In %s:" %fname)
 di = read_log(dirname + '/' + fname)
 print ("ncpu: ", di['ncpu'])
-mean_iters_per_sec = np.mean(di['iters_per_sec'])
-mean_secs_per_iter = np.mean(di['delta_t'])
-print ("Iters/sec (real time): %.1f" %mean_iters_per_sec)
-print ("Secs/iter (sim time): %.1f" %mean_secs_per_iter)
+iters = di['iters']
+niter = iters[-1] - iters[0]
+iters_per_sec = di['iters_per_sec'][1:] # first one is zero for some reason
+secs_per_iter = 1/iters_per_sec
+runtime = np.sum(secs_per_iter)
+iters_per_sec_av = niter/runtime
+dt_av = np.mean(di['delta_t'])
+print ("avg. iters/sec: %.2f" %iters_per_sec_av)
+print ("mean of rates:  %.2f" %np.mean(iters_per_sec))
+print ("avg. timestep:  %1.2e sec" %dt_av)
+print ("run time     :  " + format_time(runtime))
+print ("niter        :  ", niter)
+print ("len(iters)   :  ", len(iters_per_sec))
 
 if verbose:
     # Get fancy now ...
     print ("===============================")
     # Get the baseline time unit
-    rotation = get_parameter(dirname, 'rotation')
-    if rotation:
-        time_unit = compute_Prot(dirname)
-        unit_name = 'P_rot'
-    else:
-        time_unit = compute_tdt(dirname)
-        unit_name = 'TDT'
-    simtime_per_hour = mean_secs_per_iter*(mean_iters_per_sec*3600.)/\
+    time_unit, time_label, rotation, simple_label = get_time_unit(dirname)
+    unit_name = simple_label
+
+    simtime_per_hour = dt_av*(iters_per_sec_av*3600.)/\
             time_unit
     print ("Simulation rate = %.1f %s/hour" %(simtime_per_hour, unit_name))
     print ("Simulation rate = %.1f %s/day" %(simtime_per_hour*12.,\
@@ -75,11 +80,11 @@ if verbose:
     print ("Simulation rate = %.1f %s/(5 days)" %(simtime_per_hour*12.*5.,\
             unit_name))
     print ("===============================")
-    print ("Simulation rate = %1.2e iters/hour" %(mean_iters_per_sec*3600.))
+    print ("Simulation rate = %1.2e iters/hour" %(iters_per_sec_av*3600.))
     print ("Simulation rate = %1.2e iters/day"\
-            %(mean_iters_per_sec*3600.*24.))
+            %(iters_per_sec_av*3600.*24.))
     print ("Simulation rate = %1.2e iters/(5 days)"\
-            %(mean_iters_per_sec*3600.*24.*5.))
+            %(iters_per_sec_av*3600.*24.*5.))
     print ("===============================")
     print ("Min. time step = %1.2e s" %np.min(di['delta_t']))
     print ("Max. time step = %1.2e s" %np.max(di['delta_t']))
