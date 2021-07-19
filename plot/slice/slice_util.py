@@ -207,7 +207,7 @@ def plot_spec_2D(field, fig, ax, **kwargs):
     if not kw.xymin is None:
         kw.xmin = kw.xymin
         kw.ymin = kw.xymin
-    if not kw.xymin is None:
+    if not kw.xymax is None:
         kw.xmax = kw.xymax
         kw.ymax = kw.xymax
     if not kw.xyminmax is None:
@@ -227,9 +227,9 @@ def plot_spec_2D(field, fig, ax, **kwargs):
         iy1 = np.argmin(np.abs(kw.y - kw.yminmax[0]))
         iy2 = np.argmin(np.abs(kw.y - kw.yminmax[1]))
     if not kw.ymin is None:
-        ix1 = np.argmin(np.abs(kw.x - kw.ymin))
+        iy1 = np.argmin(np.abs(kw.y - kw.ymin))
     if not kw.ymax is None:
-        ix2 = np.argmin(np.abs(kw.x - kw.ymax))
+        iy2 = np.argmin(np.abs(kw.y - kw.ymax))
 
     # now adjust everything by the (x, y) range we want
     kw.x = kw.x[ix1:ix2+1]
