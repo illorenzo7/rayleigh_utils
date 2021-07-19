@@ -53,6 +53,11 @@ lvals = make_array(kw.lvals, tolist=True)
 mvals = make_array(kw.mvals, tolist=True)
 sectoff = make_array(kw.sectoff, tolist=True)
 
+everything = modes + lvals + mvals + sectoff
+if len(everything) == 0:
+    modes = ['lpower']
+    everything = modes
+
 print (buff_line)
 if kw.the_file is None:
     print ("plotting temporal spectra")
@@ -72,10 +77,6 @@ print (buff_line)
 # get and make plotdir of non existent
 plotdir = my_mkdir(clas0['plotdir'] + 'tspec/')
  
-everything = modes + lvals + mvals + sectoff
-if len(everything) == 0:
-    everything = ['lpower']
-
 for qval in qvals:
     for irval in irvals:
         # get radial level
