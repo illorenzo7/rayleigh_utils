@@ -123,8 +123,6 @@ for qval in qvals:
             ax = axs[0, 0]
 
             kw_plot_spec_2D.cbar_pos = 'right'
-            if kw_plot_spec_2D.x is None:
-                kw_plot_spec_2D.x = x
             if kw_plot_spec_2D.y is None:
                 kw_plot_spec_2D.y = freq
 
