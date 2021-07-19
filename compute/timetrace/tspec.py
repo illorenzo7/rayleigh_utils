@@ -38,6 +38,7 @@ if rank == 0:
 
 # modules needed by everyone
 import numpy as np
+from nfft import nfft
 # data type and reading function
 import sys, os
 from rayleigh_diagnostics_alt import Shell_Spectra
@@ -75,7 +76,7 @@ if rank == 0:
     a0 = reading_func(radatadir + file_list[0], '')
 
     # set default values for qval and irval
-    kwargs_default = dict({'irvals': np.array([0]), 'rvals': None, 'qvals': np.array([1])})
+    kwargs_default = dict({'irvals': np.array([0]), 'rvals': None, 'qvals': np.array([1]), 'nonlin': False})
 
     # overwrite defaults
     kw = update_dict(kwargs_default, clas)
@@ -95,6 +96,9 @@ if rank == 0:
 
     # everything must be array
     irvals = make_array(irvals)
+
+    # use nonlin fft or not
+    nonlin = kw.nonlin
 
     # Get the problem size
     nproc_min, nproc_max, n_per_proc_min, n_per_proc_max =\
@@ -225,6 +229,16 @@ for irval in irvals:
             print('\n' + fill_str('collection time', lent, char), end='')
             print (format_time(t2 - t1))
 
+            # get the frequencies
+            delta_t = np.mean(np.diff(times))
+            freq = np.fft.fftfreq(len(times), delta_t)
+            freq = np.fft.fftshift(freq)
+
+            if nonlin:
+                # shift the times to lie in range -1/2, 1/2
+                total_time = times[-1] - times[0]
+                times = (times - times[0])/total_time - 1/2
+
             # now redistribute the data by l-value 
             print(fill_str('proc 0 sending datacube by l-val', lent, char),\
                     end='')
@@ -251,9 +265,9 @@ for irval in irvals:
 
                 # send appropriate file info if not rank 0
                 if k > 0:
-                    comm.send([my_vals, my_nell, nm], dest=k)
+                    comm.send([my_vals, my_nell, nm, nonlin, freq, times], dest=k)
         else: # recieve appropriate file info if rank > 1
-            my_vals, my_nell, nm = comm.recv(source=0)
+            my_vals, my_nell, nm, nonlin, freq, times = comm.recv(source=0)
 
         # make sure everyone gets "their slice"
         comm.Barrier()
@@ -261,15 +275,20 @@ for irval in irvals:
             t2 = time.time()
             print (format_time(t2 - t1))
 
-            # everyone do their FFT
+            # everyone do their FFT (or nonlin fft)
             print(fill_str('doing FFT', lent, char), end='\r')
+            if nonlin:
+                print ("using DFT for NONLINEARLY SPACED times")
             t1 = time.time()
 
         count_loc = 0 
         for il in range(my_nell):
             for im in range(nm):
-                my_vals[:, il, im] = np.fft.fft(my_vals[:, il, im])
-                my_vals[:, il, im] = np.fft.fftshift(my_vals[:, il, im])
+                if nonlin:
+                    my_vals[:, il, im] = nfft(times, my_vals[:, il, im])
+                else:
+                    my_vals[:, il, im] = np.fft.fft(my_vals[:, il, im])
+                    my_vals[:, il, im] = np.fft.fftshift(my_vals[:, il, im])
                 my_vals[:, il, im] = np.abs(my_vals[:, il, im])**2
 
                 if rank == 0:
@@ -326,11 +345,6 @@ for irval in irvals:
             print (format_time(t2 - t1))
             print(fill_str('rank 0 saving data', lent, char), end='')
             t1 = time.time()
-
-            # get frequencies
-            delta_t = np.mean(np.diff(times))
-            freq = np.fft.fftfreq(len(times), delta_t)
-            freq = np.fft.fftshift(freq)
 
             # create data directory if it doesn't already exist
             datadir = clas0['datadir']
