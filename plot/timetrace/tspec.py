@@ -16,8 +16,9 @@ dirname = clas0.dirname
 dirname_stripped = strip_dirname(dirname)
 
 # SPECIFIC ARGS
-kwargs_default = dotdict(dict({'the_file': None, 'irvals': np.array([0]), 'rvals': None, 'qvals': np.array([1]), 'modes': np.array(['lpower']), 'lval': None, 'mval': None}))
-# "modes" can be: lpower, mpower, l, m, sect, or combinations thereof
+kwargs_default = dotdict(dict({'the_file': None, 'irvals': np.array([0]), 'rvals': None, 'qvals': np.array([1]), 'modes': np.array(['lpower']), 'lvals': [], 'mvals': [], 'sectoff': []}))
+# "modes" can be: lpower, mpower, sect, or combinations thereof
+# can also get other modes via --lvals (plot freq vs m), --mvals (freq vs l), and --sectoff (m = l - offset)
 
 # many kwargs
 kwargs_default.update(plot_spec_2D_kwargs_default)
@@ -43,20 +44,28 @@ if not kw.rvals is None: # irvals haven't been set directly
 # and the qvals
 qvals = make_array(kw.qvals)
 
-# everything must be array
+# everything must be an array
 irvals = make_array(irvals)
-modes = make_array(kw.modes)
+
+# modes, etc.; these must be lists
+modes = make_array(kw.modes, tolist=True)
+lvals = make_array(kw.lvals, tolist=True)
+mvals = make_array(kw.mvals, tolist=True)
+sectoff = make_array(kw.sectoff, tolist=True)
 
 print (buff_line)
 if kw.the_file is None:
     print ("plotting temporal spectra")
     print ("qvals = ", qvals)
     print ("irvals = ", irvals)
-    nfigures = len(irvals)*len(qvals)*len(modes)
+    nfigures = len(irvals)*len(qvals)*(len(modes) + len(lvals) + len(mvals) + len(sectoff))
 else:
     print ("plotting ", kw.the_file)
-    nfigures = len(modes)
+    nfigures = len(modes) + len(lvals) + len(mvals) + len(sectoff)
 print ("modes = ", modes)
+print ("lvals = ", lvals)
+print ("mvals = ", mvals)
+print ("sectoff = ", sectoff)
 print ("nfigures = ", nfigures)
 print (buff_line)
 
@@ -83,39 +92,50 @@ for qval in qvals:
         vals = np.real(di['vals'])
         nfreq, nell, nm = np.shape(vals)
 
-        for mode in modes:
-            basename = mode
-            if mode == 'lpower':
-                xlabel = 'sph. harm. deg. (l)'
-                x = np.arange(nell)
-                power = np.sum(vals, axis=2)
-                power = power.T/nm # keep power normalized
-            if mode == 'mpower':
+        # add mvals/lvals sectoff to modes
+
+        count = 0
+        for mode in modes + lvals + mvals + sectoff:
+            if count < len(modes):
+                basename = mode
+                if mode == 'lpower':
+                    xlabel = 'sph. harm. deg. (l)'
+                    x = np.arange(nell)
+                    power = np.sum(vals, axis=2)
+                    power = power.T/nm # keep power normalized
+                if mode == 'mpower':
+                    xlabel = 'azimuthal wavenumber (m)'
+                    x = np.arange(nm)
+                    power = np.sum(vals, axis=1)
+                    power = power.T/nell # keep power normalized
+                if mode == 'sect':
+                    xlabel = 'sectoral (l = m) degree'
+                    x = np.arange(nell)
+                    power = np.zeros((nell, nfreq))
+                    for il in range(nell):
+                        power[il, :] = vals[:, il, il]
+            elif count < len(modes) + len(lvals):
+                lval = int(mode)
+                basename = "lval%03i" %lval
                 xlabel = 'azimuthal wavenumber (m)'
                 x = np.arange(nm)
-                power = np.sum(vals, axis=1)
-                power = power.T/nell # keep power normalized
-            if mode == 'lval':
-                xlabel = 'azimuthal wavenumber (m)'
-                x = np.arange(nm)
-                lval = int(kw.lval)
-                basename += "%03i" %lval
                 power = vals[:, lval, :].T
-            if mode == 'mval':
+            elif count < len(modes) + len(lvals) + len(mvals):
+                mval = int(mode)
+                basename = "mval%03i" %mval
                 xlabel = 'sph. harm. deg. (l)'
                 x = np.arange(nell)
-                mval = int(kw.mval)
-                basename += "%03i" %mval
-                power = vals[:, :, mval].T
-            if mode == 'sect':
-                xlabel = 'sectoral (l = m) degree'
+                power = vals[:, :, lval].T
+            elif count < len(modes) + len(lvals) + len(mvals) + len(sectoff):
+                basename = "sectoff%03i" %mode
+                offset = int(mode)
+                xlabel = 'sectoral offset (m = l - %i)' %offset
                 x = np.arange(nell)
                 power = np.zeros((nell, nfreq))
-                for il in range(nell):
-                    power[il, :] = vals[:, il, il]
+                for il in range(offset, nell):
+                    power[il, :] = vals[:, il, il - offset]
 
             # Display at terminal what we are plotting
-             
             savename = dataname + '_' + basename + clas0['tag'] + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
 
             # make plot
@@ -138,7 +158,7 @@ for qval in qvals:
 
             # make title
             time_string = get_time_string(dirname, iter1, iter2, oneline=True)
-            slice_info = ('qval = %04i' %qval) + 5*' ' + (r'$r/R_\odot\ =\ %0.3f$' %rval)
+            slice_info = ('qval = %04i' %qval) + 5*' ' + (r'$r/R_\odot\ =\ %0.3f$' %rval) + 5*' ' + "mode = " + basename
 
             title = dirname_stripped + '\n' + slice_info + '\n' + time_string
             ax.set_title(title, va='bottom', fontsize=default_titlesize)
@@ -152,4 +172,5 @@ for qval in qvals:
                 print ("displaying " + savename[:-4])
                 plt.show()   
             plt.close()
+            count += 1
 print (buff_line)
