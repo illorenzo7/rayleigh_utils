@@ -16,7 +16,7 @@ dirname = clas0.dirname
 dirname_stripped = strip_dirname(dirname)
 
 # SPECIFIC ARGS
-kwargs_default = dotdict(dict({'the_file': None, 'irvals': np.array([0]), 'rvals': None, 'qvals': np.array([1]), 'modes': np.array(['lpower']), 'lvals': [], 'mvals': [], 'sectoff': []}))
+kwargs_default = dotdict(dict({'the_file': None, 'irvals': np.array([0]), 'rvals': None, 'qvals': np.array([1]), 'modes': [], 'lvals': [], 'mvals': [], 'sectoff': []}))
 # "modes" can be: lpower, mpower, sect, or combinations thereof
 # can also get other modes via --lvals (plot freq vs m), --mvals (freq vs l), and --sectoff (m = l - offset)
 
@@ -71,6 +71,10 @@ print (buff_line)
 
 # get and make plotdir of non existent
 plotdir = my_mkdir(clas0['plotdir'] + 'tspec/')
+ 
+everything = modes + lvals + mvals + sectoff
+if len(everything) == 0:
+    everything = ['lpower']
 
 for qval in qvals:
     for irval in irvals:
@@ -95,7 +99,7 @@ for qval in qvals:
         # add mvals/lvals sectoff to modes
 
         count = 0
-        for mode in modes + lvals + mvals + sectoff:
+        for mode in everything:
             if count < len(modes):
                 basename = mode
                 if mode == 'lpower':
@@ -125,7 +129,7 @@ for qval in qvals:
                 basename = "mval%03i" %mval
                 xlabel = 'sph. harm. deg. (l)'
                 x = np.arange(nell)
-                power = vals[:, :, lval].T
+                power = vals[:, :, mval].T
             elif count < len(modes) + len(lvals) + len(mvals) + len(sectoff):
                 basename = "sectoff%03i" %mode
                 offset = int(mode)
