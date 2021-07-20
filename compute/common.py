@@ -366,10 +366,17 @@ def reverse_dict(di):
 def read_log(fname):
     f = open(fname, 'r')
     lines = f.readlines()
+    f.close()
     iters = []
+    iters_io = []
     delta_t = []
+    delta_t_io = []
     iters_per_sec = []
-    for line in lines:
+    iters_per_sec_io = []
+    for i in range(len(lines)):
+        line = lines[i]
+        if i > 0:
+            lastline = lines[i - 1]
         if 'NCPU' in line:
             split = line.split()
             ncpu = int(split[-1])
@@ -392,15 +399,18 @@ def read_log(fname):
                         delta_t.append(float(split[i+2]))
             else:
                 print("read_log(%s): unrecognized text file format")
+            if "Creating" in lastline: # this was a line right after output
+                iters_io.append(iters[-1])
+                delta_t_io.append(delta_t[-1])
+                if lensplit == 6:
+                    iters_per_sec_io.append(iters_per_sec[-1])
 
+    di_out = dict({'iters': np.array(iters), 'delta_t': np.array(delta_t), 'ncpu': ncpu, 'iters_io': np.array(iters_io), 'delta_t_io': np.array(delta_t_io)})
     if len(iters_per_sec) > 0:
-        di = dict({'iters': np.array(iters), 'delta_t': np.array(delta_t),\
-                'iters_per_sec': np.array(iters_per_sec), 'ncpu': ncpu})
-    else:
-        di = dict({'iters': np.array(iters), 'delta_t': np.array(delta_t),\
-                'ncpu': ncpu})
+        di_out['iters_per_sec'] = np.array(iters_per_sec)
+        di_out['iters_per_sec_io'] = np.array(iters_per_sec_io)
 
-    return di
+    return di_out
 
 def print_tuple(tup, format_str, prepend=''):
     whole_str = prepend + '('

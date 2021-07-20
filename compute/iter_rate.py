@@ -55,6 +55,7 @@ print ("In %s:" %fname)
 di = read_log(dirname + '/' + fname)
 iters = di['iters'][1:]
 iters_per_sec = di['iters_per_sec'][1:] # first one is zero for some reason
+iters_per_sec_io = di['iters_per_sec_io'] # first one is zero for some reason
 delta_t = di['delta_t'][1:]
 if not nlines_to_use == 'all':
     iters = iters[-nlines_to_use:]
@@ -66,17 +67,16 @@ print ("ncpu: ", di['ncpu'])
 dt_av = np.mean(delta_t)
 niter = iters[-1] - iters[0]
 secs_per_iter = 1/iters_per_sec
+secs_per_iter_io = 1/iters_per_sec_io
 runtime = np.sum(secs_per_iter)
-# quick hack: just sum the seconds after every 50th iteration to determine
-# output time
-iotime = np.sum(secs_per_iter[::50])
+iotime = np.sum(secs_per_iter_io)
 
 iters_per_sec_av = niter/runtime
 print ("avg. iters/sec: %.2f" %iters_per_sec_av)
 print ("mean of rates:  %.2f" %np.mean(iters_per_sec))
 print ("avg. timestep:  %1.2e sec" %dt_av)
-print ("run time     :  " + format_time(runtime))
-print ("est. I/O time:  " + format_time(iotime))
+print (make_bold("run time     :  " + format_time(runtime)))
+print (make_bold("est. I/O time:  " + format_time(iotime)))
 print ("frac run     :    %.3f" %((runtime - iotime)/runtime))
 print ("frac I/O     :    %.3f" %(iotime/runtime))
 print ("niter        :  ", niter)
