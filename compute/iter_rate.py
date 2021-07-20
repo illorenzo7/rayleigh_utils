@@ -19,12 +19,15 @@ nargs = len(args)
 # See if user wants to use a different file name than last logfile
 fname = None
 verbose = False
+nlines_to_use = 'all'
 for i in range(nargs):
     arg = args[i]
     if arg == '--fname':
         fname = args[i+1]
     elif arg == '--v':
         verbose = True
+    elif arg == '--n':
+        nlines_to_use = int(args[i+1])
 
 lognames = []
 lognumbers = []
@@ -50,20 +53,36 @@ if fname is None:
 
 print ("In %s:" %fname)
 di = read_log(dirname + '/' + fname)
-print ("ncpu: ", di['ncpu'])
-iters = di['iters']
-niter = iters[-1] - iters[0]
+iters = di['iters'][1:]
 iters_per_sec = di['iters_per_sec'][1:] # first one is zero for some reason
+delta_t = di['delta_t'][1:]
+if not nlines_to_use == 'all':
+    iters = iters[-nlines_to_use:]
+    iters_per_sec = iters_per_sec[-nlines_to_use:]
+    delta_t = delta_t[-nlines_to_use:]
+
+print ("ncpu: ", di['ncpu'])
+
+dt_av = np.mean(delta_t)
+niter = iters[-1] - iters[0]
 secs_per_iter = 1/iters_per_sec
 runtime = np.sum(secs_per_iter)
+# quick hack: just sum the seconds after every 50th iteration to determine
+# output time
+iotime = np.sum(secs_per_iter[::50])
+
 iters_per_sec_av = niter/runtime
-dt_av = np.mean(di['delta_t'])
 print ("avg. iters/sec: %.2f" %iters_per_sec_av)
 print ("mean of rates:  %.2f" %np.mean(iters_per_sec))
 print ("avg. timestep:  %1.2e sec" %dt_av)
 print ("run time     :  " + format_time(runtime))
+print ("est. I/O time:  " + format_time(iotime))
+print ("frac run     :    %.3f" %((runtime - iotime)/runtime))
+print ("frac I/O     :    %.3f" %(iotime/runtime))
 print ("niter        :  ", niter)
 print ("len(iters)   :  ", len(iters_per_sec))
+print (secs_per_iter[::50])
+print (secs_per_iter[1::50])
 
 if verbose:
     # Get fancy now ...
