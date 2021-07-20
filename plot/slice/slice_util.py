@@ -181,12 +181,24 @@ def plot_moll(field_orig, costheta, fig, ax, **kwargs):
 # routine for 2D spectra
 plot_spec_2D_kwargs_default = dict({'x': None, 'y': None, 'xvals': [], 'yvals': [], 'linewidth': default_lw, 'minmax': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'yminmax': None, 'ymin': None, 'ymax': None, 'xymin': None, 'xymax': None, 'xyminmax': None,\
     # more cbar stuff
-    'plotcbar': True, 'cmap': None, 'norm': None, 'linear': False, 'units': '', 'fontsize': default_labelsize})
+    'plotcbar': True, 'cmap': None, 'norm': None, 'linear': False, 'units': '', 'fontsize': default_labelsize, 'nosci': False})
+
+# additional kwargs
+contourf_minmax_kwargs_default['logscale'] = True
+contourf_minmax_kwargs_default['posdef'] = True
+contourf_minmax_kwargs_default['buff_ignore1'] = None
+contourf_minmax_kwargs_default['buff_ignore2'] = None
+
+add_cbar_kwargs_default['logscale'] = True
+add_cbar_kwargs_default['posdef'] = True
+
+plot_spec_2D_kwargs_default.update(contourf_minmax_kwargs_default)
 plot_spec_2D_kwargs_default.update(add_cbar_kwargs_default)
 
 def plot_spec_2D(field, fig, ax, **kwargs):
     kw = update_dict(plot_spec_2D_kwargs_default, kwargs)
     kw_add_cbar = update_dict(add_cbar_kwargs_default, kwargs)
+    kw_contourf_minmax = update_dict(contourf_minmax_kwargs_default, kwargs)
     find_bad_keys(plot_spec_2D_kwargs_default, kwargs, 'plot_spec_2D')
 
     # make sure Python does not modify any of the arrays it was passed
@@ -236,34 +248,36 @@ def plot_spec_2D(field, fig, ax, **kwargs):
     kw.y = kw.y[iy1:iy2+1]
     field = field[ix1:ix2+1, iy1:iy2+1]
 
+    # get the squares to correspond to modes
     xx, yy = np.meshgrid(kw.x, kw.y, indexing='ij')
     xx, yy = xy_grid(xx, yy)
 
-    # Get minmax, if not specified
+    # get default bounds if not specified
     if kw.minmax is None:
-        field_not0 = np.copy(field)
-        # power gets wierd (close to 0?) at the two
-        # most extreme l-values
-        if ix1 == 0: 
-            field_not0 = field_not0[1:, :]
-        if ix2 == nx - 1: 
-            field_not0 = field_not0[:-1, :]
-        field_not0 = field_not0[field_not0 != 0.]
-        if kw.linear: # NOT the default...
-            kw.minmax = kw_add_cbar.minmax =\
-                contourf_minmax(field_not0, posdef=True)
-            kw_add_cbar.posdef = True
-        else:
-            kw.minmax = kw_add_cbar.minmax =\
-                contourf_minmax(field_not0, logscale=True, buff_ignore1=None, buff_ignore2=None)
-            kw_add_cbar.logscale = True
-   
+        kw.minmax = kw_add_cbar.minmax = contourf_minmax(field, **kw_contourf_minmax)
+
+    # Factor out the exponent on the field and put it on the color bar
+    # can turn this behavior off with "nosci=True"
+    if not kw.nosci:
+        maxabs = max(np.abs(kw.minmax[0]), np.abs(kw.minmax[1]))
+        kw_add_cbar.exp = get_exp(maxabs)
+        divisor = 10**kw_add_cbar.exp
+        field /= divisor
+        kw.minmax = kw_add_cbar.minmax = kw.minmax[0]/divisor, kw.minmax[1]/divisor
+
+    # Saturate the array (otherwise contourf will show white areas)
+    saturate_array(field, kw.minmax[0], kw.minmax[1])
+  
+    # deal with norm
     if kw.norm is None and not kw.linear: # the default
         kw.norm = colors.LogNorm(vmin=kw.minmax[0], vmax=kw.minmax[1])
     
     if kw.cmap is None:
         kw.cmap = 'jet'
-    im = plt.pcolormesh(xx, yy, field, cmap=kw.cmap, norm=kw.norm)  
+    im = plt.pcolormesh(xx, yy, field, cmap=kw.cmap, norm=kw.norm, vmin=kw.minmax[0], vmax=kw.minmax[1])  
+    print ("minmax = ", kw.minmax)
+    print (np.min(field))
+    print (np.max(field))
 
     # now deal with color bar, if one is desired
     if kw.plotcbar:

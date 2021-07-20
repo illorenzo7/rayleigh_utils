@@ -474,7 +474,7 @@ def lineplot(xx, profiles, ax, **kwargs):
     if kw.plotleg:
         ax.legend(loc='lower left', ncol=3, fontsize=0.8*default_labelsize)
 
-add_cbar_kwargs_default = dict({'minmax': None, 'cbar_thick': 1/8, 'cbar_aspect': 1/20, 'cbar_prec': 2, 'cbar_no': 1, 'cbar_pos': 'bottom', 'units': '', 'nosci': False, 'cbar_fs': default_labelsize, 'exp': 0, 'logscale': False})
+add_cbar_kwargs_default = dict({'minmax': None, 'cbar_thick': 1/8, 'cbar_aspect': 1/20, 'cbar_prec': 2, 'cbar_no': 1, 'cbar_pos': 'bottom', 'units': '', 'nosci': False, 'cbar_fs': default_labelsize, 'exp': 0, 'logscale': False, 'posdef': False})
 def add_cbar(fig, ax, im, **kwargs):
     # deal with kwargs
     kw = update_dict(add_cbar_kwargs_default, kwargs)
