@@ -81,8 +81,6 @@ print ("frac run     :    %.3f" %((runtime - iotime)/runtime))
 print ("frac I/O     :    %.3f" %(iotime/runtime))
 print ("niter        :  ", niter)
 print ("len(iters)   :  ", len(iters_per_sec))
-print (secs_per_iter[::50])
-print (secs_per_iter[1::50])
 
 if verbose:
     # Get fancy now ...
