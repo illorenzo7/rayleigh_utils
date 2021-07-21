@@ -21,9 +21,9 @@ fi
 nprocs=$3
 
 select=$(($nprocs/$ncpus + 1))
-if [ $nprocs%$ncpus == 0 ]
+if [ $(($nprocs%$ncpus)) == 0 ]
 then
-    select=$(($select + 1))
+    select=$(($select - 1))
 fi
 
 nprow=`python $rau/zz_runscripts/nprow.py $nprocs`
