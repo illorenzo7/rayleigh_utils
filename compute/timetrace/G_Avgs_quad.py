@@ -99,7 +99,7 @@ if rank == 0:
     # [-45, 0, 45] in latitude
 
     if 'latvals' in clas:
-        latvals = clas['latvals']
+        latvals = make_array(clas['latvals'], tolist=True)
     else:
         latvals = [-45., 0., 45.]
 
