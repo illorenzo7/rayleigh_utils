@@ -60,7 +60,7 @@ if kw.the_file is None:
     print ("irvals = ", irvals)
     nfigures = len(irvals)*len(qvals)*(len(modes) + len(lvals) + len(mvals) + len(sectoff))
 else:
-    print ("plotting ", kw.the_file)
+    print ("considering ", kw.the_file)
     nfigures = len(modes) + len(lvals) + len(mvals) + len(sectoff)
 print ("modes = ", modes)
 print ("lvals = ", lvals)
@@ -87,6 +87,7 @@ for qval in qvals:
         iter1, iter2 = get_iters_from_file(the_file)
 
         #print ("reading " + the_file)
+        print ("reading " + the_file)
         di = get_dict(the_file)
         freq = di['freq']
         power_full = np.real(di['vals'])
