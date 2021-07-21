@@ -574,7 +574,7 @@ def contourf_minmax(field, **kwargs):
         mmax = np.max(field[np.where(field >= 0.0)])
         minmax = mmin, mmax
     elif kw.logscale:
-        logfield = np.log(field)
+        logfield = np.log(field[np.where(field != 0)])
         medlog = np.median(logfield)
         shiftlog = logfield - medlog
         std_plus =\

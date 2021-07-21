@@ -186,8 +186,8 @@ plot_spec_2D_kwargs_default = dict({'x': None, 'y': None, 'xvals': [], 'yvals': 
 # additional kwargs
 contourf_minmax_kwargs_default['logscale'] = True
 contourf_minmax_kwargs_default['posdef'] = True
-contourf_minmax_kwargs_default['buff_ignore1'] = None
-contourf_minmax_kwargs_default['buff_ignore2'] = None
+#contourf_minmax_kwargs_default['buff_ignore1'] = None
+#contourf_minmax_kwargs_default['buff_ignore2'] = None
 
 add_cbar_kwargs_default['logscale'] = True
 add_cbar_kwargs_default['posdef'] = True
