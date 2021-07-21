@@ -181,16 +181,13 @@ def plot_moll(field_orig, costheta, fig, ax, **kwargs):
 # routine for 2D spectra
 plot_spec_2D_kwargs_default = dict({'x': None, 'y': None, 'xvals': [], 'yvals': [], 'linewidth': default_lw, 'minmax': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'yminmax': None, 'ymin': None, 'ymax': None, 'xymin': None, 'xymax': None, 'xyminmax': None,\
     # more cbar stuff
-    'plotcbar': True, 'cmap': None, 'norm': None, 'linear': False, 'units': '', 'fontsize': default_labelsize, 'nosci': False})
+    'plotcbar': True, 'cmap': None, 'norm': None, 'linear': False, 'units': '', 'fontsize': default_labelsize})
 
 # additional kwargs
-contourf_minmax_kwargs_default['logscale'] = True
-contourf_minmax_kwargs_default['posdef'] = True
+contourf_minmax_kwargs_default['logscale'] = add_cbar_kwargs_default['logscale'] = True
+contourf_minmax_kwargs_default['posdef'] = add_cbar_kwargs_default['posdef'] =True
 #contourf_minmax_kwargs_default['buff_ignore1'] = None
 #contourf_minmax_kwargs_default['buff_ignore2'] = None
-
-add_cbar_kwargs_default['logscale'] = True
-add_cbar_kwargs_default['posdef'] = True
 
 plot_spec_2D_kwargs_default.update(contourf_minmax_kwargs_default)
 plot_spec_2D_kwargs_default.update(add_cbar_kwargs_default)
@@ -203,6 +200,10 @@ def plot_spec_2D(field, fig, ax, **kwargs):
 
     # make sure Python does not modify any of the arrays it was passed
     field = np.copy(field)
+
+    # linear means "not logscale"
+    if kw.linear: 
+        kw.logscale = kw_add_cbar.logscale = kw_contourf_minmax.logscale = False
 
     # use full integer grid if no specific axis was specified
     nx, ny = np.shape(field)
@@ -258,7 +259,7 @@ def plot_spec_2D(field, fig, ax, **kwargs):
 
     # Factor out the exponent on the field and put it on the color bar
     # can turn this behavior off with "nosci=True"
-    if not kw.nosci:
+    if not (kw.nosci or kw.logscale):
         maxabs = max(np.abs(kw.minmax[0]), np.abs(kw.minmax[1]))
         kw_add_cbar.exp = get_exp(maxabs)
         divisor = 10**kw_add_cbar.exp
@@ -268,31 +269,26 @@ def plot_spec_2D(field, fig, ax, **kwargs):
     # Saturate the array (otherwise contourf will show white areas)
     saturate_array(field, kw.minmax[0], kw.minmax[1])
   
-    # deal with norm
+    # deal with norm and colormap
     if kw.norm is None and not kw.linear: # the default
         kw.norm = colors.LogNorm(vmin=kw.minmax[0], vmax=kw.minmax[1])
     
     if kw.cmap is None:
         kw.cmap = 'jet'
+
+    # make color plot
     im = plt.pcolormesh(xx, yy, field, cmap=kw.cmap, norm=kw.norm, vmin=kw.minmax[0], vmax=kw.minmax[1])  
-    print ("minmax = ", kw.minmax)
-    print (np.min(field))
-    print (np.max(field))
 
     # now deal with color bar, if one is desired
     if kw.plotcbar:
         add_cbar(fig, ax, im, **kw_add_cbar)
 
-    plt.sca(ax)
     # set bounds
 #    plt.xlim(0.5, nx - 0.5)
 #    plt.ylim(0.5, nm - 0.5)
 
-    # label axes
-    plt.xlabel(r'${\rm{spherical\ harmonic\ degree}}\ \ell$', fontsize=kw.fontsize)
-    plt.ylabel(r'${\rm{azimuthal\ order}}\ m$', fontsize=kw.fontsize)
-
     # Get ticks everywhere
+    plt.sca(ax)
     plt.minorticks_on()
     plt.tick_params(top=True, right=True, direction='in', which='both')
 

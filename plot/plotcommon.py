@@ -628,7 +628,7 @@ def my_contourf(xx, yy, field, fig, ax, **kwargs):
     # plot the field, maybe
     # Factor out the exponent on the field and put it on the color bar
     # can turn this behavior off with "nosci=True"
-    if not kw.nosci:
+    if not (kw.nosci or kw.logscale):
         maxabs = max(np.abs(kw.minmax[0]), np.abs(kw.minmax[1]))
         kw_add_cbar.exp = get_exp(maxabs)
         divisor = 10.0**kw_add_cbar.exp
@@ -637,6 +637,10 @@ def my_contourf(xx, yy, field, fig, ax, **kwargs):
 
     # Saturate the array (otherwise contourf will show white areas)
     saturate_array(field, kw.minmax[0], kw.minmax[1])
+
+    # deal with norm
+    if kw.norm is None and kw.logscale:
+        kw.norm = colors.LogNorm(vmin=kw.minmax[0], vmax=kw.minmax[1])
 
     nlevelsfield = 128
     if kw.symlog:
