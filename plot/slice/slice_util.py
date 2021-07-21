@@ -272,12 +272,15 @@ def plot_spec_2D(field, fig, ax, **kwargs):
     # deal with norm and colormap
     if kw.norm is None and not kw.linear: # the default
         kw.norm = colors.LogNorm(vmin=kw.minmax[0], vmax=kw.minmax[1])
-    
+        vmin, vmax = None, None
+    else:
+        vmin, vmax = kw.minmax
+
     if kw.cmap is None:
         kw.cmap = 'jet'
 
     # make color plot
-    im = plt.pcolormesh(xx, yy, field, cmap=kw.cmap, norm=kw.norm, vmin=kw.minmax[0], vmax=kw.minmax[1])  
+    im = plt.pcolormesh(xx, yy, field, cmap=kw.cmap, norm=kw.norm, vmin=vmin, vmax=vmax)  
 
     # now deal with color bar, if one is desired
     if kw.plotcbar:
