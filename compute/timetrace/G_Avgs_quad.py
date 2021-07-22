@@ -157,7 +157,7 @@ if rank == 0:
                 ir2 = nr - 1
             else:
                 ir2 = ir_sep[ir]
-            volumes[it, ir] = 2.*np.pi/3.*(rr[ir1]**3. - rr[ir2]*3.)*\
+            volumes[it, ir] = 2.*np.pi/3.*(rr[ir1]**3. - rr[ir2]**3.)*\
                     np.abs(cost[it1] - cost[it2])
 
     # Distribute file_list to each process
