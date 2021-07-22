@@ -474,7 +474,7 @@ def lineplot(xx, profiles, ax, **kwargs):
     if kw.plotleg:
         ax.legend(loc='lower left', ncol=3, fontsize=0.8*default_labelsize)
 
-add_cbar_kwargs_default = dict({'minmax': None, 'cbar_thick': 1/8, 'cbar_aspect': 1/20, 'cbar_prec': 2, 'cbar_no': 1, 'cbar_pos': 'bottom', 'units': '', 'nosci': False, 'cbar_fs': default_labelsize, 'exp': 0, 'logscale': False, 'posdef': False})
+add_cbar_kwargs_default = dict({'minmax': None, 'cbar_thick': 1/8, 'cbar_aspect': 1/20, 'cbar_prec': 2, 'cbar_no': 1, 'cbar_pos': 'bottom', 'units': '', 'nosci': False, 'cbar_fs': default_labelsize, 'exp': 0, 'logscale': False, 'posdef': False, 'tol': 0.75})
 def add_cbar(fig, ax, im, **kwargs):
     # deal with kwargs
     kw = update_dict(add_cbar_kwargs_default, kwargs)
@@ -491,8 +491,8 @@ def add_cbar(fig, ax, im, **kwargs):
         orientation = 'horizontal'
         cbar_height = kw.cbar_thick/fig_height_inches
         cbar_width = cbar_height/kw.cbar_aspect*fig_aspect
-        if cbar_width > 0.75*ax_width: # don't let cbar be thicker than plot!
-            cbar_width = 0.75*ax_width
+        if cbar_width > kw.tol*ax_width: # don't let cbar be thicker than plot!
+            cbar_width = kw.tol*ax_width
 
         # centrally position colorbar underneath the axes
         label_buff = 3/8/fig_height_inches # needs to contain
@@ -505,8 +505,8 @@ def add_cbar(fig, ax, im, **kwargs):
         orientation = 'vertical'
         cbar_width = kw.cbar_thick/fig_width_inches
         cbar_height = cbar_width/kw.cbar_aspect/fig_aspect
-        if cbar_height > 0.75*ax_height: 
-            cbar_height = 0.75*ax_height
+        if cbar_height > kw.tol*ax_height: 
+            cbar_height = kw.tol*ax_height
 
         # centrally position colorbar to right of axes
         label_buff = 3/4/fig_width_inches # needs to contain
@@ -516,15 +516,16 @@ def add_cbar(fig, ax, im, **kwargs):
         cbar_left = ax_right + lilbit + (kw.cbar_no - 1)*(label_buff + cbar_width)
     cax = fig.add_axes((cbar_left, cbar_bottom, cbar_width, cbar_height))
     cbar = plt.colorbar(im, cax=cax, orientation=orientation)
-        
-    # font size for the tick labels
-    cax.tick_params(labelsize=kw.cbar_fs)
-    #cbar.ax.tick_params(labelsize=fontsize)   
 
+    # deal with labels
     if kw.nosci or kw.logscale:
         cbar_label = kw.units
     else:
         cbar_label = (r'$\times10^{%i}\ $' %kw.exp) + kw.units
+
+    # font size for the tick labels
+    cax.tick_params(labelsize=kw.cbar_fs)
+    #cbar.ax.tick_params(labelsize=fontsize)   
 
     # ticklabel format
     if not kw.logscale:
@@ -542,12 +543,12 @@ def add_cbar(fig, ax, im, **kwargs):
     if kw.cbar_pos == 'bottom':
         fig.text(cbar_left + cbar_width + lilbit*fig_aspect,\
                 cbar_bottom + 0.5*cbar_height, cbar_label,\
-                ha='left', va='center', fontsize=kw.fontsize) 
+                ha='left', va='center', fontsize=kw.cbar_fs) 
     elif kw.cbar_pos == 'right':
         #fig.text(cbar_left + cbar_width + lilbit/fig_aspect,\
         #        cbar_bottom + 0.5*cbar_height, cbar_label,\
         #        ha='left', va='center', fontsize=kw.fontsize) 
-        cax.set_title(cbar_label, ha='left', fontsize=kw.fontsize)
+        cax.set_title(cbar_label, ha='left', fontsize=kw.cbar_fs)
 
 contourf_minmax_kwargs_default = dict({'posdef': False, 'logscale': False, 'symlog': False, 'fullrange': False, 'fullrange2': False, 'buff_ignore1': buff_frac, 'buff_ignore2': buff_frac}) 
 
