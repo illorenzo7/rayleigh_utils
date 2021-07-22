@@ -126,6 +126,14 @@ for fname in file_list:
         if plottype == 'speclm' and not kw.av:
             vals = np.abs(vals)**2
 
+        # variable labels
+        basic = is_basic(varname)
+        if basic:
+            varlabel = get_label(varname)
+            simple_label = varname
+        else:
+            varlabel, simple_label = get_label(varname)
+
         for irval in kw.irvals:
             field = vals[:, :, irval]
             rval = a.radius[irval]/rsun 
@@ -135,7 +143,7 @@ for fname in file_list:
                 savename = basename + '_' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8)
             else:
                 savename = basename + '_' + str(a.iters[0]).zfill(8)
-            savename += ('_' + varname + ('_rval%0.3f' %rval) + '.png')
+            savename += ('_' + simple_label + ('_rval%0.3f' %rval) + '.png')
 
             # make plot
             fig, axs, fpar = make_figure(**kw_make_figure)
@@ -157,7 +165,6 @@ for fname in file_list:
                 time_string = get_time_string(dirname, iter1, iter2, oneline=True)
             else:
                 time_string = get_time_string(dirname, a.iters[0])
-            varlabel = get_label(varname)
 
             if plottype == 'moll':
                 slice_info = varlabel + 5*' ' + (r'$r/R_\odot\ =\ %0.3f$' %rval) + 5*' ' + ('clon = %4.0f' %kw.clon)
@@ -173,7 +180,7 @@ for fname in file_list:
                 plt.savefig(plotdir + savename, dpi=300)
             # always show if nfigures is 1
             if nfigures == 1 and clas0['showplot']:
-                print ("displaying " + savename[:-4])
+                print ("displaying " + savename)
                 plt.show()   
             plt.close()
 print (buff_line)

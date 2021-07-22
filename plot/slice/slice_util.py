@@ -30,55 +30,91 @@ def prime_sph(field, tw): # doesn't work on equatorial slices
     return field - field_av.reshape((1, 1, nr))
 
 def get_slice(a, varname, dirname=None, j=0): 
-    # gets a basic field associated with Rayleigh object a
-    lut = a.lut 
-    rr = a.radius
+
+    # first test if varname is valid and if it's a basic variable
+    basic = is_basic(varname)
+
     # first get the appropriate time slice
     vals = a.vals[..., j]
-    if vals.ndim == 4 and not hasattr(a, 'lpower'): 
-        # Shell_Slice or Meridional_Slice
-        cost = a.costheta
-        nt = len(cost)
-        cost = cost.reshape((1, nt, 1))
-    else:
-        # note...don't do cylindrical projections for Shell_Spectra!
-        # they don't multiply well
-        cost = 0.
+    lut = a.lut 
+    rr = a.radius
 
-    # first get root variable name and store any modifiers
-    varname, deriv, primevar, sphvar = get_varprops(varname)
-
-    # get sine/cotangent from cosine
-    sint = np.sin(np.arccos(cost))
-    cott = cost/sint
-   
-    # shape to make geometric fields
-    zero = np.zeros(np.array(np.shape(vals[..., 0])))
-
-    # return the basic field based on the variable name
-    if varname in var_indices: 
-        # this is really only option for Shell_Spectra...
-        the_slice = vals[..., lut[var_indices[varname]]]
-    elif varname[-1] in ['l', 'z']: # cylindrical variable
-        the_slice_r = vals[..., lut[var_indices[varname[:-1] + 'r']]]
-        if deriv:
-            the_slice_t = vals[..., lut[var_indices[varname[:-1] + 'T']]]
+    if basic:
+        # gets a basic field associated with Rayleigh object a
+        if vals.ndim == 4 and not hasattr(a, 'lpower'): 
+            # Shell_Slice or Meridional_Slice
+            cost = a.costheta
+            nt = len(cost)
+            cost = cost.reshape((1, nt, 1))
         else:
-            the_slice_t = vals[..., lut[var_indices[varname[:-1] + 't']]]
-        if varname[-1] == 'l':
-            the_slice = sint*the_slice_r + cost*the_slice_t
-        elif varname[-1] == 'z':
-            the_slice = cost*the_slice_r - sint*the_slice_t
-    elif is_an_int(varname):
-        the_slice = vals[..., lut[int(varname)]]
-    if primevar:
-        the_slice = prime(the_slice)
-    elif sphvar:
-        gi = GridInfo(dirname + '/grid_info')
-        tw = gi.tweights
-        the_slice = prime_sph(the_slice, tw)
-    del vals # free up memory
-    return the_slice
+            # note...don't do cylindrical projections for Shell_Spectra!
+            # they don't multiply well
+            cost = 0.
+
+        # first get root variable name and store any modifiers
+        varname, deriv, primevar, sphvar = get_varprops(varname)
+
+        # get sine/cotangent from cosine
+        sint = np.sin(np.arccos(cost))
+        cott = cost/sint
+       
+        # shape to make geometric fields
+        zero = np.zeros(np.array(np.shape(vals[..., 0])))
+
+        # return the basic field based on the variable name
+        if varname in var_indices: 
+            # this is really only option for Shell_Spectra...
+            the_slice = vals[..., lut[var_indices[varname]]]
+        elif varname[-1] in ['l', 'z']: # cylindrical variable
+            the_slice_r = vals[..., lut[var_indices[varname[:-1] + 'r']]]
+            if deriv:
+                the_slice_t = vals[..., lut[var_indices[varname[:-1] + 'T']]]
+            else:
+                the_slice_t = vals[..., lut[var_indices[varname[:-1] + 't']]]
+            if varname[-1] == 'l':
+                the_slice = sint*the_slice_r + cost*the_slice_t
+            elif varname[-1] == 'z':
+                the_slice = cost*the_slice_r - sint*the_slice_t
+        elif is_an_int(varname):
+            the_slice = vals[..., lut[int(varname)]]
+        if primevar:
+            the_slice = prime(the_slice)
+        elif sphvar:
+            gi = GridInfo(dirname + '/grid_info')
+            tw = gi.tweights
+            the_slice = prime_sph(the_slice, tw)
+        del vals # free up memory
+        return the_slice
+    else:
+        if '+' in varname or '-' in varname:
+            signature = [1]
+            for char in varname:
+                if char == '+':
+                    signature.append(1)
+                elif char == '-':
+                    signature.append(-1)
+
+            the_slice = np.zeros_like(vals[..., 0])
+            count = 0
+            for subvar in varname.split('+'):
+                for subsubvar in subvar.split('-'):
+                    the_slice += get_slice(a, subsubvar, dirname, j)*signature[count]
+                    count += 1
+        elif '*' in varname or '/' in varname:
+            signature = [1]
+            for char in varname:
+                if char == '*':
+                    signature.append(1)
+                elif char == '/':
+                    signature.append(-1)
+
+            the_slice = np.ones_like(vals[..., 0])
+            count = 0
+            for subvar in varname.split('*'):
+                for subsubvar in subvar.split('/'):
+                    the_slice *= (get_slice(a, subsubvar, dirname, j))**signature[count]
+                    count += 1
+        return the_slice
 
 # mollweide + ortho transforms
 def mollweide_transform(costheta, clon=0., shrinkage=1., precision=1.e-3): 

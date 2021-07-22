@@ -7,6 +7,7 @@
 # Not all the variables have quantity codes but are derivative quantities
 # of other fluid variables
 import numpy as np
+import sys
 from common import array_of_strings
 
 # basic variable indices
@@ -73,6 +74,36 @@ var_indices = {\
 rootlabels = {'v': r'$v$', 'b': r'$B$', 'om': r'$\omega$', 'j': r'$\mathcal{J}$'}
 direclabels = {'r': r'$r$', 't': r'$\theta$', 'p': r'$\phi$', 'l': r'$\lambda$', 'z': r'$z$', 'T': r'$\Theta$', 'P': r'$\Phi$'}
 
+def is_basic(varname_full):
+    # first split according to arithmetic operations
+    varlist = []
+    for ele1 in varname_full.split('*'):
+        for ele2 in ele1.split('/'):
+            for ele3 in ele2.split('+'):
+                for ele4 in ele3.split('-'):
+                    # strip prime or sph
+                    varlist.append(ele4)
+    if len(varlist) == 1: # no splitting occurred---basic var
+        basic = True
+    else:
+        basic = False
+
+    # make sure all these basic variables are "kosher"
+    kosher = True
+    for varname in varlist:
+        if varname[-5:] == 'prime': # prime appears at end to modify varname
+            varname = varname[:-5]
+        elif varname[-3:] == 'sph':
+            varname = varname[:-3]
+        if not varname in var_indices:
+            kosher = False
+    if kosher:
+        return basic
+    else:
+        print ("ERROR! %s is not a valid variable name" %varname_full)
+        print ("exiting")
+        sys.exit()
+
 def get_varprops(varname):
     # get boolean values deriv, prime (az average subtracted), and sph
     # (sph average subtracted)
@@ -87,33 +118,60 @@ def get_varprops(varname):
     elif varname[-3:] == 'sph':
         sphvar = True
         varname = varname[:-3]
+
     return varname, deriv, primevar, sphvar
 
-def get_label(varname):
-    varname, deriv, primevar, sphvar = get_varprops(varname)
-    if deriv:
-        derivdir = varname[-1]
-        varname = varname[1:] # remove prepending d
-        varname = varname[:-2] # remove appending d?
+fancy_op_labels = dict({'+': r'$+$', '-': r'$-$', '*': r'$\times$', '+': r'$\div$'})
+simple_op_labels = dict({'+': 'plus', '-': 'minus', '*': 'times', '+': 'div' })
 
-    # now get root label
-    # start with thermal vars
-    if varname == 'p':
-        label = r'$P$'
-    elif varname == 's':
-        label = r'$S$'
-    # now field variables, with a vector component
-    if 'v' in varname or 'b' in varname or 'om' in varname or 'j' in varname:
-        rootname = varname[:-1]
-        direction = varname[-1]
-        label = rootlabels[rootname] + r'$_$' + direclabels[direction]
-    if primevar:
-        label += r'$^\prime$'
-    elif sphvar:
-        label += r'$^{\prime\prime}$'
-    if deriv:
-        label = r'${\partial}$' + label + r'$/$' + r'${\partial}$' + direclabels[derivdir]
-    return label.replace('$$', '')
+def get_label(varname):
+    # first test if varname is valid and if it's a basic variable
+    basic = is_basic(varname)
+
+    if basic:
+        varname, deriv, primevar, sphvar = get_varprops(varname)
+        if deriv:
+            derivdir = varname[-1]
+            varname = varname[1:] # remove prepending d
+            varname = varname[:-2] # remove appending d?
+
+        # now get root label
+        # start with thermal vars
+        if varname == 'p':
+            label = r'$P$'
+        elif varname == 's':
+            label = r'$S$'
+        # now field variables, with a vector component
+        if 'v' in varname or 'b' in varname or 'om' in varname or 'j' in varname:
+            rootname = varname[:-1]
+            direction = varname[-1]
+            label = rootlabels[rootname] + r'$_$' + direclabels[direction]
+        if primevar:
+            label += r'$^\prime$'
+        elif sphvar:
+            label += r'$^{\prime\prime}$'
+        if deriv:
+            label = r'${\partial}$' + label + r'$/$' + r'${\partial}$' + direclabels[derivdir]
+        return label.replace('$$', '')
+    else:
+        operations = []
+        for char in varname:
+            if char in ['*', '/', '+', '-']:
+                operations.append(char)
+        label = ''
+        simple_label = ''
+        count = 0
+        for ele1 in varname.split('*'):
+            for ele2 in ele1.split('/'):
+                for ele3 in ele2.split('+'):
+                    for ele4 in ele3.split('-'):
+                        label += get_label(ele4)
+                        simple_label += ele4
+                        if count < len(operations):
+                            label += (r' ' + fancy_op_labels[operations[count]] + r' ')
+                            simple_label += ('_' + simple_op_labels[operations[count]] + '_')
+                        count += 1
+        return label, simple_label
 
 # groups of quantities
 def get_quantity_group(groupname, magnetism):
