@@ -33,7 +33,7 @@ def axis_range(ax): # gets subplot coordinates on a figure in "normalized"
     ymin, ymax = bottom_left[1], top_right[1]
     return xmin, xmax, ymin, ymax
 
-def xy_grid(X, Y):
+def xy_grid(x, y):
     """
     plt.pcolormesh() takes arguments X, Y, and C; treats the X, Y 
     arrays as VERTICES of quadrilaterals (not center points)
@@ -41,27 +41,20 @@ def xy_grid(X, Y):
     (X[i, j], Y[i, j]) represents the CENTER of a quadrilateral
     Thus, a call to plt.pcolormesh will ignore the last row/column
     of C, using only the smaller array C[:m-1, :n-1]
-    "xy_grid" makes new arrays X_new, Y_new, which have dimension
+    "xy_grid" takes 1D arrays x, y and makes new arrays 
+    # X_new, Y_new, which have dimension
     (m+1, n+1) and represent the vertices of quadrilaterals with centers
-    at X[i, j]
+    at X[i, j] (if X, Y = meshgrid(x, y, indexing='ij'))
     """
-    m, n = np.shape(X)
-    X_mid = 0.5*(X[:m-1, :n-1] + X[1:, :n-1])
-    Y_mid = 0.5*(Y[:m-1, :n-1] + Y[:m-1, 1:])
-    X_new, Y_new = np.zeros((m+1, n+1)), np.zeros((m+1, n+1))
-    X_new[1:m, 1:n] = X_mid
-    Y_new[1:m, 1:n] = Y_mid
+    m, n = len(x), len(y)
+    xmid = (0.5*(x[:m-1] + x[1:])).tolist()
+    ymid = (0.5*(y[:n-1] + y[1:])).tolist()
+    dx = x[1] - x[0]
+    dy = y[1] - y[0]
+    x_new = [xmid[0] - dx] + xmid + [xmid[-1] + dx]
+    y_new = [ymid[0] - dy] + ymid + [ymid[-1] + dy]
 
-    X_new[1:m, 0] = X_new[1:m, 1] - (X_new[1:m, 2] - X_new[1:m, 1])
-    X_new[1:m, n] = X_new[1:m, n-1] + (X_new[1:m, n-1] - X_new[1:m, n-2])
-    Y_new[1:m, 0] = Y_new[1:m, 1] - (Y_new[1:m, 2] - Y_new[1:m, 1])
-    Y_new[1:m, n] = Y_new[1:m, n-1] + (Y_new[1:m, n-1] - Y_new[1:m, n-2])
-
-    X_new[0, :] = X_new[1, :] - (X_new[2, :] - X_new[1, :])
-    X_new[m, :] = X_new[m-1, :] + (X_new[m-1, :] - X_new[m-2, :])
-    Y_new[0, :] = Y_new[1, :] - (Y_new[2, :] - Y_new[1, :])
-    Y_new[m, :] = Y_new[m-1, :] + (Y_new[m-1, :] - Y_new[m-2, :])
-    return (X_new, Y_new)
+    return np.meshgrid(x_new, y_new, indexing='ij')
 
 def testtex(label):
     plt.plot(range(10))

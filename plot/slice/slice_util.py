@@ -286,8 +286,7 @@ def plot_spec_2D(field, fig, ax, **kwargs):
     field = field[ix1:ix2+1, iy1:iy2+1]
 
     # get the squares to correspond to modes
-    xx, yy = np.meshgrid(kw.x, kw.y, indexing='ij')
-    xx, yy = xy_grid(xx, yy)
+    xx, yy = xy_grid(kw.x, kw.y)
 
     # get default bounds if not specified
     if kw.minmax is None:
@@ -316,15 +315,17 @@ def plot_spec_2D(field, fig, ax, **kwargs):
         kw.cmap = 'jet'
 
     # make color plot
-    im = plt.pcolormesh(xx, yy, field, cmap=kw.cmap, norm=kw.norm, vmin=vmin, vmax=vmax)  
+    im = ax.pcolormesh(xx, yy, field, cmap=kw.cmap, norm=kw.norm, vmin=vmin, vmax=vmax)  
 
     # now deal with color bar, if one is desired
     if kw.plotcbar:
         add_cbar(fig, ax, im, **kw_add_cbar)
 
     # set bounds
-#    plt.xlim(0.5, nx - 0.5)
-#    plt.ylim(0.5, nm - 0.5)
+    space_x = kw.x[1] - kw.x[0]
+    space_y = kw.y[1] - kw.y[0]
+    ax.set_xlim(kw.x[0] - 0.5*space_x, kw.x[-1] + 0.5*space_x)
+    ax.set_ylim(kw.y[0] - 0.5*space_y, kw.y[-1] + 0.5*space_y)
 
     # Get ticks everywhere
     plt.sca(ax)
