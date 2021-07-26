@@ -26,6 +26,7 @@ plot_azav_kwargs_default = dict({'rbcz': None, 'minmaxrz': None, 'cmaprz': None,
        'linestyles2': np.array(['-']), 'linewidths2': np.array([default_lw]), 'linecolors2': np.array(['k'])})
 
 # add in my_contourf stuff
+my_contourf_kwargs_default['cbar_aspect'] = 1/8
 plot_azav_kwargs_default.update(my_contourf_kwargs_default)
 
 def plot_azav(field, rr, cost, fig, ax,  **kwargs):
