@@ -23,7 +23,7 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = clas0['magnetism']
 
 # defaults
-kwargs_default = dict({'the_file': None, 'ntot': 2000, 'clat': 10, 'dlat': 0, 'om': None, 'rad': False, 'lon': False, 'shav': False})
+kwargs_default = dict({'the_file': None, 'ntot': 2000, 'clat': 10, 'dlat': 0, 'om': None, 'rad': False, 'lon': False, 'shav': False, 'isamplevals': np.array([0]), 'samplevals': None})
 kwargs_default.update(get_quantity_group('b', magnetism))
 kwargs_default.update(plot_timey_kwargs_default)
 
@@ -53,8 +53,6 @@ elif kw.lon:
 elif kw.shav:
     datatype = 'timeshav'
     sampleaxis = di_grid['rr']/rsun
-    # just a loop placeholder...
-    isamplevals = [0]
 
 dataname = datatype
 if 'groupname' in kw:
@@ -100,6 +98,11 @@ if not kw.ntot == 'full':
     vals = thin_data(vals, kw.ntot)
     print ("after thin_data: len(times) = %i" %len(times))
 
+# these all need to be arrays
+kw.qvals = make_array(kw.qvals)
+kw.isamplevals = make_array(kw.isamplevals)
+kw.samplevals = make_array(kw.samplevals)
+
 # get raw traces of desired variables
 terms = []
 for qval in kw.qvals:
@@ -120,24 +123,18 @@ if 'ycut' in clas:
 nplots = len(terms)
 
 # determine desired levels to plot
-if not kw.shav:
-    if not 'isamplevals' in clas:
-        if not 'samplevals' in clas:
-            isamplevals = np.array([0]) # just plot the top radius by default
-        else: # get isamplevals from samplevals
-            samplevals = clas['samplevals']
-            if samplevals == 'all':
-                isamplevals = np.arange(len(samplevals_avail))
-            else:
-                samplevals = make_array(samplevals)
-                isamplevals = np.zeros_like(samplevals, dtype='int')
-                for i in range(len(samplevals)):
-                    isamplevals[i] = np.argmin(np.abs(samplevals_avail - samplevals[i]))
-    else:
-        isamplevals = make_array(clas['isamplevals'])
+if not kw.shav: # kw.shav means integrated over latitude, so can't choose
+    # specific latitude levels
+    if not kw.samplevals is None: # isamplevals being set indirectly
+        if np.all(kw.samplevals == 'all'):
+            kw.isamplevals = np.arange(len(samplevals_avail))
+        else:
+            kw.isamplevals = np.zeros_like(kw.samplevals, dtype='int')
+            for i in range(len(kw.samplevals)):
+                kw.isamplevals[i] = np.argmin(np.abs(samplevals_avail - kw.samplevals[i]))
 
 # Loop over the desired levels and save plots
-for isampleval in isamplevals:
+for isampleval in kw.isamplevals:
     if not kw.shav:
         sampleval = samplevals_avail[isampleval]
 
@@ -217,11 +214,11 @@ for isampleval in isamplevals:
             basename = datatype + '_%08i_%08i' %(iter1, iter2)
         savename = basename + clas0['tag'] + position_tag + '.png'
         print ("saving", plotdir + savename)
-        print ("=======================================")
         plt.savefig(plotdir + savename, dpi=200)
 
     # Show the plot if only plotting at one latitude
-    if clas0['showplot'] and len(isamplevals) == 1:
+    if clas0['showplot'] and len(kw.isamplevals) == 1:
         plt.show()
     else:
         plt.close()
+    print ("=======================================")
