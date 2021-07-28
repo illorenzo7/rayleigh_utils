@@ -19,7 +19,6 @@ azav_fig_dimensions = dict({'sub_width_inches': 2, 'sub_aspect': 2, 'sub_margin_
 
 lineplot_fig_dimensions = dict({'sub_width_inches': 3.5, 'sub_height_inches': 2.5, 'sub_margin_top_inches': 1/4, 'sub_margin_bottom_inches': default_margin_xlabel, 'sub_margin_left_inches': default_margin_ylabel, 'margin_top_inches': 1})
 
-
 # plot_azav needs my_contourf args, then some
 plot_azav_kwargs_default = dict({'rbcz': None, 'minmaxrz': None, 'cmaprz': None, 'rvals': np.array([]), 'plotlatlines': True, 'latvals': np.arange(-60., 90., 30.), 'plotboundary': True,\
         'linestyles1': np.array(['-']), 'linewidths1': np.array([default_lw]), 'linecolors1': np.array(['k']),\
@@ -506,6 +505,11 @@ plot_azav_grid_kwargs_default = dict({'maintitle': None, 'titles': None, 'shav':
 plot_azav_grid_kwargs_default.update(plot_azav_kwargs_default)
 make_figure_kwargs_default.update(azav_fig_dimensions)
 plot_azav_grid_kwargs_default.update(make_figure_kwargs_default)
+# need a nother make_figure_kwargs for the shav plot (possibly)
+make_figure_kwargs_default_shav = dict({**make_figure_kwargs_default})
+make_figure_kwargs_default_shav.update(lineplot_fig_dimensions)
+for key, val in make_figure_kwargs_default_shav.items():
+    plot_azav_grid_kwargs_default[key + '_shav'] = val
 
 def plot_azav_grid(terms, rr, cost, **kwargs):
     find_bad_keys(plot_azav_grid_kwargs_default, kwargs, 'plot_azav')
@@ -513,6 +517,10 @@ def plot_azav_grid(terms, rr, cost, **kwargs):
     kw = update_dict(plot_azav_grid_kwargs_default, kwargs)
     kw_plot_azav = update_dict(plot_azav_kwargs_default, kwargs)
     kw_make_figure = update_dict(make_figure_kwargs_default, kwargs)
+    kw_make_figure_shav = dict({})
+    for key in make_figure_kwargs_default_shav:
+        kw_make_figure_shav[key] = kw[key + '_shav']
+    kw_make_figure_shav = dotdict(kw_make_figure_shav)
 
     # possibly sum some terms, based on totsig
     nplots = len(terms)
@@ -550,18 +558,17 @@ def plot_azav_grid(terms, rr, cost, **kwargs):
 
     # possibly latitudinal average figure as well
     if kw.shav:
-        make_figure_kwargs_default.update(lineplot_fig_dimensions)
-        kw_make_figure = update_dict(make_figure_kwargs_default, kwargs)
-
-        kw_make_figure.nplots = nplots
-        kw_make_figure.ncol = kw.ncol
+        kw_make_figure_shav.nplots = nplots
+        kw_make_figure_shav.ncol = kw.ncol
+        if not kw.rbcz is None:
+            kw_make_figure_shav.sub_margin_bottom_inches *= 2
 
         if kw.rbcz is None:
-            kw_make_figure.sub_margin_right_inches = default_margin
+            kw_make_figure_shav.sub_margin_right_inches = default_margin
         else:
-            kw_make_figure.sub_margin_right_inches = default_margin_ylabel
+            kw_make_figure_shav.sub_margin_right_inches = default_margin_ylabel
 
-        av_fig, av_axs, av_fpar = make_figure(**kw_make_figure)
+        av_fig, av_axs, av_fpar = make_figure(**kw_make_figure_shav)
         xlabel = r'$r/R_\odot$' 
         nt = len(cost)
         if kw.tw is None: # just average everything unweighted
