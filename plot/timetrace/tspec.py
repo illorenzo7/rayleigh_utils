@@ -7,7 +7,7 @@ sys.path.append(os.environ['rapl'] + '/slice')
 from common import *
 from plotcommon import *
 from cla_util import *
-from slice_util import spec_2D_fig_dimensions, plot_spec_2D, plot_spec_2D_kwargs_default
+from slice_util import spec_2D_fig_dimensions
 
 # Get CLAs
 args = sys.argv 
@@ -21,13 +21,17 @@ kwargs_default = dotdict(dict({'the_file': None, 'irvals': np.array([0]), 'rvals
 # can also get other modes via --lvals (plot freq vs m), --mvals (freq vs l), and --sectoff (m = l - offset)
 
 # many kwargs
-kwargs_default.update(plot_spec_2D_kwargs_default)
+my_pcolormesh_kwargs_default['logscale'] = True
+my_pcolormesh_kwargs_default['posdef'] = True
+kwargs_default.update(my_pcolormesh_kwargs_default)
+
 make_figure_kwargs_default.update(spec_2D_fig_dimensions)
 kwargs_default.update(make_figure_kwargs_default)
+
 find_bad_keys(kwargs_default, clas, 'plot/timetrace/tspec', justwarn=True)
 
 kw = update_dict(kwargs_default, clas)
-kw_plot_spec_2D = update_dict(plot_spec_2D_kwargs_default, clas)
+kw_my_pcolormesh = update_dict(my_pcolormesh_kwargs_default, clas)
 kw_make_figure = update_dict(make_figure_kwargs_default, clas)
 
 # get the rvals we want
@@ -147,11 +151,11 @@ for qval in qvals:
             fig, axs, fpar = make_figure(**kw_make_figure)
             ax = axs[0, 0]
 
-            kw_plot_spec_2D.cbar_pos = 'right'
-            if kw_plot_spec_2D.y is None:
-                kw_plot_spec_2D.y = freq
+            kw_my_pcolormesh.cbar_pos = 'right'
+            if kw_my_pcolormesh.y is None:
+                kw_my_pcolormesh.y = freq
 
-            plot_spec_2D(power, fig, ax, **kw_plot_spec_2D)
+            my_pcolormesh(power, fig, ax, **kw_my_pcolormesh)
 
             # make labels
             ylabel = 'freq (Hz)'
