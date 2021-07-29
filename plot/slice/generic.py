@@ -37,8 +37,13 @@ if plottype == 'moll':
     reading_func = Shell_Slices
 if plottype == 'speclm':
     fig_dimensions = spec_2D_fig_dimensions
-    plotting_func = plot_spec_2D
-    plotting_func_kwargs_default = plot_spec_2D_kwargs_default
+    plotting_func = my_pcolormesh
+    plotting_func_kwargs_default = my_pcolormesh_kwargs_default
+    # need to change some things for speclm
+    plotting_func_kwargs_default['logscale'] = True
+    plotting_func_kwargs_default['posdef'] = True
+    #contourf_minmax_kwargs_default['buff_ignore1'] = None
+    #contourf_minmax_kwargs_default['buff_ignore2'] = None
     dataname = 'Shell_Spectra'
     reading_func = Shell_Spectra
 

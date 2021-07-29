@@ -711,3 +711,123 @@ def my_contourf(xx, yy, field, fig, ax, **kwargs):
         ax.axis('off') 
     
     return  fig, ax
+
+# my_pcolormesh: pixellated my_contourf
+my_pcolormesh_kwargs_default = dict({'x': None, 'y': None, 'xvals': [], 'yvals': [], 'linewidth': default_lw, 'minmax': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'yminmax': None, 'ymin': None, 'ymax': None, 'xymin': None, 'xymax': None, 'xyminmax': None,\
+    # more cbar stuff
+    'plotcbar': True, 'cmap': None, 'norm': None, 'units': '', 'fontsize': default_labelsize})
+
+my_pcolormesh_kwargs_default.update(contourf_minmax_kwargs_default)
+my_pcolormesh_kwargs_default.update(add_cbar_kwargs_default)
+def my_pcolormesh(field, fig, ax, **kwargs):
+    kw = update_dict(my_pcolormesh_kwargs_default, kwargs)
+    kw_add_cbar = update_dict(add_cbar_kwargs_default, kwargs)
+    kw_contourf_minmax = update_dict(contourf_minmax_kwargs_default, kwargs)
+    find_bad_keys(my_pcolormesh_kwargs_default, kwargs, 'my_pcolormesh')
+
+    # make sure Python does not modify any of the arrays it was passed
+    field = np.copy(field)
+
+    # use full integer grid if no specific axis was specified
+    nx, ny = np.shape(field)
+    if kw.x is None:
+        kw.x = np.arange(nx)
+    if kw.y is None:
+        kw.y = np.arange(ny)
+
+    # by default plot whole spectrum
+    ix1, ix2 = 0, nx - 1
+    iy1, iy2 = 0, ny - 1
+
+    # might set both axis boundaries at once with "xy" min/max
+    if not kw.xymin is None:
+        kw.xmin = kw.xymin
+        kw.ymin = kw.xymin
+    if not kw.xymax is None:
+        kw.xmax = kw.xymax
+        kw.ymax = kw.xymax
+    if not kw.xyminmax is None:
+        kw.xminmax = kw.xyminmax
+        kw.yminmax = kw.xyminmax
+
+    # pick and choose part of spectrum to plot
+    if not kw.xminmax is None:
+        ix1 = np.argmin(np.abs(kw.x - kw.xminmax[0]))
+        ix2 = np.argmin(np.abs(kw.x - kw.xminmax[1]))
+    if not kw.xmin is None:
+        ix1 = np.argmin(np.abs(kw.x - kw.xmin))
+    if not kw.xmax is None:
+        ix2 = np.argmin(np.abs(kw.x - kw.xmax))
+
+    if not kw.yminmax is None:
+        iy1 = np.argmin(np.abs(kw.y - kw.yminmax[0]))
+        iy2 = np.argmin(np.abs(kw.y - kw.yminmax[1]))
+    if not kw.ymin is None:
+        iy1 = np.argmin(np.abs(kw.y - kw.ymin))
+    if not kw.ymax is None:
+        iy2 = np.argmin(np.abs(kw.y - kw.ymax))
+
+    # now adjust everything by the (x, y) range we want
+    kw.x = kw.x[ix1:ix2+1]
+    kw.y = kw.y[iy1:iy2+1]
+    field = field[ix1:ix2+1, iy1:iy2+1]
+
+    # get the squares to correspond to modes
+    xx, yy = xy_grid(kw.x, kw.y)
+
+    # get default bounds if not specified
+    if kw.minmax is None:
+        kw.minmax = kw_add_cbar.minmax = contourf_minmax(field, **kw_contourf_minmax)
+
+    # Factor out the exponent on the field and put it on the color bar
+    # can turn this behavior off with "nosci=True"
+    if not (kw.nosci or kw.logscale):
+        maxabs = max(np.abs(kw.minmax[0]), np.abs(kw.minmax[1]))
+        kw_add_cbar.exp = get_exp(maxabs)
+        divisor = 10**kw_add_cbar.exp
+        field /= divisor
+        kw.minmax = kw_add_cbar.minmax = kw.minmax[0]/divisor, kw.minmax[1]/divisor
+
+    # Saturate the array (otherwise contourf will show white areas)
+    saturate_array(field, kw.minmax[0], kw.minmax[1])
+  
+    # deal with norm and colormap
+    if kw.norm is None and kw.logscale:
+        kw.norm = colors.LogNorm(vmin=kw.minmax[0], vmax=kw.minmax[1])
+        vmin, vmax = None, None
+    else:
+        vmin, vmax = kw.minmax
+
+    if kw.cmap is None:
+        kw.cmap = 'jet'
+
+    # make color plot
+    im = ax.pcolormesh(xx, yy, field, cmap=kw.cmap, norm=kw.norm, vmin=vmin, vmax=vmax)  
+
+    # now deal with color bar, if one is desired
+    if kw.plotcbar:
+        add_cbar(fig, ax, im, **kw_add_cbar)
+
+    # set bounds
+    space_x = kw.x[1] - kw.x[0]
+    space_y = kw.y[1] - kw.y[0]
+    ax.set_xlim(kw.x[0] - 0.5*space_x, kw.x[-1] + 0.5*space_x)
+    ax.set_ylim(kw.y[0] - 0.5*space_y, kw.y[-1] + 0.5*space_y)
+
+    # Get ticks everywhere
+    plt.sca(ax)
+    plt.minorticks_on()
+    plt.tick_params(top=True, right=True, direction='in', which='both')
+
+    # possibly plot x and y vals
+    xvals = make_array(kw.xvals)
+    yvals = make_array(kw.yvals)
+    count = 1
+    for axisvals in xvals, yvals:
+        for axisval in axisvals:
+            if count == 1:
+                xline, yline = axisval + np.zeros_like(kw.y), kw.y
+            if count == 2:
+                xline, yline = kw.x, axisval + np.zeros_like(kw.x)
+            ax.plot(xline, yline, 'k--')
+        count += 1
