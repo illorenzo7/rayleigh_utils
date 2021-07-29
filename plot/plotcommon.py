@@ -467,7 +467,7 @@ def lineplot(xx, profiles, ax, **kwargs):
     if kw.plotleg:
         ax.legend(loc='lower left', ncol=3, fontsize=0.8*default_labelsize)
 
-add_cbar_kwargs_default = dict({'minmax': None, 'cbar_thick': 1/8, 'cbar_aspect': 1/20, 'cbar_prec': 2, 'cbar_no': 1, 'cbar_pos': 'bottom', 'units': '', 'nosci': False, 'cbar_fs': default_labelsize, 'exp': 0, 'logscale': False, 'posdef': False, 'tol': 0.75})
+add_cbar_kwargs_default = dict({'minmax': None, 'cbar_thick': 1/8, 'cbar_aspect': 1/20, 'cbar_prec': 2, 'cbar_no': 1, 'cbar_pos': 'bottom', 'units': '', 'nosci': False, 'cbar_labels': None, 'cbar_fs': default_labelsize, 'exp': 0, 'logscale': False, 'posdef': False, 'tol': 0.75})
 def add_cbar(fig, ax, im, **kwargs):
     # deal with kwargs
     kw = update_dict(add_cbar_kwargs_default, kwargs)
@@ -522,14 +522,17 @@ def add_cbar(fig, ax, im, **kwargs):
 
     # ticklabel format
     if not kw.logscale:
-        fmt = '%.' + str(kw.cbar_prec) + 'f'
         if kw.posdef:
             tickvals = [kw.minmax[0], kw.minmax[1]]
         else:
             tickvals = [kw.minmax[0], 0, kw.minmax[1]]
-        ticklabels = []
-        for tickval in tickvals:
-            ticklabels.append(fmt %tickval)
+        if kw.cbar_labels is None:
+            fmt = '%.' + str(kw.cbar_prec) + 'f'
+            ticklabels = []
+            for tickval in tickvals:
+                ticklabels.append(fmt %tickval)
+        else:
+            ticklabels = kw.cbar_labels
         cbar.set_ticks(tickvals)
         cbar.set_ticklabels(ticklabels)
 
