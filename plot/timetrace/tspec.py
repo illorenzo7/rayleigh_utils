@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+from matplotlib.patches import Rectangle
 import numpy as np
 import sys, os
 sys.path.append(os.environ['raco'])
@@ -16,7 +17,7 @@ dirname = clas0.dirname
 dirname_stripped = strip_dirname(dirname)
 
 # SPECIFIC ARGS
-kwargs_default = dotdict(dict({'the_file': None, 'irvals': np.array([0]), 'rvals': None, 'qvals': np.array([1]), 'modes': [], 'lvals': [], 'mvals': [], 'sectoff': []}))
+kwargs_default = dotdict(dict({'the_file': None, 'irvals': np.array([0]), 'rvals': None, 'qvals': np.array([1]), 'modes': [], 'lvals': [], 'mvals': [], 'sectoff': [], 'rossby': None}))
 # "modes" can be: lpower, mpower, sect, or combinations thereof
 # can also get other modes via --lvals (plot freq vs m), --mvals (freq vs l), and --sectoff (m = l - offset)
 
@@ -37,6 +38,10 @@ kw_make_figure = update_dict(make_figure_kwargs_default, clas)
 # get the rvals we want
 radlevs = get_slice_levels(dirname)
 irvals = kw.irvals
+
+# everything must be an array
+irvals = make_array(irvals)
+kw.rvals = make_array(kw.rvals)
 if not kw.rvals is None: # irvals haven't been set directly
     if np.all(kw.rvals == 'all'):
         irvals = np.arange(radlevs.nr)
@@ -47,9 +52,6 @@ if not kw.rvals is None: # irvals haven't been set directly
 
 # and the qvals
 qvals = make_array(kw.qvals)
-
-# everything must be an array
-irvals = make_array(irvals)
 
 # modes, etc.; these must be lists
 modes = make_array(kw.modes, tolist=True)
@@ -156,6 +158,17 @@ for qval in qvals:
                 kw_my_pcolormesh.y = freq
 
             my_pcolormesh(power, fig, ax, **kw_my_pcolormesh)
+
+            # add Rossby dispersion, possibly
+            if not kw.rossby is None:
+                dfreq = 3*np.mean(np.diff(freq))
+                omi = kw.rossby
+                mvals = np.arange(lval + 1)
+                for mval in mvals:
+                    freq_theory = 2*omi*mval/lval/(lval+1)
+                    corner = mval - 0.5, freq_theory - dfreq/2
+                    ax.add_patch(Rectangle(corner, 1, dfreq, facecolor='k'))
+            
 
             # make labels
             ylabel = 'freq (Hz)'
