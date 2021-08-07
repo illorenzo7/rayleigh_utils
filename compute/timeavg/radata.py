@@ -44,7 +44,7 @@ import numpy as np
 import sys, os
 sys.path.append(os.environ['rapp'])
 
-# import the rading routines
+# import the reading routines
 from rayleigh_diagnostics import AZ_Avgs, Shell_Avgs, G_Avgs,\
         Shell_Spectra, Shell_Slices, Meridional_Slices, Equatorial_Slices
 

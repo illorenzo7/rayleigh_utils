@@ -1,11 +1,11 @@
 ##################################################################
-# Routine to trace Rayleigh G_Avgs data in time
+# Routine to trace Rayleighdata in time
 # Author: Loren Matilsky
 # Created: 12/18/2018
 # Parallelized: 11/26/2020
 ##################################################################
-# This routine computes the trace in time of the values in the G_Avgs data 
-# for a particular simulation. 
+# This routine computes the trace in time of the values in various 
+# Rayleigh data types
 ##################################################################
 
 # initialize communication
@@ -23,6 +23,7 @@ if rank == 0:
     sys.path.append(os.environ['raco'])
     # import common here
     from common import *
+    from cla_util import *
     char = '.'
     nproc = comm.Get_size()
     t1_glob = time.time()
@@ -40,9 +41,47 @@ import numpy as np
 # data type and reading function
 import sys, os
 sys.path.append(os.environ['rapp'])
-from rayleigh_diagnostics import G_Avgs
-reading_func = G_Avgs
-dataname = 'G_Avgs'
+# import the reading routines
+from rayleigh_diagnostics import AZ_Avgs, Shell_Avgs, G_Avgs, Point_Probes,\
+        Shell_Spectra, Shell_Slices, Meridional_Slices, Equatorial_Slices
+
+# Broadcast the desired datatype (azav by default)
+if rank == 0:
+    # get the CLAs
+    args = sys.argv
+    clas0, clas = read_clas(args)
+    if 'radtype' in clas:
+        radtype = clas['radtype']
+    else:
+        radtype = 'gav' # default
+else:
+    radtype = None
+radtype = comm.bcast(radtype, root=0)
+
+if radtype == 'azav':
+    reading_func = AZ_Avgs
+    dataname = 'AZ_Avgs'
+if radtype == 'shav':
+    reading_func = Shell_Avgs
+    dataname = 'Shell_Avgs'
+if radtype == 'gav':
+    reading_func = G_Avgs
+    dataname = 'G_Avgs'
+if radtype == 'specav':
+    reading_func = Shell_Spectra
+    dataname = 'Shell_Spectra'
+if radtype == 'ssav':
+    reading_func = Shell_Slices
+    dataname = 'Shell_Slices'
+if radtype == 'merav':
+    reading_func = Meridional_Slices
+    dataname = 'Meridional_Slices'
+if radtype == 'eqav':
+    reading_func = Equatorial_Slices
+    dataname = 'Equatorial_Slices'
+if radtype == 'pp':
+    reading_func = Point_Probes
+    dataname = 'Point_Probes'
 
 if rank == 0:
     # modules needed only by proc 0 
@@ -119,7 +158,10 @@ my_vals = []
 for i in range(my_nfiles):
     a = reading_func(radatadir + str(my_files[i]).zfill(8), '')
     for j in range(a.niter):
-        my_vals.append(a.vals[j, :])
+        if radtype == 'gav':
+            my_vals.append(a.vals[j, :])
+        else:
+            my_vals.append(a.vals[..., j])
         my_times.append(a.time[j])
         my_iters.append(a.iters[j])
     if rank == 0:
@@ -166,8 +208,7 @@ if rank == 0:
         os.makedirs(datadir)
 
     # Set the timetrace savename 
-    savename = 'G_Avgs_trace-' + file_list[0] + '_' +\
-            file_list[-1] + '.pkl'
+    savename = dataname + '_trace-' + file_list[0] + '_' + file_list[-1] + '.pkl'
     savefile = datadir + savename
 
     # save the data
@@ -176,7 +217,13 @@ if rank == 0:
     vals = np.array(vals)
     times = np.array(times)
     iters = np.array(iters)
-    pickle.dump({'vals': vals, 'times': times, 'iters': iters, 'lut': a.lut, 'qv': a.qv}, f, protocol=4)
+    di_sav = {'vals': vals, 'times': times, 'iters': iters, 'lut': a.lut, 'qv': a.qv}
+    if radtype == 'pp':
+        di_sav['rvals'] = a.radius
+        di_sav['thetavals'] = np.arccos(a.costheta)
+        di_sav['phivals'] = a.phi
+
+    pickle.dump(di_sav, f, protocol=4)
     f.close()
     t2 = time.time()
     print (format_time(t2 - t1))
