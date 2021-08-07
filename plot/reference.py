@@ -17,6 +17,29 @@ from plotref import plotref
 dirname = sys.argv[1]
 dirname_stripped = strip_dirname(dirname)
 
+# Directory with data and plots, make the plotting directory if it doesn't
+# already exist    
+datadir = dirname + '/data/'
+plotdir = dirname + '/plots/'
+
+args = sys.argv[2:]
+nargs = len(args)
+fname = 'equation_coefficients'
+xminmax = None
+ylog = False
+for i in range(nargs):
+    arg = args[i]
+    if arg == '-plotdir':
+        plotdir = args[i+1]
+    if arg == '-log':
+        ylog = True
+    elif arg == '-fname':
+        fname = args[i+1]
+    elif arg == '-crb':
+        fname = 'custom_reference_binary'
+    elif arg == '-xminmax':
+        xminmax = float(args[i+1]), float(args[i+2])
+
 eq = get_eq(dirname, fname=fname)
 r = eq.radius
 T = eq.temperature
@@ -34,19 +57,10 @@ Q = eq.Q
 fig, axs = plotref(r, T, rho, p, dlnT, dlnrho, s, dsdr,\
     d2lnrho, gravity, Q, color='k', xminmax=xminmax, ylog=ylog)
 
-# Mark radii if desired
-if not rvals is None:
-    for ax in axs.flatten():
-        ymin, ymax = ax.get_ylim()
-        yvals = np.linspace(ymin, ymax, 100)
-        for rval in rvals:
-            rval_n = rval/rsun
-    #        plt.ylim(ymin, ymax)
-            ax.plot(rval_n + np.zeros(100), yvals, 'k--', linewidth=0.8)
 
 plt.tight_layout() 
     
-axs[0,0].set_title(dirname_stripped, ha='left', **csfont)
+axs[0,0].set_title(dirname_stripped, ha='left')
     
 plt.savefig(plotdir + dirname_stripped + '_reference_state.png', dpi=300)
 plt.show()
