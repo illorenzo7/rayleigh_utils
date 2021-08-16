@@ -18,10 +18,7 @@ dirname = clas0['dirname']
 dirname_stripped = strip_dirname(dirname)
 
 # See if magnetism is "on"
-try:
-    magnetism = get_parameter(dirname, 'magnetism')
-except:
-    magnetism = False # if magnetism wasn't specified, it must be "off"
+magnetism = get_parameter(dirname, 'magnetism')
 
 # SPECIFIC ARGS for etrace:
 kwargs_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'nodyn': False, 'dynfrac': 0.5, 'xvals': np.array([]), 'czrz': False, 'inte': False})

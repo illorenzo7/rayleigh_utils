@@ -1,29 +1,55 @@
 # Author: Loren Matilsky
-# Date created: 06/08/2017
-import matplotlib as mpl
-mpl.use('TkAgg')
+# plots energies in different quadrants (hence, "quad") of the meridional plane
 import matplotlib.pyplot as plt
-import pickle
 import numpy as np
 import sys, os
 sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
-from subprocess import call
+sys.path.append(os.environ['rapl'])
 from common import *
+from plotcommon import *
+from cla_util import *
 from rayleigh_diagnostics import GridInfo
 
 # Get the run directory on which to perform the analysis
-dirname = sys.argv[1]
-
-# Data and plot directories
-datadir = dirname + '/data/'
+args = sys.argv
+clas0, clas = read_clas(args)
+dirname = clas0['dirname']
 dirname_stripped = strip_dirname(dirname)
 
-# domain bounds
-ncheby, domain_bounds = get_domain_bounds(dirname)
-ri = np.min(domain_bounds)
-ro = np.max(domain_bounds)
-d = ro - ri
+# See if magnetism is "on"
+magnetism = get_parameter(dirname, 'magnetism')
+
+# SPECIFIC ARGS for etrace_quad:
+kwargs_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'nodyn': False, 'dynfrac': 0.5, 'xvals': np.array([]), 'inte': False})
+
+# update these defaults from command-line
+kwargs = update_dict(kwargs_default, clas)
+
+fontsize = default_titlesize
+the_file = kwargs.the_file
+xminmax = kwargs.xminmax
+xmin = kwargs.xmin
+xmax = kwargs.xmax
+minmax = kwargs.minmax
+ymin = kwargs.min
+ymax = kwargs.max
+coords = kwargs.coords
+ntot = kwargs.ntot
+xiter = kwargs.xiter
+logscale = kwargs.log
+nodyn = kwargs.nodyn
+dynfrac = kwargs.dynfrac
+xvals = make_array(kwargs.xvals)
+plot_inte = kwargs.inte
+
+# deal with coords (if user wants minmax to only apply to certain subplots)
+if not coords is None:
+    numpanels = len(coords)//2
+    acopy = np.copy(coords)
+    coords = []
+    for i in range(numpanels):
+        coords.append((acopy[2*i], acopy[2*i + 1]))
 
 # Find the etrace file(s) in the data directory. If there are multiple, by
 # default choose the one with widest range in the trace.
