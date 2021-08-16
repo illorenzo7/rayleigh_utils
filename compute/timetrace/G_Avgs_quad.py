@@ -94,37 +94,27 @@ if rank == 0:
     eq = get_eq(dirname)
     rhot = (eq.density*eq.temperature).reshape((1, nr))
 
-    # get zone separators, defaulting to 
-    # the domain bounds in radius and
-    # [-45, 0, 45] in latitude
-
-    if 'latvals' in clas:
-        latvals = make_array(clas['latvals'], tolist=True)
-    else:
-        latvals = [-45., 0., 45.]
-
-    if 'rvals' in clas:
-        rvals = clas['rvals']
-    else:
-        rvals = [] # by default don't separate domain in radius...
-
+    # get grid info + default kwargs
+    kwargs_default = dict({})
     ncheby, domain_bounds = get_domain_bounds(dirname)
     domain_bounds = np.array(domain_bounds)/rsun # normalize by rsun
     ri, ro = domain_bounds[0], domain_bounds[-1]
     ndomains = len(ncheby)
-    if rvals == [] and ndomains > 1: # 
-        rvals = list(domain_bounds[1:-1][::-1])
-    rbounds = [ro] + rvals + [ri]
-    latbounds = [tt_lat[0]] + latvals + [tt_lat[-1]]
-    
-    # make into arrays (normalize rr)
-    rbounds = np.array(rbounds)
-    latbounds = np.array(latbounds)
+    kwargs_default['rvals'] = domain_bounds[1:-1][::-1]
+    kwargs_default['latvals'] = np.array([-45., 0., 45.])
 
+    # update these possibly
+    kw = update_dict(kwargs_default, clas)
+    latvals = make_array(kw.latvals)
+    rvals = make_array(kw.rvals)
+
+    rbounds = np.array([ro] + list(rvals) + [ri])
+    latbounds = np.array([tt_lat[0]] + latvals + [tt_lat[-1]])
+    
     # now get the separator indices
     ir_sep = []
     for rval in rvals:
-        ir_sep.append(np.argmin(np.abs(rr - rval)))
+        ir_sep.append(np.argmin(np.abs(rr/rsun - rval)))
     it_sep = []
     for lat in latvals:
         it_sep.append(np.argmin(np.abs(tt_lat - lat)))
