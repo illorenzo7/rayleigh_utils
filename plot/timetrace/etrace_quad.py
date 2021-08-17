@@ -239,8 +239,8 @@ else:
 
 # x titles
 for ir in range(nquadr):
-    r1 = rbounds[ir]/rsun
-    r2 = rbounds[ir+1]/rsun
+    r1 = rbounds[ir]
+    r2 = rbounds[ir+1]
     title = 'rad. range = [%.3f, %.3f]' %(r1, r2)
     if ir == 0:
         title = dirname_stripped + '\n' + title
