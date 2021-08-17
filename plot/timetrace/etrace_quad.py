@@ -1,5 +1,5 @@
 # Author: Loren Matilsky
-# Date created: 06/08/2017
+# plot the energy in different quadrants
 import matplotlib.pyplot as plt
 import numpy as np
 import sys, os
@@ -21,7 +21,7 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = get_parameter(dirname, 'magnetism')
 
 # SPECIFIC ARGS for etrace:
-kwargs_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'nodyn': False, 'dynfrac': 0.5, 'xvals': np.array([]), 'czrz': False, 'inte': False})
+kwargs_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'nodyn': False, 'dynfrac': 0.5, 'xvals': np.array([]), 'inte': False})
 # plots two more columns with energies in CZ and RZ separately 
 # update these defaults from command-line
 kwargs = update_dict(kwargs_default, clas)
@@ -41,7 +41,6 @@ logscale = kwargs.log
 nodyn = kwargs.nodyn
 dynfrac = kwargs.dynfrac
 xvals = make_array(kwargs.xvals)
-sep_czrz = kwargs.czrz
 plot_inte = kwargs.inte
 
 # deal with coords (if user wants minmax to only apply to certain subplots)
@@ -102,12 +101,12 @@ vals = thin_data(vals, ntot)
 print ("after thin_data: len(xaxis) = %i" %len(xaxis))
 
 # now finally get the shape of the "vals" array
-ntimes, nq, nquad_r, nquad_t = np.shape(vals)
-nplots = nquad_r*nquad_t
+ntimes, nq, nquadlat, nquadr = np.shape(vals)
+nplots = nquadlat*nquadr
 
-# create figure with nquad_r columns and nquad_t rows
-fig, axs = plt.subplots(nquad_t, nquad_r, figsize=(5*nquad_r, 10), sharex=True)
-if nquad_r == 1: # need the axis array to consistently be doubly indexed
+# create figure with nquadr columns and nquadlat rows
+fig, axs = plt.subplots(nquadlat, nquadr, figsize=(3.5*nquadr, 10), sharex=True)
+if nquadr == 1: # need the axis array to consistently be doubly indexed
     axs = np.expand_dims(axs, 1)
 
 # Make thin lines to see structure of variation for ME
@@ -125,10 +124,10 @@ else:
         ax.ticklabel_format(scilimits = (-3,4), useMathText=True)
 
 # loop over different domains
-for it in range(nquad_t):
-    for ir in range(nquad_r):
-        vals_loc = vals[:, :, it, ir]
-        ax = axs[it, ir]
+for ilat in range(nquadlat):
+    for ir in range(nquadr):
+        vals_loc = vals[:, :, ilat, ir]
+        ax = axs[ilat, ir]
 
         all_e = []
         for i in range(3): # tot, fluc, mean of energies
@@ -138,16 +137,22 @@ for it in range(nquad_t):
                 tke = vals_loc[:, lut[403]]
                 pke = vals_loc[:, lut[404]]
                 linestyle = '-'
+                label_pre = ''
+                label_app = ''
             if i == 1: # fluc
                 rke = vals_loc[:, lut[410]]
                 tke = vals_loc[:, lut[411]]
                 pke = vals_loc[:, lut[412]]
                 linestyle = ':'
+                label_pre = ''
+                label_app = '\''
             if i == 2: # mean
                 rke = vals_loc[:, lut[402]] - vals_loc[:, lut[410]]
                 tke = vals_loc[:, lut[403]] - vals_loc[:, lut[411]]
                 pke = vals_loc[:, lut[404]] - vals_loc[:, lut[412]]
                 linestyle = '--'
+                label_pre = '<'
+                label_app = '>'
             ke = rke + tke + pke
 
             # INTERNAL ENERGY
@@ -179,14 +184,10 @@ for it in range(nquad_t):
             # collect all the total energies together for min/max vals
             all_e += [rke, tke, pke, ke]
 
-            ax.plot(xaxis, ke, color_order[0],\
-                    linewidth=lw_ke, linestyle=linestyle, label=r'$\rm{KE_{tot}}$')
-            ax.plot(xaxis, rke, color_order[1],\
-                    linewidth=lw_ke, linestyle=linestyle, label=r'$\rm{KE_r}$')
-            ax.plot(xaxis, tke, color_order[2],\
-                    linewidth=lw_ke, linestyle=linestyle, label=r'$\rm{KE_\theta}$')
-            ax.plot(xaxis, pke, color_order[3],\
-                    linewidth=lw_ke, linestyle=linestyle, label=r'$\rm{KE_\phi}$')
+            ax.plot(xaxis, ke, color_order[0], linewidth=lw_ke, linestyle=linestyle, label=label_pre+'tot'+label_app)
+            ax.plot(xaxis, rke, color_order[1], linewidth=lw_ke, linestyle=linestyle, label=label_pre+'rad'+label_app)
+            ax.plot(xaxis, tke, color_order[2], linewidth=lw_ke, linestyle=linestyle, label=label_pre+'theta'+label_app)
+            ax.plot(xaxis, pke, color_order[3], linewidth=lw_ke, linestyle=linestyle, label=label_pre+'phi'+label_app)
 
             # INTERNAL
             if plot_inte:
@@ -202,20 +203,17 @@ for it in range(nquad_t):
                     itcut = 0
                 all_e += [rme[itcut:], tme[itcut:], pme[itcut:], me[itcut:]]
 
-                ax.plot(xaxis, me, color_order[0] + linestyle,\
-                        linewidth=lw, label=r'$\rm{ME_{tot}}$')
-                ax.plot(xaxis, rme, color_order[1] + linestyle,\
-                        linewidth=lw, label=r'$\rm{ME_r}$')
-                ax.plot(xaxis, tme, color_order[2] + linestyle,\
-                        linewidth=lw, label=r'$\rm{ME_\theta}$')
-                ax.plot(xaxis, pme, color_order[3] + linestyle,\
-                        linewidth=lw, label=r'$\rm{ME_\phi}$')
+                ax.plot(xaxis, me, color_order[0] + linestyle, linewidth=lw)
+                ax.plot(xaxis, rme, color_order[1] + linestyle, linewidth=lw)
+                ax.plot(xaxis, tme, color_order[2] + linestyle, linewidth=lw)
+                ax.plot(xaxis, pme, color_order[3] + linestyle, linewidth=lw)
 
-            if it == 0 and ir == 0: # put a legend on the upper left axis
-                legfrac = 1/4
-                ax.legend(loc='lower left', ncol=4, fontsize=0.8*fontsize, columnspacing=1)
-            else:
-                legfrac = None
+        if ilat == 0 and ir == 0: # put a legend on the upper left axis
+            #legfrac = 1/4
+            legfrac = 1/2
+            ax.legend(loc='lower left', ncol=3, fontsize=0.7*fontsize, columnspacing=1)
+        else:
+            legfrac = None
 
         # set the y limits
         minmax_loc = minmax
@@ -240,7 +238,7 @@ else:
     axs[2, 0].set_xlabel('time [' + time_label + ']')
 
 # x titles
-for ir in range(nquad_r):
+for ir in range(nquadr):
     r1 = rbounds[ir]/rsun
     r2 = rbounds[ir+1]/rsun
     title = 'rad. range = [%.3f, %.3f]' %(r1, r2)
@@ -249,7 +247,7 @@ for ir in range(nquad_r):
     axs[0, ir].set_title(title, fontsize=fontsize)
 
 # y labels
-for it in range(nquad_t):
+for it in range(nquadlat):
     lat1 = latbounds[it]
     lat2 = latbounds[it+1]
     axs[it, 0].set_ylabel('lat. range = [%.1f, %.1f]' %(lat1, lat2), fontsize=fontsize)
