@@ -54,17 +54,13 @@ if not coords is None:
 
 # Might need to use 2dom trace instead of regular trace
 if the_file is None:
-    if sep_czrz:
-        the_file = get_widest_range_file(clas0['datadir'], 'G_Avgs_trace_2dom')
-    else: 
-        the_file = get_widest_range_file(clas0['datadir'], 'G_Avgs_trace')
+    the_file = get_widest_range_file(clas0['datadir'], 'G_Avgs_trace_quad')
 
 print ('Getting data from ' + the_file)
 di = get_dict(the_file)
-vals_gav = di['vals']
-if sep_czrz:
-    vals_cz = di['vals_cz']
-    vals_rz = di['vals_rz']
+vals = di['vals']
+rbounds = di['rbounds']
+latbounds = di['latbounds']
 lut = di['lut']
 times = di['times']
 iters = di['iters']
@@ -94,10 +90,7 @@ xaxis = xaxis[ixmin:ixmax+1]
 times = times[ixmin:ixmax+1]
 iters = iters[ixmin:ixmax+1]
 tmin, tmax = times[0], times[-1]
-vals_gav = vals_gav[ixmin:ixmax+1, :]
-if sep_czrz:
-    vals_cz = vals_cz[ixmin:ixmax+1, :]
-    vals_rz = vals_rz[ixmin:ixmax+1, :]
+vals = vals[ixmin:ixmax+1, :]
 
 # deal with x axis, maybe thinning data
 print ("ntot = %i" %ntot)
@@ -105,22 +98,16 @@ print ("before thin_data: len(xaxis) = %i" %len(xaxis))
 xaxis = thin_data(xaxis, ntot)
 times = thin_data(times, ntot)
 iters = thin_data(iters, ntot)
-vals_gav = thin_data(vals_gav, ntot)
-if sep_czrz:
-    vals_cz = thin_data(vals_cz, ntot)
-    vals_rz = thin_data(vals_rz, ntot)
+vals = thin_data(vals, ntot)
 print ("after thin_data: len(xaxis) = %i" %len(xaxis))
 
-# create figure with 3-panel columns (total, mean and fluctuating energy)
-# 1 column if only full energies desired
-# 3 columns if CZ/RZ separation desired
-if sep_czrz:
-    ncol = 3
-else:
-    ncol = 1
-fig, axs = plt.subplots(3, ncol, figsize=(5.*ncol, 10),\
-        sharex=True)
-if ncol == 1: # need the axis array to consistently be doubly indexed
+# now finally get the shape of the "vals" array
+ntimes, nq, nquad_r, nquad_t = np.shape(vals)
+nplots = nquad_r*nquad_t
+
+# create figure with nquad_r columns and nquad_t rows
+fig, axs = plt.subplots(nquad_t, nquad_r, figsize=(5*nquad_r, 10), sharex=True)
+if nquad_r == 1: # need the axis array to consistently be doubly indexed
     axs = np.expand_dims(axs, 1)
 
 # Make thin lines to see structure of variation for ME
@@ -137,104 +124,103 @@ else:
     for ax in axs.flatten():
         ax.ticklabel_format(scilimits = (-3,4), useMathText=True)
 
-# start making plots
-# loop over tot, fluc, mean and the different domains
-vals_list = [vals_gav]
-if sep_czrz:
-    vals_list.append(vals_rz)
-    vals_list.append(vals_cz)
+# loop over different domains
+for it in range(nquad_t):
+    for ir in range(nquad_r):
+        vals_loc = vals[:, :, it, ir]
+        ax = axs[it, ir]
 
-for irow in range(3): # tot, fluc, mean
-    for icol in range(ncol):
-        vals = vals_list[icol]
-        # KINETIC ENERGY
-        if irow == 0: # tot
-            rke = vals[:, lut[402]]
-            tke = vals[:, lut[403]]
-            pke = vals[:, lut[404]]
+        all_e = []
+        for i in range(3): # tot, fluc, mean of energies
+            # KINETIC ENERGY
+            if i == 0: # tot
+                rke = vals_loc[:, lut[402]]
+                tke = vals_loc[:, lut[403]]
+                pke = vals_loc[:, lut[404]]
+                linestyle = '-'
+            if i == 1: # fluc
+                rke = vals_loc[:, lut[410]]
+                tke = vals_loc[:, lut[411]]
+                pke = vals_loc[:, lut[412]]
+                linestyle = ':'
+            if i == 2: # mean
+                rke = vals_loc[:, lut[402]] - vals_loc[:, lut[410]]
+                tke = vals_loc[:, lut[403]] - vals_loc[:, lut[411]]
+                pke = vals_loc[:, lut[404]] - vals_loc[:, lut[412]]
+                linestyle = '--'
+            ke = rke + tke + pke
+
+            # INTERNAL ENERGY
             if plot_inte:
-                inte = vals[:, lut[701]]
-        if irow == 1: # fluc
-            rke = vals[:, lut[410]]
-            tke = vals[:, lut[411]]
-            pke = vals[:, lut[412]]
-        if irow == 2: # mean
-            rke = vals[:, lut[402]] - vals[:, lut[410]]
-            tke = vals[:, lut[403]] - vals[:, lut[411]]
-            pke = vals[:, lut[404]] - vals[:, lut[412]]
-        ke = rke + tke + pke
+                if i == 1: # fluc, no inte for fluctuating S'
+                    inte = np.zeros(len(xaxis))
+                else:
+                    inte = vals_loc[:, lut[701]]
+            
+            # MAGNETIC ENERGY
+            if magnetism:
+                if i == 0: # tot
+                    rme = vals[:, lut[1102]]
+                    tme = vals[:, lut[1103]]
+                    pme = vals[:, lut[1104]]
+                if i == 1: # fluc
+                    rme = vals[:, lut[1110]]
+                    tme = vals[:, lut[1111]]
+                    pme = vals[:, lut[1112]]
+                if i == 2: # mean
+                    rme = vals[:, lut[1102]] - vals[:, lut[1110]]
+                    tme = vals[:, lut[1103]] - vals[:, lut[1111]]
+                    pme = vals[:, lut[1104]] - vals[:, lut[1112]]
+                me = rme + tme + pme
 
-        # INTERNAL ENERGY
-        if plot_inte:
-            if irow == 1: # fluc, no inte for fluctuating S'
-                inte = np.zeros(len(xaxis))
+            # make line plots
+
+            # KINETIC
+            # collect all the total energies together for min/max vals
+            all_e += [rke, tke, pke, ke]
+
+            ax.plot(xaxis, ke, color_order[0],\
+                    linewidth=lw_ke, linestyle=linestyle, label=r'$\rm{KE_{tot}}$')
+            ax.plot(xaxis, rke, color_order[1],\
+                    linewidth=lw_ke, linestyle=linestyle, label=r'$\rm{KE_r}$')
+            ax.plot(xaxis, tke, color_order[2],\
+                    linewidth=lw_ke, linestyle=linestyle, label=r'$\rm{KE_\theta}$')
+            ax.plot(xaxis, pke, color_order[3],\
+                    linewidth=lw_ke, linestyle=linestyle, label=r'$\rm{KE_\phi}$')
+
+            # INTERNAL
+            if plot_inte:
+                all_e += [inte]
+                ax.plot(xaxis, inte, color_order[4], linewidth=lw_inte, linestyle=linestyle, label='INTE')
+
+            # MAGNETIC
+            if magnetism:
+                if nodyn:
+                    tcut = tmin + dynfrac*(tmax - tmin)
+                    itcut = np.argmin(np.abs(times - tcut))
+                else:
+                    itcut = 0
+                all_e += [rme[itcut:], tme[itcut:], pme[itcut:], me[itcut:]]
+
+                ax.plot(xaxis, me, color_order[0] + linestyle,\
+                        linewidth=lw, label=r'$\rm{ME_{tot}}$')
+                ax.plot(xaxis, rme, color_order[1] + linestyle,\
+                        linewidth=lw, label=r'$\rm{ME_r}$')
+                ax.plot(xaxis, tme, color_order[2] + linestyle,\
+                        linewidth=lw, label=r'$\rm{ME_\theta}$')
+                ax.plot(xaxis, pme, color_order[3] + linestyle,\
+                        linewidth=lw, label=r'$\rm{ME_\phi}$')
+
+            if it == 0 and ir == 0: # put a legend on the upper left axis
+                legfrac = 1/4
+                ax.legend(loc='lower left', ncol=4, fontsize=0.8*fontsize, columnspacing=1)
             else:
-                inte = vals[:, lut[701]]
-        
-        # MAGNETIC ENERGY
-        if magnetism:
-            if irow == 0: # tot
-                rme = vals[:, lut[1102]]
-                tme = vals[:, lut[1103]]
-                pme = vals[:, lut[1104]]
-            if irow == 1: # fluc
-                rme = vals[:, lut[1110]]
-                tme = vals[:, lut[1111]]
-                pme = vals[:, lut[1112]]
-            if irow == 2: # mean
-                rme = vals[:, lut[1102]] - vals[:, lut[1110]]
-                tme = vals[:, lut[1103]] - vals[:, lut[1111]]
-                pme = vals[:, lut[1104]] - vals[:, lut[1112]]
-            me = rme + tme + pme
-
-        # make line plots
-        # KINETIC
-        # collect all the total energies together for min/max vals
-        all_e = [rke, tke, pke, ke]
-
-        ax = axs[irow, icol]
-        ax.plot(xaxis, ke, color_order[0],\
-                linewidth=lw_ke, label=r'$\rm{KE_{tot}}$')
-        ax.plot(xaxis, rke, color_order[1],\
-                linewidth=lw_ke, label=r'$\rm{KE_r}$')
-        ax.plot(xaxis, tke, color_order[2],\
-                linewidth=lw_ke, label=r'$\rm{KE_\theta}$')
-        ax.plot(xaxis, pke, color_order[3],\
-                linewidth=lw_ke, label=r'$\rm{KE_\phi}$')
-        # INTERNAL
-        if plot_inte:
-            all_e += [inte]
-            ax.plot(xaxis, inte, color_order[4], linewidth=lw_ke,\
-                    label='INTE')
-
-        # MAGNETIC
-        if magnetism:
-            if nodyn:
-                tcut = tmin + dynfrac*(tmax - tmin)
-                itcut = np.argmin(np.abs(times - tcut))
-            else:
-                itcut = 0
-            all_e += [rme[itcut:], tme[itcut:], pme[itcut:], me[itcut:]]
-
-            ax.plot(xaxis, me, color_order[0] + '--',\
-                    linewidth=lw, label=r'$\rm{ME_{tot}}$')
-            ax.plot(xaxis, rme, color_order[1] + '--',\
-                    linewidth=lw, label=r'$\rm{ME_r}$')
-            ax.plot(xaxis, tme, color_order[2] + '--',\
-                    linewidth=lw, label=r'$\rm{ME_\theta}$')
-            ax.plot(xaxis, pme, color_order[3] + '--',\
-                    linewidth=lw, label=r'$\rm{ME_\phi}$')
-
-        if irow == 0 and icol == 0: # put a legend on the upper left axis
-            legfrac = 1/4
-            ax.legend(loc='lower left', ncol=4, fontsize=0.8*fontsize, columnspacing=1)
-        else:
-            legfrac = None
+                legfrac = None
 
         # set the y limits
         minmax_loc = minmax
         if not coords is None:
-            if not (irow, icol) in coords: # reset minmax_loc to None
+            if not (it, ir) in coords: # reset minmax_loc to None
                 # (will become default) if not in desired coordinates
                 minmax_loc = None
         if minmax_loc is None:
@@ -247,29 +233,26 @@ for irow in range(3): # tot, fluc, mean
 
 # Set some parameters defining all subplots
 # x limits and label
-if ncol == 1:
-    icol_mid = 0
-elif ncol == 3:
-    icol_mid = 1
-axs[0,icol_mid].set_xlim((xminmax[0], xminmax[1]))
+axs[0, 0].set_xlim((xminmax[0], xminmax[1]))
 if xiter:
-    axs[2,icol_mid].set_xlabel('iteration #')
+    axs[2, 0].set_xlabel('iteration #')
 else:
-    axs[2,icol_mid].set_xlabel('time [' + time_label + ']')
+    axs[2, 0].set_xlabel('time [' + time_label + ']')
+
+# x titles
+for ir in range(nquad_r):
+    r1 = rbounds[ir]/rsun
+    r2 = rbounds[ir+1]/rsun
+    title = 'rad. range = [%.3f, %.3f]' %(r1, r2)
+    if ir == 0:
+        title = dirname_stripped + '\n' + title
+    axs[0, ir].set_title(title, fontsize=fontsize)
 
 # y labels
-axs[0,0].set_ylabel('full energy', fontsize=fontsize)
-axs[1,0].set_ylabel('fluc energy', fontsize=fontsize)
-axs[2,0].set_ylabel('mean energy', fontsize=fontsize)
-
-# Make titles
-titles = ["ALL ZONES", "RZ", "CZ"]
-for icol in range(ncol):
-    if icol == icol_mid:
-        title = dirname_stripped + '\n' + titles[icol]
-    else:
-        title = titles[icol]
-    axs[0, icol].set_title(title)
+for it in range(nquad_t):
+    lat1 = latbounds[it]
+    lat2 = latbounds[it+1]
+    axs[it, 0].set_ylabel('lat. range = [%.1f, %.1f]' %(lat1, lat2), fontsize=fontsize)
 
 # mark times if desired
 for ax in axs.flatten():
@@ -295,7 +278,7 @@ tag = clas0['tag']
 if xiter and tag == '':
     tag = '_xiter'
 plotdir = my_mkdir(clas0['plotdir']) 
-savename = 'etrace' + tag + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
+savename = 'etrace_quad' + tag + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
 
 if clas0['saveplot']:
     print ('Saving the etrace plot at ' + plotdir + savename)
