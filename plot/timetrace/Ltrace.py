@@ -1,269 +1,307 @@
 # Author: Loren Matilsky
 # Date created: 06/08/2017
-import matplotlib as mpl
-mpl.use('TkAgg')
 import matplotlib.pyplot as plt
-import pickle
 import numpy as np
 import sys, os
 sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
-from subprocess import call
+sys.path.append(os.environ['rapl'])
 from common import *
+from plotcommon import *
+from cla_util import *
+from rayleigh_diagnostics import GridInfo
 
 # Get the run directory on which to perform the analysis
-dirname = sys.argv[1]
-
-# Data and plot directories
-datadir = dirname + '/data/'
-plotdir = dirname + '/plots/'
-if (not os.path.isdir(plotdir)):
-    os.makedirs(plotdir)
+args = sys.argv
+clas0, clas = read_clas(args)
+dirname = clas0['dirname']
 dirname_stripped = strip_dirname(dirname)
 
-# domain bounds
-ncheby, domain_bounds = get_domain_bounds(dirname)
-ri = np.min(domain_bounds)
-ro = np.max(domain_bounds)
-d = ro - ri
+# See if magnetism is "on"
+magnetism = get_parameter(dirname, 'magnetism')
 
-# Find the etrace file(s) in the data directory. If there are multiple, by
-# default choose the one with widest range in the trace.
-trace_G_Avgs_file = get_widest_range_file(datadir, 'trace_G_Avgs')
+# SPECIFIC ARGS for etrace:
+kwargs_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'nodyn': False, 'dynfrac': 0.5, 'xvals': np.array([]), 'czrz': False, 'inte': False})
+# plots two more columns with energies in CZ and RZ separately 
+# update these defaults from command-line
+kwargs = update_dict(kwargs_default, clas)
 
-# Set defaults
-xiter = False
-from0 = False
-magnetism = False
-minmax = None
-xminmax = None
-plotall = False
+fontsize = default_titlesize
+the_file = kwargs.the_file
+xminmax = kwargs.xminmax
+xmin = kwargs.xmin
+xmax = kwargs.xmax
+minmax = kwargs.minmax
+ymin = kwargs.min
+ymax = kwargs.max
+coords = kwargs.coords
+ntot = kwargs.ntot
+xiter = kwargs.xiter
+logscale = kwargs.log
+nodyn = kwargs.nodyn
+dynfrac = kwargs.dynfrac
+xvals = make_array(kwargs.xvals)
+sep_czrz = kwargs.czrz
+plot_inte = kwargs.inte
 
-# Get command-line arguments
-plotdir = None
+# deal with coords (if user wants minmax to only apply to certain subplots)
+if not coords is None:
+    numpanels = len(coords)//2
+    acopy = np.copy(coords)
+    coords = []
+    for i in range(numpanels):
+        coords.append((acopy[2*i], acopy[2*i + 1]))
 
-args = sys.argv[2:]
-nargs = len(args)
-for i in range(nargs):
-    arg = args[i]
-    if arg == '-plotdir':
-        plotdir = args[i+1]
-    if arg == '-xiter': # plot w.r.t. iterations
-        xiter = True
-    elif arg == '-usefile':
-        trace_G_Avgs_file = args[i+1]
-        trace_G_Avgs_file = trace_G_Avgs_file.split('/')[-1]
-    elif arg == '-from0':
-        from0 = True
-    elif arg == '-minmax':
-        try: # first see if user wants to set all three ranges set
-            # If "plotall", then use the first range for the total amom,
-            # second for the convective, third for the mean
-            minmax = float(args[i+1]), float(args[i+2]),\
-                    float(args[i+3]), float(args[i+4]),\
-                    float(args[i+5]), float(args[i+6])
-        except: # if not, they want the same pair used for each subplot
-            minmax = float(args[i+1]), float(args[i+2])
-    elif arg == '-xminmax':
-        xminmax = float(args[i+1]), float(args[i+2])
-    elif arg == '-plotall':
-        plotall = True
+# Might need to use 2dom trace instead of regular trace
+if the_file is None:
+    if sep_czrz:
+        the_file = get_widest_range_file(clas0['datadir'], 'G_Avgs_trace_2dom')
+    else: 
+        the_file = get_widest_range_file(clas0['datadir'], 'G_Avgs_trace')
 
-
-# Tag the plot by whether or not the x axis is in "time" or "iteration"
-if xiter:
-    tag = '_xiter'
-else:
-    tag = '_xtime'
-
-# Read in the KE data (dictionary form)
-di = get_dict(datadir + trace_G_Avgs_file)
-
-vals = di['vals']
+print ('Getting data from ' + the_file)
+di = get_dict(the_file)
+vals_gav = di['vals']
+if sep_czrz:
+    vals_cz = di['vals_cz']
+    vals_rz = di['vals_rz']
 lut = di['lut']
 times = di['times']
 iters = di['iters']
-iter1 = di['iter1']
-iter2 = di['iter2']
 
-# Get the baseline time unit
-rotation = get_parameter(dirname, 'rotation')
-if rotation:
-    time_unit = compute_Prot(dirname)
-    time_label = r'$\rm{P_{rot}}$'
-else:
-    time_unit = compute_tdt(dirname)
-    time_label = r'$\rm{TDT}$'
-
-if plotdir is None:
-    plotdir = dirname + '/plots/'
-    if not os.path.isdir(plotdir):
-        os.makedirs(plotdir)
-
-# Get the first and last indices in the time direction, depending on 
-# xminmax
-ntimes = len(times)
-if xminmax is None:
-    it1, it2 = 0, ntimes - 1 # Plot over whole range by default
-else:
-    if xiter:
-        it1 = np.argmin(np.abs(iters - xminmax[0]))
-        it2 = np.argmin(np.abs(iters - xminmax[1]))
-    else:
-        it1 = np.argmin(np.abs(times/time_unit - xminmax[0]))
-        it2 = np.argmin(np.abs(times/time_unit - xminmax[1]))
-
-# Make appropriate file name to save
-savename = dirname_stripped + '_Ltrace_' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + tag + '.png'
-
-# Get data in apropriate time range
-times = times[it1:it2+1]
-t1 = np.min(times)
-t2 = np.max(times)
-iters = iters[it1:it2+1]
-Lz = vals[lut[1819], it1:it2+1]
-if plotall:
-    Lx = vals[lut[1820], it1:it2+1]
-    Ly = vals[lut[1821], it1:it2+1]
-
-Lpz = vals[lut[1822], it1:it2+1]
-if plotall:
-    Lpx = vals[lut[1823], it1:it2+1]
-    Lpy = vals[lut[1824], it1:it2+1]
-
-Lmz = vals[lut[1825], it1:it2+1]
-if plotall:
-    Lmx = vals[lut[1826], it1:it2+1]
-    Lmy = vals[lut[1827], it1:it2+1]
-
-# Get global min/max vals
-varlist = [Lz, Lpz, Lmz]
-if plotall:
-    varlist.extend([Lx, Ly, Lpx, Lpy, Lmx, Lmy])
-mmax = -np.inf
-mmin = np.inf
-for var in varlist:
-    mmax = max(mmax, np.max(var))
-    mmin = min(mmin, np.min(var))
-
+# get the x axis
+time_unit, time_label, rotation, simple_label = get_time_unit(dirname)
 if not xiter:
     xaxis = times/time_unit
 else:
     xaxis = iters
 
-if from0:
-    xmin = 0.
-else:
-    xmin = np.min(xaxis)
-
+# set xminmax if not set by user
 if xminmax is None:
-    xminmax = xmin, np.max(xaxis)
+    # set xmin possibly
+    if xmin is None:
+        xmin = np.min(xaxis)
+    # set xmax possibly
+    if xmax is None:
+        xmax = np.max(xaxis)
+    xminmax = xmin, xmax
 
-# create figure with  3 panels in a row (total, mean and fluctuating amom)
-fig, axs = plt.subplots(3, 1, figsize=(5, 10), sharex=True)
-ax1 = axs[0]; ax2 = axs[1]; ax3 = axs[2]
+ixmin = np.argmin(np.abs(xaxis - xminmax[0]))
+ixmax = np.argmin(np.abs(xaxis - xminmax[1]))
 
-# Make thin lines to see structure of variation
+# Now shorten all the "x" arrays
+xaxis = xaxis[ixmin:ixmax+1]
+times = times[ixmin:ixmax+1]
+iters = iters[ixmin:ixmax+1]
+tmin, tmax = times[0], times[-1]
+vals_gav = vals_gav[ixmin:ixmax+1, :]
+if sep_czrz:
+    vals_cz = vals_cz[ixmin:ixmax+1, :]
+    vals_rz = vals_rz[ixmin:ixmax+1, :]
+
+# deal with x axis, maybe thinning data
+print ("ntot = %i" %ntot)
+print ("before thin_data: len(xaxis) = %i" %len(xaxis))
+xaxis = thin_data(xaxis, ntot)
+times = thin_data(times, ntot)
+iters = thin_data(iters, ntot)
+vals_gav = thin_data(vals_gav, ntot)
+if sep_czrz:
+    vals_cz = thin_data(vals_cz, ntot)
+    vals_rz = thin_data(vals_rz, ntot)
+print ("after thin_data: len(xaxis) = %i" %len(xaxis))
+
+# create figure with 3-panel columns (total, mean and fluctuating energy)
+# 1 column if only full energies desired
+# 3 columns if CZ/RZ separation desired
+if sep_czrz:
+    ncol = 3
+else:
+    ncol = 1
+fig, axs = plt.subplots(3, ncol, figsize=(5.*ncol, 10),\
+        sharex=True)
+if ncol == 1: # need the axis array to consistently be doubly indexed
+    axs = np.expand_dims(axs, 1)
+
+# Make thin lines to see structure of variation for ME
 lw = 0.5
+lw_ke = 1. # bit thicker for KE to differentiate between ME
 
-# first plot: average angular momentum density trace      
-# Include title
-
-# Time string showing trace interval
-if rotation:
-    time_string = ('t = %.1f to %.1f ' %(t1/time_unit, t2/time_unit))\
-            + time_label + (r'$\ (\Delta t = %.1f\ $'\
-            %((t2 - t1)/time_unit)) + time_label + ')'
+# See if y-axis should be on log scale (must do this before setting limits)
+# Make all axes use scientific notation (except for y if logscale=True)
+if logscale:
+    for ax in axs.flatten():
+        ax.set_yscale('log')
+        ax.ticklabel_format(axis='x', scilimits=(-3,4), useMathText=True)
 else:
-    time_string = ('t = %.3f to %.3f ' %(t1/time_unit, t2/time_unit))\
-            + time_label + (r'$\ (\Delta t = %.3f\ $'\
-            %((t2 - t1)/time_unit)) + time_label + ')'
+    for ax in axs.flatten():
+        ax.ticklabel_format(scilimits = (-3,4), useMathText=True)
 
-# Make title
-ax1.set_title(dirname_stripped + '\n ' + time_string +\
-          '\n\nangular momentum')
-ax1.plot(xaxis, Lz, 'k', linewidth=lw, label=r'$\mathcal{L}_z$')
-if plotall:
-    ax1.plot(xaxis, Lx, 'r', linewidth=lw, label=r'$\mathcal{L}_x$')
-    ax1.plot(xaxis, Ly, 'g', linewidth=lw, label=r'$\mathcal{L}_y$')
+# start making plots
+# loop over tot, fluc, mean and the different domains
+vals_list = [vals_gav]
+if sep_czrz:
+    vals_list.append(vals_rz)
+    vals_list.append(vals_cz)
 
-# If we're looking for machine-precision variations, just determine
-# min and max ranges for y-axes automatically in Python...
-if minmax is None:
-    pass
-#    diff = mmax - mmin
-#    buff = 0.05*diff
-#    ax1.set_ylim(mmin - buff, mmax + buff)
+for irow in range(3): # tot, fluc, mean
+    for icol in range(ncol):
+        vals = vals_list[icol]
+        # KINETIC ENERGY
+        if irow == 0: # tot
+            rke = vals[:, lut[402]]
+            tke = vals[:, lut[403]]
+            pke = vals[:, lut[404]]
+            if plot_inte:
+                inte = vals[:, lut[701]]
+        if irow == 1: # fluc
+            rke = vals[:, lut[410]]
+            tke = vals[:, lut[411]]
+            pke = vals[:, lut[412]]
+        if irow == 2: # mean
+            rke = vals[:, lut[402]] - vals[:, lut[410]]
+            tke = vals[:, lut[403]] - vals[:, lut[411]]
+            pke = vals[:, lut[404]] - vals[:, lut[412]]
+        ke = rke + tke + pke
+
+        # INTERNAL ENERGY
+        if plot_inte:
+            if irow == 1: # fluc, no inte for fluctuating S'
+                inte = np.zeros(len(xaxis))
+            else:
+                inte = vals[:, lut[701]]
+        
+        # MAGNETIC ENERGY
+        if magnetism:
+            if irow == 0: # tot
+                rme = vals[:, lut[1102]]
+                tme = vals[:, lut[1103]]
+                pme = vals[:, lut[1104]]
+            if irow == 1: # fluc
+                rme = vals[:, lut[1110]]
+                tme = vals[:, lut[1111]]
+                pme = vals[:, lut[1112]]
+            if irow == 2: # mean
+                rme = vals[:, lut[1102]] - vals[:, lut[1110]]
+                tme = vals[:, lut[1103]] - vals[:, lut[1111]]
+                pme = vals[:, lut[1104]] - vals[:, lut[1112]]
+            me = rme + tme + pme
+
+        # make line plots
+        # KINETIC
+        # collect all the total energies together for min/max vals
+        all_e = [rke, tke, pke, ke]
+
+        ax = axs[irow, icol]
+        ax.plot(xaxis, ke, color_order[0],\
+                linewidth=lw_ke, label=r'$\rm{KE_{tot}}$')
+        ax.plot(xaxis, rke, color_order[1],\
+                linewidth=lw_ke, label=r'$\rm{KE_r}$')
+        ax.plot(xaxis, tke, color_order[2],\
+                linewidth=lw_ke, label=r'$\rm{KE_\theta}$')
+        ax.plot(xaxis, pke, color_order[3],\
+                linewidth=lw_ke, label=r'$\rm{KE_\phi}$')
+        # INTERNAL
+        if plot_inte:
+            all_e += [inte]
+            ax.plot(xaxis, inte, color_order[4], linewidth=lw_ke,\
+                    label='INTE')
+
+        # MAGNETIC
+        if magnetism:
+            if nodyn:
+                tcut = tmin + dynfrac*(tmax - tmin)
+                itcut = np.argmin(np.abs(times - tcut))
+            else:
+                itcut = 0
+            all_e += [rme[itcut:], tme[itcut:], pme[itcut:], me[itcut:]]
+
+            ax.plot(xaxis, me, color_order[0] + '--',\
+                    linewidth=lw, label=r'$\rm{ME_{tot}}$')
+            ax.plot(xaxis, rme, color_order[1] + '--',\
+                    linewidth=lw, label=r'$\rm{ME_r}$')
+            ax.plot(xaxis, tme, color_order[2] + '--',\
+                    linewidth=lw, label=r'$\rm{ME_\theta}$')
+            ax.plot(xaxis, pme, color_order[3] + '--',\
+                    linewidth=lw, label=r'$\rm{ME_\phi}$')
+
+        if irow == 0 and icol == 0: # put a legend on the upper left axis
+            legfrac = 1/4
+            ax.legend(loc='lower left', ncol=4, fontsize=0.8*fontsize, columnspacing=1)
+        else:
+            legfrac = None
+
+        # set the y limits
+        minmax_loc = minmax
+        if not coords is None:
+            if not (irow, icol) in coords: # reset minmax_loc to None
+                # (will become default) if not in desired coordinates
+                minmax_loc = None
+        if minmax_loc is None:
+            minmax_loc = lineplot_minmax(xaxis, all_e, logscale=logscale, legfrac=legfrac)
+        if not ymin is None:
+            minmax_loc = ymin, minmax_loc[1]
+        if not ymax is None:
+            minmax_loc = minmax_loc[0], ymax
+        ax.set_ylim((minmax_loc[0], minmax_loc[1]))
+
+# Set some parameters defining all subplots
+# x limits and label
+if ncol == 1:
+    icol_mid = 0
+elif ncol == 3:
+    icol_mid = 1
+axs[0,icol_mid].set_xlim((xminmax[0], xminmax[1]))
+if xiter:
+    axs[2,icol_mid].set_xlabel('iteration #')
 else:
-    if len(minmax) == 2:
-        ax1.set_ylim(minmax)
-        ax2.set_ylim(minmax)
-        ax3.set_ylim(minmax)
-    elif len(minmax) == 6:
-        ax1.set_ylim(minmax[0], minmax[1])
-        ax1.set_ylim(minmax[2], minmax[3])
-        ax1.set_ylim(minmax[4], minmax[5])
- 
-# Set x limits  
-ax1.set_xlim(xminmax)
+    axs[2,icol_mid].set_xlabel('time [' + time_label + ']')
 
-# legend
-ax1.legend(ncol=2, fontsize=8)
+# y labels
+axs[0,0].set_ylabel('full energy', fontsize=fontsize)
+axs[1,0].set_ylabel('fluc energy', fontsize=fontsize)
+axs[2,0].set_ylabel('mean energy', fontsize=fontsize)
 
-# Make axes use scientific notation
-ax1.ticklabel_format(scilimits = (-3,4), useMathText=True)
-ax2.ticklabel_format(scilimits = (-3,4), useMathText=True)
-ax3.ticklabel_format(scilimits = (-3,4), useMathText=True)
-
-# Make the second plot (angular momentum of fluctuating motions)
-ax2.plot(xaxis, Lpz, 'k', linewidth=lw, label=r'$\mathcal{L}_z^\prime$')
-if plotall:
-    ax2.plot(xaxis, Lpx, 'r', linewidth=lw, label=r'$\mathcal{L}_x^\prime$')
-    ax2.plot(xaxis, Lpy, 'g', linewidth=lw, label=r'$\mathcal{L}_y^\prime$')
-
-# Title and axis label
-ax2.set_title('convection amom')
-# Put the y-label on the middle plot
-ax2.set_ylabel(r'$\rm{angular\ momentum\ density\ (g\ cm^{-1}\ s^{-1})}$')
-
-# Third plot: angular momentum of mean energies
-ax3.plot(xaxis, Lmz, 'k', linewidth=lw, label=r'$\langle\mathcal{L}\rangle_z$')
-if plotall:
-    ax3.plot(xaxis, Lmx, 'r', linewidth=lw, label=r'$\langle\mathcal{L}\rangle_x$')
-    ax3.plot(xaxis, Lmy, 'g', linewidth=lw, label=r'$\langle\mathcal{L}\rangle_y$')
-
-# title and x-axis label
-ax3.set_title('mean-motion amom')
-
-# Put the x-axis label on the bottom
-if (xiter):
-    ax3.set_xlabel('iteration #')
-else:
-    if rotation:
-        ax3.set_xlabel(r'$\rm{t\ (P_{rot})}$')
+# Make titles
+titles = ["ALL ZONES", "RZ", "CZ"]
+for icol in range(ncol):
+    if icol == icol_mid:
+        title = dirname_stripped + '\n' + titles[icol]
     else:
-        ax3.set_xlabel(r'$\rm{t\ (T_{diff})}$')
+        title = titles[icol]
+    axs[0, icol].set_title(title)
+
+# mark times if desired
+for ax in axs.flatten():
+    y1, y2 = ax.get_ylim()
+    yvals = np.linspace(y1, y2, 100)
+    for time in xvals:
+        ax.plot(time + np.zeros(100), yvals,'k--')
 
 # Get ticks everywhere
-plt.sca(ax1)
-plt.minorticks_on()
-plt.tick_params(top=True, right=True, direction='in', which='both')
-
-plt.sca(ax2)
-plt.minorticks_on()
-plt.tick_params(top=True, right=True, direction='in', which='both')
-
-plt.sca(ax3)
-plt.minorticks_on()
-plt.tick_params(top=True, right=True, direction='in', which='both')
+for ax in axs.flatten():
+    plt.sca(ax)
+    plt.minorticks_on()
+    plt.tick_params(top=True, right=True, direction='in', which='both')
 
 # Space the subplots to make them look pretty
-plt.tight_layout
-plt.subplots_adjust(left=0.15, bottom=0.08, top=0.85, wspace=0.4)
+plt.tight_layout()
+#plt.subplots_adjust(left=0.15, bottom=0.08, top=0.85, wspace=0.4)
 
 # Save the plot
-print ('Saving the etrace plot at ' + plotdir + savename + ' ...')
-plt.savefig(plotdir + savename, dpi=300)
+iter1, iter2 = get_iters_from_file(the_file)
+# Tag the plot by whether or not the x axis is in "time" or "iteration"
+tag = clas0['tag']
+if xiter and tag == '':
+    tag = '_xiter'
+plotdir = my_mkdir(clas0['plotdir']) 
+savename = 'etrace' + tag + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
+
+if clas0['saveplot']:
+    print ('Saving the etrace plot at ' + plotdir + savename)
+    plt.savefig(plotdir + savename, dpi=300)
 
 # Show the plot
-plt.show()
+if clas0['showplot']:
+    plt.show()
+plt.close()
