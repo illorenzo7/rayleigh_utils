@@ -21,7 +21,7 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = get_parameter(dirname, 'magnetism')
 
 # SPECIFIC ARGS for etrace:
-kwargs_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'nodyn': False, 'dynfrac': 0.5, 'xvals': np.array([]), 'czrz': False, 'inte': False})
+kwargs_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'xvals': np.array([]), 'czrz': False, 'plotall': False})
 # plots two more columns with energies in CZ and RZ separately 
 # update these defaults from command-line
 kwargs = update_dict(kwargs_default, clas)
@@ -43,6 +43,7 @@ dynfrac = kwargs.dynfrac
 xvals = make_array(kwargs.xvals)
 sep_czrz = kwargs.czrz
 plot_inte = kwargs.inte
+plotall = kwargs.plotall
 
 # deal with coords (if user wants minmax to only apply to certain subplots)
 if not coords is None:
@@ -124,8 +125,7 @@ if ncol == 1: # need the axis array to consistently be doubly indexed
     axs = np.expand_dims(axs, 1)
 
 # Make thin lines to see structure of variation for ME
-lw = 0.5
-lw_ke = 1. # bit thicker for KE to differentiate between ME
+lw = 1
 
 # See if y-axis should be on log scale (must do this before setting limits)
 # Make all axes use scientific notation (except for y if logscale=True)
@@ -147,83 +147,36 @@ if sep_czrz:
 for irow in range(3): # tot, fluc, mean
     for icol in range(ncol):
         vals = vals_list[icol]
-        # KINETIC ENERGY
-        if irow == 0: # tot
-            rke = vals[:, lut[402]]
-            tke = vals[:, lut[403]]
-            pke = vals[:, lut[404]]
-            if plot_inte:
-                inte = vals[:, lut[701]]
-        if irow == 1: # fluc
-            rke = vals[:, lut[410]]
-            tke = vals[:, lut[411]]
-            pke = vals[:, lut[412]]
-        if irow == 2: # mean
-            rke = vals[:, lut[402]] - vals[:, lut[410]]
-            tke = vals[:, lut[403]] - vals[:, lut[411]]
-            pke = vals[:, lut[404]] - vals[:, lut[412]]
-        ke = rke + tke + pke
 
-        # INTERNAL ENERGY
-        if plot_inte:
-            if irow == 1: # fluc, no inte for fluctuating S'
-                inte = np.zeros(len(xaxis))
-            else:
-                inte = vals[:, lut[701]]
-        
-        # MAGNETIC ENERGY
-        if magnetism:
-            if irow == 0: # tot
-                rme = vals[:, lut[1102]]
-                tme = vals[:, lut[1103]]
-                pme = vals[:, lut[1104]]
-            if irow == 1: # fluc
-                rme = vals[:, lut[1110]]
-                tme = vals[:, lut[1111]]
-                pme = vals[:, lut[1112]]
-            if irow == 2: # mean
-                rme = vals[:, lut[1102]] - vals[:, lut[1110]]
-                tme = vals[:, lut[1103]] - vals[:, lut[1111]]
-                pme = vals[:, lut[1104]] - vals[:, lut[1112]]
-            me = rme + tme + pme
+        # z-mom:
+        if irow == 0: # tot
+            Lz = vals[:, lut[1819]]
+            if plotall:
+                Lx = vals[:, lut[1820]]
+                Ly = vals[:, lut[1821]]
+        if irow == 1: # fluc
+            Lx = vals[:, lut[1822]]
+            if plotall:
+                Lx = vals[:, lut[1823]]
+                Ly = vals[:, lut[1824]]
+        if irow == 2: # mean
+            Lz = vals[:, lut[1819]] - vals[:, lut[1822]]
+            if plotall:
+                Lx = vals[:, lut[1820]] - vals[:, lut[1823]]
+                Ly = vals[:, lut[1821]] - vals[:, lut[1824]]
 
         # make line plots
-        # KINETIC
-        # collect all the total energies together for min/max vals
-        all_e = [rke, tke, pke, ke]
 
+        # collect all the momenta for min/max values
+        all_L = [Lz]
+        
         ax = axs[irow, icol]
-        ax.plot(xaxis, ke, color_order[0],\
-                linewidth=lw_ke, label=r'$\rm{KE_{tot}}$')
-        ax.plot(xaxis, rke, color_order[1],\
-                linewidth=lw_ke, label=r'$\rm{KE_r}$')
-        ax.plot(xaxis, tke, color_order[2],\
-                linewidth=lw_ke, label=r'$\rm{KE_\theta}$')
-        ax.plot(xaxis, pke, color_order[3],\
-                linewidth=lw_ke, label=r'$\rm{KE_\phi}$')
-        # INTERNAL
-        if plot_inte:
-            all_e += [inte]
-            ax.plot(xaxis, inte, color_order[4], linewidth=lw_ke,\
-                    label='INTE')
 
-        # MAGNETIC
-        if magnetism:
-            if nodyn:
-                tcut = tmin + dynfrac*(tmax - tmin)
-                itcut = np.argmin(np.abs(times - tcut))
-            else:
-                itcut = 0
-            all_e += [rme[itcut:], tme[itcut:], pme[itcut:], me[itcut:]]
-
-            ax.plot(xaxis, me, color_order[0] + '--',\
-                    linewidth=lw, label=r'$\rm{ME_{tot}}$')
-            ax.plot(xaxis, rme, color_order[1] + '--',\
-                    linewidth=lw, label=r'$\rm{ME_r}$')
-            ax.plot(xaxis, tme, color_order[2] + '--',\
-                    linewidth=lw, label=r'$\rm{ME_\theta}$')
-            ax.plot(xaxis, pme, color_order[3] + '--',\
-                    linewidth=lw, label=r'$\rm{ME_\phi}$')
+        ax.plot(xaxis, Lz, color_order[0], linewidth=lw, label=r'$\rm{\mathcal{L}_{z}}$')
+        if plotall:
+            ax.plot(xaxis, Lx, color_order[0], linewidth=lw, label=r'$\rm{\mathcal{L}_{x}}$')
+            ax.plot(xaxis, Ly, color_order[0], linewidth=lw, label=r'$\rm{\mathcal{L}_{y}}$')
+            all_L += [Lx, Ly]
 
         if irow == 0 and icol == 0: # put a legend on the upper left axis
             legfrac = 1/4
@@ -238,7 +191,7 @@ for irow in range(3): # tot, fluc, mean
                 # (will become default) if not in desired coordinates
                 minmax_loc = None
         if minmax_loc is None:
-            minmax_loc = lineplot_minmax(xaxis, all_e, logscale=logscale, legfrac=legfrac)
+            minmax_loc = lineplot_minmax(xaxis, all_L, logscale=logscale, legfrac=legfrac)
         if not ymin is None:
             minmax_loc = ymin, minmax_loc[1]
         if not ymax is None:
@@ -258,9 +211,9 @@ else:
     axs[2,icol_mid].set_xlabel('time [' + time_label + ']')
 
 # y labels
-axs[0,0].set_ylabel('full energy', fontsize=fontsize)
-axs[1,0].set_ylabel('fluc energy', fontsize=fontsize)
-axs[2,0].set_ylabel('mean energy', fontsize=fontsize)
+axs[0,0].set_ylabel('full L', fontsize=fontsize)
+axs[1,0].set_ylabel('fluc L', fontsize=fontsize)
+axs[2,0].set_ylabel('mean L', fontsize=fontsize)
 
 # Make titles
 titles = ["ALL ZONES", "RZ", "CZ"]
@@ -295,7 +248,7 @@ tag = clas0['tag']
 if xiter and tag == '':
     tag = '_xiter'
 plotdir = my_mkdir(clas0['plotdir']) 
-savename = 'etrace' + tag + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
+savename = 'Ltrace' + tag + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
 
 if clas0['saveplot']:
     print ('Saving the etrace plot at ' + plotdir + savename)
