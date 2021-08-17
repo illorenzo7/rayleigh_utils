@@ -1,5 +1,5 @@
 # Author: Loren Matilsky
-# plot the energy in different quadrants
+# plot the amom. in different quadrants
 import matplotlib.pyplot as plt
 import numpy as np
 import sys, os
@@ -21,7 +21,7 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = get_parameter(dirname, 'magnetism')
 
 # SPECIFIC ARGS for etrace:
-kwargs_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'nodyn': False, 'dynfrac': 0.5, 'xvals': np.array([]), 'inte': False})
+kwargs_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'xvals': np.array([]), 'plotall': False, 'vol': False})
 # plots two more columns with energies in CZ and RZ separately 
 # update these defaults from command-line
 kwargs = update_dict(kwargs_default, clas)
@@ -38,10 +38,9 @@ coords = kwargs.coords
 ntot = kwargs.ntot
 xiter = kwargs.xiter
 logscale = kwargs.log
-nodyn = kwargs.nodyn
-dynfrac = kwargs.dynfrac
 xvals = make_array(kwargs.xvals)
-plot_inte = kwargs.inte
+plotall = kwargs.plotall
+vol = kwargs.vol
 
 # deal with coords (if user wants minmax to only apply to certain subplots)
 if not coords is None:
@@ -63,6 +62,7 @@ latbounds = di['latbounds']
 lut = di['lut']
 times = di['times']
 iters = di['iters']
+volumes = di['volumes']
 
 # get the x axis
 time_unit, time_label, rotation, simple_label = get_time_unit(dirname)
@@ -127,86 +127,49 @@ else:
 for ilat in range(nquadlat):
     for ir in range(nquadr):
         vals_loc = vals[:, :, ilat, ir]
+        if vol: # multiply by the volume of the quadrant
+            print (" vol = ", volumes[ilat,ir])
+            vals_loc *= volumes[ilat, ir]
         ax = axs[ilat, ir]
 
-        all_e = []
+        all_L = []
         for i in range(3): # tot, fluc, mean of energies
-            # KINETIC ENERGY
+            # z-mom:
             if i == 0: # tot
-                rke = vals_loc[:, lut[402]]
-                tke = vals_loc[:, lut[403]]
-                pke = vals_loc[:, lut[404]]
+                Lz = vals_loc[:, lut[1819]]
+                if plotall:
+                    Lx = vals_loc[:, lut[1820]]
+                    Ly = vals_loc[:, lut[1821]]
                 linestyle = '-'
                 label_pre = ''
                 label_app = ''
+
             if i == 1: # fluc
-                rke = vals_loc[:, lut[410]]
-                tke = vals_loc[:, lut[411]]
-                pke = vals_loc[:, lut[412]]
+                Lx = vals_loc[:, lut[1822]]
+                if plotall:
+                    Lx = vals_loc[:, lut[1823]]
+                    Ly = vals_loc[:, lut[1824]]
                 linestyle = ':'
                 label_pre = ''
                 label_app = '\''
             if i == 2: # mean
-                rke = vals_loc[:, lut[402]] - vals_loc[:, lut[410]]
-                tke = vals_loc[:, lut[403]] - vals_loc[:, lut[411]]
-                pke = vals_loc[:, lut[404]] - vals_loc[:, lut[412]]
+                Lz = vals_loc[:, lut[1819]] - vals_loc[:, lut[1822]]
+                if plotall:
+                    Lx = vals_loc[:, lut[1820]] - vals_loc[:, lut[1823]]
+                    Ly = vals_loc[:, lut[1821]] - vals_loc[:, lut[1824]]
                 linestyle = '--'
                 label_pre = '<'
                 label_app = '>'
-            ke = rke + tke + pke
-
-            # INTERNAL ENERGY
-            if plot_inte:
-                if i == 1: # fluc, no inte for fluctuating S'
-                    inte = np.zeros(len(xaxis))
-                else:
-                    inte = vals_loc[:, lut[701]]
-            
-            # MAGNETIC ENERGY
-            if magnetism:
-                if i == 0: # tot
-                    rme = vals[:, lut[1102]]
-                    tme = vals[:, lut[1103]]
-                    pme = vals[:, lut[1104]]
-                if i == 1: # fluc
-                    rme = vals[:, lut[1110]]
-                    tme = vals[:, lut[1111]]
-                    pme = vals[:, lut[1112]]
-                if i == 2: # mean
-                    rme = vals[:, lut[1102]] - vals[:, lut[1110]]
-                    tme = vals[:, lut[1103]] - vals[:, lut[1111]]
-                    pme = vals[:, lut[1104]] - vals[:, lut[1112]]
-                me = rme + tme + pme
 
             # make line plots
 
-            # KINETIC
-            # collect all the total energies together for min/max vals
-            all_e += [rke, tke, pke, ke]
-
-            ax.plot(xaxis, ke, color_order[0], linewidth=lw_ke, linestyle=linestyle, label=label_pre+'tot'+label_app)
-            ax.plot(xaxis, rke, color_order[1], linewidth=lw_ke, linestyle=linestyle, label=label_pre+'rad'+label_app)
-            ax.plot(xaxis, tke, color_order[2], linewidth=lw_ke, linestyle=linestyle, label=label_pre+'theta'+label_app)
-            ax.plot(xaxis, pke, color_order[3], linewidth=lw_ke, linestyle=linestyle, label=label_pre+'phi'+label_app)
-
-            # INTERNAL
-            if plot_inte:
-                all_e += [inte]
-                ax.plot(xaxis, inte, color_order[4], linewidth=lw_inte, linestyle=linestyle, label='INTE')
-
-            # MAGNETIC
-            if magnetism:
-                if nodyn:
-                    tcut = tmin + dynfrac*(tmax - tmin)
-                    itcut = np.argmin(np.abs(times - tcut))
-                else:
-                    itcut = 0
-                all_e += [rme[itcut:], tme[itcut:], pme[itcut:], me[itcut:]]
-
-                ax.plot(xaxis, me, color_order[0] + linestyle, linewidth=lw)
-                ax.plot(xaxis, rme, color_order[1] + linestyle, linewidth=lw)
-                ax.plot(xaxis, tme, color_order[2] + linestyle, linewidth=lw)
-                ax.plot(xaxis, pme, color_order[3] + linestyle, linewidth=lw)
+            ax.plot(xaxis, Lz, color_order[0], linewidth=lw, label=label_pre+r'$\rm{\mathcal{L}_{z}}$'+label_app)
+            # collect all the momenta for min/max values
+            all_L = [Lz]
+            if plotall:
+                ax.plot(xaxis, Lx, color_order[0], linewidth=lw, label=label_pre+r'$\rm{\mathcal{L}_{x}}$'+label_app)
+                ax.plot(xaxis, Ly, color_order[0], linewidth=lw, label=label_pre+r'$\rm{\mathcal{L}_{y}}$'+label_app)
+                all_L += [Lx, Ly]
 
         if ilat == 0 and ir == 0: # put a legend on the upper left axis
             #legfrac = 1/4
@@ -222,7 +185,7 @@ for ilat in range(nquadlat):
                 # (will become default) if not in desired coordinates
                 minmax_loc = None
         if minmax_loc is None:
-            minmax_loc = lineplot_minmax(xaxis, all_e, logscale=logscale, legfrac=legfrac)
+            minmax_loc = lineplot_minmax(xaxis, all_L, logscale=logscale, legfrac=legfrac)
         if not ymin is None:
             minmax_loc = ymin, minmax_loc[1]
         if not ymax is None:
@@ -241,7 +204,7 @@ else:
 for ir in range(nquadr):
     r1 = rbounds[ir]
     r2 = rbounds[ir+1]
-    title = 'rad. range = [%.3f, %.3f]' %(r1, r2)
+    title = 'rad. range = [%.3f, %.3f]' %(r1, r2) + '\n'
     if ir == 0:
         title = dirname_stripped + '\n' + title
     axs[0, ir].set_title(title, fontsize=fontsize)
@@ -276,7 +239,7 @@ tag = clas0['tag']
 if xiter and tag == '':
     tag = '_xiter'
 plotdir = my_mkdir(clas0['plotdir']) 
-savename = 'etrace_quad' + tag + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
+savename = 'Ltrace_quad' + tag + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
 
 if clas0['saveplot']:
     print ('Saving the etrace plot at ' + plotdir + savename)

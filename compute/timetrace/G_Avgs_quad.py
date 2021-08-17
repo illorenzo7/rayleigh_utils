@@ -87,8 +87,8 @@ if rank == 0:
     nr = di_grid['nr']
     rw = di_grid['rw']
     tw = di_grid['tw']
-    rr = di_grid['rr']/rsun
-    rmin, rmax = np.min(rr), np.max(rr)
+    rr = di_grid['rr']
+    rmin, rmax = np.min(rr)/rsun, np.max(rr)/rsun
     cost = di_grid['cost']
     tt_lat = di_grid['tt_lat']
     latmin, latmax = np.min(tt_lat), np.max(tt_lat)
@@ -122,10 +122,10 @@ if rank == 0:
 
     # get the associated grid indices and update the actual boundary vals
     ilatbounds = inds_from_vals(tt_lat, latbounds)
-    irbounds = inds_from_vals(rr, rbounds)
+    irbounds = inds_from_vals(rr/rsun, rbounds)
 
     latbounds = tt_lat[ilatbounds]
-    rbounds = rr[irbounds]
+    rbounds = rr[irbounds]/rsun
 
     # compute the volumes of each quadrant
     volumes = np.zeros((nquadlat, nquadr))

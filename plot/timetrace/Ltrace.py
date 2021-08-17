@@ -166,13 +166,11 @@ for irow in range(3): # tot, fluc, mean
                 Ly = vals[:, lut[1821]] - vals[:, lut[1824]]
 
         # make line plots
-
-        # collect all the momenta for min/max values
-        all_L = [Lz]
-        
         ax = axs[irow, icol]
 
         ax.plot(xaxis, Lz, color_order[0], linewidth=lw, label=r'$\rm{\mathcal{L}_{z}}$')
+        # collect all the momenta for min/max values
+        all_L = [Lz]
         if plotall:
             ax.plot(xaxis, Lx, color_order[0], linewidth=lw, label=r'$\rm{\mathcal{L}_{x}}$')
             ax.plot(xaxis, Ly, color_order[0], linewidth=lw, label=r'$\rm{\mathcal{L}_{y}}$')
