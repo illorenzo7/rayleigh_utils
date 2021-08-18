@@ -204,17 +204,13 @@ for isampleval in kw.isamplevals:
         # Make appropriate file name to save
 
         # save the figure
-        if kw.lon:
-            plotdir = my_mkdir(clas0['plotdir'] + 'timelon/')
-            basename = 'timelon_%08i_%08i' %(iter1, iter2)
-            if not om is None:
-                basename += '_om%.0f' %om
-        else:
-            plotdir = my_mkdir(clas0['plotdir'] + datatype + '/')
-            basename = datatype + '_%08i_%08i' %(iter1, iter2)
+        basename = dataname + '_%08i_%08i' %(iter1, iter2)
+        plotdir = my_mkdir(clas0['plotdir'] + '/' + datatype)
+        if kw.lon and not om is None:
+            basename += '_om%.0f' %om
         savename = basename + clas0['tag'] + position_tag + '.png'
-        print ("saving", plotdir + savename)
-        plt.savefig(plotdir + savename, dpi=200)
+        print ("saving", plotdir + '/' + savename)
+        plt.savefig(plotdir + '/' + savename, dpi=200)
 
     # Show the plot if only plotting at one latitude
     if clas0['showplot'] and len(kw.isamplevals) == 1:
