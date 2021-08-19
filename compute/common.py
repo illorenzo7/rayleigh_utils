@@ -729,8 +729,15 @@ def dph(arr): # assumes phi falls along first axis
 
 def get_domain_bounds(dirname):
     try:
-        rmin, rmax = get_parameter(dirname, 'rmin'),\
-                get_parameter(dirname, 'rmax')
+        try:
+            rmin, rmax = get_parameter(dirname, 'rmin'),\
+                    get_parameter(dirname, 'rmax')
+        except:
+            aspect_ratio = get_parameter(dirname, 'aspect_ratio')
+            shell_depth = get_parameter(dirname, 'shell_depth')
+            rmin = shell_depth/(1/aspect_ratio - 1)
+            rmax = shell_depth/(1 - aspect_ratio)
+
         nr = get_parameter(dirname, 'n_r')
         domain_bounds = np.array([rmin, rmax])
         ncheby = np.array([nr])
