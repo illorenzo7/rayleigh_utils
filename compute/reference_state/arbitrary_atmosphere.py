@@ -16,9 +16,9 @@ def arbitrary_atmosphere(r, s, dsdr, d2sdr2, g, dgdr, r0, T0, p0, cp, gamma):
             integral[ir] = simps(integrand[ir0:ir + 1], r[ir0:ir + 1])
             
     T = -(1.0/cp)*np.exp(s/cp)*integral + T0*np.exp((s - s0)/cp)   
-    p = p0*np.exp(-(s - s0)/cp)*(T/T0)**(gamma/(gamma - 1.0))
+    p = p0*np.exp(-(s - s0)/R)*(T/T0)**(gamma/(gamma - 1.0))
     rho0 = p0/(R*T0)
-    rho = rho0*np.exp(-(s - s0)/cp)*(T/T0)**(1.0/(gamma - 1.0))
+    rho = rho0*np.exp(-(s - s0)/R)*(T/T0)**(1.0/(gamma - 1.0))
     
     dlnT = dsdr/cp - g/(cp*T)
     dlnrho = (1.0/(gamma - 1.0))*(dlnT - dsdr/cv)
