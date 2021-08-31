@@ -48,7 +48,6 @@ sys.path.append(os.environ['raco'] + '/tachocline')
 
 from reference_tools import equation_coefficients
 from common import *
-import basic_constants as bc
 
 # Set default constants
 ri = 3.4139791e10 # Set RZ width equal to CZ width 
