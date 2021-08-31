@@ -39,7 +39,7 @@ def compute_polytrope(ri, ro, Nrho, nr, poly_n, rho_i):
     return dict({'rho': rho_c*rho_nd, 'P': P_c*P_nd,\
             'T': T_c*T_nd, 'S': S_c*np.ones(nr)})
 
-compute_polytrope2_kwargs_default = dict({'Nrho': 3, 'r0': rm, 'r1': None, 'rho0': rhom, 'T0':Tm, 'mstar': msun, 'poly_n': 1.5, 'gas_constant_star': thermo_R})
+compute_polytrope2_kwargs_default = dict({'Nrho': 3, 'r0': rbcz, 'r1': None, 'rho0': rhobcz, 'T0': tempbcz, 'mstar': msun, 'poly_n': 1.5, 'gas_constant_star': thermo_R})
 
 def compute_polytrope2(**kwargs):
     # overwrite defaults

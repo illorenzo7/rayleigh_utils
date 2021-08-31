@@ -2,106 +2,64 @@
 # Created: well before 05/06/2019
 # Computes the necessary outer entropy gradient to carry out a given
 # luminosity (default solar) out of a spherical shell with given 
-# reference state an dtransport coefficients profile
-# Currently reference state can either be a polytrope or from a custom
-# file
+# reference state and transport coefficients profile
+# reference state can either be a polytrope or from a custom file
 
 import numpy as np
 import sys, os
+sys.path.append(os.environ['raco'])
+sys.path.append(os.environ['rapp'])
 from polytrope import compute_polytrope
 from common import *
+from cla_util import *
 
-sys.path.append(os.environ['rapp'])
-from rayleigh_diagnostics import ReferenceState, TransportCoeffs
-from reference_tools import equation_coefficients
+# Get CLAs
+args = sys.argv
+clas0, clas = read_clas_raw(args)
+dirname = clas0['dirname']
 
-# Set default to compute necessary dsdr to carry out a solar luminosity,
-# for kappa_top = 3e12, cp = 3.5x10^8, ri, ro = 5, 6.5860209 x 10^10,
-# nrho = 3,
-# adiabatic polytrope (n = 1.5), rho_i = 0.18053428 (units all c.g.s.)
+# Set default kwargs
+kw_default = dotdict(dict({'lum': lsun, 'rmax': rmax_n3, 'fname': None, 'ktop': 5.0e12, 'rbcz': rbcz, 'rhobcz': rhobcz, 'tempbcz': tempbcz, 'polyn': 1.5, 'polynrho': 3.0, 'cp': c_P}))
 
-lum = lsun
-poly_n = 1.5
-poly_nrho = 3.0
-polytropic_reference = True
+# overwrite defaults
+kw = update_dict(kw_default, clas)
 
-# Get directory name
-dirname = sys.argv[1]
-fname = None
-kappa_top = None
+# check for bad keys
+find_bad_keys(kw_default, clas, clas0['routinename'], justwarn=True)
 
-# Now change the defaults via command-line arguments
-args = sys.argv[2:]
-nargs = len(args)
-for i in range(nargs):
-    arg = args[i]
-    if arg == '-lum':
-        lum = float(args[i+1])
-    elif arg == '-n':
-        poly_n = float(args[i+1])
-    elif arg == '-nrho':
-        poly_nrho = float(args[i+1])
-    elif arg == '-rhom':
-        rhom = float(args[i+1])
-    elif arg == '-rm':
-        rm = float(args[i+1])
-    elif arg == '-ro':
-        ro = float(args[i+1])
-    elif arg == '-file':
-        polytropic_reference = False
-    elif arg == '-fname':
-        polytropic_reference = False
-        fname = args[i+1]
-    elif arg == '-crb':
-        polytropic_reference = False
-        fname = 'custom_reference_binary'
-    elif arg == '-kappatop':
-        kappa_top = float(args[i+1])
+# check for common crb kwarg
+if 'crb' in clas:
+    kw.fname = 'custom_reference_binary'
 
-nr = 128 # this is arbitrary -- the top thermodynamic values will be
-         # independent of the number of interior grid points
-         # We just need arrays (nr > 1) for compute_polytrope to work
-         # properly
 
-if polytropic_reference:
-    di = compute_polytrope(rm, ro, poly_nrho, nr, poly_n, rhom)
-    rho = di['density']
-    T = di['temperature']
-    irtop = 0
-else: # get rho, T from equation_coefficients file,\
-      # or reference/transport pair
-    try:
-        eq = equation_coefficients()
-        if fname is None:
-            fname = 'equation_coefficients'
-        eq.read(dirname + '/' + fname)
-        rho = eq.functions[0]
-        T = eq.functions[3]
-        kappa = eq.constants[5]*eq.functions[4]
-        rr = eq.radius
-    except:
-        ref = ReferenceState(dirname + '/reference')
-        rho = ref.density
-        T = ref.temperature
-        trans = TransportCoeffs(dirname + '/transport')
-        kappa = trans.kappa
-        rr = ref.radius
-#        fname = 'reference'
-    irtop = np.argmin(np.abs(rr - ro))
+# get rho*T
+if kw.fname is None: # polytrope, default
+    print ("got rho and T from POLYTROPIC REFERENCE:")
+    print ("poly_nrho : %.2f " %kw.polynrho)
+    print ("poly_n    : %.2f " %kw.polyn)
+    print ("rho_rbcz  : %.4f " %kw.rhobcz)
 
-if kappa_top is None:
-    try: # this will work for reading from file
-        kappa_top = kappa[irtop]
-    except: # this will work for polytropic_reference
-        kappa_top = 3.0e12
+    nr = 128 # this is arbitrary -- the top thermodynamic values will be
+             # independent of the number of interior grid points
+             # We just need arrays (nr > 1) for compute_polytrope to work
+             # properly
+    di = compute_polytrope(kw.rbcz, kw.rmax, kw.polynrho, nr, kw.polyn, kw.rhobcz)
+    rho = di['rho']
+    T = di['T']
+    rhot_rmax = (rho*T)[0]
+else: # get from custom file
+    print('got rho and T from reference file: %s' %kw.fname)
+    eq = get_eq(dirname, fname=kw.fname)
+    rr = eq.radius
+    irmax = np.argmin(np.abs(rr - kw.rmax))
+    rhot_rmax = (eq.rho*eq.T)[irmax]
 
 # Now compute desired entropy gradient
-flux_top = lum/(4*np.pi*ro**2)
-desired_dsdr = -flux_top/rho[irtop]/T[irtop]/kappa_top
+flux_rmax = kw.lum/(4*np.pi*kw.rmax**2)
+desired_dsdr = -flux_rmax/rhot_rmax/kw.ktop
 
-print('For lum=%1.3e, ro=%1.7e, kappa_top=%1.3e' %(lum, ro, kappa_top))
-if polytropic_reference:
-    print('and polytropic reference: nrho=%1.1f, poly_n=%1.1f, rhom=%1.7e' %(poly_nrho, poly_n, rhom))
-else:
-    print('and reference file: %s' %fname)
-print ('Set outer_dsdr (dtdr_top) to %1.8e' %desired_dsdr)
+print('luminosity : %1.3e erg/s' %kw.lum)
+print('kappa_top  : %1.3e cm^2/s' %kw.ktop)
+print('rmax       : %1.3e cm' %kw.rmax)
+print ('Set outer_dsdr (dtdr_top) to ')
+print (make_bold('%1.8e' %desired_dsdr))
