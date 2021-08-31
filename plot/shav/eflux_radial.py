@@ -173,8 +173,14 @@ savefile = plotdir + clas0['routinename'] + clas0['tag'] + '-' + str(iter1).zfil
 # print the top and bottom fluxes
 print ("bottom flux (luminosity in):")
 print ("%1.5e" %(fpr*tflux)[-1])
+print ("bottom heat flux:")
+print ("%1.5e" %(fpr*hflux)[-1])
+
 print ("top flux (luminosity out):")
 print ("%1.5e" %(fpr*tflux)[0])
+print ("top  cond. flux")
+print ("%1.5e" %(fpr*cflux)[0])
+
 if clas0['saveplot']:
     print ('saving figure at ' + savefile)
     plt.savefig(savefile, dpi=300)
