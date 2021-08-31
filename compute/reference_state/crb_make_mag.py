@@ -14,7 +14,6 @@ sys.path.append(os.environ['raco'])
 
 from reference_tools import equation_coefficients
 from common import *
-import basic_constants as bc
 
 # Get directory name
 dirname = sys.argv[1]

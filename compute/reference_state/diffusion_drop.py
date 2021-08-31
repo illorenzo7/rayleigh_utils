@@ -45,8 +45,6 @@ import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 
-import basic_constants as bc
-
 from reference_tools import equation_coefficients
 from common import *
 
