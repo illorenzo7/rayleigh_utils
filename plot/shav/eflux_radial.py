@@ -170,6 +170,11 @@ fig.text(margin_x, 1 - margin_y, the_title,\
 plotdir = my_mkdir(clas0['plotdir'])
 savefile = plotdir + clas0['routinename'] + clas0['tag'] + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
 
+# print the top and bottom fluxes
+print ("bottom flux (luminosity in):")
+print ("%1.5e" %(fpr*tflux)[-1])
+print ("top flux (luminosity out):")
+print ("%1.5e" %(fpr*tflux)[0])
 if clas0['saveplot']:
     print ('saving figure at ' + savefile)
     plt.savefig(savefile, dpi=300)
