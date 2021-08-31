@@ -46,20 +46,25 @@ if kw.fname is None: # polytrope, default
     di = compute_polytrope(kw.rbcz, kw.rmax, kw.polynrho, nr, kw.polyn, kw.rhobcz)
     rho = di['rho']
     T = di['T']
-    rhot_rmax = (rho*T)[0]
+    rho_rmax = rho[0]
+    T_rmax = T[0]
 else: # get from custom file
     print('got rho and T from reference file: %s' %kw.fname)
     eq = get_eq(dirname, fname=kw.fname)
     rr = eq.radius
     irmax = np.argmin(np.abs(rr - kw.rmax))
-    rhot_rmax = (eq.rho*eq.T)[irmax]
+    rho_rmax = eq.rho[irmax]
+    T_rmax = eq.T[irmax]
+rhot_rmax = rho_rmax*T_rmax 
 
+print ("rho_rmax = %1.8e" %rho_rmax)
+print ("T_rmax = %1.8e" %T_rmax)
 # Now compute desired entropy gradient
 flux_rmax = kw.lum/(4*np.pi*kw.rmax**2)
 desired_dsdr = -flux_rmax/rhot_rmax/kw.ktop
 
-print('luminosity : %1.3e erg/s' %kw.lum)
-print('kappa_top  : %1.3e cm^2/s' %kw.ktop)
-print('rmax       : %1.3e cm' %kw.rmax)
+print('luminosity : %1.8e erg/s' %kw.lum)
+print('kappa_top  : %1.8e cm^2/s' %kw.ktop)
+print('rmax       : %1.8e cm' %kw.rmax)
 print ('Set outer_dsdr (dtdr_top) to ')
 print (make_bold('%1.8e' %desired_dsdr))
