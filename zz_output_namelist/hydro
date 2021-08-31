@@ -35,7 +35,7 @@ equatorial_nrec      = 1
 
 azavg_values = 
     ! FLUID VARIABLES
-    1,2,3, 301,302,303, 501,502
+    1,2,3, 301,302,303, 501,502,
     ! RADIAL/THETA DERIVS of S, P
     507,508, 513,514,
     ! ENSTROPHY    
@@ -78,7 +78,7 @@ azavg_nrec = 1
 
 shellavg_values =
     ! FLUID VARIABLES
-    1,2,3, 301,302,303, 501,502
+    1,2,3, 301,302,303, 501,502,
     ! RADIAL/THETA DERIVS of S, P
     507,508, 513,514,
     ! ENSTROPHY    
@@ -121,7 +121,7 @@ shellavg_nrec = 1
 
 globalavg_values = 
     ! FLUID VARIABLES
-    1,2,3, 301,302,303, 501,502
+    1,2,3, 301,302,303, 501,502,
     ! RADIAL/THETA DERIVS of S, P
     507,508, 513,514,
     ! ENSTROPHY    
