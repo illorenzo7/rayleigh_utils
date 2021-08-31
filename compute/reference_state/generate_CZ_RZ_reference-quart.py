@@ -61,7 +61,7 @@ clas0, clas = read_clas_raw(args)
 dirname = clas0['dirname']
 
 # Set default kwargs
-kw_default = dotdict(dict({'rmin': 0.1, 'rmax': 0.99, 'rt': 0.72, 'mstar': msun, 'rstar': rsun, 'rhot': rhobcz, 'tempt': tempbcz, 'k': 2.0, 'delta': 0.05, 'gam': thermo_gamma, 'cp': c_P, 'mag': False, 'fname': 'custom_reference_binary', 'nr': 10000}))
+kw_default = dotdict(dict({'rmin': 0.1, 'rmax': 0.99, 'rt': rbcz_nond, 'mstar': msun, 'rstar': rsun, 'rhot': rhobcz, 'tempt': tempbcz, 'k': 2.0, 'delta': 0.05, 'gam': thermo_gamma, 'cp': c_P, 'mag': False, 'fname': 'custom_reference_binary', 'nr': 10000}))
 
 # overwrite defaults
 kw = update_dict(kw_default, clas)

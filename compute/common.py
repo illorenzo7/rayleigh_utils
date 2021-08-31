@@ -39,7 +39,8 @@ thermo_R = c_P*(1. - 1./thermo_gamma)
 rhobcz = 0.18053428
 tempbcz = 2111256.4
 rbcz = 5.0e10
-rmax = 6.5860209e10 # Radii consistent with the bottom 3 density scale 
+rbcz_nond = rbcz/rsun
+rmax_n3 = 6.5860209e10 # Radii consistent with the bottom 3 density scale 
         # heights in the Sun rho_i above corresponds to the density
         # at the base of the convection zone
 
