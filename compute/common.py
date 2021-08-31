@@ -36,10 +36,10 @@ thermo_R = c_P*(1. - 1./thermo_gamma)
 
 # I am now calling r_m the base of the convection zone, 
 # while r_i (the inner shell radius) can vary
-rhom = 0.18053428
-Tm = 2111256.4
-rm = 5.0e10
-ro = 6.5860209e10 # Radii consistent with the bottom 3 density scale 
+rhobcz = 0.18053428
+tempbcz = 2111256.4
+rbcz = 5.0e10
+rmax = 6.5860209e10 # Radii consistent with the bottom 3 density scale 
         # heights in the Sun rho_i above corresponds to the density
         # at the base of the convection zone
 

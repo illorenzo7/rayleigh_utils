@@ -46,6 +46,7 @@ def read_clas_raw(args): # avoid get_parameter stuff
     args = args[2:]
     nargs = len(args)
     for i in range(nargs):
+        arg = args[i]
         if '--' in arg:
             key = arg[2:]
             clas[key] = read_cla_vals(args, i)
