@@ -5,15 +5,19 @@ modeltype=$2
 if [ $modeltype == 'bro' ]
 then
     ncpus=28
+    execext='.avx2'
 elif [ $modeltype == 'has' ]
 then
     ncpus=24
+    execext='.avx2'
 elif [ $modeltype == 'ivy' ] 
 then
     ncpus=20
+    execext='.avx'
 elif [ $modeltype == 'san' ] 
 then
     ncpus=16
+    execext='.avx'
 else
     echo "unknown model type $modeltype"
 fi
@@ -35,7 +39,7 @@ echo "#PBS -l walltime=120:00:00" >> lscript
 echo "#PBS -j oe" >> lscript
 echo "#PBS -W group_list=s2051" >> lscript
 echo "#PBS -m e" >> lscript
-echo "#PBS -l site=needed=/home1+/nobackupp18" >> lscript
+echo "#PBS -l site=needed=/home1+/nobackupp17" >> lscript
 
 echo >> lscript
 
@@ -56,4 +60,4 @@ echo "cd \$PBS_O_WORKDIR" >> lscript
 
 echo >> lscript
 
-echo "/u/scicon/tools/bin/several_tries mpiexec -np 1024 ./rayleigh.opt -nprow $nprow -npcol $npcol >> logfile2" >> lscript
+echo "/u/scicon/tools/bin/several_tries mpiexec -np $nprocs ./rayleigh$execext -nprow $nprow -npcol $npcol >> logfile2" >> lscript
