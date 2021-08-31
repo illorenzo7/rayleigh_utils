@@ -52,7 +52,7 @@ for i in range(nargs):
         lum = float(args[i+1])
 
 # Make the delta "dimensional"
-delta *= rt
+delta *= rsun
 
 # Open and read the hopefully already existing reference file!
 eq = equation_coefficients()
@@ -71,7 +71,7 @@ radial_shape = profile/int_profile
 print("---------------------------------")
 print("Computed radial shape of heating for RZ-CZ, joined with tanh")
 print("rt: %1.3e cm" %rt) 
-print("delta/rt: %.3f"  %(delta/rt))
+print("delta/rsun: %.3f"  %(delta/rsun))
 print("c_10: %1.3e"  %lum)
 print("---------------------------------")
 
