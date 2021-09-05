@@ -1,15 +1,23 @@
 ##################################################################
-# Routine to trace Rayleigh G_Avgs data in time
+# Routine to trace Rayleigh data in time, in different quadrants
+# of the meridional plane
 # Author: Loren Matilsky
 # Created: 12/18/2018
-# Parallelized: 11/26/2020
+# Revised: 09/05/2021
 ##################################################################
-# This routine computes the trace in time of the values in the G_Avgs data 
-# for a particular simulation. 
-# This routine computes the trace in time of the values in the G_Avgs data 
-# for a particular simulation. 
-# traces separtely over different "quadrants" (4-8 in total, depending on
-# if rbcz is specified to separate the domains in radius)
+# This routine computes the trace in time of global averages in various 
+# quadrants
+#
+# By default the "quadrant" is the entire plane and 
+# G_Avgs are used
+#
+# if --nquadr or --rbounds is specified (but not --nquadlat or --latbounds)
+# meridional plane is divided into spherical shells and 
+# Shell_Avgs are used
+#
+# if --nquadlat or --latbounds is specified, meridional plane is divided 
+# into conic (and/or shellular) sections  and
+# AZ_Avgs are used
 ##################################################################
 
 # initialize communication
