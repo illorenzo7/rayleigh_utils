@@ -11,7 +11,7 @@
 # By default the "quadrant" is the entire plane and 
 # G_Avgs are used
 #
-# if --nquadr or --rbounds is specified (but not --nquadlat or --latbounds)
+# if --nquadr or --rbounds or --irbounds is specified (but not --nquadlat or --latbounds or --ilatbounds)
 # meridional plane is divided into spherical shells and 
 # Shell_Avgs are used
 #
@@ -54,9 +54,7 @@ import numpy as np
 # data type and reading function
 import sys, os
 sys.path.append(os.environ['rapp'])
-from rayleigh_diagnostics import AZ_Avgs
-reading_func = AZ_Avgs
-dataname = 'AZ_Avgs'
+from rayleigh_diagnostics import G_Avgs, Shell_Avgs, AZ_Avgs
 
 if rank == 0:
     # modules needed only by proc 0 
@@ -79,16 +77,6 @@ if rank == 0:
     dirname = clas0['dirname']
     tag = clas0['tag']
 
-    # Get the Rayleigh data directory
-    radatadir = dirname + '/' + dataname + '/'
-
-    # Get all the file names in datadir and their integer counterparts
-    file_list, int_file_list, nfiles = get_file_lists(radatadir, args)
-
-    # Get the problem size
-    nproc_min, nproc_max, n_per_proc_min, n_per_proc_max =\
-            opt_workload(nfiles, nproc)
-
     # get grid information
     di_grid = get_grid_info(dirname)
     nt = di_grid['nt']
@@ -101,37 +89,51 @@ if rank == 0:
     tt_lat = di_grid['tt_lat']
     latmin, latmax = np.min(tt_lat), np.max(tt_lat)
 
-    ncheby, domain_bounds = get_domain_bounds(dirname)
-    domain_bounds = np.array(domain_bounds)/rsun # normalize by rsun
-    ndomains = len(ncheby)
-
     # get grid info + default kwargs
     kwargs_default = dict({})
-    kwargs_default['nquadr'] = ndomains # can divide up the radial grid into nquadr equally spaced domains
-    kwargs_default['rbounds'] = None # can specify radial domain boundaries directly
-    kwargs_default['nquadlat'] = 4 # "high and low" latitudes in both North and South
+    kwargs_default['nquadr'] = None # can divide up the radial grid into nquadr equally spaced domains
+    kwargs_default['rbounds'] = None # can specify radial domain boundaries directly (units of rsun, e.g., 0.721 0.863 0.92)
+    kwargs_default['irbounds'] = None # can specify radial domain boundaries directly (radial index, e.g., 32 64 96
+    kwargs_default['nquadlat'] = None # "high and low" latitudes in both North and South
     kwargs_default['latbounds'] = None
+    kwargs_default['ilatbounds'] = None
 
     # update these possibly
     kw = update_dict(kwargs_default, clas)
-    if kw.latbounds is None: # this is the default
-        kw.latbounds = np.linspace(latmin, latmax, kw.nquadlat + 1)
-    if kw.rbounds is None: # this is the default
-        kw.rbounds = np.linspace(rmin, rmax, kw.nquadr + 1)
 
-    # convert everything into a sorted array
-    latbounds = np.sort(make_array(kw.latbounds))
-    rbounds = np.sort(make_array(kw.rbounds))
+    # deal w/ radial boundaries
+    if not kw.nquadr is None: # equally spaced domain boundaries (not the default)
+        kw.rbounds = np.linspace(rmax, rmin, kw.nquadr + 1) # remember: rr is DECREASING
+    if kw.irbounds is None: # this is the default
+        if kw.rbounds is None: # this is the default
+            irbounds = [nr - 1, 0]
+            dataname = 'G_Avgs'
+        else:
+            irbounds = inds_from_vals(rr/rsun, kw.rbounds)
+            dataname = 'Shell_Avgs'
+    else:
+        irbounds = kw.irbounds
+        dataname = 'Shell_Avgs'
+
+    # deal w/ latitudinal boundaries
+    if not kw.nquadlat is None: # equally spaced domain boundaries (not the default)
+        kw.latbounds = np.linspace(latmin, latmax, kw.nquadlat + 1) # remember: tt_lat is INCREASING
+    if kw.ilatbounds is None: # this is the default
+        if kw.latbounds is None: # this is the default
+            ilatbounds = [0, nt - 1]
+        else:
+            ilatbounds = inds_from_vals(tt_lat, kw.latbounds)
+            dataname = 'AZ_Avgs'
+    else:
+        ilatbounds = kw.ilatbounds
+        dataname = 'AZ_Avgs'
 
     # update the number of quadrants
-    nquadlat = len(latbounds) - 1
-    nquadr = len(rbounds) - 1
+    nquadlat = len(ilatbounds) - 1
+    nquadr = len(irbounds) - 1
     nquad = nquadlat*nquadr
 
-    # get the associated grid indices and update the actual boundary vals
-    ilatbounds = inds_from_vals(tt_lat, latbounds)
-    irbounds = inds_from_vals(rr/rsun, rbounds)
-
+    # update the actual boundary vals
     latbounds = tt_lat[ilatbounds]
     rbounds = rr[irbounds]/rsun
 
@@ -144,7 +146,17 @@ if rank == 0:
         for ir in range(nquadr): # remember: rr is DECREASING
             ir2 = irbounds[ir]
             ir1 = irbounds[ir + 1]
-            volumes[ilat, ir] = 2.*np.pi/3.*(rr[ir1]**3. - rr[ir2]**3.)*(cost[it2] - cost[it1])
+            volumes[ilat, ir] = 2.*np.pi/3.*(rr[ir2]**3. - rr[ir1]**3.)*(cost[it2] - cost[it1])
+
+    # Get the Rayleigh data directory
+    radatadir = dirname + '/' + dataname + '/'
+
+    # Get all the file names in datadir and their integer counterparts
+    file_list, int_file_list, nfiles = get_file_lists(radatadir, args)
+
+    # Get the problem size
+    nproc_min, nproc_max, n_per_proc_min, n_per_proc_max =\
+            opt_workload(nfiles, nproc)
 
     # Distribute file_list to each process
     for k in range(nproc - 1, -1, -1):
@@ -170,10 +182,18 @@ else: # recieve my_files, my_nfiles
 # Broadcast dirname, radatadir, etc.
 if rank == 0:
     meta = [\
-dirname, radatadir, ilatbounds, irbounds, tw, rw]
+dirname, dataname, radatadir, ilatbounds, irbounds, tw, rw]
 else:
     meta = None
-dirname, radatadir, ilatbounds, irbounds, tw, rw = comm.bcast(meta, root=0)
+dirname, dataname, radatadir, ilatbounds, irbounds, tw, rw = comm.bcast(meta, root=0)
+
+# figure out which reading_func to use
+if dataname == 'G_Avgs':
+    reading_func = G_Avgs
+if dataname == 'Shell_Avgs':
+    reading_func = Shell_Avgs
+if dataname == 'AZ_Avgs':
+    reading_func = AZ_Avgs
 
 # Checkpoint and time
 comm.Barrier()
@@ -188,7 +208,7 @@ if rank == 0:
     print(fill_str('computing', lent, char), end='\r')
     t1 = time.time()
 
-# Now analyze the data
+# Now analyze the data (some processes may not have nquadlat, nquadr, etc.)
 nquadlat = len(ilatbounds) - 1
 nquadr = len(irbounds) - 1
 my_times = []
@@ -198,10 +218,11 @@ my_vals = []
 for i in range(my_nfiles):
     a = reading_func(radatadir + str(my_files[i]).zfill(8), '')
     for j in range(a.niter):
-        vals_loc = a.vals[..., j]
+        vals_loc = a.vals
 
         # Get the values in the separate quadrants
         vals_gav = np.zeros((a.nq, nquadlat, nquadr))
+        # note: the default is nquadlat, nquadr = 1, 1 (yes "extra" dimensions)
         for ilat in range(nquadlat): # remember: tt_lat is INCREASING
             it1 = ilatbounds[ilat]
             it2 = ilatbounds[ilat + 1]
@@ -210,7 +231,13 @@ for i in range(my_nfiles):
                 ir2 = irbounds[ir]
                 ir1 = irbounds[ir + 1]
 
-                vals_quad = vals_loc[it1:it2+1, ir1:ir2+1, :]
+                if dataname == 'G_Avgs':
+                    vals_quad = vals_loc[j, :].reshape((1, 1, a.nq))
+                if dataname == 'Shell_Avgs':
+                    vals_quad = vals_loc[ir1:ir2+1, 0, :, j].\
+                            reshape((1, ir2-ir1+1, a.nq))
+                if dataname == 'AZ_Avgs':
+                    vals_quad = vals_loc[it1:it2+1, ir1:ir2+1, :, j]
                 tw_quad = (tw[it1:it2+1]/np.sum(tw[it1:it2+1])).\
                         reshape((it2 - it1 + 1, 1, 1))
                 rw_quad = (rw[ir1:ir2+1]/np.sum(rw[ir1:ir2+1])).\
@@ -271,7 +298,13 @@ if rank == 0:
     # Set the timetrace savename by the directory, what we are saving,
     # and first and last iteration files for the trace
     dirname_stripped = strip_dirname(dirname)
-    savename = 'G_Avgs_trace_quad' + tag + '-' + file_list[0] + '_' + file_list[-1] + '.pkl'
+    if dataname == 'G_Avgs':
+        basename = 'G_Avgs_trace'
+    if dataname == 'Shell_Avgs':
+        basename = 'G_Avgs_trace_nquadr%i' %nquadr
+    if dataname == 'AZ_Avgs':
+        basename = 'G_Avgs_trace_nquadlat%i_nquadr%i' %(nquadlat, nquadr)
+    savename = basename + tag + '-' + file_list[0] + '_' + file_list[-1] + '.pkl'
     savefile = datadir + savename
 
     # compute the full average over the whole volume (really a sanity check)
@@ -285,7 +318,7 @@ if rank == 0:
     # Get first and last iters of files
     iter1, iter2 = int_file_list[0], int_file_list[-1]
     f = open(savefile, 'wb')
-    pickle.dump({'vals': vals, 'vals_full': vals_full,'times': times, 'iters': iters, 'lut': a.lut, 'qv': a.qv, 'volumes': volumes, 'rbounds': rbounds, 'latbounds': latbounds}, f, protocol=4)
+    pickle.dump({'vals': vals, 'vals_full': vals_full,'times': times, 'iters': iters, 'lut': a.lut, 'qv': a.qv, 'volumes': volumes, 'volume_full': np.sum(volumes), 'rbounds': rbounds, 'latbounds': latbounds}, f, protocol=4)
     f.close()
     t2 = time.time()
     print (format_time(t2 - t1))
