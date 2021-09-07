@@ -63,8 +63,10 @@ print ('Getting data from ' + the_file)
 di = get_dict(the_file)
 vals_gav = di['vals']
 if sep_czrz:
-    vals_cz = di['vals_cz']
-    vals_rz = di['vals_rz']
+    vals = di['vals']
+    vals_gav = di['vals_full']
+    vals_cz = vals[..., 0, 1]
+    vals_rz = vals[..., 0, 0]
 lut = di['lut']
 times = di['times']
 iters = di['iters']
