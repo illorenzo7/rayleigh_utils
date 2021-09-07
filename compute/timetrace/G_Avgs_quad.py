@@ -18,6 +18,11 @@
 # if --nquadlat or --latbounds is specified, meridional plane is divided 
 # into conic (and/or shellular) sections  and
 # AZ_Avgs are used
+#
+# vals is shape
+# [ntimes, nq, nquadlat, nquadr] 
+# quadrants are ordered in increasing latitude (South to North) 
+# and increasing radius (inner shell to outer shell) 
 ##################################################################
 
 # initialize communication
@@ -106,13 +111,14 @@ if rank == 0:
         kw.rbounds = np.linspace(rmax, rmin, kw.nquadr + 1) # remember: rr is DECREASING
     if kw.irbounds is None: # this is the default
         if kw.rbounds is None: # this is the default
-            irbounds = [nr - 1, 0]
+            irbounds = [0, nr - 1] # rr increases, r-inds decrease
             dataname = 'G_Avgs'
         else:
+            kw.rbounds = np.sort(kw.rbounds)[::-1] # rr decreases
             irbounds = inds_from_vals(rr/rsun, kw.rbounds)
             dataname = 'Shell_Avgs'
     else:
-        irbounds = kw.irbounds
+        irbounds = np.sort(kw.irbounds) # r-inds increase
         dataname = 'Shell_Avgs'
 
     # deal w/ latitudinal boundaries
@@ -122,10 +128,10 @@ if rank == 0:
         if kw.latbounds is None: # this is the default
             ilatbounds = [0, nt - 1]
         else:
-            ilatbounds = inds_from_vals(tt_lat, kw.latbounds)
+            ilatbounds = np.sort(inds_from_vals(tt_lat, kw.latbounds))
             dataname = 'AZ_Avgs'
     else:
-        ilatbounds = kw.ilatbounds
+        ilatbounds = np.sort(kw.ilatbounds)
         dataname = 'AZ_Avgs'
 
     # update the number of quadrants
@@ -144,8 +150,10 @@ if rank == 0:
         it2 = ilatbounds[ilat + 1]
 
         for ir in range(nquadr): # remember: rr is DECREASING
-            ir2 = irbounds[ir]
-            ir1 = irbounds[ir + 1]
+                                # but r-inds increase
+                                # r-inds begin at TOP of domain
+            ir2 = irbounds[nquadr - ir]
+            ir1 = irbounds[nquadr - ir - 1]
             volumes[ilat, ir] = 2.*np.pi/3.*(rr[ir2]**3. - rr[ir1]**3.)*(cost[it2] - cost[it1])
 
     # Get the Rayleigh data directory
@@ -228,8 +236,10 @@ for i in range(my_nfiles):
             it2 = ilatbounds[ilat + 1]
 
             for ir in range(nquadr): # remember: rr is DECREASING
-                ir2 = irbounds[ir]
-                ir1 = irbounds[ir + 1]
+                                    # but r-inds increase
+                                    # r-inds begin at TOP of domain
+                ir2 = irbounds[nquadr - ir]
+                ir1 = irbounds[nquadr - ir - 1]
 
                 if dataname == 'G_Avgs':
                     vals_quad = vals_loc[j, :].reshape((1, 1, a.nq))
@@ -242,7 +252,6 @@ for i in range(my_nfiles):
                         reshape((it2 - it1 + 1, 1, 1))
                 rw_quad = (rw[ir1:ir2+1]/np.sum(rw[ir1:ir2+1])).\
                         reshape((ir2 - ir1 + 1, 1))
-
                 gav = np.sum(tw_quad*vals_quad, axis=0)
                 gav = np.sum(rw_quad*gav, axis=0)
                 vals_gav[:, ilat, ir] = gav
