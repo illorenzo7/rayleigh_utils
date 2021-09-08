@@ -149,8 +149,8 @@ shellavg_values =
     1619,1620, 1624,1625, 1629,1630, !mean-mean: transport, diffusion: r,t,p
     1601,1602,1603, 1606,1607,1608, 1611,1612,1613, !total: shear,comp,adv: r,t,p
     1616,1617,1618, 1621,1622,1623, 1626,1627,1628  !mean-mean: shear,comp,adv: r,t,p
-shellavg_frequency = 2500
-shellavg_nrec = 1
+shellavg_frequency = 500
+shellavg_nrec = 5
 
 globalavg_values = 
     ! FLUID VARIABLES

@@ -116,8 +116,8 @@ shellavg_values =
     1216, 1219,1220,1221, ! BUOYANCY (r), CORIOLIS (r, theta, phi)
     1228,1229,1230, ! VISCOUS (r, theta, phi)
     1237,1238,1239 ! PRESSURE (r, theta, phi)
-shellavg_frequency = 2500
-shellavg_nrec = 1
+shellavg_frequency = 500
+shellavg_nrec = 5
 
 globalavg_values = 
     ! FLUID VARIABLES
