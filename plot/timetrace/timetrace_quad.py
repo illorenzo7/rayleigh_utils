@@ -109,10 +109,13 @@ print ("after thin_data: len(xaxis) = %i" %len(xaxis))
 
 # now finally get the shape of the "vals" array
 ntimes, nq, nquadlat, nquadr = np.shape(vals)
+print ("nquadlat = ", nquadlat)
 nplots = nquadlat*nquadr
 
 # create figure with nquadr columns and nquadlat rows
 fig, axs = plt.subplots(nquadlat, nquadr, figsize=(3.5*nquadr, 10), sharex=True)
+if nquadlat == 1: # need the axis array to consistently be doubly indexed
+    axs = np.expand_dims(axs, 0)
 if nquadr == 1: # need the axis array to consistently be doubly indexed
     axs = np.expand_dims(axs, 1)
 
@@ -183,9 +186,9 @@ for ilat in range(nquadlat):
 # x limits and label
 axs[0, 0].set_xlim((xminmax[0], xminmax[1]))
 if xiter:
-    axs[2, 0].set_xlabel('iteration #')
+    axs[-1, 0].set_xlabel('iteration #')
 else:
-    axs[2, 0].set_xlabel('time [' + time_label + ']')
+    axs[-1, 0].set_xlabel('time [' + time_label + ']')
 
 # x titles
 for ir in range(nquadr):
