@@ -87,11 +87,11 @@ radial_shape = profile/int_profile
 print(buff_line)
 print("Computed heating for RZ-CZ, joined with tanh")
 print("nr                  : %i" %nr) 
-print("rstar               : %1.3e cm" %rstar) 
-print("rt/rstar            : %1.3e cm" %(rt/rstar) )
-print("delta/rstar         : %.3f"  %(delta/rstar))
-print("rmax/rstar          : %.3f"  %(rmax/rstar))
-print("c_10 (lum)          : %1.3e erg/s"  %lum)
+print("rstar               : %1.8e cm" %rstar) 
+print("rt/rstar            : %1.8e" %(rt/rstar) )
+print("delta/rstar         : %.8f"  %(delta/rstar))
+print("rmax/rstar          : %.8f"  %(rmax/rstar))
+print("c_10 (lum)          : %1.8e erg/s"  %lum)
 print(buff_line)
 
 # Now write to file using the equation_coefficients framework

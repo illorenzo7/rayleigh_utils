@@ -64,7 +64,7 @@ radial_shape = profile/int_profile
 
 print("---------------------------------")
 print("Computed radial shape of heating for RZ-CZ, joined discontinuously")
-print("rt: %1.3e cm" %rt) 
+print("rt: %1.8e cm" %rt) 
 print("c_10: %1.3e"  %lum)
 print("---------------------------------")
 
