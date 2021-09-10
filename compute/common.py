@@ -374,6 +374,7 @@ def read_log(fname):
     delta_t_io = []
     iters_per_sec = []
     iters_per_sec_io = []
+    ncpu = -1
     for i in range(len(lines)):
         line = lines[i]
         if i > 0:
