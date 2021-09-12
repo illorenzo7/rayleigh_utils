@@ -217,6 +217,8 @@ if rank == 0:
     vals = np.array(vals)
     times = np.array(times)
     iters = np.array(iters)
+    if radtype == 'gav':
+        vals = vals.reshape((len(times), a.nq, 1, 1))
     di_sav = {'vals': vals, 'times': times, 'iters': iters, 'lut': a.lut, 'qv': a.qv}
     if radtype == 'pp':
         di_sav['rvals'] = a.radius
