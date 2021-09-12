@@ -323,7 +323,10 @@ if rank == 0:
     # Get first and last iters of files
     iter1, iter2 = int_file_list[0], int_file_list[-1]
     f = open(savefile, 'wb')
-    pickle.dump({'vals': vals, 'vals_full': vals_full,'times': times, 'iters': iters, 'lut': a.lut, 'qv': a.qv, 'volumes': volumes, 'volume_full': np.sum(volumes), 'rbounds': rbounds, 'latbounds': latbounds}, f, protocol=4)
+    di_sav = {'vals': vals, 'times': times, 'iters': iters, 'lut': a.lut, 'qv': a.qv, 'volumes': volumes, 'volume_full': np.sum(volumes), 'rbounds': rbounds, 'latbounds': latbounds}
+    if 'nquad' in savefile:
+        di_sav[ 'vals_full'] = vals_full
+    pickle.dump(di_sav, f, protocol=4)
     f.close()
     t2 = time.time()
     print (format_time(t2 - t1))

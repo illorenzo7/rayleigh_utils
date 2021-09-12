@@ -39,9 +39,8 @@ print(files[0])
 di0 = get_dict(files[0])
 vals = di0['vals'] # start with arrays from first dictionary and then 
     # append corresponding arrays from all the data files
-if dataname[:17] == 'G_Avgs_trace_2dom':
-    vals_cz = di0['vals_cz'] 
-    vals_rz = di0['vals_rz'] 
+if 'nquad' in dataname:
+    vals_full = di0['vals_full'] 
 
 times = di0['times']
 iters = di0['iters']
@@ -63,18 +62,16 @@ for i in range(nfiles - 1):
 
     # Now join the dictionary to append
     vals = np.vstack((vals, di2['vals'][-niters2:]))
-    if dataname[:17] == 'G_Avgs_trace_2dom':
-        vals_cz = np.vstack((vals_cz, di2['vals_cz'][-niters2:]))
-        vals_rz = np.vstack((vals_rz, di2['vals_rz'][-niters2:]))
+    if 'nquad' in dataname:
+        vals_full = np.vstack((vals_full, di2['vals_full'][-niters2:]))
     times = np.hstack((times, di2['times'][-niters2:]))
     iters = np.hstack((iters, di2['iters'][-niters2:]))
     if i == nfiles - 2:
         dummy, iter2 = get_iters_from_file(files[i+1])
 
 di_all['vals'] = vals
-if dataname[:17] == 'G_Avgs_trace_2dom':
-    di_all['vals_cz'] = vals_cz
-    di_all['vals_rz'] = vals_rz
+if 'nquad' in dataname:
+    di_all['vals_full'] = vals_full
 
 di_all['times'] = times
 di_all['iters'] = iters

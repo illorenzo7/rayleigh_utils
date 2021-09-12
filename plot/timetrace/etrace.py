@@ -61,16 +61,19 @@ if the_file is None:
 
 print ('Getting data from ' + the_file)
 di = get_dict(the_file)
-vals_gav = di['vals']
+vals = di['vals']
 titles = ["Full Domain"]
 if sep_czrz:
-    vals = di['vals']
-    vals_gav = di['vals_full']
-    vals_rz = vals[..., 0, 0]
-    vals_cz = vals[..., 0, 1]
+    vals_rz = vals[..., 0, 0] # innermost domain (RZ in CZ/RZ system)
+    vals_cz = vals[..., 0, -1] # outermost domain (CZ in CZ/RZ system)
+    vals_full = di['vals_full']
+
     rbounds = di['rbounds']
     titles += [r'$r/R_\odot \in [%.3f, %.3f]$' %(rbounds[0], rbounds[1])]
-    titles += ['one']
+    titles += [r'$r/R_\odot \in [%.3f, %.3f]$' %(rbounds[1], rbounds[2])]
+else:
+    vals_full = vals[..., 0, 0]
+
 lut = di['lut']
 times = di['times']
 iters = di['iters']
@@ -100,7 +103,7 @@ xaxis = xaxis[ixmin:ixmax+1]
 times = times[ixmin:ixmax+1]
 iters = iters[ixmin:ixmax+1]
 tmin, tmax = times[0], times[-1]
-vals_gav = vals_gav[ixmin:ixmax+1, :]
+vals_full = vals_full[ixmin:ixmax+1, :]
 if sep_czrz:
     vals_cz = vals_cz[ixmin:ixmax+1, :]
     vals_rz = vals_rz[ixmin:ixmax+1, :]
@@ -111,7 +114,7 @@ print ("before thin_data: len(xaxis) = %i" %len(xaxis))
 xaxis = thin_data(xaxis, ntot)
 times = thin_data(times, ntot)
 iters = thin_data(iters, ntot)
-vals_gav = thin_data(vals_gav, ntot)
+vals_full = thin_data(vals_full, ntot)
 if sep_czrz:
     vals_cz = thin_data(vals_cz, ntot)
     vals_rz = thin_data(vals_rz, ntot)
@@ -145,7 +148,7 @@ else:
 
 # start making plots
 # loop over tot, fluc, mean and the different domains
-vals_list = [vals_gav]
+vals_list = [vals_full]
 if sep_czrz:
     vals_list.append(vals_rz)
     vals_list.append(vals_cz)
