@@ -21,7 +21,8 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = get_parameter(dirname, 'magnetism')
 
 # SPECIFIC ARGS for etrace:
-kwargs_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'nodyn': False, 'dynfrac': 0.5, 'xvals': np.array([]), 'inte': False})
+kwargs_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'nodyn': False, 'dynfrac': 0.5, 'xvals': np.array([]), 'inte': False, 'nquadr': None, 'nquadlat': None})
+
 # plots two more columns with energies in CZ and RZ separately 
 # update these defaults from command-line
 kwargs = update_dict(kwargs_default, clas)
@@ -42,6 +43,8 @@ nodyn = kwargs.nodyn
 dynfrac = kwargs.dynfrac
 xvals = make_array(kwargs.xvals)
 plot_inte = kwargs.inte
+nquadlat = kwargs.nquadlat
+nquadr = kwargs.nquadr
 
 # deal with coords (if user wants minmax to only apply to certain subplots)
 if not coords is None:
@@ -51,9 +54,14 @@ if not coords is None:
     for i in range(numpanels):
         coords.append((acopy[2*i], acopy[2*i + 1]))
 
-# Might need to use 2dom trace instead of regular trace
+# get desired data file
+dataname = 'G_Avgs_trace'
 if the_file is None:
-    the_file = get_widest_range_file(clas0['datadir'], 'G_Avgs_trace_quad')
+    if not nquadlat is None:
+        dataname += '_nquadlat%i' %nquadlat
+    if not nquadr is None:
+        dataname += '_nquadr%i' %nquadr
+    the_file = get_widest_range_file(clas0['datadir'], dataname)
 
 print ('Getting data from ' + the_file)
 di = get_dict(the_file)
@@ -106,6 +114,8 @@ nplots = nquadlat*nquadr
 
 # create figure with nquadr columns and nquadlat rows
 fig, axs = plt.subplots(nquadlat, nquadr, figsize=(3.5*nquadr, 10), sharex=True)
+if nquadlat == 1: # need the axis array to consistently be doubly indexed
+    axs = np.expand_dims(axs, 0)
 if nquadr == 1: # need the axis array to consistently be doubly indexed
     axs = np.expand_dims(axs, 1)
 
@@ -124,6 +134,12 @@ else:
         ax.ticklabel_format(scilimits = (-3,4), useMathText=True)
 
 # loop over different domains
+print ("nquadlat = ", nquadlat)
+print ("nquadr = ", nquadr)
+print ("shape vals = ", np.shape(vals))
+print ("shape times = ", np.shape(times))
+print ("shape iters = ", np.shape(iters))
+
 for ilat in range(nquadlat):
     for ir in range(nquadr):
         vals_loc = vals[:, :, ilat, ir]
@@ -165,17 +181,17 @@ for ilat in range(nquadlat):
             # MAGNETIC ENERGY
             if magnetism:
                 if i == 0: # tot
-                    rme = vals[:, lut[1102]]
-                    tme = vals[:, lut[1103]]
-                    pme = vals[:, lut[1104]]
+                    rme = vals_loc[:, lut[1102]]
+                    tme = vals_loc[:, lut[1103]]
+                    pme = vals_loc[:, lut[1104]]
                 if i == 1: # fluc
-                    rme = vals[:, lut[1110]]
-                    tme = vals[:, lut[1111]]
-                    pme = vals[:, lut[1112]]
+                    rme = vals_loc[:, lut[1110]]
+                    tme = vals_loc[:, lut[1111]]
+                    pme = vals_loc[:, lut[1112]]
                 if i == 2: # mean
-                    rme = vals[:, lut[1102]] - vals[:, lut[1110]]
-                    tme = vals[:, lut[1103]] - vals[:, lut[1111]]
-                    pme = vals[:, lut[1104]] - vals[:, lut[1112]]
+                    rme = vals_loc[:, lut[1102]] - vals_loc[:, lut[1110]]
+                    tme = vals_loc[:, lut[1103]] - vals_loc[:, lut[1111]]
+                    pme = vals_loc[:, lut[1104]] - vals_loc[:, lut[1112]]
                 me = rme + tme + pme
 
             # make line plots
@@ -233,9 +249,9 @@ for ilat in range(nquadlat):
 # x limits and label
 axs[0, 0].set_xlim((xminmax[0], xminmax[1]))
 if xiter:
-    axs[2, 0].set_xlabel('iteration #')
+    axs[-1, 0].set_xlabel('iteration #')
 else:
-    axs[2, 0].set_xlabel('time [' + time_label + ']')
+    axs[-1, 0].set_xlabel('time [' + time_label + ']')
 
 # x titles
 for ir in range(nquadr):
@@ -276,7 +292,8 @@ tag = clas0['tag']
 if xiter and tag == '':
     tag = '_xiter'
 plotdir = my_mkdir(clas0['plotdir']) 
-savename = 'etrace_quad' + tag + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
+basename = dataname.replace('G_Avgs_trace', 'etrace')
+savename = basename + tag + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
 
 if clas0['saveplot']:
     print ('Saving the etrace plot at ' + plotdir + savename)
