@@ -55,18 +55,22 @@ if not coords is None:
 # Might need to use 2dom trace instead of regular trace
 if the_file is None:
     if sep_czrz:
-        the_file = get_widest_range_file(clas0['datadir'], 'G_Avgs_trace_2dom')
+        the_file = get_widest_range_file(clas0['datadir'], 'G_Avgs_trace_nquadr2')
     else: 
         the_file = get_widest_range_file(clas0['datadir'], 'G_Avgs_trace')
 
 print ('Getting data from ' + the_file)
 di = get_dict(the_file)
 vals_gav = di['vals']
+titles = ["Full Domain"]
 if sep_czrz:
     vals = di['vals']
     vals_gav = di['vals_full']
-    vals_cz = vals[..., 0, 1]
     vals_rz = vals[..., 0, 0]
+    vals_cz = vals[..., 0, 1]
+    rbounds = di['rbounds']
+    titles += [r'$r/R_\odot \in [%.3f, %.3f]$' %(rbounds[0], rbounds[1])]
+    titles += ['one']
 lut = di['lut']
 times = di['times']
 iters = di['iters']
@@ -265,7 +269,6 @@ axs[1,0].set_ylabel('fluc energy', fontsize=fontsize)
 axs[2,0].set_ylabel('mean energy', fontsize=fontsize)
 
 # Make titles
-titles = ["ALL ZONES", "RZ", "CZ"]
 for icol in range(ncol):
     if icol == icol_mid:
         title = dirname_stripped + '\n' + titles[icol]
@@ -297,7 +300,9 @@ tag = clas0['tag']
 if xiter and tag == '':
     tag = '_xiter'
 plotdir = my_mkdir(clas0['plotdir']) 
-savename = 'etrace' + tag + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
+basename = get_dataname_from_file(the_file)
+basename = basename.replace('G_Avgs_trace', 'etrace')
+savename =  basename + tag + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
 
 if clas0['saveplot']:
     print ('Saving the etrace plot at ' + plotdir + savename)

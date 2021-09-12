@@ -111,14 +111,14 @@ if rank == 0:
         kw.rbounds = np.linspace(rmax, rmin, kw.nquadr + 1) # remember: rr is DECREASING
     if kw.irbounds is None: # this is the default
         if kw.rbounds is None: # this is the default
-            irbounds = [0, nr - 1] # rr increases, r-inds decrease
+            irbounds = [nr - 1, 0] # rr increases, r-inds decrease
             dataname = 'G_Avgs'
         else:
-            kw.rbounds = np.sort(kw.rbounds)[::-1] # rr decreases
+            kw.rbounds = np.sort(kw.rbounds) # rr decreases
             irbounds = inds_from_vals(rr/rsun, kw.rbounds)
             dataname = 'Shell_Avgs'
     else:
-        irbounds = np.sort(kw.irbounds) # r-inds increase
+        irbounds = np.sort(kw.irbounds)[::-1] # r-inds derease
         dataname = 'Shell_Avgs'
 
     # deal w/ latitudinal boundaries
@@ -149,11 +149,9 @@ if rank == 0:
         it1 = ilatbounds[ilat]
         it2 = ilatbounds[ilat + 1]
 
-        for ir in range(nquadr): # remember: rr is DECREASING
-                                # but r-inds increase
-                                # r-inds begin at TOP of domain
-            ir2 = irbounds[nquadr - ir]
-            ir1 = irbounds[nquadr - ir - 1]
+        for ir in range(nquadr): # remember: rbounds increase but r-inds decrease
+            ir1 = irbounds[ir + 1]
+            ir2 = irbounds[ir]
             volumes[ilat, ir] = 2.*np.pi/3.*(rr[ir2]**3. - rr[ir1]**3.)*(cost[it2] - cost[it1])
 
     # Get the Rayleigh data directory
@@ -235,11 +233,9 @@ for i in range(my_nfiles):
             it1 = ilatbounds[ilat]
             it2 = ilatbounds[ilat + 1]
 
-            for ir in range(nquadr): # remember: rr is DECREASING
-                                    # but r-inds increase
-                                    # r-inds begin at TOP of domain
-                ir2 = irbounds[nquadr - ir]
-                ir1 = irbounds[nquadr - ir - 1]
+            for ir in range(nquadr): # remember: rbounds increase but r-inds decrease
+                ir1 = irbounds[ir + 1]
+                ir2 = irbounds[ir]
 
                 if dataname == 'G_Avgs':
                     vals_quad = vals_loc[j, :].reshape((1, 1, a.nq))
