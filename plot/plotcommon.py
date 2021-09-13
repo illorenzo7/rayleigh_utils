@@ -24,6 +24,9 @@ default_margin_title = 3/4
 # default figure sizes 
 sub_width_inches_default, sub_height_inches_default = 3.5, 2.5
 
+# lineplots 
+lineplot_fig_dimensions = dotdict(dict({'sub_width_inches': sub_width_inches_default, 'sub_height_inches': sub_height_inches_default, 'sub_margin_top_inches': 1/4, 'sub_margin_bottom_inches': default_margin_xlabel, 'sub_margin_left_inches': default_margin_ylabel, 'margin_top_inches': 1}))
+
 def axis_range(ax): # gets subplot coordinates on a figure in "normalized"
         # coordinates
     pos = plt.get(ax, 'position')
@@ -220,17 +223,21 @@ def make_figure(**kwargs):
 
     # Generate the figure + axes
     fig = plt.figure(figsize=(width_inches, height_inches))
-    axs = np.zeros((nrow, ncol), dtype=object)
+    #axs = np.zeros((nrow, ncol), dtype=object)
+    axs = []
     for iplot in range(fpar['nplots']):
         icol = iplot%fpar['ncol']
         irow = iplot//fpar['ncol']
         ax_left = fpar['margin_left'] + fpar['sub_margin_left'] + icol*(fpar['sub_width'] + fpar['sub_margin_left'] + fpar['sub_margin_right'])
         ax_bottom = 1.0 - fpar['margin_top'] - fpar['sub_height'] - fpar['sub_margin_top'] - irow*(fpar['sub_height'] + fpar['sub_margin_top'] + fpar['sub_margin_bottom'])
-        axs[irow,icol] = fig.add_axes((ax_left, ax_bottom, fpar['sub_width'], fpar['sub_height']))
+        axs.append(fig.add_axes((ax_left, ax_bottom, fpar['sub_width'], fpar['sub_height'])))
+
+        #axs[irow,icol] = fig.add_axes((ax_left, ax_bottom, fpar['sub_width'], fpar['sub_height']))
+    axs  = np.reshape(axs, (nrow, ncol))
 
     return fig, axs, fpar
 
-lineplot_minmax_kwargs_default = dict({'logscale': False, 'buff_ignore': None, 'legfrac': None, 'symmetrize': False, 'domain_bounds': None})
+lineplot_minmax_kwargs_default = dict({'logscale': False, 'buff_ignore': None, 'plotleg': False, 'legfrac': None, 'symmetrize': False, 'domain_bounds': None})
 def lineplot_minmax(xx, profiles, **kwargs):
     kw = update_dict(lineplot_minmax_kwargs_default, kwargs)
     find_bad_keys(lineplot_minmax_kwargs_default, kwargs, 'lineplot_minmax')
@@ -261,11 +268,14 @@ def lineplot_minmax(xx, profiles, **kwargs):
     for profile in profiles:
         mmin = min(np.min(profile), mmin)
         mmax = max(np.max(profile), mmax)
-    if not kw.legfrac is None: # legfrac is how much of plot (y dimensions)
+    if kw.plotleg:
+        if kw.legfrac is None: # legfrac is how much of plot (y dimensions)
         # the legend should take up
+            kw.legfrac = 1/3
         buff_frac_min = kw.legfrac/(1 - kw.legfrac) + buff_frac
     else:
         buff_frac_min = buff_frac
+
     if kw.logscale:
         yratio = mmax/mmin
         ymin = mmin/(yratio**buff_frac_min)
@@ -308,14 +318,11 @@ def sci_format(num, ndec=1):
     return ((r'$%1.' + (r'%i' %ndec) + r'f\times10^{%i}$')\
             %(mantissa, exponent))
 
-lineplot_kwargs_default = dict({'xlabel': None, 'ylabel': None, 'title': None, 'xvals': np.array([]), 'yvals': np.array([]), 'labels': None, 'xlogscale': False, 'xminmax': None, 'minmax': None, 'xcut': None, 'minmax2': None, 'scatter': False, 'colors': color_order, 'linestyles': style_order[0], 'markers': marker_order[0], 'lw': default_lw, 's': default_s, 'plotleg': True})
+lineplot_kwargs_default = dict({'xlabel': None, 'ylabel': None, 'title': None, 'xvals': np.array([]), 'yvals': np.array([]), 'labels': None, 'xlogscale': False, 'xminmax': None, 'minmax': None, 'xcut': None, 'minmax2': None, 'scatter': False, 'colors': color_order, 'linestyles': style_order[0], 'markers': marker_order[0], 'lw': default_lw, 's': default_s})
 lineplot_kwargs_default.update(lineplot_minmax_kwargs_default)
 
 def lineplot(xx, profiles, ax, **kwargs):
     kw = update_dict(lineplot_kwargs_default, kwargs)
-    # make room for legend by default
-    if kw['plotleg']:
-        lineplot_minmax_kwargs_default['legfrac'] = 1/3
     kw_lineplot_minmax = update_dict(lineplot_minmax_kwargs_default, kwargs)
     find_bad_keys(lineplot_kwargs_default, kwargs, 'lineplot')
 

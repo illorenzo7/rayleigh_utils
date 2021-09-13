@@ -25,12 +25,23 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = get_parameter(dirname, 'magnetism')
 
 # SPECIFIC ARGS for etrace:
-kw_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'xvals': np.array([])})
+kw_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'xvals': np.array([]), 'nquadr': None, 'nquadlat': None})
+
+# make figure kwargs
+lineplot_fig_dimensions['margin_top_inches'] = 1/2
+make_figure_kwargs_default.update(lineplot_fig_dimensions)
+kw_default.update(make_figure_kwargs_default)
+
+# lineplot kwargs
+kw_default.update(lineplot_kwargs_default)
 
 # more defaults
 kw_default.update(get_quantity_group('v', magnetism))
 
+# then override defaults
 kw = update_dict(kw_default, clas)
+kw_make_figure = update_dict(make_figure_kwargs_default, clas)
+kw_lineplot = update_dict(lineplot_kwargs_default, clas)
 
 fontsize = default_titlesize
 the_file = kw.the_file
@@ -45,6 +56,8 @@ ntot = kw.ntot
 xiter = kw.xiter
 logscale = kw.log
 xvals = make_array(kw.xvals)
+nquadlat = kw.nquadlat
+nquadr = kw.nquadr
 
 # state what we're plotting
 print ("plotting the following quantities:")
@@ -58,9 +71,14 @@ if not coords is None:
     for i in range(numpanels):
         coords.append((acopy[2*i], acopy[2*i + 1]))
 
-# Might need to use 2dom trace instead of regular trace
+# get desired data file
+dataname = 'G_Avgs_trace'
 if the_file is None:
-    the_file = get_widest_range_file(clas0['datadir'], 'G_Avgs_trace_quad')
+    if not nquadlat is None:
+        dataname += '_nquadlat%i' %nquadlat
+    if not nquadr is None:
+        dataname += '_nquadr%i' %nquadr
+    the_file = get_widest_range_file(clas0['datadir'], dataname)
 
 print ('Getting data from ' + the_file)
 di = get_dict(the_file)
@@ -112,26 +130,10 @@ ntimes, nq, nquadlat, nquadr = np.shape(vals)
 print ("nquadlat = ", nquadlat)
 nplots = nquadlat*nquadr
 
-# create figure with nquadr columns and nquadlat rows
-fig, axs = plt.subplots(nquadlat, nquadr, figsize=(3.5*nquadr, 10), sharex=True)
-if nquadlat == 1: # need the axis array to consistently be doubly indexed
-    axs = np.expand_dims(axs, 0)
-if nquadr == 1: # need the axis array to consistently be doubly indexed
-    axs = np.expand_dims(axs, 1)
-
-# Make thin lines to see structure of variation for ME
-lw = 0.5
-lw_ke = 1. # bit thicker for KE to differentiate between ME
-
-# See if y-axis should be on log scale (must do this before setting limits)
-# Make all axes use scientific notation (except for y if logscale=True)
-if logscale:
-    for ax in axs.flatten():
-        ax.set_yscale('log')
-        ax.ticklabel_format(axis='x', scilimits=(-3,4), useMathText=True)
-else:
-    for ax in axs.flatten():
-        ax.ticklabel_format(scilimits = (-3,4), useMathText=True)
+# create the figure dimensions
+kw_make_figure.nplots = nplots
+kw_make_figure.ncol = kw.ncol
+fig, axs, fpar = make_figure(**kw_make_figure)
 
 # loop over different domains
 for ilat in range(nquadlat):
@@ -141,46 +143,26 @@ for ilat in range(nquadlat):
 
         # get terms we want and plot them
         terms = []
-        for qval in kw.qvals:
+        kw_lineplot.labels = []
+        nterms = len(kw.qvals)
+        for iterm in range(nterms):
+            qval = kw.qvals[iterm]
             terms.append(vals_loc[:, lut[int(qval)]])
-        nterms = len(terms)
+            kw_lineplot.labels.append(kw.titles[iterm])
 
         # might also need the total of these terms (with some signature: totsig)
         if not kw.totsig is None:
             tot_term = np.zeros_like(terms[0])
-            for iterm in range(len(terms)):
+            for iterm in range(nterms):
                 tot_term += terms[iterm]*kw.totsig[iterm]
             terms.append(tot_term)
             nterms += 1
+            kw_lineplot.labels.append('sum')
 
         # now plot the terms
-        for iterm in range(nterms):
-            if iterm < nterms - 1:
-                label = 'q = %i' %kw.qvals[iterm]
-            else:
-                label = 'sum'
-            ax.plot(xaxis, terms[iterm], label=label)
-
-        if ilat == 0 and ir == 0: # put a legend on the upper left axis
-            #legfrac = 1/4
-            legfrac = 1/2
-            ax.legend(loc='lower left', ncol=3, fontsize=0.7*fontsize, columnspacing=1)
-        else:
-            legfrac = None
-
-        # set the y limits
-        minmax_loc = minmax
-        if not coords is None:
-            if not (it, ir) in coords: # reset minmax_loc to None
-                # (will become default) if not in desired coordinates
-                minmax_loc = None
-        if minmax_loc is None:
-            minmax_loc = lineplot_minmax(xaxis, terms, logscale=logscale, legfrac=legfrac)
-        if not ymin is None:
-            minmax_loc = ymin, minmax_loc[1]
-        if not ymax is None:
-            minmax_loc = minmax_loc[0], ymax
-        ax.set_ylim((minmax_loc[0], minmax_loc[1]))
+        if ilat == 0 and ir == 0:
+            kw_lineplot.plotleg = True
+        lineplot(xaxis, terms, ax, **kw_lineplot)
 
 # Set some parameters defining all subplots
 # x limits and label
@@ -197,6 +179,9 @@ for ir in range(nquadr):
     title = 'rad. range = [%.3f, %.3f]' %(r1, r2)
     if ir == 0:
         title = dirname_stripped + '\n' + title
+    if not kw.groupname is None:
+        title += '\n' + 'groupname = %s' %kw.groupname
+    title += '\n' + 'qvals = ' +(arr_to_str(kw.qvals, '%i'))
     axs[0, ir].set_title(title, fontsize=fontsize)
 
 # y labels
@@ -204,23 +189,6 @@ for it in range(nquadlat):
     lat1 = latbounds[it]
     lat2 = latbounds[it+1]
     axs[it, 0].set_ylabel('lat. range = [%.1f, %.1f]' %(lat1, lat2), fontsize=fontsize)
-
-# mark times if desired
-for ax in axs.flatten():
-    y1, y2 = ax.get_ylim()
-    yvals = np.linspace(y1, y2, 100)
-    for time in xvals:
-        ax.plot(time + np.zeros(100), yvals,'k--')
-
-# Get ticks everywhere
-for ax in axs.flatten():
-    plt.sca(ax)
-    plt.minorticks_on()
-    plt.tick_params(top=True, right=True, direction='in', which='both')
-
-# Space the subplots to make them look pretty
-plt.tight_layout()
-#plt.subplots_adjust(left=0.15, bottom=0.08, top=0.85, wspace=0.4)
 
 # save the figure if tag (or qgroup) was specified
 if len(clas0['tag']) > 0 or not kw.groupname is None:
