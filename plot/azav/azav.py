@@ -15,6 +15,7 @@ sys.path.append(os.environ['rapl'])
 from azav_util import *
 from common import *
 from plotcommon import *
+from derived_quantities import *
 from cla_util import *
 
 # Read command-line arguments (CLAs)
@@ -82,7 +83,7 @@ for qval in kw.qvals:
         else:
             terms.append(vals[:, :, qval])
     else:
-        terms.append(azav_derived_qval(dirname, vals, lut, qval))
+        terms.append(derived_azav(dirname, vals, lut, qval))
 
 # make the main title
 iter1, iter2 = get_iters_from_file(kw.the_file)

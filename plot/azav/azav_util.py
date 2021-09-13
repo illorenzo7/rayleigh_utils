@@ -602,13 +602,3 @@ def plot_azav_grid(terms, rr, cost, **kwargs):
         return fig, av_fig
     else:
         return fig
-
-def azav_derived_qval(dirname, vals, lut, qval):
-    # some quantities will be listed as strings to be derived
-    eq = get_eq(dirname)
-    nt, nr, dummy = np.shape(vals)
-    rho = eq.density.reshape((1, nr))
-    T = eq.temperature.reshape((1, nr))
-    dSdr = eq.dsdr.reshape((1, nr))
-    if qval == 'advref':
-        return rho*T*dSdr*vals[:, :, lut[1]]
