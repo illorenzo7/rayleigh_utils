@@ -28,7 +28,7 @@ magnetism = get_parameter(dirname, 'magnetism')
 kw_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'xvals': np.array([]), 'nquadr': None, 'nquadlat': None})
 
 # make figure kwargs
-lineplot_fig_dimensions['margin_top_inches'] = 1/2
+lineplot_fig_dimensions['margin_top_inches'] = 3/4
 make_figure_kwargs_default.update(lineplot_fig_dimensions)
 kw_default.update(make_figure_kwargs_default)
 
@@ -84,7 +84,9 @@ print ('Getting data from ' + the_file)
 di = get_dict(the_file)
 vals = di['vals']
 rbounds = di['rbounds']
+nquadr = len(rbounds) - 1
 latbounds = di['latbounds']
+nquadlat = len(latbounds) - 1
 lut = di['lut']
 times = di['times']
 iters = di['iters']
@@ -127,12 +129,11 @@ print ("after thin_data: len(xaxis) = %i" %len(xaxis))
 
 # now finally get the shape of the "vals" array
 ntimes, nq, nquadlat, nquadr = np.shape(vals)
-print ("nquadlat = ", nquadlat)
 nplots = nquadlat*nquadr
 
 # create the figure dimensions
 kw_make_figure.nplots = nplots
-kw_make_figure.ncol = kw.ncol
+kw_make_figure.ncol = nquadr
 fig, axs, fpar = make_figure(**kw_make_figure)
 
 # loop over different domains
@@ -177,11 +178,6 @@ for ir in range(nquadr):
     r1 = rbounds[ir]
     r2 = rbounds[ir+1]
     title = 'rad. range = [%.3f, %.3f]' %(r1, r2)
-    if ir == 0:
-        title = dirname_stripped + '\n' + title
-    if not kw.groupname is None:
-        title += '\n' + 'groupname = %s' %kw.groupname
-    title += '\n' + 'qvals = ' +(arr_to_str(kw.qvals, '%i'))
     axs[0, ir].set_title(title, fontsize=fontsize)
 
 # y labels
@@ -190,12 +186,23 @@ for it in range(nquadlat):
     lat2 = latbounds[it+1]
     axs[it, 0].set_ylabel('lat. range = [%.1f, %.1f]' %(lat1, lat2), fontsize=fontsize)
 
+# main title
+maintitle = dirname_stripped
+if not kw.groupname is None:
+    maintitle += '\n' + 'groupname = %s' %kw.groupname
+maintitle += '\n' + 'qvals = ' +(arr_to_str(kw.qvals, '%i'))
+# Put the main title in upper left
+fig.text(fpar['margin_left'] + fpar['sub_margin_left'], 1.0 - default_margin/fpar['height_inches'], maintitle, ha='left', va='top', fontsize=default_titlesize)
+
 # save the figure if tag (or qgroup) was specified
 if len(clas0['tag']) > 0 or not kw.groupname is None:
-    basename = 'timetrace_'
+    basename = dataname.replace('G_Avgs_trace', 'timetrace')
+
     if not kw.groupname is None:
-        basename += kw.groupname
+        basename += '_' + kw.groupname
     basename += clas0['tag']
+    iter1, iter2 = get_iters_from_file(the_file)
+    savename = basename + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
 
     plotdir = my_mkdir(clas0['plotdir'] + 'timetrace/')
 

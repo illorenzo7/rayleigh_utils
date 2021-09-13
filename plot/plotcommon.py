@@ -145,6 +145,8 @@ def make_figure(**kwargs):
             ncol = int(np.ceil(nplots/nrow))
         else:
             nrow = int(np.ceil(nplots/ncol))
+    # in the end need nplots = nrow * ncol
+    nplots = nrow*ncol
 
     sub_nspec = 0
     for val in [sub_width_inches, sub_height_inches, sub_aspect]:
