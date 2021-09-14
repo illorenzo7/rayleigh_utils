@@ -240,11 +240,10 @@ for i in range(my_nfiles):
         lut = a.lut
         nq = a.nq
         if not derive is None:
-            count = 0
             for qval in derive:
                 vals_to_add = derive_quantity(dirname, vals_loc, lut, qval, timeaxis=True)
                 vals_loc = np.concatenate((vals_loc, vals_to_add), axis=-2)
-                lut[qval] = a.nq + count
+                lut[qval] = nq
                 nq += 1
 
         # Get the values in the separate quadrants
