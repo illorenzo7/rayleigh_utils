@@ -80,7 +80,7 @@ for qval in kw.qvals:
         qval = int(qval)
         if dataname == 'AZ_Avgs':
             if lut[qval] == 4000: # derived quantity
-                terms.append(derived_quantity(dirname, vals, lut, qval))
+                terms.append(derive_quantity(dirname, vals, lut, qval))
             else:
                 terms.append(vals[:, :, lut[qval]])
         else:
