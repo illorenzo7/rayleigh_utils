@@ -24,5 +24,12 @@ def derived_quantity(dirname, vals, lut, quantity_or_index, eqslice=False):
     rho = eq.density.reshape(shape_needed)
     T = eq.temperature.reshape(shape_needed)
     dSdr = eq.dsdr.reshape(shape_needed)
+
     if quantity == 'advref':
         return rho*T*dSdr*vals[:, :, lut[1]]
+    if quantity == 'rhov_r':
+        return rho*vals[:, :, lut[1]]
+    if quantity == 'rhov_theta':
+        return rho*vals[:, :, lut[2]]
+    if quantity == 'rhov_phi':
+        return rho*vals[:, :, lut[3]]
