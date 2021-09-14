@@ -27,14 +27,23 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = clas0['magnetism']
 
 # defaults
-kwargs_default = dict({'the_file': None})
-kwargs_default.update(get_quantity_group('v', magnetism))
+kwargs_default = dict({'the_file': None, 'qvals': None, 'groupname': 'v'})
 kwargs_default.update(plot_azav_grid_kwargs_default)
 
 # overwrite defaults
 kw = update_dict(kwargs_default, clas)
 kw_plot_azav_grid = update_dict(plot_azav_grid_kwargs_default, clas)
 
+# deal with desired quantities
+if kw.qvals is None: # it's a quantity group
+    qgroup = get_quantity_group(kw.groupname, magnetism)
+    kw.qvals = qgroup['qvals']
+    kw_plot_azav_grid.titles = qgroup['titles']
+    kw_plot_azav_grid.totsig = qgroup['totsig']
+    kw_plot_azav_grid.ncol = qgroup['ncol']
+else:
+    kw_plot_azav_grid.titles = parse_quantities(kw.qvals)[1]
+    kw.groupname = input("choose a groupname to save your plot\n to not save it, enter 'nosave': ")
 # check for bad keys
 find_bad_keys(kwargs_default, clas, clas0['routinename'], justwarn=True)
 
@@ -123,7 +132,7 @@ if basename in ['azav_v', 'azav_b']: # these go in main directory
 else:
     plotdir = my_mkdir(clas0['plotdir'] + 'azav/')
 
-if clas0['saveplot']:
+if clas0['saveplot'] and kw.groupname != 'nosave':
     savefile = plotdir + basename + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
     print ('saving figure at ' + savefile)
     fig.savefig(savefile, dpi=300)
