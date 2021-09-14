@@ -122,22 +122,23 @@ ixmax = np.argmin(np.abs(xaxis - xminmax[1]))
 
 # Now shorten all the "x" arrays
 xaxis = xaxis[ixmin:ixmax+1]
-times = times[ixmin:ixmax+1]
+#times = times[ixmin:ixmax+1]
 iters = iters[ixmin:ixmax+1]
-tmin, tmax = times[0], times[-1]
-vals = vals[ixmin:ixmax+1, :]
+#tmin, tmax = times[ixmin], times[ixmax]
+#vals = vals[ixmin:ixmax+1, :] # keep the full vals array for now
 
 # deal with x axis, maybe thinning data
 print ("ntot = %i" %ntot)
 print ("before thin_data: len(xaxis) = %i" %len(xaxis))
 xaxis = thin_data(xaxis, ntot)
-times = thin_data(times, ntot)
+#times = thin_data(times, ntot)
 iters = thin_data(iters, ntot)
-vals = thin_data(vals, ntot)
+#vals = thin_data(vals, ntot) # don't thin the data quite yet for this guy
 print ("after thin_data: len(xaxis) = %i" %len(xaxis))
 
 # now finally get the shape of the "vals" array
 ntimes, nq, nquadlat, nquadr = np.shape(vals)
+ntimes = len(xaxis)
 nplots = nquadlat*nquadr
 
 # create the figure dimensions
@@ -170,7 +171,8 @@ for ilat in range(nquadlat):
             nterms += 1
             kw_lineplot.labels.append('sum')
 
-        if kw.groupname in ['torque', 'teq', 'forcer', 'forcet', 'forcep']:
+        equation_sets = ['torque', 'teq', 'forcer', 'forcet', 'forcep']
+        if kw.groupname in equation_sets:
             # replace term with its time derivative
             terms[0] = drad(terms[0], times)
             kw_lineplot.labels[0] = 'd/dt'
@@ -181,17 +183,37 @@ for ilat in range(nquadlat):
             kw_lineplot.lw = [default_lw]*nterms
 
             kw_lineplot.colors[0] = 'k'
-            kw_lineplot.lw[0] = 3*default_lw
+            kw_lineplot.lw[0] = default_lw
             kw_lineplot.linestyles[-1] = '-'
 
             kw_lineplot.colors[-1] = 'r'
-            kw_lineplot.lw[-1] = 3*default_lw
+            kw_lineplot.lw[-1] = default_lw
             kw_lineplot.linestyles[-1] = '--'
+
+            kw_lineplot.legfrac = 0.6
+
+        # now thin the data on the terms #and times
+        #times = thin_data(times[ixmin:ixmax+1], ntot)
+        for iterm in range(nterms):
+            terms[iterm] = thin_data(terms[iterm][ixmin:ixmax+1], ntot)
 
         # now plot the terms
         if ilat == 0 and ir == 0:
             kw_lineplot.plotleg = True
         lineplot(xaxis, terms, ax, **kw_lineplot)
+
+        if kw.groupname in equation_sets:
+            # label the derivative ampltitude and sum amplitude
+            diff = terms[0] - terms[-1]
+            quant = 'std(d/dt) = %1.3e' %np.std(terms[0])
+            quant += '\n' + 'std(sum) = %1.3e' %np.std(terms[-1])
+            quant += '\n' + 'std(d/dt - sum) = %1.3e' %np.std(diff)
+            xmin, xmax = ax.get_xlim()
+            dx = xmax - xmin
+            ymin, ymax = ax.get_ylim()
+            dy = ymax - ymin
+            ax.text(xmin + 0.1*dx, ymin + 0.3*dy, quant, va='bottom', ha='left')
+        
 
 # Set some parameters defining all subplots
 # x limits and label
