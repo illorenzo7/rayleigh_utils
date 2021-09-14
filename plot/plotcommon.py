@@ -341,6 +341,8 @@ def lineplot(xx, profiles, ax, **kwargs):
         kw.markers = [kw.markers]*nprofiles
     if np.isscalar(kw.linestyles):
         kw.linestyles = [kw.linestyles]*nprofiles
+    if np.isscalar(kw.lw):
+        kw.lw = [kw.lw]*nprofiles
     if kw.labels is None:
         kw.labels = [None]*nprofiles
 
@@ -383,7 +385,7 @@ def lineplot(xx, profiles, ax, **kwargs):
     for iprof in range(nprofiles):
         profile = profiles[iprof]
         kw_scatter = dict({'label': kw.labels[iprof], 'marker': kw.markers[iprof], 'color': kw.colors[iprof], 's': kw.s})
-        kw_plot = dict({'label': kw.labels[iprof], 'linestyle': kw.linestyles[iprof], 'color': kw.colors[iprof], 'linewidth': kw.lw})
+        kw_plot = dict({'label': kw.labels[iprof], 'linestyle': kw.linestyles[iprof], 'color': kw.colors[iprof], 'linewidth': kw.lw[iprof]})
         if kw.xcut is None:
             if kw.scatter:
                 ax.scatter(xx, profile, **kw_scatter)
@@ -448,13 +450,13 @@ def lineplot(xx, profiles, ax, **kwargs):
                 ax_loc = ax_right
         y1, y2 = ax_loc.get_ylim()
         ypoints = np.linspace(y1, y2, npoints)
-        ax_loc.plot(xval + np.zeros(npoints), ypoints, 'k--', linewidth=kw.lw)
+        ax_loc.plot(xval + np.zeros(npoints), ypoints, 'k--', linewidth=kw.lw[0])
     for yval in kw.yvals:
         for ax_loc in axs:
             # only plot if the line is within the range
             y1, y2 = ax_loc.get_ylim()
             if y1 < yval < y2:
-                ax_loc.plot(xpoints, yval + np.zeros(npoints), 'k--', linewidth=kw.lw)
+                ax_loc.plot(xpoints, yval + np.zeros(npoints), 'k--', linewidth=kw.lw[0])
 
     if not kw.xlabel is None:
         ax.set_xlabel(kw.xlabel, fontsize=kw.fontsize)

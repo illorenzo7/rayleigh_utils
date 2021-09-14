@@ -218,7 +218,7 @@ def get_quantity_group(groupname, magnetism):
         totsig[1] = -1
 
     if groupname == 'forcet': # linear forces, theta
-        qvals = lookup('rhov_theta'), [1202, 1220, 1238, 1229]
+        qvals = [lookup('rhov_theta'), 1202, 1220, 1238, 1229]
         if magnetism:
             qvals += [1249]
         ncol = 3

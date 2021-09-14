@@ -1,8 +1,8 @@
 # Author: Loren Matilsky
 # Created: 08/17/2021
 # plot the trace in different quadrants
-# This script plots the quantitities specified by --qvals
-# default is v
+# This script plots the quantitities specified by --qvals or --groupname
+# default is --groupname v
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -25,7 +25,7 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = get_parameter(dirname, 'magnetism')
 
 # SPECIFIC ARGS for etrace:
-kw_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'xvals': np.array([]), 'nquadr': None, 'nquadlat': None})
+kw_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'xvals': np.array([]), 'nquadr': None, 'nquadlat': None, 'qvals': None, 'groupname': 'b', 'totsig': None, 'titles': None})
 
 # make figure kwargs
 lineplot_fig_dimensions['margin_top_inches'] = 3/4
@@ -35,13 +35,22 @@ kw_default.update(make_figure_kwargs_default)
 # lineplot kwargs
 kw_default.update(lineplot_kwargs_default)
 
-# more defaults
-kw_default.update(get_quantity_group('v', magnetism))
-
 # then override defaults
 kw = update_dict(kw_default, clas)
 kw_make_figure = update_dict(make_figure_kwargs_default, clas)
 kw_lineplot = update_dict(lineplot_kwargs_default, clas)
+
+# deal with desired quantities
+if kw.qvals is None: # it's a quantity group
+    qgroup = get_quantity_group(kw.groupname, magnetism)
+    kw.qvals = qgroup['qvals']
+    if kw.titles is None:
+        kw.titles = qgroup['titles']
+    if kw.totsig is None:
+        kw.totsig = qgroup['totsig']
+else:
+    kw.titles = parse_quantities(kw.qvals)[1]
+    kw.groupname = input("choose a groupname to save your plot\n to not save it, enter 'nosave': ")
 
 fontsize = default_titlesize
 the_file = kw.the_file
@@ -152,6 +161,7 @@ for ilat in range(nquadlat):
             kw_lineplot.labels.append(kw.titles[iterm])
 
         # might also need the total of these terms (with some signature: totsig)
+
         if not kw.totsig is None:
             tot_term = np.zeros_like(terms[0])
             for iterm in range(nterms):
@@ -159,6 +169,24 @@ for ilat in range(nquadlat):
             terms.append(tot_term)
             nterms += 1
             kw_lineplot.labels.append('sum')
+
+        if kw.groupname in ['torque', 'teq', 'forcer', 'forcet', 'forcep']:
+            # replace term with its time derivative
+            terms[0] = drad(terms[0], times)
+            kw_lineplot.labels[0] = 'd/dt'
+            
+            # identify the derivative and the sum of the terms
+            kw_lineplot.colors = color_order[:nterms]
+            kw_lineplot.linestyles = [style_order[0]]*nterms
+            kw_lineplot.lw = [default_lw]*nterms
+
+            kw_lineplot.colors[0] = 'k'
+            kw_lineplot.lw[0] = 3*default_lw
+            kw_lineplot.linestyles[-1] = '-'
+
+            kw_lineplot.colors[-1] = 'r'
+            kw_lineplot.lw[-1] = 3*default_lw
+            kw_lineplot.linestyles[-1] = '--'
 
         # now plot the terms
         if ilat == 0 and ir == 0:
