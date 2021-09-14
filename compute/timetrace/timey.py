@@ -69,11 +69,10 @@ if rank == 0:
     if kwargs.qvals is None: # it's a quantity group
         groupname = kwargs.groupname
         qgroup = get_quantity_group(groupname, magnetism)
-        print (qgroup)
         qvals = qgroup['qvals']
     else:
         qvals = kwargs.qvals
-        groupname = input("choose a groupname to save your data:")
+        groupname = input("choose a groupname to save your data: ")
 
     rad = kwargs['rad']
     shav = kwargs['shav']
@@ -244,7 +243,7 @@ if rank == 0:
     else:
         basename = 'timelat'
     
-    basename += '_' + kwargs['groupname']
+    basename += '_' + groupname
     savename = basename + clas0['tag'] + '-' +\
             file_list[0] + '_' + file_list[-1] + '.pkl'
     savefile = datadir + savename

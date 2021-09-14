@@ -141,6 +141,7 @@ def read_clas(args):
             # qvals....make sure it's an integer array
             qvals = make_array(read_cla_vals(args, i))
             qvals = parse_quantities(qvals)[0]
+            clas['qvals'] = qvals
         elif arg == '--latrange':
             latmin, latmax, nlatvals = read_cla_vals(args, i)
             nlatvals = int(nlatvals)
