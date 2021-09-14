@@ -296,6 +296,18 @@ def get_quantity_group(groupname, magnetism):
         ncol = 3
         totsig = 'sumrow'
 
+    if groupname == 'teq': # thermal equation
+        ncol = 5
+        qvals = [1401, lookup('advref'), 1421, 1434, 1435]
+        titles = ['(-) adv (pert)', '(-) adv (ref)', 'cond', 'Q(r)', 'visc']
+        if magnetism:
+            ncol +=1
+            qvals.append(1436)
+            titles.append('joule')
+
+        totsig = np.ones(ncol)
+        totsig[0] = totsig[1] = -1
+
     # default just use the Rayleigh quantity abbreviations
     titles = parse_quantities(qvals)[1]
 
@@ -510,18 +522,6 @@ def get_quantity_group(groupname, magnetism):
         for j in range(3):
             for k in range(5):
                 titles.append(bases[k] + suffixes[j])
-
-    if groupname == 'teq': # thermal equation
-        ncol = 5
-        qvals = [1401, 'advref', 1421, 1434, 1435]
-        titles = ['(-) adv (pert)', '(-) adv (ref)', 'cond', 'Q(r)', 'visc']
-        if magnetism:
-            ncol +=1
-            qvals.append(1436)
-            titles.append('joule')
-
-        totsig = np.ones(ncol)
-        totsig[0] = totsig[1] = -1
 
     di_out['qvals'] = np.array(qvals)
     #di_out['qvals'] = qvals

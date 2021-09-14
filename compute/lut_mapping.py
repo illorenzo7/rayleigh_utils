@@ -3230,4 +3230,8 @@ name_given_code[2826] = "dpdz_p"
 code_given_name["dpdz_p"] = 2826
 tex_given_code[2826] = r"$\frac{\partial P^\prime}{\partial z}$"
 
+offset = 2900
+name_given_code[offset + 1] = 'advref'
 
+for key, val in name_given_code.items():
+    code_given_name[val] = key
