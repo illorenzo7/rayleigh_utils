@@ -527,7 +527,6 @@ def get_quantity_group(groupname, magnetism):
                 titles.append(bases[k] + suffixes[j])
 
     di_out['qvals'] = np.array(qvals)
-    #di_out['qvals'] = qvals
     di_out['titles'] = np.array(titles)
     di_out['ncol'] = ncol
     di_out['totsig'] = totsig

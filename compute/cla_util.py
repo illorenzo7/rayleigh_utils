@@ -6,6 +6,7 @@ import numpy as np
 #from common import get_parameter, get_domain_bounds, array_of_strings, is_an_int, rsun
 from common import *
 from varprops import *
+from lut import *
 
 def read_cla_vals(args, i):
     args_after = args[i+1:]
@@ -136,22 +137,10 @@ def read_clas(args):
             clas['val_iter'] = di_trans['val_iter']
         
         # desired quantity list (or group)
-        elif arg == '--qvals':
-            clas['totsig'] = None
-            clas['groupname'] = None
-            argvals = read_cla_vals(args, i)
-            if np.isscalar(argvals): # either group or one int/basic name
-                if is_an_int(argvals):
-                    clas['qvals'] = np.array([int(argvals)])
-                    clas['titles'] = array_of_strings(clas['qvals'])
-                else:
-                    groupname = argvals
-                    the_qgroup = get_quantity_group(groupname, magnetism)
-                    clas.update(the_qgroup)
-            else:
-                # this was a list of integers
-                clas['qvals'] = read_cla_vals(args, i)
-                clas['titles'] = array_of_strings(clas['qvals'])
+        elif arg == '--qvals': # able to specify either index or quantity name
+            # qvals....make sure it's an integer array
+            qvals = make_array(read_cla_vals(args, i))
+            qvals = parse_quantities(qvals)[0]
         elif arg == '--latrange':
             latmin, latmax, nlatvals = read_cla_vals(args, i)
             nlatvals = int(nlatvals)

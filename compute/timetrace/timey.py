@@ -64,9 +64,17 @@ if rank == 0:
     clas0, clas = read_clas(args)
     dirname = clas0['dirname']
     magnetism = clas0['magnetism']
-    kwargs_default = dict({'rad': False, 'shav': False,  'latvals': default_latvals, 'rvals': get_default_rvals(dirname)})
-    kwargs_default.update(get_quantity_group('b', magnetism))
+    kwargs_default = dict({'rad': False, 'shav': False,  'latvals': default_latvals, 'rvals': get_default_rvals(dirname), 'qvals': None, 'groupname': 'b'})
     kwargs = update_dict(kwargs_default, clas)
+    if kwargs.qvals is None: # it's a quantity group
+        groupname = kwargs.groupname
+        qgroup = get_quantity_group(groupname, magnetism)
+        print (qgroup)
+        qvals = qgroup['qvals']
+    else:
+        qvals = kwargs.qvals
+        groupname = input("choose a groupname to save your data:")
+
     rad = kwargs['rad']
     shav = kwargs['shav']
 
@@ -88,9 +96,6 @@ if rank == 0:
     di_grid = get_grid_info(dirname)
     rr = di_grid['rr']
     tt_lat = di_grid['tt_lat']
-
-    # get desired quantities
-    qvals = kwargs['qvals']
 
     # get indices associated with desired sample vals
     if not shav:
@@ -238,8 +243,8 @@ if rank == 0:
         basename = 'timeshav'
     else:
         basename = 'timelat'
-    if 'groupname' in kwargs:
-        basename += '_' + kwargs['groupname']
+    
+    basename += '_' + kwargs['groupname']
     savename = basename + clas0['tag'] + '-' +\
             file_list[0] + '_' + file_list[-1] + '.pkl'
     savefile = datadir + savename
