@@ -9,6 +9,7 @@
 import numpy as np
 import sys
 from common import array_of_strings
+from lut import *
 
 # basic variable indices
 var_indices = {\
@@ -175,232 +176,128 @@ def get_label(varname):
 
 # groups of quantities
 def get_quantity_group(groupname, magnetism):
-    di_out = dict({'groupname': groupname, 'totsig': None})
+    di_out = dict({'groupname': groupname})
+    ncol = None
+    totsig = None
 
     # set default qvals: velocity + vorticity, Pressure/ entropy
     # then possibly B, del x B
     if groupname == 'default':
         qvals = [1, 2, 3, 301, 302, 303, 501, 502]
-        titles = [r'$v_r$', r'$v_\theta$', r'$v_\phi$',\
-                r'$\omega_r$', r'$\omega_\theta$', r'$\omega_\phi$',\
-                r'$S$', r'$P$']
-
         if magnetism:
-            qvals += [801, 802, 803, 1001, 1002, 1003]
-            titles += [r'$B_r$', r'$B_\theta$', r'$B_\phi$',\
-                r'$\mathcal{J}_r$', r'$\mathcal{J}_\theta$', r'$\mathcal{J}_\phi$']
-        ncol = 4 + 3*magnetism
+            qvals += [801, 802, 803, 1001, 1004, 1007]
 
     if groupname == 'torque':
-        qvals = [3, 1801, 1802, 1803, 1804, 1819]
-        titles = [r'$v_\phi$', r'$-\tau_{\rm{rs}}$', r'$-\tau_{\rm{mc,v_\phi}}$',r'$\tau_{\rm{mc,\Omega_0}}$', r'$\tau_{\rm{v}}$',\
-          r'$\mathcal{L}_z$']
+        qvals = [1819, 1801, 1802, 1803, 1804]
 
         if magnetism:
             qvals += [1805, 1806]
-            titles += [r'$\tau_{\rm{mm}}$', r'$\tau_{\rm{ms}}$']
-        ncol = 3 + magnetism
-        totsig = np.ones(len(titles))
-        totsig[0] = totsig[5] = 0; totsig[1] = totsig[2] = -1
-        di_out['totsig'] = totsig
+        totsig = np.ones(len(qvals))
+        totsig[0] = 0; totsig[1] = totsig[2] = -1
 
     if groupname == 'induct':
         qvals = [801, 802, 803]            
         for j in range(1, 31):
             qvals.append(1600 + j)
-        titles = array_of_strings(qvals)
-        ncol = 11
 
     if groupname == 'v':
         qvals = [1, 2, 3]            
-        titles = [get_label('vr'), get_label('vt'), get_label('vp')]
         ncol = 3
 
     if groupname == 'b':
         qvals = [801, 802, 803]            
-        titles = [get_label('br'), get_label('bt'), get_label('bp')]
         ncol = 3
 
     if groupname == 'forcer': # linear forces, radial
         qvals = [1201, 1219, 1237, 1216, 1228]
-        titles= [r'$-(\mathbf{f}_{\rm{adv}})_r$', r'$(\mathbf{f}_{\rm{cor}})_r$',  r'$(\mathbf{f}_{\rm{p}})_r$', r'$(\mathbf{f}_{\rm{buoy}})_r$', r'$(\mathbf{f}_{\rm{v}})_r$']
         if magnetism:
             qvals += [1248]
-            titles += [r'$(\mathbf{f}_{\rm{mag}})_r$']
         ncol = 3
-        totsig = np.ones(len(titles))
+        totsig = np.ones(len(qvals))
         totsig[0] = -1
-        di_out['totsig'] = totsig
 
     if groupname == 'forcet': # linear forces, theta
         qvals = [1202, 1220, 1238, 1229]
-        titles= [r'$-(\mathbf{f}_{\rm{adv}})_\theta$', r'$(\mathbf{f}_{\rm{cor}})_\theta$',  r'$(\mathbf{f}_{\rm{p}})_\theta$',  r'$(\mathbf{f}_{\rm{v}})_\theta$']
         if magnetism:
             qvals += [1249]
-            titles += [r'$(\mathbf{f}_{\rm{mag}})_\theta$']
         ncol = 3
-        totsig = np.ones(len(titles))
+        totsig = np.ones(len(qvals))
         totsig[0] = -1
-        di_out['totsig'] = totsig
 
     if groupname == 'forcep': # linear forces, phi
         qvals = [1203, 1221, 1239, 1230]
-        titles= [r'$-(\mathbf{f}_{\rm{adv}})_\phi$', r'$(\mathbf{f}_{\rm{cor}})_\phi$',  r'$(\mathbf{f}_{\rm{p}})_\phi$',  r'$(\mathbf{f}_{\rm{v}})_\phi$']
         if magnetism:
             qvals += [1250]
-            titles += [r'$(\mathbf{f}_{\rm{mag}})_\phi$']
         ncol = 3
-        totsig = np.ones(len(titles))
+        totsig = np.ones(len(qvals))
         totsig[0] = -1
-        di_out['totsig'] = totsig
 
     if groupname == 'efr': # energy fluxes, r
         qvals = [1455, 1458, 1470, 1935, 1923]
-        titles = [r'$(\mathbf{\mathcal{F}}_{\rm{enth}})_r$',\
-          r'$(\mathbf{\mathcal{F}}_{\rm{enth,pp}})_r$',\
-          r'$(\mathbf{\mathcal{F}}_{\rm{cond}})_r$',\
-          r'$-(\mathbf{\mathcal{F}}_{\rm{visc}})_r$',\
-          r'$(\mathbf{\mathcal{F}}_{\rm{KE}})_r$']
         if magnetism:
             qvals += [2001]
-            titles += [r'$(\mathbf{\mathcal{F}}_{\rm{Poynt}})_r$']
         ncol = 3
-        totsig = np.ones(len(titles))
+        totsig = np.ones(len(qvals))
         totsig[3] = -1
-        di_out['totsig'] = totsig
 
     if groupname == 'eft': # energy fluxes, theta
         qvals = [1456, 1459, 1471, 1936, 1924]
-        titles = [r'$(\mathbf{\mathcal{F}}_{\rm{enth}})_\theta$',\
-          r'$(\mathbf{\mathcal{F}}_{\rm{enth,pp}})_\theta$',\
-          r'$(\mathbf{\mathcal{F}}_{\rm{cond}})_\theta$',\
-          r'$-(\mathbf{\mathcal{F}}_{\rm{visc}})_\theta$',\
-          r'$(\mathbf{\mathcal{F}}_{\rm{KE}})_\theta$']
         if magnetism:
             qvals += [2002]
-            titles += [r'$(\mathbf{\mathcal{F}}_{\rm{Poynt}})_\theta$']
         ncol = 3
-        di_out['totsig'] = 'sumrow'
-        totsig = np.ones(len(titles))
+        totsig = np.ones(len(qvals))
         totsig[3] = -1
-        di_out['totsig'] = totsig
 
     if groupname == 'efp': # energy fluxes, phi
         qvals = [1457, 1460, 1937, 1925]
-        titles = [r'$(\mathbf{\mathcal{F}}_{\rm{enth}})_\phi$',\
-          r'$(\mathbf{\mathcal{F}}_{\rm{enth,pp}})_\phi$',\
-          r'$-(\mathbf{\mathcal{F}}_{\rm{visc}})_\phi$',\
-          r'$(\mathbf{\mathcal{F}}_{\rm{KE}})_\phi$']
         if magnetism:
             qvals += [2003]
-            titles += [r'$(\mathbf{\mathcal{F}}_{\rm{Poynt}})_\phi$']
         ncol = 3
-        totsig = np.ones(len(titles))
+        totsig = np.ones(len(qvals))
         totsig[3] = -1
-        di_out['totsig'] = totsig
 
     if groupname == 'indr': # induction, r
-        qvals = [1601, 1602, 1603, 1604, 1605, 801]
-        titles = [r'$[\left\langle\mathbf{B}\cdot\nabla\mathbf{v}\right\rangle]_r$',\
-            r'$-\left\langleB_r(\nabla\cdot\mathbf{v})\right\rangle$',\
-            r'$-[\left\langle\mathbf{v}\cdot\nabla\mathbf{B}\right\rangle]_r$',\
-            r'$[\nabla\times(\left\langle\mathbf{v}\times\mathbf{B}\right\rangle)]_r$',\
-            r'$-[\nabla\times(\eta\nabla\times\langle\mathbf{B}\rangle)]_r$',\
-            r'$\left\langle B_r\right\rangle$']
-        ncol = 3
-        totsig = np.zeros(len(titles))
-        totsig[3] = totsig[4] = 1
-        di_out['totsig'] = totsig
+        qvals = [801, 1601, 1602, 1603, 1604, 1605]
+        totsig = np.zeros(len(qvals))
+        totsig[-2] = totsig[-1] = 1
 
     if groupname == 'indrmean': # energy fluxes, r, mean
-        qvals = [1616, 1617, 1618, 1619, 1620, 801]
-        titles = [r'$[\left\langle\mathbf{B}\right\rangle\cdot\nabla\left\langle\mathbf{v}\right\rangle]_r$',\
-    r'$-\left\langleB_r\right\rangle(\nabla\cdot\left\langle\mathbf{v}\right\rangle)$',\
-    r'$-[\left\langle\mathbf{v}\right\rangle\cdot\nabla\left\langle\mathbf{B}\right\rangle]_r$',\
-    r'$[\nabla\times(\left\langle\mathbf{v}\right\rangle\times\left\langle\mathbf{B}\right\rangle)]_r$',\
-    r'$-[\nabla\times(\eta\nabla\times\langle\mathbf{B}\rangle)]_r$',\
-    r'$\left\langleB_r\right\rangle$']
-        ncol = 3
-        totsig = np.zeros(len(titles))
-        totsig[3] = totsig[4] = 1
-        di_out['totsig'] = totsig
+        qvals = [1616, 1617, 1618, 1619, 1620]
+        totsig = np.zeros(len(qvals))
+        totsig[-2] = totsig[-1] = 1
 
     if groupname == 'indt': # energy fluxes, theta
-        qvals = [1606, 1607, 1608, 1609, 1610, 802]
-        titles = [r'$[\left\langle\mathbf{B}\cdot\nabla\mathbf{v}\right\rangle]_\theta$',\
-            r'$-\left\langleB_\theta(\nabla\cdot\mathbf{v})\right\rangle$',\
-            r'$-[\left\langle\mathbf{v}\cdot\nabla\mathbf{B}\right\rangle]_\theta$',\
-            r'$[\nabla\times(\left\langle\mathbf{v}\times\mathbf{B}\right\rangle)]_\theta$',\
-            r'$-[\nabla\times(\eta\nabla\times\langle\mathbf{B}\rangle)]_\theta$',\
-            r'$\left\langle B_\theta\right\rangle$']
-        ncol = 3
-        totsig = np.zeros(len(titles))
-        totsig[3] = totsig[4] = 1
-        di_out['totsig'] = totsig
+        qvals = [802, 1606, 1607, 1608, 1609, 1610]
+        totsig = np.zeros(len(qvals))
+        totsig[-2] = totsig[-1] = 1
 
     if groupname == 'indtmean': # energy fluxes, theta, mean
-        qvals = [1621, 1622, 1623, 1624, 1625, 802]
-        titles = [r'$[\left\langle\mathbf{B}\right\rangle\cdot\nabla\left\langle\mathbf{v}\right\rangle]_\theta$',\
-            r'$-\left\langleB_\theta\right\rangle(\nabla\cdot\left\langle\mathbf{v}\right\rangle)$',\
-            r'$-[\left\langle\mathbf{v}\right\rangle\cdot\nabla\left\langle\mathbf{B}\right\rangle]_\theta$',\
-            r'$[\nabla\times(\left\langle\mathbf{v}\right\rangle\times\left\langle\mathbf{B}\right\rangle)]_\theta$',\
-            r'$-[\nabla\times(\eta\nabla\times\langle\mathbf{B}\rangle)]_\theta$',\
-            r'$\left\langleB_\theta\right\rangle$']
-        ncol = 3
-        totsig = np.zeros(len(titles))
-        totsig[3] = totsig[4] = 1
-        di_out['totsig'] = totsig
+        qvals = [1621, 1622, 1623, 1624, 1625]
+        totsig = np.zeros(len(qvals))
+        totsig[-2] = totsig[-1] = 1
 
     if groupname == 'indp': # energy fluxes, phi
-        qvals = [1611, 1612, 1613, 1614, 1615, 803]
-
-        titles = [r'$[\left\langle\mathbf{B}\cdot\nabla\mathbf{v}\right\rangle]_\phi$',\
-        r'$-\left\langleB_\phi(\nabla\cdot\mathbf{v})\right\rangle$',\
-        r'$-[\left\langle\mathbf{v}\cdot\nabla\mathbf{B}\right\rangle]_\phi$',\
-        r'$[\nabla\times(\left\langle\mathbf{v}\times\mathbf{B}\right\rangle)]_\phi$',\
-        r'$-[\nabla\times(\eta\nabla\times\langle\mathbf{B}\rangle)]_\phi$',\
-        r'$\left\langle B_\phi\right\rangle$']
-        ncol = 3
-        totsig = np.zeros(len(titles))
-        totsig[3] = totsig[4] = 1
-        di_out['totsig'] = totsig
+        qvals = [803, 1611, 1612, 1613, 1614, 1615]
+        totsig = np.zeros(len(qvals))
+        totsig[-2] = totsig[-1] = 1
 
     if groupname == 'indpmean': # energy fluxes, phi, mean
-        qvals = [1626, 1627, 1628, 1629, 1630, 803]
-        titles = [r'$[\left\langle\mathbf{B}\right\rangle\cdot\nabla\left\langle\mathbf{v}\right\rangle]_\phi$',\
-            r'$-\left\langleB_\phi\right\rangle(\nabla\cdot\left\langle\mathbf{v}\right\rangle)$',\
-            r'$-[\left\langle\mathbf{v}\right\rangle\cdot\nabla\left\langle\mathbf{B}\right\rangle]_\phi$',\
-            r'$[\nabla\times(\left\langle\mathbf{v}\right\rangle\times\left\langle\mathbf{B}\right\rangle)]_\phi$',\
-            r'$-[\nabla\times(\eta\nabla\times\langle\mathbf{B}\rangle)]_\phi$',\
-            r'$\left\langleB_\phi\right\rangle$']
-        ncol = 3
-        totsig = np.zeros(len(titles))
-        totsig[3] = totsig[4] = 1
-        di_out['totsig'] = totsig
+        qvals = [1626, 1627, 1628, 1629, 1630]
+        totsig = np.zeros(len(qvals))
+        totsig[-2] = totsig[-1] = 1
 
     if groupname == 'ke':
         qvals = [402, 403, 404, 410, 411, 412]
-        titles =\
-            [r'$\overline{\rm{KE}}_{\rm{r}}$',\
-            r'$\overline{\rm{KE}}_{\rm{\theta}}$',\
-            r'$\overline{\rm{KE}}_{\rm{\phi}}$',\
-            r'$\rm{KE}^\prime_r$',\
-            r'$\rm{KE}^\prime_\theta$',\
-            r'$\rm{KE}^\prime_\phi$']
         ncol = 3
         totsig = 'sumrow'
     
     if groupname == 'me':
         qvals = [1102, 1103, 1104, 1110, 1111, 1112]
-        titles =\
-            [r'$\overline{\rm{ME}}_{\rm{r}}$',\
-            r'$\overline{\rm{ME}}_{\rm{\theta}}$',\
-            r'$\overline{\rm{ME}}_{\rm{\phi}}$',\
-            r'$\rm{ME}^\prime_r$',\
-            r'$\rm{ME}^\prime_\theta$',\
-            r'$\rm{ME}^\prime_\phi']
         ncol = 3
         totsig = 'sumrow'
+
+    # default just use the Rayleigh quantity abbreviations
+    titles = parse_quantities(qvals)[1]
 
     if 'meprod' in [groupname[:-3], groupname[:-4]]: # this is the exact stuff
         baselen = 6
@@ -453,8 +350,6 @@ def get_quantity_group(groupname, magnetism):
         totsig[0] = 1
         if ncol == 5: # include diffusion
             totsig[4] = 1
-        di_out['totsig'] = totsig
-
 
     if groupname[:9] == 'meprodnum':
         nq = 12 # (r, t, p) x (ind, shear, adv, comp)
@@ -503,9 +398,8 @@ def get_quantity_group(groupname, magnetism):
         titles += ['induct' + app, 'shear' + app, 'advec' + app,\
                     'comp' + app, 'diff' + app]
         ncol = 5
-        totsig = np.zeros(len(titles))
+        totsig = np.zeros(len(qvals))
         totsig[0] = totsig[4] = 1
-        di_out['totsig'] = totsig
 
     if groupname[:11] in ['meprodshear', 'meprodadvec']:
         nq = 15 # (r, t, p) x (br (d/dr), bt (d/dt), bp (d/dp), curv1, curv2
@@ -533,7 +427,7 @@ def get_quantity_group(groupname, magnetism):
             else:
                 titles += ['-vr (d/dr)' + app, '-vt (d/dT)' + app, '-vp (d/dP)' + app, 'curv1' + app, 'curv2' + app]
         ncol = 5
-        di_out['totsig'] = 'sumrow'
+        totsig = 'sumrow'
         #di_out['totsig'] = np.array([1, 1, 1, 1, 0]) # ignore the big
         # "curv 2" by default
 
@@ -592,7 +486,6 @@ def get_quantity_group(groupname, magnetism):
                 more_titles.append(titles[j] + '_' + ext)
             titles += more_titles
         ncol = 5 
-        di_out['totsig'] = 'sumrow'
 
     if groupname == 'magtorquemm':
         titles = [r'$\tau_{\rm{mm,r}}$', r'$\frac{r\sin\theta}{4\pi}\left\langle B_r\right\rangle\left\langle\frac{\partial B_\phi}{\partial r}\right\rangle$', r'$\frac{r\sin\theta}{4\pi}\left\langle B_\phi\right\rangle\left\langle\frac{\partial B_r}{\partial r}\right\rangle$', r'$\frac{3\sin\theta}{4\pi}\langle B_r\rangle\langle B_\phi\rangle$',\
@@ -627,12 +520,13 @@ def get_quantity_group(groupname, magnetism):
             qvals.append(1436)
             titles.append('joule')
 
-        di_out['totsig'] = np.ones(ncol)
-        di_out['totsig'][0] = di_out['totsig'][1] = -1
+        totsig = np.ones(ncol)
+        totsig[0] = totsig[1] = -1
 
     di_out['qvals'] = np.array(qvals)
     #di_out['qvals'] = qvals
     di_out['titles'] = np.array(titles)
     di_out['ncol'] = ncol
+    di_out['totsig'] = totsig
 
     return di_out

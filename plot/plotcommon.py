@@ -130,7 +130,7 @@ def make_figure(**kwargs):
         nplots = ncol = nrow = 1
     if nspec == 1: # 1 is specified
         if not nplots is None:
-            ncol = min(3, nplots)
+            ncol = min(5, nplots)
             nrow = int(np.ceil(nplots/ncol))
         elif not nrow is None:
             nplots = nrow

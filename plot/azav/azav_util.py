@@ -523,6 +523,8 @@ def plot_azav_grid(terms, rr, cost, **kwargs):
     # possibly sum some terms, based on totsig
     nplots = len(terms)
     if not kw.totsig is None:
+        if kw.ncol is None:
+            kw.ncol = nplots
         if np.isscalar(kw.totsig):
             if kw.totsig == 'sumrow':
                 ncol_loc = kw.ncol
