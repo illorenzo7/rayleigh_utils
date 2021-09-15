@@ -25,7 +25,7 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = get_parameter(dirname, 'magnetism')
 
 # SPECIFIC ARGS for etrace:
-kw_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'xvals': np.array([]), 'nquadr': None, 'nquadlat': None, 'qvals': None, 'groupname': 'b', 'totsig': None, 'titles': None})
+kw_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'xvals': np.array([]), 'nquadr': None, 'nquadlat': None, 'qvals': None, 'groupname': 'b', 'totsig': None, 'titles': None, 'justtot': False})
 
 # make figure kwargs
 lineplot_fig_dimensions['margin_top_inches'] = 3/4
@@ -171,27 +171,22 @@ for ilat in range(nquadlat):
             nterms += 1
             kw_lineplot.labels.append('sum')
 
-        equation_sets = ['torque', 'teq', 'forcer', 'forcet', 'forcep']
+        equation_sets = ['torque', 'teq', 'forcer', 'forcet', 'forcep', 'indr', 'indt', 'indp']
         if kw.groupname in equation_sets:
             # replace term with its time derivative
             terms[0] = drad(terms[0], times)
             kw_lineplot.labels[0] = 'd/dt'
             
-            # identify the derivative and the sum of the terms
-            kw_lineplot.colors = color_order[:nterms]
-            kw_lineplot.linestyles = [style_order[0]]*nterms
-            kw_lineplot.lw = [default_lw]*nterms
-
-            kw_lineplot.colors[0] = 'k'
-            kw_lineplot.lw[0] = default_lw
-            kw_lineplot.linestyles[-1] = '-'
-
-            kw_lineplot.colors[-1] = 'r'
-            kw_lineplot.lw[-1] = default_lw
-            kw_lineplot.linestyles[-1] = '--'
-
             kw_lineplot.legfrac = 0.6
 
+        if kw.justtot:
+            diff = terms[-1] - terms[0]
+            terms = [terms[0], terms[-1], diff]
+            nterms = 3
+            kw_lineplot.labels = ['d/dt', 'sum', 'diff']
+            kw_lineplot.linestyles = ['-', '--', ':']
+            kw_lineplot.colors = ['k', 'r', 'g']
+            
         # now thin the data on the terms #and times
         #times = thin_data(times[ixmin:ixmax+1], ntot)
         for iterm in range(nterms):
@@ -204,10 +199,14 @@ for ilat in range(nquadlat):
 
         if kw.groupname in equation_sets:
             # label the derivative ampltitude and sum amplitude
-            diff = terms[0] - terms[-1]
+            if kw.justtot:
+                tot = terms[-2]
+            else:
+                tot = terms[-1]
             quant = 'std(d/dt) = %1.3e' %np.std(terms[0])
-            quant += '\n' + 'std(sum) = %1.3e' %np.std(terms[-1])
+            quant += '\n' + 'std(sum) = %1.3e' %np.std(tot)
             quant += '\n' + 'std(d/dt - sum) = %1.3e' %np.std(diff)
+            quant += '\n' + 'err = %1.3e' %(np.std(diff)/np.std(terms[0]))
             xmin, xmax = ax.get_xlim()
             dx = xmax - xmin
             ymin, ymax = ax.get_ylim()
