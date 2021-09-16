@@ -143,8 +143,10 @@ if rank == 0:
     nquad = nquadlat*nquadr
 
     # deal with derived quantities....make sure it's an integer array
-    derive = make_array(kw.derive)
-    derive = parse_quantities(derive)[0]
+    derive = kw.derive
+    if not derive is None:
+        derive = make_array(kw.derive)
+        derive = parse_quantities(derive)[0]
 
     # update the actual boundary vals
     latbounds = tt_lat[ilatbounds]
