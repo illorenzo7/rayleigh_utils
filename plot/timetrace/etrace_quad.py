@@ -23,9 +23,15 @@ magnetism = get_parameter(dirname, 'magnetism')
 # SPECIFIC ARGS for etrace:
 kwargs_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'nodyn': False, 'dynfrac': 0.5, 'xvals': np.array([]), 'inte': False, 'nquadr': None, 'nquadlat': None})
 
+# make figure kwargs
+lineplot_fig_dimensions['margin_top_inches'] = 3/4
+make_figure_kwargs_default.update(lineplot_fig_dimensions)
+kwargs_default.update(make_figure_kwargs_default)
+
 # plots two more columns with energies in CZ and RZ separately 
 # update these defaults from command-line
 kwargs = update_dict(kwargs_default, clas)
+kw_make_figure = update_dict(make_figure_kwargs_default, clas)
 
 fontsize = default_titlesize
 the_file = kwargs.the_file
@@ -112,12 +118,15 @@ print ("after thin_data: len(xaxis) = %i" %len(xaxis))
 ntimes, nq, nquadlat, nquadr = np.shape(vals)
 nplots = nquadlat*nquadr
 
-# create figure with nquadr columns and nquadlat rows
-fig, axs = plt.subplots(nquadlat, nquadr, figsize=(3.5*nquadr, 10), sharex=True)
-if nquadlat == 1: # need the axis array to consistently be doubly indexed
-    axs = np.expand_dims(axs, 0)
-if nquadr == 1: # need the axis array to consistently be doubly indexed
-    axs = np.expand_dims(axs, 1)
+# now finally get the shape of the "vals" array
+ntimes, nq, nquadlat, nquadr = np.shape(vals)
+ntimes = len(xaxis)
+nplots = nquadlat*nquadr
+
+# create the figure dimensions
+kw_make_figure.nplots = nplots
+kw_make_figure.ncol = nquadr
+fig, axs, fpar = make_figure(**kw_make_figure)
 
 # Make thin lines to see structure of variation for ME
 lw = 0.5
