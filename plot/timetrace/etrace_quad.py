@@ -143,12 +143,6 @@ else:
         ax.ticklabel_format(scilimits = (-3,4), useMathText=True)
 
 # loop over different domains
-print ("nquadlat = ", nquadlat)
-print ("nquadr = ", nquadr)
-print ("shape vals = ", np.shape(vals))
-print ("shape times = ", np.shape(times))
-print ("shape iters = ", np.shape(iters))
-
 for ilat in range(nquadlat):
     for ir in range(nquadr):
         vals_loc = vals[:, :, ilat, ir]
@@ -235,10 +229,12 @@ for ilat in range(nquadlat):
 
         if ilat == 0 and ir == 0: # put a legend on the upper left axis
             #legfrac = 1/4
-            legfrac = 1/2
+            legfrac = 0.6
+            plotleg = True
             ax.legend(loc='lower left', ncol=3, fontsize=0.7*fontsize, columnspacing=1)
         else:
             legfrac = None
+            plotleg = False
 
         # set the y limits
         minmax_loc = minmax
@@ -247,16 +243,14 @@ for ilat in range(nquadlat):
                 # (will become default) if not in desired coordinates
                 minmax_loc = None
         if minmax_loc is None:
-            minmax_loc = lineplot_minmax(xaxis, all_e, logscale=logscale, legfrac=legfrac)
+            minmax_loc = lineplot_minmax(xaxis, all_e, logscale=logscale, legfrac=legfrac, plotleg=plotleg)
         if not ymin is None:
             minmax_loc = ymin, minmax_loc[1]
         if not ymax is None:
             minmax_loc = minmax_loc[0], ymax
         ax.set_ylim((minmax_loc[0], minmax_loc[1]))
 
-# Set some parameters defining all subplots
-# x limits and label
-axs[0, 0].set_xlim((xminmax[0], xminmax[1]))
+        ax.set_xlim((xminmax[0], xminmax[1]))
 if xiter:
     axs[-1, 0].set_xlabel('iteration #')
 else:
@@ -289,10 +283,6 @@ for ax in axs.flatten():
     plt.sca(ax)
     plt.minorticks_on()
     plt.tick_params(top=True, right=True, direction='in', which='both')
-
-# Space the subplots to make them look pretty
-plt.tight_layout()
-#plt.subplots_adjust(left=0.15, bottom=0.08, top=0.85, wspace=0.4)
 
 # Save the plot
 iter1, iter2 = get_iters_from_file(the_file)
