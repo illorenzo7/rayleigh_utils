@@ -179,6 +179,7 @@ def get_quantity_group(groupname, magnetism):
     di_out = dict({'groupname': groupname})
     ncol = None
     totsig = None
+    qvals = None
 
     # set default qvals: velocity + vorticity, Pressure/ entropy
     # then possibly B, del x B
@@ -311,8 +312,9 @@ def get_quantity_group(groupname, magnetism):
         totsig = np.ones(ncol)
         totsig[0] = totsig[1] = -1
 
-    # default just use the Rayleigh quantity abbreviations
-    titles = parse_quantities(qvals)[1]
+    # default just use the Rayleigh quantity abbreviations (if qvals has been defined by now)
+    if not qvals is None:
+        titles = parse_quantities(qvals)[1]
 
     if 'meprod' in [groupname[:-3], groupname[:-4]]: # this is the exact stuff
         baselen = 6
