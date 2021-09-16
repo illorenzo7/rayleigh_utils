@@ -4,7 +4,7 @@
 # namely iters_per_second (in real time) and
 # seconds_per_iter (in sim. time)
 # By default uses the last of the numbered logfiles in the directory
-# or else the logfile specified by -fname
+# or else the logfile specified by --fname
 import numpy as np
 import os, sys
 sys.path.append(os.environ['rapp'])
@@ -29,30 +29,21 @@ for i in range(nargs):
     elif arg == '--n':
         nlines_to_use = int(args[i+1])
 
-lognames = []
-lognumbers = []
-for name in os.listdir(dirname):
-    if 'logfile' in name:
-        # Make sure there is number following logfile
-        lastpart = name[7:]
-        try:
-            lognumbers.append(int(lastpart))
-            lognames.append(name)
-        except:
-            print ("Can't discern a number for %s" %name)
-            print ("Not considering %s by default" %name)
-            print ("To use it, specify -fname %s" %name)
-
-# convert to arrays
-lognames = np.array(lognames)
-lognumbers = np.array(lognumbers)
-
 if fname is None:
-    imax = np.argmax(lognumbers)
-    fname = lognames[imax]
+    lognames = []
+    for name in os.listdir(dirname):
+        if 'logfile' in name:
+            lognames.append(name)
+    lognames = np.sort(lognames)
+    if len(lognames) > 0:
+        fname = lognames[-1]
+    else:
+        print ('no logfiles found')
+        sys.exit()
 
-print ("In %s:" %fname)
-di = read_log(dirname + '/' + fname)
+fullname = dirname + '/' + fname
+print ("In %s:" %fullname)
+di = read_log(fullname)
 iters = di['iters'][1:]
 iters_per_sec = di['iters_per_sec'][1:] # first one is zero for some reason
 delta_t = di['delta_t'][1:]
@@ -97,7 +88,6 @@ iters_io = iters_io[it1_io:it2_io]
 iters_per_sec_io = iters_per_sec_io[it1_io:it2_io]
 delta_t_io = delta_t_io[it1_io:it2_io]
 
-
 print ("range = " + str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8))
 print ("ncpu: ", di['ncpu'])
 
@@ -109,11 +99,11 @@ runtime = np.sum(secs_per_iter)
 iotime = np.sum(secs_per_iter_io)
 
 iters_per_sec_av = niter/runtime
-print ("avg. iters/sec: %.2f" %iters_per_sec_av)
+print (make_bold("avg. iters/sec: %.2f" %iters_per_sec_av))
 print ("mean of rates:  %.2f" %np.mean(iters_per_sec))
-print ("avg. timestep:  %1.2e sec" %dt_av)
-print (make_bold("run time     :  " + format_time(runtime)))
-print (make_bold("est. I/O time:  " + format_time(iotime)))
+print (make_bold("avg. timestep:  %1.2e sec" %dt_av))
+print ("run time     :  " + format_time(runtime))
+print ("est. I/O time:  " + format_time(iotime))
 print ("frac run     :    %.3f" %((runtime - iotime)/runtime))
 print ("frac I/O     :    %.3f" %(iotime/runtime))
 print ("niter        :  ", niter)
