@@ -21,7 +21,7 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = get_parameter(dirname, 'magnetism')
 
 # SPECIFIC ARGS for etrace:
-kwargs_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'nodyn': False, 'dynfrac': 0.5, 'xvals': np.array([]), 'inte': False, 'nquadr': None, 'nquadlat': None})
+kwargs_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'nodyn': False, 'dynfrac': 0.5, 'xvals': np.array([]), 'inte': False, 'nquadr': None, 'nquadlat': None, 'etype': 'tot', 'legfrac': None})
 
 # make figure kwargs
 lineplot_fig_dimensions['margin_top_inches'] = 3/4
@@ -51,6 +51,8 @@ xvals = make_array(kwargs.xvals)
 plot_inte = kwargs.inte
 nquadlat = kwargs.nquadlat
 nquadr = kwargs.nquadr
+etype = kwargs.etype
+legfrac = kwargs.legfrac
 
 # deal with coords (if user wants minmax to only apply to certain subplots)
 if not coords is None:
@@ -149,91 +151,95 @@ for ilat in range(nquadlat):
         ax = axs[ilat, ir]
 
         all_e = []
-        for i in range(3): # tot, fluc, mean of energies
-            # KINETIC ENERGY
-            if i == 0: # tot
-                rke = vals_loc[:, lut[402]]
-                tke = vals_loc[:, lut[403]]
-                pke = vals_loc[:, lut[404]]
-                linestyle = '-'
-                label_pre = ''
-                label_app = ''
-            if i == 1: # fluc
-                rke = vals_loc[:, lut[410]]
-                tke = vals_loc[:, lut[411]]
-                pke = vals_loc[:, lut[412]]
-                linestyle = ':'
-                label_pre = ''
-                label_app = '\''
-            if i == 2: # mean
-                rke = vals_loc[:, lut[402]] - vals_loc[:, lut[410]]
-                tke = vals_loc[:, lut[403]] - vals_loc[:, lut[411]]
-                pke = vals_loc[:, lut[404]] - vals_loc[:, lut[412]]
-                linestyle = '--'
-                label_pre = '<'
-                label_app = '>'
-            ke = rke + tke + pke
+        # choose etype: tot, fluc, or mean of energies
 
-            # INTERNAL ENERGY
-            if plot_inte:
-                if i == 1: # fluc, no inte for fluctuating S'
-                    inte = np.zeros(len(xaxis))
-                else:
-                    inte = vals_loc[:, lut[701]]
-            
-            # MAGNETIC ENERGY
-            if magnetism:
-                if i == 0: # tot
-                    rme = vals_loc[:, lut[1102]]
-                    tme = vals_loc[:, lut[1103]]
-                    pme = vals_loc[:, lut[1104]]
-                if i == 1: # fluc
-                    rme = vals_loc[:, lut[1110]]
-                    tme = vals_loc[:, lut[1111]]
-                    pme = vals_loc[:, lut[1112]]
-                if i == 2: # mean
-                    rme = vals_loc[:, lut[1102]] - vals_loc[:, lut[1110]]
-                    tme = vals_loc[:, lut[1103]] - vals_loc[:, lut[1111]]
-                    pme = vals_loc[:, lut[1104]] - vals_loc[:, lut[1112]]
-                me = rme + tme + pme
+        # KINETIC ENERGY
+        if etype == 'tot':
+            rke = vals_loc[:, lut[402]]
+            tke = vals_loc[:, lut[403]]
+            pke = vals_loc[:, lut[404]]
+            label_pre = ''
+            label_app = ''
+        if etype == 'fluc':
+            rke = vals_loc[:, lut[410]]
+            tke = vals_loc[:, lut[411]]
+            pke = vals_loc[:, lut[412]]
+            label_pre = ''
+            label_app = '\''
+        if etype == 'mean':
+            rke = vals_loc[:, lut[402]] - vals_loc[:, lut[410]]
+            tke = vals_loc[:, lut[403]] - vals_loc[:, lut[411]]
+            pke = vals_loc[:, lut[404]] - vals_loc[:, lut[412]]
+            label_pre = '<'
+            label_app = '>'
+        ke = rke + tke + pke
 
-            # make line plots
+        # INTERNAL ENERGY
+        if plot_inte:
+            if etype == 'fluc': # no inte for fluctuating S'
+                inte = np.zeros(len(xaxis))
+            else:
+                inte = vals_loc[:, lut[701]]
+        
+        # MAGNETIC ENERGY
+        if magnetism:
+            if etype == 'tot':
+                rme = vals_loc[:, lut[1102]]
+                tme = vals_loc[:, lut[1103]]
+                pme = vals_loc[:, lut[1104]]
+            if etype == 'fluc':
+                rme = vals_loc[:, lut[1110]]
+                tme = vals_loc[:, lut[1111]]
+                pme = vals_loc[:, lut[1112]]
+            if etype == 'mean':
+                rme = vals_loc[:, lut[1102]] - vals_loc[:, lut[1110]]
+                tme = vals_loc[:, lut[1103]] - vals_loc[:, lut[1111]]
+                pme = vals_loc[:, lut[1104]] - vals_loc[:, lut[1112]]
+            me = rme + tme + pme
 
-            # KINETIC
-            # collect all the total energies together for min/max vals
-            all_e += [rke, tke, pke, ke]
+        # make line plots
 
-            ax.plot(xaxis, ke, color_order[0], linewidth=lw_ke, linestyle=linestyle, label=label_pre+'tot'+label_app)
-            ax.plot(xaxis, rke, color_order[1], linewidth=lw_ke, linestyle=linestyle, label=label_pre+'rad'+label_app)
-            ax.plot(xaxis, tke, color_order[2], linewidth=lw_ke, linestyle=linestyle, label=label_pre+'theta'+label_app)
-            ax.plot(xaxis, pke, color_order[3], linewidth=lw_ke, linestyle=linestyle, label=label_pre+'phi'+label_app)
+        # KINETIC
+        # collect all the total energies together for min/max vals
+        all_e += [rke, tke, pke, ke]
+        
+        ax.plot(xaxis, ke, color_order[0],\
+                linewidth=lw_ke, label=r'$\rm{KE_{tot}}$')
+        ax.plot(xaxis, rke, color_order[1],\
+                linewidth=lw_ke, label=r'$\rm{KE_r}$')
+        ax.plot(xaxis, tke, color_order[2],\
+                linewidth=lw_ke, label=r'$\rm{KE_\theta}$')
+        ax.plot(xaxis, pke, color_order[3],\
+                linewidth=lw_ke, label=r'$\rm{KE_\phi}$')
 
-            # INTERNAL
-            if plot_inte:
-                all_e += [inte]
-                ax.plot(xaxis, inte, color_order[4], linewidth=lw_inte, linestyle=linestyle, label='INTE')
+        # INTERNAL
+        if plot_inte:
+            all_e += [inte]
+            ax.plot(xaxis, inte, color_order[4], linewidth=lw_ke,\
+                    label='INTE')
 
-            # MAGNETIC
-            if magnetism:
-                if nodyn:
-                    tcut = tmin + dynfrac*(tmax - tmin)
-                    itcut = np.argmin(np.abs(times - tcut))
-                else:
-                    itcut = 0
-                all_e += [rme[itcut:], tme[itcut:], pme[itcut:], me[itcut:]]
+        # MAGNETIC
+        if magnetism:
+            if nodyn:
+                tcut = tmin + dynfrac*(tmax - tmin)
+                itcut = np.argmin(np.abs(times - tcut))
+            else:
+                itcut = 0
+            all_e += [rme[itcut:], tme[itcut:], pme[itcut:], me[itcut:]]
 
-                ax.plot(xaxis, me, color_order[0] + linestyle, linewidth=lw)
-                ax.plot(xaxis, rme, color_order[1] + linestyle, linewidth=lw)
-                ax.plot(xaxis, tme, color_order[2] + linestyle, linewidth=lw)
-                ax.plot(xaxis, pme, color_order[3] + linestyle, linewidth=lw)
+            ax.plot(xaxis, me, color_order[0] + '--',\
+                    linewidth=lw, label=r'$\rm{ME_{tot}}$')
+            ax.plot(xaxis, rme, color_order[1] + '--',\
+                    linewidth=lw, label=r'$\rm{ME_r}$')
+            ax.plot(xaxis, tme, color_order[2] + '--',\
+                    linewidth=lw, label=r'$\rm{ME_\theta}$')
+            ax.plot(xaxis, pme, color_order[3] + '--',\
+                    linewidth=lw, label=r'$\rm{ME_\phi}$')
 
         if ilat == 0 and ir == 0: # put a legend on the upper left axis
-            #legfrac = 1/4
-            legfrac = 0.6
             plotleg = True
             ax.legend(loc='lower left', ncol=3, fontsize=0.7*fontsize, columnspacing=1)
         else:
-            legfrac = None
             plotleg = False
 
         # set the y limits
@@ -291,7 +297,7 @@ tag = clas0['tag']
 if xiter and tag == '':
     tag = '_xiter'
 plotdir = my_mkdir(clas0['plotdir']) 
-basename = dataname.replace('G_Avgs_trace', 'etrace')
+basename = dataname.replace('G_Avgs_trace', 'etrace' + '_' + etype)
 savename = basename + tag + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
 
 if clas0['saveplot']:

@@ -236,9 +236,11 @@ for irow in range(3): # tot, fluc, mean
 
         if irow == 0 and icol == 0: # put a legend on the upper left axis
             legfrac = 1/4
+            plotleg = True
             ax.legend(loc='lower left', ncol=4, fontsize=0.8*fontsize, columnspacing=1)
         else:
             legfrac = None
+            plotleg = False
 
         # set the y limits
         minmax_loc = minmax
