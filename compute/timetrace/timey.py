@@ -64,8 +64,10 @@ if rank == 0:
     clas0, clas = read_clas(args)
     dirname = clas0['dirname']
     magnetism = clas0['magnetism']
-    kwargs_default = dict({'rad': False, 'shav': False,  'latvals': default_latvals, 'rvals': get_default_rvals(dirname), 'qvals': None, 'groupname': 'b'})
+    kwargs_default = dict({'rad': False, 'shav': False,  'latvals': default_latvals, 'rvals': None, 'qvals': None, 'groupname': 'b', 'rcut': None})
     kwargs = update_dict(kwargs_default, clas)
+    if kwargs.rvals is None:
+        kwargs.rvals = get_default_rvals(dirname, rcut=kwargs.rcut)
     if kwargs.qvals is None: # it's a quantity group
         groupname = kwargs.groupname
         qgroup = get_quantity_group(groupname, magnetism)
