@@ -183,7 +183,7 @@ for ilat in range(nquadlat):
             diff = terms[-1] - terms[0]
             terms = [terms[0], terms[-1], diff]
             nterms = 3
-            kw_lineplot.labels = ['d/dt', 'sum', 'diff']
+            kw_lineplot.labels = ['d/dt (LHS)', 'sum (RHS)', 'difference']
             kw_lineplot.linestyles = ['-', '--', ':']
             kw_lineplot.colors = ['k', 'r', 'g']
             
@@ -203,10 +203,11 @@ for ilat in range(nquadlat):
                 tot = terms[-2]
             else:
                 tot = terms[-1]
-            quant = 'std(d/dt) = %1.3e' %np.std(terms[0])
-            quant += '\n' + 'std(sum) = %1.3e' %np.std(tot)
-            quant += '\n' + 'std(d/dt - sum) = %1.3e' %np.std(diff)
-            quant += '\n' + 'err = %1.3e' %(np.std(diff)/np.std(terms[0]))
+                diff = tot - terms[0]
+            quant = 'rms(d/dt) = %1.3e' %rms(terms[0])
+            quant += '\n' + 'rms(sum) = %1.3e' %rms(tot)
+            quant += '\n' + 'rms(d/dt - sum) = %1.3e' %rms(diff)
+            quant += '\n' + 'err = %1.3e' %(rms(diff)/rms(terms[0]))
             xmin, xmax = ax.get_xlim()
             dx = xmax - xmin
             ymin, ymax = ax.get_ylim()
