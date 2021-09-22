@@ -319,7 +319,7 @@ def get_quantity_group(groupname, magnetism):
     if 'meprod' in [groupname[:-3], groupname[:-4]]: # this is the exact stuff
         baselen = 6
         ext = groupname[baselen:baselen + 3]
-        basetitles = ['induct', 'shear', 'advec', 'comp', 'diff']
+        basetitles = ['ME', 'induct', 'shear', 'advec', 'comp', 'diff']
 
         custom_offset = 2200
         set_offset = 15
@@ -349,24 +349,28 @@ def get_quantity_group(groupname, magnetism):
         if ext == 'ppp':
             ncol = 5
             iqstart = custom_offset + 1 + 2*set_offset + 2*set_offset2 + set_offset3
+        
 
         # do r, theta, then phi, production terms, in that order
         qvals = []
         titles = []
         count = 0
         for direc in ['r', 'th', 'ph']:
+            qvals += [1102 + count] # add in the magnetic energy
             qvals_loc = iqstart + np.arange(0, ncol*3, 3) + count
             qvals += qvals_loc.tolist()
             titles_loc = []
-            for j in range(ncol):
+            for j in range(ncol+1):
                 titles_loc.append(basetitles[j] + ' (' + ext + ', ' +\
                         direc + ')')
             titles += titles_loc
             count += 1
+        ncol += 1 # make room for magnetic energy
         totsig = np.zeros(ncol)
-        totsig[0] = 1
-        if ncol == 5: # include diffusion
-            totsig[4] = 1
+        totsig[0] = 0
+        totsig[1] = 1
+        if ncol == 6: # include diffusion
+            totsig[5] = 1
 
     if groupname[:9] == 'meprodnum':
         nq = 12 # (r, t, p) x (ind, shear, adv, comp)

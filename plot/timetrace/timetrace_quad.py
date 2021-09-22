@@ -180,12 +180,25 @@ for ilat in range(nquadlat):
             kw_lineplot.legfrac = 0.6
 
         if kw.justtot:
-            diff = terms[-1] - terms[0]
-            terms = [terms[0], terms[-1], diff]
-            nterms = 3
-            kw_lineplot.labels = ['d/dt (LHS)', 'sum (RHS)', 'difference']
-            kw_lineplot.linestyles = ['-', '--', ':']
-            kw_lineplot.colors = ['k', 'r', 'g']
+            ddt = terms[0]
+            tot = terms[-1]
+            difference = tot - ddt
+            if 'meprod' in kw.groupname: # add induction + diffusion
+                ddt *= (4*np.pi)
+                induct = terms[1]
+                diffusion = terms[-2]
+            if 'ind' in kw.groupname:
+                induct = terms[-3]
+                diffusion = terms[-2]
+            if 'meprod' in kw.groupname or 'ind' in kw.groupname:
+                terms = [induct, diffusion, tot, ddt, difference]
+                kw_lineplot.labels = ['induction', 'diffusion', 'ind + diff', 'd/dt (LHS)', 'RHS - LHS']
+            else:
+                terms = [tot, ddt, difference]
+                kw_lineplot.labels = ['sum (RHS)', 'd/dt (LHS)', 'RHS - LHS']
+                kw_lineplot.linestyles = ['-', '--', ':']
+                kw_lineplot.colors = ['k', 'r', 'g']
+            nterms = len(terms)
             
         # now thin the data on the terms #and times
         #times = thin_data(times[ixmin:ixmax+1], ntot)
