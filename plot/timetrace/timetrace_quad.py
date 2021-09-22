@@ -171,7 +171,7 @@ for ilat in range(nquadlat):
             nterms += 1
             kw_lineplot.labels.append('sum')
 
-        equation_sets = ['torque', 'teq', 'forcer', 'forcet', 'forcep', 'indr', 'indt', 'indp']
+        equation_sets = ['torque', 'teq', 'forcer', 'forcet', 'forcep', 'indr', 'indt', 'indp', 'meprodtotr', 'meprodtott', 'meprodtotp']
         if kw.groupname in equation_sets:
             # replace term with its time derivative
             terms[0] = drad(terms[0], times)
@@ -179,10 +179,12 @@ for ilat in range(nquadlat):
             
             kw_lineplot.legfrac = 0.6
 
+        # name these in case we quantify their rms later
+        ddt = terms[0]
+        tot = terms[-1]
+        difference = tot - ddt
+
         if kw.justtot:
-            ddt = terms[0]
-            tot = terms[-1]
-            difference = tot - ddt
             if 'meprod' in kw.groupname: # add induction + diffusion
                 ddt *= (4*np.pi)
                 induct = terms[1]
@@ -212,15 +214,10 @@ for ilat in range(nquadlat):
 
         if kw.groupname in equation_sets:
             # label the derivative ampltitude and sum amplitude
-            if kw.justtot:
-                tot = terms[-2]
-            else:
-                tot = terms[-1]
-                diff = tot - terms[0]
-            quant = 'rms(d/dt) = %1.3e' %rms(terms[0])
+            quant = 'rms(d/dt) = %1.3e' %rms(ddt)
             quant += '\n' + 'rms(sum) = %1.3e' %rms(tot)
-            quant += '\n' + 'rms(d/dt - sum) = %1.3e' %rms(diff)
-            quant += '\n' + 'err = %1.3e' %(rms(diff)/rms(terms[0]))
+            quant += '\n' + 'rms(d/dt - sum) = %1.3e' %rms(difference)
+            quant += '\n' + 'err = %1.3e' %(rms(difference)/rms(ddt))
             xmin, xmax = ax.get_xlim()
             dx = xmax - xmin
             ymin, ymax = ax.get_ylim()
