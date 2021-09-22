@@ -76,7 +76,7 @@ def fill_str(stri, lent, char):
 
 char = ' '
 
-headers = ['node type', 'requesting', 'using', 'total', 'req. ratio', 'use ratio']
+headers = ['node type', 'requesting', 'using', 'free', 'req. ratio', 'use ratio', 'cores free']
 col_buffer = 5
 whole_header = ''
 column_widths = []
@@ -103,9 +103,13 @@ del use[rmkey]
 total['Broadwell'] += total[rmkey]
 del total[rmkey]
 
+# set number of cores per node
+di_ncores = dict({'SandyBridge': 16, 'IvyBridge': 20, 'Haswell': 24, 'Broadwell': 28, 'Skylake': 40, 'Cascadelake': 40, 'ROME':128})
+
 for key in keys:
-    rowdata = [key, '%i' %req[key], '%i' %use[key], '%i' %total[key],\
-            '%.3f' %(req[key]/total[key]), '%.3f' %(use[key]/total[key])]
+    nfree = total[key] - use[key]
+    ncores = di_ncores[key]
+    rowdata = [key, '%i' %req[key], '%i' %use[key], '%i' %(nfree), '%.3f' %(req[key]/total[key]), '%.3f' %(use[key]/total[key]), '%i' %(nfree*ncores)]
     row = ''
     count = 0
     for datum in rowdata:
