@@ -21,7 +21,7 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = get_parameter(dirname, 'magnetism')
 
 # SPECIFIC ARGS for etrace:
-kwargs_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'nodyn': False, 'dynfrac': 0.5, 'xvals': np.array([]), 'inte': False, 'nquadr': None, 'nquadlat': None, 'etype': 'tot', 'legfrac': None})
+kwargs_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'nodyn': False, 'dynfrac': 0.5, 'xvals': np.array([]), 'inte': False, 'nquadr': None, 'nquadlat': None, 'etype': 'tot', 'legfrac': None, 'nomag': False, 'noke': False})
 
 # make figure kwargs
 lineplot_fig_dimensions['margin_top_inches'] = 3/4
@@ -53,6 +53,8 @@ nquadlat = kwargs.nquadlat
 nquadr = kwargs.nquadr
 etype = kwargs.etype
 legfrac = kwargs.legfrac
+noke = kwargs.noke
+nomag = kwargs.nomag
 
 # deal with coords (if user wants minmax to only apply to certain subplots)
 if not coords is None:
@@ -201,16 +203,17 @@ for ilat in range(nquadlat):
 
         # KINETIC
         # collect all the total energies together for min/max vals
-        all_e += [rke, tke, pke, ke]
-        
-        ax.plot(xaxis, ke, color_order[0],\
-                linewidth=lw_ke, label=r'$\rm{KE_{tot}}$')
-        ax.plot(xaxis, rke, color_order[1],\
-                linewidth=lw_ke, label=r'$\rm{KE_r}$')
-        ax.plot(xaxis, tke, color_order[2],\
-                linewidth=lw_ke, label=r'$\rm{KE_\theta}$')
-        ax.plot(xaxis, pke, color_order[3],\
-                linewidth=lw_ke, label=r'$\rm{KE_\phi}$')
+        if not noke:
+            all_e += [rke, tke, pke, ke]
+            
+            ax.plot(xaxis, ke, color_order[0],\
+                    linewidth=lw_ke, label=r'$\rm{KE_{tot}}$')
+            ax.plot(xaxis, rke, color_order[1],\
+                    linewidth=lw_ke, label=r'$\rm{KE_r}$')
+            ax.plot(xaxis, tke, color_order[2],\
+                    linewidth=lw_ke, label=r'$\rm{KE_\theta}$')
+            ax.plot(xaxis, pke, color_order[3],\
+                    linewidth=lw_ke, label=r'$\rm{KE_\phi}$')
 
         # INTERNAL
         if plot_inte:
@@ -219,22 +222,23 @@ for ilat in range(nquadlat):
                     label='INTE')
 
         # MAGNETIC
-        if magnetism:
-            if nodyn:
-                tcut = tmin + dynfrac*(tmax - tmin)
-                itcut = np.argmin(np.abs(times - tcut))
-            else:
-                itcut = 0
-            all_e += [rme[itcut:], tme[itcut:], pme[itcut:], me[itcut:]]
+        if not nomag:
+            if magnetism:
+                if nodyn:
+                    tcut = tmin + dynfrac*(tmax - tmin)
+                    itcut = np.argmin(np.abs(times - tcut))
+                else:
+                    itcut = 0
+                all_e += [rme[itcut:], tme[itcut:], pme[itcut:], me[itcut:]]
 
-            ax.plot(xaxis, me, color_order[0] + '--',\
-                    linewidth=lw, label=r'$\rm{ME_{tot}}$')
-            ax.plot(xaxis, rme, color_order[1] + '--',\
-                    linewidth=lw, label=r'$\rm{ME_r}$')
-            ax.plot(xaxis, tme, color_order[2] + '--',\
-                    linewidth=lw, label=r'$\rm{ME_\theta}$')
-            ax.plot(xaxis, pme, color_order[3] + '--',\
-                    linewidth=lw, label=r'$\rm{ME_\phi}$')
+                ax.plot(xaxis, me, color_order[0] + '--',\
+                        linewidth=lw, label=r'$\rm{ME_{tot}}$')
+                ax.plot(xaxis, rme, color_order[1] + '--',\
+                        linewidth=lw, label=r'$\rm{ME_r}$')
+                ax.plot(xaxis, tme, color_order[2] + '--',\
+                        linewidth=lw, label=r'$\rm{ME_\theta}$')
+                ax.plot(xaxis, pme, color_order[3] + '--',\
+                        linewidth=lw, label=r'$\rm{ME_\phi}$')
 
         if ilat == 0 and ir == 0: # put a legend on the upper left axis
             plotleg = True
