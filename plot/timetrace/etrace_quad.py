@@ -110,6 +110,9 @@ tmin, tmax = times[0], times[-1]
 vals = vals[ixmin:ixmax+1, :]
 
 # deal with x axis, maybe thinning data
+if np.all(ntot == 'full'):
+    print ('ntot = full')
+    ntot = len(times)
 print ("ntot = %i" %ntot)
 print ("before thin_data: len(xaxis) = %i" %len(xaxis))
 xaxis = thin_data(xaxis, ntot)
