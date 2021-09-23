@@ -809,8 +809,12 @@ def my_pcolormesh(field, fig, ax, **kwargs):
     else:
         vmin, vmax = kw.minmax
 
+    if kw.fullrange2: # need equally spaced levels on each side of zero
+        kw.norm = colors.TwoSlopeNorm(vmin=kw.minmax[0], vcenter=0, vmax=kw.minmax[1])
+
     if kw.cmap is None:
-        kw.cmap = 'jet'
+        #kw.cmap = 'jet'
+        kw.cmap = 'RdYlBu_r'
 
     # make color plot
     im = ax.pcolormesh(xx, yy, field, cmap=kw.cmap, norm=kw.norm, vmin=vmin, vmax=vmax)  
