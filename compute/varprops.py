@@ -447,10 +447,10 @@ def get_quantity_group(groupname, magnetism):
                 titles += ['br (d/dr)' + app, 'bt (d/dT)' + app, 'bp (d/dP)' + app, 'curv1' + app, 'curv2' + app]
             else:
                 titles += ['-vr (d/dr)' + app, '-vt (d/dT)' + app, '-vp (d/dP)' + app, 'curv1' + app, 'curv2' + app]
+
+        totsig = np.array([1, 1, 1, 1, 0]) # remove curv2 term by default
+                # must correct for this when plotting azimuthal shear
         ncol = 5
-        totsig = 'sumrow'
-        #di_out['totsig'] = np.array([1, 1, 1, 1, 0]) # ignore the big
-        # "curv 2" by default
 
     if groupname[:10] == 'meprodmean':
         nq = 15 # (shear, adv, comp, ind, diff) x (r, th, ph)
