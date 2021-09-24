@@ -320,7 +320,7 @@ def sci_format(num, ndec=1):
     return ((r'$%1.' + (r'%i' %ndec) + r'f\times10^{%i}$')\
             %(mantissa, exponent))
 
-lineplot_kwargs_default = dict({'xlabel': None, 'ylabel': None, 'title': None, 'xvals': np.array([]), 'yvals': np.array([]), 'labels': None, 'xlogscale': False, 'xminmax': None, 'minmax': None, 'xcut': None, 'minmax2': None, 'scatter': False, 'colors': color_order, 'linestyles': style_order[0], 'markers': marker_order[0], 'lw': default_lw, 's': default_s})
+lineplot_kwargs_default = dict({'xlabel': None, 'ylabel': None, 'title': None, 'xvals': np.array([]), 'yvals': np.array([]), 'labels': None, 'xlogscale': False, 'xminmax': None, 'minmax': None, 'xcut': None, 'minmax2': None, 'scatter': False, 'colors': color_order, 'linestyles': style_order[0], 'markers': marker_order[0], 'lw': default_lw, 's': default_s, 'ncolleg': 3})
 lineplot_kwargs_default.update(lineplot_minmax_kwargs_default)
 
 def lineplot(xx, profiles, ax, **kwargs):
@@ -476,7 +476,7 @@ def lineplot(xx, profiles, ax, **kwargs):
 
     # make the legend
     if kw.plotleg:
-        ax.legend(loc='lower left', ncol=3, fontsize=0.8*default_labelsize)
+        ax.legend(loc='lower left', ncol=kw.ncolleg, fontsize=0.8*default_labelsize)
 
 add_cbar_kwargs_default = dict({'minmax': None, 'cbar_thick': 1/8, 'cbar_aspect': 1/20, 'cbar_prec': 2, 'cbar_no': 1, 'cbar_pos': 'bottom', 'units': '', 'nosci': False, 'cbar_labels': None, 'cbar_fs': default_labelsize, 'tickvals': None, 'ticklabels': None, 'exp': 0, 'logscale': False, 'posdef': False, 'tol': 0.75})
 def add_cbar(fig, ax, im, **kwargs):
