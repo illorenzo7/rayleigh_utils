@@ -24,6 +24,7 @@ dirname_stripped = strip_dirname(dirname)
 kwargs_default = dict({'the_file': None, 'mark_bcz': False})
 kwargs_default.update(make_figure_kwargs_default)
 lineplot_kwargs_default['legfrac'] = 0.3
+lineplot_kwargs_default['plotleg'] = True
 kwargs_default.update(lineplot_kwargs_default)
 kw = update_dict(kwargs_default, clas)
 kw_make_figure = update_dict(make_figure_kwargs_default, clas)
@@ -142,8 +143,8 @@ kw_lineplot.ylabel = r'$4\pi r^2$' + '(flux)/' + r'$L_*$'
 # Try to find the BCZ from where enthalpy flux goes negative, if desired
 # avoid the outer boundary
 if kw.mark_bcz:
-    irneg = np.argmin(eflux[20:] > 0) + 20
-    irpos = np.argmin(eflux[20:] > 0) + 19
+    irneg = np.argmin(eflux[20:] > 0) + 20 # argmin gives first place condition breaks down
+    irpos = np.argmin(eflux[20:] > 0) + 19 # remember radial indices are reversed
     rrneg = rr[irneg]/rsun
     rrpos = rr[irpos]/rsun
     efluxneg = eflux[irneg]
@@ -153,6 +154,21 @@ if kw.mark_bcz:
     kw_lineplot.xvals = make_array(kw_lineplot.xvals, tolist=True)
     kw_lineplot.xvals.append(rbcz_est)
 
+    # also mark depth of overshoot
+    # see where eflux goes positive
+    mineflux = np.min(eflux)
+    tol = 0.05*mineflux # tol is negative
+    irbcz = np.copy(irneg)
+    irpos = np.argmin(eflux[irbcz:] < tol) + irbcz
+    irneg = np.argmin(eflux[irbcz:] < tol) + irbcz - 1
+    rrneg = rr[irneg]/rsun
+    rrpos = rr[irpos]/rsun
+    efluxneg = eflux[irneg]
+    efluxpos = eflux[irpos]
+    slope =  (efluxpos - efluxneg)/(rrpos - rrneg)
+    rov_est = rrneg - efluxneg/slope # remember rrneg is above now
+    kw_lineplot.xvals.append(rov_est)
+
 lineplot(rr/rsun, profiles_int, ax, **kw_lineplot)
 
 # make title 
@@ -161,6 +177,8 @@ time_string = get_time_string(dirname, iter1, iter2)
 the_title = dirname_stripped + '\n' +  'radial energy flux' + '\n' + time_string
 if kw.mark_bcz:
     the_title += ('\n' + r'$r_{BCZ}/R_\odot = %.3f$' %rbcz_est)
+    the_title += ('\n' + r'$r_{os}/R_\odot = %.3f$' %rov_est)
+
 margin_x = fpar['margin_left'] + fpar['sub_margin_left']
 margin_y = default_margin/fpar['height_inches']
 fig.text(margin_x, 1 - margin_y, the_title,\
