@@ -188,6 +188,7 @@ for ilat in range(nquadlat):
             if 'meprod' in kw.groupname: # add induction + diffusion
                 ddt *= (4*np.pi)
                 induct = terms[1]
+                difference = tot - ddt # need to recompute this now
                 diffusion = terms[-2]
             if 'ind' in kw.groupname:
                 induct = terms[-3]
