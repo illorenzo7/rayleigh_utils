@@ -2,10 +2,12 @@
 # Updated: 06/30/2021
 
 import numpy as np
+from scipy.integrate import simpson
 import sys, os
 sys.path.append(os.environ['raco'])
 from common import *
 from cla_util import *
+import lane_emden as le
 
 def compute_polytrope(ri, ro, Nrho, nr, poly_n, rho_i):
     d = ro - ri
@@ -77,3 +79,13 @@ def compute_polytrope2(**kwargs):
     S = cv_star*(kw.poly_n/1.5 - 1)*(np.log(r/kw.r0) - np.log(poly_a + (1 - poly_a)*(r/kw.r0)))
 
     return dict({'rr': r, 'rho': rho, 'dlnrho': dlnrho, 'd2lnrho': dlnrho, 'P': P, 'T': T,  'dlnT': dlnT, 'dSdr': dSdr, 'S': S})
+
+
+def compute_lane_emden(ri, ro, nr, poly_n, poly_mstar):
+    xi, theta = le.lane_emden(poly_n, nr)
+    integ = simpson(theta**poly_n, xi)
+    rho_c = 1
+
+
+
+
