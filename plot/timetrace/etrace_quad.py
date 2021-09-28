@@ -252,7 +252,7 @@ for ilat in range(nquadlat):
         # set the y limits
         minmax_loc = minmax
         if not coords is None:
-            if not (it, ir) in coords: # reset minmax_loc to None
+            if not (ilat, ir) in coords: # reset minmax_loc to None
                 # (will become default) if not in desired coordinates
                 minmax_loc = None
         if minmax_loc is None:
