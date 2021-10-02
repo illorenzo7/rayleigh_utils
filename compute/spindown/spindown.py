@@ -3,7 +3,8 @@
 from scipy.optimize import minimize
 import numpy as np
 
-tau_sun = 35. # convective overturning time of the Sun
+#tau_sun = 35. # convective overturning time of the Sun
+tau_sun = 16.
 age_sun = 4.6e3 # age of Sun in Myr
 P_sun = 25.38 # rotation period of the Sun (sidereal Carrington)
 # k_I = 452.
