@@ -48,9 +48,6 @@ def compute_r_grid(nr, rmin, rmax, use_extrema=False):
     return r, rw
 
 def compute_grid_info(domain_bounds, ncheby, nt, use_extrema=False):
-    if not isinstance(ncheby, tuple): # this is probably because
-        # ncheby was specified as nr, not (nr,)
-        ncheby = (ncheby,)
     ndomains = len(ncheby)
     nr = np.sum(ncheby)
     ri, ro = domain_bounds[0], domain_bounds[-1]
@@ -104,5 +101,5 @@ def compute_grid_info(domain_bounds, ncheby, nt, use_extrema=False):
     sint = np.sin(tt)
     nphi = 2*nt
     phi = 2*np.pi*np.arange(0, nphi)/nphi
-    dphi = 2*np.pi/nphi
+    dphi = 2*np.pi/nphi + np.zeros(nphi)
     return nr, nt, nphi, r, rw, tt, cost, sint, tw, phi, dphi
