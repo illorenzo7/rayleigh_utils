@@ -1,0 +1,122 @@
+&output_namelist
+! Variables to check the heat equation and momentum equation(s)
+
+point_probe_values =
+    ! FLUID VARIABLES
+    1,2,3, 501,502,
+    201,202,203,
+    ! KINETIC ENERGY
+	402,403,404,
+    ! THERMAL ENERGY
+    701,!internal energy (rhobar*Tbar*S)
+    ! KINETIC ENERGY EQUATION
+    1901,1904,1907,1910,
+    ! Pressure work, buoyancy work, viscous work on KE,\
+    ! minus advec. work, Lorentz work
+    ! THERMAL ENERGY EQUATION
+	1401,1402,1406, ! (minus) Advection (tot., fluc., vr_dsdr piece)
+    1421,1434,1435, ! vol. heating: conductive, internal, viscous/(rho*T)
+    ! TORQUE (AMOM PRODUCTION TERMS): minus RS, minus advec., Coriolis, viscous
+	1801,1802, 1803, 1804,
+    ! AMOM DENSITY (z,x,y: tot, fluc
+    1819, 1822,
+    ! MOMENTUM EQUATION: 
+	1201,1202,1203, 1210,1211,1212,
+    ! ADV: r,theta,phi: tot, pp (radial mm currently wrong in Diagnostics_Mean_Correction
+    1216, 1219,1220,1221, ! BUOYANCY (r), CORIOLIS (r, theta, phi)
+    1228,1229,1230, ! VISCOUS (r, theta, phi)
+    1237,1238,1239 ! PRESSURE (r, theta, phi)
+
+point_probe_frequency = 1
+point_probe_nrec = 1
+
+! basically equally spaced points in radius (assumes 2 dom), latitude, and azimuth
+point_probe_r_nrm = 0.025, 0.0625, 0.125, 0.1875, 0.25, 0.3125, 0.375, 0.4375, 0.475, 0.5, 0.525, 0.5625, 0.625, 0.6875, 0.75, 0.8125, 0.875, 0.9375, 0.975
+point_probe_theta_nrm = 0.05, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 0.95
+point_probe_phi_nrm = 0.0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875
+
+azavg_values = 
+    ! FLUID VARIABLES
+    1,2,3, 501,502,
+    201,202,203,
+    ! KINETIC ENERGY
+	402,403,404,
+    ! THERMAL ENERGY
+    701,!internal energy (rhobar*Tbar*S)
+    ! KINETIC ENERGY EQUATION
+    1901,1904,1907,1910,
+    ! Pressure work, buoyancy work, viscous work on KE,\
+    ! minus advec. work, Lorentz work
+    ! THERMAL ENERGY EQUATION
+	1401,1402,1406, ! (minus) Advection (tot., fluc., vr_dsdr piece)
+    1421,1434,1435, ! vol. heating: conductive, internal, viscous/(rho*T)
+    ! TORQUE (AMOM PRODUCTION TERMS): minus RS, minus advec., Coriolis, viscous
+	1801,1802, 1803, 1804,
+    ! AMOM DENSITY (z,x,y: tot, fluc
+    1819, 1822,
+    ! MOMENTUM EQUATION: 
+	1201,1202,1203, 1210,1211,1212,
+    ! ADV: r,theta,phi: tot, pp (radial mm currently wrong in Diagnostics_Mean_Correction
+    1216, 1219,1220,1221, ! BUOYANCY (r), CORIOLIS (r, theta, phi)
+    1228,1229,1230, ! VISCOUS (r, theta, phi)
+    1237,1238,1239 ! PRESSURE (r, theta, phi)
+azavg_frequency = 1
+azavg_nrec = 1
+
+shellavg_values =
+    ! FLUID VARIABLES
+    1,2,3, 501,502,
+    201,202,203,
+    ! KINETIC ENERGY
+	402,403,404,
+    ! THERMAL ENERGY
+    701,!internal energy (rhobar*Tbar*S)
+    ! KINETIC ENERGY EQUATION
+    1901,1904,1907,1910,
+    ! Pressure work, buoyancy work, viscous work on KE,\
+    ! minus advec. work, Lorentz work
+    ! THERMAL ENERGY EQUATION
+	1401,1402,1406, ! (minus) Advection (tot., fluc., vr_dsdr piece)
+    1421,1434,1435, ! vol. heating: conductive, internal, viscous/(rho*T)
+    ! TORQUE (AMOM PRODUCTION TERMS): minus RS, minus advec., Coriolis, viscous
+	1801,1802, 1803, 1804,
+    ! AMOM DENSITY (z,x,y: tot, fluc
+    1819, 1822,
+    ! MOMENTUM EQUATION: 
+	1201,1202,1203, 1210,1211,1212,
+    ! ADV: r,theta,phi: tot, pp (radial mm currently wrong in Diagnostics_Mean_Correction
+    1216, 1219,1220,1221, ! BUOYANCY (r), CORIOLIS (r, theta, phi)
+    1228,1229,1230, ! VISCOUS (r, theta, phi)
+    1237,1238,1239 ! PRESSURE (r, theta, phi)
+
+shellavg_frequency = 1
+shellavg_nrec = 1
+
+globalavg_values = 
+    ! FLUID VARIABLES
+    1,2,3, 501,502,
+    201,202,203,
+    ! KINETIC ENERGY
+	402,403,404,
+    ! THERMAL ENERGY
+    701,!internal energy (rhobar*Tbar*S)
+    ! KINETIC ENERGY EQUATION
+    1901,1904,1907,1910,
+    ! Pressure work, buoyancy work, viscous work on KE,\
+    ! minus advec. work, Lorentz work
+    ! THERMAL ENERGY EQUATION
+	1401,1402,1406, ! (minus) Advection (tot., fluc., vr_dsdr piece)
+    1421,1434,1435, ! vol. heating: conductive, internal, viscous/(rho*T)
+    ! TORQUE (AMOM PRODUCTION TERMS): minus RS, minus advec., Coriolis, viscous
+	1801,1802, 1803, 1804,
+    ! AMOM DENSITY (z,x,y: tot, fluc
+    1819, 1822,
+    ! MOMENTUM EQUATION: 
+	1201,1202,1203, 1210,1211,1212,
+    ! ADV: r,theta,phi: tot, pp (radial mm currently wrong in Diagnostics_Mean_Correction
+    1216, 1219,1220,1221, ! BUOYANCY (r), CORIOLIS (r, theta, phi)
+    1228,1229,1230, ! VISCOUS (r, theta, phi)
+    1237,1238,1239 ! PRESSURE (r, theta, phi)
+globalavg_frequency = 1
+globalavg_nrec = 1
+/

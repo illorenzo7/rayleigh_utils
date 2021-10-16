@@ -1,0 +1,177 @@
+&output_namelist
+! Variables to check the heat equation, momentum equation(s)
+! and induction equation(s)
+! (includes custom magnetic energy production terms...)
+
+point_probe_values =
+    ! FLUID VARIABLES
+    1,2,3, 501,502,
+    201,202,203, 801,802,803,
+    ! KINETIC ENERGY
+	402,403,404,
+    ! THERMAL ENERGY
+    701,!internal energy (rhobar*Tbar*S)
+    ! MAGNETIC ENERGY
+ 	1102,1103,1104,
+    ! KINETIC ENERGY EQUATION
+    1901,1904,1907,1910,1916,
+    ! Pressure work, buoyancy work, viscous work on KE,\
+    ! minus advec. work, Lorentz work
+    ! THERMAL ENERGY EQUATION
+	1401,1402,1406, ! (minus) Advection (tot., fluc., vr_dsdr piece)
+    1421,1434,1435,1436, ! vol. heating: conductive, internal, viscous/(rho*T), Ohmic/(rho*T)
+    ! MAGNETIC ENERGY EQUATION (all terms must be / (4*pi))
+    2019,
+    2025,2026,2027,
+    ! ishear_work, iadvec_work, icomp_work: tot, mmm, ppp)
+    2043,2044,2045, ! idiff_work: tot, pp, mm
+    ! TORQUE (AMOM PRODUCTION TERMS): minus RS, minus advec., Coriolis, viscous, Maxwell: mm, pp
+	1801,1802, 1803, 1804, 1805,1806,
+    ! AMOM DENSITY (z,x,y: tot, fluc
+    1819, 1822,
+    ! MOMENTUM EQUATION: 
+	1201,1202,1203, 1210,1211,1212,
+    ! ADV: r,theta,phi: tot, pp (radial mm currently wrong in Diagnostics_Mean_Correction
+    1216, 1219,1220,1221, ! BUOYANCY (r), CORIOLIS (r, theta, phi)
+    1228,1229,1230, ! VISCOUS (r, theta, phi)
+    1237,1238,1239, ! PRESSURE (r, theta, phi)
+    1248,1249,1250,
+    ! INDUCTION
+    1604,1605, 1609,1610, 1614,1615, !total: transport, diffusion: r,t,p
+    1601,1602,1603, 1606,1607,1608, 1611,1612,1613, !total: shear,comp,adv: r,t,p
+    ! CUSTOM MAG. ENERGY (must be / (4*pi)): 
+    2201, 2202, 2203, 2204, 2205, 2206, 2207, 2208, 2209, 2210, 2211,
+       2212, 2213, 2214, 2215
+point_probe_frequency = 1
+point_probe_nrec = 1
+
+point_probe_r_nrm = 0.025, 0.0625, 0.125, 0.1875, 0.25, 0.3125, 0.375, 0.4375, 0.475, 0.5, 0.525, 0.5625, 0.625, 0.6875, 0.75, 0.8125, 0.875, 0.9375, 0.975
+point_probe_theta_nrm = 0.05, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 0.95
+point_probe_phi_nrm = 0.0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875
+
+azavg_values = 
+    ! FLUID VARIABLES
+    1,2,3, 501,502,
+    201,202,203, 801,802,803,
+    ! KINETIC ENERGY
+	402,403,404,
+    ! THERMAL ENERGY
+    701,!internal energy (rhobar*Tbar*S)
+    ! MAGNETIC ENERGY
+ 	1102,1103,1104,
+    ! KINETIC ENERGY EQUATION
+    1901,1904,1907,1910,1916,
+    ! Pressure work, buoyancy work, viscous work on KE,\
+    ! minus advec. work, Lorentz work
+    ! THERMAL ENERGY EQUATION
+	1401,1402,1406, ! (minus) Advection (tot., fluc., vr_dsdr piece)
+    1421,1434,1435,1436, ! vol. heating: conductive, internal, viscous/(rho*T), Ohmic/(rho*T)
+    ! MAGNETIC ENERGY EQUATION (all terms must be / (4*pi))
+    2019,
+    2025,2026,2027,
+    ! ishear_work, iadvec_work, icomp_work: tot, mmm, ppp)
+    2043,2044,2045, ! idiff_work: tot, pp, mm
+    ! TORQUE (AMOM PRODUCTION TERMS): minus RS, minus advec., Coriolis, viscous, Maxwell: mm, pp
+	1801,1802, 1803, 1804, 1805,1806,
+    ! AMOM DENSITY (z,x,y: tot, fluc
+    1819, 1822,
+    ! MOMENTUM EQUATION: 
+	1201,1202,1203, 1210,1211,1212,
+    ! ADV: r,theta,phi: tot, pp (radial mm currently wrong in Diagnostics_Mean_Correction
+    1216, 1219,1220,1221, ! BUOYANCY (r), CORIOLIS (r, theta, phi)
+    1228,1229,1230, ! VISCOUS (r, theta, phi)
+    1237,1238,1239, ! PRESSURE (r, theta, phi)
+    1248,1249,1250,
+    ! INDUCTION
+    1604,1605, 1609,1610, 1614,1615, !total: transport, diffusion: r,t,p
+    1601,1602,1603, 1606,1607,1608, 1611,1612,1613, !total: shear,comp,adv: r,t,p
+    ! CUSTOM MAG. ENERGY (must be / (4*pi)): 
+    2201, 2202, 2203, 2204, 2205, 2206, 2207, 2208, 2209, 2210, 2211,
+       2212, 2213, 2214, 2215
+azavg_frequency = 1
+azavg_nrec = 1
+
+shellavg_values =
+    ! FLUID VARIABLES
+    1,2,3, 501,502,
+    201,202,203, 801,802,803,
+    ! KINETIC ENERGY
+	402,403,404,
+    ! THERMAL ENERGY
+    701,!internal energy (rhobar*Tbar*S)
+    ! MAGNETIC ENERGY
+ 	1102,1103,1104,
+    ! KINETIC ENERGY EQUATION
+    1901,1904,1907,1910,1916,
+    ! Pressure work, buoyancy work, viscous work on KE,\
+    ! minus advec. work, Lorentz work
+    ! THERMAL ENERGY EQUATION
+	1401,1402,1406, ! (minus) Advection (tot., fluc., vr_dsdr piece)
+    1421,1434,1435,1436, ! vol. heating: conductive, internal, viscous/(rho*T), Ohmic/(rho*T)
+    ! MAGNETIC ENERGY EQUATION (all terms must be / (4*pi))
+    2019,
+    2025,2026,2027,
+    ! ishear_work, iadvec_work, icomp_work: tot, mmm, ppp)
+    2043,2044,2045, ! idiff_work: tot, pp, mm
+    ! TORQUE (AMOM PRODUCTION TERMS): minus RS, minus advec., Coriolis, viscous, Maxwell: mm, pp
+	1801,1802, 1803, 1804, 1805,1806,
+    ! AMOM DENSITY (z,x,y: tot, fluc
+    1819, 1822,
+    ! MOMENTUM EQUATION: 
+	1201,1202,1203, 1210,1211,1212,
+    ! ADV: r,theta,phi: tot, pp (radial mm currently wrong in Diagnostics_Mean_Correction
+    1216, 1219,1220,1221, ! BUOYANCY (r), CORIOLIS (r, theta, phi)
+    1228,1229,1230, ! VISCOUS (r, theta, phi)
+    1237,1238,1239, ! PRESSURE (r, theta, phi)
+    1248,1249,1250,
+    ! INDUCTION
+    1604,1605, 1609,1610, 1614,1615, !total: transport, diffusion: r,t,p
+    1601,1602,1603, 1606,1607,1608, 1611,1612,1613, !total: shear,comp,adv: r,t,p
+    ! CUSTOM MAG. ENERGY (must be / (4*pi)): 
+    2201, 2202, 2203, 2204, 2205, 2206, 2207, 2208, 2209, 2210, 2211,
+       2212, 2213, 2214, 2215
+shellavg_frequency = 1
+shellavg_nrec = 1
+
+globalavg_values = 
+    ! FLUID VARIABLES
+    1,2,3, 501,502,
+    201,202,203, 801,802,803,
+    ! KINETIC ENERGY
+	402,403,404,
+    ! THERMAL ENERGY
+    701,!internal energy (rhobar*Tbar*S)
+    ! MAGNETIC ENERGY
+ 	1102,1103,1104,
+    ! KINETIC ENERGY EQUATION
+    1901,1904,1907,1910,1916,
+    ! Pressure work, buoyancy work, viscous work on KE,\
+    ! minus advec. work, Lorentz work
+    ! THERMAL ENERGY EQUATION
+	1401,1402,1406, ! (minus) Advection (tot., fluc., vr_dsdr piece)
+    1421,1434,1435,1436, ! vol. heating: conductive, internal, viscous/(rho*T), Ohmic/(rho*T)
+    ! MAGNETIC ENERGY EQUATION (all terms must be / (4*pi))
+    2019,
+    2025,2026,2027,
+    ! ishear_work, iadvec_work, icomp_work: tot, mmm, ppp)
+    2043,2044,2045, ! idiff_work: tot, pp, mm
+    ! TORQUE (AMOM PRODUCTION TERMS): minus RS, minus advec., Coriolis, viscous, Maxwell: mm, pp
+	1801,1802, 1803, 1804, 1805,1806,
+    ! AMOM DENSITY (z,x,y: tot, fluc
+    1819, 1822,
+    ! MOMENTUM EQUATION: 
+	1201,1202,1203, 1210,1211,1212,
+    ! ADV: r,theta,phi: tot, pp (radial mm currently wrong in Diagnostics_Mean_Correction
+    1216, 1219,1220,1221, ! BUOYANCY (r), CORIOLIS (r, theta, phi)
+    1228,1229,1230, ! VISCOUS (r, theta, phi)
+    1237,1238,1239, ! PRESSURE (r, theta, phi)
+    1248,1249,1250,
+    ! INDUCTION
+    1604,1605, 1609,1610, 1614,1615, !total: transport, diffusion: r,t,p
+    1601,1602,1603, 1606,1607,1608, 1611,1612,1613, !total: shear,comp,adv: r,t,p
+    ! CUSTOM MAG. ENERGY (must be / (4*pi)): 
+    2201, 2202, 2203, 2204, 2205, 2206, 2207, 2208, 2209, 2210, 2211,
+       2212, 2213, 2214, 2215
+globalavg_frequency = 1
+globalavg_nrec = 1
+/
