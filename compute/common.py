@@ -1337,10 +1337,12 @@ default_latvals = np.array([-85., -75., -60., -45., -30., -15., 0., 15., 30., 45
 
 def get_default_rvals(dirname, rcut=None):
     ncheby, domain_bounds = get_domain_bounds(dirname)
+    rmin, rmax = np.min(domain_bounds), np.max(domain_bounds)
+    domain_bounds = rmin, rmax
+    ndomains = 1
     if not rcut is None:
-        rmin, rmax = np.min(domain_bounds), np.max(domain_bounds)
         domain_bounds = rmin, rcut*rsun, rmax
-    ndomains = len(domain_bounds) - 1
+        ndomains = 2
     basedepths = np.array([0.05, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 0.95, 1.0])
     rvals = np.array([], dtype='float')
     for idomain in range(ndomains):

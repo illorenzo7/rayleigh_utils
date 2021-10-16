@@ -67,7 +67,16 @@ if rank == 0:
     kwargs_default = dict({'rad': False, 'shav': False,  'latvals': default_latvals, 'rvals': None, 'qvals': None, 'groupname': 'b', 'rcut': None})
     kwargs = update_dict(kwargs_default, clas)
     if kwargs.rvals is None:
-        kwargs.rvals = get_default_rvals(dirname, rcut=kwargs.rcut)
+        rvals = get_default_rvals(dirname, rcut=kwargs.rcut)
+        if kwargs.rcut is None:
+            rtag = ''
+        else:
+            rtag = '_rcut%0.3f' %kwargs.rcut
+    else:
+        rvals = kwargs.rvals
+        rtag = input("choose a tag name for your chosen rvals: ")
+        rtag = '_' + rtag
+
     if kwargs.qvals is None: # it's a quantity group
         groupname = kwargs.groupname
         qgroup = get_quantity_group(groupname, magnetism)
@@ -104,7 +113,7 @@ if rank == 0:
             samplevals = kwargs['latvals']
             sampleaxis = tt_lat
         else:
-            samplevals = kwargs['rvals']
+            samplevals = rvals
             sampleaxis = rr/rsun
 
         isamplevals = []
@@ -245,7 +254,7 @@ if rank == 0:
     else:
         basename = 'timelat'
     
-    basename += '_' + groupname
+    basename += '_' + groupname + rtag
     savename = basename + clas0['tag'] + '-' +\
             file_list[0] + '_' + file_list[-1] + '.pkl'
     savefile = datadir + savename
