@@ -23,7 +23,7 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = clas0['magnetism']
 
 # defaults
-kwargs_default = dict({'the_file': None, 'ntot': 2000, 'clat': 10, 'dlat': 0, 'om': None, 'rad': False, 'lon': False, 'shav': False, 'isamplevals': np.array([0]), 'samplevals': None})
+kwargs_default = dict({'the_file': None, 'ntot': 2000, 'clat': 10, 'dlat': 0, 'om': None, 'rad': False, 'lon': False, 'shav': False, 'isamplevals': np.array([0]), 'samplevals': None, 'rcut': None})
 kwargs_default.update(get_quantity_group('b', magnetism))
 kwargs_default.update(plot_timey_kwargs_default)
 
@@ -57,6 +57,9 @@ elif kw.shav:
 dataname = datatype
 if 'groupname' in kw:
     dataname += '_' + kw.groupname
+if 'rcut' in kw:
+    dataname += '_rcut%0.3f' %kw.rcut
+
 dataname += clas0['tag']
 
 # get data
