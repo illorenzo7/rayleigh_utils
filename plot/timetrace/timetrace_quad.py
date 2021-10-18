@@ -128,6 +128,9 @@ iters = iters[ixmin:ixmax+1]
 #vals = vals[ixmin:ixmax+1, :] # keep the full vals array for now
 
 # deal with x axis, maybe thinning data
+if np.all(ntot == 'full'):
+    print ('ntot = full')
+    ntot = len(times)
 print ("ntot = %i" %ntot)
 print ("before thin_data: len(xaxis) = %i" %len(xaxis))
 xaxis = thin_data(xaxis, ntot)
