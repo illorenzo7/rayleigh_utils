@@ -469,7 +469,7 @@ def get_quantity_group(groupname, magnetism):
             titles += ['shear' + app, 'comp' + app, 'advec' + app,
                     'induct' + app, 'diff' + app]
         ncol = 5
-        di_out['totsig'] = np.array([0, 0, 0, 1, 1])
+        totsig = np.array([0, 0, 0, 1, 1])
 
     if groupname[:6] == 'meprod':
         if len(groupname) == baselen + 4: # another extension, 
