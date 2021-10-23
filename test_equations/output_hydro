@@ -12,9 +12,9 @@ point_probe_values =
     ! KINETIC ENERGY EQUATION
     1901,1904,1907,1910,
     ! Pressure work, buoyancy work, viscous work on KE,\
-    ! minus advec. work, Lorentz work
+    ! minus advec. work
     ! THERMAL ENERGY EQUATION
-	1401,1402,1406, ! (minus) Advection (tot., fluc., vr_dsdr piece)
+	1401,1402,1406,1479,! (minus) Advection (tot., fluc., vr_dsdr piece, ref_adv)
     1421,1434,1435, ! vol. heating: conductive, internal, viscous/(rho*T)
     ! TORQUE (AMOM PRODUCTION TERMS): minus RS, minus advec., Coriolis, viscous
 	1801,1802, 1803, 1804,
@@ -46,9 +46,9 @@ azavg_values =
     ! KINETIC ENERGY EQUATION
     1901,1904,1907,1910,
     ! Pressure work, buoyancy work, viscous work on KE,\
-    ! minus advec. work, Lorentz work
+    ! minus advec. work
     ! THERMAL ENERGY EQUATION
-	1401,1402,1406, ! (minus) Advection (tot., fluc., vr_dsdr piece)
+	1401,1402,1406,1479,! (minus) Advection (tot., fluc., vr_dsdr piece, ref_adv)
     1421,1434,1435, ! vol. heating: conductive, internal, viscous/(rho*T)
     ! TORQUE (AMOM PRODUCTION TERMS): minus RS, minus advec., Coriolis, viscous
 	1801,1802, 1803, 1804,
@@ -74,9 +74,9 @@ shellavg_values =
     ! KINETIC ENERGY EQUATION
     1901,1904,1907,1910,
     ! Pressure work, buoyancy work, viscous work on KE,\
-    ! minus advec. work, Lorentz work
+    ! minus advec. work
     ! THERMAL ENERGY EQUATION
-	1401,1402,1406, ! (minus) Advection (tot., fluc., vr_dsdr piece)
+	1401,1402,1406,1479,! (minus) Advection (tot., fluc., vr_dsdr piece, ref_adv)
     1421,1434,1435, ! vol. heating: conductive, internal, viscous/(rho*T)
     ! TORQUE (AMOM PRODUCTION TERMS): minus RS, minus advec., Coriolis, viscous
 	1801,1802, 1803, 1804,
@@ -103,9 +103,9 @@ globalavg_values =
     ! KINETIC ENERGY EQUATION
     1901,1904,1907,1910,
     ! Pressure work, buoyancy work, viscous work on KE,\
-    ! minus advec. work, Lorentz work
+    ! minus advec. work
     ! THERMAL ENERGY EQUATION
-	1401,1402,1406, ! (minus) Advection (tot., fluc., vr_dsdr piece)
+	1401,1402,1406,1479,! (minus) Advection (tot., fluc., vr_dsdr piece, ref_adv)
     1421,1434,1435, ! vol. heating: conductive, internal, viscous/(rho*T)
     ! TORQUE (AMOM PRODUCTION TERMS): minus RS, minus advec., Coriolis, viscous
 	1801,1802, 1803, 1804,
