@@ -66,7 +66,7 @@ kw.varnames = make_array(kw.varnames)
 basename = plottype
 if kw.av:
     basename += 'av'
-plotdir = my_mkdir(clas0['plotdir'] + basename + '/')
+plotdir = my_mkdir(clas0['plotdir'] + basename + clas0['tag'] + '/')
 
 # get shell slice, range (for movie), or average
 onefile = True
