@@ -18,7 +18,7 @@ dirname = clas0.dirname
 dirname_stripped = strip_dirname(dirname)
 
 # SPECIFIC ARGS
-kwargs_default = dotdict(dict({'the_file': None, 'av': False, 'val_iter': int(1e9), 'irvals': np.array([0]), 'rvals': None, 'varnames': np.array(['vr'])}))
+kwargs_default = dotdict(dict({'the_file': None, 'av': False, 'val_iter': int(1e9), 'irvals': np.array([0]), 'rvals': None, 'varnames': np.array(['vr']), 'labelbyindex': False}))
 # this guy need to update right away to choose fig dimensions
 if 'type' in clas:
     plottype = clas.type
@@ -148,7 +148,10 @@ for fname in file_list:
                 savename = basename + '_' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8)
             else:
                 savename = basename + '_' + str(a.iters[0]).zfill(8)
-            savename += ('_' + simple_label + ('_rval%0.3f' %rval) + '.png')
+            if kw.labelbyindex:
+                savename += ('_' + simple_label + ('_irval%03i' %irval) + '.png')
+            else:
+                savename += ('_' + simple_label + ('_rval%0.3f' %rval) + '.png')
 
             # make plot
             fig, axs, fpar = make_figure(**kw_make_figure)
