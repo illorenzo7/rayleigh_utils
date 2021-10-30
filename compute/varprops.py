@@ -8,7 +8,7 @@
 # of other fluid variables
 import numpy as np
 import sys
-from common import array_of_strings
+from common import array_of_strings, is_an_int
 from lut import *
 
 # basic variable indices
@@ -96,7 +96,7 @@ def is_basic(varname_full):
             varname = varname[:-5]
         elif varname[-3:] == 'sph':
             varname = varname[:-3]
-        if not varname in var_indices:
+        if not varname in var_indices and not is_an_int(varname):
             kosher = False
     if kosher:
         return basic
@@ -138,7 +138,9 @@ def get_label(varname):
 
         # now get root label
         # start with thermal vars
-        if varname == 'p':
+        if is_an_int(varname):
+            label = varname
+        elif varname == 'p':
             label = r'$P$'
         elif varname == 's':
             label = r'$S$'

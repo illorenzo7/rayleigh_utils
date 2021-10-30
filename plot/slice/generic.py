@@ -60,7 +60,7 @@ kw_make_figure = update_dict(make_figure_kwargs_default, clas)
 # needs to be arrays
 kw.irvals = make_array(kw.irvals)
 kw.rvals = make_array(kw.rvals)
-kw.varnames = make_array(kw.varnames)
+kw.varnames = array_of_strings(make_array(kw.varnames))
 
 # make plot directory if nonexistent
 basename = plottype
