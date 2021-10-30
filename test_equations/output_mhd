@@ -39,7 +39,7 @@ point_probe_values =
     1604,1605, 1609,1610, 1614,1615, !total: transport, diffusion: r,t,p
     1601,1602,1603, 1606,1607,1608, 1611,1612,1613 !total: shear,comp,adv: r,t,p
 point_probe_frequency = 1
-point_probe_nrec = 1
+point_probe_nrec = 1000
 
 ! radii: 
 ! 9 values (5%, 12.5%, 25%, ..., 75%, 87.5%, 95%) up through RZ
@@ -126,7 +126,7 @@ shellavg_values =
     1604,1605, 1609,1610, 1614,1615, !total: transport, diffusion: r,t,p
     1601,1602,1603, 1606,1607,1608, 1611,1612,1613 !total: shear,comp,adv: r,t,p
 shellavg_frequency = 1
-shellavg_nrec = 1
+shellavg_nrec = 1000
 
 globalavg_values = 
     ! FLUID VARIABLES
@@ -165,5 +165,5 @@ globalavg_values =
     1604,1605, 1609,1610, 1614,1615, !total: transport, diffusion: r,t,p
     1601,1602,1603, 1606,1607,1608, 1611,1612,1613 !total: shear,comp,adv: r,t,p
 globalavg_frequency = 1
-globalavg_nrec = 1
+globalavg_nrec = 1000
 /

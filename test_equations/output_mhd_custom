@@ -43,7 +43,7 @@ point_probe_values =
     2201, 2202, 2203, 2204, 2205, 2206, 2207, 2208, 2209, 2210, 2211,
        2212, 2213, 2214, 2215
 point_probe_frequency = 1
-point_probe_nrec = 1
+point_probe_nrec = 1000
 
 point_probe_r_nrm = 0.025, 0.0625, 0.125, 0.1875, 0.25, 0.3125, 0.375, 0.4375, 0.475, 0.5, 0.525, 0.5625, 0.625, 0.6875, 0.75, 0.8125, 0.875, 0.9375, 0.975
 point_probe_theta_nrm = 0.05, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 0.95
@@ -131,7 +131,7 @@ shellavg_values =
     2201, 2202, 2203, 2204, 2205, 2206, 2207, 2208, 2209, 2210, 2211,
        2212, 2213, 2214, 2215
 shellavg_frequency = 1
-shellavg_nrec = 1
+shellavg_nrec = 1000
 
 globalavg_values = 
     ! FLUID VARIABLES
@@ -173,5 +173,5 @@ globalavg_values =
     2201, 2202, 2203, 2204, 2205, 2206, 2207, 2208, 2209, 2210, 2211,
        2212, 2213, 2214, 2215
 globalavg_frequency = 1
-globalavg_nrec = 1
+globalavg_nrec = 1000
 /
