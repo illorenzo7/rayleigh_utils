@@ -259,34 +259,35 @@ def get_widest_range_file(datadir, dataname):
     # multiple, by default choose the one with widest range in the
     # trace/average/distribution
     # If there is no matching file, return the empty string
-    datafiles = os.listdir(datadir)
-    specific_files = []
-    for i in range(len(datafiles)):
-        datafile = datafiles[i]
-        if dataname == datafile.split('-')[0]:
-            specific_files.append(datafile)
+    if os.path.isdir(datadir):
+        datafiles = os.listdir(datadir)
+        specific_files = []
+        for i in range(len(datafiles)):
+            datafile = datafiles[i]
+            if dataname == datafile.split('-')[0]:
+                specific_files.append(datafile)
 
-    ranges = []
-    iters1 = []
-    iters2 = []
-    if len(specific_files) > 0:
-        for specific_file in specific_files:
-            iter1, iter2 = get_iters_from_file(specific_file)
-            ranges.append(iter2 - iter1)
-            iters1.append(iter1)
-            iters2.append(iter2)
-        
-        ranges = np.array(ranges)
-        iters1 = np.array(iters1)
-        iters2 = np.array(iters2)
-        
-        inds_max_range = np.where(ranges == np.max(ranges))
-        iters2_maxrange = iters2[inds_max_range]
-        # By default, use the file closest to the end of the simulation
-        ind = inds_max_range[0][np.argmax(iters2_maxrange)]
-        return datadir + specific_files[ind]
-    else:
-        return ''
+        ranges = []
+        iters1 = []
+        iters2 = []
+        if len(specific_files) > 0:
+            for specific_file in specific_files:
+                iter1, iter2 = get_iters_from_file(specific_file)
+                ranges.append(iter2 - iter1)
+                iters1.append(iter1)
+                iters2.append(iter2)
+            
+            ranges = np.array(ranges)
+            iters1 = np.array(iters1)
+            iters2 = np.array(iters2)
+            
+            inds_max_range = np.where(ranges == np.max(ranges))
+            iters2_maxrange = iters2[inds_max_range]
+            # By default, use the file closest to the end of the simulation
+            ind = inds_max_range[0][np.argmax(iters2_maxrange)]
+            return datadir + specific_files[ind]
+    # if we reached this point, no file can be found
+    return None
 
 def frac_nonzero(arr):
     num_nonzero = len(np.where(arr != 0)[0])
@@ -669,9 +670,9 @@ def translate_times(time, dirname, translate_from='iter'):
     # Get the G_Avgs trace
     datadir = dirname + '/data/'
     the_file = get_widest_range_file(datadir, 'G_Avgs_trace')
-    try:
+    if not the_file is None:
         di = get_dict(the_file)
-    except:
+    else:
         print ("translate_times(): you need to have G_Avgs_trace file")
         print ("to use me! Exiting.")
         sys.exit()
