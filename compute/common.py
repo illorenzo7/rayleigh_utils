@@ -446,6 +446,9 @@ def get_parameter(dirname, parameter):
         # remove spaces and newline character (at the end of each line)
         line = line.replace(' ', '')
         line = line.replace('\n', '')
+
+        if line == '':
+            continue
         
         # remove possible trailing comma from line
         if line[-1] == ',':
@@ -455,15 +458,15 @@ def get_parameter(dirname, parameter):
         # only lines with "=" are relevant
         # ignore the ones commented out with !
         if '=' in line and line[0] != '!':
-            line = line.lower()
+            if '!' in line:
+                # there was a comment after the code statement
+                # throw it away!
+                excl_index = line.index('!')
+                line = line[:excl_index]
+
             lhs, rhs = line.split('=')
             if parameter == lhs: # found the parameter!
                 num_string = rhs
-                if '!' in num_string:
-                    # there was a comment after the equals statement
-                    # throw it away!
-                    excl_index = num_string.index('!')
-                    num_string = num_string[:excl_index]
                 return (string_to_number_or_array(num_string))
 
     # if we reached this point, nothing was returned
