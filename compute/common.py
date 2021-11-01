@@ -429,44 +429,50 @@ def fill_str(stri, lent, char):
     return stri + char*nfill
 
 def get_parameter(dirname, parameter):
+    # read in main_input
     f = open(dirname + '/main_input')
     lines = f.readlines()
     n = len(lines)
-    try:
-        for i in range(n):
-            if (parameter in lines[i].lower() and '=' in lines[i] and \
-                    lines[i][0] != '!' and not (parameter == 'tacho_r' and\
-                    lines[i][:8] == 'tacho_r2')):
-                line = lines[i]
-        line = line[:] # test if line was assigned
-    except:
-        if parameter in ['magnetism', 'use_extrema', 'rotation']:
-            return False # if these weren't specified, they are false
-        else:
-            raise Exception('The parameter ' + parameter + ' was not\n' +\
-                            'specified in run: ' + dirname + '. \n' +\
-                            'exiting NOW\n')
+
+    # search for parameter, line-by-line
+    for i in range(n):
+        # process each line
+        line = lines[i]
+
+        # make lower case
+        line = line.lower()
+
+        # remove spaces and newline character (at the end of each line)
+        line = line.replace(' ', '')
+        line = line.replace('\n', '')
+        
+        # remove possible trailing comma from line
+        if line[-1] == ',':
+            line = line[:-1]
+
+        # line ready to process
+        # only lines with "=" are relevant
+        # ignore the ones commented out with !
+        if '=' in line and line[0] != '!':
+            line = line.lower()
+            lhs, rhs = line.split('=')
+            if parameter == lhs: # found the parameter!
+                num_string = rhs
+                if '!' in num_string:
+                    # there was a comment after the equals statement
+                    # throw it away!
+                    excl_index = num_string.index('!')
+                    num_string = num_string[:excl_index]
+                return (string_to_number_or_array(num_string))
+
+    # if we reached this point, nothing was returned
+    if parameter in ['magnetism', 'use_extrema', 'rotation']:
+        return False # if these weren't specified, they are false
+    else:
+        raise Exception('The parameter ' + parameter + ' was not\n' +\
+                        'specified in run: ' + dirname + '. \n' +\
+                        'exiting NOW\n')
     
-    # Make line lowercase
-    line = line.lower()
-
-    # Remove spaces and newline character (at the end of each line)
-    line = line.replace(' ', '')
-    line = line.replace('\n', '')
-
-    # Remove possible trailing comma from line
-    if line[-1] == ',':
-        line = line[:-1]
- 
-    equals_index = line.index('=') # find where the actual number
-        # or array starts (should be after the equals sign)
-    num_string = line[equals_index + 1:]
-    if '!' in num_string: # there was a comment after the equals statement
-                        # throw it away!
-        excl_index = num_string.index('!')
-        num_string = num_string[:excl_index]
-    return (string_to_number_or_array(num_string))
-
 def get_lum(dirname):
     # Make lstar = lsun unless otherwise specified in main_input
     try:
