@@ -2,6 +2,16 @@
 ! Variables to check the heat equation, momentum equation(s)
 ! and induction equation(s)
 
+shellspectra_levels_nrm  = 0.05, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 0.95
+shellspectra_values    = 801, 1604, 1605
+shellspectra_frequency = 1
+shellspectra_nrec      = 1000
+
+shellslice_levels_nrm  = 0.05, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 0.95
+shellslice_values    = 801, 1604, 1605
+shellslice_frequency = 1
+shellslice_nrec      = 1000
+
 point_probe_values =
     ! FLUID VARIABLES
     1,2,3, 501,502,
