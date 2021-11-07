@@ -1,108 +1,82 @@
-# Plot location of Chebyshev collocation points along with various radial
-# locations (see how many grid points are inside different zones)
-import matplotlib as mpl
-mpl.use('TkAgg')
+# Plot location of Chebyshev, Legendre, and Fourier collocation points
+# Can also plot radial/theta/phi locations to see how many points 
+# are in various intervals
 import matplotlib.pyplot as plt
-plt.rcParams['mathtext.fontset'] = 'dejavuserif'
-csfont = {'fontname':'DejaVu Serif'}
 import numpy as np
 import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from compute_grid_info import compute_grid_info
 from common import *
-dirname = sys.argv[1]
+
+# Get CLAs
+args = sys.argv
+clas0, clas = read_clas(args)
+dirname = clas0['dirname']
 dirname_stripped = strip_dirname(dirname)
 
-# domain bounds
+# get the current grid info and plot that unless user tells me not to
 ncheby, domain_bounds = get_domain_bounds(dirname)
-ri = np.min(domain_bounds)
-ro = np.max(domain_bounds)
-d = ro - ri
 
-rnorm = None
-rval = None
-ncheby = None
-domain_bounds = None
-nt = None
+# allowed args + defaults
+kwargs_default = dict({'ncheby': ncheby, 'rbounds': domain_bounds, 'nt': get_parameter(dirname, 'n_theta'), 'rvals': None, 'latvals': None, 'lonvals': None, 'rminmax': None, 'latmin': None, 'lonminmax': None, 'rnorm': None})
 
-fname = 'grid_info'
-plotdir = None
+# overwrite defaults
+kw = update_dict(kwargs_default, clas)
 
-args = sys.argv[2:]
-nargs = len(args)
-for i in range(nargs):
-    arg = args[i]
-    if arg == '-plotdir':
-        plotdir = args[i+1]
-    if arg == '-fname':
-        fname = args[i+1]
-    elif arg == '-rval':
-        rval = float(args[i+1])
-    elif arg == '-nr':
-        ncheby = (int(args[i+1]),)
-    elif arg == '-nt':
-        nt = int(args[i+1])
-    elif arg == '-ncheby':
-        ncheby_str = args[i+1].split()
-        ncheby = []
-        for val_str in ncheby_str:
-            ncheby.append(int(val_str))
-        ncheby = tuple(ncheby)
-    elif arg == '-rminmax':
-        domain_bounds = (float(args[i+1]), float(args[i+2]))
-    elif arg == '-dombounds':
-        dombounds_str = args[i+1].split()
-        domain_bounds = []
-        for val_str in dombounds_str:
-            domain_bounds.append(float(val_str))
-        domain_bounds = tuple(domain_bounds)
-    elif arg == '-rnorm':
-        rnorm = float(args[i+1])
-
-# Get relevant info from main_input file
-if nt is None:
-    print("Getting nt from main_input")
-    nt = get_parameter(dirname, 'n_theta')
-else:
-    print("Using user-specified nt")
-print ("nt = %i" %nt)
-
-#use_extrema = get_parameter(dirname, 'use_extrema')
-use_extrema = False # also, dummy; may change this if I ever start using
-    # the "correct" Chebyshev weights like Connor
-
-if ncheby is None:
-    print("Getting ncheby from main_input")
-    ncheby, dummy = get_domain_bounds(dirname)
-else:
-    print("Using user-specified ncheby")
-print_tuple(ncheby, "%i", prepend="ncheby = ")
-
-if domain_bounds is None:
-    print("Getting domain_bounds from main_input")
-    dummy, domain_bounds = get_domain_bounds(dirname)
-else:
-    print("Using user-specified domain_bounds")
-print_tuple(domain_bounds, "%1.3e", prepend="domain_bounds = ")
-
+# calculate problemsize grid
+print (buffline)
+print ("plotting grid for:")
+print ("nt = nphi/2 =", kw.nt)
+print ("ncheby =", kw.ncheby)
+print ("rbounds (domain_bounds) =", kw.rbounds)
 nr, nt, nphi, rr, rw, tt, cost, sint, tw, phi, dphi =\
-        compute_grid_info(domain_bounds, ncheby, nt,\
-        use_extrema=use_extrema)
+        compute_grid_info(kw.domain_bounds, kw.ncheby, kw.nt)
+
+# adjust which portion of grid to look at (minmax kwargs)
+
+# radial
+if not kw.rminmax is None:
+    irmin = np.argmin(np.abs(rr - kw.rminmax[0]))
+    irmax = np.argmin(np.abs(rr - kw.rminmax[1]))
+    rr = rr[irmax:irmin+1]
+rmin, rmax = rr[-1], rr[0]
+
+# latitude
+tt_lat = 180./np.pi*(np.pi/2. - tt)
+if not kw.latminmax is None:
+    ilatmin = np.argmin(np.abs(tt_lat - kw.latminmax[0]))
+    ilatmax = np.argmin(np.abs(tt_lat - kw.latminmax[1]))
+    tt_lat = tt_lat[ilatmin:ilatmax+1]
+latmin, latmax = tt_lat[0], tt_lat[-1]
+
+# longitude
+phi_lon = 180./np.pi*phi
+if not kw.lonminmax is None:
+    ilonmin = np.argmin(np.abs(tt_lon - kw.lonminmax[0]))
+    ilonmax = np.argmin(np.abs(tt_lon - kw.lonminmax[1]))
+    phi_lon = phi_lon[ilonmin:ilonmax+1]
+lonmin, lonmax = phi_lon[0], phi_lon[-1]
 
 # User can specify what to normalize the radius by
 # By default, normalize by the solar radius
-if rnorm is None:
-    rnorm = rsun
-if rval is None:
-    rval = np.max(rr)
-ir0 = np.argmin(np.abs(rr - rval))
+if kw.rnorm is None:
+    kw.rnorm = rsun
 rr /= rnorm                                           
-r0 = rr[ir0]
-rval /= rnorm
+print (buffline)
+print ("normalizing grid spacing by rnorm =", kw.rnorm)
+
+# calculate grid spacing
+
+# radial
 dr = np.zeros(nr)
 dr[:-1] = rr[:-1] - rr[1:]
 dr[-1] = dr[-2]
+
+# theta
+dt = np.zeros(nt)
+dt[:-1] = tt[:-1] - tt[1:]
+dt[-1] = dt[-2]
 
 # Generate the plot (1 row of 3 subplots)
 fig, axs = plt.subplots(1, 3, sharey=True, figsize=(12,4))
@@ -115,9 +89,6 @@ axs[0].scatter(r0, dr[ir0], color='r', s=3*size)
 
 # Plot r0 * delta_theta
 tt_lat = 180./np.pi*(np.pi/2. - tt)
-dt = np.zeros(nt)
-dt[:-1] = tt[:-1] - tt[1:]
-dt[-1] = dt[-2]
 axs[1].scatter(tt_lat, r0*dt, color='k', s=size)
 
 # Plot r0 * sin(theta) * dphi
