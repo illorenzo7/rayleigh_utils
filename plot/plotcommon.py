@@ -582,21 +582,16 @@ def contourf_minmax(field, **kwargs):
         maxabs = np.max(np.abs(field))
         minmax = -maxabs, maxabs       
     elif kw.fullrange2:
-        mmin = np.min(field[np.where(field <= 0.0)])
-        mmax = np.max(field[np.where(field >= 0.0)])
+        mmin = np.min(field[np.where(field != 0.0)])
+        mmax = np.max(field[np.where(field != 0.0)])
         minmax = mmin, mmax
     elif kw.logscale:
         logfield = np.log(field[np.where(field != 0)])
-        medlog = np.median(logfield)
-        shiftlog = logfield - medlog
-        std_plus =\
-            np.std(shiftlog[np.where(shiftlog > 0.)].flatten())
-        std_minus =\
-            np.std(shiftlog[np.where(shiftlog <= 0.)].flatten())
-        av_std = (std_plus + std_minus)/2.
+        meanlog = np.mean(logfield)
+        stdlog = np.std(logfield)
 
-        minexp = medlog - 5.*av_std
-        maxexp = medlog + 5.*av_std
+        minexp = meanlog - 3.*stdlog
+        maxexp = meanlog + 3.*stdlog
         minmax = np.exp(minexp), np.exp(maxexp)        
     elif kw.posdef:
         sig = rms(field)
