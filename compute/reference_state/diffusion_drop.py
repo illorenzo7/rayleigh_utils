@@ -22,16 +22,19 @@
 # Diffusion drop (default 1000) to plunge diffusivities in radiative zone
 #
 # -nutop
-# default 3 x 10^12 c.g.s
+# default 5 x 10^12 c.g.s
 #
 # -kappatop
-# default 3 x 10^12 c.g.s
+# default 5 x 10^12 c.g.s
 #
 # -etatop
-# default 3 x 10^12 c.g.s
+# default 5 x 10^12 c.g.s
 #
 # -mag
 # Whether magnetism is True or False, default False (hydro)
+# 
+# -rtop
+# default 6.5860209e10
 #
 # -nodropnu
 # -nodropkappa
@@ -50,12 +53,13 @@ from common import *
 
 # Set default constants
 rt = 4.87e10 # by default transition a bit below RZ-CZ transition
+rtop = rmax_n3
 delta = 0.030
 power = -0.5
-drop = 1000.
-nutop = 3.0e12
-kappatop = 3.0e12
-etatop = 3.0e12
+drop = 5000.
+nutop = 5.0e12
+kappatop = 5.0e12
+etatop = 5.0e12
 mag = False
 nodropnu = False
 nodropkappa = False
@@ -109,7 +113,8 @@ eq.read(the_file)
 rr = eq.radius
 rho = eq.functions[0]
 dlnrho = eq.functions[7]
-rhotop = rho[0]
+ir0 = np.argmin(np.abs(eq.radius-rtop))
+rhotop = rho[ir0]
 monotone = (rho/rhotop)**power
 dmonotone = power*monotone*dlnrho
 
@@ -161,6 +166,12 @@ if nodropeta:
 else:
     eq.set_function(etatop*radial_shape, 7)
     eq.set_function(dlnradial_shape, 13)
+
+print("nutop = %1.3e" %nutop)
+print("kappatop = %1.3e" %kappatop)
+if mag:
+    print("eta_top = %1.3e" %etatop)
+
 
 print("Setting c_5, c_6, c_7, c_8, and c_9")
 if not mag:

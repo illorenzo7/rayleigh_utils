@@ -31,9 +31,9 @@ sys.path.append(os.environ['raco'])
 from reference_tools import equation_coefficients
 
 # Set default constants
-nutop = 3.0e12
-kappatop = 3.0e12
-etatop = 3.0e12
+nutop = 5.0e12
+kappatop = 5.0e12
+etatop = 5.0e12
 mag = False
 
 # Get directory to save binary files for reference state and heating
