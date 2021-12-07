@@ -27,7 +27,7 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = clas0['magnetism']
 
 # defaults
-kwargs_default = dict({'the_file': None, 'qvals': None, 'groupname': 'v'})
+kwargs_default = dict({'the_file': None, 'qvals': None, 'groupname': 'v', 'shearfile': None, 'subcurv': False})
 kwargs_default.update(plot_azav_grid_kwargs_default)
 
 # overwrite defaults
@@ -54,7 +54,6 @@ for ext in ['tot', 'pmp', 'ppm', 'mmm', 'mpp', 'ppp']:
         dataname_list['meprodnum' + ext + ext2] = 'me_prod'
         dataname_list['meprodshear' + ext + ext2] = 'me_prod_shear'
         dataname_list['meprodadvec' + ext + ext2] = 'me_prod_advec'
-    dataname_list['meprodtheta' + ext] = 'me_prod_theta'
 for direc in ['r', 't', 'p']:
     dataname_list['ind' + direc + 'alt'] = 'induct_alt'
     dataname_list['ind' + direc + 'altnum'] = 'induct_alt_num'
