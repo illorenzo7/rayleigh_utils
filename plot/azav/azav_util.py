@@ -525,27 +525,42 @@ def plot_azav_grid(terms, rr, cost, **kwargs):
     if not kw.totsig is None:
         if kw.ncol is None:
             kw.ncol = nplots
+        nrow = len(terms)//kw.ncol
+
+        # totsig works by summing over rows
+        # some rows may get summed differently (but try to avoid this)
         if np.isscalar(kw.totsig):
             if kw.totsig == 'sumrow':
                 ncol_loc = kw.ncol
-                kw.totsig = np.ones(kw.ncol)
-        else:
-            ncol_loc = len(kw.totsig)
-        nrow_loc = len(terms)//ncol_loc
+                kw.totsig = np.ones(len(terms))
+        if len(kw.totsig) < len(terms): # must repeat according to to rows
+            # first make sure totsig is the length of a row
+            if len(kw.totsig) == kw.ncol:
+                kw.totsig = kw.totsig.tolist()
+                kw.totsig *= nrow
+                kw.totsig = np.array(kw.totsig)
+            else:
+                print ('ERROR: (len(totsig) = %i) < (len(terms) = %i)' %(len(kw.totsig), len(terms)))
+                print ('but (len(totsig) = %i) != (ncol = %i)' %(len(kw.totsig), kw.ncol))
+                print ('exiting')
+                sys.exit()
 
+        count = 0
         iterm = 0
         kw.titles = kw.titles.tolist()
-        for irow in range(nrow_loc):
+        for irow in range(nrow):
             tot_term = np.zeros_like(terms[0])
-            for icol in range(ncol_loc):
-                tot_term += terms[iterm]*kw.totsig[icol]
+            for icol in range(kw.ncol):
+                tot_term += terms[iterm]*kw.totsig[count]
                 iterm += 1
+                count += 1
 
             # insert the tot_term at the correct place
             terms.insert(iterm, tot_term)
             kw.titles.insert(iterm, 'tot')
             iterm += 1
             nplots += 1
+
         # need to made ncol 1 bigger to include the tot term
         kw.ncol += 1
 

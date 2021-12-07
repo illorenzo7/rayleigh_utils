@@ -165,7 +165,9 @@ if kw.subcurv:
         elif ext2 == 't':
             kw_plot_azav_grid.totsig[4] = 0
         elif ext2 == '':
-            kw_plot_azav_grid.totsig[4] = 0
+            kw_plot_azav_grid.totsig = np.ones(len(terms))
+            kw_plot_azav_grid.totsig[3:5] = 0
+            kw_plot_azav_grid.totsig[9] = 0
         else:
             # nothing to do for phi quantities
             print ('WARNING: subcurv = True has no effect for qgroup ' + kw.groupname)
