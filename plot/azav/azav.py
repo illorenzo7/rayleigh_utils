@@ -79,14 +79,24 @@ if dataname == 'AZ_Avgs':
     lut = di['lut']
 
 if kw.subcurv: # want to subtract curvature terms from exact ME prod terms
+    # only makes sense for exact me prod, or me_prod_[shear, advec]
     print ('subcurv = True')
     if 'meprod' in [kw.groupname[:-3], kw.groupname[:-4]]: # this is the exact stuff
-        print ('subtracting canceling curvature terms from ' + kw.groupname)
         # should only specify subcurv for exact quantity groups
         baselen = 6
-        ext = kw.groupname[baselen:baselen + 3]
-        basetitles = ['ME', 'induct', 'shear', 'advec', 'comp', 'diff']
+    elif kw.groupname[:11] in ['meprodshear', 'meprodadvec']:
+        baselen = 11
+    else:
+        print ('ERROR: subcurv = True meaningless for groupname = ' + kw.groupname)
+        print ('exiting')
+        sys.exit()
 
+    # get data type (meprod, meprodshear, meprodadvec)
+    datatype = kw.groupname[:baselen]
+    ext = kw.groupname[baselen:baselen + 3] # tot, pmp, etc.
+
+    if datatype == 'meprod': # need curvature terms directly
+        print ('subtracting canceling curvature terms from ' + kw.groupname)
         if kw.shearfile is None:
             kw.shearfile = get_widest_range_file(clas0['datadir'], 'me_prod_shear')
         print ('reading curvature terms from ' + kw.shearfile)
@@ -107,10 +117,6 @@ if kw.subcurv: # want to subtract curvature terms from exact ME prod terms
         curvr1 = vals_shear[..., iqshear + 3]
         curvr2 = vals_shear[..., iqshear + 4]
         curvt2 = vals_shear[..., iqshear + 9]
-    else:
-        print ('ERROR: subcurv = True meaningless for groupname = ' + kw.groupname)
-        print ('exiting')
-        sys.exit()
 
 # collect terms to plot
 print ("plotting the following quantities:")
@@ -134,23 +140,35 @@ if kw.subcurv:
     # first need to figure out if this is only for a specific direction
     ext2 = kw.groupname[baselen+3:]
 
-    if ext2 == 'r':
-        # radial quantities
-        terms[2] -= (curvr1 + curvr2) # subtract from shear
-        terms[3] += (curvr1 + curvr2) # add to advection
-    elif ext2 == 't':
-        terms[2] -= curvt2
-        terms[3] += curvt2
-    elif ext2 == '':
-        # radial quantities
-        terms[2] -= (curvr1 + curvr2) # subtract from shear
-        terms[3] += (curvr1 + curvr2) # add to advection
-        # theta quantities
-        terms[2 + qgroup['ncol']] -= curvt2
-        terms[3 + qgroup['ncol']] += curvt2
-    else:
-        # nothing to do for phi quantities
-        print ('WARNING: subcurv = True has no effect for qgroup ' + kw.groupname)
+    if datatype == 'meprod':
+        if ext2 == 'r':
+            # radial quantities
+            terms[2] -= (curvr1 + curvr2) # subtract from shear
+            terms[3] += (curvr1 + curvr2) # add to advection
+        elif ext2 == 't':
+            terms[2] -= curvt2
+            terms[3] += curvt2
+        elif ext2 == '':
+            # radial quantities
+            terms[2] -= (curvr1 + curvr2) # subtract from shear
+            terms[3] += (curvr1 + curvr2) # add to advection
+            # theta quantities
+            terms[2 + qgroup['ncol']] -= curvt2
+            terms[3 + qgroup['ncol']] += curvt2
+        else:
+            # nothing to do for phi quantities
+            print ('WARNING: subcurv = True has no effect for qgroup ' + kw.groupname)
+    else: # meprodshear, meprodadvec
+        print ('got here')
+        if ext2 == 'r':
+            kw_plot_azav_grid.totsig[3:5] = 0
+        elif ext2 == 't':
+            kw_plot_azav_grid.totsig[4] = 0
+        elif ext2 == '':
+            kw_plot_azav_grid.totsig[4] = 0
+        else:
+            # nothing to do for phi quantities
+            print ('WARNING: subcurv = True has no effect for qgroup ' + kw.groupname)
 
 # make the main title
 iter1, iter2 = get_iters_from_file(kw.the_file)
