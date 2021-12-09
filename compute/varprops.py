@@ -374,6 +374,37 @@ def get_quantity_group(groupname, magnetism):
         if ncol == 6: # include diffusion
             totsig[5] = 1
 
+    if 'meprodalt' in [groupname[:-3], groupname[:-4]]:
+        # exact forms of "alternate" induction terms
+        baselen = 9
+        ext = groupname[baselen:baselen + 3]
+
+        basetitles = ['ME', 'induct', 'shear', 'advec', 'comp', 'diff']
+
+        ncol = 5
+
+        # do r, theta, then phi, production terms, in that order
+        qvals = []
+        titles = []
+        count = 0
+        iqstart = 2301 # these are the "alternate" terms
+        for direc in ['r', 'th', 'ph']:
+            qvals += [1102 + count] # add in the magnetic energy
+            qvals_loc = iqstart + np.arange(0, 12, 3) + count
+            qvals_loc = qvals_loc.tolist()
+            qvals_loc += [2213 + count] # diffusive terms haven't changed
+            qvals += qvals_loc
+            titles_loc = []
+            for j in range(ncol+1):
+                titles_loc.append(basetitles[j] + ' (tot, ' +\
+                        direc + ')')
+            titles += titles_loc
+            count += 1
+        ncol += 1 # make room for magnetic energy
+        totsig = np.zeros(ncol)
+        totsig[0] = 0
+        totsig[1] = totsig[5] = 1
+
     if groupname[:9] == 'meprodnum':
         nq = 12 # (r, t, p) x (ind, shear, adv, comp)
         baselen = 9
