@@ -374,6 +374,53 @@ def get_quantity_group(groupname, magnetism):
         if ncol == 6: # include diffusion
             totsig[5] = 1
 
+    if 'indmeprod' in [groupname, groupname[:-1]]: # sum over the different components of the production by induction
+        baselen = 9
+        basetitles = ['tot', 'pmp', 'ppm', 'mmm', 'mpp', 'ppp']
+        ncol = 6
+
+        # do r, theta, then phi, production terms, in that order
+        qvals = []
+        titles = []
+        count = 0
+        for direc in ['r', 'th', 'ph']:
+            qvals += [2201 + count] # tot. ind.
+            qvals += [2216 + count] # pmp
+            qvals += [2228 + count] # ppm
+            qvals += [2240 + count] # mmm
+            qvals += [2255 + count] # mpp
+            qvals += [2264 + count] # ppp
+
+            titles_loc = []
+            for j in range(ncol):
+                titles_loc.append(basetitles[j] + ' (' + direc + ')')
+            titles += titles_loc
+            count += 1
+        totsig = np.ones(ncol)
+        totsig[0] = 0
+
+    if 'diffmeprod' in [groupname, groupname[:-1]]: # sum over the different components of the production by induction
+        baselen = 10
+        basetitles = ['tot', 'mm', 'pp']
+        ncol = 3
+
+        # do r, theta, then phi, production terms, in that order
+        qvals = []
+        titles = []
+        count = 0
+        for direc in ['r', 'th', 'ph']:
+            qvals += [2213 + count] # tot. diff.
+            qvals += [2252 + count] # mm
+            qvals += [2276 + count] # pp
+
+            titles_loc = []
+            for j in range(ncol):
+                titles_loc.append(basetitles[j] + ' (' + direc + ')')
+            titles += titles_loc
+            count += 1
+        totsig = np.ones(ncol)
+        totsig[0] = 0
+
     if 'meprodalt' in [groupname[:-3], groupname[:-4]]:
         # exact forms of "alternate" induction terms
         baselen = 9
