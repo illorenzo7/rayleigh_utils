@@ -452,6 +452,85 @@ def get_quantity_group(groupname, magnetism):
         totsig[0] = 0
         totsig[1] = totsig[5] = 1
 
+    if 'shearmeprodalt' in [groupname, groupname[:-1]]: # sum over the different components of the production by shear production
+        ncol = 3
+
+        # do r, theta, then phi, production terms, in that order
+        qvals = []
+        titles = []
+        count = 0
+        for direc in ['r', 'th', 'ph']:
+            if direc == 'r':
+                perp1 = 'th'
+                perp2 = 'ph'
+            if direc == 'th':
+                perp1 = 'r'
+                perp2 = 'ph'
+            if direc == 'ph':
+                perp1 = 'r'
+                perp2 = 'th'
+
+            qvals += [2304 + count] # tot. shear
+            qvals += [2401 + count] # shear1
+            qvals += [2404 + count] # shear2
+
+            titles += ['tot unbroken',\
+                    'B_' + perp1 + ' dotgrad v_' + direc,\
+                    'B_' + perp2 + ' dotgrad v_' + direc]
+            count += 1
+        totsig = np.ones(ncol)
+        totsig[0] = 0
+
+    if 'advmeprodalt' in [groupname, groupname[:-1]]: # sum over the different components of the production by shear production
+        ncol = 6
+        # do r, theta, then phi, production terms, in that order
+        qvals = []
+        titles = []
+        count = 0
+        for direc in ['r', 'th', 'ph']:
+            app = 'B_' + direc
+            titles += ['tot unbroken', '-vr (d/dr)' + app, '-vt (d/dT)' + app, '-vp (d/dP)' + app, 'curv1 (' + direc + ')', 'curv2 (' + direc + ')']
+
+            qvals += [2307 + count] # tot. adv
+            qvals += [2407 + count] 
+            qvals += [2410 + count]
+            qvals += [2413 + count] 
+            qvals += [2416 + count]
+            qvals += [2419 + count]
+            count += 1
+        totsig = np.ones(ncol)
+        totsig[0] = 0
+
+    if 'compmeprodalt' in [groupname, groupname[:-1]]: # sum over the different components of the production by shear production
+        ncol = 3
+
+        # do r, theta, then phi, production terms, in that order
+        qvals = []
+        titles = []
+        count = 0
+        for direc in ['r', 'th', 'ph']:
+            if direc == 'r':
+                perp1 = 'th'
+                perp2 = 'ph'
+            if direc == 'th':
+                perp1 = 'r'
+                perp2 = 'ph'
+            if direc == 'ph':
+                perp1 = 'r'
+                perp2 = 'th'
+
+            qvals += [2310 + count] # tot. comp.
+            qvals += [2422 + count] # comp1
+            qvals += [2425 + count] # comp2
+
+            titles += ['tot unbroken',\
+                    '-B_' + direc + ' div v_' + perp1,\
+                    '-B_' + direc + ' div v_' + perp2]
+
+            count += 1
+        totsig = np.ones(ncol)
+        totsig[0] = 0
+
     if groupname[:9] == 'meprodnum':
         nq = 12 # (r, t, p) x (ind, shear, adv, comp)
         baselen = 9
