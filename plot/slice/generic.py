@@ -89,10 +89,10 @@ if kw.av: # use time-averaged file
     datadir = dirname + '/data/'
     if kw.the_file is None:
         kw.the_file = get_widest_range_file(datadir, dataname)
-        iter1, iter2 = get_iters_from_file(kw.the_file)
-        print ("plotting average file: " + kw.the_file)
-        di = get_dict(kw.the_file)
-        a0.vals = di['vals'][..., np.newaxis]
+    iter1, iter2 = get_iters_from_file(kw.the_file)
+    print ("plotting average file: " + kw.the_file)
+    di = get_dict(kw.the_file)
+    a0.vals = di['vals'][..., np.newaxis]
 else:
     print ('plotting %i %s files: %s through %s'\
         %(nfiles, dataname, file_list[0], file_list[-1]))
