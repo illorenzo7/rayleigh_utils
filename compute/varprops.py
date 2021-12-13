@@ -482,21 +482,19 @@ def get_quantity_group(groupname, magnetism):
         totsig[0] = 0
 
     if 'advmeprodalt' in [groupname, groupname[:-1]]: # sum over the different components of the production by shear production
-        ncol = 6
+        ncol = 4
         # do r, theta, then phi, production terms, in that order
         qvals = []
         titles = []
         count = 0
         for direc in ['r', 'th', 'ph']:
             app = 'B_' + direc
-            titles += ['tot unbroken', '-vr (d/dr)' + app, '-vt (d/dT)' + app, '-vp (d/dP)' + app, 'curv1 (' + direc + ')', 'curv2 (' + direc + ')']
+            titles += ['tot unbroken', '-vr (d/dr)' + app, '-vt (d/dT)' + app, '-vp (d/dP)' + app]
 
             qvals += [2307 + count] # tot. adv
             qvals += [2407 + count] 
             qvals += [2410 + count]
             qvals += [2413 + count] 
-            qvals += [2416 + count]
-            qvals += [2419 + count]
             count += 1
         totsig = np.ones(ncol)
         totsig[0] = 0
@@ -520,8 +518,8 @@ def get_quantity_group(groupname, magnetism):
                 perp2 = 'th'
 
             qvals += [2310 + count] # tot. comp.
-            qvals += [2422 + count] # comp1
-            qvals += [2425 + count] # comp2
+            qvals += [2416 + count] # comp1
+            qvals += [2419 + count] # comp2
 
             titles += ['tot unbroken',\
                     '-B_' + direc + ' div v_' + perp1,\
