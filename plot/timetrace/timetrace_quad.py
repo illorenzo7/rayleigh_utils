@@ -197,13 +197,13 @@ for ilat in range(nquadlat):
                 induct = terms[-3]
                 diffusion = terms[-2]
             if 'meprod' in kw.groupname or 'ind' in kw.groupname:
-                terms = [induct, diffusion, tot, ddt, difference]
-                kw_lineplot.labels = ['induction', 'diffusion', 'ind + diff', 'd/dt (LHS)', 'RHS - LHS']
+                terms = [ddt, induct, diffusion]
+                kw_lineplot.labels = ['d/dt (LHS)', 'induction', 'diffusion']
             else:
-                terms = [tot, ddt, difference]
-                kw_lineplot.labels = ['sum (RHS)', 'd/dt (LHS)', 'RHS - LHS']
-                kw_lineplot.linestyles = ['-', '--', ':']
-                kw_lineplot.colors = ['k', 'r', 'g']
+                terms = [difference, tot, ddt]
+                kw_lineplot.labels = ['RHS - LHS', 'sum (RHS)', 'd/dt (LHS)']
+            kw_lineplot.linestyles = ['-', '--', ':']
+            kw_lineplot.colors = ['k', 'r', 'g']
             nterms = len(terms)
             
         # now thin the data on the terms #and times
