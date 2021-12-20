@@ -550,6 +550,10 @@ def add_cbar(fig, ax, im, **kwargs):
             tickvals = kw.tickvals
         cbar.set_ticks(tickvals)
         cbar.set_ticklabels(ticklabels)
+    else:
+        locator = ticker.LogLocator(subs='all')
+        cbar.set_ticks(locator)
+
 
     if kw.cbar_pos == 'bottom':
         fig.text(cbar_left + cbar_width + lilbit*fig_aspect,\
@@ -670,6 +674,8 @@ def my_contourf(xx, yy, field, fig, ax, **kwargs):
         levels = np.hstack((levels_neg, levels_mid, levels_pos))
         kw.norm = colors.SymLogNorm(linthresh=kw.linthresh,\
             linscale=kw.linscale, vmin=kw.minmax[0], vmax=kw.minmax[1])
+    elif kw.logscale:
+        levels = np.logspace(np.log10(kw.minmax[0]), np.log10(kw.minmax[1]), nlevelsfield+1)
     else:
         levels = np.linspace(kw.minmax[0], kw.minmax[1], nlevelsfield + 1)
         if kw.fullrange2: # need equally spaced levels on each side of zero
@@ -678,6 +684,8 @@ def my_contourf(xx, yy, field, fig, ax, **kwargs):
     if kw.cmap is None:
         if kw.posdef:
             kw.cmap = 'plasma'
+        elif kw.logscale:
+            kw.cmap = 'Greys'
         else:
             kw.cmap = 'RdYlBu_r'
 
