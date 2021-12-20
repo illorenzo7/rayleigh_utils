@@ -132,7 +132,12 @@ nplots = len(terms)
 if not kw.shav: # kw.shav means integrated over latitude, so can't choose
     # specific latitude levels
     if not kw.samplevals is None: # isamplevals being set indirectly
-        if np.all(kw.samplevals == 'all'):
+        # check for special 'all' option
+        itsall = False
+        if len(kw.samplevals) == 1:
+            if kw.samplevals[0] == 'all':
+                itsall = True
+        if itsall:
             kw.isamplevals = np.arange(len(samplevals_avail))
         else:
             kw.isamplevals = np.zeros_like(kw.samplevals, dtype='int')
