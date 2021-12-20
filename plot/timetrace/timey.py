@@ -23,8 +23,7 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = clas0['magnetism']
 
 # defaults
-kwargs_default = dict({'the_file': None, 'ntot': 2000, 'clat': 10, 'dlat': 0, 'om': None, 'rad': False, 'lon': False, 'shav': False, 'isamplevals': np.array([0]), 'samplevals': None, 'rcut': None})
-kwargs_default.update(get_quantity_group('b', magnetism))
+kwargs_default = dict({'the_file': None, 'ntot': 2000, 'clat': 10, 'dlat': 0, 'om': None, 'rad': False, 'lon': False, 'shav': False, 'isamplevals': np.array([0]), 'samplevals': None, 'rcut': None, 'groupname': 'b'})
 kwargs_default.update(plot_timey_kwargs_default)
 
 # check for bad keys
@@ -32,6 +31,10 @@ find_bad_keys(kwargs_default, clas, clas0['routinename'], justwarn=True)
 
 # overwrite defaults
 kw = update_dict(kwargs_default, clas)
+# add in groupname keys
+kw.update(get_quantity_group(kw.groupname, magnetism))
+# user may have wanted to change some groupname keys
+kw = update_dict(kw, clas)
 kw_plot_timey = update_dict(plot_timey_kwargs_default, clas)
 
 # baseline time unit
@@ -57,7 +60,7 @@ elif kw.shav:
 dataname = datatype
 if 'groupname' in kw:
     dataname += '_' + kw.groupname
-if 'rcut' in kw:
+if not kw.rcut is None:
     dataname += '_rcut%0.3f' %kw.rcut
 
 dataname += clas0['tag']
