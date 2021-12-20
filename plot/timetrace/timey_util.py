@@ -11,7 +11,7 @@ from common import *
 from plotcommon import *
 
 # plot_timey needs my_contourf args, then some
-plot_timey_kwargs_default = dict({'ycut': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax2': None, 'timevals': np.array([]), 'yvals': np.array([]), 'navg': None, 'plotboundary': True, 'linestyles1': np.array(['-']), 'linewidths1': np.array([default_lw]), 'linecolors1': np.array(['k']),\
+plot_timey_kwargs_default = dict({'ycut': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'yminmax': None, 'ymin': None, 'ymax': None,'minmax2': None, 'timevals': np.array([]), 'yvals': np.array([]), 'navg': None, 'plotboundary': True, 'linestyles1': np.array(['-']), 'linewidths1': np.array([default_lw]), 'linecolors1': np.array(['k']),\
        'linestyles2': np.array(['-']), 'linewidths2': np.array([default_lw]), 'linecolors2': np.array(['k'])})
 
 # need to change a few default my_contourf settings
@@ -54,6 +54,19 @@ def plot_timey(field, times, yy, fig, ax, **kwargs):
 
     ixmin = np.argmin(np.abs(times - kw.xminmax[0]))
     ixmax = np.argmin(np.abs(times - kw.xminmax[1]))
+
+    # set yminmax if not set by user
+    if kw.yminmax is None:
+        # set ymin possibly
+        if kw.ymin is None:
+            kw.ymin = np.min(yy)
+        # set ymax possibly
+        if kw.ymax is None:
+            kw.ymax = np.max(yy)
+        kw.yminmax = kw.ymin, kw.ymax
+
+    iymin = np.argmin(np.abs(yy - kw.yminmax[0]))
+    iymax = np.argmin(np.abs(yy - kw.yminmax[1]))
 
     # Now shorten all the "x" arrays
     times = times[ixmin:ixmax + 1]
