@@ -85,18 +85,18 @@ def get_slice(a, varname, dirname=None, j=0):
         del vals # free up memory
         return the_slice
     else:
-        if '+' in varname or '-' in varname:
+        if '+' in varname or '=' in varname:
             signature = [1]
             for char in varname:
                 if char == '+':
                     signature.append(1)
-                elif char == '-':
+                elif char == '=':
                     signature.append(-1)
 
             the_slice = np.zeros_like(vals[..., 0])
             count = 0
             for subvar in varname.split('+'):
-                for subsubvar in subvar.split('-'):
+                for subsubvar in subvar.split('='):
                     the_slice += get_slice(a, subsubvar, dirname, j)*signature[count]
                     count += 1
         elif '*' in varname or '/' in varname:

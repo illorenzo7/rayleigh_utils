@@ -81,7 +81,7 @@ def is_basic(varname_full):
     for ele1 in varname_full.split('*'):
         for ele2 in ele1.split('/'):
             for ele3 in ele2.split('+'):
-                for ele4 in ele3.split('-'):
+                for ele4 in ele3.split('='):
                     # strip prime or sph
                     varlist.append(ele4)
     if len(varlist) == 1: # no splitting occurred---basic var
@@ -122,8 +122,8 @@ def get_varprops(varname):
 
     return varname, deriv, primevar, sphvar
 
-fancy_op_labels = dict({'+': r'$+$', '-': r'$-$', '*': r'$\times$', '+': r'$\div$'})
-simple_op_labels = dict({'+': 'plus', '-': 'minus', '*': 'times', '+': 'div' })
+fancy_op_labels = dict({'+': r'$+$', '=': r'$-$', '*': r'$\times$', '+': r'$\div$'})
+simple_op_labels = dict({'+': 'plus', '=': 'minus', '*': 'times', '+': 'div' })
 
 def get_label(varname):
     # first test if varname is valid and if it's a basic variable
@@ -159,7 +159,7 @@ def get_label(varname):
     else:
         operations = []
         for char in varname:
-            if char in ['*', '/', '+', '-']:
+            if char in ['*', '/', '+', '=']:
                 operations.append(char)
         label = ''
         simple_label = ''
@@ -167,7 +167,7 @@ def get_label(varname):
         for ele1 in varname.split('*'):
             for ele2 in ele1.split('/'):
                 for ele3 in ele2.split('+'):
-                    for ele4 in ele3.split('-'):
+                    for ele4 in ele3.split('='):
                         label += get_label(ele4)
                         simple_label += ele4
                         if count < len(operations):
