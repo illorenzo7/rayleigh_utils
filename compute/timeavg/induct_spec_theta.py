@@ -136,7 +136,7 @@ for i in range(my_nfiles):
     # loop over the induction terms, multiplying by B*
     nell, nm, nr, nq, niter = np.shape(a.vals)
     bfield = np.conjugate(a.vals[:,:,:,a.lut[802],:])
-    induct_set = [3002,3005,3008,3011,3102,3105,3108,3111,3114,3117,3120]
+    induct_set = [3002,3005,3008,3011,3102,3105,3108,3111,3114,3117,3120, 2912]
     for qval in induct_set:
         # take mean along the time axis, which is usually the last axis
         my_vals[..., a.lut[qval]] += np.mean(np.real(a.vals[..., a.lut[qval], :]*bfield), axis=3)*weight
