@@ -610,8 +610,8 @@ def contourf_minmax(field, **kwargs):
 
 my_contourf_kwargs_default = dict({
         # basic flags:
-         'plotfield': True,\
-        'plotcontours': True, 'ncontours': 8, 'contourlevels': None, 'contourstyles': '--', 'contourcolors': 'k', 'contourwidths': default_lw,\
+         'plotfield': True,
+         'plotcontours': True, 'ncontours': 8, 'contourlevels': None, 'contourstyles': '--', 'contourcolors': 'k', 'contourwidths': default_lw, 'nlevelsfield': None,
         # additional colorbar stuff
         'plotcbar': True, 'cmap': None, 'norm': None, 'units': '',         
         # only need this for time-lat plots or such, since need ticks there
@@ -653,7 +653,11 @@ def my_contourf(xx, yy, field, fig, ax, **kwargs):
     if kw.norm is None and kw.logscale:
         kw.norm = colors.LogNorm(vmin=kw.minmax[0], vmax=kw.minmax[1])
 
-    nlevelsfield = 128
+    if kw.nlevelsfield is None:
+        nlevelsfield = 128
+    else:
+        nlevelsfield = kw.nlevelsfield
+
     if kw.symlog:
         linthresh_default, linscale_default =\
             get_symlog_params(field, field_max=kw.minmax[1])
