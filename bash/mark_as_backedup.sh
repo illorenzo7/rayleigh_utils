@@ -10,8 +10,9 @@ subdirs=`find $maindir -maxdepth 1 -mindepth 1 -type d -printf '%f\n'`
 
 for subdir in $subdirs
 do
-    echo "touching $maindir/00_backedup"
-    touch $subdir/00_backedup
+    echo "touching $maindir/$subdir/00_backedup"
+    touch $maindir/$subdir/00_backedup
 done
 # For good measure mark the main directory as all backedup
+echo "touching $maindir/00_all_backedup"
 touch $maindir/00_all_backedup
