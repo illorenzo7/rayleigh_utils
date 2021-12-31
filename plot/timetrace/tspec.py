@@ -26,6 +26,7 @@ my_pcolormesh_kwargs_default['logscale'] = True
 my_pcolormesh_kwargs_default['posdef'] = True
 kwargs_default.update(my_pcolormesh_kwargs_default)
 
+spec_2D_fig_dimensions['sub_margin_top_inches'] = 3/4
 make_figure_kwargs_default.update(spec_2D_fig_dimensions)
 kwargs_default.update(make_figure_kwargs_default)
 
@@ -157,7 +158,7 @@ for qval in qvals:
             if kw_my_pcolormesh.y is None:
                 kw_my_pcolormesh.y = freq
 
-            my_pcolormesh(power, fig, ax, **kw_my_pcolormesh)
+            mmin, mmax = my_pcolormesh(power, fig, ax, **kw_my_pcolormesh)
 
             # add Rossby dispersion, possibly
             if not kw.rossby is None:
@@ -183,6 +184,7 @@ for qval in qvals:
             slice_info = ('qval = %04i' %qval) + 5*' ' + (r'$r/R_\odot\ =\ %0.3f$' %rval) + 5*' ' + "mode = " + basename
 
             title = dirname_stripped + '\n' + slice_info + '\n' + time_string
+            title += '\nminmax = %1.3e, %1.3e' %(mmin, mmax)
             ax.set_title(title, va='bottom', fontsize=default_titlesize)
 
             # save by default

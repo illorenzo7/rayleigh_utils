@@ -857,3 +857,4 @@ def my_pcolormesh(field, fig, ax, **kwargs):
                 xline, yline = kw.x, axisval + np.zeros_like(kw.x)
             ax.plot(xline, yline, 'k--')
         count += 1
+    return kw.minmax
