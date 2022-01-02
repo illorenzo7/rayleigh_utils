@@ -289,7 +289,6 @@ for irval in irvals:
                 else:
                     my_vals[:, il, im] = np.fft.fft(my_vals[:, il, im])
                     my_vals[:, il, im] = np.fft.fftshift(my_vals[:, il, im])
-                #my_vals[:, il, im] = np.abs(my_vals[:, il, im])**2
 
                 if rank == 0:
                     if count_loc == 0:
@@ -302,7 +301,6 @@ for irval in irvals:
                 count_loc += 1
                 
         # make it an array
-        #my_vals = np.real(my_vals)
         my_vals = np.array(my_vals)
 
         # make sure everybody does their part and "gets there"!
@@ -318,7 +316,6 @@ for irval in irvals:
             t1 = time.time()
 
             # need to make this a real array again
-            #vals = np.zeros_like(vals, 'float')
             vals = np.zeros_like(vals, 'complex')
 
             # Gather the FFT results back into vals array

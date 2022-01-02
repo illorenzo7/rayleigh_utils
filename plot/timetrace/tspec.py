@@ -101,7 +101,6 @@ for qval in qvals:
         print ("reading " + the_file)
         di = get_dict(the_file)
         freq = di['freq']
-        #vals = np.real(di['vals'])
         vals = np.abs(di['vals'])**2
         nfreq, nell, nm = np.shape(vals)
 
