@@ -165,7 +165,7 @@ for qval in qvals:
                     power[il, :] = power_full[:, il, il - offset]
 
             # now adjust everything by the (x, y) range we want
-            power = power[ix1:ix2+1, iy1:iy2+1]
+            powerrange = power[ix1:ix2+1, iy1:iy2+1]
 
             # Display at terminal what we are analyzing the power of
             if count == 0:
@@ -175,7 +175,11 @@ for qval in qvals:
             print ("mode = " + basename)
             print ("irval = ", irval, '   ', "rval/rsun = %.3f" %rval)
 
-            frac = np.sum(power)/np.sum(power_full)
-            print ("frac of total power = " + make_bold("%.3f" %frac))
+            print ("[mode power] / [total power] = " + make_bold("%1.3e"\
+                    %(np.sum(power)/np.sum(power_full))))
+            print ("[range power]/ [mode  power] = " + make_bold("%1.3e"\
+                    %(np.sum(powerrange)/np.sum(power))))
+            print ("[range power]/ [total power] = " + make_bold("%1.3e"\
+                    %(np.sum(powerrange)/np.sum(power_full))))
             print (buff_line)
             count += 1
