@@ -265,7 +265,7 @@ for irval in irvals:
                     itend = itstart + my_nt
 
                 # Get the portion of vals for rank k
-                my_vals = np.copy(vals[:, itstart:itend, :])
+                my_vals = np.copy(vals[:, :, itstart:itend])
 
                 # send appropriate file info if not rank 0
                 if k > 0:
@@ -285,29 +285,23 @@ for irval in irvals:
                 print ("using DFT for NONLINEARLY SPACED times")
             t1 = time.time()
 
-        count_loc = 0 
-        for it in range(my_nt):
-            for im in range(nm):
-            # do the phi FFT first
-            my_vals = np.fft.fft(my_vals, axis=0)
-            my_vals = np.fft.fftshift(my_vals, axis=0)
-            # now the time FFT 
-            if nonlin:
-                my_vals[:, il, im] = nfft(times, my_vals[:, il, im])
-            else:
-                my_vals[:, il, im] = np.fft.fft(my_vals[:, il, im])
-                my_vals[:, il, im] = np.fft.fftshift(my_vals[:, il, im])
+        if rank == 0:
+            t1_loc = time.time()
+            print(fill_str('doing FFT', lent, char), end='\r')
 
-            if rank == 0:
-                if count_loc == 0:
-                    t1_loc = time.time()
-                t2_loc = time.time()
-                pcnt_done = (count_loc + 1)/(my_nell*nm)*100
-                print(fill_str('doing FFT', lent, char) +\
-                        ('rank 0 %5.1f%% done' %pcnt_done) + ' ' +\
-                        format_time(t2_loc - t1_loc) + 3*' ', end='\r')
-            count_loc += 1
-            
+        # do the phi FFT first
+        my_vals = np.fft.fft(my_vals, axis=1)
+        my_vals = np.fft.fftshift(my_vals, axes=1)
+
+        # now the time FFT 
+        if nonlin:
+            for it in range(my_nt):
+                for im in range(nphi):
+                    my_vals[:, im, it] = nfft(times, my_vals[:, im, it])
+        else:
+            my_vals = np.fft.fft(my_vals, axis=0)
+            my_vals = np.fft.fftshift(my_vals, axes=0)
+
         # make it an array
         my_vals = np.array(my_vals)
 
@@ -323,24 +317,24 @@ for irval in irvals:
             print(fill_str('rank 0 collecting FFTs', lent, char), end='')
             t1 = time.time()
 
-            # need to make this a real array again
+            # now overwrite vals with the transformed datacube
             vals = np.zeros_like(vals, 'complex')
 
             # Gather the FFT results back into vals array
             for k in range(nproc):
-                if k < nproc_max: # first processes have more l-values
-                    my_nell = np.copy(n_per_proc_max)
-                    ilstart = k*my_nell
-                    ilend = ilstart + my_nell
+                if k < nproc_max: # first processes have more theta-values
+                    my_nt = np.copy(n_per_proc_max)
+                    itstart = k*my_nt
+                    itend = itstart + my_nt
                 else: # last processes analyze fewer files
-                    my_nell = np.copy(n_per_proc_min)
-                    ilstart = nproc_max*n_per_proc_max + (k - nproc_max)*my_nell
-                    ilend = ilstart + my_nell
+                    my_nt = np.copy(n_per_proc_min)
+                    itstart = nproc_max*n_per_proc_max + (k - nproc_max)*my_nt
+                    itend = itstart + my_nt
 
                 if k > 0:
                     # Get my_vals from rank k
                      my_vals = comm.recv(source=k, tag=0)
-                vals[:, ilstart:ilend, :] = my_vals
+                vals[:, :, itstart:itend] = my_vals
 
         else: # other processes send their data
             comm.send(my_vals, dest=0, tag=0)
@@ -359,7 +353,7 @@ for irval in irvals:
                 os.makedirs(datadir)
 
             # Set the timetrace savename
-            savename = ('tspec_qval%04i_irval%02i' %(qval, irval)) +\
+            savename = ('tmspec_qval%04i_irval%02i' %(qval, irval)) +\
                     clas0['tag'] + '-' + file_list[0] + '_' + file_list[-1] + '.pkl'
             savefile = datadir + savename
 
@@ -369,9 +363,12 @@ for irval in irvals:
             vals = np.array(vals)
             times = np.array(times)
             iters = np.array(iters)
-            pickle.dump({'vals': vals, 'times': times, 'iters': iters, 'freq': freq}, f, protocol=4)
+            pickle.dump({'vals': vals, 'times': times, 'iters': iters, 'freq': freq, 'mvals': mvals}, f, protocol=4)
             f.close()
-            print ("the following should be zero:")
+            if kw.nonlin:
+                print ("the following need not be zero:")
+            else:
+                print ("the following should be zero:")
             print ("std(dt) = ", np.std(np.diff(times)))
             print ('data saved at ')
             print (make_bold(savefile))
