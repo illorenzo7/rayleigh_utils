@@ -237,6 +237,13 @@ for irval in irvals:
             dphi = 1./nphi
             mvals = np.fft.fftfreq(nphi, dphi)
             mvals = np.fft.fftshift(mvals)
+            imcut = len(mvals)//2 # negative m redundant (we're 
+            # transforming real quantities; we throw away nyquist freq
+            # imcut is also nm before dealiasing
+            nm = int(np.floor(2./3.*imcut))
+            # remember to dealias---otherwise we are saving a bunch of
+            # zeros
+            mvals = mvals[imcut:imcut+nm]
 
             if nonlin:
                 # shift the times to lie in range -1/2, 1/2
@@ -269,9 +276,9 @@ for irval in irvals:
 
                 # send appropriate file info if not rank 0
                 if k > 0:
-                    comm.send([my_vals, my_nt, nonlin], dest=k)
+                    comm.send([my_vals, my_nt, nonlin, imcut, nm], dest=k)
         else: # recieve appropriate file info if rank > 1
-            my_vals, my_nt, nonlin = comm.recv(source=0)
+            my_vals, my_nt, nonlin, imcut, nm = comm.recv(source=0)
 
         # make sure everyone gets "their slice"
         comm.Barrier()
@@ -292,11 +299,12 @@ for irval in irvals:
         # do the phi FFT first
         my_vals = np.fft.fft(my_vals, axis=1)
         my_vals = np.fft.fftshift(my_vals, axes=1)
+        my_vals = my_vals[:, imcut:imcut+nm, :]
 
         # now the time FFT 
         if nonlin:
             for it in range(my_nt):
-                for im in range(nphi):
+                for im in range(nm):
                     my_vals[:, im, it] = nfft(times, my_vals[:, im, it])
         else:
             my_vals = np.fft.fft(my_vals, axis=0)
@@ -318,7 +326,7 @@ for irval in irvals:
             t1 = time.time()
 
             # now overwrite vals with the transformed datacube
-            vals = np.zeros_like(vals, 'complex')
+            vals = np.zeros((ntimes, nm, nt), 'complex')
 
             # Gather the FFT results back into vals array
             for k in range(nproc):

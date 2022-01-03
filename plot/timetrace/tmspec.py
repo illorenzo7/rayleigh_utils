@@ -43,6 +43,8 @@ irvals = kw.irvals
 # get latitude
 gi = get_grid_info(dirname)
 tt_lat = gi['tt_lat']
+tw = gi['tw']
+tw_nd = tw.reshape((1, 1, len(tw)))
 
 # everything must be an array
 irvals = make_array(irvals)
@@ -104,6 +106,8 @@ for qval in qvals:
         di = get_dict(the_file)
         freq = di['freq']
         vals = np.abs(di['vals'])**2
+        # everything with m >= 1 should be counted twice
+        vals[:, 1:, :] *= 2.
         nfreq, nm, nt = np.shape(vals)
 
         # add mvals/latvals to modes
@@ -120,7 +124,7 @@ for qval in qvals:
                 if mode == 'mpower':
                     xlabel = 'azimuthal wavenumber (m)'
                     x = di['mvals']
-                    power = np.sum(vals, axis=2)
+                    power = np.sum(vals*tw_nd, axis=2)
                     power = power.T/len(tt_lat) # keep power normalized
             elif count < len(modes) + len(latvals):
                 latval = float(mode)
