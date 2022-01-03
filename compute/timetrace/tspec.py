@@ -281,24 +281,18 @@ for irval in irvals:
                 print ("using DFT for NONLINEARLY SPACED times")
             t1 = time.time()
 
-        count_loc = 0 
-        for il in range(my_nell):
-            for im in range(nm):
-                if nonlin:
+        # do FFT
+        if nonlin:
+            for il in range(nell):
+                for im in range(nm):
                     my_vals[:, il, im] = nfft(times, my_vals[:, il, im])
-                else:
-                    my_vals[:, il, im] = np.fft.fft(my_vals[:, il, im])
-                    my_vals[:, il, im] = np.fft.fftshift(my_vals[:, il, im])
+        else:
+            my_vals = np.fft.fft(my_vals, axis=0)
+            my_vals = np.fft.fftshift(my_vals, axes=0)
 
-                if rank == 0:
-                    if count_loc == 0:
-                        t1_loc = time.time()
-                    t2_loc = time.time()
-                    pcnt_done = (count_loc + 1)/(my_nell*nm)*100
-                    print(fill_str('doing FFT', lent, char) +\
-                            ('rank 0 %5.1f%% done' %pcnt_done) + ' ' +\
-                            format_time(t2_loc - t1_loc) + 3*' ', end='\r')
-                count_loc += 1
+        if rank == 0:
+            t1_loc = time.time()
+            print(fill_str('doing FFT', lent, char), end='\r')
                 
         # make it an array
         my_vals = np.array(my_vals)
