@@ -179,6 +179,7 @@ for irval in irvals:
                         ('rank 0 %5.1f%% done' %pcnt_done) + ' ' +\
                         format_time(t2_loc - t1_loc) + 3*' ', end='\r')
 
+        #print ('mvasl =', my_vals)
         # make sure everybody does their part and "gets there"!
         # Checkpoint and time
         comm.Barrier()
@@ -234,16 +235,11 @@ for irval in irvals:
             delta_t = np.mean(np.diff(times))
             freq = np.fft.fftfreq(len(times), delta_t)
             freq = np.fft.fftshift(freq)
-            dphi = 1./nphi
-            mvals = np.fft.fftfreq(nphi, dphi)
-            mvals = np.fft.fftshift(mvals)
-            imcut = len(mvals)//2 # negative m redundant (we're 
-            # transforming real quantities; we throw away nyquist freq
-            # imcut is also nm before dealiasing
-            nm = int(np.floor(2./3.*imcut))
+
+            # dealiased no. mvalues
             # remember to dealias---otherwise we are saving a bunch of
-            # zeros
-            mvals = mvals[imcut:imcut+nm]
+            nm = int(np.floor(2./3.*nt))
+            mvals = np.arange(nm)
 
             if nonlin:
                 # shift the times to lie in range -1/2, 1/2
@@ -264,7 +260,7 @@ for irval in irvals:
                 # distribute the partial file list to other procs 
                 if k < nproc_max: # first processes analyzes more files
                     my_nt = np.copy(n_per_proc_max)
-                    itstart = k*my_nell
+                    itstart = k*my_nt
                     itend = itstart + my_nt
                 else: # last processes analyze fewer files
                     my_nt = np.copy(n_per_proc_min)
@@ -276,9 +272,9 @@ for irval in irvals:
 
                 # send appropriate file info if not rank 0
                 if k > 0:
-                    comm.send([my_vals, my_nt, nonlin, imcut, nm], dest=k)
+                    comm.send([my_vals, my_nt, nonlin, nm], dest=k)
         else: # recieve appropriate file info if rank > 1
-            my_vals, my_nt, nonlin, imcut, nm = comm.recv(source=0)
+            my_vals, my_nt, nonlin, nm = comm.recv(source=0)
 
         # make sure everyone gets "their slice"
         comm.Barrier()
@@ -297,9 +293,10 @@ for irval in irvals:
             print(fill_str('doing FFT', lent, char), end='\r')
 
         # do the phi FFT first
-        my_vals = np.fft.fft(my_vals, axis=1)
-        my_vals = np.fft.fftshift(my_vals, axes=1)
-        my_vals = my_vals[:, imcut:imcut+nm, :]
+        # this is just a transform of real data
+        my_vals = np.fft.rfft(my_vals, axis=1)
+        # throw away values above dealised max
+        my_vals = my_vals[:, :nm, :]
 
         # now the time FFT 
         if nonlin:
