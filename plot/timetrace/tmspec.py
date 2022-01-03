@@ -65,7 +65,7 @@ mvals = make_array(kw.mvals, tolist=True)
 
 everything = modes + latvals + mvals
 if len(everything) == 0:
-    modes = ['latpower']
+    modes = ['mpower']
     everything = modes
 
 print (buff_line)
