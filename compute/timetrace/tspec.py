@@ -283,7 +283,7 @@ for irval in irvals:
 
         # do FFT
         if nonlin:
-            for il in range(nell):
+            for il in range(my_nell):
                 for im in range(nm):
                     my_vals[:, il, im] = nfft(times, my_vals[:, il, im])
         else:

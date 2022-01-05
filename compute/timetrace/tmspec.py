@@ -272,9 +272,9 @@ for irval in irvals:
 
                 # send appropriate file info if not rank 0
                 if k > 0:
-                    comm.send([my_vals, my_nt, nonlin, nm], dest=k)
+                    comm.send([my_vals, my_nt, nonlin, nm, times], dest=k)
         else: # recieve appropriate file info if rank > 1
-            my_vals, my_nt, nonlin, nm = comm.recv(source=0)
+            my_vals, my_nt, nonlin, nm, times = comm.recv(source=0)
 
         # make sure everyone gets "their slice"
         comm.Barrier()
