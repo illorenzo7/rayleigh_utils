@@ -17,7 +17,7 @@ dirname = clas0.dirname
 dirname_stripped = strip_dirname(dirname)
 
 # SPECIFIC ARGS
-kwargs_default = dotdict(dict({'the_file': None, 'irvals': np.array([0]), 'rvals': None, 'qvals': np.array([1]), 'modes': [], 'latvals': [], 'mvals': []}))
+kwargs_default = dotdict(dict({'the_file': None, 'irvals': np.array([0]), 'rvals': None, 'qvals': np.array([1]), 'modes': [], 'latvals': [], 'mvals': [], 'diffrot': False, 'azfile': None}))
 # "modes" can be: latpower, mpower, or combinations thereof
 # can also get other modes via --latvals (plot freq vs m), --mvals (freq vs lat.)
 
@@ -87,11 +87,29 @@ print (buff_line)
 
 # get and make plotdir if non-existent
 plotdir = my_mkdir(clas0['plotdir'] + 'tmspec/')
+
+# include differential rotation if requested
+if kw.diffrot:
+    if kw.azfile is None:
+        kw.azfile = get_widest_range_file(clas0['datadir'], 'AZ_Avgs')
+    print ('over plotting differential rotation')
+    print ('reading ' + kw.azfile)
+    print (buff_line)
+    azdi = get_dict(kw.azfile)
+    azvals = azdi['vals']
+    azlut = azdi['lut']
+    xx = gi['xx']
+    om = azvals[:, :, azlut[3]]/xx
+    om /= 2*np.pi # rad/s --> Hz
  
 for qval in qvals:
     for irval in irvals:
         # get radial level
         rval = radlevs.radius[irval]/rsun
+        if kw.diffrot:
+            iirval = radlevs.inds[irval]
+            # lat profile of diffrot
+            om_lat = om[:, iirval]
 
         # get data
         if kw.the_file is None:
@@ -121,11 +139,19 @@ for qval in qvals:
                     x = tt_lat
                     power = np.sum(vals, axis=1)
                     power = power.T/nm # keep power normalized
+                    if kw.diffrot:
+                        omy = om_lat
                 if mode == 'mpower':
                     xlabel = 'azimuthal wavenumber (m)'
                     x = di['mvals']
                     power = np.sum(vals*tw_nd, axis=2)
                     power = power.T/len(tt_lat) # keep power normalized
+                    if kw.diffrot:
+                        #print (om_lat)
+                        #print (tw)
+                        omy = np.sum(om_lat*tw)
+                        #print(omy)
+                        omy = omy*x
             elif count < len(modes) + len(latvals):
                 latval = float(mode)
                 ithval = np.argmin(np.abs(tt_lat - latval))
@@ -133,12 +159,17 @@ for qval in qvals:
                 xlabel = 'azimuthal wavenumber (m)'
                 x = di['mvals']
                 power = vals[:, :, ithval].T
+                if kw.diffrot:
+                    omy = om_lat[ithval]
+                    omy = omy*x
             elif count < len(modes) + len(latvals) + len(mvals):
                 mval = int(mode)
                 basename = "mval%03i" %mval
                 xlabel = 'latitude (deg)'
                 x = tt_lat
                 power = vals[:, mval, :].T
+                if kw.diffrot:
+                    omy = om_lat*mval
 
             # Display at terminal what we are plotting
             savename = dataname + '_' + basename + clas0['tag'] + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
@@ -170,6 +201,21 @@ for qval in qvals:
             title = dirname_stripped + '\n' + slice_info + '\n' + time_string
             title += '\nminmax = %1.3e, %1.3e' %(mmin, mmax)
             ax.set_title(title, va='bottom', fontsize=default_titlesize)
+
+            # possibly overplot DR
+            if kw.diffrot:
+                # positive diffrot means negative freq
+                omy *= -1
+                #print (omy)
+                #print (om)
+                #print (x)
+                # make sure to reset xlim ylim after
+                xmin, xmax = ax.get_xlim()
+                ymin, ymax = ax.get_ylim()
+                ax.scatter(x, omy, color='k')
+                ax.set_xlim(xmin,xmax)
+                ax.set_ylim(ymin,ymax)
+
 
             # save by default
             if clas0['saveplot']:
