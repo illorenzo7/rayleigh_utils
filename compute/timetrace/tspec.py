@@ -38,12 +38,18 @@ if rank == 0:
 
 # modules needed by everyone
 import numpy as np
-from nfft import nfft
+# from nfft import nfft
 # data type and reading function
 import sys, os
 from rayleigh_diagnostics_alt import Shell_Spectra
 reading_func = Shell_Spectra
 dataname = 'Shell_Spectra'
+
+# my own version of nfft (should be same --- good test)
+def my_nfft(times, arr):
+    times_eq = np.linspace(times[0], times[-1], len(times))
+    arr_eq = np.interp(times_eq, times, arr)
+    return np.fft.fftshift(np.fft.fft(arr_eq))
 
 if rank == 0:
     # modules needed only by proc 0 
@@ -285,7 +291,7 @@ for irval in irvals:
         if nonlin:
             for il in range(my_nell):
                 for im in range(nm):
-                    my_vals[:, il, im] = nfft(times, my_vals[:, il, im])
+                    my_vals[:, il, im] = my_nfft(times, my_vals[:, il, im])
         else:
             my_vals = np.fft.fft(my_vals, axis=0)
             my_vals = np.fft.fftshift(my_vals, axes=0)
