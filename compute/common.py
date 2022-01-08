@@ -1401,7 +1401,9 @@ def lat_format(latval):
         hemisphere = 'N'
     return hemisphere + '%02.0f' %np.abs(latval)
 
-def get_slice_levels(dirname, datatype='Shell_Slices'):
+def get_slice_levels(dirname, datatype='Shell_Slices', fname=None):
     radatadir = dirname + '/' + datatype + '/'
     file_list, int_file_list, nfiles = get_file_lists_all(radatadir)
-    return slicelevels(file_list[0], path=radatadir)
+    if fname is None:
+        fname = file_list[0]
+    return slicelevels(fname, path=radatadir)
