@@ -28,6 +28,7 @@ dirname_stripped = strip_dirname(dirname)
 kwargs_default = dict({'the_file': None, 'latvals': np.array([0., 15., 30., 45., 60., 75.])})
 kwargs_default.update(make_figure_kwargs_default)
 lineplot_kwargs_default['legfrac'] = 1/5
+lineplot_kwargs_default['plotleg'] = True
 kwargs_default.update(lineplot_kwargs_default)
 kw = update_dict(kwargs_default, clas)
 kw_make_figure = update_dict(make_figure_kwargs_default, clas)
