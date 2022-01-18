@@ -121,192 +121,113 @@ def plot_azav(field, rr, cost, fig, ax,  **kwargs):
                 xline, yline = xx_full[ilatval, :], yy_full[ilatval, :]
             ax.plot(xline, yline, linewidth=linewidths[i], linestyle=linestyles[i], color=linecolors[i])
 
-def plot_azav_half(field, rr, cost, sym='even', fig=None, ax=None,\
-        cmap='RdYlBu_r', units='', minmax=None, posdef=False, logscale=False,\
-        symlog=False, linthresh=None, linscale=None, plotcontours=True,\
-        plotfield=True, nlevs=10, levels=None, plotlatlines=False, rvals=[],\
-        norm=None, fontsize=10, showplot=False, plot_cbar=True):
-	
+plot_azav_half_kwargs_default = dict(plot_azav_kwargs_default)
+plot_azav_half_kwargs_default['sym'] = 'even'
+plot_azav_half_kwargs_default['latvals'] = np.arange(0., 90., 30.)
+
+def plot_azav_half(field, rr, cost, fig, ax,  **kwargs):
     '''Takes a figure with a subplot (axis) of aspect ratio 1x1 (or
     generates default axes if they are not provided) and adds
     a plot of the upper meridional plane to the axis, averaging the full
     plane with either even or odd symmetry
     '''
+    find_bad_keys(plot_azav_half_kwargs_default, kwargs, 'plot_azav_half')
+    kw = update_dict(plot_azav_half_kwargs_default, kwargs)
+    kw_my_contourf = update_dict(my_contourf_kwargs_default, kwargs)
 
-    # Get default bounds if not specified
-    # Do this before "folding" the field
-    if minmax is None:
-        field_cut = trim_field(np.copy(field), rr, cost)
-        minmax = get_satvals(field_cut, posdef=posdef, logscale=logscale,\
-                symlog=symlog)
-        
-    # Grid info -- make "folded" grid
-    nr = len(rr)
-    nt = len(cost)
-    ri, ro = np.min(rr), np.max(rr)
-    
-    # "Fold" the field in half
-    # Please don't try this with odd N_theta!
-    it_half = int(nt/2)
-    
-    # "Half grid" quantities
-    cost = cost[it_half:]
-    lats = (np.pi/2. - np.arccos(cost))*180./np.pi
-    sint = np.sqrt(1. - cost**2.)
-    
-    # Calculate the grid on which to plot
-    rr_2d = rr.reshape((1, nr))
-    cost_2d = cost.reshape((int(nt/2), 1))
-    sint_2d = sint.reshape((int(nt/2), 1))
-    xx = rr_2d*sint_2d/ro
-    zz = rr_2d*cost_2d/ro    
-    # Field is ordered from theta=pi (south pole) to theta=0 (north pole)
-    # Average the Northern and Southern hemispheres together (must flip 
-    # the Southern hemisphere with respect to latitude, then add or subtract it
-    if sym=='even':
-        field = 0.5*(field[it_half:, :] +\
-                np.flip(field[:it_half, :], axis=0))
-    elif sym=='odd':
-        field = 0.5*(field[it_half:, :] -\
-                np.flip(field[:it_half, :], axis=0))
+    # make copy of field
+    field_full = np.copy(field)
 
-    # Get the exponent to use for scientific notation
-    # and normalize the field by 10**exp
-    if not logscale:
-        maxabs = max(np.abs(minmax[0]), np.abs(minmax[1]))
-        exp = get_exp(maxabs)
-        divisor = 10.**exp
-        
-        # Normalize field by divisor
-        field /= divisor
-        minmax = minmax[0]/divisor, minmax[1]/divisor
-    
-    # Create a default set of figure axes if they weren't already
-    # specified by user
-    if fig is None or ax is None:
-        fig, ax = default_axes_1by1()
-        showplot = True # probably in this case the user just
-        # ran plot_azav from the command line wanting to view
-        # view the plot
-    
-    # Specify linewidths to be used in the meridional plane, one for the 
-    # boundary (lw) and one for the contours (contour_lw)
-    lw = 1
-    contour_lw = .2
-    
-    if plotfield:
-        plt.sca(ax)
-#        levs = np.linspace(minmax[0], minmax[1], 100)
-#        im = ax.contourf(xx, zz, field, cmap='RdYlBu_r',\
-#        levels=levs)
-#        plt.sca(ax)
-        if logscale:
-            plt.pcolormesh(xx, zz, field, cmap='Greys',\
-                    norm=colors.LogNorm(vmin=minmax[0], vmax=minmax[1]))
-        else:
-            if posdef:
-                cmap = 'plasma'
+    # may need to symmetrize array
+    if not kw.sym is None:
+        print('got here')
+
+    # grid info
+    nt, nr = len(cost), len(rr)
+    zeros = np.zeros((nt, nr))
+    rr_2d = rr.reshape((1, nr)) + zeros
+    rmax = np.max(rr_2d)
+    cost_2d = cost.reshape((nt, 1)) + zeros
+    sint_2d = np.sqrt(1.0 - cost_2d**2.0)
+    tt_lat = 180.0/np.pi*(np.pi/2.0 - np.arccos(cost))
+
+    # use these to plot lines/boundaries
+    xx_full = rr_2d*sint_2d/rmax
+    yy_full = rr_2d*cost_2d/rmax
+
+    if kw.rbcz is None: # just plotting 1 domain
+        xx = xx_full
+        yy = yy_full
+        field = field_full
+    else: # plotting two domains
+        irbcz = np.argmin(np.abs(rr/rsun - kw.rbcz))
+
+        field = field[:, :irbcz+1]
+        xx = (rr_2d*sint_2d)[:, :irbcz+1]/rmax
+        yy = (rr_2d*cost_2d)[:, :irbcz+1]/rmax
+
+        fieldrz = field_full[:, irbcz+1:]
+        xxrz = (rr_2d*sint_2d)[:, irbcz+1:]/rmax
+        yyrz = (rr_2d*cost_2d)[:, irbcz+1:]/rmax
+
+    # plot the CZ field
+    my_contourf(xx, yy, field, fig, ax, **kw_my_contourf)
+
+    # possibly plot RZ field
+    if not kw.rbcz is None: 
+        # will need to change some contourf kwargs:
+        kw_my_contourf.minmax = kw.minmaxrz
+        kw_my_contourf.allticksoff = False # no need to turn off ticks twice
+        if kw.cmaprz is None:
+            if kw.posdef: 
+                kw_my_contourf.cmap = 'cividis'
             else:
-                cmap = 'RdYlBu_r'
-            plt.pcolormesh(xx, zz, field, vmin=minmax[0], vmax=minmax[1],\
-                    cmap=cmap)
-        
-        # Get the position of the axes on the figure
-        ax_left, ax_right, ax_bottom, ax_top = axis_range(ax)
-        ax_width = ax_right - ax_left
-        ax_height = ax_top - ax_bottom
-        ax_aspect = ax_height/ax_width
-       
-        # Set the colorbar axis to be in the "cavity" of the meridional plane
-        # The colorbar height is set by making sure it "fits" in the cavity
-        chi = ri/ro # aspect ratio of the shell
-        cavity_height = ax_height*chi
-        cbax_aspect = 10
-        cbax_height = 0.7*cavity_height
-        cbax_width = cbax_height/cbax_aspect / ax_aspect
-        
-        cbax_left = ax_left + 0.1*ax_width
-        cbax_bottom = ax_bottom + 0.1*ax_height
-        
-        cbaxes = fig.add_axes([cbax_left, cbax_bottom,\
-                       cbax_width, cbax_height])
-        cbar = plt.colorbar(cax=cbaxes)
-
-        cbaxes.tick_params(labelsize=fontsize)
-        cbar.ax.tick_params(labelsize=fontsize)   #font size for the ticks
-
-        if not logscale:
-            if posdef:
-                mid = (minmax[0] + minmax[1])/2.
-                ticks = np.array([minmax[0], mid, minmax[1]])
-            else:
-                ticks = np.array([minmax[0], 0., minmax[1]])
-            ticklabels = []
-            for i in range(len(ticks)):
-                ticklabels.append(str(round(ticks[i], 1)))
-            ticks = np.array(ticks)
-            cbar.set_ticks(ticks)
-            cbar.set_ticklabels(ticklabels)
-            cbar_label = (r'$\times10^{%i}\ $' %exp) + units
+                kw_my_contourf.cmap = 'PuOr_r'    
         else:
-            cbar_label = units
-        # Put the units and exponent to left of colorbar
-        fig.text(cbax_left - 0.3*cbax_width, cbax_bottom + cbax_height/2.,\
-                cbar_label, ha='right', va='center', rotation=90,\
-                fontsize=fontsize)
+            kw_my_contourf.cmap = kw.cmaprz
+        kw_my_contourf.cbar_no = 2
+        my_contourf(xxrz, yyrz, fieldrz, fig, ax, **kw_my_contourf)
 
-    # Plot the boundary of the meridional plane
-    plt.sca(ax)
-    # outer boundary
-    plt.plot(rr[0]/ro*sint, rr[0]/ro*cost, 'k', linewidth=lw)
-    # inner boundary
-    plt.plot(rr[-1]/ro*sint, rr[-1]/ro*cost, 'k', linewidth=lw) 
-    # polar "edge"
-    plt.plot([0,0], [rr[-1]/ro, rr[0]/ro], 'k', linewidth=lw) 
-    # equatorial "edge"
-    plt.plot([rr[-1]/ro, rr[0]/ro], [0,0], 'k', linewidth=lw) 
+    # potentially plot coordinate lines
+    if not kw.plotlatlines:
+        kw.latvals = np.array([])
+    for ind in [1, 2]:
+        if ind == 1:
+            vals = make_array(kw.rvals, tolist=True)
+            linecolors = kw.linecolors1
+            linestyles = kw.linestyles1
+            linewidths = kw.linewidths1
+        if ind == 2:
+            vals = make_array(kw.latvals, tolist=True)
+            linecolors = kw.linecolors2
+            linestyles = kw.linestyles2
+            linewidths = kw.linewidths2
 
-    # Plot latitude lines, if desired
-    if plotlatlines: 
-        lats = (np.pi/2. - np.arccos(cost))*180./np.pi
-        lats_to_plot = np.arange(0., 90., 15.) 
-        for lat in lats_to_plot:
-            it = np.argmin(np.abs(lats - lat))
-            xx_in, zz_in = rr[-1]/ro*sint[it], rr[-1]/ro*cost[it]
-            xx_out, zz_out = rr[0]/ro*sint[it], rr[0]/ro*cost[it]
-            plt.sca(ax)
-            plt.plot([xx_in, xx_out], [zz_in, zz_out], 'k',\
-                    linewidth=contour_lw)
+        # make lists from everything that needs to be
+        linecolors = make_array(linecolors, tolist=True, length=len(vals))
+        linestyles = make_array(linestyles, tolist=True, length=len(vals))
+        linewidths = make_array(linewidths, tolist=True, length=len(vals))
 
-    # Set axis ranges to be just outside the boundary lines
-    lilbit = 0.01
-    ax.set_xlim((-lilbit, 1 + lilbit))
-    ax.set_ylim((-lilbit, 1 + lilbit))
-    ax.axis('off') 
+        if kw.plotboundary:
+            if ind == 1:
+                to_add = [np.min(rr/rsun), np.max(rr/rsun)]
+            if ind == 2:
+                to_add = [np.min(tt_lat), np.max(tt_lat)]
+            vals = [to_add[0]] + vals + [to_add[1]]
+            linewidths = [default_lw] + linewidths + [default_lw] 
+            linestyles = ['-'] + linestyles + ['-'] # make boundary lines solid
+            linecolors = ['k'] + linecolors + ['k'] # make boundary lines black
 
-    # Plot contours in the meridional plane, if desired
-    if plotcontours:
-        # Determine the contour levels
-        if levels is None:
-            if logscale:
-                levels = np.logspace(minexp, maxexp, nlevs)
-            else:
-                levels = np.linspace(minmax[0], minmax[1], nlevs)
-        else: # the caller specified specific contour levels to plot!
-            levels = np.array(levels)
-        # Determine how to color the contours
-        if logscale:
-            contour_color = 'r'
-        elif posdef:
-            contour_color = 'w'
-        else:
-            contour_color = 'k'
-        # plot the contours
-        plt.sca(ax)
-        plt.contour(xx, zz, field, colors=contour_color, levels=levels,\
-                linewidths=contour_lw)
-    if showplot:
-        plt.show()
+        # make vals an array again
+        for i in range(len(vals)):
+            val = vals[i]
+            if ind == 1:
+                irval = np.argmin(np.abs(rr/rsun - val))
+                xline, yline = xx_full[:, irval], yy_full[:, irval]
+            if ind == 2:
+                ilatval = np.argmin(np.abs(tt_lat - val))
+                xline, yline = xx_full[ilatval, :], yy_full[ilatval, :]
+            ax.plot(xline, yline, linewidth=linewidths[i], linestyle=linestyles[i], color=linecolors[i])
 
 def plot_quiver(vr, vt, rr, cost, fig=None, ax=None, minmax=None,\
         plotlatlines=False, rvals=[], fontsize=10,\
