@@ -320,7 +320,7 @@ def sci_format(num, ndec=1):
     return ((r'$%1.' + (r'%i' %ndec) + r'f\times10^{%i}$')\
             %(mantissa, exponent))
 
-lineplot_kwargs_default = dict({'xlabel': None, 'ylabel': None, 'title': None, 'xvals': np.array([]), 'yvals': np.array([]), 'labels': None, 'xlogscale': False, 'xminmax': None, 'minmax': None, 'xcut': None, 'minmax2': None, 'scatter': False, 'colors': color_order, 'linestyles': style_order[0], 'markers': marker_order[0], 'lw': default_lw, 's': default_s, 'ncolleg': 3})
+lineplot_kwargs_default = dict({'xlabel': None, 'ylabel': None, 'title': None, 'xvals': np.array([]), 'yvals': np.array([]), 'labels': None, 'xlogscale': False, 'xminmax': None, 'minmax': None, 'xcut': None, 'minmax2': None, 'scatter': False, 'colors': color_order, 'linestyles': style_order[0], 'markers': marker_order[0], 'lw': default_lw, 's': default_s, 'ncolleg': 3, 'fontsize': default_labelsize})
 lineplot_kwargs_default.update(lineplot_minmax_kwargs_default)
 
 def lineplot(xx, profiles, ax, **kwargs):
