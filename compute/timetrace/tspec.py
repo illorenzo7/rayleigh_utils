@@ -346,7 +346,7 @@ for irval in irvals:
             t1 = time.time()
 
             # create data directory if it doesn't already exist
-            datadir = clas0['datadir']
+            datadir = clas0['datadir'] + 'tspec/'
             if not os.path.isdir(datadir):
                 os.makedirs(datadir)
 

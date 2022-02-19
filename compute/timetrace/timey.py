@@ -240,11 +240,6 @@ comm.Barrier()
 
 # proc 0 saves the data
 if rank == 0:
-    # create data directory if it doesn't already exist
-    datadir = dirname + '/data/'
-    if not os.path.isdir(datadir):
-        os.makedirs(datadir)
-
     # Set the timetrace savename by the directory, what we are saving,
     # and first and last iteration files for the trace
     if rad:
@@ -253,7 +248,12 @@ if rank == 0:
         basename = 'timeshav'
     else:
         basename = 'timelat'
-    
+
+    # create data directory if it doesn't already exist
+    datadir = clas0['datadir'] + basename + '/'
+    if not os.path.isdir(datadir):
+        os.makedirs(datadir)
+
     basename += '_' + groupname + rtag
     savename = basename + clas0['tag'] + '-' +\
             file_list[0] + '_' + file_list[-1] + '.pkl'
