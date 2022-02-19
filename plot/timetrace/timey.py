@@ -67,7 +67,8 @@ dataname += clas0['tag']
 
 # get data
 if kw.the_file is None:
-    kw.the_file = get_widest_range_file(clas0['datadir'], dataname)
+    kw.the_file = get_widest_range_file(clas0['datadir'] +\
+            datatype + '/', dataname)
 
 # Read in the data
 print ('reading ' + kw.the_file)
