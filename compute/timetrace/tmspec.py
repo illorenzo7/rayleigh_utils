@@ -152,11 +152,15 @@ if rank == 0:
         %(nfiles, dataname, file_list[0], file_list[-1]))
 
 count = 1
+if rank == 0:
+    totpklfiles = len(irvals)*len(qvals)
+
 for irval in irvals:
     for qval in qvals:
         if rank == 0:
             print (buff_line)
-            print ("data file no. %02i" %count)
+            fracpklfiles = count/totpklfiles*100
+            print ("data file no. %04i of %04i (%5.1f%% done)" %(count, totpklfiles, fracpklfiles))
             print ("irval = ", irval)
             print ("qval = ", qval)
             print (buff_line)
