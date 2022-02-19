@@ -108,8 +108,6 @@ if rank == 0:
 
     # Get metadata
     rvals = a0.radius[irvals]/rsun
-    nrvals = len(rvals)
-    nq = len(qvals)
     clat = kw.clat
     dlat = kw.dlat
 
@@ -157,11 +155,11 @@ else: # recieve my_files, my_nfiles
 
 # Broadcast meta data
 if rank == 0:
-    meta = [dirname, radatadir, qvals, nq, irvals, nrvals, nphi,\
+    meta = [dirname, radatadir, qvals, irvals, nphi,\
             ith1, ith2, tw_strip]
 else:
     meta = None
-dirname, radatadir, qvals, nq, irvals, nrvals, nphi,\
+dirname, radatadir, qvals, irvals, nphi,\
         ith1, ith2, tw_strip = comm.bcast(meta, root=0)
 
 # Checkpoint and time
@@ -187,11 +185,15 @@ if rank == 0:
 
 # loop over rvals and qvals, and make data
 count = 1
+if rank == 0:
+    totpklfiles = len(irvals)*len(qvals)
+
 for irval in irvals:
     for qval in qvals:
         if rank == 0:
             print (buff_line)
-            print ("data file no. %02i" %count)
+            fracpklfiles = count/totpklfiles*100
+            print ("data file no. %04i of %04i (%5.1f%% done)" %(count, totpklfiles, fracpklfiles))
             print ("irval = ", irval)
             print ("qval = ", qval)
             print (buff_line)
