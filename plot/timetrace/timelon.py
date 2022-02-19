@@ -23,7 +23,7 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = clas0['magnetism']
 
 # defaults
-kwargs_default = dict({'the_file': None, 'ntot': 2000, 'clat': 10, 'dlat': 0, 'om': None, 'rad': False, 'lon': False, 'shav': False, 'isamplevals': np.array([0]), 'samplevals': None, 'rcut': None, 'groupname': 'b'})
+kwargs_default = dict({'the_file': None, 'ntot': 2000, 'clat': 10, 'dlat': 0, 'om': None, 'irvals': np.array([0]), 'rvals': None, 'rcut': None, 'groupname': 'b'})
 kwargs_default.update(plot_timey_kwargs_default)
 
 # check for bad keys
@@ -43,16 +43,10 @@ time_unit, time_label, rotation, simple_label = get_time_unit(dirname)
 # get grid info
 di_grid = get_grid_info(dirname)
 
-datatype = 'timelat'
-sampleaxis = di_grid['tt_lat']
-if kw.rad:
-    datatype = 'timerad'
-    sampleaxis = di_grid['rr']/rsun
-elif kw.lon:
-    if not kw.om is None:
-        om0 = 1/time_unit*1e9 # frame rate, nHz
-    datatype = 'timelon_clat' + lat_format(clat) + '_dlat%03.0f' %dlat
-    sampleaxis = di_grid['lons']
+if not kw.om is None:
+    om0 = 1/time_unit*1e9 # frame rate, nHz
+datatype = 'timelon_clat' + lat_format(clat) + '_dlat%03.0f' %dlat
+sampleaxis = di_grid['lons']
 elif kw.shav:
     datatype = 'timeshav'
     sampleaxis = di_grid['rr']/rsun
@@ -78,7 +72,7 @@ times = di['times']
 iters = di['iters']
 qvals_avail = np.array(di['qvals'])
 if not kw.shav:
-    samplevals_avail = di['samplevals']
+    rvals_avail = di['rvals']
 
 # time range
 iter1, iter2 = get_iters_from_file(kw.the_file)
@@ -107,8 +101,8 @@ if not kw.ntot == 'full':
 
 # these all need to be arrays
 kw.qvals = make_array(kw.qvals)
-kw.isamplevals = make_array(kw.isamplevals)
-kw.samplevals = make_array(kw.samplevals)
+kw.irvals = make_array(kw.irvals)
+kw.rvals = make_array(kw.rvals)
 
 # get raw traces of desired variables
 terms = []
@@ -132,41 +126,41 @@ nplots = len(terms)
 # determine desired levels to plot
 if not kw.shav: # kw.shav means integrated over latitude, so can't choose
     # specific latitude levels
-    if not kw.samplevals is None: # isamplevals being set indirectly
+    if not kw.rvals is None: # irvals being set indirectly
         # check for special 'all' option
         itsall = False
-        if len(kw.samplevals) == 1:
-            if kw.samplevals[0] == 'all':
+        if len(kw.rvals) == 1:
+            if kw.rvals[0] == 'all':
                 itsall = True
         if itsall:
-            kw.isamplevals = np.arange(len(samplevals_avail))
+            kw.irvals = np.arange(len(rvals_avail))
         else:
-            kw.isamplevals = np.zeros_like(kw.samplevals, dtype='int')
-            for i in range(len(kw.samplevals)):
-                kw.isamplevals[i] = np.argmin(np.abs(samplevals_avail - kw.samplevals[i]))
+            kw.irvals = np.zeros_like(kw.rvals, dtype='int')
+            for i in range(len(kw.rvals)):
+                kw.irvals[i] = np.argmin(np.abs(rvals_avail - kw.rvals[i]))
 
 # Loop over the desired levels and save plots
-for isampleval in kw.isamplevals:
+for irval in kw.irvals:
     if not kw.shav:
-        sampleval = samplevals_avail[isampleval]
+        rval = rvals_avail[irval]
 
     # set some labels 
     axislabel = 'latitude (deg)'
-    samplelabel =  r'$r/R_\odot$' + ' = %.3f' %sampleval
-    position_tag = '_rval%.3f' %sampleval
+    samplelabel =  r'$r/R_\odot$' + ' = %.3f' %rval
+    position_tag = '_rval%.3f' %rval
     if kw.rad:
         axislabel = r'$r/R_\odot$'
-        samplelabel = 'lat = ' + lat_format(sampleval)
-        position_tag = '_lat' + lat_format(sampleval)
+        samplelabel = 'lat = ' + lat_format(rval)
+        position_tag = '_lat' + lat_format(rval)
     elif kw.lon:
         axislabel = 'longitude (deg)'
-        samplelabel = 'clat = ' + lat_format(clat) + '\n' +  r'$r/R_\odot$' + ' = %.3f' %sampleval
+        samplelabel = 'clat = ' + lat_format(clat) + '\n' +  r'$r/R_\odot$' + ' = %.3f' %rval
         if not kw.om is None:
             samplelabel += '\n' + (r'$\Omega_{\rm{frame}}$' + ' = %.1f nHz ' + '\n' + r'$\Omega_{\rm{frame}} - \Omega_0$' + ' = %.2f nHz') %(om, om - om0)
         else:
             samplelabel += '\n' + r'$\Omega_{\rm{frame}} = \Omega_0$'
 
-        position_tag = '_clat' + lat_format(clat) + '_rval%.3f' %sampleval
+        position_tag = '_clat' + lat_format(clat) + '_rval%.3f' %rval
     elif kw.shav:
         axislabel = r'$r/R_\odot$'
         samplelabel = ''
@@ -183,7 +177,7 @@ for isampleval in kw.isamplevals:
         maintitle += '\n' + ('t_avg = %.1f Prot' %averaging_time)
 
     if not kw.shav:
-        print('plotting sampleval = %0.3f (i = %02i)' %(sampleval, isampleval))
+        print('plotting rval = %0.3f (i = %02i)' %(rval, irval))
    
     # make plot
     fig, axs, fpar = make_figure(nplots=nplots, ncol=1, sub_width_inches=sub_width_inches, sub_height_inches=sub_height_inches, margin_left_inches=margin_left_inches, margin_right_inches=margin_right_inches, margin_top_inches=margin_top_inches, margin_bottom_inches=margin_bottom_inches)
@@ -191,9 +185,9 @@ for isampleval in kw.isamplevals:
     for iplot in range(nplots):
         ax = axs[iplot, 0]
         if kw.rad:
-            field = terms[iplot][:, isampleval, :]
+            field = terms[iplot][:, irval, :]
         else:
-            field = terms[iplot][:, :, isampleval]
+            field = terms[iplot][:, :, irval]
         plot_timey(field, times, sampleaxis, fig, ax, **kw_plot_timey)
                 
         #  title the plot
@@ -225,7 +219,7 @@ for isampleval in kw.isamplevals:
         plt.savefig(plotdir + '/' + savename, dpi=200)
 
     # Show the plot if only plotting at one latitude
-    if clas0['showplot'] and len(kw.isamplevals) == 1:
+    if clas0['showplot'] and len(kw.irvals) == 1:
         plt.show()
     else:
         plt.close()
