@@ -19,6 +19,8 @@
 # initialize communication
 import time
 from mpi4py import MPI
+import sys, os
+sys.path.append(os.environ['raco'])
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 
@@ -49,7 +51,7 @@ import numpy as np
 # data type and reading function
 import sys, os
 sys.path.append(os.environ['rapp'])
-from rayleigh_diagnostics import Shell_Slices
+from rayleigh_diagnostics_alt import Shell_Slices
 reading_func = Shell_Slices
 dataname = 'Shell_Slices'
 
@@ -69,9 +71,6 @@ if rank == 0:
 if rank == 0:
     # get CLAS
     args = sys.argv
-    if not '--qvals' in args:
-        args += ['--qvals', 'b'] # clas will deal with --qvals
-        # default trace the magnetic field
     clas0, clas = read_clas(args)
     dirname = clas0['dirname']
 
@@ -81,30 +80,38 @@ if rank == 0:
     # Get all the file names in datadir and their integer counterparts
     file_list, int_file_list, nfiles = get_file_lists(radatadir, args)
 
+    # read first file for some metadata
+    a0 = reading_func(radatadir + file_list[0], '')
+
     # Set other defaults
-    kwargs_default = dict({'clat': 10, 'dlat': 0, 'rvals': 'all', 'irvals': None})
-    kwargs = update_dict(kwargs_default, clas)
-    clat = kwargs.clat
-    dlat = kwargs.dlat
-    rvals = kwargs.rvals
-    irvals = make_array(kwargs.irvals)
+    kwargs_default = dict({'clat': 10, 'dlat': 0, 'irvals': np.array([0]), 'rvals': None, 'qvals': np.array([1])})
+
+    # overwrite defaults
+    kw = update_dict(kwargs_default, clas)
+
+    # get the rvals we want
+    rvals = kw.rvals
+    irvals = kw.irvals
+    if not kw.rvals is None: # irvals haven't been set directly
+        if np.all(kw.rvals == 'all'):
+            irvals = np.arange(a0.nr)
+        else:
+            irvals = np.zeros_like(kw.rvals, dtype='int')
+            for i in range(len(kw.rvals)):
+                irvals[i] = np.argmin(np.abs(a0.radius/rsun - kw.rvals[i]))
+
+    # and the qvals
+    qvals = make_array(kw.qvals)
+
+    # everything must be array
+    irvals = make_array(irvals)
 
     # Get metadata
-    a0 = reading_func(radatadir + file_list[0], '')
-    qvals = clas['qvals']
-    nq = len(qvals)
-
-    if irvals is None:
-        if np.isscalar(rvals):
-            if rvals == 'all':
-                rvals = a0.radius/rsun
-        irvals = []
-        for rval in rvals:
-            irvals.append(np.argmin(np.abs(a0.radius/rsun - rval)))
-        irvals = np.array(irvals)
-        # recompute the actual sample values we get
     rvals = a0.radius[irvals]/rsun
     nrvals = len(rvals)
+    nq = len(qvals)
+    clat = kw.clat
+    dlat = kw.dlat
 
     # didn't put this earlier because it got messed up by the message
     # saying which depths we were taking
@@ -126,9 +133,6 @@ if rank == 0:
     # Get the problem size
     nproc_min, nproc_max, n_per_proc_min, n_per_proc_max =\
             opt_workload(nfiles, nproc)
-
-    # Get metadata
-    nq = len(qvals)
 
     # Distribute file_list to each process
     for k in range(nproc - 1, -1, -1):
@@ -181,87 +185,102 @@ if rank == 0:
     print(fill_str('computing', lent, char), end='\r')
     t1 = time.time()
 
-# Now analyze the data
-my_times = []
-my_iters = []
-my_vals = []
+# loop over rvals and qvals, and make data
+count = 1
+for irval in irvals:
+    for qval in qvals:
+        if rank == 0:
+            print (buff_line)
+            print ("data file no. %02i" %count)
+            print ("irval = ", irval)
+            print ("qval = ", qval)
+            print (buff_line)
+            print(fill_str('reading data', lent, char), end='\r')
+            t1_thisfile = time.time()
+            t1 = np.copy(t1_thisfile)
 
-for i in range(my_nfiles):
-    #print ("rank ", rank, ": reading ", str(my_files[i]).zfill(8))
-    ta = time.time()
-    a = reading_func(radatadir + str(my_files[i]).zfill(8), '')
-    #print ("rank ", rank, ": done reading ", str(my_files[i]).zfill(8))
-    tb = time.time()
-    #print ("took %.3f" %(tb - ta))
-    for j in range(a.niter):
-        # space in the arrays
-        # get desired values in the strip, careful not to change 
-        # the dimensionality of the array: (nphi, nlats, nrvals, nq)
-        vals_strip = a.vals[:, ith1:ith2+1, :, :, j]
-        vals_strip = vals_strip[:, :, irvals, :]
-        vals_strip = vals_strip[:, :, :, a.lut[qvals]]
-        my_vals.append(np.sum(vals_strip*tw_strip, axis=1))
-        my_times.append(a.time[j])
-        my_iters.append(a.iters[j])
-    if rank == 0:
-        pcnt_done = i/my_nfiles*100.0
-        print(fill_str('computing', lent, char) +\
-                ('rank 0 %5.1f%% done' %pcnt_done), end='\r')
+        # Now analyze the data, for each rval, qval
+        my_times = []
+        my_iters = []
+        my_vals = []
 
-# Checkpoint and time
-comm.Barrier()
+        for i in range(my_nfiles):
+            a = reading_func(radatadir + str(my_files[i]).zfill(8), '', irvals=irval, qvals=qval)
+            for j in range(a.niter):
+                # space in the arrays
+                # get desired values in the strip
+                vals_strip = a.vals[:, ith1:ith2+1, 0, 0, j]
+                my_vals.append(np.sum(vals_strip*tw_strip, axis=1))
+                my_times.append(a.time[j])
+                my_iters.append(a.iters[j])
+            if rank == 0:
+                pcnt_done = i/my_nfiles*100.0
+                print(fill_str('computing', lent, char) +\
+                        ('rank 0 %5.1f%% done' %pcnt_done), end='\r')
+
+        # Checkpoint and time
+        comm.Barrier()
+        if rank == 0:
+            t2 = time.time()
+            print('\n' + fill_str('computing time', lent, char), end='')
+            print (format_time(t2 - t1))
+            print(fill_str('rank 0 collecting and saving the results',\
+                    lent, char), end='')
+            t1 = time.time()
+
+        # proc 0 now collects the results from each process
+        if rank == 0:
+            # initialize empty lists for the final arrays
+            times = []
+            iters = []
+            vals = []
+
+            # Gather the results
+            for j in range(nproc):
+                if j >= 1:
+                    # Get my_times, my_iters, my_vals from rank j
+                    my_times, my_iters, my_vals = comm.recv(source=j)
+                times += my_times
+                iters += my_iters
+                vals += my_vals
+        else: # other processes send their data
+            comm.send([my_times, my_iters, my_vals], dest=0)
+
+        # Make sure proc 0 collects all data
+        comm.Barrier()
+
+        # proc 0 saves the data
+        if rank == 0:
+            # create data directory if it doesn't already exist
+            datadir = clas0['datadir'] + 'timelon/'
+            if not os.path.isdir(datadir):
+                os.makedirs(datadir)
+
+            # Set the timetrace savename
+            savename = 'timelon_clat' + lat_format(clat) + '_dlat%03.0f' %dlat + ('_qval%04i_irval%02i' %(qval, irval)) +\
+                    clas0['tag'] + '-' + file_list[0] + '_' + file_list[-1] + '.pkl'
+            savefile = datadir + savename
+
+            # save the data
+            f = open(savefile, 'wb')
+            # convert everything to arrays
+            vals = np.array(vals)
+            times = np.array(times)
+            iters = np.array(iters)
+            pickle.dump({'vals': vals, 'times': times, 'iters': iters, 'clat': clat, 'dlat': dlat}, f, protocol=4)
+            f.close()
+            print ('data saved at ')
+            print (make_bold(savefile))
+
+            t2 = time.time()
+            print (format_time(t2 - t1))
+            print(make_bold(fill_str('time for file no. %02i' %count, lent, char)), end='')
+            print (make_bold(format_time(t2 - t1_thisfile)))
+            print (buff_line)
+        count += 1
+
 if rank == 0:
     t2 = time.time()
-    print('\n' + fill_str('computing time', lent, char), end='')
-    print (format_time(t2 - t1))
-    print(fill_str('rank 0 collecting and saving the results',\
-            lent, char), end='')
-    t1 = time.time()
-
-# proc 0 now collects the results from each process
-if rank == 0:
-    # initialize empty lists for the final arrays
-    times = []
-    iters = []
-    vals = []
-
-    # Gather the results
-    for j in range(nproc):
-        if j >= 1:
-            # Get my_times, my_iters, my_vals from rank j
-            my_times, my_iters, my_vals = comm.recv(source=j)
-        times += my_times
-        iters += my_iters
-        vals += my_vals
-else: # other processes send their data
-    comm.send([my_times, my_iters, my_vals], dest=0)
-
-# Make sure proc 0 collects all data
-comm.Barrier()
-
-# proc 0 saves the data
-if rank == 0:
-    # create data directory if it doesn't already exist
-    datadir = clas0['datadir']
-    if not os.path.isdir(datadir):
-        os.makedirs(datadir)
-
-    # Set the timetrace savename by the directory, what we are saving, 
-    # and first and last iteration files for the trace (and optional tag)
-    savename = 'timelon' + '_clat' + lat_format(clat) + '_dlat%03.0f' %dlat + clas0['tag'] + '-' + file_list[0] + '_' + file_list[-1] + '.pkl'
-    savefile = datadir + savename    
-
-    # save the data
-    f = open(savefile, 'wb')
-    # convert everything to arrays
-    vals = np.array(vals)
-    times = np.array(times)
-    iters = np.array(iters)
-    pickle.dump({'vals': vals, 'times': times, 'iters': iters, 'samplevals': rvals, 'qvals': qvals, 'clat': clat, 'dlat': dlat}, f, protocol=4)
-    f.close()
-    t2 = time.time()
-    print (format_time(t2 - t1))
     print(make_bold(fill_str('total time', lent, char)), end='')
     print (make_bold(format_time(t2 - t1_glob)))
-    print ('data saved at ')
-    print (make_bold(savefile))
+    print (buff_line)
