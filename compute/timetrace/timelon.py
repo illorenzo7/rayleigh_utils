@@ -87,7 +87,7 @@ if rank == 0:
     clat = kwargs.clat
     dlat = kwargs.dlat
     rvals = kwargs.rvals
-    irvals = kwargs.irvals
+    irvals = make_array(kwargs.irvals)
 
     # Get metadata
     a0 = reading_func(radatadir + file_list[0], '')
@@ -98,13 +98,13 @@ if rank == 0:
         if np.isscalar(rvals):
             if rvals == 'all':
                 rvals = a0.radius/rsun
-        nrvals = len(rvals)
         irvals = []
         for rval in rvals:
             irvals.append(np.argmin(np.abs(a0.radius/rsun - rval)))
         irvals = np.array(irvals)
         # recompute the actual sample values we get
     rvals = a0.radius[irvals]/rsun
+    nrvals = len(rvals)
 
     # didn't put this earlier because it got messed up by the message
     # saying which depths we were taking
@@ -190,9 +190,9 @@ for i in range(my_nfiles):
     #print ("rank ", rank, ": reading ", str(my_files[i]).zfill(8))
     ta = time.time()
     a = reading_func(radatadir + str(my_files[i]).zfill(8), '')
-    print ("rank ", rank, ": done reading ", str(my_files[i]).zfill(8))
+    #print ("rank ", rank, ": done reading ", str(my_files[i]).zfill(8))
     tb = time.time()
-    print ("took %.3f" %(tb - ta))
+    #print ("took %.3f" %(tb - ta))
     for j in range(a.niter):
         # space in the arrays
         # get desired values in the strip, careful not to change 
