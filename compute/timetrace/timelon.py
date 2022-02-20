@@ -125,7 +125,7 @@ if rank == 0:
     dlat = di_grid['tt_lat'][ith2] - di_grid['tt_lat'][ith2]
     tw_strip = di_grid['tw'][ith1:ith2+1]
     tw_strip /= np.sum(tw_strip)
-    tw_strip = tw_strip.reshape((1, ith2 - ith1 + 1, 1, 1))
+    tw_strip = tw_strip.reshape((1, ith2 - ith1 + 1))
     nphi =  di_grid['nphi']
 
     # Get the problem size
