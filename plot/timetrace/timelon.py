@@ -34,6 +34,9 @@ kw = update_dict(kwargs_default, clas)
 kw_plot_timey = update_dict(plot_timey_kwargs_default, clas)
 
 # get the rvals we want
+radlevs = get_slice_levels(dirname)
+irvals = kw.irvals
+
 rvals = kw.rvals
 irvals = kw.irvals
 if not kw.rvals is None: # irvals haven't been set directly
@@ -52,9 +55,12 @@ irvals = make_array(irvals)
 
 # baseline time unit
 time_unit, time_label, rotation, simple_label = get_time_unit(dirname)
+print ('time_unit = ', time_unit/86400, 'days')
 
 # get grid info
 di_grid = get_grid_info(dirname)
+nphi = di_grid['nphi']
+lons = di_grid['lons']
 
 if not kw.om is None:
     om0 = 1/time_unit*1e9 # frame rate, nHz
@@ -62,20 +68,21 @@ if not kw.om is None:
 # set figure dimensions
 sub_width_inches = 3.0
 sub_height_inches = 9.0
-margin_bottom_inches = 1/2 # space for x-axis and colorbar
+margin_bottom_inches = 1/2 # space for x-axis and label
 margin_top_inches =  1.25
-margin_left_inches = 5/8 # space for time label
-#margin_right_inches = 7/8 # space for colorbar
+margin_left_inches = 1/2 # space for time label
+margin_right_inches = 7/8 # space for colorbar
 
 # loop over data and make plots
 for irval in irvals:
+    rval = radlevs.radius[irval]/rsun
     for qval in qvals:
-        dataname = 'timelon_clat' + lat_format(clat) + '_dlat%03.0f' %dlat + ('_qval%04i_irval%02i' %(qval, irval)) + clas0['tag']
+        dataname = 'timelon_clat' + lat_format(kw.clat) + '_dlat%03.0f' %kw.dlat + ('_qval%04i_irval%02i' %(qval, irval)) + clas0['tag']
 
         # get data
         if kw.the_file is None:
             kw.the_file = get_widest_range_file(clas0['datadir'] +\
-                   + 'timelon/', dataname)
+                'timelon/', dataname)
 
         # Read in the data
         print ('reading ' + kw.the_file)
@@ -86,16 +93,17 @@ for irval in irvals:
 
         # time range
         iter1, iter2 = get_iters_from_file(kw.the_file)
-        times /= time_unit
 
         # Subtract DR, if desired
         if not kw.om is None:
             print ("plotting in rotating frame om = %.1f nHz" %kw.om)
             print ("compare this to frame rate    = %.1f nHz" %om0)
-            phi_deflections = (times*(kw.om - om0)) % 1 # between zero and one
-            nphi = len(sampleaxis)
+            rate_wrt_frame = (kw.om - om0)/1e9
+            #phi_deflections = ((times - times[0])*rate_wrt_frame) % 1 
+            t0 = times[0]
+            # between zero and one
             for it in range(len(times)):
-                phi_deflection = phi_deflections[it]
+                phi_deflection = ((times[it] - t0)*rate_wrt_frame) % 1
                 nroll = int(phi_deflection*nphi)
                 vals[it] = np.roll(vals[it], -nroll, axis=0)
 
@@ -109,7 +117,7 @@ for irval in irvals:
             print ("after thin_data: len(times) = %i" %len(times))
 
         # set some labels 
-        samplelabel = 'clat = ' + lat_format(clat) + '\n' +  r'$r/R_\odot$' + ' = %.3f' %rval
+        samplelabel = 'clat = ' + lat_format(kw.clat) + '\n' +  r'$r/R_\odot$' + ' = %.3f' %rval
         if not kw.om is None:
             samplelabel += '\n' + (r'$\Omega_{\rm{frame}}$' + ' = %.1f nHz ' + '\n' + r'$\Omega_{\rm{frame}} - \Omega_0$' + ' = %.2f nHz') %(om, om - om0)
         else:
@@ -121,12 +129,14 @@ for irval in irvals:
             maintitle += '\n' + samplelabel
 
         # Display at terminal what we are plotting
-        savename = dataname + '_' + basename + clas0['tag'] + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
+        savename = dataname + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
    
         # make plot
-        fig, axs, fpar = make_figure(nplots=nplots, ncol=1, sub_width_inches=sub_width_inches, sub_height_inches=sub_height_inches, margin_left_inches=margin_left_inches, margin_right_inches=margin_right_inches, margin_top_inches=margin_top_inches, margin_bottom_inches=margin_bottom_inches)
+        fig, axs, fpar = make_figure(sub_width_inches=sub_width_inches, sub_height_inches=sub_height_inches, margin_left_inches=margin_left_inches, margin_right_inches=margin_right_inches, margin_top_inches=margin_top_inches, margin_bottom_inches=margin_bottom_inches)
+        ax = axs[0, 0]
 
         # plot the colormesh
+        plot_timey(vals.T, lons, times/time_unit, fig, ax, **kw_plot_timey)
 
         # title plot
         fig.text(fpar['margin_left'], 1 - fpar['margin_top'], maintitle, fontsize=fontsize, ha='left', va='bottom')
@@ -146,7 +156,7 @@ for irval in irvals:
             if not kw.om is None:
                 plotdir = my_mkdir(clas0['plotdir'] + '/timelon_om%.1f' %om)
             else:
-                plotdir = my_mkdir(clas0['plotdir'] + '/timelon_om%.1f' %om)
+                plotdir = my_mkdir(clas0['plotdir'] + '/timelon')
 
         print ("saving", plotdir + '/' + savename)
         plt.savefig(plotdir + '/' + savename, dpi=200)
