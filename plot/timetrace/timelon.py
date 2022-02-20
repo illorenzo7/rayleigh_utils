@@ -68,7 +68,9 @@ if not kw.om is None:
 sub_width_inches = 3.0
 sub_height_inches = 9.0
 sub_margin_bottom_inches = 1/2 # space for x-axis and label
-margin_top_inches =  1.25
+margin_top_inches =  1 + 1/4
+if not kw.om is None:
+    margin_top_inches += 1/4
 sub_margin_left_inches = 3/4 # space for time label
 sub_margin_right_inches = 7/8 # space for colorbar
 
@@ -123,7 +125,7 @@ for irval in irvals:
             samplelabel += '\n' + r'$\Omega_{\rm{frame}} = \Omega_0$'
 
         # Put some useful information on the title
-        maintitle = dirname_stripped 
+        maintitle = dirname_stripped + '\nqval = %i' %qval
         if not kw.shav:
             maintitle += '\n' + samplelabel
 
@@ -163,7 +165,7 @@ for irval in irvals:
             plt.savefig(plotdir + '/' + savename, dpi=200)
 
         # Show the plot if only plotting at one latitude
-        if clas0['showplot'] and len(kw.irvals) == 1:
+        if clas0['showplot'] and len(irvals) == 1:
             plt.show()
         else:
             plt.close()
