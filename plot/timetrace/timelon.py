@@ -138,6 +138,8 @@ for irval in irvals:
 
         # plot the colormesh
         plot_timey(vals.T, lons, times/time_unit, fig, ax, **kw_plot_timey)
+        # make time go downward
+        ax.invert_yaxis()
 
         # title plot
         fig.text(fpar['sub_margin_left'] + fpar['margin_left'], 1 - fpar['margin_top'], maintitle, fontsize=fontsize, ha='left', va='bottom')

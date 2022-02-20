@@ -122,12 +122,14 @@ def plot_timey(field, times, yy, fig, ax, **kwargs):
         linewidths = make_array(linewidths, tolist=True, length=len(vals))
 
         npoints = 100
+        xaxis = np.linspace(times[0], times[-1], npoints)
+        yaxis = np.linspace(yy[0], yy[-1], npoints)
         for i in range(len(vals)):
             val = vals[i]
             if ind == 1:
-                xline, yline = val + np.zeros(100), yy
+                xline, yline = val + np.zeros(npoints), yaxis
             if ind == 2:
-                xline, yline = times, val + np.zeros(100)
+                xline, yline = xaxis, val + np.zeros(npoints)
             ax.plot(xline, yline, linewidth=linewidths[i], linestyle=linestyles[i], color=linecolors[i])
 
     # Get ticks everywhere
