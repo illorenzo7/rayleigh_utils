@@ -41,11 +41,11 @@ rvals = kw.rvals
 irvals = kw.irvals
 if not kw.rvals is None: # irvals haven't been set directly
     if np.all(kw.rvals == 'all'):
-        irvals = np.arange(a0.nr)
+        irvals = np.arange(radlevs.nr)
     else:
         irvals = np.zeros_like(kw.rvals, dtype='int')
         for i in range(len(kw.rvals)):
-            irvals[i] = np.argmin(np.abs(a0.radius/rsun - kw.rvals[i]))
+            irvals[i] = np.argmin(np.abs(radlevs.radius/rsun - kw.rvals[i]))
 
 # and the qvals
 qvals = make_array(kw.qvals)
@@ -61,8 +61,7 @@ di_grid = get_grid_info(dirname)
 nphi = di_grid['nphi']
 lons = di_grid['lons']
 
-if not kw.om is None:
-    om0 = 1/time_unit*1e9 # frame rate, nHz
+om0 = 1/time_unit*1e9 # frame rate, nHz
 
 # set figure dimensions
 sub_width_inches = 3.0
@@ -122,7 +121,7 @@ for irval in irvals:
         if not kw.om is None:
             samplelabel += '\n' + (r'$\Omega_{\rm{frame}}$' + ' = %.1f nHz ' + '\n' + r'$\Omega_{\rm{frame}} - \Omega_0$' + ' = %.2f nHz') %(kw.om, kw.om - om0)
         else:
-            samplelabel += '\n' + r'$\Omega_{\rm{frame}} = \Omega_0$'
+            samplelabel += '\n' + r'$\Omega_{\rm{frame}} = \Omega_0 =$' +  '%.2f nHz' %om0
 
         # Put some useful information on the title
         maintitle = dirname_stripped + '\nqval = %i' %qval

@@ -23,7 +23,7 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = clas0['magnetism']
 
 # defaults
-kwargs_default = dict({'the_file': None, 'ntot': 2000, 'clat': 10, 'dlat': 0, 'om': None, 'rad': False, 'lon': False, 'shav': False, 'isamplevals': np.array([0]), 'samplevals': None, 'rcut': None, 'groupname': 'b'})
+kwargs_default = dict({'the_file': None, 'ntot': 500, 'clat': 10, 'dlat': 0, 'om': None, 'rad': False, 'lon': False, 'shav': False, 'isamplevals': np.array([0]), 'samplevals': None, 'rcut': None, 'groupname': 'b'})
 kwargs_default.update(plot_timey_kwargs_default)
 
 # check for bad keys
