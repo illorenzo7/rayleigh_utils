@@ -23,7 +23,7 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = clas0['magnetism']
 
 # defaults
-kwargs_default = dict({'the_file': None, 'ntot': 2000, 'clat': 10, 'dlat': 0, 'om': None, 'irvals': np.array([0]), 'rvals': None, 'qvals': np.array([1])})
+kwargs_default = dict({'the_file': None, 'ntot': 500, 'clat': 10, 'dlat': 0, 'om': None, 'irvals': np.array([0]), 'rvals': None, 'qvals': np.array([1])})
 kwargs_default.update(plot_timey_kwargs_default)
 
 # check for bad keys
@@ -55,7 +55,6 @@ irvals = make_array(irvals)
 
 # baseline time unit
 time_unit, time_label, rotation, simple_label = get_time_unit(dirname)
-print ('time_unit = ', time_unit/86400, 'days')
 
 # get grid info
 di_grid = get_grid_info(dirname)
@@ -68,10 +67,10 @@ if not kw.om is None:
 # set figure dimensions
 sub_width_inches = 3.0
 sub_height_inches = 9.0
-margin_bottom_inches = 1/2 # space for x-axis and label
+sub_margin_bottom_inches = 1/2 # space for x-axis and label
 margin_top_inches =  1.25
-margin_left_inches = 1/2 # space for time label
-margin_right_inches = 7/8 # space for colorbar
+sub_margin_left_inches = 3/4 # space for time label
+sub_margin_right_inches = 7/8 # space for colorbar
 
 # loop over data and make plots
 for irval in irvals:
@@ -96,8 +95,8 @@ for irval in irvals:
 
         # Subtract DR, if desired
         if not kw.om is None:
-            print ("plotting in rotating frame om = %.1f nHz" %kw.om)
-            print ("compare this to frame rate    = %.1f nHz" %om0)
+            #print ("plotting in rotating frame om = %.1f nHz" %kw.om)
+            #print ("compare this to frame rate    = %.1f nHz" %om0)
             rate_wrt_frame = (kw.om - om0)/1e9
             #phi_deflections = ((times - times[0])*rate_wrt_frame) % 1 
             t0 = times[0]
@@ -119,7 +118,7 @@ for irval in irvals:
         # set some labels 
         samplelabel = 'clat = ' + lat_format(kw.clat) + '\n' +  r'$r/R_\odot$' + ' = %.3f' %rval
         if not kw.om is None:
-            samplelabel += '\n' + (r'$\Omega_{\rm{frame}}$' + ' = %.1f nHz ' + '\n' + r'$\Omega_{\rm{frame}} - \Omega_0$' + ' = %.2f nHz') %(om, om - om0)
+            samplelabel += '\n' + (r'$\Omega_{\rm{frame}}$' + ' = %.1f nHz ' + '\n' + r'$\Omega_{\rm{frame}} - \Omega_0$' + ' = %.2f nHz') %(kw.om, kw.om - om0)
         else:
             samplelabel += '\n' + r'$\Omega_{\rm{frame}} = \Omega_0$'
 
@@ -130,16 +129,17 @@ for irval in irvals:
 
         # Display at terminal what we are plotting
         savename = dataname + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
-   
+  
         # make plot
-        fig, axs, fpar = make_figure(sub_width_inches=sub_width_inches, sub_height_inches=sub_height_inches, margin_left_inches=margin_left_inches, margin_right_inches=margin_right_inches, margin_top_inches=margin_top_inches, margin_bottom_inches=margin_bottom_inches)
+        fig, axs, fpar = make_figure(sub_width_inches=sub_width_inches, sub_height_inches=sub_height_inches, sub_margin_left_inches=sub_margin_left_inches, sub_margin_right_inches=sub_margin_right_inches, margin_top_inches=margin_top_inches, sub_margin_bottom_inches=sub_margin_bottom_inches)
         ax = axs[0, 0]
 
         # plot the colormesh
         plot_timey(vals.T, lons, times/time_unit, fig, ax, **kw_plot_timey)
 
         # title plot
-        fig.text(fpar['margin_left'], 1 - fpar['margin_top'], maintitle, fontsize=fontsize, ha='left', va='bottom')
+        fig.text(fpar['sub_margin_left'] + fpar['margin_left'], 1 - fpar['margin_top'], maintitle, fontsize=fontsize, ha='left', va='bottom')
+        #ax.set_title(maintitle, fontsize=fontsize, ha='left', va='bottom')
 
         # Put lon label on bottom
         ax.set_xlabel('longitude (deg)', fontsize=fontsize)
@@ -154,12 +154,13 @@ for irval in irvals:
             # save the figure
             basename = dataname + '_%08i_%08i' %(iter1, iter2)
             if not kw.om is None:
-                plotdir = my_mkdir(clas0['plotdir'] + '/timelon_om%.1f' %om)
+                plotdir = my_mkdir(clas0['plotdir'] + '/timelon_om%.1f' %kw.om)
             else:
                 plotdir = my_mkdir(clas0['plotdir'] + '/timelon')
 
-        print ("saving", plotdir + '/' + savename)
-        plt.savefig(plotdir + '/' + savename, dpi=200)
+        if clas0['saveplot']:
+            print ("saving", plotdir + '/' + savename)
+            plt.savefig(plotdir + '/' + savename, dpi=200)
 
         # Show the plot if only plotting at one latitude
         if clas0['showplot'] and len(kw.irvals) == 1:

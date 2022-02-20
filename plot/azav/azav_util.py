@@ -531,7 +531,7 @@ def plot_azav_grid(terms, rr, cost, **kwargs):
             lineplot(rr/rsun, [av_term], av_ax, xlabel=xlabel, title=title_loc, xcut=kw.rbcz, xvals=kw.rvals, minmax=kw.minmax, minmax2=kw.minmaxrz, plotleg=False)
 
     # Put the main title in upper left
-    fig.text(fpar['margin_left'] + fpar['sub_margin_left'], 1.0 - fpar['margin_top'], kw.maintitle, ha='left', va='bottom', fontsize=default_titlesize)
+    fig.text(fpar['margin_left'] + fpar['sub_margin_left'], 1.0 - fpar['margin_top'], kw.maintitle, ha='left', va='top', fontsize=default_titlesize)
 
     if kw.shav:
         av_fig.text(av_fpar['margin_left'] + av_fpar['sub_margin_left'], 1.0 - av_fpar['margin_top'], kw.maintitle + ' (Shell Averaged)', ha='left', va='bottom', fontsize=default_titlesize)
