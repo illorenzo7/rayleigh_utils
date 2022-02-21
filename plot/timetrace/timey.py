@@ -63,7 +63,7 @@ if 'groupname' in kw:
 if not kw.rcut is None:
     dataname += '_rcut%0.3f' %kw.rcut
 
-dataname += clas0['tag']
+#dataname += clas0['tag']
 
 # get data
 if kw.the_file is None:
