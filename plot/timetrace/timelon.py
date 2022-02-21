@@ -23,7 +23,7 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = clas0['magnetism']
 
 # defaults
-kwargs_default = dict({'ntot': 500, 'clat': 10, 'dlat': 0, 'om': None, 'irvals': np.array([0]), 'rvals': None, 'qvals': np.array([1])})
+kwargs_default = dict({'ntot': 500, 'clat': 10, 'dlat': 0, 'om': None, 'irvals': np.array([0]), 'rvals': None, 'qvals': np.array([1]), 'subaz': False})
 kwargs_default.update(plot_timey_kwargs_default)
 
 # check for bad keys
@@ -89,6 +89,9 @@ for irval in irvals:
         vals = di['vals']
         times = di['times']
         iters = di['iters']
+        if kw.subaz:
+            print ('subtracting azimuthal mean')
+            vals = vals - np.mean(vals, axis=1).reshape((len(times), 1))
 
         # time range
         iter1, iter2 = get_iters_from_file(the_file)
@@ -124,11 +127,16 @@ for irval in irvals:
 
         # Put some useful information on the title
         maintitle = dirname_stripped + '\nqval = %i' %qval
+        if kw.subaz:
+            maintitle += (' (sub. az. mean)')
         if not kw.shav:
             maintitle += '\n' + samplelabel
 
         # Display at terminal what we are plotting
-        savename = dataname + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
+        savename = dataname 
+        if kw.subaz:
+            savename += '_subaz'
+        savename += '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
   
         # make plot
         fig, axs, fpar = make_figure(sub_width_inches=sub_width_inches, sub_height_inches=sub_height_inches, sub_margin_left_inches=sub_margin_left_inches, sub_margin_right_inches=sub_margin_right_inches, margin_top_inches=margin_top_inches, sub_margin_bottom_inches=sub_margin_bottom_inches)
