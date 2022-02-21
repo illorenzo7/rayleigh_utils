@@ -23,7 +23,7 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = clas0['magnetism']
 
 # defaults
-kwargs_default = dict({'the_file': None, 'ntot': 500, 'clat': 10, 'dlat': 0, 'om': None, 'irvals': np.array([0]), 'rvals': None, 'qvals': np.array([1])})
+kwargs_default = dict({'ntot': 500, 'clat': 10, 'dlat': 0, 'om': None, 'irvals': np.array([0]), 'rvals': None, 'qvals': np.array([1])})
 kwargs_default.update(plot_timey_kwargs_default)
 
 # check for bad keys
@@ -80,19 +80,18 @@ for irval in irvals:
         dataname = 'timelon_clat' + lat_format(kw.clat) + '_dlat%03.0f' %kw.dlat + ('_qval%04i_irval%02i' %(qval, irval)) + clas0['tag']
 
         # get data
-        if kw.the_file is None:
-            kw.the_file = get_widest_range_file(clas0['datadir'] +\
+        the_file = get_widest_range_file(clas0['datadir'] +\
                 'timelon/', dataname)
 
         # Read in the data
-        print ('reading ' + kw.the_file)
-        di = get_dict(kw.the_file)
+        print ('reading ' + the_file)
+        di = get_dict(the_file)
         vals = di['vals']
         times = di['times']
         iters = di['iters']
 
         # time range
-        iter1, iter2 = get_iters_from_file(kw.the_file)
+        iter1, iter2 = get_iters_from_file(the_file)
 
         # Subtract DR, if desired
         if not kw.om is None:
