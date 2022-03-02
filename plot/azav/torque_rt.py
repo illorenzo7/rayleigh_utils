@@ -23,8 +23,6 @@ sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapl'])
 from azav_util import plot_azav
 from common import *
-from read_inner_vp import read_inner_vp
-from read_eq_vp import read_eq_vp
 
 # Get directory name and stripped_dirname for plotting purposes
 dirname = sys.argv[1]
@@ -149,10 +147,10 @@ except:
     magnetism = False # if magnetism wasn't specified, it must be "off"
 
 # Get the torques:
-print ('Getting amom fluxes from ' + datadir + AZ_Avgs_file)
-di = get_dict(datadir + AZ_Avgs_file)
+print ('Getting amom fluxes from ' +  AZ_Avgs_file)
+di = get_dict( AZ_Avgs_file)
 
-iter1, iter2 = di['iter1'], di['iter2']
+iter1, iter2 = get_iters_from_file(AZ_Avgs_file)
 vals = di['vals']
 lut = di['lut']
 
@@ -175,17 +173,12 @@ if plotdir is None:
         os.makedirs(plotdir)
 
 # Get necessary grid info
-rr = di['rr']
-rr_2d = di['rr_2d']
-cost = di['cost']
-cost_2d = di['cost_2d']
-tt = np.arccos(cost)
-sint = di['sint']
-sint_2d = di['sint_2d']
-cott = cost_2d/sint_2d
-tt_lat = di['tt_lat']
-xx = di['xx']
-nr, nt = di['nr'], di['nt']
+gi = get_grid_info(dirname)
+rr = gi['rr']
+rr_2d = gi['rr_2d']
+tt = gi['tt']
+cost = gi['cost']
+cott = gi['cott_2d']
 
 torque_rs = -vals[:, :, lut[1801]]
 torque_mc = -vals[:, :, lut[1802]] + vals[:, :, lut[1803]]
@@ -203,24 +196,25 @@ f_mc_t = vals[:, :, lut[1810]] + vals[:, :, lut[1812]]
 f_v_r = vals[:, :, lut[1813]]
 f_v_t = vals[:, :, lut[1814]]
 
-torque_rs_r = -(drad(f_rs_r, rr) + 2.*f_rs_r/rr)
-torque_rs_t = -( (1./rr)*(dth(f_rs_t, tt) + cott*f_rs_t) )
+torque_rs_r = -(drad(f_rs_r, rr) + 2.*f_rs_r/rr_2d)
+print (np.shape(cott))
+torque_rs_t = -( (1./rr_2d)*(dth(f_rs_t, tt) + cott*f_rs_t) )
 
-torque_mc_r = -(drad(f_mc_r, rr) + 2.*f_mc_r/rr)
-torque_mc_t = -( (1./rr)*(dth(f_mc_t, tt) + cott*f_mc_t) )
+torque_mc_r = -(drad(f_mc_r, rr) + 2.*f_mc_r/rr_2d)
+torque_mc_t = -( (1./rr_2d)*(dth(f_mc_t, tt) + cott*f_mc_t) )
 
-torque_visc_r = -(drad(f_v_r, rr) + 2.*f_v_r/rr)
-torque_visc_t = -( (1./rr)*(dth(f_v_t, tt) + cott*f_v_t) )
+torque_visc_r = -(drad(f_v_r, rr) + 2.*f_v_r/rr_2d)
+torque_visc_t = -( (1./rr_2d)*(dth(f_v_t, tt) + cott*f_v_t) )
 
 if magnetism:
     f_ms_r = vals[:, :, lut[1815]]
     f_ms_t = vals[:, :, lut[1816]]
     f_mm_r = vals[:, :, lut[1817]]
     f_mm_t = vals[:, :, lut[1818]]
-    torque_ms_r = -(drad(f_ms_r, rr) + 2.*f_ms_r/rr)
-    torque_ms_t = -( (1./rr)*(dth(f_ms_t, tt) + cott*f_ms_t) )
-    torque_mm_r = -(drad(f_mm_r, rr) + 2.*f_mm_r/rr)
-    torque_mm_t = -( (1./rr)*(dth(f_mm_t, tt) + cott*f_mm_t) )
+    torque_ms_r = -(drad(f_ms_r, rr) + 2.*f_ms_r/rr_2d)
+    torque_ms_t = -( (1./rr_2d)*(dth(f_ms_t, tt) + cott*f_ms_t) )
+    torque_mm_r = -(drad(f_mm_r, rr) + 2.*f_mm_r/rr_2d)
+    torque_mm_t = -( (1./rr_2d)*(dth(f_mm_t, tt) + cott*f_mm_t) )
 
 # Set up the actual figure from scratch
 fig_width_inches = 7. # TOTAL figure width, in inches
@@ -291,9 +285,7 @@ for key in terms.keys():
         ax = fig.add_axes((ax_left, ax_bottom, subplot_width, subplot_height))
         plot_azav (torques[iplot], rr, cost, fig=fig, ax=ax, units=units,\
                minmax=minmax, plotcontours=plotcontours, rvals=rvals,\
-               minmaxrz=minmaxrz, rbcz=rbcz, symlog=symlog,\
-        linthresh=linthresh, linscale=linscale, linthreshrz=linthreshrz,\
-        linscalerz=linscalerz, plotlatlines=plotlatlines, plotboundary=plotboundary)
+               minmaxrz=minmaxrz, rbcz=rbcz)
 
         ax.set_title(titles[iplot], verticalalignment='bottom', **csfont)
 
