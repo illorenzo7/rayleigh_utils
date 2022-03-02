@@ -92,7 +92,7 @@ for qval in qvals:
         # get data
         if kw.the_file is None:
             dataname = ('tspec_qval%04i_irval%02i' %(qval, irval))          
-            the_file = get_widest_range_file(clas0['datadir'], dataname)
+            the_file = get_widest_range_file(clas0['datadir'] + 'tspec/', dataname)
         else:
             dataname = get_dataname_from_file(kw.the_file)
             the_file = kw.the_file

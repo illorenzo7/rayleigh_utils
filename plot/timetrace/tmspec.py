@@ -17,7 +17,7 @@ dirname = clas0.dirname
 dirname_stripped = strip_dirname(dirname)
 
 # SPECIFIC ARGS
-kwargs_default = dotdict(dict({'the_file': None, 'irvals': np.array([0]), 'rvals': None, 'qvals': np.array([1]), 'modes': [], 'latvals': [], 'mvals': [], 'diffrot': False, 'azfile': None}))
+kwargs_default = dotdict(dict({'the_file': None, 'irvals': np.array([0]), 'rvals': None, 'qvals': np.array([1]), 'modes': [], 'latvals': [], 'mvals': [], 'diffrot': False, 'azfile': None, 'mnot0': False}))
 # "modes" can be: latpower, mpower, or combinations thereof
 # can also get other modes via --latvals (plot freq vs m), --mvals (freq vs lat.)
 
@@ -114,7 +114,7 @@ for qval in qvals:
         # get data
         if kw.the_file is None:
             dataname = ('tmspec_qval%04i_irval%02i' %(qval, irval)) 
-            the_file = get_widest_range_file(clas0['datadir'], dataname)
+            the_file = get_widest_range_file(clas0['datadir'] + 'tmspec/', dataname)
         else:
             dataname = get_dataname_from_file(kw.the_file)
             the_file = kw.the_file
@@ -126,6 +126,12 @@ for qval in qvals:
         vals = np.abs(di['vals'])**2
         # everything with m >= 1 should be counted twice
         vals[:, 1:, :] *= 2.
+
+        # may want to ignore m = 0 
+        if kw.mnot0:
+            vals = vals[:, 1:, :]
+            di['mvals'] = di['mvals'][1:]
+
         nfreq, nm, nt = np.shape(vals)
 
         # add mvals/latvals to modes
@@ -170,6 +176,9 @@ for qval in qvals:
                 power = vals[:, mval, :].T
                 if kw.diffrot:
                     omy = om_lat*mval
+
+            if kw.mnot0:
+                basename += '_mnot0'
 
             # Display at terminal what we are plotting
             savename = dataname + '_' + basename + clas0['tag'] + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
