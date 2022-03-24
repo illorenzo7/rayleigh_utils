@@ -372,14 +372,12 @@ for irval in irvals:
             t1 = time.time()
 
             # create data directory if it doesn't already exist
-            datadir = clas0['datadir'] + 'tmspec/'
-            if not os.path.isdir(datadir):
-                os.makedirs(datadir)
-            # create data directory if it doesn't already exist
             if not mmax is None:
                 datadir = clas0['datadir'] + ('tmspec_mmax%03i/' %mmax)
             else:
                 datadir = clas0['datadir'] + 'tmspec/'
+            if not os.path.isdir(datadir):
+                os.makedirs(datadir)
 
             # Set the timetrace savename
             savename = ('tmspec_qval%04i_irval%02i' %(qval, irval)) +\
