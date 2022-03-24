@@ -375,10 +375,13 @@ for irval in irvals:
             datadir = clas0['datadir'] + 'tmspec/'
             if not os.path.isdir(datadir):
                 os.makedirs(datadir)
+            # create data directory if it doesn't already exist
+            if not mmax is None:
+                datadir = clas0['datadir'] + ('tmspec_mmax%03i/' %mmax)
+            else:
+                datadir = clas0['datadir'] + 'tmspec/'
 
             # Set the timetrace savename
-            if not mmax is None:
-                clas0['tag'] = ('_mmax%03i' %mmax) + clas0['tag']
             savename = ('tmspec_qval%04i_irval%02i' %(qval, irval)) +\
                     clas0['tag'] + '-' + file_list[0] + '_' + file_list[-1] + '.pkl'
             savefile = datadir + savename

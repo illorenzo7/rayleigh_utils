@@ -75,7 +75,7 @@ if rank == 0:
     a0 = reading_func(radatadir + file_list[0], '')
 
     # set default values for qval and irval
-    kwargs_default = dict({'irvals': np.array([0]), 'rvals': None, 'qvals': np.array([1])})
+    kwargs_default = dict({'irvals': np.array([0]), 'rvals': None, 'qvals': np.array([1]), 'mmax': None})
 
     # overwrite defaults
     kw = update_dict(kwargs_default, clas)
@@ -100,6 +100,9 @@ if rank == 0:
     nproc_min, nproc_max, n_per_proc_min, n_per_proc_max =\
             opt_workload(nfiles, nproc)
 
+    # mmax (if needed)
+    mmax = kw.mmax
+
     # Distribute file_list and my_ntimes to each process
     for k in range(nproc - 1, -1, -1):
         # distribute the partial file list to other procs 
@@ -123,10 +126,10 @@ else: # recieve appropriate file info if rank > 1
 
 # Broadcast meta data
 if rank == 0:
-    meta = [dirname, radatadir, irvals, qvals]
+    meta = [dirname, radatadir, irvals, qvals, mmax]
 else:
     meta = None
-dirname, radatadir, irvals, qvals = comm.bcast(meta, root=0)
+dirname, radatadir, irvals, qvals, mmax = comm.bcast(meta, root=0)
 
 # Checkpoint and time
 comm.Barrier()
@@ -235,7 +238,11 @@ for irval in irvals:
             # dealiased no. mvalues
             # remember to dealias---otherwise we are saving a bunch of
             # NOTHING!
-            nm = int(np.floor(2./3.*nt))
+            if mmax is None: # may manually strip even more m-values to
+                # save space
+                nm = int(np.floor(2./3.*nt))
+            else:
+                nm = mmax
             mvals = np.arange(nm)
 
             # now redistribute the data by theta-val
@@ -331,7 +338,11 @@ for irval in irvals:
             t1 = time.time()
 
             # create data directory if it doesn't already exist
-            datadir = clas0['datadir'] + 'mtrace/'
+            if not mmax is None:
+                datadir = clas0['datadir'] + ('mtrace_mmax%03i/' %mmax)
+            else:
+                datadir = clas0['datadir'] + 'mtrace/'
+
             if not os.path.isdir(datadir):
                 os.makedirs(datadir)
 
