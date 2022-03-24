@@ -129,8 +129,7 @@ for qval in qvals:
 
         # may want to ignore m = 0 
         if kw.mnot0:
-            vals = vals[:, 1:, :]
-            di['mvals'] = di['mvals'][1:]
+            vals[:, 0, :] = 0.0
 
         nfreq, nm, nt = np.shape(vals)
 

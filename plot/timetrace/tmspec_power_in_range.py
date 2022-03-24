@@ -14,7 +14,7 @@ dirname = clas0.dirname
 dirname_stripped = strip_dirname(dirname)
 
 # SPECIFIC ARGS
-kwargs_default = dotdict(dict({'the_file': None, 'irvals': np.array([0]), 'rvals': None, 'qvals': np.array([1]), 'modes': [], 'latvals': [], 'mvals': [],  'xminmax': None, 'xmin': None, 'xmax': None, 'yminmax': None, 'ymin': None, 'ymax': None, 'xymin': None, 'xymax': None, 'xyminmax': None, 'not0': False}))
+kwargs_default = dotdict(dict({'the_file': None, 'irvals': np.array([0]), 'rvals': None, 'qvals': np.array([1]), 'modes': [], 'latvals': [], 'mvals': [],  'xminmax': None, 'xmin': None, 'xmax': None, 'yminmax': None, 'ymin': None, 'ymax': None, 'xymin': None, 'xymax': None, 'xyminmax': None, 'mnot0': False}))
 
 # "modes" can be: latpower, mpower, sect, or combinations thereof
 # or specific lat or m
@@ -91,7 +91,7 @@ for qval in qvals:
         power_full = np.abs(di['vals'])**2
         # everything with m >= 1 should be counted twice
         power_full[:, 1:, :] *= 2.
-        if kw.not0: # don't include the m = 0 power
+        if kw.mnot0: # don't include the m = 0 power
             print ('ignoring the m = 0 power')
             power_full[:, 0, :] = 0.0
         nfreq, nm, nlat = np.shape(power_full)
