@@ -75,10 +75,13 @@ if rank == 0:
     a0 = reading_func(radatadir + file_list[0], '')
 
     # set default values for qval and irval
-    kwargs_default = dict({'irvals': np.array([0]), 'rvals': None, 'qvals': np.array([1]), 'mmax': None})
+    kwargs_default = dict({'irvals': np.array([0]), 'rvals': None, 'qvals': None, 'mmax': None})
+    print('clas = ', clas)
 
     # overwrite defaults
+    print ('kw.qvals =', kwargs_default['qvals'])
     kw = update_dict(kwargs_default, clas)
+    print ('kw.qvals =', kw.qvals)
 
     # get the rvals we want
     irvals = kw.irvals
@@ -91,10 +94,16 @@ if rank == 0:
                 irvals[i] = np.argmin(np.abs(a0.radius/rsun - kw.rvals[i]))
 
     # and the qvals
-    qvals = make_array(kw.qvals)
+    qvals = kw.qvals
+    print ('qvals = ', qvals)
+    if np.all(qvals == 'all'):
+        qvals = np.sort(a0.qv)
+    
+    print ('qvals = ', qvals)
 
     # everything must be array
     irvals = make_array(irvals)
+    qvals = make_array(qvals)
 
     # Get the problem size
     nproc_min, nproc_max, n_per_proc_min, n_per_proc_max =\

@@ -140,7 +140,11 @@ def read_clas(args):
         elif arg == '--qvals': # able to specify either index or quantity name
             # qvals....make sure it's an integer array
             qvals = make_array(read_cla_vals(args, i))
-            qvals = parse_quantities(qvals)[0]
+            if not np.all(qvals == 'all'):
+                qvals = parse_quantities(qvals)[0]
+                # leave qvals = 'all' alone; (calling script may want to 
+                # use this for something specific
+                # 04/13/22: at some point, find a cleaner way of doing this
             clas['qvals'] = qvals
         elif arg == '--latrange':
             latmin, latmax, nlatvals = read_cla_vals(args, i)
