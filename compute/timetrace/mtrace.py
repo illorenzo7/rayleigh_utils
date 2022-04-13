@@ -76,12 +76,9 @@ if rank == 0:
 
     # set default values for qval and irval
     kwargs_default = dict({'irvals': np.array([0]), 'rvals': None, 'qvals': None, 'mmax': None})
-    print('clas = ', clas)
 
     # overwrite defaults
-    print ('kw.qvals =', kwargs_default['qvals'])
     kw = update_dict(kwargs_default, clas)
-    print ('kw.qvals =', kw.qvals)
 
     # get the rvals we want
     irvals = kw.irvals
@@ -95,11 +92,9 @@ if rank == 0:
 
     # and the qvals
     qvals = kw.qvals
-    print ('qvals = ', qvals)
     if np.all(qvals == 'all'):
         qvals = np.sort(a0.qv)
     
-    print ('qvals = ', qvals)
 
     # everything must be array
     irvals = make_array(irvals)
@@ -191,7 +186,6 @@ for irval in irvals:
                         ('rank 0 %5.1f%% done' %pcnt_done) + ' ' +\
                         format_time(t2_loc - t1_loc) + 3*' ', end='\r')
 
-        #print ('mvasl =', my_vals)
         # make sure everybody does their part and "gets there"!
         # Checkpoint and time
         comm.Barrier()
