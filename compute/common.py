@@ -1407,3 +1407,12 @@ def get_slice_levels(dirname, datatype='Shell_Slices', fname=None):
     if fname is None:
         fname = file_list[0]
     return slicelevels(fname, path=radatadir)
+
+def isall(arg):
+    if np.isscalar(arg):
+        if arg == 'all':
+            return True
+        else:
+            return False
+    else:
+        return False

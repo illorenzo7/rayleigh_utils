@@ -83,8 +83,9 @@ if rank == 0:
     # get the rvals we want
     irvals = kw.irvals
     if not kw.rvals is None: # irvals haven't been set directly
-        if np.all(kw.rvals == 'all'):
-            irvals = np.arange(a0.nr)
+        if np.isscalar(kw.rvals):
+            if kw.rvals == 'all':
+                irvals = np.arange(a0.nr)
         else:
             irvals = np.zeros_like(kw.rvals, dtype='int')
             for i in range(len(kw.rvals)):
@@ -92,8 +93,9 @@ if rank == 0:
 
     # and the qvals
     qvals = kw.qvals
-    if np.all(qvals == 'all'):
-        qvals = np.sort(a0.qv)
+    if np.isscalar(qvals):
+        if qvals == 'all':
+            qvals = np.sort(a0.qv)
 
     if qvals is None:
         qvals = np.array([1])

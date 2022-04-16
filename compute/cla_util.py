@@ -138,9 +138,9 @@ def read_clas(args):
         
         # desired quantity list (or group)
         elif arg == '--qvals': # able to specify either index or quantity name
-            # qvals....make sure it's an integer array
-            qvals = make_array(read_cla_vals(args, i))
-            if not np.all(qvals == 'all'):
+            if not isall(qvals): # if it's 'all', do nothing
+                # qvals....make sure it's an integer array
+                qvals = make_array(read_cla_vals(args, i))
                 qvals = parse_quantities(qvals)[0]
                 # leave qvals = 'all' alone; (calling script may want to 
                 # use this for something specific
