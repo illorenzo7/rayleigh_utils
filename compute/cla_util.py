@@ -138,7 +138,7 @@ def read_clas(args):
         
         # desired quantity list (or group)
         elif arg == '--qvals': # able to specify either index or quantity name
-            if not isall(qvals): # if it's 'all', do nothing
+            if not isall(args[i+1]): # if it's 'all', do nothing
                 # qvals....make sure it's an integer array
                 qvals = make_array(read_cla_vals(args, i))
                 qvals = parse_quantities(qvals)[0]
