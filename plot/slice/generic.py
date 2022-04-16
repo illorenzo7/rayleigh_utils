@@ -99,7 +99,7 @@ else:
 
 # get the rvals we want
 if not kw.rvals is None: # irvals haven't been set directly
-    if np.all(kw.rvals == 'all'):
+    if isall(kw.rvals):
         kw.irvals = np.arange(a0.nr)
     else:
         kw.irvals = np.zeros_like(kw.rvals, dtype='int')
@@ -107,7 +107,7 @@ if not kw.rvals is None: # irvals haven't been set directly
             kw.irvals[i] = np.argmin(np.abs(a0.radius/rsun - kw.rvals[i]))
 
 # get the vars we want
-if np.all(kw.varnames == 'all'): # remember varnames is an array now
+if isall(kw.varnames):
     kw.varnames = get_default_varnames(dirname)
 
 # loop over rvals/vars and make plots
