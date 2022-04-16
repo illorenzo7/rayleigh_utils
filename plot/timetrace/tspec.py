@@ -44,7 +44,7 @@ irvals = kw.irvals
 irvals = make_array(irvals)
 kw.rvals = make_array(kw.rvals)
 if not kw.rvals is None: # irvals haven't been set directly
-    if np.all(kw.rvals == 'all'):
+    if isall(kw.rvals):
         irvals = np.arange(radlevs.nr)
     else:
         irvals = np.zeros_like(kw.rvals, dtype='int')

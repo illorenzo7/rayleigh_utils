@@ -29,7 +29,7 @@ radlevs = get_slice_levels(dirname)
 irvals = kw.irvals
 if not kw.rvals is None: # irvals haven't been set directly
     kw.rvals = make_array(kw.rvals)
-    if np.all(kw.rvals == 'all'):
+    if isall(kw.rvals):
         irvals = np.arange(radlevs.nr)
     else:
         irvals = np.zeros_like(kw.rvals, dtype='int')
