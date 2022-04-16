@@ -94,8 +94,10 @@ if rank == 0:
     qvals = kw.qvals
     if np.all(qvals == 'all'):
         qvals = np.sort(a0.qv)
-    
 
+    if qvals is None:
+        qvals = np.array([1])
+    
     # everything must be array
     irvals = make_array(irvals)
     qvals = make_array(qvals)
