@@ -90,7 +90,7 @@ if rank == 0:
     # get the rvals we want
     irvals = kw.irvals
     if not kw.rvals is None: # irvals haven't been set directly
-        if np.all(kw.rvals == 'all'):
+        if isall(rvals):
             irvals = np.arange(a0.nr)
         else:
             irvals = np.zeros_like(kw.rvals, dtype='int')
