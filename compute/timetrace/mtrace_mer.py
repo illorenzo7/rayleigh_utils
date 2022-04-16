@@ -64,7 +64,7 @@ if rank == 0:
     clas0, clas = read_clas(args)
     dirname = clas0['dirname']
     magnetism = clas0['magnetism']
-    kwargs_default = dict({'rad': False, 'shav': False,  'latvals': default_latvals, 'rvals': None, 'qvals': None, 'groupname': 'b', 'rcut': None})
+    kwargs_default = dict({'rad': False, 'latvals': default_latvals, 'rvals': None, 'qvals': None, 'groupname': 'b', 'rcut': None})
     kwargs = update_dict(kwargs_default, clas)
     if kwargs.rvals is None:
         rvals = get_default_rvals(dirname, rcut=kwargs.rcut)
@@ -97,13 +97,12 @@ if rank == 0:
     tt_lat = di_grid['tt_lat']
 
     # get indices associated with desired sample vals
-    if not shav:
-        if rad:
-            samplevals = kwargs['latvals']
-            sampleaxis = tt_lat
-        else:
-            samplevals = rvals
-            sampleaxis = rr/rsun
+    if rad:
+        samplevals = kwargs['latvals']
+        sampleaxis = tt_lat
+    else:
+        samplevals = rvals
+        sampleaxis = rr/rsun
 
         isamplevals = []
         for sampleval in samplevals:
@@ -136,16 +135,12 @@ else: # recieve appropriate file info if rank > 1
 
 # broadcast meta data
 if rank == 0:
-    meta = [dirname, radatadir, qvals, rad, shav]
-    if not shav:
-        meta += [isamplevals, nsamplevals]
+    meta = [dirname, radatadir, qvals, rad, isamplevals, nsamplevals]
 else:
     meta = None
 
 the_bcast = comm.bcast(meta, root=0)
-dirname, radatadir, qvals, rad, shav = the_bcast[:5]
-if not shav:
-    isamplevals, nsamplevals = the_bcast[5:]
+dirname, radatadir, qvals, rad, shav, isamplevals, nsamplevals = the_bcast[:5]
 
 # Checkpoint and time
 comm.Barrier()
