@@ -23,7 +23,6 @@ if rank == 0:
     import sys, os
     sys.path.append(os.environ['raco'])
     # import common here
-    from common import *
     from cla_util import *
     char = '.'
     nproc = comm.Get_size()
@@ -42,6 +41,8 @@ import numpy as np
 # data type and reading function
 import sys, os
 sys.path.append(os.environ['rapp'])
+sys.path.append(os.environ['raco'])
+from common import *
 from rayleigh_diagnostics import Meridional_Slices
 
 if rank == 0:
@@ -87,6 +88,14 @@ if rank == 0:
     # get desired analysis range
     file_list, int_file_list, nfiles = get_file_lists(radatadir, args)
 
+    # get first file for its metadata
+    reading_func = Meridional_Slices
+    a0 = reading_func(file_list[0])
+
+    # see if qvals is "all"
+    if isall(qvals):
+        qvals = a0.qv
+
     # get the problem size
     nproc_min, nproc_max, n_per_proc_min, n_per_proc_max =\
             opt_workload(nfiles, nproc)
@@ -104,13 +113,13 @@ if rank == 0:
         samplevals = rvals
         sampleaxis = rr/rsun
 
-        isamplevals = []
-        for sampleval in samplevals:
-            isamplevals.append(np.argmin(np.abs(sampleaxis - sampleval)))
-        isamplevals = np.array(isamplevals)
-        # recompute the actual sample values we get
-        samplevals = sampleaxis[isamplevals]
-        nsamplevals = len(samplevals)
+    isamplevals = []
+    for sampleval in samplevals:
+        isamplevals.append(np.argmin(np.abs(sampleaxis - sampleval)))
+    isamplevals = np.array(isamplevals)
+    # recompute the actual sample values we get
+    samplevals = sampleaxis[isamplevals]
+    nsamplevals = len(samplevals)
 
     # Distribute file_list to each process
     for k in range(nproc - 1, -1, -1):
@@ -140,7 +149,7 @@ else:
     meta = None
 
 the_bcast = comm.bcast(meta, root=0)
-dirname, radatadir, qvals, rad, shav, isamplevals, nsamplevals = the_bcast[:5]
+dirname, radatadir, qvals, rad, isamplevals, nsamplevals = the_bcast
 
 # Checkpoint and time
 comm.Barrier()
@@ -149,18 +158,17 @@ if rank == 0:
     print (format_time(t2 - t1))
     print ('Considering %i %s files for the trace: %s through %s'\
         %(nfiles, dataname, file_list[0], file_list[-1]))
-    if not shav:
-        print ("sampling values:")
-        print ("qvals = " + arr_to_str(qvals, "%i"))
-        st = "sampling locations:"
-        if rad:
-            st2 = "lats = "
-            fmt = '%.1f'
-        else:
-            st2 = "rvals = "
-            fmt = '%1.3f'
-        print(st)
-        print (st2 + arr_to_str(samplevals, fmt))
+    print ("sampling values:")
+    print ("qvals = " + arr_to_str(a0.qv, "%i"))
+    st = "sampling locations:"
+    if rad:
+        st2 = "lats = "
+        fmt = '%.1f'
+    else:
+        st2 = "rvals = "
+        fmt = '%1.3f'
+    print(st)
+    print (st2 + arr_to_str(samplevals, fmt))
     print(fill_str('computing', lent, char), end='\r')
     t1 = time.time()
 
@@ -173,16 +181,13 @@ reading_func = Meridional_Slices
 
 for i in range(my_nfiles):
     a = reading_func(radatadir + str(my_files[i]).zfill(8), '')
-    if isall(qvals):
-        qinds = np.arange(a.nq)
-    else:
-        qinds = a.lut[qvals]
+    qinds = a.lut[qvals]
     for j in range(a.niter):
         if rad:
-            vals_loc = a.vals[:, :, :, j][isamplevals, :,  :][:, :, qinds]
+            vals_loc = a.vals[:, :, :, :, j][:, isamplevals, :,  :][:, :, :, qinds]
         else:
-            vals_loc = a.vals[:, :, :, j][:, isamplevals, :][:, :, qinds]
-        vals.append(np.fft.rfft(vals_loc, axis=0))
+            vals_loc = a.vals[:, :, :, :, j][:, :, isamplevals, :][:, :, :, qinds]
+        my_vals.append(np.fft.rfft(vals_loc, axis=0))
         my_times.append(a.time[j])
         my_iters.append(a.iters[j])
     if rank == 0:
@@ -224,6 +229,11 @@ comm.Barrier()
 
 # proc 0 saves the data
 if rank == 0:
+    # convert everything to arrays
+    vals = np.array(vals)
+    times = np.array(times)
+    iters = np.array(iters)
+
     # Set the timetrace savename by the directory, what we are saving,
     # and first and last iteration files for the trace
     if rad:
@@ -236,22 +246,28 @@ if rank == 0:
     if not os.path.isdir(datadir):
         os.makedirs(datadir)
 
-    for irval in range(len(rvals)):
+    # save files for each radial level and qval separately
+    for isampleval in range(nsamplevals):
+        sampleval = samplevals[isampleval]
+        iqval = 0
         for qval in qvals:
-            savename = basename + ('_qval%04i_irval%02i' %(qval, irval)) +\
+            if rad:
+                datatag = '_qval%04i_' %qval + lat_format(sampleval)
+            else:
+                datatag = '_qval%04i_rval%.3f' %(qval, sampleval)
+
+            savename = basename + datatag +\
                     clas0['tag'] + '-' + file_list[0] + '_' +\
                     file_list[-1] + '.pkl'
             savefile = datadir + savename
 
             # save the data
             f = open(savefile, 'wb')
-            # convert everything to arrays
-            vals = np.array(vals)
-            times = np.array(times)
-            iters = np.array(iters)
-            di_sav = dict({'vals': vals, 'times': times, 'iters': iters, 'qvals': qvals})
-            if not shav:
-                di_sav['samplevals'] = samplevals
+            if rad:
+                these_vals = vals[:, :, isampleval, :, iqval]
+            else:
+                these_vals = vals[:, :, :, isampleval, iqval]
+            di_sav = dict({'vals': these_vals, 'times': times, 'iters': iters, 'qvals': qvals, 'samplevals': samplevals})
             pickle.dump(di_sav, f, protocol=4)
             f.close()
             t2 = time.time()
@@ -260,4 +276,8 @@ if rank == 0:
             print (make_bold(format_time(t2 - t1_glob)))
             print ('data saved at ')
             print (make_bold(savefile))
-            print ('r/rsun = %.3f' %rvals[irval]/rsun)
+            if rad:
+                print ('lat = ' + lat_format(sampleval))
+            else:
+                print ('r/rsun = %.3f' %sampleval)
+            iqval += 1
