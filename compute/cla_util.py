@@ -145,6 +145,8 @@ def read_clas(args):
                 # leave qvals = 'all' alone; (calling script may want to 
                 # use this for something specific
                 # 04/13/22: at some point, find a cleaner way of doing this
+            else:
+                qvals = 'all'
             clas['qvals'] = qvals
         elif arg == '--latrange':
             latmin, latmax, nlatvals = read_cla_vals(args, i)
