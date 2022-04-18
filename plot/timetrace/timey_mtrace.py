@@ -33,7 +33,7 @@ file_list, int_file_list, nfiles = get_file_lists(radatadir, args)
 a0 = Shell_Slices(radatadir + file_list[0], '')
 
 # defaults
-kwargs_default = dict({'ntot': 500, 'groupname': 'b', 'irvals': np.array([0]), 'rvals': None, 'qvals': None, 'mmax': None, 'mval': 1})
+kwargs_default = dict({'ntot': 500, 'groupname': 'b', 'irvals': np.array([0]), 'rvals': None, 'mmax': 10, 'mval': 1})
 
 kwargs_default.update(plot_timey_kwargs_default)
 
@@ -68,17 +68,10 @@ if not kw.rvals is None: # irvals haven't been set directly
         for i in range(len(kw.rvals)):
             irvals[i] = np.argmin(np.abs(a0.radius/rsun - kw.rvals[i]))
 
-# and the qvals
 qvals = kw.qvals
-if isall(kw.qvals):
-    qvals = np.sort(a0.qv)
-
-if qvals is None:
-    qvals = np.array([1])
-
 # everything must be array
 irvals = make_array(irvals)
-qvals = make_array(qvals)
+#qvals = make_array(qvals)
 
 # mmax (if needed)
 mmax = kw.mmax
@@ -192,7 +185,11 @@ for irval in irvals:
         # Make appropriate file name to save
 
         # save the figure
-        basename = dataname + '_%08i_%08i' %(iter1, iter2)
+        if kw.groupname is None:
+            basename = dataname
+        else:
+            basename = 'mtrace_' + kw.groupname + '_irval%02i' %irval
+        basename += '-%08i_%08i' %(iter1, iter2)
         plotdir = my_mkdir(clas0['plotdir'] + '/timelat_mval%03i' %mval)
         savename = basename + clas0['tag'] + position_tag + '.png'
         print ("saving", plotdir + '/' + savename)
