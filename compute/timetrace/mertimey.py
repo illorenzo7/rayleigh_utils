@@ -65,12 +65,19 @@ if rank == 0:
     clas0, clas = read_clas(args)
     dirname = clas0['dirname']
     magnetism = clas0['magnetism']
-    kwargs_default = dict({'rad': False, 'latvals': default_latvals, 'rvals': None, 'qvals': None, 'groupname': 'b', 'rcut': None})
+    kwargs_default = dict({'rad': False, 'latvals': default_latvals, 'rvals': None, 'qvals': None, 'groupname': 'b', 'rcut': None, 'mval': 1})
     kwargs = update_dict(kwargs_default, clas)
+
     if kwargs.rvals is None:
         rvals = get_default_rvals(dirname, rcut=kwargs.rcut)
+        if kwargs.rcut is None:
+            rtag = ''
+        else:
+            rtag = '_rcut%0.3f' %kwargs.rcut
     else:
         rvals = kwargs.rvals
+        rtag = input("choose a tag name for your chosen rvals: ")
+        rtag = '_' + rtag
 
     if kwargs.qvals is None: # it's a quantity group
         groupname = kwargs.groupname
@@ -78,8 +85,10 @@ if rank == 0:
         qvals = qgroup['qvals']
     else:
         qvals = kwargs.qvals
+        groupname = input("choose a groupname to save your data: ")
 
     rad = kwargs['rad']
+    mval = kwargs['mval']
 
     # get the Rayleigh data directory
     dataname = 'Meridional_Slices'
@@ -87,14 +96,6 @@ if rank == 0:
 
     # get desired analysis range
     file_list, int_file_list, nfiles = get_file_lists(radatadir, args)
-
-    # get first file for its metadata
-    reading_func = Meridional_Slices
-    a0 = reading_func(file_list[0])
-
-    # see if qvals is "all"
-    if isall(qvals):
-        qvals = a0.qv
 
     # get the problem size
     nproc_min, nproc_max, n_per_proc_min, n_per_proc_max =\
@@ -144,12 +145,12 @@ else: # recieve appropriate file info if rank > 1
 
 # broadcast meta data
 if rank == 0:
-    meta = [dirname, radatadir, qvals, rad, isamplevals, nsamplevals]
+    meta = [dirname, radatadir, qvals, rad, isamplevals, nsamplevals, mval]
 else:
     meta = None
 
 the_bcast = comm.bcast(meta, root=0)
-dirname, radatadir, qvals, rad, isamplevals, nsamplevals = the_bcast
+dirname, radatadir, qvals, rad, isamplevals, nsamplevals, mval = the_bcast
 
 # Checkpoint and time
 comm.Barrier()
@@ -159,7 +160,7 @@ if rank == 0:
     print ('Considering %i %s files for the trace: %s through %s'\
         %(nfiles, dataname, file_list[0], file_list[-1]))
     print ("sampling values:")
-    print ("qvals = " + arr_to_str(a0.qv, "%i"))
+    print ("qvals = " + arr_to_str(qvals, "%i"))
     st = "sampling locations:"
     if rad:
         st2 = "lats = "
@@ -187,7 +188,8 @@ for i in range(my_nfiles):
             vals_loc = a.vals[:, :, :, :, j][:, isamplevals, :,  :][:, :, :, qinds]
         else:
             vals_loc = a.vals[:, :, :, :, j][:, :, isamplevals, :][:, :, :, qinds]
-        my_vals.append(np.fft.rfft(vals_loc, axis=0))
+        vals_fft = np.fft.rfft(vals_loc, axis=0)
+        my_vals.append(vals_fft[mval, :, :, :])
         my_times.append(a.time[j])
         my_iters.append(a.iters[j])
     if rank == 0:
@@ -242,42 +244,23 @@ if rank == 0:
         basename = 'mertimelat'
 
     # create data directory if it doesn't already exist
-    datadir = clas0['datadir'] + basename + '/'
+    datadir = clas0['datadir'] + basename + '_mval%03i/' %mval
     if not os.path.isdir(datadir):
         os.makedirs(datadir)
 
-    # save files for each radial level and qval separately
-    for isampleval in range(nsamplevals):
-        sampleval = samplevals[isampleval]
-        iqval = 0
-        for qval in qvals:
-            if rad:
-                datatag = '_qval%04i_' %qval + lat_format(sampleval)
-            else:
-                datatag = '_qval%04i_rval%.3f' %(qval, sampleval)
+    basename += '_' + groupname + rtag
+    savename = basename + clas0['tag'] + '-' +\
+            file_list[0] + '_' + file_list[-1] + '.pkl'
+    savefile = datadir + savename
 
-            savename = basename + datatag +\
-                    clas0['tag'] + '-' + file_list[0] + '_' +\
-                    file_list[-1] + '.pkl'
-            savefile = datadir + savename
-
-            # save the data
-            f = open(savefile, 'wb')
-            if rad:
-                these_vals = vals[:, :, isampleval, :, iqval]
-            else:
-                these_vals = vals[:, :, :, isampleval, iqval]
-            di_sav = dict({'vals': these_vals, 'times': times, 'iters': iters, 'qvals': qvals, 'samplevals': samplevals})
-            pickle.dump(di_sav, f, protocol=4)
-            f.close()
-            t2 = time.time()
-            print (format_time(t2 - t1))
-            print(make_bold(fill_str('total time', lent, char)), end='')
-            print (make_bold(format_time(t2 - t1_glob)))
-            print ('data saved at ')
-            print (make_bold(savefile))
-            if rad:
-                print ('lat = ' + lat_format(sampleval))
-            else:
-                print ('r/rsun = %.3f' %sampleval)
-            iqval += 1
+    # save the data
+    f = open(savefile, 'wb')
+    di_sav = dict({'vals': vals, 'times': times, 'iters': iters, 'qvals': qvals, 'samplevals': samplevals, 'mval': mval})
+    pickle.dump(di_sav, f, protocol=4)
+    f.close()
+    t2 = time.time()
+    print (format_time(t2 - t1))
+    print(make_bold(fill_str('total time', lent, char)), end='')
+    print (make_bold(format_time(t2 - t1_glob)))
+    print ('data saved at ')
+    print (make_bold(savefile))
