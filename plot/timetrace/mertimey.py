@@ -77,8 +77,7 @@ vals = di['vals']
 times = di['times']
 iters = di['iters']
 qvals_avail = np.array(di['qvals'])
-if not kw.shav:
-    samplevals_avail = di['samplevals']
+samplevals_avail = di['samplevals']
 
 # time range
 iter1, iter2 = get_iters_from_file(kw.the_file)
@@ -96,7 +95,8 @@ if not kw.ntot == 'full':
 # these all need to be arrays
 kw.qvals = make_array(kw.qvals)
 kw.isamplevals = make_array(kw.isamplevals)
-kw.samplevals = make_array(kw.samplevals)
+if not isall(kw.samplevals):
+    kw.samplevals = make_array(kw.samplevals)
 
 # get raw traces of desired variables
 terms = []
