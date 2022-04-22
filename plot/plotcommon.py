@@ -5,7 +5,7 @@ from matplotlib import colors, ticker
 import matplotlib.pyplot as plt
 from common import *
 
-color_order = ['b', 'g', 'r', 'c', 'm', 'y', 'k']*2
+color_order = ['b', 'orange', 'r', 'm', 'c', 'y', 'k', 'g']*2
 style_order = ['-', '--', '-.', ':']
 marker_order = [".", "o", "v","s", "*", "x", "^", "<", ">"]
 default_lw = 1.0
