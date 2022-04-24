@@ -111,8 +111,8 @@ for qval in kw.qvals:
 # set figure dimensions
 sub_width_inches = 7.5
 sub_height_inches = 2.0
-margin_bottom_inches = 1/2 # space for x-axis label
-margin_top_inches = 3/4
+margin_bottom_inches = 3/8 # space for x-axis label
+margin_top_inches = 1
 margin_left_inches = 5/8 # space for latitude label
 margin_right_inches = 7/8 # space for colorbar
 if 'ycut' in clas:
@@ -146,6 +146,7 @@ for isampleval in kw.isamplevals:
     # Put some useful information on the title
     maintitle = dirname_stripped 
     maintitle += '\n' + samplelabel
+    maintitle += '\nmval = %03i' %kw.mval
     if kw.navg is None:
         maintitle += '\nt_avg = none'
     else:
