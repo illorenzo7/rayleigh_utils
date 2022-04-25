@@ -33,7 +33,7 @@ file_list, int_file_list, nfiles = get_file_lists(radatadir, args)
 a0 = Shell_Slices(radatadir + file_list[0], '')
 
 # defaults
-kwargs_default = dict({'ntot': 500, 'groupname': 'b', 'irvals': np.array([0]), 'rvals': None, 'mmax': 10, 'mval': 1})
+kwargs_default = dict({'ntot': 500, 'groupname': 'b', 'irvals': np.array([0]), 'rvals': None, 'mmax': 10, 'mval': 1, 'imag': False})
 
 kwargs_default.update(plot_timey_kwargs_default)
 
@@ -48,6 +48,12 @@ kw.update(get_quantity_group(kw.groupname, magnetism))
 # user may have wanted to change some groupname keys
 kw = update_dict(kw, clas)
 kw_plot_timey = update_dict(plot_timey_kwargs_default, clas)
+
+# check if we want the real or imaginary vals
+if kw.imag:
+    take_real = False
+else:
+    take_real = True
 
 # baseline time unit
 time_unit, time_label, rotation, simple_label = get_time_unit(dirname)
@@ -79,7 +85,7 @@ mmax = kw.mmax
 # set figure dimensions
 sub_width_inches = 7.5
 sub_height_inches = 2.0
-margin_bottom_inches = 1/2 # space for x-axis label
+margin_bottom_inches = 3/8 # space for x-axis label
 margin_top_inches = 1
 if kw.lon:
     margin_top_inches =  1 + 1/4
@@ -92,9 +98,9 @@ nplots = len(qvals)
 
 print (buff_line)
 print ("plotting time-latitude trace for mval = %03i" %mval)
-print ("irvals = ", irvals)
-print ("r/rsun = ", a0.radius[irvals]/rsun)
-print ("qvals = ", qvals)
+print ("irvals = " + arr_to_str(irvals, "%i"))
+print ("r/rsun = " + arr_to_str(a0.radius[irvals]/rsun, "%.3f"))
+print ("qvals = " + arr_to_str(qvals, "%i"))
 print (buff_line)
 
 # Loop over the desired levels and save plots
@@ -104,6 +110,7 @@ for irval in irvals:
     terms = []
 
     # must read in each data file separately
+    count = 0
     for qval in qvals:
         dataname = ('mtrace_qval%04i_irval%02i' %(qval, irval)) +\
                 clas0['tag']
@@ -125,7 +132,8 @@ for irval in irvals:
 
         # maybe thin data
         if not kw.ntot == 'full':
-            if firstplot:
+            if count == len(qvals) - 1: # last one
+                print (buff_line)
                 print ("ntot = %i" %kw.ntot)
                 print ("before thin_data: len(times) = %i" %len(times))
 
@@ -133,11 +141,12 @@ for irval in irvals:
             iters = thin_data(iters, kw.ntot)
             vals = thin_data(vals, kw.ntot)
 
-            if firstplot:
+            if count == len(qvals) - 1: # last one
                 print ("after thin_data: len(times) = %i" %len(times))
-                firstplot = False
+                print (buff_line)
         
         terms.append(vals)
+        count += 1
 
     # set some labels 
     axislabel = 'latitude (deg)'
@@ -186,12 +195,18 @@ for irval in irvals:
 
         # save the figure
         if kw.groupname is None:
-            basename = dataname
+            basename = dataname[:-8] # remove "_irvalXX"
+            basename.replace('mtrace', 'mtracetimelat')
         else:
-            basename = 'mtrace_' + kw.groupname + '_irval%02i' %irval
+            basename = 'mtracetimelat_' + kw.groupname
         basename += '-%08i_%08i' %(iter1, iter2)
-        plotdir = my_mkdir(clas0['plotdir'] + '/timelat_mval%03i' %mval)
-        savename = basename + clas0['tag'] + position_tag + '.png'
+        plotdir = my_mkdir(clas0['plotdir'] +\
+                '/timelat_mval%03i' %mval + clas0['tag'])
+        if take_real:
+            realtag = '_real'
+        else:
+            realtag = '_imag'
+        savename = basename + position_tag + realtag + '.png'
         print ("saving", plotdir + '/' + savename)
         plt.savefig(plotdir + '/' + savename, dpi=200)
 
