@@ -187,12 +187,12 @@ for isampleval in kw.isamplevals:
 
         # save the figure
         basename = dataname + '_%08i_%08i' %(iter1, iter2)
-        plotdir = my_mkdir(clas0['plotdir'] + '/' + datatype)
+        plotdir = my_mkdir(clas0['plotdir'] + '/' + datatype + clas0['tag'])
         if take_real:
             realtag = '_real'
         else:
             realtag = '_imag'
-        savename = basename + clas0['tag'] + position_tag + realtag + '.png'
+        savename = basename + position_tag + realtag + '.png'
         print ("saving", plotdir + '/' + savename)
         plt.savefig(plotdir + '/' + savename, dpi=200)
 
