@@ -119,8 +119,8 @@ for qval in kw.qvals:
 # set figure dimensions
 sub_width_inches = 7.5
 sub_height_inches = 2.0
-margin_bottom_inches = 1/2 # space for x-axis label
-margin_top_inches = 3/4
+margin_bottom_inches = 3/8 # space for x-axis label
+margin_top_inches = 1
 if kw.lon:
     margin_top_inches =  1 + 1/4
 margin_left_inches = 5/8 # space for latitude label
@@ -178,6 +178,8 @@ for isampleval in kw.isamplevals:
         averaging_time = (times[-1] - times[0])/len(times)*kw.navg
         maintitle += '\n' + ('t_avg = %.1f Prot' %averaging_time)
 
+    maintitle += '\nm=0 (lon. avg.)'
+
     if not kw.shav:
         print('plotting sampleval = %0.3f (i = %02i)' %(sampleval, isampleval))
    
@@ -213,10 +215,10 @@ for isampleval in kw.isamplevals:
 
         # save the figure
         basename = dataname + '_%08i_%08i' %(iter1, iter2)
-        plotdir = my_mkdir(clas0['plotdir'] + '/' + datatype)
+        plotdir = my_mkdir(clas0['plotdir'] + '/' + datatype + clas0['tag'])
         if kw.lon and not om is None:
             basename += '_om%.0f' %om
-        savename = basename + clas0['tag'] + position_tag + '.png'
+        savename = basename + position_tag + '.png'
         print ("saving", plotdir + '/' + savename)
         plt.savefig(plotdir + '/' + savename, dpi=200)
 
