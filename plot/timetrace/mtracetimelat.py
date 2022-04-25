@@ -201,7 +201,7 @@ for irval in irvals:
             basename = 'mtracetimelat_' + kw.groupname
         basename += '-%08i_%08i' %(iter1, iter2)
         plotdir = my_mkdir(clas0['plotdir'] +\
-                '/timelat_mval%03i' %mval + clas0['tag'])
+                '/mtracetimelat_mval%03i' %mval + clas0['tag'])
         if take_real:
             realtag = '_real'
         else:
