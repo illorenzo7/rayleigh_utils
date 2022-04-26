@@ -33,7 +33,7 @@ file_list, int_file_list, nfiles = get_file_lists(radatadir, args)
 a0 = Shell_Slices(radatadir + file_list[0], '')
 
 # defaults
-kwargs_default = dict({'ntot': 500, 'groupname': 'b', 'irvals': np.array([0]), 'rvals': None, 'mmax': 10, 'mval': 1, 'imag': False})
+kwargs_default = dict({'ntot': 500, 'groupname': 'b', 'irvals': np.array([0]), 'rvals': None, 'mmax': 10, 'mval': 1, 'imag': False, 'qvals': None})
 
 kwargs_default.update(plot_timey_kwargs_default)
 
@@ -42,8 +42,11 @@ find_bad_keys(kwargs_default, clas, clas0['routinename'], justwarn=True)
 
 # overwrite defaults
 kw = update_dict(kwargs_default, clas)
-# add in groupname keys
-kw.update(get_quantity_group(kw.groupname, magnetism))
+
+if kw.qvals is None: # specified qvals trumps groupname
+    # add in groupname keys
+    kw.update(get_quantity_group(kw.groupname, magnetism))
+    # ...this will also overwrite qvals
 
 # user may have wanted to change some groupname keys
 kw = update_dict(kw, clas)
@@ -74,8 +77,17 @@ if not kw.rvals is None: # irvals haven't been set directly
         for i in range(len(kw.rvals)):
             irvals[i] = np.argmin(np.abs(a0.radius/rsun - kw.rvals[i]))
 
-qvals = kw.qvals
-# everything must be array
+# and the qvals
+qvals = kw.qvals # ... if groupname is specified, this will just be
+                 # the qvals associated with the group, e.g., 
+                 # b <--> 801, 802, 803
+
+if isall(qvals):
+    qvals = np.sort(a0.qv)
+
+if qvals is None:
+    qvals = np.array([1])
+
 irvals = make_array(irvals)
 #qvals = make_array(qvals)
 
