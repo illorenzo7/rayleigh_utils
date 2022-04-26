@@ -90,7 +90,7 @@ if rank == 0:
     # get the rvals we want
     irvals = kw.irvals
     if not kw.rvals is None: # irvals haven't been set directly
-        if isall(rvals):
+        if isall(kw.rvals):
             irvals = np.arange(a0.nr)
         else:
             irvals = np.zeros_like(kw.rvals, dtype='int')
@@ -98,10 +98,16 @@ if rank == 0:
                 irvals[i] = np.argmin(np.abs(a0.radius/rsun - kw.rvals[i]))
 
     # and the qvals
-    qvals = make_array(kw.qvals)
+    qvals = kw.qvals
+    if isall(qvals):
+        qvals = np.sort(a0.qv)
 
+    if qvals is None:
+        qvals = np.array([1])
+    
     # everything must be array
     irvals = make_array(irvals)
+    qvals = make_array(qvals)
 
     # use nonlin fft or not
     nonlin = kw.nonlin
