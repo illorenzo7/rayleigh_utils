@@ -18,7 +18,7 @@ dirname = clas0.dirname
 dirname_stripped = strip_dirname(dirname)
 
 # SPECIFIC ARGS
-kwargs_default = dotdict(dict({'the_file': None, 'av': False, 'val_iter': int(1e9), 'irvals': np.array([0]), 'rvals': None, 'varnames': np.array(['vr']), 'labelbyindex': False}))
+kwargs_default = dotdict(dict({'the_file': None, 'av': False, 'val_iter': int(1e9), 'irvals': np.array([0]), 'rvals': None, 'varnames': np.array(['vr']), 'labelbyindex': False, 'skip': None, 'nframes': None}))
 # this guy need to update right away to choose fig dimensions
 if 'type' in clas:
     plottype = clas.type
@@ -79,6 +79,14 @@ if onefile:
 # Get desired file names in datadir and their integer counterparts
 radatadir = dirname + '/' + dataname + '/'
 file_list, int_file_list, nfiles = get_file_lists(radatadir, args)
+
+if not kw.nframes is None:
+    kw.skip = nfiles//kw.nframes
+
+if not kw.skip is None:
+    file_list = file_list[::kw.skip]
+    int_file_list = int_file_list[::kw.skip]
+    nfiles = len(int_file_list)
 
 # need one of these no matter what
 print ("reading " + dataname + '/' + file_list[0])
