@@ -196,9 +196,18 @@ for fname in file_list:
                 ax = axs[0, 1]
                 angle = np.arccos(a.costheta)
                 tt_lat = 180/np.pi*(np.pi/2 - angle)
-                ax.plot(np.mean(field, axis=0), tt_lat)
+                fieldav = np.mean(field, axis=0)
+                ax.plot(fieldav, tt_lat)
                 ax.set_xlabel('lon. avg.')
                 ax.set_ylim(-90, 90)
+                # ignore pm 75 degrees
+                lat1 = -75
+                lat2 = 75
+                ith1 = np.argmin(np.abs(tt_lat - lat1))
+                ith2 = np.argmin(np.abs(tt_lat - lat2))
+                xmin = np.min(fieldav[ith1:ith2+1])
+                xmax = np.max(fieldav[ith1:ith2+1])
+                ax.set_xlim(xmin, xmax)
                 #ax.set_ylabel('latitude (deg)')
 
             # save by default
