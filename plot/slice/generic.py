@@ -59,7 +59,6 @@ kw_make_figure = update_dict(make_figure_kwargs_default, clas)
 
 # needs to be arrays
 kw.irvals = make_array(kw.irvals)
-kw.rvals = make_array(kw.rvals)
 kw.varnames = array_of_strings(make_array(kw.varnames))
 
 # make plot directory if nonexistent
@@ -110,6 +109,7 @@ if not kw.rvals is None: # irvals haven't been set directly
     if isall(kw.rvals):
         kw.irvals = np.arange(a0.nr)
     else:
+        kw.rvals = make_array(kw.rvals)
         kw.irvals = np.zeros_like(kw.rvals, dtype='int')
         for i in range(len(kw.rvals)):
             kw.irvals[i] = np.argmin(np.abs(a0.radius/rsun - kw.rvals[i]))
