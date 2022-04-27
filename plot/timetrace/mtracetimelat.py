@@ -43,11 +43,6 @@ find_bad_keys(kwargs_default, clas, clas0['routinename'], justwarn=True)
 # overwrite defaults
 kw = update_dict(kwargs_default, clas)
 
-if kw.qvals is None: # specified qvals trumps groupname
-    # add in groupname keys
-    kw.update(get_quantity_group(kw.groupname, magnetism))
-    # ...this will also overwrite qvals
-
 # user may have wanted to change some groupname keys
 kw = update_dict(kw, clas)
 kw_plot_timey = update_dict(plot_timey_kwargs_default, clas)
@@ -82,11 +77,20 @@ qvals = kw.qvals # ... if groupname is specified, this will just be
                  # the qvals associated with the group, e.g., 
                  # b <--> 801, 802, 803
 
-if isall(qvals):
+if isall(qvals): # probably won't use this option here ... would 
+    # make too many panels
     qvals = np.sort(a0.qv)
 
-if qvals is None:
-    qvals = np.array([1])
+if qvals is None: # it's a quantity group
+    groupname = kw.groupname
+    qgroup = get_quantity_group(groupname, magnetism)
+    qvals = qgroup['qvals']
+    titles = qgroup['titles']
+else:
+    titles = []
+    for qval in qvals:
+        titles.append(str(qval))
+    groupname = input("choose a groupname to save your plot: ")
 
 irvals = make_array(irvals)
 #qvals = make_array(qvals)
@@ -187,7 +191,7 @@ for irval in irvals:
         plot_timey(field, times, sampleaxis, fig, ax, **kw_plot_timey)
                 
         #  title the plot
-        ax.set_title(kw.titles[iplot], fontsize=fontsize)
+        ax.set_title(titles[iplot], fontsize=fontsize)
 
         # Turn the x tick labels off for the top strips
         #if iplot < nplots - 1:
@@ -206,11 +210,7 @@ for irval in irvals:
         # Make appropriate file name to save
 
         # save the figure
-        if kw.groupname is None:
-            basename = dataname[:-8] # remove "_irvalXX"
-            basename.replace('mtrace', 'mtracetimelat')
-        else:
-            basename = 'mtracetimelat_' + kw.groupname
+        basename = 'mtracetimelat_' + groupname
         basename += '-%08i_%08i' %(iter1, iter2)
         plotdir = my_mkdir(clas0['plotdir'] +\
                 '/mtracetimelat_mval%03i' %mval + clas0['tag'])
