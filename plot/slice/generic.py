@@ -18,7 +18,7 @@ dirname = clas0.dirname
 dirname_stripped = strip_dirname(dirname)
 
 # SPECIFIC ARGS
-kwargs_default = dotdict(dict({'the_file': None, 'av': False, 'val_iter': int(1e9), 'irvals': np.array([0]), 'rvals': None, 'varnames': np.array(['vr']), 'labelbyindex': False, 'skip': None, 'nframes': None}))
+kwargs_default = dotdict(dict({'the_file': None, 'av': False, 'val_iter': int(1e9), 'irvals': np.array([0]), 'rvals': None, 'varnames': np.array(['vr']), 'labelbyindex': False, 'skip': None, 'nframes': None, 'lonav': False}))
 # this guy need to update right away to choose fig dimensions
 if 'type' in clas:
     plottype = clas.type
@@ -162,6 +162,8 @@ for fname in file_list:
                 savename += ('_' + simple_label + ('_rval%0.3f' %rval) + '.png')
 
             # make plot
+            if kw.lonav:
+                kw_make_figure.nplots = 2
             fig, axs, fpar = make_figure(**kw_make_figure)
             ax = axs[0, 0]
             if plottype == 'moll':
@@ -189,6 +191,15 @@ for fname in file_list:
 
             title = dirname_stripped + '\n' + slice_info + '\n' + time_string
             ax.set_title(title, va='bottom', fontsize=default_titlesize)
+
+            if kw.lonav:
+                ax = axs[0, 1]
+                angle = np.arccos(a.costheta)
+                tt_lat = 180/np.pi*(np.pi/2 - angle)
+                ax.plot(np.mean(field, axis=0), tt_lat)
+                ax.set_xlabel('lon. avg.')
+                ax.set_ylim(-90, 90)
+                #ax.set_ylabel('latitude (deg)')
 
             # save by default
             if clas0['saveplot']:
