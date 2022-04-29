@@ -93,6 +93,7 @@ if rank == 0:
         if isall(kw.rvals):
             irvals = np.arange(a0.nr)
         else:
+            kw.rvals = make_array(kw.rvals)
             irvals = np.zeros_like(kw.rvals, dtype='int')
             for i in range(len(kw.rvals)):
                 irvals[i] = np.argmin(np.abs(a0.radius/rsun - kw.rvals[i]))
