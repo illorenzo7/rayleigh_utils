@@ -236,7 +236,6 @@ for irval in irvals:
         vals = np.array(vals) # needs to be array
         # get shape here
         ntimes, its9, nphi, nt = np.shape(vals)
-        print ("nphi = ", nphi)
         nphi = 2*nt
     else: # other processes send their data
         comm.send([my_times, my_iters, my_vals], dest=0)
@@ -309,7 +308,6 @@ for irval in irvals:
 
     # make it an array
     my_vals = np.array(my_vals)
-    print ('shape(my_vals) = ', np.shape(my_vals))
 
     # make sure everybody does their part and "gets there"!
     comm.Barrier()
