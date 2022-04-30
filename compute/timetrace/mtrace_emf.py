@@ -184,7 +184,6 @@ for irval in irvals:
                 vp*br - vr*bp, vp*br, -vr*bp,\
                 vr*bt - vt*br, vr*bt, -vt*br]
 
-
             my_vals.append(emfs)
             my_times.append(avr.time[j])
             my_iters.append(avr.iters[j])
@@ -237,6 +236,7 @@ for irval in irvals:
         vals = np.array(vals) # needs to be array
         # get shape here
         ntimes, its9, nphi, nt = np.shape(vals)
+        print ("nphi = ", nphi)
         nphi = 2*nt
     else: # other processes send their data
         comm.send([my_times, my_iters, my_vals], dest=0)
@@ -282,7 +282,7 @@ for irval in irvals:
                 itend = itstart + my_nt
 
             # Get the portion of vals for rank k
-            my_vals = np.copy(vals[:, :, itstart:itend])
+            my_vals = np.copy(vals[:, :, :, itstart:itend])
 
             # send appropriate file info if not rank 0
             if k > 0:
@@ -362,7 +362,7 @@ for irval in irvals:
             os.makedirs(datadir)
 
         # Set the timetrace savename
-        savename = ('mtrace_qval%04i_irval%02i' %(qval, irval)) +\
+        savename = ('mtrace_emf_irval%02i' %irval) +\
                 clas0['tag'] + '-' + file_list[0] + '_' + file_list[-1] + '.pkl'
         savefile = datadir + savename
 
