@@ -138,10 +138,10 @@ else: # recieve appropriate file info if rank > 1
 
 # Broadcast meta data
 if rank == 0:
-    meta = [dirname, radatadir, irvals,  mmax, nm]
+    meta = [dirname, radatadir, irvals,  mmax, nm, nt]
 else:
     meta = None
-dirname, radatadir, irvals,  mmax, nm = comm.bcast(meta, root=0)
+dirname, radatadir, irvals,  mmax, nm, nt = comm.bcast(meta, root=0)
 
 # Checkpoint and time
 comm.Barrier()
@@ -173,7 +173,11 @@ for irval in irvals:
     # Now read the data
     my_times = []
     my_iters = []
-    my_vals = []
+    my_vals_r = []
+    my_vals_r_nodr = []
+    my_vals_t = []
+    my_vals_t_nodr = []
+    my_vals_p = []
 
     for i in range(my_nfiles):
         avr = reading_func(radatadir + str(my_files[i]).zfill(8), '', irvals=irval, qvals=1)
@@ -188,22 +192,43 @@ for irval in irvals:
             vr = avr.vals[:, :, 0, 0, j]
             vt = avt.vals[:, :, 0, 0, j]
             vp = avp.vals[:, :, 0, 0, j]
+            vp_nodr = vp - np.mean(vp, axis=0).reshape((1, nt))
 
             br = abr.vals[:, :, 0, 0, j]
             bt = abt.vals[:, :, 0, 0, j]
             bp = abp.vals[:, :, 0, 0, j]
+           
+            emfs_r_phys = [vt*bp - vp*bt, vt*bp, -vp*bt]
+            emfs_r_phys_nodr = [vt*bp - vp_nodr*bt, vt*bp, -vp_nodr*bt]
+            emfs_t_phys = [vp*br - vr*bp, vp*br, -vr*bp]
+            emfs_t_phys_nodr = [vp_nodr*br - vr*bp, vp_nodr*br, -vr*bp]
+            emfs_p_phys = [vr*bt - vt*br, vr*bt, -vt*br]
 
-            emfs_phys = [vt*bp - vp*bt, vt*bp, -vp*bt,\
-                vp*br - vr*bp, vp*br, -vr*bp,\
-                vr*bt - vt*br, vr*bt, -vt*br]
+            emfs_r = []
+            emfs_r_nodr = []
+            emfs_t = []
+            emfs_t_nodr = []
+            emfs_p = []
 
-            emfs = []
-            for emf_phys in emfs_phys:
-                emf = np.fft.rfft(emf_phys, axis=0)
-                # throw away values above dealised max
-                emfs.append(emf[:nm, :])
+            # throw away values above dealised max (nm)
+            for iemf in range(3):
+                emfs_r.append(np.fft.rfft(emfs_r_phys[iemf],\
+                        axis=0)[:nm, :])
+                emfs_r_nodr.append(np.fft.rfft(emfs_r_phys_nodr[iemf],\
+                        axis=0)[:nm, :])
+                emfs_t.append(np.fft.rfft(emfs_t_phys[iemf],\
+                        axis=0)[:nm, :])
+                emfs_t_nodr.append(np.fft.rfft(emfs_t_phys_nodr[iemf],\
+                        axis=0)[:nm, :])
+                emfs_p.append(np.fft.rfft(emfs_p_phys[iemf],\
+                        axis=0)[:nm, :])
 
-            my_vals.append(emfs)
+            my_vals_r.append(np.array(emfs_r))
+            my_vals_r_nodr.append(np.array(emfs_r_nodr))
+            my_vals_t.append(np.array(emfs_t))
+            my_vals_t_nodr.append(np.array(emfs_t_nodr))
+            my_vals_p.append(np.array(emfs_p))
+
             my_times.append(avr.time[j])
             my_iters.append(avr.iters[j])
 
@@ -233,16 +258,28 @@ for irval in irvals:
         # initialize empty lists for the final arrays
         times = []
         iters = []
-        vals = []
+
+        vals_r = []
+        vals_r_nodr = []
+        vals_t = []
+        vals_t_nodr = []
+        vals_p = []
 
         # Gather the results into these "master" arrays
         for j in range(nproc):
             if j >= 1:
                 # Get data from rank j
-                my_times, my_iters, my_vals = comm.recv(source=j)
+                my_times, my_iters, my_vals_r, my_vals_r_nodr,\
+                    my_vals_t, my_vals_t_nodr, my_vals_p =\
+                    comm.recv(source=j)
             times += my_times
             iters += my_iters
-            vals += my_vals
+
+            vals_r += my_vals_r
+            vals_r_nodr += my_vals_r_nodr
+            vals_t += my_vals_t
+            vals_t_nodr += my_vals_t_nodr
+            vals_p += my_vals_p
 
             pcnt_done = (j + 1)/nproc*100
             if j == 0:
@@ -252,9 +289,9 @@ for irval in irvals:
                     ('%5.1f%% done' %pcnt_done) + ' ' +\
                     format_time(t2_loc - t1_loc) + 3*' ', end='\r')
 
-        vals = np.array(vals) # needs to be array
     else: # other processes send their data
-        comm.send([my_times, my_iters, my_vals], dest=0)
+        comm.send([my_times, my_iters, my_vals_r, my_vals_r_nodr,\
+                    my_vals_t, my_vals_t_nodr, my_vals_p], dest=0)
 
     # Checkpoint and time
     comm.Barrier()
@@ -277,26 +314,36 @@ for irval in irvals:
             os.makedirs(datadir)
 
         # Set the timetrace savename
-        savename = ('mtrace_emf_irval%02i' %irval) +\
+        for emftag in ['emfr', 'emfr_nodr', 'emft', 'emft_nodr', 'emfp']:
+            savename = ('mtrace_' + emftag + '_irval%02i' %irval) +\
                 clas0['tag'] + '-' + file_list[0] + '_' + file_list[-1] + '.pkl'
-        savefile = datadir + savename
+            savefile = datadir + savename
 
-        # save the data
-        f = open(savefile, 'wb')
-        # convert everything to arrays
-        vals = np.array(vals)
-        times = np.array(times)
-        iters = np.array(iters)
-        pickle.dump({'vals': vals, 'times': times, 'iters': iters, 'mvals': mvals}, f, protocol=4)
-        f.close()
-        print ('data saved at ')
-        print (make_bold(savefile))
+            # save the data
+            f = open(savefile, 'wb')
+            # convert everything to arrays
+            if emftag == 'emfr':
+                vals = np.array(vals_r)
+            elif emftag == 'emfr_nodr':
+                vals = np.array(vals_r_nodr)
+            elif emftag == 'emft':
+                vals = np.array(vals_t)
+            elif emftag == 'emft_nodr':
+                vals = np.array(vals_r_nodr)
+            elif emftag == 'emfp':
+                vals = np.array(vals_p)
+            times = np.array(times)
+            iters = np.array(iters)
+            pickle.dump({'vals': vals, 'times': times, 'iters': iters, 'mvals': mvals}, f, protocol=4)
+            f.close()
+            print ('data saved at ')
+            print (make_bold(savefile))
 
-        t2 = time.time()
-        print (format_time(t2 - t1))
-        print(make_bold(fill_str('time for file no. %02i' %count, lent, char)), end='')
-        print (make_bold(format_time(t2 - t1_thisfile)))
-        print (buff_line)
+            t2 = time.time()
+            print (format_time(t2 - t1))
+            print(make_bold(fill_str('time for file no. %02i' %count, lent, char)), end='')
+            print (make_bold(format_time(t2 - t1_thisfile)))
+            print (buff_line)
 
     count += 1
 
