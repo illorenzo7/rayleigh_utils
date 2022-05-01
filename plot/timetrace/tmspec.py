@@ -17,7 +17,7 @@ dirname = clas0.dirname
 dirname_stripped = strip_dirname(dirname)
 
 # SPECIFIC ARGS
-kwargs_default = dotdict(dict({'the_file': None, 'irvals': np.array([0]), 'rvals': None, 'qvals': np.array([1]), 'modes': [], 'latvals': [], 'mvals': [], 'diffrot': False, 'azfile': None, 'mnot0': False}))
+kwargs_default = dotdict(dict({'the_file': None, 'irvals': np.array([0]), 'rvals': None, 'qvals': np.array([1]), 'modes': [], 'latvals': [], 'mvals': [], 'diffrot': False, 'azfile': None, 'mmax': None, 'mnot0': False}))
 # "modes" can be: latpower, mpower, or combinations thereof
 # can also get other modes via --latvals (plot freq vs m), --mvals (freq vs lat.)
 
@@ -39,6 +39,9 @@ kw_make_figure = update_dict(make_figure_kwargs_default, clas)
 # get the rvals we want
 radlevs = get_slice_levels(dirname)
 irvals = kw.irvals
+
+# mmax (if needed)
+mmax = kw.mmax
 
 # get latitude
 gi = get_grid_info(dirname)
@@ -114,7 +117,11 @@ for qval in qvals:
         # get data
         if kw.the_file is None:
             dataname = ('tmspec_qval%04i_irval%02i' %(qval, irval)) 
-            the_file = get_widest_range_file(clas0['datadir'] + 'tmspec/', dataname)
+            if mmax is None:
+                datadir = clas0['datadir'] + 'tmspec/'
+            else:
+                datadir = clas0['datadir'] + 'tmspec_mmax%03i/' %mmax
+            the_file = get_widest_range_file(datadir, dataname)
         else:
             dataname = get_dataname_from_file(kw.the_file)
             the_file = kw.the_file
@@ -192,7 +199,7 @@ for qval in qvals:
             if kw_my_pcolormesh.y is None:
                 kw_my_pcolormesh.y = freq
 
-            mmin, mmax = my_pcolormesh(power, fig, ax, **kw_my_pcolormesh)
+            themin, themax = my_pcolormesh(power, fig, ax, **kw_my_pcolormesh)
 
             # make labels
             ylabel = 'freq (Hz)'
@@ -207,7 +214,7 @@ for qval in qvals:
             slice_info = ('qval = %04i' %qval) + 5*' ' + (r'$r/R_\odot\ =\ %0.3f$' %rval) + 5*' ' + "mode = " + basename
 
             title = dirname_stripped + '\n' + slice_info + '\n' + time_string
-            title += '\nminmax = %1.3e, %1.3e' %(mmin, mmax)
+            title += '\nminmax = %1.3e, %1.3e' %(themin, themax)
             ax.set_title(title, va='bottom', fontsize=default_titlesize)
 
             # possibly overplot DR
