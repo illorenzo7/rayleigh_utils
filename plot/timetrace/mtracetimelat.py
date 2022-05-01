@@ -33,7 +33,7 @@ file_list, int_file_list, nfiles = get_file_lists(radatadir, args)
 a0 = Shell_Slices(radatadir + file_list[0], '')
 
 # defaults
-kwargs_default = dict({'ntot': 500, 'groupname': 'b', 'irvals': np.array([0]), 'rvals': None, 'mmax': 10, 'mval': 1, 'imag': False, 'qvals': None})
+kwargs_default = dict({'ntot': 500, 'groupname': 'b', 'irvals': np.array([0]), 'rvals': None, 'mmax': 10, 'mval': 1, 'imag': False, 'abs': False, 'qvals': None})
 
 kwargs_default.update(plot_timey_kwargs_default)
 
@@ -49,9 +49,12 @@ kw_plot_timey = update_dict(plot_timey_kwargs_default, clas)
 
 # check if we want the real or imaginary vals
 if kw.imag:
-    take_real = False
+    part = 'imag'
+elif kw.abs:
+    part = 'abs'
+    kw_plot_timey.posdef = True
 else:
-    take_real = True
+    part = 'real'
 
 # baseline time unit
 time_unit, time_label, rotation, simple_label = get_time_unit(dirname)
@@ -68,6 +71,7 @@ if not kw.rvals is None: # irvals haven't been set directly
     if isall(kw.rvals):
         irvals = np.arange(a0.nr)
     else:
+        kw.rvals = make_array(kw.rvals)
         irvals = np.zeros_like(kw.rvals, dtype='int')
         for i in range(len(kw.rvals)):
             irvals[i] = np.argmin(np.abs(a0.radius/rsun - kw.rvals[i]))
@@ -138,7 +142,12 @@ for irval in irvals:
         # Read in the data
         print ('reading ' + the_file)
         di = get_dict(the_file)
-        vals = np.real(di['vals'][:, mval, :])
+        if part == 'imag':
+            vals = np.imag(di['vals'][:, mval, :])
+        elif part == 'abs':
+            vals = np.abs(di['vals'][:, mval, :])
+        else:
+            vals = np.real(di['vals'][:, mval, :])
         times = di['times']
         iters = di['iters']
 
@@ -174,6 +183,12 @@ for irval in irvals:
     maintitle = dirname_stripped 
     maintitle += '\n' + samplelabel
     maintitle += '\nmval=%03i' %mval
+    if part == 'imag':
+        maintitle += '\nimag part'
+    elif part == 'abs':
+        maintitle += '\nabs. magnitude'
+    else:
+        maintitle += '\nreal part'
     if kw.navg is None:
         maintitle += '\nt_avg = none'
     else:
@@ -214,11 +229,7 @@ for irval in irvals:
         basename += '-%08i_%08i' %(iter1, iter2)
         plotdir = my_mkdir(clas0['plotdir'] +\
                 '/mtracetimelat_mval%03i' %mval + clas0['tag'])
-        if take_real:
-            realtag = '_real'
-        else:
-            realtag = '_imag'
-        savename = basename + position_tag + realtag + '.png'
+        savename = basename + position_tag + '_' + part + '.png'
         print ("saving", plotdir + '/' + savename)
         plt.savefig(plotdir + '/' + savename, dpi=200)
 
