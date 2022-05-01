@@ -47,7 +47,6 @@ dataname = 'Shell_Slices'
 if rank == 0:
     # modules needed only by proc 0 
     import pickle
-    from rayleigh_diagnostics import GridInfo
 
 # Checkpoint and time
 comm.Barrier()
@@ -79,6 +78,24 @@ if rank == 0:
 
     # overwrite defaults
     kw = update_dict(kwargs_default, clas)
+
+    # the grid
+    gi = get_grid_info(dirname)
+    nt = gi['nt']
+    nphi = gi['nphi']
+    
+    # get the mvals
+    # dealiased no. mvalues
+    # remember to dealias---otherwise we are saving a bunch of
+    # NOTHING!
+    mmax = kw.mmax
+    if mmax is None: # may manually strip even more m-values to
+        # save space
+        nm = int(np.floor(2./3.*nt))
+    else:
+        nm = mmax
+    mvals = np.arange(nm)
+
 
     # get the rvals we want
     irvals = kw.irvals
@@ -132,10 +149,10 @@ else: # recieve appropriate file info if rank > 1
 
 # Broadcast meta data
 if rank == 0:
-    meta = [dirname, radatadir, irvals, qvals, mmax]
+    meta = [dirname, radatadir, irvals, qvals, mmax, nm]
 else:
     meta = None
-dirname, radatadir, irvals, qvals, mmax = comm.bcast(meta, root=0)
+dirname, radatadir, irvals, qvals, mmax, nm = comm.bcast(meta, root=0)
 
 # Checkpoint and time
 comm.Barrier()
@@ -175,7 +192,10 @@ for irval in irvals:
         for i in range(my_nfiles):
             a = reading_func(radatadir + str(my_files[i]).zfill(8), '', irvals=irval, qvals=qval)
             for j in range(a.niter):
-                my_vals.append(a.vals[:, :, 0, 0, j])
+                vals_loc = a.vals[:, :, 0, 0, j]
+                vals_loc = np.fft.rfft(vals_loc, axis=0)
+                # throw away values above dealised max
+                my_vals.append(vals_loc[:nm, :])
                 my_times.append(a.time[j])
                 my_iters.append(a.iters[j])
 
@@ -225,9 +245,6 @@ for irval in irvals:
                         format_time(t2_loc - t1_loc) + 3*' ', end='\r')
 
             vals = np.array(vals) # needs to be array
-            # get shape here
-            ntimes, nphi, nt = np.shape(vals)
-            nphi = 2*nt
         else: # other processes send their data
             comm.send([my_times, my_iters, my_vals], dest=0)
 
@@ -239,107 +256,6 @@ for irval in irvals:
             print('\n' + fill_str('collection time', lent, char), end='')
             print (format_time(t2 - t1))
 
-            # get the mvals
-            # dealiased no. mvalues
-            # remember to dealias---otherwise we are saving a bunch of
-            # NOTHING!
-            if mmax is None: # may manually strip even more m-values to
-                # save space
-                nm = int(np.floor(2./3.*nt))
-            else:
-                nm = mmax
-            mvals = np.arange(nm)
-
-            # now redistribute the data by theta-val
-            print(fill_str('proc 0 sending datacube by theta-val',\
-                    lent, char), end='')
-            t1 = time.time()
-
-            nproc_min, nproc_max, n_per_proc_min, n_per_proc_max =\
-                    opt_workload(nt, nproc)
-
-            # Distribute itvals to each process
-            for k in range(nproc - 1, -1, -1): # go in reverse so my_vals
-                # for rank 0 is correct
-                # distribute the partial file list to other procs 
-                if k < nproc_max: # first processes analyzes more files
-                    my_nt = np.copy(n_per_proc_max)
-                    itstart = k*my_nt
-                    itend = itstart + my_nt
-                else: # last processes analyze fewer files
-                    my_nt = np.copy(n_per_proc_min)
-                    itstart = nproc_max*n_per_proc_max + (k - nproc_max)*my_nt
-                    itend = itstart + my_nt
-
-                # Get the portion of vals for rank k
-                my_vals = np.copy(vals[:, :, itstart:itend])
-
-                # send appropriate file info if not rank 0
-                if k > 0:
-                    comm.send([my_vals, my_nt, nm, times], dest=k)
-        else: # recieve appropriate file info if rank > 1
-            my_vals, my_nt, nm, times = comm.recv(source=0)
-
-        # make sure everyone gets "their slice"
-        comm.Barrier()
-        if rank == 0:
-            t2 = time.time()
-            print (format_time(t2 - t1))
-
-            # everyone do their FFT (in phi only)
-            print(fill_str('doing FFT: phi --> m', lent, char), end='\r')
-            t1 = time.time()
-            #t1_loc = time.time()
-
-        # do the phi FFT first
-        # this is just a transform of real data
-        my_vals = np.fft.rfft(my_vals, axis=1)
-        # throw away values above dealised max
-        my_vals = my_vals[:, :nm, :]
-
-        # make it an array
-        my_vals = np.array(my_vals)
-
-        # make sure everybody does their part and "gets there"!
-        comm.Barrier()
-
-        # rank 0 collects Fourier transform
-        if rank == 0:
-            t2 = time.time()
-
-            print('\n' + fill_str('FFT time', lent, char), end='')
-            print (format_time(t2 - t1))
-            print(fill_str('rank 0 collecting FFTs', lent, char), end='')
-            t1 = time.time()
-
-            # now overwrite vals with the transformed datacube
-            vals = np.zeros((ntimes, nm, nt), 'complex')
-
-            # Gather the FFT results back into vals array
-            for k in range(nproc):
-                if k < nproc_max: # first processes have more theta-values
-                    my_nt = np.copy(n_per_proc_max)
-                    itstart = k*my_nt
-                    itend = itstart + my_nt
-                else: # last processes analyze fewer files
-                    my_nt = np.copy(n_per_proc_min)
-                    itstart = nproc_max*n_per_proc_max + (k - nproc_max)*my_nt
-                    itend = itstart + my_nt
-
-                if k > 0:
-                    # Get my_vals from rank k
-                     my_vals = comm.recv(source=k, tag=0)
-                vals[:, :, itstart:itend] = my_vals
-
-        else: # other processes send their data
-            comm.send(my_vals, dest=0, tag=0)
-
-        # Make sure all data is collected
-        comm.Barrier()
-        if rank == 0:
-            t2 = time.time()
-            print (format_time(t2 - t1))
-            print(fill_str('rank 0 saving data', lent, char), end='')
             t1 = time.time()
 
             # create data directory if it doesn't already exist

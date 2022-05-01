@@ -253,8 +253,6 @@ for irval in irvals:
                     format_time(t2_loc - t1_loc) + 3*' ', end='\r')
 
         vals = np.array(vals) # needs to be array
-        # get shape here
-        ntimes = len(times)
     else: # other processes send their data
         comm.send([my_times, my_iters, my_vals], dest=0)
 
