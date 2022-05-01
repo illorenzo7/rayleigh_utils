@@ -47,7 +47,6 @@ dataname = 'Shell_Slices'
 if rank == 0:
     # modules needed only by proc 0 
     import pickle
-    #from rayleigh_diagnostics import GridInfo
 
 # Checkpoint and time
 comm.Barrier()
