@@ -16,8 +16,17 @@ clas0, clas = read_clas(args)
 dirname = clas0.dirname
 dirname_stripped = strip_dirname(dirname)
 
+# Get the Rayleigh data directory
+radatadir = dirname + '/Shell_Slices/'
+
+# Get all the file names in datadir and their integer counterparts
+file_list, int_file_list, nfiles = get_file_lists_all(radatadir)
+
+# read first file for some metadata
+a0 = Shell_Slices(radatadir + file_list[0], '')
+
 # SPECIFIC ARGS
-kwargs_default = dotdict(dict({'the_file': None, 'irvals': np.array([0]), 'rvals': None, 'qvals': np.array([1]), 'modes': [], 'latvals': [], 'mvals': [], 'diffrot': False, 'azfile': None, 'mmax': None, 'mnot0': False}))
+kwargs_default = dotdict(dict({'the_file': None, 'irvals': np.array([0]), 'rvals': None, 'qvals': None, 'modes': [], 'latvals': [], 'mvals': [], 'diffrot': False, 'azfile': None, 'mmax': None, 'mnot0': False}))
 # "modes" can be: latpower, mpower, or combinations thereof
 # can also get other modes via --latvals (plot freq vs m), --mvals (freq vs lat.)
 
@@ -61,7 +70,16 @@ if not kw.rvals is None: # irvals haven't been set directly
             irvals[i] = np.argmin(np.abs(radlevs.radius/rsun - kw.rvals[i]))
 
 # and the qvals
-qvals = make_array(kw.qvals)
+qvals = kw.qvals # ... if groupname is specified, this will just be
+                 # the qvals associated with the group, e.g., 
+                 # b <--> 801, 802, 803
+
+if isall(qvals): # probably won't use this option here ... would 
+    # make too many panels
+    qvals = np.sort(a0.qv)
+
+if qvals is None: 
+    qvals = np.array([1])
 
 # modes, etc.; these must be lists
 modes = make_array(kw.modes, tolist=True)
