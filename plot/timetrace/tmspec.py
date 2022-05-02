@@ -107,7 +107,11 @@ print ("nfigures = ", nfigures)
 print (buff_line)
 
 # get and make plotdir if non-existent
-plotdir = my_mkdir(clas0['plotdir'] + 'tmspec/')
+if mmax is None:
+    plotdir = my_mkdir(clas0['plotdir'] + 'tmspec' + clas0['tag'] + '/')
+else:
+    plotdir = my_mkdir(clas0['plotdir'] +\
+        'tmspec_mmax%03i' %mmax + clas0['tag'] + '/')
 
 # include differential rotation if requested
 if kw.diffrot:

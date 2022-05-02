@@ -17,12 +17,13 @@ import pickle
 
 # my own version of a nonlinear fft
 def my_nfft(times, arr):
+    # assumes arr is 1-D
     # shift the times to lie in range -1/2, 1/2
     total_time = times[-1] - times[0]
-    times = (times - times[0])/total_time - 1/2
+    times_shift = (times - times[0])/total_time - 1/2
     # get equally spaced times
-    times_eq = np.linspace(times[0], times[-1], len(times))
-    arr_eq = np.interp(times_eq, times, arr)
+    times_eq = np.linspace(-1/2, 1/2, len(times))
+    arr_eq = np.interp(times_eq, times_shift, arr)
     return np.fft.fftshift(np.fft.fft(arr_eq))
 
 # CLAs
@@ -127,7 +128,7 @@ for irval in irvals:
         # Fourier transform the vals
         print (buff_line)
         print ('doing Fourier transform along time axis')
-        vals_fft = np.zeros_like(vals)
+        vals_fft = np.zeros_like(vals, 'complex')
         if nonlin:
             print ("using DFT for NONLINEARLY SPACED times")
             for it in range(nt):
@@ -146,10 +147,9 @@ for irval in irvals:
         # save the data
         print (buff_line)
         print ('saving ' + savefile)
-        vals_fft = np.zeros_like(vals)
         f = open(savefile, 'wb')
 
-        pickle.dump({'vals': vals, 'times': times, 'iters': di['iters'], 'freq': freq, 'mvals': mvals}, f, protocol=4)
+        pickle.dump({'vals': vals_fft, 'times': times, 'iters': di['iters'], 'freq': freq, 'mvals': mvals}, f, protocol=4)
 
         f.close()
         print (buff_line)
