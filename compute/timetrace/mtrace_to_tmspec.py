@@ -1,124 +1,91 @@
 ##################################################################
-# Routine to make m spectra (from Shell Slices), as a time trace
+# Routine to make mtrace to tmspec (transform along time axis)
 # Author: Loren Matilsky
-# Created: 02/09/2022
+# Created: 05/01/2022
 ##################################################################
 
-# initialize communication
-from mpi4py import MPI
+# import
 import sys, os
 sys.path.append(os.environ['raco'])
 from cla_util import *
-from common import rsun
-comm = MPI.COMM_WORLD
-rank = comm.Get_rank()
+from common import *
+lent = 50
+char = '.'
 
-# Start timing immediately
-comm.Barrier()
-if rank == 0:
-    # timing module
-    import time
-    # info for print messages
-    import sys, os
-    sys.path.append(os.environ['raco'])
-    # import common here
-    from common import *
-    lent = 50
-    char = '.'
-    nproc = comm.Get_size()
-    t1_glob = time.time()
-    t1 = t1_glob + 0.0
-    if nproc > 1:
-        print ('processing in parallel with %i ranks' %nproc)
-        print ('communication initialized')
-    else:
-        print ('processing in serial with 1 rank')
-    print(fill_str('processes importing necessary modules', lent, char),\
-            end='')
-
-# modules needed by everyone
 import numpy as np
-# data type and reading function
-import sys, os
-from rayleigh_diagnostics_alt import Shell_Slices
-reading_func = Shell_Slices
-dataname = 'Shell_Slices'
+import pickle
 
-if rank == 0:
-    # modules needed only by proc 0 
-    import pickle
+# CLAs
+args = sys.argv
+clas0, clas = read_clas(args)
+dirname = clas0['dirname']
 
-# Checkpoint and time
-comm.Barrier()
-if rank == 0:
-    t2 = time.time()
-    print (format_time(t2 - t1))
-    print(fill_str('proc 0 distributing the file lists', lent, char),\
-            end='')
-    t1 = time.time()
+# Get the Rayleigh data directory
+radatadir = dirname + '/' + dataname + '/'
 
-# proc 0 reads the file lists and distributes them
-if rank == 0:
-    # read the arguments
-    args = sys.argv
-    clas0, clas = read_clas(args)
-    dirname = clas0['dirname']
+# Get all the file names in datadir and their integer counterparts
+file_list, int_file_list, nfiles = get_file_lists(radatadir, args)
 
-    # Get the Rayleigh data directory
-    radatadir = dirname + '/' + dataname + '/'
+# read first file for some metadata
+a0 = reading_func(radatadir + file_list[0], '')
 
-    # Get all the file names in datadir and their integer counterparts
-    file_list, int_file_list, nfiles = get_file_lists(radatadir, args)
+# set default values for qval and irval
+kwargs_default = dict({'irvals': np.array([0]), 'rvals': None, 'qvals': None, 'mmax': None})
 
-    # read first file for some metadata
-    a0 = reading_func(radatadir + file_list[0], '')
+# overwrite defaults
+kw = update_dict(kwargs_default, clas)
 
-    # set default values for qval and irval
-    kwargs_default = dict({'irvals': np.array([0]), 'rvals': None, 'qvals': None, 'mmax': None})
+# the grid
+gi = get_grid_info(dirname)
+nt = gi['nt']
+nphi = gi['nphi']
 
-    # overwrite defaults
-    kw = update_dict(kwargs_default, clas)
+# get the mvals
+mmax = kw.mmax
+if mmax is None: # may manually strip even more m-values to
+    # save space
+    nm = int(np.floor(2./3.*nt))
+else:
+    nm = mmax
+mvals = np.arange(nm)
 
-    # the grid
-    gi = get_grid_info(dirname)
-    nt = gi['nt']
-    nphi = gi['nphi']
-    
-    # get the mvals
-    # dealiased no. mvalues
-    # remember to dealias---otherwise we are saving a bunch of
-    # NOTHING!
-    mmax = kw.mmax
-    if mmax is None: # may manually strip even more m-values to
-        # save space
-        nm = int(np.floor(2./3.*nt))
+# get the rvals we want
+irvals = kw.irvals
+if not kw.rvals is None: # irvals haven't been set directly
+    if isall(kw.rvals):
+        irvals = np.arange(a0.nr)
     else:
-        nm = mmax
-    mvals = np.arange(nm)
+        kw.rvals = make_array(kw.rvals)
+        irvals = np.zeros_like(kw.rvals, dtype='int')
+        for i in range(len(kw.rvals)):
+            irvals[i] = np.argmin(np.abs(a0.radius/rsun - kw.rvals[i]))
 
+# and the qvals
+qvals = kw.qvals
+if isall(qvals):
+    qvals = np.sort(a0.qv)
 
-    # get the rvals we want
-    irvals = kw.irvals
-    if not kw.rvals is None: # irvals haven't been set directly
-        if isall(kw.rvals):
-            irvals = np.arange(a0.nr)
-        else:
-            kw.rvals = make_array(kw.rvals)
-            irvals = np.zeros_like(kw.rvals, dtype='int')
-            for i in range(len(kw.rvals)):
-                irvals[i] = np.argmin(np.abs(a0.radius/rsun - kw.rvals[i]))
+if qvals is None:
+    qvals = np.array([1])
 
-    # and the qvals
-    qvals = kw.qvals
-    if isall(qvals):
-        qvals = np.sort(a0.qv)
+# everything must be array
+irvals = make_array(irvals)
+qvals = make_array(qvals)
 
-    if qvals is None:
-        qvals = np.array([1])
-    
-    # everything must be array
-    irvals = make_array(irvals)
-    qvals = make_array(qvals)
+            # create data directory if it doesn't already exist
+            if not mmax is None:
+                datadir = clas0['datadir'] + ('mtrace_mmax%03i/' %mmax)
+            else:
+                datadir = clas0['datadir'] + 'mtrace/'
+
+            if not os.path.isdir(datadir):
+                os.makedirs(datadir)
+
+            # Set the timetrace savename
+            savename = ('mtrace_qval%04i_irval%02i' %(qval, irval)) +\
+                    clas0['tag'] + '-' + file_list[0] + '_' + file_list[-1] + '.pkl'
+            savefile = datadir + savename
+
 
     # Get the problem size
     nproc_min, nproc_max, n_per_proc_min, n_per_proc_max =\
