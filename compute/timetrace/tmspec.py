@@ -47,6 +47,10 @@ dataname = 'Shell_Slices'
 
 # my own version of nfft (should be same --- good test)
 def my_nfft(times, arr):
+    # shift the times to lie in range -1/2, 1/2
+    total_time = times[-1] - times[0]
+    times = (times - times[0])/total_time - 1/2
+    # get equally spaced times
     times_eq = np.linspace(times[0], times[-1], len(times))
     arr_eq = np.interp(times_eq, times, arr)
     return np.fft.fftshift(np.fft.fft(arr_eq))
@@ -266,11 +270,6 @@ for irval in irvals:
             else:
                 nm = mmax
             mvals = np.arange(nm)
-
-            if nonlin:
-                # shift the times to lie in range -1/2, 1/2
-                total_time = times[-1] - times[0]
-                times = (times - times[0])/total_time - 1/2
 
             # now redistribute the data by theta-val
             print(fill_str('proc 0 sending datacube by theta-val',\
