@@ -33,7 +33,7 @@ file_list, int_file_list, nfiles = get_file_lists(radatadir, args)
 a0 = Shell_Slices(radatadir + file_list[0], '')
 
 # defaults
-kwargs_default = dict({'ntot': 500, 'irvals': np.array([0]), 'rvals': None, 'mmax': 10, 'mval': 1, 'imag': False, 'abs': False, 'nodr': True, 'theta': False, 'phi': False})
+kwargs_default = dict({'ntot': 500, 'irvals': np.array([0]), 'rvals': None, 'mmax': 10, 'mval': 1, 'imag': False, 'abs': False, 'nodr': False, 'theta': False, 'phi': False})
 
 kwargs_default.update(plot_timey_kwargs_default)
 
