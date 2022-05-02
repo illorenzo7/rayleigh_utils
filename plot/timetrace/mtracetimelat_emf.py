@@ -33,7 +33,7 @@ file_list, int_file_list, nfiles = get_file_lists(radatadir, args)
 a0 = Shell_Slices(radatadir + file_list[0], '')
 
 # defaults
-kwargs_default = dict({'ntot': 500, 'irvals': np.array([0]), 'rvals': None, 'mmax': 10, 'mval': 1, 'imag': False, 'abs': False})
+kwargs_default = dict({'ntot': 500, 'irvals': np.array([0]), 'rvals': None, 'mmax': 10, 'mval': 1, 'imag': False, 'abs': False, 'nodr': True, 'theta': False, 'phi': False})
 
 kwargs_default.update(plot_timey_kwargs_default)
 
@@ -76,28 +76,41 @@ if not kw.rvals is None: # irvals haven't been set directly
         for i in range(len(kw.rvals)):
             irvals[i] = np.argmin(np.abs(a0.radius/rsun - kw.rvals[i]))
 
-# and the qvals
-qvals = kw.qvals # ... if groupname is specified, this will just be
-                 # the qvals associated with the group, e.g., 
-                 # b <--> 801, 802, 803
+# get the direction (r, theta, phi) of the emf
+direc = 'r' # 'r', 't', or 'p'
+if kw.theta:
+    direc = 't'
+elif kw.phi:
+    direc = 'p'
+groupname = 'emf' + direc
 
-if isall(qvals): # probably won't use this option here ... would 
-    # make too many panels
-    qvals = np.sort(a0.qv)
+# vector labels (keep track of components)
+vr_label = r'$v_r$'
+vt_label = r'$v_\theta$'
+vp_label = r'$v_\phi$'
+br_label = r'$B_r$'
+bt_label = r'$B_\theta$'
+bp_label = r'$B_\phi$'
 
-if qvals is None: # it's a quantity group
-    groupname = kw.groupname
-    qgroup = get_quantity_group(groupname, magnetism)
-    qvals = qgroup['qvals']
-    titles = qgroup['titles']
-else:
-    titles = []
-    for qval in qvals:
-        titles.append(str(qval))
-    groupname = input("choose a groupname to save your plot: ")
+# take into account differential rotation (or not)
+if kw.nodr and groupname in ['emfr', 'emft']:
+    groupname += '_nodr'
+    vp_label = r'$v_\phi^\prime$'
+
+if direc == 'r':
+    titles = [vt_label + bp_label + r"$\ -\ $" + vp_label + bt_label,\
+        vt_label + bp_label,
+        r"$-$" + vp_label + bt_label]
+elif direc == 't':
+    titles = [vp_label + br_label + r"$\ -\ $" + vr_label + bp_label,\
+        vp_label + br_label,
+        r"$-$" + vr_label + bp_label]
+elif direc == 'p':
+    titles = [vr_label + bt_label + r"$\ -\ $" + vt_label + br_label,\
+        vr_label + bt_label,
+        r"$-$" + vt_label + br_label]
 
 irvals = make_array(irvals)
-#qvals = make_array(qvals)
 
 # mmax (if needed)
 mmax = kw.mmax
@@ -114,50 +127,48 @@ margin_right_inches = 7/8 # space for colorbar
 if 'ycut' in clas:
     margin_right_inches *= 2
 
-nplots = len(qvals)
+nplots = 3
 
 print (buff_line)
 print ("plotting time-latitude trace for mval = %03i" %mval)
 print ("irvals = " + arr_to_str(irvals, "%i"))
 print ("r/rsun = " + arr_to_str(a0.radius[irvals]/rsun, "%.3f"))
-print ("qvals = " + arr_to_str(qvals, "%i"))
+print ("qvals = " + groupname)
 print (buff_line)
 
 # Loop over the desired levels and save plots
 firstplot = True
 for irval in irvals:
-    # for each plot, collect the terms (qvals) we want
+    # for each plot, collect the terms we want
     terms = []
 
-    # must read in each data file separately
-    count = 0
-    for qval in qvals:
-        dataname = ('mtrace_qval%04i_irval%02i' %(qval, irval)) +\
-                clas0['tag']
+    dataname = 'mtrace_' + groupname + '_irval%02i' %irval +\
+            clas0['tag']
 
-        # get data
-        the_file = get_widest_range_file(clas0['datadir'] +\
-                    '/mtrace_mmax%03i/' %mmax, dataname)
+    # get data
+    the_file = get_widest_range_file(clas0['datadir'] +\
+                '/mtrace_mmax%03i/' %mmax, dataname)
 
-        # Read in the data
-        print ('reading ' + the_file)
-        di = get_dict(the_file)
+    # Read in the data
+    print ('reading ' + the_file)
+    di = get_dict(the_file)
+    # time range
+    times = di['times']
+    iters = di['iters']
+    iter1, iter2 = get_iters_from_file(the_file)
+    times /= time_unit
+
+    for iemf in range(3):
         if part == 'imag':
-            vals = np.imag(di['vals'][:, mval, :])
+            vals = np.imag(di['vals'][:, iemf, mval, :])
         elif part == 'abs':
-            vals = np.abs(di['vals'][:, mval, :])
+            vals = np.abs(di['vals'][:, iemf, mval, :])
         else:
-            vals = np.real(di['vals'][:, mval, :])
-        times = di['times']
-        iters = di['iters']
-
-        # time range
-        iter1, iter2 = get_iters_from_file(the_file)
-        times /= time_unit
+            vals = np.real(di['vals'][:, iemf, mval, :])
 
         # maybe thin data
         if not kw.ntot == 'full':
-            if count == len(qvals) - 1: # last one
+            if iemf == 2:
                 print (buff_line)
                 print ("ntot = %i" %kw.ntot)
                 print ("before thin_data: len(times) = %i" %len(times))
@@ -166,12 +177,11 @@ for irval in irvals:
             iters = thin_data(iters, kw.ntot)
             vals = thin_data(vals, kw.ntot)
 
-            if count == len(qvals) - 1: # last one
+            if iemf == 2: # last one
                 print ("after thin_data: len(times) = %i" %len(times))
                 print (buff_line)
         
         terms.append(vals)
-        count += 1
 
     # set some labels 
     axislabel = 'latitude (deg)'
