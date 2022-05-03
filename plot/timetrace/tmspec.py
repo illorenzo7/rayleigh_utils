@@ -26,13 +26,11 @@ file_list, int_file_list, nfiles = get_file_lists_all(radatadir)
 a0 = Shell_Slices(radatadir + file_list[0], '')
 
 # SPECIFIC ARGS
-kwargs_default = dotdict(dict({'the_file': None, 'irvals': np.array([0]), 'rvals': None, 'qvals': None, 'modes': [], 'latvals': [], 'mvals': [], 'diffrot': False, 'azfile': None, 'mmax': None, 'mnot0': False}))
+kwargs_default = dotdict(dict({'the_file': None, 'irvals': np.array([0]), 'rvals': None, 'qvals': None, 'modes': [], 'latvals': [], 'mvals': [], 'diffrot': False, 'azfile': None, 'mmax': None, 'mnot0': False, 'imag': False, 'abs': False}))
 # "modes" can be: latpower, mpower, or combinations thereof
 # can also get other modes via --latvals (plot freq vs m), --mvals (freq vs lat.)
 
 # many kwargs
-my_pcolormesh_kwargs_default['logscale'] = True
-my_pcolormesh_kwargs_default['posdef'] = True
 kwargs_default.update(my_pcolormesh_kwargs_default)
 
 spec_2D_fig_dimensions['sub_margin_top_inches'] = 3/4
@@ -44,6 +42,16 @@ find_bad_keys(kwargs_default, clas, 'plot/timetrace/tmspec', justwarn=True)
 kw = update_dict(kwargs_default, clas)
 kw_my_pcolormesh = update_dict(my_pcolormesh_kwargs_default, clas)
 kw_make_figure = update_dict(make_figure_kwargs_default, clas)
+
+# check if we want the real or imaginary vals
+if kw.imag:
+    part = 'imag'
+elif kw.abs:
+    part = 'abs'
+    kw_my_pcolormesh.posdef = True
+    kw_my_pcolormesh.logscale = True
+else:
+    part = 'real'
 
 # get the rvals we want
 radlevs = get_slice_levels(dirname)
@@ -104,6 +112,7 @@ print ("modes = ", modes)
 print ("latvals = ", latvals)
 print ("mvals = ", mvals)
 print ("nfigures = ", nfigures)
+print("considering part %s of the complex spectra" %part)
 print (buff_line)
 
 # get and make plotdir if non-existent
@@ -152,13 +161,25 @@ for qval in qvals:
         print ("reading " + the_file)
         di = get_dict(the_file)
         freq = di['freq']
-        vals = np.abs(di['vals'])**2
-        # everything with m >= 1 should be counted twice
-        vals[:, 1:, :] *= 2.
 
-        # may want to ignore m = 0 
-        if kw.mnot0:
-            vals[:, 0, :] = 0.0
+        vals = di['vals']
+        if part == 'imag':
+            vals = np.imag(vals)
+        elif part == 'abs':
+            vals = np.abs(vals)**2
+        else:
+            vals = np.real(vals)
+
+        # everything with m >= 1 should be counted twice,
+        # if looking at power
+        if part == 'abs':
+            vals[:, 1:, :] *= 2.
+
+            # may want to ignore m = 0 
+            # (again, only relevant if we are summing over m, in 
+            # modes like "latpower"
+            if kw.mnot0:
+                vals[:, 0, :] = 0.0
 
         nfreq, nm, nt = np.shape(vals)
 
@@ -209,7 +230,7 @@ for qval in qvals:
                 basename += '_mnot0'
 
             # Display at terminal what we are plotting
-            savename = dataname + '_' + basename + clas0['tag'] + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
+            savename = dataname + '_' + basename + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '_' + part + '.png'
 
             # make plot
             fig, axs, fpar = make_figure(**kw_make_figure)

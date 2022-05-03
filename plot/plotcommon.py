@@ -809,6 +809,8 @@ def my_pcolormesh(field, fig, ax, **kwargs):
         divisor = 10**kw_add_cbar.exp
         field /= divisor
         kw.minmax = kw_add_cbar.minmax = kw.minmax[0]/divisor, kw.minmax[1]/divisor
+    else:
+        divisor = 1.0
 
     # Saturate the array (otherwise contourf will show white areas)
     saturate_array(field, kw.minmax[0], kw.minmax[1])
@@ -857,4 +859,4 @@ def my_pcolormesh(field, fig, ax, **kwargs):
                 xline, yline = kw.x, axisval + np.zeros_like(kw.x)
             ax.plot(xline, yline, 'k--')
         count += 1
-    return kw.minmax
+    return kw.minmax[0]*divisor, kw.minmax[1]*divisor

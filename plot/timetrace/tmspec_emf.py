@@ -197,7 +197,7 @@ for irval in irvals:
         if part == 'imag':
             vals = np.imag(di['vals'][:, iemf, mval, :])
         elif part == 'abs':
-            vals = np.abs(di['vals'][:, iemf, mval, :])
+            vals = np.abs(di['vals'][:, iemf, mval, :])**2
         else:
             vals = np.real(di['vals'][:, iemf, mval, :])
 
