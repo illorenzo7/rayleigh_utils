@@ -35,6 +35,8 @@ kwargs_default.update(my_pcolormesh_kwargs_default)
 
 spec_2D_fig_dimensions['sub_margin_top_inches'] = 1
 make_figure_kwargs_default.update(spec_2D_fig_dimensions)
+make_figure_kwargs_default['margin_top_inches'] = 1
+make_figure_kwargs_default['nplots'] = 3
 kwargs_default.update(make_figure_kwargs_default)
 
 find_bad_keys(kwargs_default, clas, 'plot/timetrace/tmspec', justwarn=True)
@@ -60,7 +62,7 @@ mmax = kw.mmax
 gi = get_grid_info(dirname)
 tt_lat = gi['tt_lat']
 tw = gi['tw']
-tw_nd = tw.reshape((1, 1, len(tw)))
+tw_nd = tw.reshape((1, 1, 1, len(tw)))
 
 # get the rvals we want
 radlevs = get_slice_levels(dirname)
@@ -157,131 +159,125 @@ if kw.diffrot:
     xx = gi['xx']
     om = azvals[:, :, azlut[3]]/xx
     om /= 2*np.pi # rad/s --> Hz
- 
-for qval in qvals:
-    for irval in irvals:
-        # get radial level
-        rval = radlevs.radius[irval]/rsun
-        if kw.diffrot:
-            iirval = radlevs.inds[irval]
-            # lat profile of diffrot
-            om_lat = om[:, iirval]
 
-        # get data
-        if kw.the_file is None:
-            dataname = ('tmspec_qval%04i_irval%02i' %(qval, irval)) 
-            if mmax is None:
-                datadir = clas0['datadir'] + 'tmspec/'
-            else:
-                datadir = clas0['datadir'] + 'tmspec_mmax%03i/' %mmax
-            the_file = get_widest_range_file(datadir, dataname)
+# loop over radial levels and get data
+for irval in irvals:
+    # get radial level
+    rval = radlevs.radius[irval]/rsun
+    if kw.diffrot:
+        iirval = radlevs.inds[irval]
+        # lat profile of diffrot
+        om_lat = om[:, iirval]
+
+    # get data
+    if kw.the_file is None:
+        if mmax is None:
+            datadir = clas0['datadir'] + 'tmspec/'
         else:
-            dataname = get_dataname_from_file(kw.the_file)
-            the_file = kw.the_file
-        iter1, iter2 = get_iters_from_file(the_file)
+            datadir = clas0['datadir'] + 'tmspec_mmax%03i/' %mmax
+        dataname = 'tmspec_' + groupname + '_irval%02i' %irval +\
+                clas0['tag']
+        the_file = get_widest_range_file(datadir, dataname)
+    else:
+        dataname = get_dataname_from_file(kw.the_file)
+        the_file = kw.the_file
+    iter1, iter2 = get_iters_from_file(the_file)
 
-        print ("reading " + the_file)
-        di = get_dict(the_file)
-        freq = di['freq']
+    print ("reading " + the_file)
+    di = get_dict(the_file)
+    freq = di['freq']
 
-        vals = di['vals']
-        if part == 'imag':
-            vals = np.imag(vals)
-        elif part == 'abs':
-            vals = np.abs(vals)**2
-        else:
-            vals = np.real(vals)
+    vals = di['vals']
+    if part == 'imag':
+        vals = np.imag(vals)
+    elif part == 'abs':
+        vals = np.abs(vals)**2
+    else:
+        vals = np.real(vals)
 
-        # everything with m >= 1 should be counted twice,
-        # if looking at power
-        if part == 'abs':
-            vals[:, 1:, :] *= 2.
+    # everything with m >= 1 should be counted twice,
+    # if looking at power
+    if part == 'abs':
+        vals[:, :, 1:, :] *= 2. # one more dimension 1:3 for emf parts
 
-            # may want to ignore m = 0 
-            # (again, only relevant if we are summing over m, in 
-            # modes like "latpower"
-            if kw.mnot0:
-                vals[:, 0, :] = 0.0
+        # may want to ignore m = 0 
+        # (again, only relevant if we are summing over m, in 
+        # modes like "latpower"
+        if kw.mnot0:
+            vals[:, :, 0, :] = 0.0
 
-        nfreq, nm, nt = np.shape(vals)
+    nfreq, its3, nm, nt = np.shape(vals)
 
-        # add mvals/latvals to modes
-
-        count = 0
-        for mode in everything:
-            if count < len(modes):
-                basename = mode
-                if mode == 'latpower':
-                    xlabel = 'latitude (deg)'
-                    x = tt_lat
-                    power = np.sum(vals, axis=1)
-                    power = power.T/nm # keep power normalized
-                    if kw.diffrot:
-                        omy = om_lat
-                if mode == 'mpower':
-                    xlabel = 'azimuthal wavenumber (m)'
-                    x = di['mvals']
-                    power = np.sum(vals*tw_nd, axis=2)
-                    power = power.T/len(tt_lat) # keep power normalized
-                    if kw.diffrot:
-                        #print (om_lat)
-                        #print (tw)
-                        omy = np.sum(om_lat*tw)
-                        #print(omy)
-                        omy = omy*x
-            elif count < len(modes) + len(latvals):
-                latval = float(mode)
-                ithval = np.argmin(np.abs(tt_lat - latval))
-                basename = "ithval%03i" %ithval
-                xlabel = 'azimuthal wavenumber (m)'
-                x = di['mvals']
-                power = vals[:, :, ithval].T
-                if kw.diffrot:
-                    omy = om_lat[ithval]
-                    omy = omy*x
-            elif count < len(modes) + len(latvals) + len(mvals):
-                mval = int(mode)
-                basename = "mval%03i" %mval
+    # add mvals/latvals to modes
+    count = 0
+    for mode in everything:
+        if count < len(modes):
+            basename = mode
+            if mode == 'latpower':
                 xlabel = 'latitude (deg)'
                 x = tt_lat
-                power = vals[:, mval, :].T
+                power = np.sum(vals, axis=2)
+                power = power/nm # keep power normalized
+                # do transpose later
                 if kw.diffrot:
-                    omy = om_lat*mval
+                    omy = om_lat
+            if mode == 'mpower':
+                xlabel = 'azimuthal wavenumber (m)'
+                x = di['mvals']
+                power = np.sum(vals*tw_nd, axis=3)
+                power = power/len(tt_lat) # keep power normalized
+                if kw.diffrot:
+                    #print (om_lat)
+                    #print (tw)
+                    omy = np.sum(om_lat*tw)
+                    #print(omy)
+                    omy = omy*x
+        elif count < len(modes) + len(latvals):
+            latval = float(mode)
+            ithval = np.argmin(np.abs(tt_lat - latval))
+            basename = "ithval%03i" %ithval
+            xlabel = 'azimuthal wavenumber (m)'
+            x = di['mvals']
+            power = vals[:, :, :, ithval]
+            if kw.diffrot:
+                omy = om_lat[ithval]
+                omy = omy*x
+        elif count < len(modes) + len(latvals) + len(mvals):
+            mval = int(mode)
+            basename = "mval%03i" %mval
+            xlabel = 'latitude (deg)'
+            x = tt_lat
+            power = vals[:, :, mval, :]
+            if kw.diffrot:
+                omy = om_lat*mval
 
-            if kw.mnot0:
-                basename += '_mnot0'
+        if kw.mnot0:
+            basename += '_mnot0'
 
-            # Display at terminal what we are plotting
-            savename = dataname + '_' + basename + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '_' + part + '.png'
+        # Display at terminal what we are plotting
+        savename = dataname + '_' + basename + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '_' + part + '.png'
 
-            # make plot
-            fig, axs, fpar = make_figure(**kw_make_figure)
-            ax = axs[0, 0]
+        # make plot
+        fig, axs, fpar = make_figure(**kw_make_figure)
 
-            kw_my_pcolormesh.cbar_pos = 'right'
-            if kw_my_pcolormesh.x is None:
-                kw_my_pcolormesh.x = x
-            if kw_my_pcolormesh.y is None:
-                kw_my_pcolormesh.y = freq
+        kw_my_pcolormesh.cbar_pos = 'right'
+        if kw_my_pcolormesh.x is None:
+            kw_my_pcolormesh.x = x
+        if kw_my_pcolormesh.y is None:
+            kw_my_pcolormesh.y = freq
+        ylabel = 'freq (Hz)'
 
-            themin, themax = my_pcolormesh(power, fig, ax, **kw_my_pcolormesh)
-
+        for iemf in range(3):
+            power_loc = power[:, iemf, :].T
+            ax = axs[0, iemf]
+            themin, themax = my_pcolormesh(power_loc, fig, ax, **kw_my_pcolormesh)
             # make labels
-            ylabel = 'freq (Hz)'
             ax.set_xlabel(xlabel, fontsize=default_labelsize)
             ax.set_ylabel(ylabel, fontsize=default_labelsize)
 
             # get y axis to use scientific notation
             ax.ticklabel_format(scilimits=(-3,4), useMathText=True)
-
-            # make title
-            time_string = get_time_string(dirname, iter1, iter2, oneline=True)
-            slice_info = ('qval = %04i' %qval) + 5*' ' + (r'$r/R_\odot\ =\ %0.3f$' %rval) + 5*' ' + "mode = " + basename
-
-            title = dirname_stripped + '\n' + slice_info + '\n' + time_string
-            title += '\nminmax = %1.3e, %1.3e' %(themin, themax)
-            title += '\n%s part' %part
-            ax.set_title(title, va='bottom', fontsize=default_titlesize)
+            ax.set_title(titles[iemf])
 
             # possibly overplot DR
             if kw.diffrot:
@@ -297,15 +293,24 @@ for qval in qvals:
                 ax.set_xlim(xmin,xmax)
                 ax.set_ylim(ymin,ymax)
 
+        # make main title
+        time_string = get_time_string(dirname, iter1, iter2, oneline=True)
+        slice_info = ('qvals = ' + groupname) + 5*' ' + (r'$r/R_\odot\ =\ %0.3f$' %rval) + 5*' ' + "mode = " + basename
 
-            # save by default
-            if clas0['saveplot']:
-                print ("saving " + plotdir + savename)
-                plt.savefig(plotdir + savename, dpi=300)
-            # always show if nfigures is 1
-            if nfigures == 1 and clas0['showplot']:
-                print ("displaying " + savename[:-4])
-                plt.show()   
-            plt.close()
-            count += 1
+        title = dirname_stripped + '\n' + slice_info + '\n' + time_string
+        title += '\nminmax = %1.3e, %1.3e' %(themin, themax)
+        title += '\n%s part' %part
+        fig.text(fpar['margin_left'], 1-fpar['margin_top'], \
+                title, va='bottom', ha='left', fontsize=default_titlesize)
+
+        # save by default
+        if clas0['saveplot']:
+            print ("saving " + plotdir + savename)
+            plt.savefig(plotdir + savename, dpi=300)
+        # always show if nfigures is 1
+        if nfigures == 1 and clas0['showplot']:
+            print ("displaying " + plotdir + savename)
+            plt.show()   
+        plt.close()
+        count += 1
 print (buff_line)
