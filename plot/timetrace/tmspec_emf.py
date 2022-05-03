@@ -31,11 +31,9 @@ kwargs_default = dotdict(dict({'the_file': None, 'irvals': np.array([0]), 'rvals
 # can also get other modes via --latvals (plot freq vs m), --mvals (freq vs lat.)
 
 # many kwargs
-my_pcolormesh_kwargs_default['logscale'] = True
 kwargs_default.update(my_pcolormesh_kwargs_default)
 
-spec_2D_fig_dimensions['sub_margin_top_inches'] = 3/4
-make_figure_kwargs_default['nplots'] = 3 # for each emf
+spec_2D_fig_dimensions['sub_margin_top_inches'] = 1
 make_figure_kwargs_default.update(spec_2D_fig_dimensions)
 kwargs_default.update(make_figure_kwargs_default)
 
@@ -51,12 +49,9 @@ if kw.imag:
 elif kw.abs:
     part = 'abs'
     kw_my_pcolormesh.posdef = True
+    kw_my_pcolormesh.logscale = True
 else:
     part = 'real'
-
-# get the rvals we want
-radlevs = get_slice_levels(dirname)
-irvals = kw.irvals
 
 # mmax (if needed)
 mmax = kw.mmax
@@ -67,16 +62,18 @@ tt_lat = gi['tt_lat']
 tw = gi['tw']
 tw_nd = tw.reshape((1, 1, len(tw)))
 
-# everything must be an array
-irvals = make_array(irvals)
-kw.rvals = make_array(kw.rvals)
+# get the rvals we want
+radlevs = get_slice_levels(dirname)
+irvals = kw.irvals
 if not kw.rvals is None: # irvals haven't been set directly
     if isall(kw.rvals):
-        irvals = np.arange(radlevs.nr)
+        irvals = np.arange(a0.nr)
     else:
+        kw.rvals = make_array(kw.rvals)
         irvals = np.zeros_like(kw.rvals, dtype='int')
         for i in range(len(kw.rvals)):
-            irvals[i] = np.argmin(np.abs(radlevs.radius/rsun - kw.rvals[i]))
+            irvals[i] = np.argmin(np.abs(a0.radius/rsun - kw.rvals[i]))
+irvals = make_array(irvals)
 
 # get the direction (r, theta, phi) of the emf
 direc = 'r' # 'r', 't', or 'p'
@@ -112,12 +109,6 @@ elif direc == 'p':
         vr_label + bt_label,
         r"$-$" + vt_label + br_label]
 
-# must be an array
-irvals = make_array(irvals)
-
-# mmax (if needed)
-mmax = kw.mmax
-
 # modes, etc.; these must be lists
 modes = make_array(kw.modes, tolist=True)
 latvals = make_array(kw.latvals, tolist=True)
@@ -131,17 +122,19 @@ if len(everything) == 0:
 print (buff_line)
 if kw.the_file is None:
     print ("plotting temporal/m spectra")
-    print ("irvals = ", irvals)
+    print ("irvals = " + arr_to_str(irvals, "%i"))
     print ("r/rsun = " + arr_to_str(a0.radius[irvals]/rsun, "%.3f"))
     print ("qvals = " + groupname)
     nfigures = len(irvals)*(len(modes) + len(latvals) + len(mvals))
 else:
     print ("plotting ", kw.the_file)
     nfigures = len(modes) + len(latvals) + len(mvals)
+print (buff_line)
 print ("modes = ", modes)
 print ("latvals = ", latvals)
 print ("mvals = ", mvals)
 print ("nfigures = ", nfigures)
+print ("considering part %s of the complex spectra" %part)
 print (buff_line)
 
 # get and make plotdir if non-existent
@@ -164,49 +157,51 @@ if kw.diffrot:
     xx = gi['xx']
     om = azvals[:, :, azlut[3]]/xx
     om /= 2*np.pi # rad/s --> Hz
+ 
+for qval in qvals:
+    for irval in irvals:
+        # get radial level
+        rval = radlevs.radius[irval]/rsun
+        if kw.diffrot:
+            iirval = radlevs.inds[irval]
+            # lat profile of diffrot
+            om_lat = om[:, iirval]
 
-# loop over rvals and make plots
-for irval in irvals:
-    # get radial level
-    rval = radlevs.radius[irval]/rsun
-    if kw.diffrot:
-        iirval = radlevs.inds[irval]
-        # lat profile of diffrot
-        om_lat = om[:, iirval]
-
-    # get data
-    if kw.the_file is None:
-        dataname = ('tmspec_' + groupname + '_irval%02i' %irval) 
-        if mmax is None:
-            datadir = clas0['datadir'] + 'tmspec/'
+        # get data
+        if kw.the_file is None:
+            dataname = ('tmspec_qval%04i_irval%02i' %(qval, irval)) 
+            if mmax is None:
+                datadir = clas0['datadir'] + 'tmspec/'
+            else:
+                datadir = clas0['datadir'] + 'tmspec_mmax%03i/' %mmax
+            the_file = get_widest_range_file(datadir, dataname)
         else:
-            datadir = clas0['datadir'] + 'tmspec_mmax%03i/' %mmax
-        the_file = get_widest_range_file(datadir, dataname)
-    else:
-        dataname = get_dataname_from_file(kw.the_file)
-        the_file = kw.the_file
-    iter1, iter2 = get_iters_from_file(the_file)
+            dataname = get_dataname_from_file(kw.the_file)
+            the_file = kw.the_file
+        iter1, iter2 = get_iters_from_file(the_file)
 
-    print ("reading " + the_file)
-    di = get_dict(the_file)
-    freq = di['freq']
+        print ("reading " + the_file)
+        di = get_dict(the_file)
+        freq = di['freq']
 
-    # loop over the EMF parts and plot
-    for iemf in range(3):
-        ax = axs[0, iemf]
+        vals = di['vals']
         if part == 'imag':
-            vals = np.imag(di['vals'][:, iemf, mval, :])
+            vals = np.imag(vals)
         elif part == 'abs':
-            vals = np.abs(di['vals'][:, iemf, mval, :])**2
+            vals = np.abs(vals)**2
         else:
-            vals = np.real(di['vals'][:, iemf, mval, :])
+            vals = np.real(vals)
 
-        # everything with m >= 1 should be counted twice
-        vals[:, 1:, :] *= 2.
+        # everything with m >= 1 should be counted twice,
+        # if looking at power
+        if part == 'abs':
+            vals[:, 1:, :] *= 2.
 
-        # may want to ignore m = 0 
-        if kw.mnot0:
-            vals[:, 0, :] = 0.0
+            # may want to ignore m = 0 
+            # (again, only relevant if we are summing over m, in 
+            # modes like "latpower"
+            if kw.mnot0:
+                vals[:, 0, :] = 0.0
 
         nfreq, nm, nt = np.shape(vals)
 
@@ -257,10 +252,11 @@ for irval in irvals:
                 basename += '_mnot0'
 
             # Display at terminal what we are plotting
-            savename = dataname + '_' + basename + clas0['tag'] + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
+            savename = dataname + '_' + basename + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '_' + part + '.png'
 
             # make plot
             fig, axs, fpar = make_figure(**kw_make_figure)
+            ax = axs[0, 0]
 
             kw_my_pcolormesh.cbar_pos = 'right'
             if kw_my_pcolormesh.x is None:
@@ -280,10 +276,11 @@ for irval in irvals:
 
             # make title
             time_string = get_time_string(dirname, iter1, iter2, oneline=True)
-            slice_info = ('qvals = ' + groupname) + 5*' ' + (r'$r/R_\odot\ =\ %0.3f$' %rval) + 5*' ' + "mode = " + basename
+            slice_info = ('qval = %04i' %qval) + 5*' ' + (r'$r/R_\odot\ =\ %0.3f$' %rval) + 5*' ' + "mode = " + basename
 
             title = dirname_stripped + '\n' + slice_info + '\n' + time_string
             title += '\nminmax = %1.3e, %1.3e' %(themin, themax)
+            title += '\n%s part' %part
             ax.set_title(title, va='bottom', fontsize=default_titlesize)
 
             # possibly overplot DR
@@ -301,14 +298,14 @@ for irval in irvals:
                 ax.set_ylim(ymin,ymax)
 
 
-        # save by default
-        if clas0['saveplot']:
-            print ("saving " + plotdir + savename)
-            plt.savefig(plotdir + savename, dpi=300)
-        # always show if nfigures is 1
-        if nfigures == 1 and clas0['showplot']:
-            print ("displaying " + savename[:-4])
-            plt.show()   
-        plt.close()
-        count += 1
+            # save by default
+            if clas0['saveplot']:
+                print ("saving " + plotdir + savename)
+                plt.savefig(plotdir + savename, dpi=300)
+            # always show if nfigures is 1
+            if nfigures == 1 and clas0['showplot']:
+                print ("displaying " + savename[:-4])
+                plt.show()   
+            plt.close()
+            count += 1
 print (buff_line)

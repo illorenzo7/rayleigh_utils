@@ -75,6 +75,7 @@ if not kw.rvals is None: # irvals haven't been set directly
         irvals = np.zeros_like(kw.rvals, dtype='int')
         for i in range(len(kw.rvals)):
             irvals[i] = np.argmin(np.abs(a0.radius/rsun - kw.rvals[i]))
+irvals = make_array(irvals)
 
 # get the direction (r, theta, phi) of the emf
 direc = 'r' # 'r', 't', or 'p'
@@ -110,7 +111,6 @@ elif direc == 'p':
         vr_label + bt_label,
         r"$-$" + vt_label + br_label]
 
-irvals = make_array(irvals)
 
 # mmax (if needed)
 mmax = kw.mmax
@@ -137,7 +137,6 @@ print ("qvals = " + groupname)
 print (buff_line)
 
 # Loop over the desired levels and save plots
-firstplot = True
 for irval in irvals:
     # for each plot, collect the terms we want
     terms = []
