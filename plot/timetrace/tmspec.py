@@ -33,7 +33,7 @@ kwargs_default = dotdict(dict({'the_file': None, 'irvals': np.array([0]), 'rvals
 # many kwargs
 kwargs_default.update(my_pcolormesh_kwargs_default)
 
-spec_2D_fig_dimensions['sub_margin_top_inches'] = 3/4
+spec_2D_fig_dimensions['sub_margin_top_inches'] = 1
 make_figure_kwargs_default.update(spec_2D_fig_dimensions)
 kwargs_default.update(make_figure_kwargs_default)
 
@@ -258,6 +258,7 @@ for qval in qvals:
 
             title = dirname_stripped + '\n' + slice_info + '\n' + time_string
             title += '\nminmax = %1.3e, %1.3e' %(themin, themax)
+            title += '\n%s part' %part
             ax.set_title(title, va='bottom', fontsize=default_titlesize)
 
             # possibly overplot DR
