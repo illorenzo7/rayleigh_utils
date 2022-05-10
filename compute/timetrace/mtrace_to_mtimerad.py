@@ -124,7 +124,7 @@ savefile = datadir + savename
 # save the data
 f = open(savefile, 'wb')
 di_sav = dict({'vals': vals, 'times': times, 'iters': iters, 'qvals': qvals, 'latvals': samplevals, 'mval': mval, 'rr_avail': rr_avail})
-#pickle.dump(di_sav, f, protocol=4)
+pickle.dump(di_sav, f, protocol=4)
 f.close()
 
 print ('data saved at ')
