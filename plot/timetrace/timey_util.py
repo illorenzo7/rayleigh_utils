@@ -28,12 +28,12 @@ def plot_timey(field, times, yy, fig, ax, **kwargs):
     find_bad_keys(plot_timey_kwargs_default, kwargs, 'plot_timey')
     kw = update_dict(plot_timey_kwargs_default, kwargs)
 
-	if kw.pcolormesh:
-		plotting_func = my_pcolormesh
-		kw_plotting_func = update_dict(my_pcolormesh_kwargs_default, kwargs)
-	else:		
-		plotting_func = my_contourf
-		kw_plotting_func = update_dict(my_contourf_kwargs_default, kwargs)
+    if kw.pcolormesh:
+        plotting_func = my_pcolormesh
+        kw_plotting_func = update_dict(my_pcolormesh_kwargs_default, kwargs)
+    else:        
+        plotting_func = my_contourf
+        kw_plotting_func = update_dict(my_contourf_kwargs_default, kwargs)
 
     # Work with copy of field (not actual field)
     field_full = np.copy(field)
@@ -100,11 +100,11 @@ def plot_timey(field, times, yy, fig, ax, **kwargs):
 
     # plot the first field
     if kw.pcolormesh:
-    	kw_plotting_func.x = times_2d1[:, 0]
-    	kw_plotting_func.y = yy_2d1[0, :]
-    	plotting_func(field1, fig, ax, **kw_my_plotting_func)
+        kw_plotting_func.x = times_2d1[:, 0]
+        kw_plotting_func.y = yy_2d1[0, :]
+        plotting_func(field1, fig, ax, **kw_plotting_func)
     else:
-    	plotting_func(times_2d1, yy_2d1, field1, fig, ax, **plotting_func)
+        plotting_func(times_2d1, yy_2d1, field1, fig, ax, **kw_plotting_func)
 
     if not kw.ycut is None:
         plotting_func.minmax = kw.minmax2
@@ -114,11 +114,12 @@ def plot_timey(field, times, yy, fig, ax, **kwargs):
             kw_plotting_func.cmap = 'PuOr_r'    
         kw_plotting_func.cbar_no = 2
         if kw.pcolormesh:
-   		   	kw_plotting_func.x = times_2d2[:, 0]
-			kw_plotting_func.y = yy_2d2[0, :]
-			plotting_func(field2, fig, ax, **kw_my_plotting_func)
-		else:
-        	plotting_func(times_2d2, yy_2d2, field2, fig, ax, **kw_plotting_func)
+            kw_plotting_func.x = times_2d2[:, 0]
+            kw_plotting_func.y = yy_2d2[0, :]
+            plotting_func(field2, fig, ax, **kw_plotting_func)
+            #ax.set_ylim(np.min(yy), np.max(yy))
+        else:
+            plotting_func(times_2d2, yy_2d2, field2, fig, ax, **kw_plotting_func)
 
     # potentially plot coordinate lines
     for ind in [1, 2]:
