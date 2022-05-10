@@ -10,20 +10,30 @@ from matplotlib import colors
 from common import *
 from plotcommon import *
 
-# plot_timey needs my_contourf args, then some
+# plot_timey needs my_contourf/my_pcolormesh args, then some
 plot_timey_kwargs_default = dict({'ycut': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'yminmax': None, 'ymin': None, 'ymax': None,'minmax2': None, 'timevals': np.array([]), 'yvals': np.array([]), 'navg': None, 'plotboundary': True, 'linestyles1': np.array(['-']), 'linewidths1': np.array([default_lw]), 'linecolors1': np.array(['k']),\
-       'linestyles2': np.array(['-']), 'linewidths2': np.array([default_lw]), 'linecolors2': np.array(['k'])})
+       'linestyles2': np.array(['-']), 'linewidths2': np.array([default_lw]), 'linecolors2': np.array(['k']),\
+       'pcolormesh': False})
 
 # need to change a few default my_contourf settings
 my_contourf_kwargs_default.update(dict({'plotcontours': False, 'cbar_pos': 'right', 'allticksoff': False}))
+my_pcolormesh_kwargs_default.update(dict({'cbar_pos': 'right'}))
+
 plot_timey_kwargs_default.update(my_contourf_kwargs_default)
+plot_timey_kwargs_default.update(my_pcolormesh_kwargs_default)
 
 # plot time "lat or rad"
 def plot_timey(field, times, yy, fig, ax, **kwargs):
+
     find_bad_keys(plot_timey_kwargs_default, kwargs, 'plot_timey')
     kw = update_dict(plot_timey_kwargs_default, kwargs)
 
-    kw_my_contourf = update_dict(my_contourf_kwargs_default, kwargs)
+	if kw.pcolormesh:
+		plotting_func = my_pcolormesh
+		kw_plotting_func = update_dict(my_pcolormesh_kwargs_default, kwargs)
+	else:		
+		plotting_func = my_contourf
+		kw_plotting_func = update_dict(my_contourf_kwargs_default, kwargs)
 
     # Work with copy of field (not actual field)
     field_full = np.copy(field)
@@ -89,19 +99,26 @@ def plot_timey(field, times, yy, fig, ax, **kwargs):
         yy_2d2 = yy_2d_full[:, iycut+1:]
 
     # plot the first field
-    my_contourf(times_2d1, yy_2d1, field1, fig, ax, **kw_my_contourf)
+    if kw.pcolormesh:
+    	kw_plotting_func.x = times_2d1[:, 0]
+    	kw_plotting_func.y = yy_2d1[0, :]
+    	plotting_func(field1, fig, ax, **kw_my_plotting_func)
+    else:
+    	plotting_func(times_2d1, yy_2d1, field1, fig, ax, **plotting_func)
 
     if not kw.ycut is None:
-        # plot second field first
-        kw_my_contourf.minmax = kw.minmax2
+        plotting_func.minmax = kw.minmax2
         if kw.posdef: 
-            kw_my_contourf.cmap = 'cividis'
+            kw_plotting_func.cmap = 'cividis'
         else:
-            kw_my_contourf.cmap = 'PuOr_r'    
-        kw_my_contourf.cbar_no = 2
-
-        # will need to change some kwargs:
-        my_contourf(times_2d2, yy_2d2, field2, fig, ax, **kw_my_contourf)
+            kw_plotting_func.cmap = 'PuOr_r'    
+        kw_plotting_func.cbar_no = 2
+        if kw.pcolormesh:
+   		   	kw_plotting_func.x = times_2d2[:, 0]
+			kw_plotting_func.y = yy_2d2[0, :]
+			plotting_func(field2, fig, ax, **kw_my_plotting_func)
+		else:
+        	plotting_func(times_2d2, yy_2d2, field2, fig, ax, **kw_plotting_func)
 
     # potentially plot coordinate lines
     for ind in [1, 2]:
