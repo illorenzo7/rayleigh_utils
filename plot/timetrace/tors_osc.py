@@ -72,8 +72,6 @@ if not kw.rcut is None:
     dataname += '_rcut%0.3f' %kw.rcut
     thename += '_rcut%0.3f' %kw.rcut
 
-dataname += clas0['tag']
-
 # get data
 if kw.the_file is None:
     kw.the_file = get_widest_range_file(clas0['datadir'] + 'timelat/', dataname)
@@ -112,11 +110,6 @@ if not kw.ntot == 'full':
     iters = thin_data(iters, kw.ntot)
     vals = thin_data(vals, kw.ntot)
     print ("after thin_data: len(times) = %i" %len(times))
-
-# these all need to be arrays
-kw.qvals = make_array(kw.qvals)
-kw.isamplevals = make_array(kw.isamplevals)
-kw.samplevals = make_array(kw.samplevals)
 
 # get rsintheta (xx)
 if kw.rad:
@@ -164,6 +157,12 @@ if not kw.shav: # kw.shav means integrated over latitude, so can't choose
             kw.isamplevals = np.zeros_like(kw.samplevals, dtype='int')
             for i in range(len(kw.samplevals)):
                 kw.isamplevals[i] = np.argmin(np.abs(samplevals_avail - kw.samplevals[i]))
+
+# these all need to be arrays
+kw.qvals = make_array(kw.qvals)
+kw.isamplevals = make_array(kw.isamplevals)
+kw.samplevals = make_array(kw.samplevals)
+
 
 # Loop over the desired levels and save plots
 for isampleval in kw.isamplevals:
@@ -237,10 +236,10 @@ for isampleval in kw.isamplevals:
 
         # save the figure
         basename = thename + '_%08i_%08i' %(iter1, iter2)
-        plotdir = my_mkdir(clas0['plotdir'] + '/' + datatype)
+        plotdir = my_mkdir(clas0['plotdir'] + '/' + datatype + clas0['tag'])
         if kw.lon and not om is None:
             basename += '_om%.0f' %om
-        savename = basename + clas0['tag'] + position_tag + '.png'
+        savename = basename + position_tag + '.png'
         print ("saving", plotdir + '/' + savename)
         plt.savefig(plotdir + '/' + savename, dpi=200)
 
