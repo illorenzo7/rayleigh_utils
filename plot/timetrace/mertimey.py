@@ -23,7 +23,7 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = clas0['magnetism']
 
 # defaults
-kwargs_default = dict({'the_file': None, 'ntot': 500, 'rad': False, 'isamplevals': np.array([0]), 'samplevals': None, 'rcut': None, 'groupname': 'b', 'mval': 1, 'imag': False})
+kwargs_default = dict({'the_file': None, 'ntot': 500, 'rad': False, 'isamplevals': np.array([0]), 'samplevals': None, 'rcut': None, 'groupname': 'b', 'mval': 1, 'imag': False, 'mtimerad': False})
 kwargs_default.update(plot_timey_kwargs_default)
 
 # check for bad keys
@@ -57,6 +57,14 @@ if kw.rad:
     dataname = 'mertimerad'
     sampleaxis = di_grid['rr']/rsun
 
+if kw.mtimerad:
+    kw.rad = True
+    radlevs = get_slice_levels(dirname)
+    datatype = 'mtimerad'
+    dataname = 'mtimerad'
+    radlevs = get_slice_levels(dirname)
+    sampleaxis = radlevs.radius/rsun
+
 datatype += '_mval%03i' %kw.mval
 
 if 'groupname' in kw:
@@ -77,9 +85,11 @@ vals = di['vals']
 times = di['times']
 iters = di['iters']
 qvals_avail = np.array(di['qvals'])
-samplevals_avail = di['samplevals']
+if kw.mtimerad:
+    samplevals_avail = di['latvals']
+else:
+    samplevals_avail = di['samplevals'] 
 
-# time range
 iter1, iter2 = get_iters_from_file(kw.the_file)
 times /= time_unit
 
