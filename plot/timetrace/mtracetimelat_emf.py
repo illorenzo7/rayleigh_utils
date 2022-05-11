@@ -141,8 +141,7 @@ for irval in irvals:
     # for each plot, collect the terms we want
     terms = []
 
-    dataname = 'mtrace_' + groupname + '_irval%02i' %irval +\
-            clas0['tag']
+    dataname = 'mtrace_' + groupname + '_irval%02i' %irval
 
     # get data
     the_file = get_widest_range_file(clas0['datadir'] +\

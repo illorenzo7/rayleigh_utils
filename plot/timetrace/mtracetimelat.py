@@ -132,8 +132,7 @@ for irval in irvals:
     # must read in each data file separately
     count = 0
     for qval in qvals:
-        dataname = ('mtrace_qval%04i_irval%02i' %(qval, irval)) +\
-                clas0['tag']
+        dataname = ('mtrace_qval%04i_irval%02i' %(qval, irval))
 
         # get data
         the_file = get_widest_range_file(clas0['datadir'] +\
