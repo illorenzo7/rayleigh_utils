@@ -137,6 +137,7 @@ if not kw.shav: # kw.shav means integrated over latitude, so can't choose
         if isall(kw.samplevals):
             kw.isamplevals = np.arange(len(samplevals_avail))
         else:
+            kw.samplevals = make_array(kw.samplevals)
             kw.isamplevals = np.zeros_like(kw.samplevals, dtype='int')
             for i in range(len(kw.samplevals)):
                 kw.isamplevals[i] = np.argmin(np.abs(samplevals_avail - kw.samplevals[i]))
