@@ -131,15 +131,15 @@ else:
 terms = []
 for qval in [3]:
     qind = np.argmin(np.abs(qvals_avail - qval))
-    terms.append(vals[:, :, :, qind]/xx/(2*np.pi))
+    terms.append(vals[:, :, :, qind]/xx/(2*np.pi)) # diffrot in nHz
     if kw.sub:
         dummy, n1, n2 = np.shape(terms[-1])
         tempmean = np.mean(terms[-1], axis=0).reshape((1, n1, n2))
         terms[0] -= tempmean
 
-kw.titles = ['diff. rot (full om)']
+kw.titles = ['diff. rot (full om, Hz)']
 if kw.sub:
-    kw.titles = ['diff. rot (om - om0)']
+    kw.titles = ['diff. rot (om - om0, Hz)']
 
 # set figure dimensions
 sub_width_inches = 7.5
