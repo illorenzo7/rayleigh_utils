@@ -234,13 +234,13 @@ for ilat in range(nquadlat):
                     itcut = 0
                 all_e += [rme[itcut:], tme[itcut:], pme[itcut:], me[itcut:]]
 
-                ax.plot(xaxis, me, color_order[0] + '--',\
+                ax.plot(xaxis, me, color=color_order[0], linestyle='--',\
                         linewidth=lw, label=r'$\rm{ME_{tot}}$')
-                ax.plot(xaxis, rme, color_order[1] + '--',\
+                ax.plot(xaxis, rme, color=color_order[1], linestyle='--',\
                         linewidth=lw, label=r'$\rm{ME_r}$')
-                ax.plot(xaxis, tme, color_order[2] + '--',\
+                ax.plot(xaxis, tme, color=color_order[2], linestyle='--',\
                         linewidth=lw, label=r'$\rm{ME_\theta}$')
-                ax.plot(xaxis, pme, color_order[3] + '--',\
+                ax.plot(xaxis, pme, color=color_order[3], linestyle='--',\
                         linewidth=lw, label=r'$\rm{ME_\phi}$')
 
         if ilat == 0 and ir == 0: # put a legend on the upper left axis
