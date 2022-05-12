@@ -25,7 +25,7 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = get_parameter(dirname, 'magnetism')
 
 # SPECIFIC ARGS for etrace:
-kw_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'xvals': np.array([]), 'nquadr': None, 'nquadlat': None, 'qvals': None, 'groupname': 'b', 'totsig': None, 'titles': None, 'justtot': False, 'dpi': 300})
+kw_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'xvals': np.array([]), 'nquadr': None, 'nquadlat': None, 'qvals': None, 'groupname': 'b', 'totsig': None, 'titles': None, 'justtot': False, 'dpi': 300, 'vol': False})
 
 # make figure kwargs
 lineplot_fig_dimensions['margin_top_inches'] = 3/4
@@ -93,6 +93,11 @@ if the_file is None:
 print ('Getting data from ' + the_file)
 di = get_dict(the_file)
 vals = di['vals']
+if kw.vol:
+    vols = -di['volumes']
+    shapevols = list(np.shape(vols))
+    newshape = [1,1] + shapevols
+    vals = vals*vols.reshape(newshape)
 rbounds = di['rbounds']
 nquadr = len(rbounds) - 1
 latbounds = di['latbounds']
@@ -273,8 +278,9 @@ if len(clas0['tag']) > 0 or not kw.groupname is None:
 
     iter1, iter2 = get_iters_from_file(the_file)
     savefile = plotdir + basename + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
-    print ('saving figure at ' + savefile)
-    fig.savefig(savefile, dpi=kw.dpi)
+    if not kw.groupname == 'nosave':
+        print ('saving figure at ' + savefile)
+        fig.savefig(savefile, dpi=kw.dpi)
 
 # Show the plot
 if clas0['showplot']:
