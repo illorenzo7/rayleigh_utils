@@ -1435,3 +1435,29 @@ def my_nfft(times, arr, axis=0):
     freq = np.fft.fftshift(freq)
     # return everything
     return arr_fft, freq
+
+def my_infft(times, arr_fft, axis=0):
+    # undo all the good work of the FFT
+
+    # undo the frequency shift
+    arr_fft = np.fft.ifftshift(arr_fft, axes=axis)
+
+    # undo the fft
+    arr_interp = np.fft.ifft(arr_fft, axis=axis)
+
+    #  calculate shifted times (to -1/2, 1/2 interval)
+    total_time = times[-1] - times[0]
+    times_shift = (times - times[0])/total_time - 1/2
+
+    # get equally spaced times
+    times_eq = np.linspace(-1/2, 1/2, len(times))
+
+    # get the "interpolant of the undoing"
+    interpolant = interp1d(times_eq, arr_interp, axis=axis)
+
+    # get the original array --- backward interpolated onto
+    # the original times
+    arr_orig = interpolant(times_shift)
+
+    # return the original array
+    return arr_orig
