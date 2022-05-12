@@ -248,6 +248,18 @@ def get_dataname_from_file(filename):
     just_file = filename.split('/')[-1] #strip the possible full path info
     return just_file.split('-')[0]
 
+def get_datadir_from_file(filename):
+    just_dir = filename.split('/')[:-1] #strip the filename away from full path
+    datadir_rel = ''
+    start_adding = False
+    for subdir in just_dir:
+        if subdir == 'data':
+            start_adding = True
+
+        if start_adding:
+            datadir_rel += subdir + '/'
+    return datadir_rel
+
 def get_iters_from_file(filename):
     filename_end = filename.split('-')[-1][:-4] 
     # (gets the [iter1]_[iter2].pkl and removes the trailing .ext)

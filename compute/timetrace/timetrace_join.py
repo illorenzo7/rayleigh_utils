@@ -21,19 +21,30 @@ from common import *
 # doesn't already exist
 files = []
 dirname = sys.argv[1]
-datadir = dirname + '/data/' # data subdirectory of output directory
 
-delete_old_files = True # delete the partial files by default
+delete_old_files = False # delete the partial files by specifying --del
 args = sys.argv[2:]
 nargs = len(args)
 for i in range(nargs):
     arg = args[i]
-    if arg == '--nodel':
-        delete_old_files = False
+    if arg == '--del':
+        delete_old_files = True
     if arg[-4:] == '.pkl':
         files.append(arg)
 nfiles = len(files)
+
+# get the relative data directory
+datadir_rel = get_datadir_from_file(files[0])
+
+# the dataname
 dataname = get_dataname_from_file(files[0])
+
+# full datadir
+datadir = dirname + '/' + datadir_rel
+# create it if non-existent
+if not os.path.isdir(datadir):
+    os.makedirs(datadir)
+
 print(make_bold('starting joined %s with' %dataname))
 print(files[0])
 di0 = get_dict(files[0])
