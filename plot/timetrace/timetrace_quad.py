@@ -71,6 +71,7 @@ nquadr = kw.nquadr
 # state what we're plotting
 print ("plotting the following quantities:")
 print ("qvals = ", kw.qvals)
+print ("totsig = ", kw.totsig)
 
 # deal with coords (if user wants minmax to only apply to certain subplots)
 if not coords is None:
