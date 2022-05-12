@@ -3,6 +3,7 @@
 # Common routines for routines for post-processing Rayleigh data 
 
 import numpy as np
+from scipy.interpolate import interp1d
 import sys, os, pickle
 from string_to_num import string_to_number_or_array
 sys.path.append(os.environ['rapp'])
@@ -1416,3 +1417,21 @@ def isall(arg):
             return False
     else:
         return False
+
+def my_nfft(times, arr, axis=0):
+    # shift the times to lie in range -1/2, 1/2
+    total_time = times[-1] - times[0]
+    times_shift = (times - times[0])/total_time - 1/2
+    # get equally spaced times
+    times_eq = np.linspace(-1/2, 1/2, len(times))
+    interpolant = interp1d(times_shift, arr, axis=axis)
+    arr_interp = interpolant(times_eq)
+    arr_fft = np.fft.fft(arr_interp, axis=axis)
+    arr_fft = np.fft.fftshift(arr_fft, axes=axis)
+
+    # may as well get frequencies here too
+    delta_t = np.mean(np.diff(times))
+    freq = np.fft.fftfreq(len(times), delta_t)
+    freq = np.fft.fftshift(freq)
+    # return everything
+    return arr_fft, freq
