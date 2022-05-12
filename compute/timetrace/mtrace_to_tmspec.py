@@ -30,7 +30,7 @@ file_list, int_file_list, nfiles = get_file_lists(radatadir, args)
 a0 = Shell_Slices(radatadir + file_list[0], '')
 
 # set default values for qval and irval
-kwargs_default = dict({'irvals': np.array([0]), 'rvals': None, 'qvals': None, 'mmax': None, 'nonlin': False})
+kwargs_default = dict({'irvals': np.array([0]), 'rvals': None, 'qvals': None, 'mmax': None, 'nonlin': None})
 
 # overwrite defaults
 kw = update_dict(kwargs_default, clas)
@@ -108,13 +108,21 @@ for irval in irvals:
         iter1, iter2 = get_iters_from_file(the_file)
         vals = di['vals']
 
-        # get the times
+        # get the times 
         times = di['times']
+        delta_t = np.mean(np.diff(times))
+        if kw.nonlin is None: # by default, determine "nonlin" from dispersion
+            tol = 1e-6
+            # of times
+            disp_t = np.sqrt(np.mean((np.diff(times) - delta_t)**2))
+            if disp_t/delta_t > tol:
+                nonlin = True
+            else:
+                nonlin = False
 
         # Fourier transform the vals
         print (buff_line)
         print ('doing Fourier transform along time axis')
-        vals_fft = np.zeros_like(vals, 'complex')
         if nonlin:
             print ("using DFT for NONLINEARLY SPACED times")
             vals_fft, freq = my_nfft(times, vals)

@@ -16,17 +16,6 @@ char = '.'
 import numpy as np
 import pickle
 
-# my own version of a nonlinear fft
-def my_nfft(times, arr):
-    # assumes arr is 1-D
-    # shift the times to lie in range -1/2, 1/2
-    total_time = times[-1] - times[0]
-    times_shift = (times - times[0])/total_time - 1/2
-    # get equally spaced times
-    times_eq = np.linspace(-1/2, 1/2, len(times))
-    arr_eq = np.interp(times_eq, times_shift, arr)
-    return np.fft.fftshift(np.fft.fft(arr_eq))
-
 # CLAs
 args = sys.argv
 clas0, clas = read_clas(args)
@@ -108,11 +97,9 @@ for irval in irvals:
         iter1, iter2 = get_iters_from_file(the_file)
         vals = di['vals']
 
-        # get the times / frequencies
+        # get the times 
         times = di['times']
         delta_t = np.mean(np.diff(times))
-        freq = np.fft.fftfreq(len(times), delta_t)
-        freq = np.fft.fftshift(freq)
         if kw.nonlin is None: # by default, determine "nonlin" from dispersion
             tol = 1e-6
             # of times
@@ -125,17 +112,15 @@ for irval in irvals:
         # Fourier transform the vals
         print (buff_line)
         print ('doing Fourier transform along time axis')
-        vals_fft = np.zeros_like(vals, 'complex')
         if nonlin:
             print ("using DFT for NONLINEARLY SPACED times")
-            for iemf in range(3):
-                for it in range(nt):
-                    for im in range(nm):
-                        vals_fft[:, iemf, im, it] =\
-                                my_nfft(times, vals[:, iemf, im, it])
+            vals_fft, freq = my_nfft(times, vals)
         else:
             vals_fft = np.fft.fft(vals, axis=0)
             vals_fft = np.fft.fftshift(vals_fft, axes=0)
+            # get the frequencies
+            freq = np.fft.fftfreq(len(times), delta_t)
+            freq = np.fft.fftshift(freq)
 
         # Set the tmspec savename
         savename = ('tmspec_' + emftag + '_irval%02i' %irval) +\
