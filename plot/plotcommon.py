@@ -6,8 +6,8 @@ import matplotlib.pyplot as plt
 from common import *
 
 color_order = ['b', 'orange', 'r', 'm', 'c', 'y', 'k', 'g']*2
-style_order = ['-', '--', '-.', ':']
-marker_order = [".", "o", "v","s", "*", "x", "^", "<", ">"]
+style_order = ['-', '--', '-.', ':']*2
+marker_order = [".", "o", "v","s", "*", "x", "^", "<", ">"]*2
 default_lw = 1.0
 default_s = 0.2 # markersize
 default_labelsize = 12
