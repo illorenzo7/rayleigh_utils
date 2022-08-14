@@ -22,6 +22,6 @@ if kw.type == 'speclm':
 # get the radial levels
 radlevs = get_slice_levels(dirname, datatype=datatype)
 print ('irvals     =', radlevs.inds)
-print ('rvals      =', radlevs.radius)
-print ('rvals/rsun =', radlevs.radius/rsun)
+print ('rvals      = ' + arr_to_str(radlevs.radius, "%1.3e"))
+print ('rvals/rsun = ' + arr_to_str(radlevs.radius/rsun, "%.3f"))
 print (buff_line)
