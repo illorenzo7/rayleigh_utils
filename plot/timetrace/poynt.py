@@ -63,6 +63,7 @@ print ('Getting data from ' + the_file)
 di = get_dict(the_file)
 vals = di['vals']
 rbounds = di['rbounds']
+volumes = di['volumes']
 times = di['times']
 iters = di['iters']
 
@@ -136,6 +137,12 @@ for ir in range(nquadr):
     diss = vals_loc[:, 5]
     poynt_bot = -vals[:, 6, ir] # remember bottom one needs negative
     poynt_top = vals[:, 6, ir+1]
+    # also need to multiply poynting flux by surface area, then 
+    # divide by the volume of the shell to get energy change per unit vol
+    poynt_bot *= (4*np.pi*rbounds[ir]**2)
+    poynt_top *= (4*np.pi*rbounds[ir+1]**2)
+    poynt_bot /= volumes[ir]
+    poynt_top /= volumes[ir]
     the_sum = v_work + diss + poynt_bot + poynt_top
 
     # make line plots
@@ -143,40 +150,19 @@ for ir in range(nquadr):
     all_terms = [dmedt, diss, v_work, poynt_bot, poynt_top, the_sum]
 
     ax.plot(xaxis, dmedt, color_order[0],\
-            linewidth=lw_ke, label='dME/dt')
-    ax.plot(xaxis, rke, color_order[1],\
-            linewidth=lw_ke, label=r'$\rm{KE_r}$')
-    ax.plot(xaxis, tke, color_order[2],\
-            linewidth=lw_ke, label=r'$\rm{KE_\theta}$')
-    ax.plot(xaxis, pke, color_order[3],\
-            linewidth=lw_ke, label=r'$\rm{KE_\phi}$')
+            linewidth=lw, label='dME/dt')
+    ax.plot(xaxis, v_work, color_order[1],\
+            linewidth=lw, label='v work')
+    ax.plot(xaxis, diss, color_order[2],\
+            linewidth=lw, label='ohm loss')
+    ax.plot(xaxis, poynt_bot, color_order[3],\
+            linewidth=lw, label='flux bot')
+    ax.plot(xaxis, poynt_top, color_order[4],\
+            linewidth=lw, label='flux top')
+    ax.plot(xaxis, the_sum, color_order[5],\
+            linewidth=lw, label='sum RHS')
 
-    # INTERNAL
-    if plot_inte:
-        all_e += [inte]
-        ax.plot(xaxis, inte, color_order[4], linewidth=lw_ke,\
-                label='INTE')
-
-    # MAGNETIC
-    if not nomag:
-        if magnetism:
-            if nodyn:
-                tcut = tmin + dynfrac*(tmax - tmin)
-                itcut = np.argmin(np.abs(times - tcut))
-            else:
-                itcut = 0
-            all_e += [rme[itcut:], tme[itcut:], pme[itcut:], me[itcut:]]
-
-            ax.plot(xaxis, me, color=color_order[0], linestyle='--',\
-                    linewidth=lw, label=r'$\rm{ME_{tot}}$')
-            ax.plot(xaxis, rme, color=color_order[1], linestyle='--',\
-                    linewidth=lw, label=r'$\rm{ME_r}$')
-            ax.plot(xaxis, tme, color=color_order[2], linestyle='--',\
-                    linewidth=lw, label=r'$\rm{ME_\theta}$')
-            ax.plot(xaxis, pme, color=color_order[3], linestyle='--',\
-                    linewidth=lw, label=r'$\rm{ME_\phi}$')
-
-    if ilat == 0 and ir == 0: # put a legend on the upper left axis
+    if ir == 0: # put a legend on the upper left axis
         plotleg = True
         ax.legend(loc='lower left', ncol=3, fontsize=0.7*fontsize, columnspacing=1)
     else:
@@ -185,11 +171,11 @@ for ir in range(nquadr):
     # set the y limits
     minmax_loc = minmax
     if not coords is None:
-        if not (ilat, ir) in coords: # reset minmax_loc to None
+        if not (0, ir) in coords: # reset minmax_loc to None
             # (will become default) if not in desired coordinates
             minmax_loc = None
     if minmax_loc is None:
-        minmax_loc = lineplot_minmax(xaxis, all_e, logscale=logscale, legfrac=legfrac, plotleg=plotleg)
+        minmax_loc = lineplot_minmax(xaxis, all_terms, legfrac=legfrac, plotleg=plotleg)
     if not ymin is None:
         minmax_loc = ymin, minmax_loc[1]
     if not ymax is None:
@@ -211,12 +197,6 @@ for ir in range(nquadr):
         title = dirname_stripped + '\n' + title
     axs[0, ir].set_title(title, fontsize=fontsize)
 
-# y labels
-for it in range(nquadlat):
-    lat1 = latbounds[it]
-    lat2 = latbounds[it+1]
-    axs[it, 0].set_ylabel('lat. range = [%.1f, %.1f]' %(lat1, lat2), fontsize=fontsize)
-
 # mark times if desired
 for ax in axs.flatten():
     y1, y2 = ax.get_ylim()
@@ -237,7 +217,7 @@ tag = clas0['tag']
 if xiter and tag == '':
     tag = '_xiter'
 plotdir = my_mkdir(clas0['plotdir']) 
-basename = dataname.replace('G_Avgs_trace', 'etrace' + '_' + etype)
+basename = dataname
 savename = basename + tag + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
 
 if clas0['saveplot']:
