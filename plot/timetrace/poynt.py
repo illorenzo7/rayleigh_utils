@@ -108,6 +108,7 @@ print ("after thin_data: len(xaxis) = %i" %len(xaxis))
 
 # now finally get the shape of the "vals" array
 ntimes, nq, nquadr = np.shape(vals)
+nquadr -= 1
 # nq should = 7
 nplots = nquadr
 
