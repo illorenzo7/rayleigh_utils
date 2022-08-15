@@ -189,19 +189,15 @@ my_vals = []
 
 for i in range(my_nfiles):
     a = reading_func(radatadir + str(my_files[i]).zfill(8), '')
+    vals_loc = a.vals[:, 0, :, :] # remember to take the 0th moment
+    # get look up table, etc.
+    lut = a.lut
+    #nq = a.nq
+    nq = 7
+
     for j in range(a.niter):
-        if dataname == 'Shell_Avgs':
-            vals_loc = a.vals[:, 0, :, :]
-        else:
-            vals_loc = a.vals
-
-        # get look up table, etc.
-        lut = a.lut
-        #nq = a.nq
-        nq = 7
-
         # Get values in the separate quadrants, plus Poynting flux
-        vals_gav = np.zeros((nq, nquadr))
+        vals_gav = np.zeros((nq, nquadr+1))
         # note: the default is nquadr = 1, 1 (yes "extra" dimensions)
         # do volume-avg'd quantities first
         for ir in range(nquadr): # remember: rbounds increase but r-inds decrease
