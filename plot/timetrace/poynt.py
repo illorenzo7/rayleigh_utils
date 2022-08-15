@@ -131,34 +131,25 @@ for ir in range(nquadr):
     # total ME, generation by flows, dissipation by eta,
     # and two Poynting flluxes
     me = vals_loc[:, 0]
-    :x
-
-
-        if etype == 'fluc':
-            rme = vals_loc[:, lut[1110]]
-            tme = vals_loc[:, lut[1111]]
-            pme = vals_loc[:, lut[1112]]
-        if etype == 'mean':
-            rme = vals_loc[:, lut[1102]] - vals_loc[:, lut[1110]]
-            tme = vals_loc[:, lut[1103]] - vals_loc[:, lut[1111]]
-            pme = vals_loc[:, lut[1104]] - vals_loc[:, lut[1112]]
-        me = rme + tme + pme
+    dmedt = np.gradient(me, times)
+    v_work = vals_loc[:, 4]
+    diss = vals_loc[:, 5]
+    poynt_bot = -vals[:, 6, ir] # remember bottom one needs negative
+    poynt_top = vals[:, 6, ir+1]
+    the_sum = v_work + diss + poynt_bot + poynt_top
 
     # make line plots
+    # need to collect everything for profiles
+    all_terms = [dmedt, diss, v_work, poynt_bot, poynt_top, the_sum]
 
-    # KINETIC
-    # collect all the total energies together for min/max vals
-    if not noke:
-        all_e += [rke, tke, pke, ke]
-        
-        ax.plot(xaxis, ke, color_order[0],\
-                linewidth=lw_ke, label=r'$\rm{KE_{tot}}$')
-        ax.plot(xaxis, rke, color_order[1],\
-                linewidth=lw_ke, label=r'$\rm{KE_r}$')
-        ax.plot(xaxis, tke, color_order[2],\
-                linewidth=lw_ke, label=r'$\rm{KE_\theta}$')
-        ax.plot(xaxis, pke, color_order[3],\
-                linewidth=lw_ke, label=r'$\rm{KE_\phi}$')
+    ax.plot(xaxis, dmedt, color_order[0],\
+            linewidth=lw_ke, label='dME/dt')
+    ax.plot(xaxis, rke, color_order[1],\
+            linewidth=lw_ke, label=r'$\rm{KE_r}$')
+    ax.plot(xaxis, tke, color_order[2],\
+            linewidth=lw_ke, label=r'$\rm{KE_\theta}$')
+    ax.plot(xaxis, pke, color_order[3],\
+            linewidth=lw_ke, label=r'$\rm{KE_\phi}$')
 
     # INTERNAL
     if plot_inte:
