@@ -216,9 +216,15 @@ for i in range(my_nfiles):
         # get total energy
         vals_gav[0,:] = vals_gav[1,:] + vals_gav[2,:] + vals_gav[3,:]
 
+        # some need negative signs
+        vals_gav[4,:] *= -1
+        vals_gav[5,:] *= -1
+
         # get Poynting flux
         for ir in range(nquadr+1): # remember: rbounds increase but r-inds decrease
-            vals_gav[6,ir] = vals_loc[irbounds[ir], lut[2001],j]
+            # deal with signage when plotting
+            # deal with 1/4pi now
+            vals_gav[6,ir] = (1/4/np.pi)*vals_loc[irbounds[ir], lut[2001],j]
             # not really "gav" for this guy, but anyway...
 
         # now we can append the array to the trace
