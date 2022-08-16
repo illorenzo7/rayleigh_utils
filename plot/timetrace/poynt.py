@@ -144,7 +144,7 @@ for ir in range(nquadr):
     # need to collect everything for profiles
     all_terms = [dmedt, diss, v_work, poynt_bot, poynt_top, the_sum]
 
-    ax.plot(xaxis, dmedt, color_order[0],\
+    ax.plot(xaxis, dmedt, 'k',\
             linewidth=lw, label='dME/dt')
     ax.plot(xaxis, v_work, color_order[1],\
             linewidth=lw, label='v work')
