@@ -11,7 +11,7 @@
 #
 # By default the "quadrant" is the entire shell
 #
-# if --nquadr or --rbounds or --irbounds is specified 
+# if --nquadr or --rvals or --irvals is specified 
 # quantities are computed over multiple shells
 # (Poynting flux is evaluated at the radial boundaries, other quantities
 # are integrated between these boundaries
@@ -95,8 +95,8 @@ if rank == 0:
     # get grid info + default kwargs
     kwargs_default = dict({})
     kwargs_default['nquadr'] = None # can divide up the radial grid into nquadr equally spaced domains
-    kwargs_default['rbounds'] = None # can specify radial domain boundaries directly (units of rsun, e.g., 0.721 0.863 0.92)
-    kwargs_default['irbounds'] = None # can specify radial domain boundaries directly (radial index, e.g., 32 64 96
+    kwargs_default['rvals'] = None # can specify radial domain boundaries directly (units of rsun, e.g., 0.721 0.863 0.92)
+    kwargs_default['irvals'] = None # can specify radial domain boundaries directly (radial index, e.g., 32 64 96
 
     # update these possibly
     kw = update_dict(kwargs_default, clas)
@@ -104,27 +104,27 @@ if rank == 0:
     # deal w/ radial boundaries
     dataname = 'Shell_Avgs'
     if not kw.nquadr is None: # equally spaced domain boundaries (not the default)
-        kw.rbounds = np.linspace(rmax, rmin, kw.nquadr + 1) # remember: rr is DECREASING
-    if kw.irbounds is None: # this is the default
-        if kw.rbounds is None: # this is the default
-            irbounds = [nr - 1, 0] # rr increases, r-inds decrease
+        kw.rvals = np.linspace(rmax, rmin, kw.nquadr + 1) # remember: rr is DECREASING
+    if kw.irvals is None: # this is the default
+        if kw.rvals is None: # this is the default
+            irvals = [nr - 1, 0] # rr increases, r-inds decrease
         else:
-            kw.rbounds = np.sort(kw.rbounds) # rr decreases
-            irbounds = inds_from_vals(rr/rsun, kw.rbounds)
+            kw.rvals = np.sort(kw.rvals) # rr decreases
+            irvals = inds_from_vals(rr/rsun, kw.rvals)
     else:
-        irbounds = np.sort(kw.irbounds)[::-1] # r-inds derease
+        irvals = np.sort(kw.irvals)[::-1] # r-inds derease
 
     # update the number of quadrants
-    nquadr = len(irbounds) - 1
+    nquadr = len(irvals) - 1
 
     # update the actual boundary vals
-    rbounds = rr[irbounds]/rsun
+    rvals = rr[irvals]/rsun
 
     # compute the volumes of each quadrant
     volumes = np.zeros(nquadr)
-    for ir in range(nquadr): # remember: rbounds increase but r-inds decrease
-        ir1 = irbounds[ir]
-        ir2 = irbounds[ir+1]
+    for ir in range(nquadr): # remember: rvals increase but r-inds decrease
+        ir1 = irvals[ir]
+        ir2 = irvals[ir+1]
         volumes[ir] = 4.*np.pi/3.*(rr[ir2]**3. - rr[ir1]**3.)
 
     # Get the Rayleigh data directory
@@ -161,10 +161,10 @@ else: # recieve my_files, my_nfiles
 # Broadcast dirname, radatadir, etc.
 if rank == 0:
     meta = [\
-dirname, dataname, radatadir, irbounds, rw, volumes, rbounds, rsun]
+dirname, dataname, radatadir, irvals, rw, volumes, rvals, rsun]
 else:
     meta = None
-dirname, dataname, radatadir, irbounds, rw, volumes, rbounds, rsun = comm.bcast(meta, root=0)
+dirname, dataname, radatadir, irvals, rw, volumes, rvals, rsun = comm.bcast(meta, root=0)
 
 # figure out which reading_func to use
 reading_func = Shell_Avgs
@@ -175,14 +175,14 @@ if rank == 0:
     t2 = time.time()
     print (format_time(t2 - t1))
     print ("tracing over %i shellular quadrants" %nquadr)
-    print ("rbounds/rsun = " + arr_to_str(rbounds, "%.3f"))
+    print ("rvals/rsun = " + arr_to_str(rvals, "%.3f"))
     print ('Considering %i %s files for the trace: %s through %s'\
         %(nfiles, dataname, file_list[0], file_list[-1]))
     print(fill_str('computing', lent, char), end='\r')
     t1 = time.time()
 
 # Now analyze the data (some processes may not have nquadr)
-nquadr = len(irbounds) - 1
+nquadr = len(irvals) - 1
 my_times = []
 my_iters = []
 my_vals = []
@@ -200,9 +200,9 @@ for i in range(my_nfiles):
         vals_gav = np.zeros((nq, nquadr+1))
         # note: the default is nquadr = 1, 1 (yes "extra" dimensions)
         # do volume-avg'd quantities first
-        for ir in range(nquadr): # remember: rbounds increase but r-inds decrease
-            ir1 = irbounds[ir + 1]
-            ir2 = irbounds[ir]
+        for ir in range(nquadr): # remember: rvals increase but r-inds decrease
+            ir1 = irvals[ir + 1]
+            ir2 = irvals[ir]
 
             # radial integration weights
             rw_quad = rw[ir1:ir2+1]/np.sum(rw[ir1:ir2+1])
@@ -222,10 +222,10 @@ for i in range(my_nfiles):
         vals_gav[5,:] *= -1
 
         # get Poynting flux
-        for ir in range(nquadr+1): # remember: rbounds increase but r-inds decrease
+        for ir in range(nquadr+1): # remember: rvals increase but r-inds decrease
             # deal with signage when plotting
             # deal with 1/4pi*4pi r^2 now
-            vals_gav[6,ir] = (rbounds[ir]*rsun)**2*vals_loc[irbounds[ir], lut[2001],j]
+            vals_gav[6,ir] = (rvals[ir]*rsun)**2*vals_loc[irvals[ir], lut[2001],j]
             # not really "gav" for this guy, but anyway...
             # it's "globally integrated"
 
@@ -290,7 +290,7 @@ if rank == 0:
     # Get first and last iters of files
     iter1, iter2 = int_file_list[0], int_file_list[-1]
     f = open(savefile, 'wb')
-    di_sav = {'vals': vals, 'times': times, 'iters': iters, 'volumes': volumes, 'volume_full': np.sum(volumes), 'rbounds': rbounds}
+    di_sav = {'vals': vals, 'times': times, 'iters': iters, 'volumes': volumes, 'volume_full': np.sum(volumes), 'rvals': rvals}
     pickle.dump(di_sav, f, protocol=4)
     f.close()
     t2 = time.time()

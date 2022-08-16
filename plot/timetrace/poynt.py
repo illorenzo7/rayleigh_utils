@@ -62,7 +62,7 @@ if the_file is None:
 print ('Getting data from ' + the_file)
 di = get_dict(the_file)
 vals = di['vals']
-rbounds = di['rbounds']
+rvals = di['rvals']
 volumes = di['volumes']
 times = di['times']
 iters = di['iters']
@@ -154,8 +154,8 @@ for ir in range(nquadr):
             linewidth=lw, label='flux bot')
     ax.plot(xaxis, poynt_top, color_order[4],\
             linewidth=lw, label='flux top')
-    #ax.plot(xaxis, the_sum, color_order[5],\
-    #        linewidth=lw, label='sum RHS')
+    ax.plot(xaxis, the_sum, 'r--',\
+            linewidth=lw, label='sum RHS')
 
     if ir == 0: # put a legend on the upper left axis
         plotleg = True
@@ -185,8 +185,8 @@ else:
 
 # x titles
 for ir in range(nquadr):
-    r1 = rbounds[ir]
-    r2 = rbounds[ir+1]
+    r1 = rvals[ir]
+    r2 = rvals[ir+1]
     title = 'rad. range = [%.3f, %.3f]' %(r1, r2)
     if ir == 0:
         title = dirname_stripped + '\n' + title
