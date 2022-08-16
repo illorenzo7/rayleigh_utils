@@ -18,7 +18,7 @@ dirname = clas0['dirname']
 dirname_stripped = strip_dirname(dirname)
 
 # SPECIFIC ARGS for etrace:
-kwargs_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'xvals': np.array([]), 'nquadr': 1, 'legfrac': None})
+kwargs_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'xvals': np.array([]), 'nquadr': 1, 'legfrac': None, 'symlog': False, 'linthresh': None, 'linscale': None})
 
 # make figure kwargs
 lineplot_fig_dimensions['margin_top_inches'] = 3/4
@@ -138,12 +138,6 @@ for ir in range(nquadr):
     diss = vals_loc[:, 5]
     poynt_bot = -vals[:, 6, ir] # remember bottom one needs negative
     poynt_top = vals[:, 6, ir+1]
-    # also need to multiply poynting flux by surface area, then 
-    # divide by the volume of the shell to get energy change per unit vol
-    poynt_bot *= (4*np.pi*rbounds[ir]**2)
-    poynt_top *= (4*np.pi*rbounds[ir+1]**2)
-    poynt_bot /= volumes[ir]
-    poynt_top /= volumes[ir]
     the_sum = v_work + diss + poynt_bot + poynt_top
 
     # make line plots
@@ -160,8 +154,8 @@ for ir in range(nquadr):
             linewidth=lw, label='flux bot')
     ax.plot(xaxis, poynt_top, color_order[4],\
             linewidth=lw, label='flux top')
-    ax.plot(xaxis, the_sum, color_order[5],\
-            linewidth=lw, label='sum RHS')
+    #ax.plot(xaxis, the_sum, color_order[5],\
+    #        linewidth=lw, label='sum RHS')
 
     if ir == 0: # put a legend on the upper left axis
         plotleg = True
@@ -210,6 +204,24 @@ for ax in axs.flatten():
     plt.sca(ax)
     plt.minorticks_on()
     plt.tick_params(top=True, right=True, direction='in', which='both')
+
+# maybe deal with symlog axes:
+if kwargs.symlog:
+    if kwargs.minmax is None:
+        field_max = None
+    else:
+        field_max=kwargs.minmax[1]
+    linthresh_default, linscale_default =\
+        get_symlog_params(np.array(all_terms),\
+            field_max=field_max)
+    if kwargs.linthresh is None:
+        kwargs.linthresh = linthresh_default
+    if kwargs.linscale is None:
+        kwargs.linscale = linscale_default
+
+    for ax in axs.flatten():
+        ax.set_yscale('symlog', linthresh=kwargs.linthresh,\
+                linscale=kwargs.linscale)
 
 # Save the plot
 iter1, iter2 = get_iters_from_file(the_file)

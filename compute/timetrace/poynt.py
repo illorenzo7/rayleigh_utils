@@ -123,8 +123,8 @@ if rank == 0:
     # compute the volumes of each quadrant
     volumes = np.zeros(nquadr)
     for ir in range(nquadr): # remember: rbounds increase but r-inds decrease
-        ir1 = irbounds[ir + 1]
-        ir2 = irbounds[ir]
+        ir1 = irbounds[ir]
+        ir2 = irbounds[ir+1]
         volumes[ir] = 4.*np.pi/3.*(rr[ir2]**3. - rr[ir1]**3.)
 
     # Get the Rayleigh data directory
@@ -161,10 +161,10 @@ else: # recieve my_files, my_nfiles
 # Broadcast dirname, radatadir, etc.
 if rank == 0:
     meta = [\
-dirname, dataname, radatadir, irbounds, rw]
+dirname, dataname, radatadir, irbounds, rw, volumes, rbounds, rsun]
 else:
     meta = None
-dirname, dataname, radatadir, irbounds, rw = comm.bcast(meta, root=0)
+dirname, dataname, radatadir, irbounds, rw, volumes, rbounds, rsun = comm.bcast(meta, root=0)
 
 # figure out which reading_func to use
 reading_func = Shell_Avgs
@@ -205,12 +205,13 @@ for i in range(my_nfiles):
             ir2 = irbounds[ir]
 
             # radial integration weights
-            rw_quad = (rw[ir1:ir2+1]/np.sum(rw[ir1:ir2+1]))
+            rw_quad = rw[ir1:ir2+1]/np.sum(rw[ir1:ir2+1])
 
             count = 1
             for qval in [1102,1103,1104,1916,1436]:
                 vals_quad = vals_loc[ir1:ir2+1, lut[qval], j]
-                vals_gav[count,ir] = np.sum(rw_quad*vals_quad)
+                # integrate over volume
+                vals_gav[count,ir] = np.sum(rw_quad*vals_quad)*volumes[ir]
                 count += 1
 
         # get total energy
@@ -223,9 +224,10 @@ for i in range(my_nfiles):
         # get Poynting flux
         for ir in range(nquadr+1): # remember: rbounds increase but r-inds decrease
             # deal with signage when plotting
-            # deal with 1/4pi now
-            vals_gav[6,ir] = (1/4/np.pi)*vals_loc[irbounds[ir], lut[2001],j]
+            # deal with 1/4pi*4pi r^2 now
+            vals_gav[6,ir] = (rbounds[ir]*rsun)**2*vals_loc[irbounds[ir], lut[2001],j]
             # not really "gav" for this guy, but anyway...
+            # it's "globally integrated"
 
         # now we can append the array to the trace
         my_vals.append(vals_gav)
