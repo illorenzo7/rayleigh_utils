@@ -21,10 +21,19 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = get_parameter(dirname, 'magnetism')
 
 # SPECIFIC ARGS for etrace:
-kwargs_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'xvals': np.array([]), 'plotall': False, 'vol': False})
+kwargs_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'xvals': np.array([]), 'plotall': False, 'vol': False, 'nquadr': None, 'nquadlat': None, 'ltype': 'tot'})
+# plots two more columns with energies in CZ and RZ separately 
+# update these defaults from command-line
+
+# make figure kwargs
+lineplot_fig_dimensions['margin_top_inches'] = 3/4
+make_figure_kwargs_default.update(lineplot_fig_dimensions)
+kwargs_default.update(make_figure_kwargs_default)
+
 # plots two more columns with energies in CZ and RZ separately 
 # update these defaults from command-line
 kwargs = update_dict(kwargs_default, clas)
+kw_make_figure = update_dict(make_figure_kwargs_default, clas)
 
 fontsize = default_titlesize
 the_file = kwargs.the_file
@@ -41,6 +50,9 @@ logscale = kwargs.log
 xvals = make_array(kwargs.xvals)
 plotall = kwargs.plotall
 vol = kwargs.vol
+nquadlat = kwargs.nquadlat
+nquadr = kwargs.nquadr
+ltype = kwargs.ltype
 
 # deal with coords (if user wants minmax to only apply to certain subplots)
 if not coords is None:
@@ -50,9 +62,14 @@ if not coords is None:
     for i in range(numpanels):
         coords.append((acopy[2*i], acopy[2*i + 1]))
 
-# Might need to use 2dom trace instead of regular trace
+# get desired data file
+dataname = 'G_Avgs_trace'
 if the_file is None:
-    the_file = get_widest_range_file(clas0['datadir'], 'G_Avgs_trace_quad')
+    if not nquadlat is None:
+        dataname += '_nquadlat%i' %nquadlat
+    if not nquadr is None:
+        dataname += '_nquadr%i' %nquadr
+    the_file = get_widest_range_file(clas0['datadir'], dataname)
 
 print ('Getting data from ' + the_file)
 di = get_dict(the_file)
@@ -104,10 +121,10 @@ print ("after thin_data: len(xaxis) = %i" %len(xaxis))
 ntimes, nq, nquadlat, nquadr = np.shape(vals)
 nplots = nquadlat*nquadr
 
-# create figure with nquadr columns and nquadlat rows
-fig, axs = plt.subplots(nquadlat, nquadr, figsize=(3.5*nquadr, 10), sharex=True)
-if nquadr == 1: # need the axis array to consistently be doubly indexed
-    axs = np.expand_dims(axs, 1)
+# create the figure dimensions
+kw_make_figure.nplots = nplots
+kw_make_figure.ncol = nquadr
+fig, axs, fpar = make_figure(**kw_make_figure)
 
 # Make thin lines to see structure of variation for ME
 lw = 0.5
@@ -133,43 +150,42 @@ for ilat in range(nquadlat):
         ax = axs[ilat, ir]
 
         all_L = []
-        for i in range(3): # tot, fluc, mean of energies
-            # z-mom:
-            if i == 0: # tot
-                Lz = vals_loc[:, lut[1819]]
-                if plotall:
-                    Lx = vals_loc[:, lut[1820]]
-                    Ly = vals_loc[:, lut[1821]]
-                linestyle = '-'
-                label_pre = ''
-                label_app = ''
-
-            if i == 1: # fluc
-                Lx = vals_loc[:, lut[1822]]
-                if plotall:
-                    Lx = vals_loc[:, lut[1823]]
-                    Ly = vals_loc[:, lut[1824]]
-                linestyle = ':'
-                label_pre = ''
-                label_app = '\''
-            if i == 2: # mean
-                Lz = vals_loc[:, lut[1819]] - vals_loc[:, lut[1822]]
-                if plotall:
-                    Lx = vals_loc[:, lut[1820]] - vals_loc[:, lut[1823]]
-                    Ly = vals_loc[:, lut[1821]] - vals_loc[:, lut[1824]]
-                linestyle = '--'
-                label_pre = '<'
-                label_app = '>'
-
-            # make line plots
-
-            ax.plot(xaxis, Lz, color_order[0], linewidth=lw, label=label_pre+r'$\rm{\mathcal{L}_{z}}$'+label_app)
-            # collect all the momenta for min/max values
-            all_L = [Lz]
+        # choose ltype: tot, fluc, or mean of amom
+        if ltype == 'tot':
+            Lz = vals_loc[:, lut[1819]]
             if plotall:
-                ax.plot(xaxis, Lx, color_order[0], linewidth=lw, label=label_pre+r'$\rm{\mathcal{L}_{x}}$'+label_app)
-                ax.plot(xaxis, Ly, color_order[0], linewidth=lw, label=label_pre+r'$\rm{\mathcal{L}_{y}}$'+label_app)
-                all_L += [Lx, Ly]
+                Lx = vals_loc[:, lut[1820]]
+                Ly = vals_loc[:, lut[1821]]
+            linestyle = '-'
+            label_pre = ''
+            label_app = ''
+
+        if ltype == 'fluc':
+            Lz = vals_loc[:, lut[1822]]
+            if plotall:
+                Lx = vals_loc[:, lut[1823]]
+                Ly = vals_loc[:, lut[1824]]
+            linestyle = ':'
+            label_pre = ''
+            label_app = '\''
+        if ltype == 'mean':
+            Lz = vals_loc[:, lut[1819]] - vals_loc[:, lut[1822]]
+            if plotall:
+                Lx = vals_loc[:, lut[1820]] - vals_loc[:, lut[1823]]
+                Ly = vals_loc[:, lut[1821]] - vals_loc[:, lut[1824]]
+            linestyle = '--'
+            label_pre = '<'
+            label_app = '>'
+
+        # make line plots
+
+        ax.plot(xaxis, Lz, color_order[0], linewidth=lw, label=label_pre+r'$\rm{\mathcal{L}_{z}}$'+label_app)
+        # collect all the momenta for min/max values
+        all_L = [Lz]
+        if plotall:
+            ax.plot(xaxis, Lx, color_order[1], linewidth=lw, label=label_pre+r'$\rm{\mathcal{L}_{x}}$'+label_app)
+            ax.plot(xaxis, Ly, color_order[2], linewidth=lw, label=label_pre+r'$\rm{\mathcal{L}_{y}}$'+label_app)
+            all_L += [Lx, Ly]
 
         if ilat == 0 and ir == 0: # put a legend on the upper left axis
             #legfrac = 1/4
@@ -191,14 +207,11 @@ for ilat in range(nquadlat):
         if not ymax is None:
             minmax_loc = minmax_loc[0], ymax
         ax.set_ylim((minmax_loc[0], minmax_loc[1]))
-
-# Set some parameters defining all subplots
-# x limits and label
-axs[0, 0].set_xlim((xminmax[0], xminmax[1]))
+        ax.set_xlim((xminmax[0], xminmax[1]))
 if xiter:
-    axs[2, 0].set_xlabel('iteration #')
+    axs[-1, 0].set_xlabel('iteration #')
 else:
-    axs[2, 0].set_xlabel('time [' + time_label + ']')
+    axs[-1, 0].set_xlabel('time [' + time_label + ']')
 
 # x titles
 for ir in range(nquadr):
@@ -227,10 +240,6 @@ for ax in axs.flatten():
     plt.sca(ax)
     plt.minorticks_on()
     plt.tick_params(top=True, right=True, direction='in', which='both')
-
-# Space the subplots to make them look pretty
-plt.tight_layout()
-#plt.subplots_adjust(left=0.15, bottom=0.08, top=0.85, wspace=0.4)
 
 # Save the plot
 iter1, iter2 = get_iters_from_file(the_file)
