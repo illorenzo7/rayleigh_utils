@@ -62,10 +62,13 @@ if the_file is None:
 
 print ('Getting data from ' + the_file)
 di = get_dict(the_file)
-vals_gav = di['vals']
+vals = di['vals']
 if sep_czrz:
     vals_cz = di['vals_cz']
     vals_rz = di['vals_rz']
+    vals_full = di['vals_full']
+else:
+    vals_full = vals[..., 0, 0]
 lut = di['lut']
 times = di['times']
 iters = di['iters']
@@ -95,7 +98,7 @@ xaxis = xaxis[ixmin:ixmax+1]
 times = times[ixmin:ixmax+1]
 iters = iters[ixmin:ixmax+1]
 tmin, tmax = times[0], times[-1]
-vals_gav = vals_gav[ixmin:ixmax+1, :]
+vals_full = vals_full[ixmin:ixmax+1, :]
 if sep_czrz:
     vals_cz = vals_cz[ixmin:ixmax+1, :]
     vals_rz = vals_rz[ixmin:ixmax+1, :]
@@ -106,7 +109,7 @@ print ("before thin_data: len(xaxis) = %i" %len(xaxis))
 xaxis = thin_data(xaxis, ntot)
 times = thin_data(times, ntot)
 iters = thin_data(iters, ntot)
-vals_gav = thin_data(vals_gav, ntot)
+vals_full = thin_data(vals_full, ntot)
 if sep_czrz:
     vals_cz = thin_data(vals_cz, ntot)
     vals_rz = thin_data(vals_rz, ntot)
@@ -139,7 +142,7 @@ else:
 
 # start making plots
 # loop over tot, fluc, mean and the different domains
-vals_list = [vals_gav]
+vals_list = [vals_full]
 if sep_czrz:
     vals_list.append(vals_rz)
     vals_list.append(vals_cz)
