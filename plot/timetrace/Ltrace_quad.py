@@ -74,7 +74,7 @@ if the_file is None:
 print ('Getting data from ' + the_file)
 di = get_dict(the_file)
 vals = di['vals']
-rbounds = di['rbounds']
+rvals = di['rvals']
 latbounds = di['latbounds']
 lut = di['lut']
 times = di['times']
@@ -215,8 +215,8 @@ else:
 
 # x titles
 for ir in range(nquadr):
-    r1 = rbounds[ir]
-    r2 = rbounds[ir+1]
+    r1 = rvals[ir]
+    r2 = rvals[ir+1]
     title = 'rad. range = [%.3f, %.3f]' %(r1, r2) + '\n'
     if ir == 0:
         title = dirname_stripped + '\n' + title

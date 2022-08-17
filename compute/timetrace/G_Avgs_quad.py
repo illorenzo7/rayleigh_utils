@@ -11,7 +11,7 @@
 # By default the "quadrant" is the entire plane and 
 # G_Avgs are used
 #
-# if --nquadr or --rbounds or --irbounds is specified (but not --nquadlat or --latbounds or --ilatbounds)
+# if --nquadr or --rvals or --irvals is specified (but not --nquadlat or --latbounds or --ilatbounds)
 # meridional plane is divided into spherical shells and 
 # Shell_Avgs are used
 #
@@ -99,8 +99,8 @@ if rank == 0:
     # get grid info + default kwargs
     kwargs_default = dict({})
     kwargs_default['nquadr'] = None # can divide up the radial grid into nquadr equally spaced domains
-    kwargs_default['rbounds'] = None # can specify radial domain boundaries directly (units of rsun, e.g., 0.721 0.863 0.92)
-    kwargs_default['irbounds'] = None # can specify radial domain boundaries directly (radial index, e.g., 32 64 96
+    kwargs_default['rvals'] = None # can specify radial domain boundaries directly (units of rsun, e.g., 0.721 0.863 0.92)
+    kwargs_default['irvals'] = None # can specify radial domain boundaries directly (radial index, e.g., 32 64 96
     kwargs_default['nquadlat'] = None # "high and low" latitudes in both North and South
     kwargs_default['latbounds'] = None
     kwargs_default['ilatbounds'] = None
@@ -111,17 +111,17 @@ if rank == 0:
 
     # deal w/ radial boundaries
     if not kw.nquadr is None: # equally spaced domain boundaries (not the default)
-        kw.rbounds = np.linspace(rmax, rmin, kw.nquadr + 1) # remember: rr is DECREASING
-    if kw.irbounds is None: # this is the default
-        if kw.rbounds is None: # this is the default
-            irbounds = [nr - 1, 0] # rr increases, r-inds decrease
+        kw.rvals = np.linspace(rmax, rmin, kw.nquadr + 1) # remember: rr is DECREASING
+    if kw.irvals is None: # this is the default
+        if kw.rvals is None: # this is the default
+            irvals = [nr - 1, 0] # rr increases, r-inds decrease
             dataname = 'G_Avgs'
         else:
-            kw.rbounds = np.sort(kw.rbounds) # rr decreases
-            irbounds = inds_from_vals(rr/rsun, kw.rbounds)
+            kw.rvals = np.sort(kw.rvals) # rr decreases
+            irvals = inds_from_vals(rr/rsun, kw.rvals)
             dataname = 'Shell_Avgs'
     else:
-        irbounds = np.sort(kw.irbounds)[::-1] # r-inds derease
+        irvals = np.sort(kw.irvals)[::-1] # r-inds derease
         dataname = 'Shell_Avgs'
 
     # deal w/ latitudinal boundaries
@@ -139,7 +139,7 @@ if rank == 0:
 
     # update the number of quadrants
     nquadlat = len(ilatbounds) - 1
-    nquadr = len(irbounds) - 1
+    nquadr = len(irvals) - 1
     nquad = nquadlat*nquadr
 
     # deal with derived quantities....make sure it's an integer array
@@ -150,7 +150,7 @@ if rank == 0:
 
     # update the actual boundary vals
     latbounds = tt_lat[ilatbounds]
-    rbounds = rr[irbounds]/rsun
+    rvals = rr[irvals]/rsun
 
     # compute the volumes of each quadrant
     volumes = np.zeros((nquadlat, nquadr))
@@ -158,9 +158,9 @@ if rank == 0:
         it1 = ilatbounds[ilat]
         it2 = ilatbounds[ilat + 1]
 
-        for ir in range(nquadr): # remember: rbounds increase but r-inds decrease
-            ir1 = irbounds[ir + 1]
-            ir2 = irbounds[ir]
+        for ir in range(nquadr): # remember: rvals increase but r-inds decrease
+            ir1 = irvals[ir + 1]
+            ir2 = irvals[ir]
             volumes[ilat, ir] = 2.*np.pi/3.*(rr[ir2]**3. - rr[ir1]**3.)*(cost[it2] - cost[it1])
 
     # Get the Rayleigh data directory
@@ -197,10 +197,10 @@ else: # recieve my_files, my_nfiles
 # Broadcast dirname, radatadir, etc.
 if rank == 0:
     meta = [\
-dirname, dataname, radatadir, ilatbounds, irbounds, tw, rw, derive]
+dirname, dataname, radatadir, ilatbounds, irvals, tw, rw, derive]
 else:
     meta = None
-dirname, dataname, radatadir, ilatbounds, irbounds, tw, rw, derive = comm.bcast(meta, root=0)
+dirname, dataname, radatadir, ilatbounds, irvals, tw, rw, derive = comm.bcast(meta, root=0)
 
 # figure out which reading_func to use
 if dataname == 'G_Avgs':
@@ -216,7 +216,7 @@ if rank == 0:
     t2 = time.time()
     print (format_time(t2 - t1))
     print ("tracing over %i x %i = %i quadrants" %(nquadlat, nquadr, nquad))
-    print ("rbounds/rsun = " + arr_to_str(rbounds, "%.3f"))
+    print ("rvals/rsun = " + arr_to_str(rvals, "%.3f"))
     print ("latbounds = " + arr_to_str(latbounds, "%.1f"))
     print ('Considering %i %s files for the trace: %s through %s'\
         %(nfiles, dataname, file_list[0], file_list[-1]))
@@ -225,7 +225,7 @@ if rank == 0:
 
 # Now analyze the data (some processes may not have nquadlat, nquadr, etc.)
 nquadlat = len(ilatbounds) - 1
-nquadr = len(irbounds) - 1
+nquadr = len(irvals) - 1
 my_times = []
 my_iters = []
 my_vals = []
@@ -255,9 +255,9 @@ for i in range(my_nfiles):
             it1 = ilatbounds[ilat]
             it2 = ilatbounds[ilat + 1]
 
-            for ir in range(nquadr): # remember: rbounds increase but r-inds decrease
-                ir1 = irbounds[ir + 1]
-                ir2 = irbounds[ir]
+            for ir in range(nquadr): # remember: rvals increase but r-inds decrease
+                ir1 = irvals[ir + 1]
+                ir2 = irvals[ir]
 
                 if dataname == 'G_Avgs':
                     vals_quad = vals_loc[j, :].reshape((1, 1, nq))
@@ -345,7 +345,7 @@ if rank == 0:
     # Get first and last iters of files
     iter1, iter2 = int_file_list[0], int_file_list[-1]
     f = open(savefile, 'wb')
-    di_sav = {'vals': vals, 'times': times, 'iters': iters, 'lut': lut, 'qv': a.qv, 'volumes': volumes, 'volume_full': np.sum(volumes), 'rbounds': rbounds, 'latbounds': latbounds}
+    di_sav = {'vals': vals, 'times': times, 'iters': iters, 'lut': lut, 'qv': a.qv, 'volumes': volumes, 'volume_full': np.sum(volumes), 'rvals': rvals, 'latbounds': latbounds}
     if 'nquad' in savefile:
         di_sav[ 'vals_full'] = vals_full
     pickle.dump(di_sav, f, protocol=4)
