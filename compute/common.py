@@ -1259,14 +1259,17 @@ def opt_workload(n, nproc):
 
 # Thin out the arrays to not deal obscene quantities of data 
 # (and unreadable "curves")
-def thin_data(vals, ntot):
-    nx = np.shape(vals)[0]
-    nskip = nx//ntot
-    if not nskip in [0, 1]: #for ntot < 2*nx, do nothing
-        vals_new = vals[::nskip]
+def thin_data(vals, ntot=None):
+    if ntot is None: # do nothing
+        return vals
     else:
-        vals_new = vals
-    return vals_new
+        nx = np.shape(vals)[0]
+        nskip = nx//ntot
+        if not nskip in [0, 1]: #for ntot < 2*nx, do nothing
+            vals_new = vals[::nskip]
+        else:
+            vals_new = vals
+        return vals_new
 
 def array_of_strings(arr):
     li = []
