@@ -49,7 +49,7 @@ echo "running shiftc --create-tar --index-tar --hosts=6"
 echo "on $thefile, which is"
 cat $thefile
 echo $bufferstring
-shiftc --create-tar --index-tar --hosts=6 $thefile
+shiftc --create-tar --index-tar --hosts=6 < $thefile
 cd $currentdir
 echo $bufferstring
 echo -n "I returned here: "
