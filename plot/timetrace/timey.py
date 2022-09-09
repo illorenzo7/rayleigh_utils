@@ -105,11 +105,6 @@ if not kw.ntot == 'full':
     vals = thin_data(vals, kw.ntot)
     print ("after thin_data: len(times) = %i" %len(times))
 
-# these all need to be arrays
-kw.qvals = make_array(kw.qvals)
-kw.isamplevals = make_array(kw.isamplevals)
-kw.samplevals = make_array(kw.samplevals)
-
 # get raw traces of desired variables
 terms = []
 for qval in kw.qvals:
