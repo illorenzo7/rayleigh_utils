@@ -103,7 +103,7 @@ if rank == 0:
     rho = eq.rho.reshape((1, 1, nr))
     mu = rho*nu
     prefactor = -1/(rho*nu*rr_3d**2*sint_3d**2) # visc flux --> DOm/dr
-    geofactor = rr_3d**2*sint_3d**2/(4*np.pi) # for the angular momentum fluxes
+    geofactor = rr_3d*sint_3d/(4*np.pi) # for the angular momentum fluxes
 
     # Distribute file lists to each process
     for k in range(nproc - 1, -1, -1):
