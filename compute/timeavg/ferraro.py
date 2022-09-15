@@ -163,35 +163,35 @@ for i in range(my_nfiles):
         br = mer.vals[:, :, :, mer.lut[801], j]
         bt = mer.vals[:, :, :, mer.lut[802], j]
 
-        # mean Omega-gradients
-        amom_visc_r = a.vals[:, :, a.lut[1813], j].reshape((1, nt, nr))
-        amom_visc_t = a.vals[:, :, a.lut[1814], j].reshape((1, nt, nr))
-        dOmdr = prefactor*amom_visc_r
-        dOmdt = prefactor*amom_visc_t
-
         # mean B_pol
         br_m = a.vals[:, :, a.lut[801], j].reshape((1, nt, nr))
         bt_m = a.vals[:, :, a.lut[802], j].reshape((1, nt, nr))
 
-        # calculate flux terms
-        Bp_meanshear = (br*dOmdr + bt*dOmdt) 
+        # mean Omega-gradients (instantaneous)
+        amom_vflux_r = a.vals[:, :, a.lut[1813], j].reshape((1, nt, nr))
+        amom_vflux_t = a.vals[:, :, a.lut[1814], j].reshape((1, nt, nr))
+        dOmdr = prefactor*amom_vflux_r
+        dOmdt = prefactor*amom_vflux_t
+
+        # calculate B_phi terms from mean shear
+        Bp_meanshear = (br*dOmdr + bt*dOmdt)  # full mean shear
         Bp_meanshear_m = (br_m*dOmdr + bt_m*dOmdt) 
+        # mean shear from mean fields
         # still needs to be multiplied by a time scale...
 
-        # these are angular momentum fluxes from magnetic tension
-        # they include the factor of 4pi (in geofactor)
-        flux_r = np.mean(geofactor*Bp_meanshear*br, axis=0)*my_weight
-        flux_t = np.mean(geofactor*Bp_meanshear*bt, axis=0)*my_weight
+        # next get the angular momentum fluxes from magnetic tension
+        amom_magflux_r = np.mean(geofactor*Bp_meanshear*br, axis=0)*my_weight
+        amom_magflux_t = np.mean(geofactor*Bp_meanshear*bt, axis=0)*my_weight
 
-        flux_r_m = np.mean(geofactor*Bp_meanshear_m*br_m, axis=0)*my_weight
-        flux_t_m = np.mean(geofactor*Bp_meanshear_m*bt_m, axis=0)*my_weight
+        amom_magflux_r_m = np.mean(geofactor*Bp_meanshear_m*br_m, axis=0)*my_weight
+        amom_magflux_t_m = np.mean(geofactor*Bp_meanshear_m*bt_m, axis=0)*my_weight
 
-        torque_r = drad(flux_r, rr) + (2/rr_2d)*flux_r
-        torque_t = (1/rr_2d)*(dth(flux_t, tt) + cott_2d*flux_t)
+        torque_r = drad(amom_magflux_r, rr) + (2/rr_2d)*amom_magflux_r
+        torque_t = (1/rr_2d)*(dth(amom_magflux_t, tt) + cott_2d*amom_magflux_t)
         torque = torque_r + torque_t
 
-        torque_r_m = drad(flux_r_m, rr) + (2/rr_2d)*flux_r_m
-        torque_t_m = (1/rr_2d)*(dth(flux_t_m, tt) + cott_2d*flux_t_m)
+        torque_r_m = drad(amom_magflux_r_m, rr) + (2/rr_2d)*amom_magflux_r_m
+        torque_t_m = (1/rr_2d)*(dth(amom_magflux_t_m, tt) + cott_2d*amom_magflux_t_m)
         torque_m = torque_r_m + torque_t_m
 
         # add to my_vals array
