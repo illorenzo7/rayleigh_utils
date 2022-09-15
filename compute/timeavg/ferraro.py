@@ -198,8 +198,8 @@ for i in range(my_nfiles):
             dOmdt = dOmdt_ms
 
         # calculate B_phi terms from mean shear
-        Bp_fromshear = (br*dOmdr + bt*dOmdt)  # full mean shear
-        Bp_fromshear_m = (br_m*dOmdr + bt_m*dOmdt) 
+        Bp_fromshear = rr_3d*sint_3d*(br*dOmdr + bt*dOmdt)  # full mean shear
+        Bp_fromshear_m = rr_3d*sint_3d*(br_m*dOmdr + bt_m*dOmdt) 
         # mean shear from mean fields
         # still needs to be multiplied by a time scale...
 
