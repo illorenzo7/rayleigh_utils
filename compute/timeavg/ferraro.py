@@ -183,11 +183,11 @@ for i in range(my_nfiles):
         # still needs to be multiplied by a time scale...
 
         # next get the angular momentum fluxes from magnetic tension
-        amom_magflux_r = -np.mean(geofactor*Bp_meanshear*br, axis=0)*my_weight
-        amom_magflux_t = -np.mean(geofactor*Bp_meanshear*bt, axis=0)*my_weight
+        amom_magflux_r = -np.mean(geofactor*Bp_meanshear*br, axis=0)
+        amom_magflux_t = -np.mean(geofactor*Bp_meanshear*bt, axis=0)
 
-        amom_magflux_r_m = -np.mean(geofactor*Bp_meanshear_m*br_m, axis=0)*my_weight
-        amom_magflux_t_m = -np.mean(geofactor*Bp_meanshear_m*bt_m, axis=0)*my_weight
+        amom_magflux_r_m = -np.mean(geofactor*Bp_meanshear_m*br_m, axis=0)
+        amom_magflux_t_m = -np.mean(geofactor*Bp_meanshear_m*bt_m, axis=0)
 
         torque_r = - ( drad(amom_magflux_r, rr) + (2/rr_2d)*amom_magflux_r )
         torque_t = - ( (1/rr_2d)*(dth(amom_magflux_t, tt) + cott_2d*amom_magflux_t) )
@@ -200,19 +200,19 @@ for i in range(my_nfiles):
         # add to my_vals array
         # first the full terms
         indstart = 0
-        my_vals[:, :, indstart + 0] += amom_magflux_r
-        my_vals[:, :, indstart + 1] += amom_magflux_t
-        my_vals[:, :, indstart + 2] += torque_r
-        my_vals[:, :, indstart + 3] += torque_t
-        my_vals[:, :, indstart + 4] += torque
+        my_vals[:, :, indstart + 0] += amom_magflux_r*my_weight
+        my_vals[:, :, indstart + 1] += amom_magflux_t*my_weight
+        my_vals[:, :, indstart + 2] += torque_r*my_weight
+        my_vals[:, :, indstart + 3] += torque_t*my_weight
+        my_vals[:, :, indstart + 4] += torque*my_weight
 
         # mean terms
         indstart += nset
-        my_vals[:, :, indstart + 0] += amom_magflux_r_m
-        my_vals[:, :, indstart + 1] += amom_magflux_t_m
-        my_vals[:, :, indstart + 2] += torque_r_m
-        my_vals[:, :, indstart + 3] += torque_t_m
-        my_vals[:, :, indstart + 4] += torque_m
+        my_vals[:, :, indstart + 0] += amom_magflux_r_m*my_weight
+        my_vals[:, :, indstart + 1] += amom_magflux_t_m*my_weight
+        my_vals[:, :, indstart + 2] += torque_r_m*my_weight
+        my_vals[:, :, indstart + 3] += torque_t_m*my_weight
+        my_vals[:, :, indstart + 4] += torque_m*my_weight
 
 # fluc terms
 indstart = 2*nset
