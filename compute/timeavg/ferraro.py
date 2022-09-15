@@ -72,6 +72,11 @@ if rank == 0:
     # get the name of the run directory + CLAs
     args = sys.argv
     clas0, clas = read_clas(args)
+    if 'instant' in clas:
+        instantshear = True
+    else:
+        instantshear = False # the default
+
     dirname = clas0['dirname']
 
     # Get the Rayleigh data directory
@@ -97,6 +102,27 @@ if rank == 0:
     rr_3d = di_grid['rr_3d']
     sint_3d = di_grid['sint_3d']
 
+    # will need rho and nu to get angular velocity gradients
+    eq = get_eq(dirname)
+    nu = eq.nu.reshape((1, 1, nr))
+    rho = eq.rho.reshape((1, 1, nr))
+
+    # get time averaged shear from longest AZ_Avgs file if required
+    if instantshear:
+        print ("Will get instantaneaous shear from the AZ_Avgs at each timestep")
+        dOmdr_ms = 0.0 # just placeholders...won't be used
+        dOmdt_ms = 0.0
+    else:
+        the_file = get_widest_range_file(clas0['datadir'], 'AZ_Avgs')
+        print ('Getting mean shear from ' + the_file)
+        di = get_dict(the_file)
+        amom_vflux_r = di['vals'][:, :, di['lut'][1813]].reshape((1, nt, nr))
+        amom_vflux_t = di['vals'][:, :, di['lut'][1814]].reshape((1, nt, nr))
+
+        # this is the "mean shear" grad Omega
+        dOmdr_ms = -amom_vflux_r/(rho*nu*rr_3d**2*sint_3d**2)
+        dOmdt_ms = -amom_vflux_t/(rho*nu*rr_3d**2*sint_3d**2)
+
     # Distribute file lists to each process
     for k in range(nproc - 1, -1, -1):
         # distribute the partial file list to other procs 
@@ -121,10 +147,10 @@ else: # recieve my_files
 # Broadcast dirname, radatadir, nq, etc.
 if rank == 0:
     meta =[\
-dirname, radatadir1, radatadir2, nt, nr, rr, tt, rr_2d, sint_2d, cott_2d, rr_3d, sint_3d, nfiles]
+dirname, radatadir1, radatadir2, nt, nr, rr, tt, rr_2d, sint_2d, cott_2d, rr_3d, sint_3d, nfiles, instantshear, rho, nu, dOmdr_ms, dOmdt_ms]
 else:
     meta = None
-dirname, radatadir1, radatadir2, nt, nr, rr, tt, rr_2d, sint_2d, cott_2d, rr_3d, sint_3d, nfiles = comm.bcast(meta, root=0)
+dirname, radatadir1, radatadir2, nt, nr, rr, tt, rr_2d, sint_2d, cott_2d, rr_3d, sint_3d, nfiles, instantshear, rho, nu, dOmdr_ms, dOmdt_ms = comm.bcast(meta, root=0)
 
 # Checkpoint and time
 comm.Barrier()
@@ -163,28 +189,27 @@ for i in range(my_nfiles):
         amom_vflux_r = a.vals[:, :, a.lut[1813], j].reshape((1, nt, nr))
         amom_vflux_t = a.vals[:, :, a.lut[1814], j].reshape((1, nt, nr))
 
-        instantshear = True
         if instantshear:
             # need rho and nu to get angular velocity gradients
-            eq = get_eq(dirname)
-            nu = eq.nu.reshape((1, 1, nr))
-            rho = eq.rho.reshape((1, 1, nr))
             dOmdr = -amom_vflux_r/(rho*nu*rr_3d**2*sint_3d**2)
             dOmdt = -amom_vflux_t/(rho*nu*rr_3d**2*sint_3d**2)
+        else:
+            dOmdr = dOmdr_ms
+            dOmdt = dOmdt_ms
 
         # calculate B_phi terms from mean shear
-        Bp_meanshear = (br*dOmdr + bt*dOmdt)  # full mean shear
-        Bp_meanshear_m = (br_m*dOmdr + bt_m*dOmdt) 
+        Bp_fromshear = (br*dOmdr + bt*dOmdt)  # full mean shear
+        Bp_fromshear_m = (br_m*dOmdr + bt_m*dOmdt) 
         # mean shear from mean fields
         # still needs to be multiplied by a time scale...
 
         # next get the angular momentum fluxes from magnetic tension
         factor = rr_3d*sint_3d/(4*np.pi) 
-        amom_magflux_r = -np.mean(factor*Bp_meanshear*br, axis=0)
-        amom_magflux_t = -np.mean(factor*Bp_meanshear*bt, axis=0)
+        amom_magflux_r = -np.mean(factor*Bp_fromshear*br, axis=0)
+        amom_magflux_t = -np.mean(factor*Bp_fromshear*bt, axis=0)
 
-        amom_magflux_r_m = -np.mean(factor*Bp_meanshear_m*br_m, axis=0)
-        amom_magflux_t_m = -np.mean(factor*Bp_meanshear_m*bt_m, axis=0)
+        amom_magflux_r_m = -np.mean(factor*Bp_fromshear_m*br_m, axis=0)
+        amom_magflux_t_m = -np.mean(factor*Bp_fromshear_m*bt_m, axis=0)
 
         torque_r = - ( drad(amom_magflux_r, rr) + (2/rr_2d)*amom_magflux_r )
         torque_t = - ( (1/rr_2d)*(dth(amom_magflux_t, tt) + cott_2d*amom_magflux_t) )
@@ -259,8 +284,11 @@ if rank == 0:
 
     # Set the timetrace savename by the directory, what we are saving,
     # and first and last iteration files for the trace
-    savename = 'ferraro-' +\
-            file_list[0] + '_' + file_list[-1] + '.pkl'
+    if instantshear:
+        savename = 'ferraro_instantshear'
+    else:
+        savename = 'ferraro' # the default
+    savename += '-' + file_list[0] + '_' + file_list[-1] + '.pkl'
     savefile = datadir + savename
 
     # save the data
