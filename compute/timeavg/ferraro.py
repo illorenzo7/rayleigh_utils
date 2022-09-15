@@ -197,16 +197,16 @@ for i in range(my_nfiles):
         # add to my_vals array
         # first the full terms
         indstart = 0
-        my_vals[:, :, indstart + 0] += flux_r
-        my_vals[:, :, indstart + 1] += flux_t
+        my_vals[:, :, indstart + 0] += amom_magflux_r
+        my_vals[:, :, indstart + 1] += amom_magflux_t
         my_vals[:, :, indstart + 2] += torque_r
         my_vals[:, :, indstart + 3] += torque_t
         my_vals[:, :, indstart + 4] += torque
 
         # mean terms
         indstart += nset
-        my_vals[:, :, indstart + 0] += flux_r_m
-        my_vals[:, :, indstart + 1] += flux_t_m
+        my_vals[:, :, indstart + 0] += amom_magflux_r_m
+        my_vals[:, :, indstart + 1] += amom_magflux_t_m
         my_vals[:, :, indstart + 2] += torque_r_m
         my_vals[:, :, indstart + 3] += torque_t_m
         my_vals[:, :, indstart + 4] += torque_m
