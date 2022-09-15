@@ -236,16 +236,16 @@ for i in range(my_nfiles):
         my_vals[:, :, indstart + 3] += torque_t_m*my_weight
         my_vals[:, :, indstart + 4] += torque_m*my_weight
 
+    if rank == 0:
+        pcnt_done = (i + 1)/my_nfiles*100.
+        print(fill_str('computing', lent, char) +\
+                ('rank 0 %5.1f%% done' %pcnt_done), end='\r')
+
 # fluc terms
 indstart = 2*nset
 for k in range(nset):
     my_vals[:, :, indstart + k] +=\
             my_vals[:, :, k] - my_vals[:, :, k + nset]
-
-    if rank == 0:
-        pcnt_done = (i + 1)/my_nfiles*100.
-        print(fill_str('computing', lent, char) +\
-                ('rank 0 %5.1f%% done' %pcnt_done), end='\r')
 
 # Checkpoint and time
 comm.Barrier()
