@@ -48,7 +48,7 @@ import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from rayleigh_diagnostics import AZ_Avgs, Meridional_Slices
-from common import drad, dth
+from common import drad, dth, get_eq
 reading_func1 = AZ_Avgs
 reading_func2 = Meridional_Slices
 dataname1 = 'AZ_Avgs'
@@ -97,14 +97,6 @@ if rank == 0:
     rr_3d = di_grid['rr_3d']
     sint_3d = di_grid['sint_3d']
 
-    # need dynamic viscosity to get omega gradients
-    eq = get_eq(dirname)
-    nu = eq.nu.reshape((1, 1, nr))
-    rho = eq.rho.reshape((1, 1, nr))
-    mu = rho*nu
-    prefactor = -1/(rho*nu*rr_3d**2*sint_3d**2) # visc flux --> DOm/dr
-    geofactor = rr_3d*sint_3d/(4*np.pi) # for the angular momentum fluxes
-
     # Distribute file lists to each process
     for k in range(nproc - 1, -1, -1):
         # distribute the partial file list to other procs 
@@ -129,10 +121,10 @@ else: # recieve my_files
 # Broadcast dirname, radatadir, nq, etc.
 if rank == 0:
     meta =[\
-dirname, radatadir1, radatadir2, nt, nr, rr, tt, rr_2d, sint_2d, cott_2d, rr_3d, sint_3d, prefactor, geofactor, nfiles]
+dirname, radatadir1, radatadir2, nt, nr, rr, tt, rr_2d, sint_2d, cott_2d, rr_3d, sint_3d, nfiles]
 else:
     meta = None
-dirname, radatadir1, radatadir2, nt, nr, rr, tt, rr_2d, sint_2d, cott_2d, rr_3d, sint_3d, prefactor, geofactor, nfiles = comm.bcast(meta, root=0)
+dirname, radatadir1, radatadir2, nt, nr, rr, tt, rr_2d, sint_2d, cott_2d, rr_3d, sint_3d, nfiles = comm.bcast(meta, root=0)
 
 # Checkpoint and time
 comm.Barrier()
@@ -173,8 +165,12 @@ for i in range(my_nfiles):
 
         instantshear = True
         if instantshear:
-            dOmdr = prefactor*amom_vflux_r
-            dOmdt = prefactor*amom_vflux_t
+            # need rho and nu to get angular velocity gradients
+            eq = get_eq(dirname)
+            nu = eq.nu.reshape((1, 1, nr))
+            rho = eq.rho.reshape((1, 1, nr))
+            dOmdr = -amom_vflux_r/(rho*nu*rr_3d**2*sint_3d**2)
+            dOmdt = -amom_vflux_t/(rho*nu*rr_3d**2*sint_3d**2)
 
         # calculate B_phi terms from mean shear
         Bp_meanshear = (br*dOmdr + bt*dOmdt)  # full mean shear
@@ -183,11 +179,12 @@ for i in range(my_nfiles):
         # still needs to be multiplied by a time scale...
 
         # next get the angular momentum fluxes from magnetic tension
-        amom_magflux_r = -np.mean(geofactor*Bp_meanshear*br, axis=0)
-        amom_magflux_t = -np.mean(geofactor*Bp_meanshear*bt, axis=0)
+        factor = rr_3d*sint_3d/(4*np.pi) 
+        amom_magflux_r = -np.mean(factor*Bp_meanshear*br, axis=0)
+        amom_magflux_t = -np.mean(factor*Bp_meanshear*bt, axis=0)
 
-        amom_magflux_r_m = -np.mean(geofactor*Bp_meanshear_m*br_m, axis=0)
-        amom_magflux_t_m = -np.mean(geofactor*Bp_meanshear_m*bt_m, axis=0)
+        amom_magflux_r_m = -np.mean(factor*Bp_meanshear_m*br_m, axis=0)
+        amom_magflux_t_m = -np.mean(factor*Bp_meanshear_m*bt_m, axis=0)
 
         torque_r = - ( drad(amom_magflux_r, rr) + (2/rr_2d)*amom_magflux_r )
         torque_t = - ( (1/rr_2d)*(dth(amom_magflux_t, tt) + cott_2d*amom_magflux_t) )
