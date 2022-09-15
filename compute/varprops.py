@@ -687,7 +687,7 @@ def get_quantity_group(groupname, magnetism):
         for j in range(3):
             for k in range(5):
                 if groupname == 'ferraroinst':
-                    titles.append('(inst. shear) ' + bases[k] + suffixes[j])
+                    titles.append('inst. ' + bases[k] + suffixes[j])
                 else:
                     titles.append(bases[k] + suffixes[j])
 
