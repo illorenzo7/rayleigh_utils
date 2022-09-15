@@ -676,7 +676,7 @@ def get_quantity_group(groupname, magnetism):
         qvals = [4, 12, 13, 14, 5, 15, 16, 17]
         ncol = 4
 
-    if groupname == 'ferraro':
+    if groupname in ['ferraro', 'ferraroinst']:
         ncol = 5
         qvals = np.arange(15)
         # order: flux_r, flux_t, torque_r, torque_t, torque
@@ -686,7 +686,10 @@ def get_quantity_group(groupname, magnetism):
         suffixes = [' (full)', ' (mm)', ' (pp)']
         for j in range(3):
             for k in range(5):
-                titles.append(bases[k] + suffixes[j])
+                if groupname == 'ferraroinst':
+                    titles.append('(inst. shear) ' + bases[k] + suffixes[j])
+                else:
+                    titles.append(bases[k] + suffixes[j])
 
     di_out['qvals'] = np.array(qvals)
     di_out['titles'] = np.array(titles)

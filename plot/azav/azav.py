@@ -62,6 +62,7 @@ for ext in ['mm', 'ms']:
 for ext in ['tot', 'mmm', 'mpp']:
     dataname_list['meprodmean' + ext] = 'me_prod_mean'
 dataname_list['ferraro'] = 'ferraro'
+dataname_list['ferraroinst'] = 'ferraroinst'
 
 if kw.groupname in dataname_list.keys():
     dataname = dataname_list[kw.groupname]
