@@ -78,7 +78,7 @@ lineplot(rr/rsun, profiles, ax, **kw_lineplot)
 # make title 
 iter1, iter2 = get_iters_from_file(kw.the_file)
 time_string = get_time_string(dirname, iter1, iter2) 
-the_title = dirname_stripped + '\n' +  'radial energy flux' + '\n' + time_string
+the_title = dirname_stripped + '\n' +  ' velocity amplitudes' + '\n' + time_string
 ax.set_title(the_title, fontsize=default_titlesize)
 
 # save the figure
