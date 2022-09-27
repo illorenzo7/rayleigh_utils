@@ -1,7 +1,6 @@
 # Created: 05/03/2019
 # Author: Loren Matilsky
 
-import matplotlib as mpl
 import numpy as np
 from scipy.integrate import cumtrapz
 import matplotlib.pyplot as plt
@@ -62,5 +61,5 @@ plt.tight_layout()
     
 axs[0,0].set_title(dirname_stripped, ha='left')
     
-plt.savefig(plotdir + dirname_stripped + '_reference_state.png', dpi=300)
+plt.savefig(plotdir +  'reference_state.png', dpi=300)
 plt.show()

@@ -121,26 +121,26 @@ if not xminmax is None:
 
 # Plot transport coeff and log derivatives one-by-one
 lw = 1.
-axs[0,0].plot(r/rsun, nu, linewidth=lw)
+axs[0,0].plot(r/rsun, nu, 'k-', linewidth=lw)
 #    axs[1,0].yaxis.set_major_formatter(yfmt)
 axs[0,0].ticklabel_format(scilimits = (0,0), useMathText=True, axis='y')
 axs[0,0].set_ylabel(r'$\nu(r)\ $' +  r'$\rm{[cm^2\ s^{-1}]}$')
 if ylog:
     axs[0,0].set_yscale('log')
 
-axs[0,1].plot(r/rsun, dlnu, linewidth=lw)
+axs[0,1].plot(r/rsun, dlnu, 'k-', linewidth=lw)
 #    axs[1,0].yaxis.set_major_formatter(yfmt)
 axs[0,1].ticklabel_format(scilimits = (0,0), useMathText=True, axis='y')
 axs[0,1].set_ylabel(r'$d\ln\nu/dr\ $' +  r'$\rm{[cm^{-1}]}$')
 
-axs[1,0].plot(r/rsun, kappa, linewidth=lw)
+axs[1,0].plot(r/rsun, kappa, 'k-', linewidth=lw)
 #    axs[1,0].yaxis.set_major_formatter(yfmt)
 axs[1,0].ticklabel_format(scilimits = (0,0), useMathText=True, axis='y')
 axs[1,0].set_ylabel(r'$\kappa(r)\ $' +  r'$\rm{[cm^2\ s^{-1}]}$')
 if ylog:
     axs[1,0].set_yscale('log')
 
-axs[1,1].plot(r/rsun, dlnu, linewidth=lw)
+axs[1,1].plot(r/rsun, dlnu, 'k-', linewidth=lw)
 #    axs[1,0].yaxis.set_major_formatter(yfmt)
 axs[1,1].ticklabel_format(scilimits = (0,0), useMathText=True, axis='y')
 axs[1,1].set_ylabel(r'$d\ln\kappa/dr\ $' +  r'$\rm{[cm^{-1}]}$')
@@ -165,14 +165,14 @@ plt.tick_params(top=True, right=True, direction='in', which='both')
 mag_index = 2
 
 if magnetism:
-    axs[mag_index,0].plot(r/rsun, eta, linewidth=lw)
+    axs[mag_index,0].plot(r/rsun, eta, 'k-', linewidth=lw)
     #    axs[1,0].yaxis.set_major_formatter(yfmt)
     axs[mag_index,0].ticklabel_format(scilimits = (0,0), useMathText=True, axis='y')
     axs[mag_index,0].set_ylabel(r'$\eta(r)\ $' +  r'$\rm{[cm^2\ s^{-1}]}$')
     if ylog:
         axs[mag_index,0].set_yscale('log')
 
-    axs[mag_index,1].plot(r/rsun, dlneta, linewidth=lw)
+    axs[mag_index,1].plot(r/rsun, dlneta, 'k-', linewidth=lw)
     #    axs[1,0].yaxis.set_major_formatter(yfmt)
     axs[mag_index,1].ticklabel_format(scilimits = (0,0), useMathText=True, axis='y')
     axs[mag_index,1].set_ylabel(r'$d\ln\eta/dr\ $' +  r'$\rm{[cm^{-1}]}$')
@@ -203,5 +203,5 @@ else:
 axs[0,0].set_xlim(np.min(r)/rsun, np.max(r)/rsun)
 plt.subplots_adjust(wspace=0.3)
     
-plt.savefig(plotdir + dirname_stripped + '_transport.png', dpi=300)
+plt.savefig(plotdir +  'transport.png', dpi=300)
 plt.show()
