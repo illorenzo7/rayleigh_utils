@@ -1001,72 +1001,75 @@ def field_amp(dirname, the_file=None):
     # Return the dictionary 
     return di_out
 
-def length_scales(dirname):
+def length_scales(dirname, the_file=None, the_file_spec=None):
     # Make empty dictionary for length_scale arrays
     di_out = dotdict(dict([]))
 
     # See if run is magnetic
     magnetism = get_parameter(dirname, 'magnetism')
 
-    # First get mixing length scale (the one we know will be there)
+    # First get mixing length scale + grid
     eq = get_eq(dirname)
-    L_rho = -1./eq.dlnrho
+    hrho = -1./eq.dlnrho
     rr = eq.radius
     nr = len(rr)
+
     di_out['rr'] = rr
     di_out['nr'] = nr
-    di_out['L_rho'] = L_rho
+    di_out.hrho = hrho
 
     # Get data directory
     datadir = dirname + '/data/'
 
     # Get field amplitudes
-    di_field_amp = field_amp(dirname)
+    fa = field_amp(dirname, the_file=the_file)
 
-    # Read in the Shell_Avgs data
-    the_file = get_widest_range_file(datadir, 'Shell_Avgs')
-    if not the_file == '':
-        print ('length_scales(): Getting vorticity from ' + the_file)
-        di = get_dict(the_file)
-        di_out['iter1'], di_out['iter2'] = get_iters_from_file(the_file)
-        vals = di['vals']
-        lut = di['lut']
-        try:
-            # Read in enstrophy of convective flows
-            vortsqr = vals[:, 0, lut[317]] 
-            vortsqt = vals[:, 0, lut[318]]
-            vortsqp = vals[:, 0, lut[319]]
-            vortsqh = vortsqt + vortsqp
-            enstr = vortsqr + vortsqt + vortsqp
-            # Read in velocity-squared of convective flows
-            vsq = di_field_amp['vfluc']**2.0
-            # Compute length scale and put it in dictionary
-            L_omr = (vsq/vortsqr)**0.5
-            L_omh = (vsq/vortsqh)**0.5
-            L_om = (vsq/enstr)**0.5
-            di_out['L_omr'] = L_omr
-            di_out['L_omh'] = L_omh
-            di_out['L_om'] = L_om
-        except:
-            print ("length_scales(): one or more quantities needed for enstrophy")
-            print("were not output for Shell_Avgs data")
-            print("failed to compute L_om")
+    # Compute lengthscales (from flows) and put them in dictionary
 
-        if magnetism:
-            print ('Getting del x B currents from ' + the_file)
-            try:
-                # Read in current of convective fields
-                del_crossB2 = vals[:, 0, lut[1015]] + vals[:, 0, lut[1018]] + vals[:, 0, lut[1021]]
-                # Read in B-squared of convective flows
-                B2 = di_field_amp['bfluc']**2.0
-                # Compute length scale and put it in dictionary
-                L_J = (B2/del_crossB2)**0.5
-                di_out['L_J'] = L_J
-            except:
-                print ("one or more quantities needed for current or")
-                print("were not output for Shell_Avgs data")
-                print("failed to compute L_J, assigning it L_om ")
-                di_out['L_J'] = L_om
+    # full flows
+    di_out.v = fa.v/fa.om
+    di_out.vhor = fa.vhor/fa.omr
+    di_out.vpol = fa.vpol/fa.omp
+    # NOTE: the following will only be accurate if v_phi is the strongest component of v
+    di_out.vp = fa.vp/fa.ompol
+
+    # mean flows
+    di_out.vmean = fa.vmean/fa.ommean
+    di_out.vhormean = fa.vhormean/fa.omrmean
+    di_out.vpolmean = fa.vpolmean/fa.ompmean
+    # NOTE: the following will only be accurate if v_phi is the strongest component of v
+    di_out.vpmean = fa.vpmean/fa.ompolmean
+
+    # fluc flows
+    di_out.vfluc = fa.vfluc/fa.omfluc
+    di_out.vhorfluc = fa.vhorfluc/fa.omrfluc
+    di_out.vpolfluc = fa.vpolfluc/fa.ompfluc
+    # NOTE: the following will only be accurate if v_phi is the strongest component of v
+    di_out.vpfluc = fa.vpfluc/fa.ompolfluc
+
+    # Compute lengthscales (from fields) and put them in dictionary
+    if magnetism:
+        # full fields
+        di_out.b = fa.b/fa.j
+        di_out.bhor = fa.bhor/fa.jr
+        di_out.bpol = fa.bpol/fa.jp
+        # NOTE: the following will only be accurate if b_phi is the strongest component of b
+        di_out.bp = fa.bp/fa.jpol
+
+        # mean fields
+        di_out.bmean = fa.bmean/fa.jmean
+        di_out.bhormean = fa.bhormean/fa.jrmean
+        di_out.bpolmean = fa.bpolmean/fa.jpmean
+        # NOTE: the following will only be accurate if b_phi is the strongest component of b
+        di_out.bpmean = fa.bpmean/fa.jpolmean
+
+        # fluc fields
+        di_out.bfluc = fa.bfluc/fa.jfluc
+        di_out.bhorfluc = fa.bhorfluc/fa.jrfluc
+        di_out.bpolfluc = fa.bpolfluc/fa.jpfluc
+        # NOTE: the following will only be accurate if b_phi is the strongest component of b
+        di_out.bpfluc = fa.bpfluc/fa.jpolfluc
+
 
     # Read in the Shell_Spectra data
     the_file = get_widest_range_file(datadir, 'Shell_Spectra')
