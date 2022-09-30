@@ -777,7 +777,7 @@ def get_domain_bounds(dirname):
         ncheby = get_parameter(dirname, 'ncheby')
     return ncheby, domain_bounds
 
-def field_amp(dirname):
+def field_amp(dirname, the_file=None):
     # Make empty dictionary for field-amplitude arrays
     di_out = dotdict(dict([]))
 
@@ -795,101 +795,171 @@ def field_amp(dirname):
     # Get data directory
     datadir = dirname + '/data/'
 
-    # Read in the Shell_Avgs data
-    the_file = get_widest_range_file(datadir, 'Shell_Avgs')
-    if not the_file == '':
-        print ('field_amp(): Getting velocity (maybe B field) amps from '\
-                + the_file)
+    # Try to read in the Shell_Avgs data
+    try:
+        if the_file is None: # default
+            the_file = get_widest_range_file(datadir, 'Shell_Avgs')
+        print ('field_amp(): reading ' + the_file)
         di = get_dict(the_file)
-        di_out['iter1'], di_out['iter2'] = get_iters_from_file(datadir +\
-                the_file)
+        di_out['iter1'], di_out['iter2'] = get_iters_from_file(the_file)
         vals = di['vals']
         lut = di['lut']
-        try:
-            # Read in velocity-squared of flows
-            # get this from kinetic energy
-            vsqr = 2.0*vals[:, 0, lut[402]]/eq.rho
-            vsqt = 2.0*vals[:, 0, lut[403]]/eq.rho
-            vsqp = 2.0*vals[:, 0, lut[404]]/eq.rho
 
-            vsqr_fluc = 2.0*vals[:, 0, lut[410]]/eq.rho
-            vsqt_fluc = 2.0*vals[:, 0, lut[411]]/eq.rho
-            vsqp_fluc = 2.0*vals[:, 0, lut[412]]/eq.rho
+        # Read in velocity-squared of flows
+        # get this from kinetic energy
+        vsqr = 2.0*vals[:, 0, lut[402]]/eq.rho
+        vsqt = 2.0*vals[:, 0, lut[403]]/eq.rho
+        vsqp = 2.0*vals[:, 0, lut[404]]/eq.rho
 
-            vsqr_mean = np.abs(vsqr - vsqr_fluc)
-            vsqt_mean = np.abs(vsqt - vsqt_fluc)
-            vsqp_mean = np.abs(vsqp - vsqp_fluc)
+        vsqr_fluc = 2.0*vals[:, 0, lut[410]]/eq.rho
+        vsqt_fluc = 2.0*vals[:, 0, lut[411]]/eq.rho
+        vsqp_fluc = 2.0*vals[:, 0, lut[412]]/eq.rho
 
-            di_out['vamp_r'] = np.sqrt(vsqr)
-            di_out['vamp_t'] = np.sqrt(vsqt)
-            di_out['vamp_p'] = np.sqrt(vsqp)
-            di_out['vamp_pol'] = np.sqrt(vsqr + vsqt)
-            di_out['vamp_hor'] = np.sqrt(vsqt + vsqp)
-            di_out['vamp'] = np.sqrt(vsqr + vsqt + vsqp)
+        # inherently positive, but avoid slightly negative
+        # (machine error) when 0
+        vsqr_mean = np.abs(vsqr - vsqr_fluc)
+        vsqt_mean = np.abs(vsqt - vsqt_fluc)
+        vsqp_mean = np.abs(vsqp - vsqp_fluc)
 
-            di_out['vamp_r_fluc'] = np.sqrt(vsqr_fluc)
-            di_out['vamp_t_fluc'] = np.sqrt(vsqt_fluc)
-            di_out['vamp_p_fluc'] = np.sqrt(vsqp_fluc)
-            di_out['vamp_pol_fluc'] = np.sqrt(vsqr_fluc + vsqt_fluc)
-            di_out['vamp_hor_fluc'] = np.sqrt(vsqt_fluc + vsqp_fluc)
-            di_out['vamp_fluc'] = np.sqrt(vsqr_fluc + vsqt_fluc + vsqp_fluc)
+        # get the velocity amplitudes
+        di_out['vr'] = np.sqrt(vsqr)
+        di_out['vt'] = np.sqrt(vsqt)
+        di_out['vp'] = np.sqrt(vsqp)
+        di_out['vpol'] = np.sqrt(vsqr + vsqt)
+        di_out['vhor'] = np.sqrt(vsqt + vsqp)
+        di_out['v'] = np.sqrt(vsqr + vsqt + vsqp)
 
-            di_out['vamp_r_mean'] = np.sqrt(vsqr_mean)
-            di_out['vamp_t_mean'] = np.sqrt(vsqt_mean)
-            di_out['vamp_p_mean'] = np.sqrt(vsqp_mean)
-            di_out['vamp_pol_mean'] = np.sqrt(vsqr_mean + vsqt_mean)
-            di_out['vamp_hor_mean'] = np.sqrt(vsqt_mean + vsqp_mean)
-            di_out['vamp_mean'] = np.sqrt(vsqr_mean + vsqt_mean + vsqp_mean)
+        di_out['vrfluc'] = np.sqrt(vsqr_fluc)
+        di_out['vtfluc'] = np.sqrt(vsqt_fluc)
+        di_out['vpfluc'] = np.sqrt(vsqp_fluc)
+        di_out['vpolfluc'] = np.sqrt(vsqr_fluc + vsqt_fluc)
+        di_out['vhorfluc'] = np.sqrt(vsqt_fluc + vsqp_fluc)
+        di_out['vfluc'] = np.sqrt(vsqr_fluc + vsqt_fluc + vsqp_fluc)
+
+        di_out['vrmean'] = np.sqrt(vsqr_mean)
+        di_out['vtmean'] = np.sqrt(vsqt_mean)
+        di_out['vpmean'] = np.sqrt(vsqp_mean)
+        di_out['vpolmean'] = np.sqrt(vsqr_mean + vsqt_mean)
+        di_out['vhormean'] = np.sqrt(vsqt_mean + vsqp_mean)
+        di_out['vmean'] = np.sqrt(vsqr_mean + vsqt_mean + vsqp_mean)
+
+        # Read in enstrophy of convective flows
+        omsqr = vals[:, 0, lut[314]] 
+        omsqt = vals[:, 0, lut[315]]
+        omsqp = vals[:, 0, lut[316]]
+
+        omsqr_fluc = vals[:, 0, lut[317]] 
+        omsqt_fluc = vals[:, 0, lut[318]]
+        omsqp_fluc = vals[:, 0, lut[319]]
+
+        # inherently positive, but avoid slightly negative
+        # (machine error) when 0
+        omsqr_mean = np.abs(omsqr - omsqr_fluc)
+        omsqt_mean = np.abs(omsqt - omsqt_fluc)
+        omsqp_mean = np.abs(omsqp - omsqp_fluc)
+
+        # get the vorticity amplitudes
+        di_out['omr'] = np.sqrt(omsqr)
+        di_out['omt'] = np.sqrt(omsqt)
+        di_out['omp'] = np.sqrt(omsqp)
+        di_out['ompol'] = np.sqrt(omsqr + omsqt)
+        di_out['omhor'] = np.sqrt(omsqt + omsqp)
+        di_out['om'] = np.sqrt(omsqr + omsqt + omsqp)
+
+        di_out['omrfluc'] = np.sqrt(omsqr_fluc)
+        di_out['omtfluc'] = np.sqrt(omsqt_fluc)
+        di_out['ompfluc'] = np.sqrt(omsqp_fluc)
+        di_out['ompolfluc'] = np.sqrt(omsqr_fluc + omsqt_fluc)
+        di_out['omhorfluc'] = np.sqrt(omsqt_fluc + omsqp_fluc)
+        di_out['omfluc'] = np.sqrt(omsqr_fluc + omsqt_fluc + omsqp_fluc)
+
+        di_out['omrmean'] = np.sqrt(omsqr_mean)
+        di_out['omtmean'] = np.sqrt(omsqt_mean)
+        di_out['ompmean'] = np.sqrt(omsqp_mean)
+        di_out['ompolmean'] = np.sqrt(omsqr_mean + omsqt_mean)
+        di_out['omhormean'] = np.sqrt(omsqt_mean + omsqp_mean)
+        di_out['ommean'] = np.sqrt(omsqr_mean + omsqt_mean + omsqp_mean)
+
+        if magnetism:
+            # Read in squared B-fields
+            # get this from magnetic energy
+            eightpi = 8.*np.pi
+            bsqr = eightpi*vals[:, 0, lut[1102]]
+            bsqt = eightpi*vals[:, 0, lut[1103]]
+            bsqp = eightpi*vals[:, 0, lut[1104]]
+
+            bsqr_fluc = eightpi*vals[:, 0, lut[1110]]
+            bsqt_fluc = eightpi*vals[:, 0, lut[1111]]
+            bsqp_fluc = eightpi*vals[:, 0, lut[1112]]
+
+            # inherently positive, but avoid slightly negative
+            # (machine error) when 0
+            bsqr_mean = np.abs(bsqr - bsqr_fluc)
+            bsqt_mean = np.abs(bsqt - bsqt_fluc)
+            bsqp_mean = np.abs(bsqp - bsqp_fluc)
+
+            di_out['br'] = np.sqrt(bsqr)
+            di_out['bt'] = np.sqrt(bsqt)
+            di_out['bp'] = np.sqrt(bsqp)
+            di_out['bpol'] = np.sqrt(bsqr + bsqt)
+            di_out['bhor'] = np.sqrt(bsqt + bsqp)
+            di_out['bamp'] = np.sqrt(bsqr + bsqt + bsqp)
+
+            di_out['brfluc'] = np.sqrt(bsqr_fluc)
+            di_out['btfluc'] = np.sqrt(bsqt_fluc)
+            di_out['bpfluc'] = np.sqrt(bsqp_fluc)
+            di_out['bpolfluc'] = np.sqrt(bsqr_fluc + bsqt_fluc)
+            di_out['bhorfluc'] = np.sqrt(bsqt_fluc + bsqp_fluc)
+            di_out['bfluc'] = np.sqrt(bsqr_fluc + bsqt_fluc + bsqp_fluc)
+
+            di_out['brmean'] = np.sqrt(bsqr_mean)
+            di_out['btmean'] = np.sqrt(bsqt_mean)
+            di_out['bpmean'] = np.sqrt(bsqp_mean)
+            di_out['bpolmean'] = np.sqrt(bsqr_mean + bsqt_mean)
+            di_out['bhormean'] = np.sqrt(bsqt_mean + bsqp_mean)
+            di_out['bmean'] = np.sqrt(bsqr_mean + bsqt_mean + bsqp_mean)
+
+            # Read in squared current densities
+            jsqr = vals[:, 0, lut[1014]]
+            jsqt = vals[:, 0, lut[1017]]
+            jsqp = vals[:, 0, lut[1020]]
+
+            jsqr_fluc = vals[:, 0, lut[1015]]
+            jsqt_fluc = vals[:, 0, lut[1018]]
+            jsqp_fluc = vals[:, 0, lut[1021]]
+
+            # inherently positive, but avoid slightly negative
+            # (machine error) when 0
+            jsqr_mean = np.abs(jsqr - bsqr_fluc)
+            bsqt_mean = np.abs(bsqt - bsqt_fluc)
+            bsqp_mean = np.abs(bsqp - bsqp_fluc)
+
+            di_out['br'] = np.sqrt(bsqr)
+            di_out['bt'] = np.sqrt(bsqt)
+            di_out['bp'] = np.sqrt(bsqp)
+            di_out['bpol'] = np.sqrt(bsqr + bsqt)
+            di_out['bhor'] = np.sqrt(bsqt + bsqp)
+            di_out['bamp'] = np.sqrt(bsqr + bsqt + bsqp)
+
+            di_out['brfluc'] = np.sqrt(bsqr_fluc)
+            di_out['btfluc'] = np.sqrt(bsqt_fluc)
+            di_out['bpfluc'] = np.sqrt(bsqp_fluc)
+            di_out['bpolfluc'] = np.sqrt(bsqr_fluc + bsqt_fluc)
+            di_out['bhorfluc'] = np.sqrt(bsqt_fluc + bsqp_fluc)
+            di_out['bfluc'] = np.sqrt(bsqr_fluc + bsqt_fluc + bsqp_fluc)
+
+            di_out['brmean'] = np.sqrt(bsqr_mean)
+            di_out['btmean'] = np.sqrt(bsqt_mean)
+            di_out['bpmean'] = np.sqrt(bsqp_mean)
+            di_out['bpolmean'] = np.sqrt(bsqr_mean + bsqt_mean)
+            di_out['bhormean'] = np.sqrt(bsqt_mean + bsqp_mean)
+            di_out['bmean'] = np.sqrt(bsqr_mean + bsqt_mean + bsqp_mean)
 
         except:
             print ("field_amplitudes(): one or more quantities needed for")
             print("velocity-squared were not output for Shell_Avgs data")
             print("failed to compute the velocity amplitudes (vamps)")
 
-        if magnetism:
-            try:
-                # Read in B-squared fields
-                # get this from magnetic energy
-                eightpi = 8.*np.pi
-                bsqr = eightpi*vals[:, 0, lut[1102]]
-                bsqt = eightpi*vals[:, 0, lut[1103]]
-                bsqp = eightpi*vals[:, 0, lut[1104]]
-
-                bsqr_fluc = eightpi*vals[:, 0, lut[1110]]
-                bsqt_fluc = eightpi*vals[:, 0, lut[1111]]
-                bsqp_fluc = eightpi*vals[:, 0, lut[1112]]
-
-                # inherently positive, but avoid slightly negative
-                # (machine error) when 0
-                bsqr_mean = np.abs(bsqr - bsqr_fluc)
-                bsqt_mean = np.abs(bsqt - bsqt_fluc)
-                bsqp_mean = np.abs(bsqp - bsqp_fluc)
-
-                di_out['bamp_r'] = np.sqrt(bsqr)
-                di_out['bamp_t'] = np.sqrt(bsqt)
-                di_out['bamp_p'] = np.sqrt(bsqp)
-                di_out['bamp_pol'] = np.sqrt(bsqr + bsqt)
-                di_out['bamp_hor'] = np.sqrt(bsqt + bsqp)
-                di_out['bamp'] = np.sqrt(bsqr + bsqt + bsqp)
-
-                di_out['bamp_r_fluc'] = np.sqrt(bsqr_fluc)
-                di_out['bamp_t_fluc'] = np.sqrt(bsqt_fluc)
-                di_out['bamp_p_fluc'] = np.sqrt(bsqp_fluc)
-                di_out['bamp_pol_fluc'] = np.sqrt(bsqr_fluc + bsqt_fluc)
-                di_out['bamp_hor_fluc'] = np.sqrt(bsqt_fluc + bsqp_fluc)
-                di_out['bamp_fluc'] = np.sqrt(bsqr_fluc + bsqt_fluc + bsqp_fluc)
-
-                di_out['bamp_r_mean'] = np.sqrt(bsqr_mean)
-                di_out['bamp_t_mean'] = np.sqrt(bsqt_mean)
-                di_out['bamp_p_mean'] = np.sqrt(bsqp_mean)
-                di_out['bamp_pol_mean'] = np.sqrt(bsqr_mean + bsqt_mean)
-                di_out['bamp_hor_mean'] = np.sqrt(bsqt_mean + bsqp_mean)
-                di_out['bamp_mean'] = np.sqrt(bsqr_mean + bsqt_mean + bsqp_mean)
-
-            except:
-                print ("field_amplitudes(): one or more quantities needed for")
-                print("B-squared (ME) were not output for Shell_Avgs data")
-                print("failed to compute the B-field amplitudes (bamps)")
 
     # For consistency also compute the shell depth
     di_out['shell_depth'] = np.max(rr) - np.min(rr)
@@ -935,7 +1005,7 @@ def length_scales(dirname):
             vortsqh = vortsqt + vortsqp
             enstr = vortsqr + vortsqt + vortsqp
             # Read in velocity-squared of convective flows
-            vsq = di_field_amp['vamp_fluc']**2.0
+            vsq = di_field_amp['vfluc']**2.0
             # Compute length scale and put it in dictionary
             L_omr = (vsq/vortsqr)**0.5
             L_omh = (vsq/vortsqh)**0.5
@@ -954,7 +1024,7 @@ def length_scales(dirname):
                 # Read in current of convective fields
                 del_crossB2 = vals[:, 0, lut[1015]] + vals[:, 0, lut[1018]] + vals[:, 0, lut[1021]]
                 # Read in B-squared of convective flows
-                B2 = di_field_amp['bamp_fluc']**2.0
+                B2 = di_field_amp['bfluc']**2.0
                 # Compute length scale and put it in dictionary
                 L_J = (B2/del_crossB2)**0.5
                 di_out['L_J'] = L_J
@@ -1147,17 +1217,17 @@ def nonD_numbers(dirname, rbcz=None):
     hrho = di_len['L_rho']
 
     di_out['Re'] = di_amp['vamp']*shell_depth/eq.nu
-    di_out['Re_fluc'] = di_amp['vamp_fluc']*shell_depth/eq.nu
-    di_out['Re_mean'] = di_amp['vamp_mean']*shell_depth/eq.nu
+    di_out['Re_fluc'] = di_amp['vfluc']*shell_depth/eq.nu
+    di_out['Re_mean'] = di_amp['vmean']*shell_depth/eq.nu
 
     di_out['Rehrho'] = di_amp['vamp']*hrho/eq.nu
-    di_out['Rehrho_fluc'] = di_amp['vamp_fluc']*hrho/eq.nu
-    di_out['Rehrho_mean'] = di_amp['vamp_fluc']*hrho/eq.nu
+    di_out['Rehrho_fluc'] = di_amp['vfluc']*hrho/eq.nu
+    di_out['Rehrho_mean'] = di_amp['vfluc']*hrho/eq.nu
 
     L_om = di_len['L_om']
     di_out['Revort'] = di_amp['vamp']*L_om/eq.nu
-    di_out['Revort_fluc'] = di_amp['vamp_fluc']*L_om/eq.nu
-    di_out['Revort_mean'] = di_amp['vamp_mean']*L_om/eq.nu
+    di_out['Revort_fluc'] = di_amp['vfluc']*L_om/eq.nu
+    di_out['Revort_mean'] = di_amp['vmean']*L_om/eq.nu
 
     # Read in the Shell_Spectra data
     datadir = dirname + '/data/'
@@ -1172,39 +1242,39 @@ def nonD_numbers(dirname, rbcz=None):
         rr_spec = di_len['rr_spec']
         L_v = di_len['L_v']
         di_out['Respec'] = (di_amp['vamp']/eq.nu)[ir_spec]*L_v
-        di_out['Respec_fluc'] = (di_amp['vamp_fluc']/eq.nu)[ir_spec]*L_v
-        di_out['Respec_mean'] = (di_amp['vamp_mean']/eq.nu)[ir_spec]*L_v
+        di_out['Respec_fluc'] = (di_amp['vfluc']/eq.nu)[ir_spec]*L_v
+        di_out['Respec_mean'] = (di_amp['vmean']/eq.nu)[ir_spec]*L_v
 
     if magnetism: # magnetic Reynolds numbers Rm
         L_J = di_len['L_J']
         di_out['Rm'] = di_amp['vamp']*L_J/eq.eta
-        di_out['Rm_fluc'] = di_amp['vamp_fluc']*L_J/eq.eta
-        di_out['Rm_mean'] = di_amp['vamp_mean']*L_J/eq.eta
+        di_out['Rm_fluc'] = di_amp['vfluc']*L_J/eq.eta
+        di_out['Rm_mean'] = di_amp['vmean']*L_J/eq.eta
 
         if have_spec:
             L_B = di_len['L_B']
             di_out['Rmspec'] = (di_amp['vamp']/eq.eta)[ir_spec]*L_B
-            di_out['Rmspec_fluc'] = (di_amp['vamp_fluc']/eq.eta)[ir_spec]*L_B
-            di_out['Rmspec_mean'] = (di_amp['vamp_mean']/eq.eta)[ir_spec]*L_B
+            di_out['Rmspec_fluc'] = (di_amp['vfluc']/eq.eta)[ir_spec]*L_B
+            di_out['Rmspec_mean'] = (di_amp['vmean']/eq.eta)[ir_spec]*L_B
 
     if rotation: # Rossby numbers
         Om0 = 2*np.pi/compute_Prot(dirname)
         di_out['Ro'] = di_amp['vamp']/(2.0*Om0*shell_depth)
-        di_out['Ro_fluc'] = di_amp['vamp_fluc']/(2.0*Om0*shell_depth)
-        di_out['Ro_mean'] = di_amp['vamp_mean']/(2.0*Om0*shell_depth)
+        di_out['Ro_fluc'] = di_amp['vfluc']/(2.0*Om0*shell_depth)
+        di_out['Ro_mean'] = di_amp['vmean']/(2.0*Om0*shell_depth)
 
         di_out['Rohrho'] = di_amp['vamp']/(2.0*Om0*hrho)
-        di_out['Rohrho_fluc'] = di_amp['vamp_fluc']/(2.0*Om0*hrho)
-        di_out['Rohrho_mean'] = di_amp['vamp_mean']/(2.0*Om0*hrho)
+        di_out['Rohrho_fluc'] = di_amp['vfluc']/(2.0*Om0*hrho)
+        di_out['Rohrho_mean'] = di_amp['vmean']/(2.0*Om0*hrho)
 
         di_out['Rovort'] = di_amp['vamp']/(2.0*Om0*L_om)
-        di_out['Rovort_fluc'] = di_amp['vamp_fluc']/(2.0*Om0*L_om)
-        di_out['Rovort_mean'] = di_amp['vamp_mean']/(2.0*Om0*L_om)
+        di_out['Rovort_fluc'] = di_amp['vfluc']/(2.0*Om0*L_om)
+        di_out['Rovort_mean'] = di_amp['vmean']/(2.0*Om0*L_om)
 
         if have_spec:
             di_out['Rospec'] = (di_amp['vamp']/eq.eta)[ir_spec]/(2.0*Om0*L_v)
-            di_out['Rospec_fluc'] = (di_amp['vamp_fluc']/eq.eta)[ir_spec]/(2.0*Om0*L_v)
-            di_out['Rospec_mean'] = (di_amp['vamp_mean']/eq.eta)[ir_spec]/(2.0*Om0*L_v)
+            di_out['Rospec_fluc'] = (di_amp['vfluc']/eq.eta)[ir_spec]/(2.0*Om0*L_v)
+            di_out['Rospec_mean'] = (di_amp['vmean']/eq.eta)[ir_spec]/(2.0*Om0*L_v)
 
     # now compute the global average of all numbers
     gi = GridInfo(dirname + '/grid_info', '')
