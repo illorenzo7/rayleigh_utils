@@ -779,7 +779,7 @@ def get_domain_bounds(dirname):
 
 def field_amp(dirname):
     # Make empty dictionary for field-amplitude arrays
-    di_out = dict([])
+    di_out = dotdict(dict([]))
 
     # See if run is magnetic
     magnetism = get_parameter(dirname, 'magnetism')
@@ -816,9 +816,9 @@ def field_amp(dirname):
             vsqt_fluc = 2.0*vals[:, 0, lut[411]]/eq.rho
             vsqp_fluc = 2.0*vals[:, 0, lut[412]]/eq.rho
 
-            vsqr_mean = vsqr - vsqr_fluc
-            vsqt_mean = vsqt - vsqt_fluc
-            vsqp_mean = vsqp - vsqp_fluc
+            vsqr_mean = np.abs(vsqr - vsqr_fluc)
+            vsqt_mean = np.abs(vsqt - vsqt_fluc)
+            vsqp_mean = np.abs(vsqp - vsqp_fluc)
 
             di_out['vamp_r'] = np.sqrt(vsqr)
             di_out['vamp_t'] = np.sqrt(vsqt)
@@ -859,9 +859,11 @@ def field_amp(dirname):
                 bsqt_fluc = eightpi*vals[:, 0, lut[1111]]
                 bsqp_fluc = eightpi*vals[:, 0, lut[1112]]
 
-                bsqr_mean = bsqr - bsqr_fluc
-                bsqt_mean = bsqt - bsqt_fluc
-                bsqp_mean = bsqp - bsqp_fluc
+                # inherently positive, but avoid slightly negative
+                # (machine error) when 0
+                bsqr_mean = np.abs(bsqr - bsqr_fluc)
+                bsqt_mean = np.abs(bsqt - bsqt_fluc)
+                bsqp_mean = np.abs(bsqp - bsqp_fluc)
 
                 di_out['bamp_r'] = np.sqrt(bsqr)
                 di_out['bamp_t'] = np.sqrt(bsqt)
