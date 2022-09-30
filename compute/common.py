@@ -880,6 +880,45 @@ def field_amp(dirname, the_file=None):
         di_out['omhormean'] = np.sqrt(omsqt_mean + omsqp_mean)
         di_out['ommean'] = np.sqrt(omsqr_mean + omsqt_mean + omsqp_mean)
 
+        # get some thermo amplitudes
+
+        # full spherical moments
+        ssq = vals[:, 1, lut[501]]
+        dsdrsq = vals[:, 1, lut[507]]
+        psq = vals[:, 1, lut[502]]
+        dpdrsq = vals[:, 1, lut[508]]
+
+        # spherical means (square them)
+        ssq_sphmean = vals[:, 0, lut[501]]**2
+        psq_sphmean = vals[:, 0, lut[502]]**2
+        dsdrsq_sphmean = vals[:, 0, lut[507]]**2
+        dpdrsq_sphmean = vals[:, 0, lut[508]]**2
+
+        # spherical fluctuations
+        # inherently positive, but avoid slightly negative
+        # (machine error) when 0
+        ssq_sphfluc = np.abs(ssq - ssq_sphmean)
+        dsdrsq_sphfluc = np.abs(dsdrsq - dsdrsq_sphmean)
+        psq_sphfluc = np.abs(psq - psq_sphmean)
+        dpdrsq_sphfluc = np.abs(dpdrsq - dpdrsq_sphmean)
+
+        # add thermo amplitudes to dictionary        
+        di_out['s'] = np.sqrt(ssq)
+        di_out['ssphfluc'] = np.sqrt(ssq_sphfluc)
+        di_out['ssphmean'] = np.sqrt(ssq_sphmean)
+
+        di_out['p'] = np.sqrt(psq)
+        di_out['psphfluc'] = np.sqrt(psq_sphfluc)
+        di_out['psphmean'] = np.sqrt(psq_sphmean)
+        
+        di_out['dsdr'] = np.sqrt(dsdrsq)
+        di_out['dsdrsphfluc'] = np.sqrt(dsdrsq_sphfluc)
+        di_out['dsdrsphmean'] = np.sqrt(dsdrsq_sphmean)
+
+        di_out['dpdr'] = np.sqrt(dpdrsq)
+        di_out['dpdrsphfluc'] = np.sqrt(dpdrsq_sphfluc)
+        di_out['dpdrsphmean'] = np.sqrt(dpdrsq_sphmean)
+
         if magnetism:
             # Read in squared B-fields
             # get this from magnetic energy
@@ -903,7 +942,7 @@ def field_amp(dirname, the_file=None):
             di_out['bp'] = np.sqrt(bsqp)
             di_out['bpol'] = np.sqrt(bsqr + bsqt)
             di_out['bhor'] = np.sqrt(bsqt + bsqp)
-            di_out['bamp'] = np.sqrt(bsqr + bsqt + bsqp)
+            di_out['b'] = np.sqrt(bsqr + bsqt + bsqp)
 
             di_out['brfluc'] = np.sqrt(bsqr_fluc)
             di_out['btfluc'] = np.sqrt(bsqt_fluc)
@@ -930,39 +969,34 @@ def field_amp(dirname, the_file=None):
 
             # inherently positive, but avoid slightly negative
             # (machine error) when 0
-            jsqr_mean = np.abs(jsqr - bsqr_fluc)
-            bsqt_mean = np.abs(bsqt - bsqt_fluc)
-            bsqp_mean = np.abs(bsqp - bsqp_fluc)
+            jsqr_mean = np.abs(jsqr - jsqr_fluc)
+            jsqt_mean = np.abs(jsqt - jsqt_fluc)
+            jsqp_mean = np.abs(jsqp - jsqp_fluc)
 
-            di_out['br'] = np.sqrt(bsqr)
-            di_out['bt'] = np.sqrt(bsqt)
-            di_out['bp'] = np.sqrt(bsqp)
-            di_out['bpol'] = np.sqrt(bsqr + bsqt)
-            di_out['bhor'] = np.sqrt(bsqt + bsqp)
-            di_out['bamp'] = np.sqrt(bsqr + bsqt + bsqp)
+            di_out['jr'] = np.sqrt(jsqr)
+            di_out['jt'] = np.sqrt(jsqt)
+            di_out['jp'] = np.sqrt(jsqp)
+            di_out['jpol'] = np.sqrt(jsqr + jsqt)
+            di_out['jhor'] = np.sqrt(jsqt + jsqp)
+            di_out['jamp'] = np.sqrt(jsqr + jsqt + jsqp)
 
-            di_out['brfluc'] = np.sqrt(bsqr_fluc)
-            di_out['btfluc'] = np.sqrt(bsqt_fluc)
-            di_out['bpfluc'] = np.sqrt(bsqp_fluc)
-            di_out['bpolfluc'] = np.sqrt(bsqr_fluc + bsqt_fluc)
-            di_out['bhorfluc'] = np.sqrt(bsqt_fluc + bsqp_fluc)
-            di_out['bfluc'] = np.sqrt(bsqr_fluc + bsqt_fluc + bsqp_fluc)
+            di_out['jrfluc'] = np.sqrt(jsqr_fluc)
+            di_out['jtfluc'] = np.sqrt(jsqt_fluc)
+            di_out['jpfluc'] = np.sqrt(jsqp_fluc)
+            di_out['jpolfluc'] = np.sqrt(jsqr_fluc + jsqt_fluc)
+            di_out['jhorfluc'] = np.sqrt(jsqt_fluc + jsqp_fluc)
+            di_out['jfluc'] = np.sqrt(jsqr_fluc + jsqt_fluc + jsqp_fluc)
 
-            di_out['brmean'] = np.sqrt(bsqr_mean)
-            di_out['btmean'] = np.sqrt(bsqt_mean)
-            di_out['bpmean'] = np.sqrt(bsqp_mean)
-            di_out['bpolmean'] = np.sqrt(bsqr_mean + bsqt_mean)
-            di_out['bhormean'] = np.sqrt(bsqt_mean + bsqp_mean)
-            di_out['bmean'] = np.sqrt(bsqr_mean + bsqt_mean + bsqp_mean)
+            di_out['jrmean'] = np.sqrt(jsqr_mean)
+            di_out['jtmean'] = np.sqrt(jsqt_mean)
+            di_out['jpmean'] = np.sqrt(jsqp_mean)
+            di_out['jpolmean'] = np.sqrt(jsqr_mean + jsqt_mean)
+            di_out['jhormean'] = np.sqrt(jsqt_mean + jsqp_mean)
+            di_out['jmean'] = np.sqrt(jsqr_mean + jsqt_mean + jsqp_mean)
 
-        except:
-            print ("field_amplitudes(): one or more quantities needed for")
-            print("velocity-squared were not output for Shell_Avgs data")
-            print("failed to compute the velocity amplitudes (vamps)")
-
-
-    # For consistency also compute the shell depth
-    di_out['shell_depth'] = np.max(rr) - np.min(rr)
+    except:
+        print ("field_amplitudes(): need to compute Shell_Avgs time avg")
+        print ("returning empty dictionary")
 
     # Return the dictionary 
     return di_out
