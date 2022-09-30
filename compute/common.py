@@ -899,7 +899,7 @@ def field_amp(dirname):
 
 def length_scales(dirname):
     # Make empty dictionary for length_scale arrays
-    di_out = dict([])
+    di_out = dotdict(dict([]))
 
     # See if run is magnetic
     magnetism = get_parameter(dirname, 'magnetism')
