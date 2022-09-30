@@ -508,6 +508,12 @@ def get_lum(dirname):
         print("or 'main_input' files. Setting luminosity to lsun.")
     return lstar
 
+class dotdict(dict):
+    """dot.notation access to dictionary attributes"""
+    __getattr__ = dict.get
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__
+
 class eq_human_readable:
     """Rayleigh Universal Equation Coefficients Structure
     ----------------------------------
@@ -1055,7 +1061,7 @@ def get_grid_info(dirname):
     di_out['rw_3d'] = di_out['rw'].reshape((1, 1, di_out['nr']))
     di_out['xx_3d'] = di_out['rr_3d']*di_out['sint_3d']
     di_out['zz_3d'] = di_out['rr_3d']*di_out['cost_3d']
-    return di_out
+    return dotdict(di_out)
 
 def integrate_in_r(arr, dirname):
     # routine to integrate in radius (over each domain separately)
@@ -1324,12 +1330,6 @@ def arr_to_str(a, fmt):
     for ele in a:
         st += (fmt + ' ') %ele
     return '[' + st[:-1] + ']'
-
-class dotdict(dict):
-    """dot.notation access to dictionary attributes"""
-    __getattr__ = dict.get
-    __setattr__ = dict.__setitem__
-    __delattr__ = dict.__delitem__
 
 def update_dict(dict_orig, dict_update):
     dict_out = {**dict_orig} # start with original dict
