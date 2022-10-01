@@ -514,55 +514,6 @@ class dotdict(dict):
     __setattr__ = dict.__setitem__
     __delattr__ = dict.__delitem__
 
-class eq_human_readable:
-    """Rayleigh Universal Equation Coefficients Structure
-    ----------------------------------
-    self.nr          : number of radial points
-    self.radius      : radial coordinates
-    self.density     : density
-    self.rho         : density
-    self.dlnrho      : logarithmic derivative of density
-    self.d2lnrho     : d_by_dr of dlnrho
-    self.temperature : temperature
-    self.T           : temperature
-    self.dlnT        : logarithmic derivative of temperature
-    self.pressure    : pressure (rho*R*T)
-    self.P           : pressure (rho*R*T)
-    self.dsdr        : radial entropy gradient
-    self.gravity     : gravity 
-    self.heating     : volumetric heating (Q) 
-    self.nu          : momentum diffusivity (kinematic viscosity)
-    self.dlnu        : logarithmic derivative of the viscosity
-    self.kappa       : temperature diffusivity (thermometric conductivity)
-    self.dlkappa     : logarithmic derivative of the temp. diffusivity
-    self.eta :       : magnetic diffusivity 
-    self.dlneta      : logarithmic derivative of magnetic diffusivity
-    self.lum         : (scalar) stellar luminosity
-    """
-    def __init__(self, nr):
-        self.nr = nr
-        self.density = np.zeros(nr)
-        self.rho = np.zeros(nr) # same as density
-        self.dlnrho = np.zeros(nr)
-        self.d2lnrho = np.zeros(nr)
-        self.temperature = np.zeros(nr)
-        self.T = np.zeros(nr) # same as temperature
-        self.dlnT = np.zeros(nr)
-        self.pressure = np.zeros(nr)
-        self.P = np.zeros(nr)
-        self.gravity = np.zeros(nr) 
-        self.g = np.zeros(nr) # same as gravity
-        self.dsdr = np.zeros(nr)
-        self.heating = np.zeros(nr)
-        self.Q = np.zeros(nr) # same as heating
-        self.nu = np.zeros(nr)
-        self.dlnu = np.zeros(nr)
-        self.kappa = np.zeros(nr)
-        self.dlnkappa = np.zeros(nr)
-        self.eta = np.zeros(nr) # these should stay zero 
-        self.dlneta = np.zeros(nr) # if magnetism = False
-        self.lum = 0.0 # luminosity
-
 def get_eq(dirname, fname='equation_coefficients'): 
     # return a human readable version of equation_coefficients
     # [dirname], either using equation_coefficients or 
@@ -571,8 +522,8 @@ def get_eq(dirname, fname='equation_coefficients'):
         # by default, get info from equation_coefficients (if file exists)
         eq = equation_coefficients()
         eq.read(dirname + '/' + fname)
-        eq_hr = eq_human_readable(eq.nr)
-
+        #eq_hr = eq_human_readable(eq.nr)
+        eq_hr = dotdict(dict({}))
         eq_hr.radius = eq.radius
         eq_hr.density = eq.functions[0]
         eq_hr.rho = eq_hr.density
@@ -586,6 +537,7 @@ def get_eq(dirname, fname='equation_coefficients'):
         eq_hr.gravity = eq.functions[1]/eq_hr.rho*c_P
         eq_hr.g = eq_hr.gravity
         eq_hr.dsdr = eq.functions[13]
+        eq_hr.Nsq = (eq_hr.g/c_P)*eq_hr.dsdr
         eq_hr.heating = eq.constants[9]*eq.functions[5]
         eq_hr.Q = eq_hr.heating
         eq_hr.nu = eq.constants[4]*eq.functions[2]
@@ -595,7 +547,6 @@ def get_eq(dirname, fname='equation_coefficients'):
         eq_hr.eta = eq.constants[6]*eq.functions[6] # these are built-in to
         eq_hr.dlneta = eq.functions[12] # equation_coefficients as "zero"
         eq_hr.lum = eq.constants[9]
-        # if magnetism = False
     else:
         ref = ReferenceState(dirname + '/reference')
         eq_hr = eq_human_readable(ref.nr)
