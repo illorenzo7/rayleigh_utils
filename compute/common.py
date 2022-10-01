@@ -563,7 +563,8 @@ class eq_human_readable:
         self.dlneta = np.zeros(nr) # if magnetism = False
         self.lum = 0.0 # luminosity
 
-def get_eq(dirname, fname='equation_coefficients'): # return an eq_human_readable class associated with
+def get_eq(dirname, fname='equation_coefficients'): 
+    # return a human readable version of equation_coefficients
     # [dirname], either using equation_coefficients or 
     # transport/reference files
     if os.path.exists(dirname + '/' + fname):
@@ -1001,7 +1002,7 @@ def field_amp(dirname, the_file=None):
     # Return the dictionary 
     return di_out
 
-def length_scales(dirname, the_file=None, the_file_spec=None):
+def length_scales(dirname, the_file=None):
     # Make empty dictionary for length_scale arrays
     di_out = dotdict(dict([]))
 
@@ -1022,6 +1023,7 @@ def length_scales(dirname, the_file=None, the_file_spec=None):
     datadir = dirname + '/data/'
 
     # Get field amplitudes
+    print ('length_scales(): ', end='')
     fa = field_amp(dirname, the_file=the_file)
 
     # Compute lengthscales (from flows) and put them in dictionary
@@ -1070,9 +1072,6 @@ def length_scales(dirname, the_file=None, the_file_spec=None):
         # NOTE: the following will only be accurate if b_phi is the strongest component of b
         di_out.bpfluc = fa.bpfluc/fa.jpolfluc
 
-    # finally, get shell_depth
-    di_out.shell_depth = np.max(rr) - np.min(rr)
-
     # Return the dictionary 
     return di_out
 
@@ -1081,6 +1080,7 @@ def get_grid_info(dirname):
     gi = GridInfo(dirname + '/grid_info', '')
     # 1D arrays
     di_out['rr'] = gi.radius
+    di_out['shell_depth'] = np.max(gi.radius) - np.min(gi.radius)
     di_out['tt'] = gi.theta
     di_out['cost'] = gi.costheta
     di_out['sint'] = gi.sintheta
@@ -1118,6 +1118,53 @@ def get_grid_info(dirname):
     di_out['xx_3d'] = di_out['rr_3d']*di_out['sint_3d']
     di_out['zz_3d'] = di_out['rr_3d']*di_out['cost_3d']
     return dotdict(di_out)
+
+def get_numbers(dirname, the_file=None, shell_depth=None):
+    # output dictionary
+    di = dotdict(dict({}))
+
+    # See if run is rotating and/or magnetic 
+    rotation = get_parameter(dirname, 'rotation')
+    magnetism = get_parameter(dirname, 'magnetism')
+    if rotation:
+        Om0 = 2*np.pi/compute_Prot(dirname)
+
+    # get equation coefs
+    eq = get_eq(dirname)
+
+    # get grid info
+    gi = get_grid_info(dirname)
+    if shell_depth is None:
+        shell_depth = gi.shell_depth
+
+    # get field amplitudes and length scales
+    print ("get_numbers(): ", end='')
+    fa = field_amp(dirname, the_file=the_file)
+    print ("get_numbers(): ", end='')
+    ls = length_scales(dirname, the_file=the_file)
+
+    # get some numbers!
+    # (first, prognostic ones)
+
+    # Prandtl
+    di.pr = eq.nu/eq.kappa
+    if magnetism:
+        di.prm = eq.nu/eq.eta
+
+    if rotation:
+        # Ekman
+        di.ek = eq.nu/(2*eq.shell_depth**2*Om0)
+
+        # Taylor
+        di.ta = 1/di.ek**2
+
+        # Buoyancy parameter (zero for convection only)
+        di.bref = eq.N**2/Om0**2
+
+    # (then, diagnostic ones)
+
+    return 
+
 
 def integrate_in_r(arr, dirname):
     # routine to integrate in radius (over each domain separately)
