@@ -1110,7 +1110,7 @@ def get_numbers(dirname, the_file=None, shell_depth=None):
         di.ta = 1/di.ek**2
 
         # Buoyancy parameter (zero for convection only)
-        di.bref = eq.N**2/Om0**2
+        di.bref = eq.Nsq/Om0**2
 
     # (then, diagnostic ones)
 
