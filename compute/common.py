@@ -260,6 +260,41 @@ def dph(arr): # assumes phi falls along first axis
     dphi = 2.*np.pi/nphi
     return np.gradient(arr, dphi, axis=0)
 
+def opt_workload(n, nproc):
+    # optimally distributes workload (n tasks) over processes (n workers)
+    n_per_proc_min = np.int(np.floor(n/nproc)) # min workload
+    n_per_proc_max = np.int(np.ceil(n/nproc)) # max workload
+    # min/max workloads differ by 1
+    r = n/nproc - n_per_proc_min # remainder: r sets optimal number of processes
+    # to perform max workload
+    nproc_max = np.int(np.floor(nproc*r))
+    nproc_min = nproc - nproc_max # there are total nproc processes
+
+    # "optimal choice" assumes partial processes; but processes are whole
+    # correct nproc_max/min to make sure all n tasks are perofrmed
+    n_real_life = nproc_min*n_per_proc_min + nproc_max*n_per_proc_max 
+    diff = n - n_real_life
+    if diff > 0:
+        nproc_max += diff
+        nproc_min -= diff
+    else:
+        nproc_max -= diff
+        nproc_min += diff
+    return (nproc_min, nproc_max, n_per_proc_min, n_per_proc_max)
+
+# Thin out the arrays to not deal obscene quantities of data 
+# (and unreadable "curves")
+def thin_data(vals, ntot=None):
+    if ntot is None: # do nothing
+        return vals
+    else:
+        nx = np.shape(vals)[0]
+        nskip = nx//ntot
+        if not nskip in [0, 1]: #for ntot < 2*nx, do nothing
+            vals_new = vals[::nskip]
+        else:
+            vals_new = vals
+        return vals_new
 
 #############################################################
 # ROUTINES FOR CHARACTERIZING/SORTING RAYLEIGH RAW DATA FILES
@@ -586,122 +621,6 @@ def get_parameter(dirname, parameter):
                         'specified in run: ' + dirname + '. \n' +\
                         'exiting NOW\n')
 
-def get_eq(dirname, fname='equation_coefficients'): 
-    # return a human readable version of equation_coefficients
-    # [dirname], either using equation_coefficients or 
-    # transport/reference files
-    if os.path.exists(dirname + '/' + fname):
-        # by default, get info from equation_coefficients (if file exists)
-        eq = equation_coefficients()
-        eq.read(dirname + '/' + fname)
-        #eq_hr = eq_human_readable(eq.nr)
-        eq_hr = dotdict(dict({}))
-        eq_hr.radius = eq.radius
-        eq_hr.density = eq.functions[0]
-        eq_hr.rho = eq_hr.density
-        eq_hr.dlnrho = eq.functions[7]
-        eq_hr.d2lnrho = eq.functions[8]
-        eq_hr.temperature = eq.functions[3]
-        eq_hr.T = eq_hr.temperature
-        eq_hr.pressure = thermo_R*eq_hr.rho*eq_hr.T
-        eq_hr.P = eq_hr.pressure
-        eq_hr.dlnT = eq.functions[9]
-        eq_hr.gravity = eq.functions[1]/eq_hr.rho*c_P
-        eq_hr.g = eq_hr.gravity
-        eq_hr.dsdr = eq.functions[13]
-        eq_hr.Nsq = (eq_hr.g/c_P)*eq_hr.dsdr
-        eq_hr.heating = eq.constants[9]*eq.functions[5]
-        eq_hr.Q = eq_hr.heating
-        eq_hr.nu = eq.constants[4]*eq.functions[2]
-        eq_hr.dlnu = eq.functions[10]
-        eq_hr.kappa = eq.constants[5]*eq.functions[4]
-        eq_hr.dlnkappa = eq.functions[11]
-        eq_hr.eta = eq.constants[6]*eq.functions[6] # these are built-in to
-        eq_hr.dlneta = eq.functions[12] # equation_coefficients as "zero"
-        eq_hr.lum = eq.constants[9]
-    else:
-        ref = ReferenceState(dirname + '/reference')
-        eq_hr = eq_human_readable(ref.nr)
-
-        eq_hr.radius = ref.radius
-        eq_hr.density = ref.density
-        eq_hr.rho = eq_hr.density
-        eq_hr.dlnrho = ref.dlnrho
-        eq_hr.d2lnrho = ref.d2lnrho
-        eq_hr.temperature = ref.temperature
-        eq_hr.T = eq_hr.temperature
-        eq_hr.dlnT = ref.dlnt
-        eq_hr.pressure = thermo_R*eq_hr.rho*eq_hr.T
-        eq_hr.P = eq_hr.pressure
-        eq_hr.gravity = ref.gravity
-        eq_hr.g = eq_hr.gravity
-        eq_hr.dsdr = ref.dsdr
-        eq_hr.heating = eq_hr.rho*eq_hr.T*ref.heating
-        eq_hr.Q = eq_hr.heating
-        # 'transport' didn't always used to exist, so only read it if possible
-        if os.path.exists(dirname + '/transport'):
-            trans = TransportCoeffs(dirname + '/transport')
-            eq_hr.nu = trans.nu
-            eq_hr.dlnu = trans.dlnu
-            eq_hr.kappa = trans.kappa
-            eq_hr.dlnkappa = trans.dlnkappa
-            try:
-                eq_hr.eta = trans.eta
-                eq_hr.dlneta = dlneta # this will fail for hydro cases
-                # "trans" will not have attributes eta, dlneta
-            except: # if it failed, just keep the arrays zero             
-                pass # (magnetism = False)
-        else:
-            print ("get_eq(): neither 'equation_coefficients' nor 'transport' found")
-            print ("nu, dlnu, etc. will be zero")
-        eq_hr.lum = get_parameter(dirname, 'luminosity')
-    return eq_hr
-
-def get_grid_info(dirname):
-    di_out = dict({})
-    gi = GridInfo(dirname + '/grid_info', '')
-    # 1D arrays
-    di_out['rr'] = gi.radius
-    di_out['shell_depth'] = np.max(gi.radius) - np.min(gi.radius)
-    di_out['tt'] = gi.theta
-    di_out['cost'] = gi.costheta
-    di_out['sint'] = gi.sintheta
-    di_out['cott'] = di_out['cost']/di_out['sint']
-    di_out['tt_lat'] = (np.pi/2 - di_out['tt'])*180/np.pi
-    di_out['phi'] = gi.phi
-    di_out['lons'] = gi.phi*180./np.pi
-    di_out['rw'] = gi.rweights
-    di_out['tw'] = gi.tweights
-    di_out['pw'] = gi.pweights
-    # grid dimensions
-    di_out['nr'] = gi.nr
-    di_out['nt'] = gi.ntheta
-    di_out['nphi'] = gi.nphi
-    # 2D arrays (theta, r)
-    di_out['tt_2d'] = di_out['tt'].reshape((di_out['nt'], 1))
-    di_out['sint_2d'] = np.sin(di_out['tt_2d'])
-    di_out['cost_2d'] = np.cos(di_out['tt_2d'])
-    di_out['cott_2d'] = di_out['cost_2d']/di_out['sint_2d']
-    di_out['tw_2d'] = di_out['tw'].reshape((di_out['nt'], 1))
-    di_out['rr_2d'] = di_out['rr'].reshape((1, di_out['nr']))
-    di_out['rw_2d'] = di_out['rw'].reshape((1, di_out['nr']))
-    di_out['xx'] = di_out['rr_2d']*di_out['sint_2d']
-    di_out['zz'] = di_out['rr_2d']*di_out['cost_2d']
-    # 3D arrays (phi, theta, r)
-    di_out['phi_3d'] = di_out['phi'].reshape((di_out['nphi'], 1, 1))
-    di_out['pw_3d'] = di_out['pw'].reshape((di_out['nphi'], 1, 1))
-    di_out['tt_3d'] = di_out['tt'].reshape((1, di_out['nt'], 1))
-    di_out['sint_3d'] = np.sin(di_out['tt_3d'])
-    di_out['cost_3d'] = np.cos(di_out['tt_3d'])
-    di_out['cott_3d'] = di_out['cost_3d']/di_out['sint_3d']
-    di_out['tw_3d'] = di_out['tw'].reshape((1, di_out['nt'], 1))
-    di_out['rr_3d'] = di_out['rr'].reshape((1, 1, di_out['nr']))
-    di_out['rw_3d'] = di_out['rw'].reshape((1, 1, di_out['nr']))
-    di_out['xx_3d'] = di_out['rr_3d']*di_out['sint_3d']
-    di_out['zz_3d'] = di_out['rr_3d']*di_out['cost_3d']
-    return dotdict(di_out)
-
-
 #########################################################
 # some parameters (like luminosity and domain_bounds) can 
 # be specified using multiple keywords
@@ -801,38 +720,134 @@ def compute_tdt(dirname, mag=False, visc=False, tach=False):
         H = ro - ri
         return H**2.0/diff_mid
 
-def translate_times(time, dirname, translate_from='iter'):
-    # Get the baseline time unit
-    time_unit, time_label, rotation, simple_label = get_time_unit(dirname)
+#################################################################################
+# Get basic radial coefficients (grid info, reference state) associated with sim.
+#################################################################################
 
-    # Get the G_Avgs trace
-    datadir = dirname + '/data/'
-    the_file = get_widest_range_file(datadir, 'G_Avgs_trace')
-    if not the_file is None:
-        di = get_dict(the_file)
+def get_eq(dirname, fname='equation_coefficients'): 
+    # return a human readable version of equation_coefficients
+    # [dirname], either using equation_coefficients or 
+    # transport/reference files
+    if os.path.exists(dirname + '/' + fname):
+        # by default, get info from equation_coefficients (if file exists)
+        eq = equation_coefficients()
+        eq.read(dirname + '/' + fname)
+        #eq_hr = eq_human_readable(eq.nr)
+        eq_hr = dotdict(dict({}))
+        eq_hr.radius = eq_hr.rr = eq.radius
+        eq_hr.density = eq.functions[0]
+        eq_hr.rho = eq_hr.density
+        eq_hr.dlnrho = eq.functions[7]
+        eq_hr.d2lnrho = eq.functions[8]
+        eq_hr.temperature = eq.functions[3]
+        eq_hr.T = eq_hr.temperature
+        eq_hr.pressure = thermo_R*eq_hr.rho*eq_hr.T
+        eq_hr.P = eq_hr.pressure
+        eq_hr.dlnT = eq.functions[9]
+        eq_hr.gravity = eq.functions[1]/eq_hr.rho*c_P
+        eq_hr.g = eq_hr.gravity
+        eq_hr.dsdr = eq.functions[13]
+        eq_hr.Nsq = (eq_hr.g/c_P)*eq_hr.dsdr
+        eq_hr.heating = eq.constants[9]*eq.functions[5]
+        eq_hr.Q = eq_hr.heating
+        eq_hr.nu = eq.constants[4]*eq.functions[2]
+        eq_hr.dlnu = eq.functions[10]
+        eq_hr.kappa = eq.constants[5]*eq.functions[4]
+        eq_hr.dlnkappa = eq.functions[11]
+        eq_hr.eta = eq.constants[6]*eq.functions[6] # these are built-in to
+        eq_hr.dlneta = eq.functions[12] # equation_coefficients as "zero"
+        eq_hr.lum = eq.constants[9]
     else:
-        print ("translate_times(): you need to have G_Avgs_trace file")
-        print ("to use me! Exiting.")
-        sys.exit()
+        ref = ReferenceState(dirname + '/reference')
+        eq_hr = eq_human_readable(ref.nr)
 
-    # Get times and iters from trace file
-    times = di['times']
-    iters = di['iters']
+        eq_hr.radius = eq_hr.rr = ref.radius
+        eq_hr.density = ref.density
+        eq_hr.rho = eq_hr.density
+        eq_hr.dlnrho = ref.dlnrho
+        eq_hr.d2lnrho = ref.d2lnrho
+        eq_hr.temperature = ref.temperature
+        eq_hr.T = eq_hr.temperature
+        eq_hr.dlnT = ref.dlnt
+        eq_hr.pressure = thermo_R*eq_hr.rho*eq_hr.T
+        eq_hr.P = eq_hr.pressure
+        eq_hr.gravity = ref.gravity
+        eq_hr.g = eq_hr.gravity
+        eq_hr.dsdr = ref.dsdr
+        eq_hr.heating = eq_hr.rho*eq_hr.T*ref.heating
+        eq_hr.Q = eq_hr.heating
+        # 'transport' didn't always used to exist, so only read it if possible
+        if os.path.exists(dirname + '/transport'):
+            trans = TransportCoeffs(dirname + '/transport')
+            eq_hr.nu = trans.nu
+            eq_hr.dlnu = trans.dlnu
+            eq_hr.kappa = trans.kappa
+            eq_hr.dlnkappa = trans.dlnkappa
+            try:
+                eq_hr.eta = trans.eta
+                eq_hr.dlneta = dlneta # this will fail for hydro cases
+                # "trans" will not have attributes eta, dlneta
+            except: # if it failed, just keep the arrays zero             
+                pass # (magnetism = False)
+        else:
+            print ("get_eq(): neither 'equation_coefficients' nor 'transport' found")
+            print ("nu, dlnu, etc. will be zero")
+            eq_hr.nu = np.zeros_like(eq_hr.rr)
+            eq_hr.dlnu = np.zeros_like(eq_hr.rr)
+            eq_hr.kappa = np.zeros_like(eq_hr.rr)
+            eq_hr.dlnkappa = np.zeros_like(eq_hr.rr)
+        eq_hr.lum = get_parameter(dirname, 'luminosity')
+    return eq_hr
 
-    if translate_from == 'iter':
-        ind = np.argmin(np.abs(iters - time))
-    elif translate_from in ['unit', 'prot', 'tdt']:
-        ind = np.argmin(np.abs(times/time_unit - time))
-    elif translate_from == 'sec':
-        ind = np.argmin(np.abs(times - time))
+def get_grid_info(dirname):
+    # get basic grid info
+    di_out = dict({})
+    gi = GridInfo(dirname + '/grid_info', '')
+    # 1D arrays
+    di_out['rr'] = gi.radius
+    di_out['shell_depth'] = np.max(gi.radius) - np.min(gi.radius)
+    di_out['tt'] = gi.theta
+    di_out['cost'] = gi.costheta
+    di_out['sint'] = gi.sintheta
+    di_out['cott'] = di_out['cost']/di_out['sint']
+    di_out['tt_lat'] = (np.pi/2 - di_out['tt'])*180/np.pi
+    di_out['phi'] = gi.phi
+    di_out['lons'] = gi.phi*180./np.pi
+    di_out['rw'] = gi.rweights
+    di_out['tw'] = gi.tweights
+    di_out['pw'] = gi.pweights
+    # grid dimensions
+    di_out['nr'] = gi.nr
+    di_out['nt'] = gi.ntheta
+    di_out['nphi'] = gi.nphi
+    # 2D arrays (theta, r)
+    di_out['tt_2d'] = di_out['tt'].reshape((di_out['nt'], 1))
+    di_out['sint_2d'] = np.sin(di_out['tt_2d'])
+    di_out['cost_2d'] = np.cos(di_out['tt_2d'])
+    di_out['cott_2d'] = di_out['cost_2d']/di_out['sint_2d']
+    di_out['tw_2d'] = di_out['tw'].reshape((di_out['nt'], 1))
+    di_out['rr_2d'] = di_out['rr'].reshape((1, di_out['nr']))
+    di_out['rw_2d'] = di_out['rw'].reshape((1, di_out['nr']))
+    di_out['xx'] = di_out['rr_2d']*di_out['sint_2d']
+    di_out['zz'] = di_out['rr_2d']*di_out['cost_2d']
+    # 3D arrays (phi, theta, r)
+    di_out['phi_3d'] = di_out['phi'].reshape((di_out['nphi'], 1, 1))
+    di_out['pw_3d'] = di_out['pw'].reshape((di_out['nphi'], 1, 1))
+    di_out['tt_3d'] = di_out['tt'].reshape((1, di_out['nt'], 1))
+    di_out['sint_3d'] = np.sin(di_out['tt_3d'])
+    di_out['cost_3d'] = np.cos(di_out['tt_3d'])
+    di_out['cott_3d'] = di_out['cost_3d']/di_out['sint_3d']
+    di_out['tw_3d'] = di_out['tw'].reshape((1, di_out['nt'], 1))
+    di_out['rr_3d'] = di_out['rr'].reshape((1, 1, di_out['nr']))
+    di_out['rw_3d'] = di_out['rw'].reshape((1, 1, di_out['nr']))
+    di_out['xx_3d'] = di_out['rr_3d']*di_out['sint_3d']
+    di_out['zz_3d'] = di_out['rr_3d']*di_out['cost_3d']
+    return dotdict(di_out)
 
-    val_sec = times[ind]
-    val_iter = iters[ind]
-    val_unit = times[ind]/time_unit
 
-    return dict({'val_sec': val_sec,'val_iter': val_iter,\
-            'val_unit': val_unit, 'simple_label': simple_label})
-
+####################################
+# Routines associated with grid info
+####################################
 
 def integrate_in_r(arr, dirname):
     # routine to integrate in radius (over each domain separately)
@@ -887,42 +902,59 @@ def get_volumes(dirname):
             li.append(fact*(r2**3.0 - r1**3.0))
     return li
 
-
-def opt_workload(n, nproc):
-    # optimally distributes workload (n tasks) over processes (n workers)
-    n_per_proc_min = np.int(np.floor(n/nproc)) # min workload
-    n_per_proc_max = np.int(np.ceil(n/nproc)) # max workload
-    # min/max workloads differ by 1
-    r = n/nproc - n_per_proc_min # remainder: r sets optimal number of processes
-    # to perform max workload
-    nproc_max = np.int(np.floor(nproc*r))
-    nproc_min = nproc - nproc_max # there are total nproc processes
-
-    # "optimal choice" assumes partial processes; but processes are whole
-    # correct nproc_max/min to make sure all n tasks are perofrmed
-    n_real_life = nproc_min*n_per_proc_min + nproc_max*n_per_proc_max 
-    diff = n - n_real_life
-    if diff > 0:
-        nproc_max += diff
-        nproc_min -= diff
-    else:
-        nproc_max -= diff
-        nproc_min += diff
-    return (nproc_min, nproc_max, n_per_proc_min, n_per_proc_max)
-
-# Thin out the arrays to not deal obscene quantities of data 
-# (and unreadable "curves")
-def thin_data(vals, ntot=None):
-    if ntot is None: # do nothing
-        return vals
-    else:
-        nx = np.shape(vals)[0]
-        nskip = nx//ntot
-        if not nskip in [0, 1]: #for ntot < 2*nx, do nothing
-            vals_new = vals[::nskip]
+def get_default_rvals(dirname, rcut=None):
+    ncheby, domain_bounds = get_domain_bounds(dirname)
+    rmin, rmax = np.min(domain_bounds), np.max(domain_bounds)
+    domain_bounds = rmin, rmax
+    ndomains = 1
+    if not rcut is None:
+        domain_bounds = rmin, rcut*rsun, rmax
+        ndomains = 2
+    basedepths = np.array([0.05, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 0.95, 1.0])
+    rvals = np.array([], dtype='float')
+    for idomain in range(ndomains):
+        rbot = domain_bounds[ndomains - idomain - 1]
+        rtop = domain_bounds[ndomains - idomain]
+        if idomain == ndomains - 1:
+            rvals_to_add = rtop - (rtop - rbot)*basedepths[:-1]
         else:
-            vals_new = vals
-        return vals_new
+            rvals_to_add = rtop - (rtop - rbot)*basedepths
+        rvals = np.hstack((rvals, rvals_to_add))
+    return rvals/rsun
+
+
+
+def translate_times(time, dirname, translate_from='iter'):
+    # Get the baseline time unit
+    time_unit, time_label, rotation, simple_label = get_time_unit(dirname)
+
+    # Get the G_Avgs trace
+    datadir = dirname + '/data/'
+    the_file = get_widest_range_file(datadir, 'G_Avgs_trace')
+    if not the_file is None:
+        di = get_dict(the_file)
+    else:
+        print ("translate_times(): you need to have G_Avgs_trace file")
+        print ("to use me! Exiting.")
+        sys.exit()
+
+    # Get times and iters from trace file
+    times = di['times']
+    iters = di['iters']
+
+    if translate_from == 'iter':
+        ind = np.argmin(np.abs(iters - time))
+    elif translate_from in ['unit', 'prot', 'tdt']:
+        ind = np.argmin(np.abs(times/time_unit - time))
+    elif translate_from == 'sec':
+        ind = np.argmin(np.abs(times - time))
+
+    val_sec = times[ind]
+    val_iter = iters[ind]
+    val_unit = times[ind]/time_unit
+
+    return dict({'val_sec': val_sec,'val_iter': val_iter,\
+            'val_unit': val_unit, 'simple_label': simple_label})
 
 def get_time_unit(dirname):
     rotation = get_parameter(dirname, 'rotation')
@@ -960,26 +992,6 @@ def get_time_string(dirname, iter1, iter2=None, oneline=False):
         time_string = (('t = ' + fmt + ' ') %(t1/time_unit)) + time_label
 
     return time_string
-
-def get_default_rvals(dirname, rcut=None):
-    ncheby, domain_bounds = get_domain_bounds(dirname)
-    rmin, rmax = np.min(domain_bounds), np.max(domain_bounds)
-    domain_bounds = rmin, rmax
-    ndomains = 1
-    if not rcut is None:
-        domain_bounds = rmin, rcut*rsun, rmax
-        ndomains = 2
-    basedepths = np.array([0.05, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 0.95, 1.0])
-    rvals = np.array([], dtype='float')
-    for idomain in range(ndomains):
-        rbot = domain_bounds[ndomains - idomain - 1]
-        rtop = domain_bounds[ndomains - idomain]
-        if idomain == ndomains - 1:
-            rvals_to_add = rtop - (rtop - rbot)*basedepths[:-1]
-        else:
-            rvals_to_add = rtop - (rtop - rbot)*basedepths
-        rvals = np.hstack((rvals, rvals_to_add))
-    return rvals/rsun
 
 def get_default_varnames(dirname):
     magnetism = get_parameter(dirname, 'magnetism')
