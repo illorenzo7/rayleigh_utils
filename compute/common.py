@@ -14,6 +14,10 @@ from rayleigh_diagnostics_alt import slicelevels
 from compute_grid_info import compute_grid_info, compute_theta_grid,\
         compute_r_grid
 
+###############################
+# BASIC ASTROPHYSICAL CONSTANTS
+###############################
+
 # Solar radius, luminosity, and mass (as we have been assuming in Rayleigh)
 rsun = 6.957e10  # value taken from IAU recommendation: arxiv, 1510.07674
                  # should probably figure out how Nick chose 
@@ -28,7 +32,6 @@ msun = 1.98891e33 # FROM WIKIPEDIA: 1.98847 \pm 0.00007
                   # G = 6.67408 \pm 0.00031 (10^-8 c.g.s.)
                 # NOTE: ALL THESE QUANTITIES CHANGE IN TIME (except G, if
                 # the cosmologists are right...)
-# Read in all files from the Rayleigh data directory and sort them by name (number)
 
 #Thermodyanmic variables
 c_P = 3.5e8
@@ -45,6 +48,17 @@ rmax_n3 = 6.5860209e10 # Radii consistent with the bottom 3 density scale
         # heights in the Sun rho_i above corresponds to the density
         # at the base of the convection zone
 
+#######################################
+# RANDOM CONSTANTS FOR COMPUTE ROUTINES
+#######################################
+
+# handy class for making dictionaries "dot-accessible" "key-accessible" and vice versa
+class dotdict(dict):
+    """dot.notation access to dictionary attributes"""
+    __getattr__ = dict.get
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__
+
 # width of print messages in parallel routines
 lent = 50
 buff_frac = 0.05 # default buffer to set axes limits
@@ -57,6 +71,13 @@ letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l',\
     'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
 
 buff_line = buffer_line = "=============================================="
+
+# default latitudes to sample Rayleigh sim
+default_latvals = np.array([-85., -75., -60., -45., -30., -15., 0., 15., 30., 45., 60., 75., 85.])
+
+######################################
+# FORMATTING ROUTINES FOR PRINT OUTPUT
+######################################
 
 def make_bold(st):
     return bold_char_begin + st + bold_char_end
@@ -93,12 +114,159 @@ def format_size(nbytes):
         # output G
         return "%1.1f G" %(nbytes/1024**3)
 
+def fill_str(stri, lent, char):
+    len_loc = len(stri)
+    nfill = lent - len_loc
+    return stri + char*nfill
+
+def make_array(arr, tolist=False, length=None): 
+    # arr is scalar, list, or array
+    # convert everything to a list
+    if arr is None:
+        return None
+    elif np.isscalar(arr):
+        out = [arr]
+    else:
+        out = list(arr)
+
+    # if length was specified (only good if OG length was 1
+    # make the list that length
+    if not length is None and len(out) == 1:
+        out = out*length
+
+    if tolist:
+        return out
+    else:
+        return (np.array(out))
+
+def lat_format(latval):
+    if latval < 0:
+        hemisphere = 'S'
+    else:
+        hemisphere = 'N'
+    return hemisphere + '%02.0f' %np.abs(latval)
+
+def array_of_strings(arr):
+    li = []
+    for ele in arr:
+        li.append(str(ele))
+    return np.array(li)
+
+def my_mkdir(dirname):
+    if not os.path.isdir(dirname):
+        os.makedirs(dirname)
+    return dirname
+
+def arr_to_str(a, fmt):
+    st = ''
+    for ele in a:
+        st += (fmt + ' ') %ele
+    return '[' + st[:-1] + ']'
+
+def update_dict(dict_orig, dict_update):
+    dict_out = {**dict_orig} # start with original dict
+    for key, val in dict_update.items():
+        if key in dict_orig: # only update arguments that are
+            # specified in the default set
+            dict_out[key] = val
+    return dotdict(dict_out)
+
+def print_dict(di):
+    for key, value in di.items():
+        print (key, '\t\t', value)
+
+def find_bad_keys(dict_orig, dict_update, funcname, justwarn=False):
+    bad_keys = []
+    for key, val in dict_update.items():
+        if not key in dict_orig: 
+            bad_keys.append(key)
+    if len (bad_keys) > 0:
+        if justwarn:
+            print ("WARNING!")
+        else:
+            print ("ERROR!")
+        print (funcname + '() got bad keyword args:')
+        print (bad_keys)
+        if not justwarn:
+            print ("exiting")
+            sys.exit()
+
+########################
+# BASIC COMPUTE ROUTINES
+########################
+
 def inds_from_vals(arr, arrvals):
     nind = len(arrvals)
     indarr = np.zeros(nind, 'int')
     for i in range(nind):
         indarr[i] = np.argmin(np.abs(arr - arrvals[i]))
     return indarr
+
+def is_an_int(string):
+    # obviously, first check if it's actually an int
+    if isinstance(string, int) or isinstance(string, np.int64):
+        return True
+    len_str = len(string)
+    bool_val = True
+    for i in range(len_str):
+        char = string[i]
+        bool_val *= (char >= '0' and char <= '9')
+    return(bool(bool_val))
+
+def frac_nonzero(arr):
+    num_nonzero = len(np.where(arr != 0)[0])
+    num_total = np.size(arr)
+    return (num_nonzero/num_total)
+
+def rms(array):
+    if np.size(array) == 0:
+        return 0
+    else:
+        return np.sqrt(np.mean(array**2))
+
+def drad(arr, rr): # this works for any dimension array, as long as
+    # the radial index is the last one
+    # make the output array
+    darr = np.zeros_like(arr)
+
+    # check for repeated radii; they are bad!
+    nr = len(rr)
+    ir_rep = []
+    for ir in range(1, nr):
+        if rr[ir] == rr[ir-1]:
+            ir_rep.append(ir)
+
+    ir1 = 0
+    ir2 = nr - 1
+    for ir_rep_loc in ir_rep:
+        darr[..., ir1:ir_rep_loc] = np.gradient(arr[..., ir1:ir_rep_loc],\
+                rr[ir1:ir_rep_loc], axis=arr.ndim-1)
+        darr[..., ir_rep_loc] = darr[..., ir_rep_loc-1]
+        ir1 = ir_rep_loc + 1
+    # then do the last segment:
+    darr[..., ir1:ir2+1] = np.gradient(arr[..., ir1:ir2+1],\
+            rr[ir1:ir2+1], axis=arr.ndim-1)
+    return darr
+
+def dth(arr, tt): # assumes theta falls along the second-to-last axis
+    # if array is > 1D
+    if arr.ndim < 2:
+        return np.gradient(arr, tt)
+    else:
+        return np.gradient(arr, tt, axis=arr.ndim-2)
+
+def dph(arr): # assumes phi falls along first axis
+    nphi = np.shape(arr)[0]
+    dphi = 2.*np.pi/nphi
+    return np.gradient(arr, dphi, axis=0)
+
+
+#############################################################
+# ROUTINES FOR CHARACTERIZING/SORTING RAYLEIGH RAW DATA FILES
+#############################################################
+
+# options for selecting a range of files (to average over, trace over, etc.)
+range_options = ['--range', '--centerrange', '--leftrange', '--rightrange', '--iter', '--n', '--f', '--all']
 
 def get_file_lists_all(radatadir):
     # Get all the file names in datadir and their integer counterparts
@@ -126,9 +294,23 @@ def get_file_lists_all(radatadir):
     
     return file_list, int_file_list, nfiles
 
-range_options = ['--range', '--centerrange', '--leftrange', '--rightrange', '--iter', '--n', '--f', '--all']
+def get_file_lists(radatadir, args):
+    # Get file names in datadir and their integer counterparts
+    # (only the ones in the desired range determined by args)
+    # all the "action" occurs in get_desired_range() function below
+
+    # get all files
+    file_list, int_file_list, nfiles = get_file_lists_all(radatadir)
+    # get the desired range
+    index_first, index_last = get_desired_range(int_file_list, args)
+    # Remove parts of file lists we don't need
+    file_list = file_list[index_first:index_last + 1]
+    int_file_list = int_file_list[index_first:index_last + 1]
+    nfiles = index_last - index_first + 1
+    return file_list, int_file_list, nfiles
 
 def get_desired_range(int_file_list, args):
+    # Get first and last index (within the int_file_list) associated with the desired range
     nargs = len(args)
     nfiles = len(int_file_list)
     # By default, the range will always be the last 100 files:
@@ -200,78 +382,16 @@ def get_desired_range(int_file_list, args):
     # Return the desired indices
     return index_first, index_last
 
-def get_file_lists(radatadir, args):
-    # Get file names in datadir and their integer counterparts
-    # (only the ones in the desired range determined by args)
+########################################################################
+# ROUTINES FOR CHARACTERIZING/READING RAYLEIGH POST-PROCESSED DATA FILES
+########################################################################
 
-    # get all files
-    file_list, int_file_list, nfiles = get_file_lists_all(radatadir)
-    # get the desired range
-    index_first, index_last = get_desired_range(int_file_list, args)
-    # Remove parts of file lists we don't need
-    file_list = file_list[index_first:index_last + 1]
-    int_file_list = int_file_list[index_first:index_last + 1]
-    nfiles = index_last - index_first + 1
-    return file_list, int_file_list, nfiles
-
-def strip_dirname(dirname, wrap=False):
-    dirname_stripped = dirname.split('/')[-1]
-    if dirname_stripped == '':
-        dirname_stripped = dirname.split('/')[-2]
-    if dirname == '.':
-        dirname_stripped = os.getcwd().split('/')[-1]
-    if dirname == '..':
-        orig_dir = os.getcwd()
-        os.chdir('..')
-        dirname_stripped = os.getcwd().split('/')[-1]
-        os.chdir(orig_dir)
-
-    ncut = 20
-    if wrap and len(dirname_stripped) > ncut:
-        # Split dirname_stripped into two lines if it is very long
-        dirname_stripped = dirname_stripped[:ncut] + '\n' +\
-                dirname_stripped[ncut:]
-    return dirname_stripped
-
-def is_an_int(string):
-    # obviously, first check if it's actually an int
-    if isinstance(string, int) or isinstance(string, np.int64):
-        return True
-    len_str = len(string)
-    bool_val = True
-    for i in range(len_str):
-        char = string[i]
-        bool_val *= (char >= '0' and char <= '9')
-    return(bool(bool_val))
-
-def get_dataname_from_file(filename):
-    just_file = filename.split('/')[-1] #strip the possible full path info
-    return just_file.split('-')[0]
-
-def get_datadir_from_file(filename):
-    just_dir = filename.split('/')[:-1] #strip the filename away from full path
-    datadir_rel = ''
-    start_adding = False
-    for subdir in just_dir:
-        if subdir == 'data':
-            start_adding = True
-
-        if start_adding:
-            datadir_rel += subdir + '/'
-    return datadir_rel
-
-def get_iters_from_file(filename):
-    filename_end = filename.split('-')[-1][:-4] 
-    # (gets the [iter1]_[iter2].pkl and removes the trailing .ext)
-    iters_st = filename_end.split('_')
-    iter1, iter2 = int(iters_st[0]), int(iters_st[1])
-    return iter1, iter2
-        
 def get_widest_range_file(datadir, dataname):
-    # Find the desired file(s) in the data directory. If there are 
-    # multiple, by default choose the one with widest range in the
-    # trace/average/distribution
-    # If there is no matching file, return the empty string
+    # Find the desired post-processed file(s) in the data directory. If there are 
+    # multiple, by default choose the one with widest range as far
+    # as the input raw data files are concerned (i.e., the largest last_iter - first_iter)
+    # If there is no matching file (i.e., the data product has not been computed yet), 
+    # return None
     if os.path.isdir(datadir):
         datafiles = os.listdir(datadir)
         specific_files = []
@@ -302,12 +422,9 @@ def get_widest_range_file(datadir, dataname):
     # if we reached this point, no file can be found
     return None
 
-def frac_nonzero(arr):
-    num_nonzero = len(np.where(arr != 0)[0])
-    num_total = np.size(arr)
-    return (num_nonzero/num_total)
-
 def get_dict(fname):
+    # basic routine for reading post-processed data (either .pkl or .npy format)
+    # update 10/07/22: maybe I don't need the "npy" format anymore?
     if fname[-3:] == 'npy':
         di = np.load(fname, encoding='latin1', allow_pickle=True).item()
     elif fname[-3:] == 'pkl':
@@ -316,13 +433,8 @@ def get_dict(fname):
         f.close()
     return di
 
-def rms(array):
-    if np.size(array) == 0:
-        return 0
-    else:
-        return np.sqrt(np.mean(array**2))
-
 def read_log(fname):
+    # routine for reading Rayleigh logfiles (the files I redirect Rayleigh output to)
     f = open(fname, 'r')
     lines = f.readlines()
     f.close()
@@ -372,13 +484,62 @@ def read_log(fname):
 
     return di_out
 
-def fill_str(stri, lent, char):
-    len_loc = len(stri)
-    nfill = lent - len_loc
-    return stri + char*nfill
+def get_dataname_from_file(filename):
+    # route does what it's named to do...gets the dataname associated with post-processed 
+    # data product name
+    just_file = filename.split('/')[-1] #strip the possible full path info
+    return just_file.split('-')[0]
+
+def get_datadir_from_file(filename):
+    # route does what it's named to do...
+    just_dir = filename.split('/')[:-1] #strip the filename away from full path
+    datadir_rel = ''
+    start_adding = False
+    for subdir in just_dir:
+        if subdir == 'data':
+            start_adding = True
+
+        if start_adding:
+            datadir_rel += subdir + '/'
+    return datadir_rel
+
+def get_iters_from_file(filename):
+    # route does what it's named to do...
+    filename_end = filename.split('-')[-1][:-4] 
+    # (gets the [iter1]_[iter2].pkl and removes the trailing .ext)
+    iters_st = filename_end.split('_')
+    iter1, iter2 = int(iters_st[0]), int(iters_st[1])
+    return iter1, iter2
+        
+##################################################################################
+# ROUTINES TO GET BASIC INFO ABOUT A RAYLEIGH SIMULATION, GIVEN THE SIM. DIRECTORY
+##################################################################################
+
+###################################
+# Start with basic input parameters
+###################################
+
+def strip_dirname(dirname, wrap=False):
+    dirname_stripped = dirname.split('/')[-1]
+    if dirname_stripped == '':
+        dirname_stripped = dirname.split('/')[-2]
+    if dirname == '.':
+        dirname_stripped = os.getcwd().split('/')[-1]
+    if dirname == '..':
+        orig_dir = os.getcwd()
+        os.chdir('..')
+        dirname_stripped = os.getcwd().split('/')[-1]
+        os.chdir(orig_dir)
+
+    ncut = 20
+    if wrap and len(dirname_stripped) > ncut:
+        # Split dirname_stripped into two lines if it is very long
+        dirname_stripped = dirname_stripped[:ncut] + '\n' +\
+                dirname_stripped[ncut:]
+    return dirname_stripped
 
 def get_parameter(dirname, parameter):
-    # read in main_input
+    # read a paremter from main_input
     f = open(dirname + '/main_input')
     lines = f.readlines()
     n = len(lines)
@@ -424,30 +585,6 @@ def get_parameter(dirname, parameter):
         raise Exception('The parameter ' + parameter + ' was not\n' +\
                         'specified in run: ' + dirname + '. \n' +\
                         'exiting NOW\n')
-    
-def get_lum(dirname):
-    # Make lstar = lsun unless otherwise specified in main_input
-    try:
-        # First see if we can get c_10 from equation_coefficients:
-        try:
-            eq = equation_coefficients()
-            eq.read(dirname + '/equation_coefficients')
-            lstar = eq.constants[9]
-            print("Got luminosity from 'equation_coefficients' file")
-        except: # otherwise get "luminosity" from main_input
-            lstar = get_parameter(dirname, 'luminosity')
-            print ("Got luminosity from 'main_input' file")
-    except:
-        lstar = lsun
-        print ("Cannot find luminosity in either 'equation_coefficients'")
-        print("or 'main_input' files. Setting luminosity to lsun.")
-    return lstar
-
-class dotdict(dict):
-    """dot.notation access to dictionary attributes"""
-    __getattr__ = dict.get
-    __setattr__ = dict.__setitem__
-    __delattr__ = dict.__delitem__
 
 def get_eq(dirname, fname='equation_coefficients'): 
     # return a human readable version of equation_coefficients
@@ -520,6 +657,107 @@ def get_eq(dirname, fname='equation_coefficients'):
         eq_hr.lum = get_parameter(dirname, 'luminosity')
     return eq_hr
 
+def get_grid_info(dirname):
+    di_out = dict({})
+    gi = GridInfo(dirname + '/grid_info', '')
+    # 1D arrays
+    di_out['rr'] = gi.radius
+    di_out['shell_depth'] = np.max(gi.radius) - np.min(gi.radius)
+    di_out['tt'] = gi.theta
+    di_out['cost'] = gi.costheta
+    di_out['sint'] = gi.sintheta
+    di_out['cott'] = di_out['cost']/di_out['sint']
+    di_out['tt_lat'] = (np.pi/2 - di_out['tt'])*180/np.pi
+    di_out['phi'] = gi.phi
+    di_out['lons'] = gi.phi*180./np.pi
+    di_out['rw'] = gi.rweights
+    di_out['tw'] = gi.tweights
+    di_out['pw'] = gi.pweights
+    # grid dimensions
+    di_out['nr'] = gi.nr
+    di_out['nt'] = gi.ntheta
+    di_out['nphi'] = gi.nphi
+    # 2D arrays (theta, r)
+    di_out['tt_2d'] = di_out['tt'].reshape((di_out['nt'], 1))
+    di_out['sint_2d'] = np.sin(di_out['tt_2d'])
+    di_out['cost_2d'] = np.cos(di_out['tt_2d'])
+    di_out['cott_2d'] = di_out['cost_2d']/di_out['sint_2d']
+    di_out['tw_2d'] = di_out['tw'].reshape((di_out['nt'], 1))
+    di_out['rr_2d'] = di_out['rr'].reshape((1, di_out['nr']))
+    di_out['rw_2d'] = di_out['rw'].reshape((1, di_out['nr']))
+    di_out['xx'] = di_out['rr_2d']*di_out['sint_2d']
+    di_out['zz'] = di_out['rr_2d']*di_out['cost_2d']
+    # 3D arrays (phi, theta, r)
+    di_out['phi_3d'] = di_out['phi'].reshape((di_out['nphi'], 1, 1))
+    di_out['pw_3d'] = di_out['pw'].reshape((di_out['nphi'], 1, 1))
+    di_out['tt_3d'] = di_out['tt'].reshape((1, di_out['nt'], 1))
+    di_out['sint_3d'] = np.sin(di_out['tt_3d'])
+    di_out['cost_3d'] = np.cos(di_out['tt_3d'])
+    di_out['cott_3d'] = di_out['cost_3d']/di_out['sint_3d']
+    di_out['tw_3d'] = di_out['tw'].reshape((1, di_out['nt'], 1))
+    di_out['rr_3d'] = di_out['rr'].reshape((1, 1, di_out['nr']))
+    di_out['rw_3d'] = di_out['rw'].reshape((1, 1, di_out['nr']))
+    di_out['xx_3d'] = di_out['rr_3d']*di_out['sint_3d']
+    di_out['zz_3d'] = di_out['rr_3d']*di_out['cost_3d']
+    return dotdict(di_out)
+
+
+#########################################################
+# some parameters (like luminosity and domain_bounds) can 
+# be specified using multiple keywords
+# in main_input, so need special routines to extract them
+#########################################################
+
+def get_lum(dirname):
+    # Make lstar = lsun unless otherwise specified in main_input
+    try:
+        # First see if we can get c_10 from equation_coefficients:
+        try:
+            eq = equation_coefficients()
+            eq.read(dirname + '/equation_coefficients')
+            lstar = eq.constants[9]
+            print("Got luminosity from 'equation_coefficients' file")
+        except: # otherwise get "luminosity" from main_input
+            lstar = get_parameter(dirname, 'luminosity')
+            print ("Got luminosity from 'main_input' file")
+    except:
+        lstar = lsun
+        print ("Cannot find luminosity in either 'equation_coefficients'")
+        print("or 'main_input' files. Setting luminosity to lsun.")
+    return lstar
+
+def compute_Prot(dirname):
+    try:
+        Om0 = get_parameter(dirname, 'angular_velocity')
+    except:
+        eq = equation_coefficients()
+        eq.read(dirname + '/equation_coefficients')
+        Om0 = eq.constants[0]/2.
+    return 2*np.pi/Om0
+
+def get_domain_bounds(dirname):
+    try:
+        # if one-domain, should be able to get rmin, rmax somehow
+        # (no way I can think of to determine if it's one domain
+        # without just trying it, seeing if I get error)
+        try: # can set boundaries via rmin, rmax directly
+            rmin, rmax = get_parameter(dirname, 'rmin'),\
+                    get_parameter(dirname, 'rmax')
+        except: # ... or can set boundaries via aspect ratio and
+            # shell depth
+            aspect_ratio = get_parameter(dirname, 'aspect_ratio')
+            shell_depth = get_parameter(dirname, 'shell_depth')
+            rmin = shell_depth/(1/aspect_ratio - 1)
+            rmax = shell_depth/(1 - aspect_ratio)
+
+        nr = get_parameter(dirname, 'n_r')
+        domain_bounds = np.array([rmin, rmax])
+        ncheby = np.array([nr])
+    except: # otherwise things must be multi-domain
+        domain_bounds = get_parameter(dirname, 'domain_bounds')
+        ncheby = get_parameter(dirname, 'ncheby')
+    return ncheby, domain_bounds
+
 def compute_tdt(dirname, mag=False, visc=False, tach=False):
     # Returns computed diffusion time (in sec) across whole layer
     # If tach=True, return diffusion time across whole layer,
@@ -563,15 +801,6 @@ def compute_tdt(dirname, mag=False, visc=False, tach=False):
         H = ro - ri
         return H**2.0/diff_mid
 
-def compute_Prot(dirname):
-    try:
-        Om0 = get_parameter(dirname, 'angular_velocity')
-    except:
-        eq = equation_coefficients()
-        eq.read(dirname + '/equation_coefficients')
-        Om0 = eq.constants[0]/2.
-    return 2*np.pi/Om0
-
 def translate_times(time, dirname, translate_from='iter'):
     # Get the baseline time unit
     time_unit, time_label, rotation, simple_label = get_time_unit(dirname)
@@ -604,64 +833,222 @@ def translate_times(time, dirname, translate_from='iter'):
     return dict({'val_sec': val_sec,'val_iter': val_iter,\
             'val_unit': val_unit, 'simple_label': simple_label})
 
-def drad(arr, rr): # this works for any dimension array, as long as
-    # the radial index is the last one
-    # make the output array
-    darr = np.zeros_like(arr)
 
-    # check for repeated radii; they are bad!
-    nr = len(rr)
-    ir_rep = []
-    for ir in range(1, nr):
-        if rr[ir] == rr[ir-1]:
-            ir_rep.append(ir)
+def integrate_in_r(arr, dirname):
+    # routine to integrate in radius (over each domain separately)
+    di = get_grid_info(dirname)
+    rw = di['rw']
+    nr = len(rw)
+    ndim = arr.ndim
+    newshape = [nr]
+    for i in range(ndim - 1):
+        newshape = [1] + newshape
+    rw_nd = rw.reshape(newshape)
+    ncheby, domain_bounds = get_domain_bounds(dirname)
+    ndomains = len(ncheby)
+   
+    # start the return with the fully averaged arr
+    li = [np.sum(arr*rw_nd, axis=ndim-1)]
 
-    ir1 = 0
-    ir2 = nr - 1
-    for ir_rep_loc in ir_rep:
-        darr[..., ir1:ir_rep_loc] = np.gradient(arr[..., ir1:ir_rep_loc],\
-                rr[ir1:ir_rep_loc], axis=arr.ndim-1)
-        darr[..., ir_rep_loc] = darr[..., ir_rep_loc-1]
-        ir1 = ir_rep_loc + 1
-    # then do the last segment:
-    darr[..., ir1:ir2+1] = np.gradient(arr[..., ir1:ir2+1],\
-            rr[ir1:ir2+1], axis=arr.ndim-1)
-    return darr
+    # loop over the domains and integrate
+    if ndomains > 1:
+        ir2 = nr
+        ir1 = ir2 - ncheby[0]
+        for idom in range(ndomains):
+            if idom > 0:
+                ir2 -= ncheby[idom - 1]
+                ir1 -= ncheby[idom]
+            rw_loc = rw_nd[..., ir1:ir2]
+            li.append(np.sum(arr[..., ir1:ir2]*rw_loc, axis=ndim-1))
+    return li
 
-def dth(arr, tt): # assumes theta falls along the second-to-last axis
-    # if array is > 1D
-    if arr.ndim < 2:
-        return np.gradient(arr, tt)
+def get_volumes(dirname):
+    # routine to integrate in radius (over each domain separately)
+    di = get_grid_info(dirname)
+    rr = di['rr']
+    nr = di['nr']
+    fact = 4.0*np.pi/3.0
+    ncheby, domain_bounds = get_domain_bounds(dirname)
+    ndomains = len(ncheby)
+   
+    # start the return with the full volume
+    li = [fact*(np.max(rr)**3.0 - np.min(rr)**3.0)]
+
+    # loop over the domains and integrate
+    if ndomains > 1:
+        ir2 = nr
+        ir1 = ir2 - ncheby[0]
+        for idom in range(ndomains):
+            if idom > 0:
+                ir2 -= ncheby[idom - 1]
+                ir1 -= ncheby[idom]
+            r1 = rr[ir1]
+            r2 = rr[ir2 - 1]
+            li.append(fact*(r2**3.0 - r1**3.0))
+    return li
+
+
+def opt_workload(n, nproc):
+    # optimally distributes workload (n tasks) over processes (n workers)
+    n_per_proc_min = np.int(np.floor(n/nproc)) # min workload
+    n_per_proc_max = np.int(np.ceil(n/nproc)) # max workload
+    # min/max workloads differ by 1
+    r = n/nproc - n_per_proc_min # remainder: r sets optimal number of processes
+    # to perform max workload
+    nproc_max = np.int(np.floor(nproc*r))
+    nproc_min = nproc - nproc_max # there are total nproc processes
+
+    # "optimal choice" assumes partial processes; but processes are whole
+    # correct nproc_max/min to make sure all n tasks are perofrmed
+    n_real_life = nproc_min*n_per_proc_min + nproc_max*n_per_proc_max 
+    diff = n - n_real_life
+    if diff > 0:
+        nproc_max += diff
+        nproc_min -= diff
     else:
-        return np.gradient(arr, tt, axis=arr.ndim-2)
+        nproc_max -= diff
+        nproc_min += diff
+    return (nproc_min, nproc_max, n_per_proc_min, n_per_proc_max)
 
-def dph(arr): # assumes phi falls along first axis
-    nphi = np.shape(arr)[0]
-    dphi = 2.*np.pi/nphi
-    return np.gradient(arr, dphi, axis=0)
+# Thin out the arrays to not deal obscene quantities of data 
+# (and unreadable "curves")
+def thin_data(vals, ntot=None):
+    if ntot is None: # do nothing
+        return vals
+    else:
+        nx = np.shape(vals)[0]
+        nskip = nx//ntot
+        if not nskip in [0, 1]: #for ntot < 2*nx, do nothing
+            vals_new = vals[::nskip]
+        else:
+            vals_new = vals
+        return vals_new
 
-def get_domain_bounds(dirname):
-    try:
-        # if one-domain, should be able to get rmin, rmax somehow
-        # (no way I can think of to determine if it's one domain
-        # without just trying it, seeing if I get error)
-        try: # can set boundaries via rmin, rmax directly
-            rmin, rmax = get_parameter(dirname, 'rmin'),\
-                    get_parameter(dirname, 'rmax')
-        except: # ... or can set boundaries via aspect ratio and
-            # shell depth
-            aspect_ratio = get_parameter(dirname, 'aspect_ratio')
-            shell_depth = get_parameter(dirname, 'shell_depth')
-            rmin = shell_depth/(1/aspect_ratio - 1)
-            rmax = shell_depth/(1 - aspect_ratio)
+def get_time_unit(dirname):
+    rotation = get_parameter(dirname, 'rotation')
+    if rotation:
+        time_unit = compute_Prot(dirname)
+        time_label = r'${\rm{P_{rot}}}$'
+        simple_label = 'rotations'
+    else:
+        time_unit = compute_tdt(dirname)
+        time_label = r'${\rm{TDT}}$'
+        simple_label = 'TDT'
+    return time_unit, time_label, rotation, simple_label
 
-        nr = get_parameter(dirname, 'n_r')
-        domain_bounds = np.array([rmin, rmax])
-        ncheby = np.array([nr])
-    except: # otherwise things must be multi-domain
-        domain_bounds = get_parameter(dirname, 'domain_bounds')
-        ncheby = get_parameter(dirname, 'ncheby')
-    return ncheby, domain_bounds
+def get_time_string(dirname, iter1, iter2=None, oneline=False):
+    # Get the time range in sec
+    t1 = translate_times(iter1, dirname, translate_from='iter')['val_sec']
+    if not iter2 == None:
+        t2 = translate_times(iter2, dirname, translate_from='iter')['val_sec']
+
+    # Get the baseline time unit
+    time_unit, time_label, rotation, simple_label = get_time_unit(dirname)
+
+    # set the averaging-interval label
+    if rotation:
+        fmt = '%.0f' # measure rotations
+    else:
+        fmt = '%.3f'
+
+    if not iter2 is None:
+        if oneline:
+            time_string = (('t = ' + fmt + ' to ' + fmt) %(t1/time_unit, t2/time_unit)) + ' ' + time_label + ' ' + r'$(\Delta t$' + ' = ' + (fmt %((t2 - t1)/time_unit)) + ' ' + time_label + ')'
+        else:
+            time_string = (('t = ' + fmt + ' to ' + fmt) %(t1/time_unit, t2/time_unit)) + ' ' + time_label + '\n' + r'$\Delta t$' + ' = ' + (fmt %((t2 - t1)/time_unit)) + ' ' + time_label
+    else:
+        time_string = (('t = ' + fmt + ' ') %(t1/time_unit)) + time_label
+
+    return time_string
+
+def get_default_rvals(dirname, rcut=None):
+    ncheby, domain_bounds = get_domain_bounds(dirname)
+    rmin, rmax = np.min(domain_bounds), np.max(domain_bounds)
+    domain_bounds = rmin, rmax
+    ndomains = 1
+    if not rcut is None:
+        domain_bounds = rmin, rcut*rsun, rmax
+        ndomains = 2
+    basedepths = np.array([0.05, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 0.95, 1.0])
+    rvals = np.array([], dtype='float')
+    for idomain in range(ndomains):
+        rbot = domain_bounds[ndomains - idomain - 1]
+        rtop = domain_bounds[ndomains - idomain]
+        if idomain == ndomains - 1:
+            rvals_to_add = rtop - (rtop - rbot)*basedepths[:-1]
+        else:
+            rvals_to_add = rtop - (rtop - rbot)*basedepths
+        rvals = np.hstack((rvals, rvals_to_add))
+    return rvals/rsun
+
+def get_default_varnames(dirname):
+    magnetism = get_parameter(dirname, 'magnetism')
+    varnames_default = ['vr', 'vt', 'vp', 'omr',\
+                'omt', 'omp', 'sprime', 'pprime', 'ssph', 'psph']
+    if magnetism:
+        varnames_default += ['br', 'bt', 'bp', 'jr', 'jt', 'jp']
+    varnames_default = np.array(varnames_default)    
+    return varnames_default
+
+def get_slice_levels(dirname, datatype='Shell_Slices', fname=None):
+    radatadir = dirname + '/' + datatype + '/'
+    file_list, int_file_list, nfiles = get_file_lists_all(radatadir)
+    if fname is None:
+        fname = file_list[0]
+    return slicelevels(fname, path=radatadir)
+
+def isall(arg):
+    if np.isscalar(arg):
+        if arg == 'all':
+            return True
+        else:
+            return False
+    else:
+        return False
+
+def my_nfft(times, arr, axis=0):
+    # shift the times to lie in range -1/2, 1/2
+    total_time = times[-1] - times[0]
+    times_shift = (times - times[0])/total_time - 1/2
+    # get equally spaced times
+    times_eq = np.linspace(-1/2, 1/2, len(times))
+    interpolant = interp1d(times_shift, arr, axis=axis)
+    arr_interp = interpolant(times_eq)
+    arr_fft = np.fft.fft(arr_interp, axis=axis)
+    arr_fft = np.fft.fftshift(arr_fft, axes=axis)
+
+    # may as well get frequencies here too
+    delta_t = np.mean(np.diff(times))
+    freq = np.fft.fftfreq(len(times), delta_t)
+    freq = np.fft.fftshift(freq)
+    # return everything
+    return arr_fft, freq
+
+def my_infft(times, arr_fft, axis=0):
+    # undo all the good work of the FFT
+
+    # undo the frequency shift
+    arr_fft = np.fft.ifftshift(arr_fft, axes=axis)
+
+    # undo the fft
+    arr_interp = np.fft.ifft(arr_fft, axis=axis)
+
+    #  calculate shifted times (to -1/2, 1/2 interval)
+    total_time = times[-1] - times[0]
+    times_shift = (times - times[0])/total_time - 1/2
+
+    # get equally spaced times
+    times_eq = np.linspace(-1/2, 1/2, len(times))
+
+    # get the "interpolant of the undoing"
+    interpolant = interp1d(times_eq, arr_interp, axis=axis)
+
+    # get the original array --- backward interpolated onto
+    # the original times
+    arr_orig = interpolant(times_shift)
+
+    # return the original array
+    return arr_orig
 
 def field_amp(dirname, the_file=None):
     # Make empty dictionary for field-amplitude arrays
@@ -960,50 +1347,6 @@ def length_scales(dirname, the_file=None):
     # Return the dictionary 
     return di_out
 
-def get_grid_info(dirname):
-    di_out = dict({})
-    gi = GridInfo(dirname + '/grid_info', '')
-    # 1D arrays
-    di_out['rr'] = gi.radius
-    di_out['shell_depth'] = np.max(gi.radius) - np.min(gi.radius)
-    di_out['tt'] = gi.theta
-    di_out['cost'] = gi.costheta
-    di_out['sint'] = gi.sintheta
-    di_out['cott'] = di_out['cost']/di_out['sint']
-    di_out['tt_lat'] = (np.pi/2 - di_out['tt'])*180/np.pi
-    di_out['phi'] = gi.phi
-    di_out['lons'] = gi.phi*180./np.pi
-    di_out['rw'] = gi.rweights
-    di_out['tw'] = gi.tweights
-    di_out['pw'] = gi.pweights
-    # grid dimensions
-    di_out['nr'] = gi.nr
-    di_out['nt'] = gi.ntheta
-    di_out['nphi'] = gi.nphi
-    # 2D arrays (theta, r)
-    di_out['tt_2d'] = di_out['tt'].reshape((di_out['nt'], 1))
-    di_out['sint_2d'] = np.sin(di_out['tt_2d'])
-    di_out['cost_2d'] = np.cos(di_out['tt_2d'])
-    di_out['cott_2d'] = di_out['cost_2d']/di_out['sint_2d']
-    di_out['tw_2d'] = di_out['tw'].reshape((di_out['nt'], 1))
-    di_out['rr_2d'] = di_out['rr'].reshape((1, di_out['nr']))
-    di_out['rw_2d'] = di_out['rw'].reshape((1, di_out['nr']))
-    di_out['xx'] = di_out['rr_2d']*di_out['sint_2d']
-    di_out['zz'] = di_out['rr_2d']*di_out['cost_2d']
-    # 3D arrays (phi, theta, r)
-    di_out['phi_3d'] = di_out['phi'].reshape((di_out['nphi'], 1, 1))
-    di_out['pw_3d'] = di_out['pw'].reshape((di_out['nphi'], 1, 1))
-    di_out['tt_3d'] = di_out['tt'].reshape((1, di_out['nt'], 1))
-    di_out['sint_3d'] = np.sin(di_out['tt_3d'])
-    di_out['cost_3d'] = np.cos(di_out['tt_3d'])
-    di_out['cott_3d'] = di_out['cost_3d']/di_out['sint_3d']
-    di_out['tw_3d'] = di_out['tw'].reshape((1, di_out['nt'], 1))
-    di_out['rr_3d'] = di_out['rr'].reshape((1, 1, di_out['nr']))
-    di_out['rw_3d'] = di_out['rw'].reshape((1, 1, di_out['nr']))
-    di_out['xx_3d'] = di_out['rr_3d']*di_out['sint_3d']
-    di_out['zz_3d'] = di_out['rr_3d']*di_out['cost_3d']
-    return dotdict(di_out)
-
 def get_numbers(dirname, the_file=None, shell_depth=None):
     # output dictionary
     di = dotdict(dict({}))
@@ -1049,60 +1392,6 @@ def get_numbers(dirname, the_file=None, shell_depth=None):
     # (then, diagnostic ones)
 
     return 
-
-
-def integrate_in_r(arr, dirname):
-    # routine to integrate in radius (over each domain separately)
-    di = get_grid_info(dirname)
-    rw = di['rw']
-    nr = len(rw)
-    ndim = arr.ndim
-    newshape = [nr]
-    for i in range(ndim - 1):
-        newshape = [1] + newshape
-    rw_nd = rw.reshape(newshape)
-    ncheby, domain_bounds = get_domain_bounds(dirname)
-    ndomains = len(ncheby)
-   
-    # start the return with the fully averaged arr
-    li = [np.sum(arr*rw_nd, axis=ndim-1)]
-
-    # loop over the domains and integrate
-    if ndomains > 1:
-        ir2 = nr
-        ir1 = ir2 - ncheby[0]
-        for idom in range(ndomains):
-            if idom > 0:
-                ir2 -= ncheby[idom - 1]
-                ir1 -= ncheby[idom]
-            rw_loc = rw_nd[..., ir1:ir2]
-            li.append(np.sum(arr[..., ir1:ir2]*rw_loc, axis=ndim-1))
-    return li
-
-def get_volumes(dirname):
-    # routine to integrate in radius (over each domain separately)
-    di = get_grid_info(dirname)
-    rr = di['rr']
-    nr = di['nr']
-    fact = 4.0*np.pi/3.0
-    ncheby, domain_bounds = get_domain_bounds(dirname)
-    ndomains = len(ncheby)
-   
-    # start the return with the full volume
-    li = [fact*(np.max(rr)**3.0 - np.min(rr)**3.0)]
-
-    # loop over the domains and integrate
-    if ndomains > 1:
-        ir2 = nr
-        ir1 = ir2 - ncheby[0]
-        for idom in range(ndomains):
-            if idom > 0:
-                ir2 -= ncheby[idom - 1]
-                ir1 -= ncheby[idom]
-            r1 = rr[ir1]
-            r2 = rr[ir2 - 1]
-            li.append(fact*(r2**3.0 - r1**3.0))
-    return li
 
 def nonD_numbers(dirname, rbcz=None):
     # all the nonD numbers (as functions of radius and in different zones)
@@ -1229,238 +1518,3 @@ def nonD_numbers(dirname, rbcz=None):
     # I think we got it all!
     return di_out
 
-def opt_workload(n, nproc):
-    # optimally distributes workload (n tasks) over processes (n workers)
-    n_per_proc_min = np.int(np.floor(n/nproc)) # min workload
-    n_per_proc_max = np.int(np.ceil(n/nproc)) # max workload
-    # min/max workloads differ by 1
-    r = n/nproc - n_per_proc_min # remainder: r sets optimal number of processes
-    # to perform max workload
-    nproc_max = np.int(np.floor(nproc*r))
-    nproc_min = nproc - nproc_max # there are total nproc processes
-
-    # "optimal choice" assumes partial processes; but processes are whole
-    # correct nproc_max/min to make sure all n tasks are perofrmed
-    n_real_life = nproc_min*n_per_proc_min + nproc_max*n_per_proc_max 
-    diff = n - n_real_life
-    if diff > 0:
-        nproc_max += diff
-        nproc_min -= diff
-    else:
-        nproc_max -= diff
-        nproc_min += diff
-    return (nproc_min, nproc_max, n_per_proc_min, n_per_proc_max)
-
-# Thin out the arrays to not deal obscene quantities of data 
-# (and unreadable "curves")
-def thin_data(vals, ntot=None):
-    if ntot is None: # do nothing
-        return vals
-    else:
-        nx = np.shape(vals)[0]
-        nskip = nx//ntot
-        if not nskip in [0, 1]: #for ntot < 2*nx, do nothing
-            vals_new = vals[::nskip]
-        else:
-            vals_new = vals
-        return vals_new
-
-def array_of_strings(arr):
-    li = []
-    for ele in arr:
-        li.append(str(ele))
-    return np.array(li)
-
-def get_time_unit(dirname):
-    rotation = get_parameter(dirname, 'rotation')
-    if rotation:
-        time_unit = compute_Prot(dirname)
-        time_label = r'${\rm{P_{rot}}}$'
-        simple_label = 'rotations'
-    else:
-        time_unit = compute_tdt(dirname)
-        time_label = r'${\rm{TDT}}$'
-        simple_label = 'TDT'
-    return time_unit, time_label, rotation, simple_label
-
-def get_time_string(dirname, iter1, iter2=None, oneline=False):
-    # Get the time range in sec
-    t1 = translate_times(iter1, dirname, translate_from='iter')['val_sec']
-    if not iter2 == None:
-        t2 = translate_times(iter2, dirname, translate_from='iter')['val_sec']
-
-    # Get the baseline time unit
-    time_unit, time_label, rotation, simple_label = get_time_unit(dirname)
-
-    # set the averaging-interval label
-    if rotation:
-        fmt = '%.0f' # measure rotations
-    else:
-        fmt = '%.3f'
-
-    if not iter2 is None:
-        if oneline:
-            time_string = (('t = ' + fmt + ' to ' + fmt) %(t1/time_unit, t2/time_unit)) + ' ' + time_label + ' ' + r'$(\Delta t$' + ' = ' + (fmt %((t2 - t1)/time_unit)) + ' ' + time_label + ')'
-        else:
-            time_string = (('t = ' + fmt + ' to ' + fmt) %(t1/time_unit, t2/time_unit)) + ' ' + time_label + '\n' + r'$\Delta t$' + ' = ' + (fmt %((t2 - t1)/time_unit)) + ' ' + time_label
-    else:
-        time_string = (('t = ' + fmt + ' ') %(t1/time_unit)) + time_label
-
-    return time_string
-
-def my_mkdir(dirname):
-    if not os.path.isdir(dirname):
-        os.makedirs(dirname)
-    return dirname
-
-def arr_to_str(a, fmt):
-    st = ''
-    for ele in a:
-        st += (fmt + ' ') %ele
-    return '[' + st[:-1] + ']'
-
-def update_dict(dict_orig, dict_update):
-    dict_out = {**dict_orig} # start with original dict
-    for key, val in dict_update.items():
-        if key in dict_orig: # only update arguments that are
-            # specified in the default set
-            dict_out[key] = val
-    return dotdict(dict_out)
-
-def print_dict(di):
-    for key, value in di.items():
-        print (key, '\t\t', value)
-
-def find_bad_keys(dict_orig, dict_update, funcname, justwarn=False):
-    bad_keys = []
-    for key, val in dict_update.items():
-        if not key in dict_orig: 
-            bad_keys.append(key)
-    if len (bad_keys) > 0:
-        if justwarn:
-            print ("WARNING!")
-        else:
-            print ("ERROR!")
-        print (funcname + '() got bad keyword args:')
-        print (bad_keys)
-        if not justwarn:
-            print ("exiting")
-            sys.exit()
-
-default_latvals = np.array([-85., -75., -60., -45., -30., -15., 0., 15., 30., 45., 60., 75., 85.])
-
-def get_default_rvals(dirname, rcut=None):
-    ncheby, domain_bounds = get_domain_bounds(dirname)
-    rmin, rmax = np.min(domain_bounds), np.max(domain_bounds)
-    domain_bounds = rmin, rmax
-    ndomains = 1
-    if not rcut is None:
-        domain_bounds = rmin, rcut*rsun, rmax
-        ndomains = 2
-    basedepths = np.array([0.05, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 0.95, 1.0])
-    rvals = np.array([], dtype='float')
-    for idomain in range(ndomains):
-        rbot = domain_bounds[ndomains - idomain - 1]
-        rtop = domain_bounds[ndomains - idomain]
-        if idomain == ndomains - 1:
-            rvals_to_add = rtop - (rtop - rbot)*basedepths[:-1]
-        else:
-            rvals_to_add = rtop - (rtop - rbot)*basedepths
-        rvals = np.hstack((rvals, rvals_to_add))
-    return rvals/rsun
-
-def get_default_varnames(dirname):
-    magnetism = get_parameter(dirname, 'magnetism')
-    varnames_default = ['vr', 'vt', 'vp', 'omr',\
-                'omt', 'omp', 'sprime', 'pprime', 'ssph', 'psph']
-    if magnetism:
-        varnames_default += ['br', 'bt', 'bp', 'jr', 'jt', 'jp']
-    varnames_default = np.array(varnames_default)    
-    return varnames_default
-
-def make_array(arr, tolist=False, length=None): 
-    # arr is scalar, list, or array
-    # convert everything to a list
-    if arr is None:
-        return None
-    elif np.isscalar(arr):
-        out = [arr]
-    else:
-        out = list(arr)
-
-    # if length was specified (only good if OG length was 1
-    # make the list that length
-    if not length is None and len(out) == 1:
-        out = out*length
-
-    if tolist:
-        return out
-    else:
-        return (np.array(out))
-
-def lat_format(latval):
-    if latval < 0:
-        hemisphere = 'S'
-    else:
-        hemisphere = 'N'
-    return hemisphere + '%02.0f' %np.abs(latval)
-
-def get_slice_levels(dirname, datatype='Shell_Slices', fname=None):
-    radatadir = dirname + '/' + datatype + '/'
-    file_list, int_file_list, nfiles = get_file_lists_all(radatadir)
-    if fname is None:
-        fname = file_list[0]
-    return slicelevels(fname, path=radatadir)
-
-def isall(arg):
-    if np.isscalar(arg):
-        if arg == 'all':
-            return True
-        else:
-            return False
-    else:
-        return False
-
-def my_nfft(times, arr, axis=0):
-    # shift the times to lie in range -1/2, 1/2
-    total_time = times[-1] - times[0]
-    times_shift = (times - times[0])/total_time - 1/2
-    # get equally spaced times
-    times_eq = np.linspace(-1/2, 1/2, len(times))
-    interpolant = interp1d(times_shift, arr, axis=axis)
-    arr_interp = interpolant(times_eq)
-    arr_fft = np.fft.fft(arr_interp, axis=axis)
-    arr_fft = np.fft.fftshift(arr_fft, axes=axis)
-
-    # may as well get frequencies here too
-    delta_t = np.mean(np.diff(times))
-    freq = np.fft.fftfreq(len(times), delta_t)
-    freq = np.fft.fftshift(freq)
-    # return everything
-    return arr_fft, freq
-
-def my_infft(times, arr_fft, axis=0):
-    # undo all the good work of the FFT
-
-    # undo the frequency shift
-    arr_fft = np.fft.ifftshift(arr_fft, axes=axis)
-
-    # undo the fft
-    arr_interp = np.fft.ifft(arr_fft, axis=axis)
-
-    #  calculate shifted times (to -1/2, 1/2 interval)
-    total_time = times[-1] - times[0]
-    times_shift = (times - times[0])/total_time - 1/2
-
-    # get equally spaced times
-    times_eq = np.linspace(-1/2, 1/2, len(times))
-
-    # get the "interpolant of the undoing"
-    interpolant = interp1d(times_eq, arr_interp, axis=axis)
-
-    # get the original array --- backward interpolated onto
-    # the original times
-    arr_orig = interpolant(times_shift)
-
-    # return the original array
-    return arr_orig
