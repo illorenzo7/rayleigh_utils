@@ -307,20 +307,6 @@ def frac_nonzero(arr):
     num_total = np.size(arr)
     return (num_nonzero/num_total)
 
-def interpy(x1, y1, x2, y2, x):
-    ''' Given two points (x1, y1), (x2, y2) and an abscissa x, interpy 
-    interpolates (or extrapolates) to find y(x)'''
-    slope = (y2 - y1)/(x2 - x1)
-    y = y1 + slope*(x - x1)
-    return (y)
-
-def interpx(x1, y1, x2, y2, y):
-    ''' Given two points (x1, y1), (x2, y2) and an ordinate y, interpx 
-    interpolates (or extrapolates) to find x(y)'''
-    slope = (y2 - y1)/(x2 - x1)
-    x = x1 + (y - y1)/slope
-    return (x)
-
 def get_dict(fname):
     if fname[-3:] == 'npy':
         di = np.load(fname, encoding='latin1', allow_pickle=True).item()
@@ -335,13 +321,6 @@ def rms(array):
         return 0
     else:
         return np.sqrt(np.mean(array**2))
-
-def my_bool(x):
-    x = x.lower()
-    if x == 't' or x == 'true' or x == '1':
-        return True
-    elif x == 'f' or x == 'false' or x == '0':
-        return False
 
 def read_log(fname):
     f = open(fname, 'r')
