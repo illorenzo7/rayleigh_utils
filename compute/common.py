@@ -372,15 +372,6 @@ def read_log(fname):
 
     return di_out
 
-def print_tuple(tup, format_str, prepend=''):
-    whole_str = prepend + '('
-    for i in range(len(tup)):
-        whole_str += (format_str %tup[i])
-        if i < len(tup) - 1:
-            whole_str += ', '
-    whole_str += ')'
-    print(whole_str)
-
 def fill_str(stri, lent, char):
     len_loc = len(stri)
     nfill = lent - len_loc
@@ -613,11 +604,6 @@ def translate_times(time, dirname, translate_from='iter'):
     return dict({'val_sec': val_sec,'val_iter': val_iter,\
             'val_unit': val_unit, 'simple_label': simple_label})
 
-def get_closest_file(radatadir, val_iter):
-    file_list, int_file_list, nfiles = get_file_lists_all(radatadir)
-    iiter = np.argmin(np.abs(int_file_list - val_iter))
-    return radatadir + file_list[iiter]
-
 def drad(arr, rr): # this works for any dimension array, as long as
     # the radial index is the last one
     # make the output array
@@ -656,10 +642,14 @@ def dph(arr): # assumes phi falls along first axis
 
 def get_domain_bounds(dirname):
     try:
-        try:
+        # if one-domain, should be able to get rmin, rmax somehow
+        # (no way I can think of to determine if it's one domain
+        # without just trying it, seeing if I get error)
+        try: # can set boundaries via rmin, rmax directly
             rmin, rmax = get_parameter(dirname, 'rmin'),\
                     get_parameter(dirname, 'rmax')
-        except:
+        except: # ... or can set boundaries via aspect ratio and
+            # shell depth
             aspect_ratio = get_parameter(dirname, 'aspect_ratio')
             shell_depth = get_parameter(dirname, 'shell_depth')
             rmin = shell_depth/(1/aspect_ratio - 1)
@@ -668,7 +658,7 @@ def get_domain_bounds(dirname):
         nr = get_parameter(dirname, 'n_r')
         domain_bounds = np.array([rmin, rmax])
         ncheby = np.array([nr])
-    except:
+    except: # otherwise things must be multi-domain
         domain_bounds = get_parameter(dirname, 'domain_bounds')
         ncheby = get_parameter(dirname, 'ncheby')
     return ncheby, domain_bounds
