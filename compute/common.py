@@ -74,6 +74,9 @@ buff_line = buffer_line = "=============================================="
 
 # default latitudes to sample Rayleigh sim
 default_latvals = np.array([-85., -75., -60., -45., -30., -15., 0., 15., 30., 45., 60., 75., 85.])
+# default radial levels within a given zone 
+# (samples basically every 12.5% of the way through, and at the top)
+basedepths = np.array([0.05, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 0.95, 1.0])
 
 ######################################
 # FORMATTING ROUTINES FOR PRINT OUTPUT
@@ -151,11 +154,6 @@ def array_of_strings(arr):
     for ele in arr:
         li.append(str(ele))
     return np.array(li)
-
-def my_mkdir(dirname):
-    if not os.path.isdir(dirname):
-        os.makedirs(dirname)
-    return dirname
 
 def arr_to_str(a, fmt):
     st = ''
@@ -302,6 +300,11 @@ def thin_data(vals, ntot=None):
 
 # options for selecting a range of files (to average over, trace over, etc.)
 range_options = ['--range', '--centerrange', '--leftrange', '--rightrange', '--iter', '--n', '--f', '--all']
+
+def my_mkdir(dirname):
+    if not os.path.isdir(dirname):
+        os.makedirs(dirname)
+    return dirname
 
 def get_file_lists_all(radatadir):
     # Get all the file names in datadir and their integer counterparts
@@ -902,27 +905,54 @@ def get_volumes(dirname):
             li.append(fact*(r2**3.0 - r1**3.0))
     return li
 
-def get_default_rvals(dirname, rcut=None):
+def interpret_rvals(dirname, rvals):
+    # interpret array of rvals (array of strings), some could have the special keywords, rmin, rmid, rmax
+    # but otherwise assumed to be float
+
+    # get the actual min/max/mid of the full domain:
     ncheby, domain_bounds = get_domain_bounds(dirname)
     rmin, rmax = np.min(domain_bounds), np.max(domain_bounds)
-    domain_bounds = rmin, rmax
-    ndomains = 1
-    if not rcut is None:
-        domain_bounds = rmin, rcut*rsun, rmax
-        ndomains = 2
-    basedepths = np.array([0.05, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 0.95, 1.0])
-    rvals = np.array([], dtype='float')
-    for idomain in range(ndomains):
-        rbot = domain_bounds[ndomains - idomain - 1]
-        rtop = domain_bounds[ndomains - idomain]
-        if idomain == ndomains - 1:
-            rvals_to_add = rtop - (rtop - rbot)*basedepths[:-1]
+    rmid = 0.5*(rmin + rmax)
+
+    gi = get_grid_info(dirname)
+    rr = gi.rr
+    rvals_out = []
+    rvals = make_array(rvals)
+    for rval in rvals:
+        if rval == 'rmin':
+            rvals_out.append(rmin)
+        elif rval == 'rmid':
+            rvals_out.append(rmid)
+        elif rval == 'rmax':
+            rvals_out.append(rmax)
         else:
-            rvals_to_add = rtop - (rtop - rbot)*basedepths
-        rvals = np.hstack((rvals, rvals_to_add))
-    return rvals/rsun
+            # get the closest r value to the one specified
+            ind = np.argmin(np.abs(rr - float(rval)))
+            rvals_out.append(rr[ind])   
+    return np.array(rvals_out)
 
+def get_default_rvals(dirname, rvals=None):
+    # default sampling locations
+    # to specify multiple domains, need to specify boundary points (rvals, in cm)
+    ncheby, domain_bounds = get_domain_bounds(dirname)
+    rmin, rmax = np.min(domain_bounds), np.max(domain_bounds)
 
+    if rvals is None:
+        rvals = np.array([rmin, rmax])
+    else:
+        rvals = interpret_rvals(dirname, rvals)
+        rvals = np.sort(rvals) # easier if rvals are in ascending order
+
+    rvals_out = np.array([])
+    for ir in range(len(rvals) - 1): # rvals define len(rvals) - 1 domains
+        rbot = rvals[ir]
+        rtop = rvals[ir+1]
+        if ir == 0: # for the first domain, include the bottom boundary
+            rvals_to_add = np.hstack((rbot, rbot + (rtop - rbot)*basedepths))
+        else:
+            rvals_to_add = rbot + (rtop - rbot)*basedepths
+        rvals_out = np.hstack((rvals_out, rvals_to_add))
+    return rvals_out
 
 def translate_times(time, dirname, translate_from='iter'):
     # Get the baseline time unit
