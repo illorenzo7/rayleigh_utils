@@ -1107,7 +1107,7 @@ def get_default_varnames(dirname):
     return varnames_default
 
 ##############################################################
-ROUTINES FOR FIELD AMPLITUDES, LENGTH SCALES AND NON-D NUMBERS
+# ROUTINES FOR FIELD AMPLITUDES, LENGTH SCALES AND NON-D NUMBERS
 ##############################################################
 
 def field_amp(dirname, the_file=None):
