@@ -211,6 +211,17 @@ def is_an_int(string):
         bool_val *= (char >= '0' and char <= '9')
     return(bool(bool_val))
 
+def isall(arg):
+    if np.isscalar(arg):
+        isitall = arg
+    else:
+        isitall = args[0]
+
+    if arg == 'all':
+        return True
+    else:
+        return False
+
 def frac_nonzero(arr):
     num_nonzero = len(np.where(arr != 0)[0])
     num_total = np.size(arr)
@@ -222,6 +233,7 @@ def rms(array):
     else:
         return np.sqrt(np.mean(array**2))
 
+# derivative routines
 def drad(arr, rr): # this works for any dimension array, as long as
     # the radial index is the last one
     # make the output array
@@ -293,6 +305,51 @@ def thin_data(vals, ntot=None):
         else:
             vals_new = vals
         return vals_new
+
+# Nonlinear Fourier transforms
+def my_nfft(times, arr, axis=0):
+    # shift the times to lie in range -1/2, 1/2
+    total_time = times[-1] - times[0]
+    times_shift = (times - times[0])/total_time - 1/2
+    # get equally spaced times
+    times_eq = np.linspace(-1/2, 1/2, len(times))
+    interpolant = interp1d(times_shift, arr, axis=axis)
+    arr_interp = interpolant(times_eq)
+    arr_fft = np.fft.fft(arr_interp, axis=axis)
+    arr_fft = np.fft.fftshift(arr_fft, axes=axis)
+
+    # may as well get frequencies here too
+    delta_t = np.mean(np.diff(times))
+    freq = np.fft.fftfreq(len(times), delta_t)
+    freq = np.fft.fftshift(freq)
+    # return everything
+    return arr_fft, freq
+
+def my_infft(times, arr_fft, axis=0):
+    # undo all the good work of the FFT
+
+    # undo the frequency shift
+    arr_fft = np.fft.ifftshift(arr_fft, axes=axis)
+
+    # undo the fft
+    arr_interp = np.fft.ifft(arr_fft, axis=axis)
+
+    #  calculate shifted times (to -1/2, 1/2 interval)
+    total_time = times[-1] - times[0]
+    times_shift = (times - times[0])/total_time - 1/2
+
+    # get equally spaced times
+    times_eq = np.linspace(-1/2, 1/2, len(times))
+
+    # get the "interpolant of the undoing"
+    interpolant = interp1d(times_eq, arr_interp, axis=axis)
+
+    # get the original array --- backward interpolated onto
+    # the original times
+    arr_orig = interpolant(times_shift)
+
+    # return the original array
+    return arr_orig
 
 #############################################################
 # ROUTINES FOR CHARACTERIZING/SORTING RAYLEIGH RAW DATA FILES
@@ -954,19 +1011,47 @@ def get_default_rvals(dirname, rvals=None):
         rvals_out = np.hstack((rvals_out, rvals_to_add))
     return rvals_out
 
+def get_slice_levels(dirname, datatype='Shell_Slices', fname=None):
+    radatadir = dirname + '/' + datatype + '/'
+    file_list, int_file_list, nfiles = get_file_lists_all(radatadir)
+    if fname is None:
+        fname = file_list[0]
+    return slicelevels(fname, path=radatadir)
+
+############################################
+# ROUTINES FOR TIME PARAMETERS OF SIMULATION
+############################################
+
+def get_time_unit(dirname):
+    # get basic time unit of simulation (rotation period or diffusion time)
+    rotation = get_parameter(dirname, 'rotation')
+    if rotation:
+        time_unit = compute_Prot(dirname)
+        time_label = r'${\rm{P_{rot}}}$'
+        simple_label = 'rotations'
+    else:
+        time_unit = compute_tdt(dirname)
+        time_label = r'${\rm{TDT}}$'
+        simple_label = 'TDT'
+    return time_unit, time_label, rotation, simple_label
+
 def translate_times(time, dirname, translate_from='iter'):
+    # TO USE MUST HAVE G_Avgs_trace file
+    # change between different time units (can translate from: iter, unit (default time unit), 
+    # rotation period, thermal diffusion time, seconds
+
     # Get the baseline time unit
     time_unit, time_label, rotation, simple_label = get_time_unit(dirname)
 
     # Get the G_Avgs trace
     datadir = dirname + '/data/'
     the_file = get_widest_range_file(datadir, 'G_Avgs_trace')
-    if not the_file is None:
-        di = get_dict(the_file)
-    else:
+    if the_file is None:
         print ("translate_times(): you need to have G_Avgs_trace file")
         print ("to use me! Exiting.")
         sys.exit()
+    else:
+        di = get_dict(the_file)
 
     # Get times and iters from trace file
     times = di['times']
@@ -983,20 +1068,8 @@ def translate_times(time, dirname, translate_from='iter'):
     val_iter = iters[ind]
     val_unit = times[ind]/time_unit
 
-    return dict({'val_sec': val_sec,'val_iter': val_iter,\
-            'val_unit': val_unit, 'simple_label': simple_label})
-
-def get_time_unit(dirname):
-    rotation = get_parameter(dirname, 'rotation')
-    if rotation:
-        time_unit = compute_Prot(dirname)
-        time_label = r'${\rm{P_{rot}}}$'
-        simple_label = 'rotations'
-    else:
-        time_unit = compute_tdt(dirname)
-        time_label = r'${\rm{TDT}}$'
-        simple_label = 'TDT'
-    return time_unit, time_label, rotation, simple_label
+    return dotdict(dict({'val_sec': val_sec,'val_iter': val_iter,\
+            'val_unit': val_unit, 'simple_label': simple_label}))
 
 def get_time_string(dirname, iter1, iter2=None, oneline=False):
     # Get the time range in sec
@@ -1023,6 +1096,7 @@ def get_time_string(dirname, iter1, iter2=None, oneline=False):
 
     return time_string
 
+# default variable names to plot on slices 
 def get_default_varnames(dirname):
     magnetism = get_parameter(dirname, 'magnetism')
     varnames_default = ['vr', 'vt', 'vp', 'omr',\
@@ -1032,65 +1106,9 @@ def get_default_varnames(dirname):
     varnames_default = np.array(varnames_default)    
     return varnames_default
 
-def get_slice_levels(dirname, datatype='Shell_Slices', fname=None):
-    radatadir = dirname + '/' + datatype + '/'
-    file_list, int_file_list, nfiles = get_file_lists_all(radatadir)
-    if fname is None:
-        fname = file_list[0]
-    return slicelevels(fname, path=radatadir)
-
-def isall(arg):
-    if np.isscalar(arg):
-        if arg == 'all':
-            return True
-        else:
-            return False
-    else:
-        return False
-
-def my_nfft(times, arr, axis=0):
-    # shift the times to lie in range -1/2, 1/2
-    total_time = times[-1] - times[0]
-    times_shift = (times - times[0])/total_time - 1/2
-    # get equally spaced times
-    times_eq = np.linspace(-1/2, 1/2, len(times))
-    interpolant = interp1d(times_shift, arr, axis=axis)
-    arr_interp = interpolant(times_eq)
-    arr_fft = np.fft.fft(arr_interp, axis=axis)
-    arr_fft = np.fft.fftshift(arr_fft, axes=axis)
-
-    # may as well get frequencies here too
-    delta_t = np.mean(np.diff(times))
-    freq = np.fft.fftfreq(len(times), delta_t)
-    freq = np.fft.fftshift(freq)
-    # return everything
-    return arr_fft, freq
-
-def my_infft(times, arr_fft, axis=0):
-    # undo all the good work of the FFT
-
-    # undo the frequency shift
-    arr_fft = np.fft.ifftshift(arr_fft, axes=axis)
-
-    # undo the fft
-    arr_interp = np.fft.ifft(arr_fft, axis=axis)
-
-    #  calculate shifted times (to -1/2, 1/2 interval)
-    total_time = times[-1] - times[0]
-    times_shift = (times - times[0])/total_time - 1/2
-
-    # get equally spaced times
-    times_eq = np.linspace(-1/2, 1/2, len(times))
-
-    # get the "interpolant of the undoing"
-    interpolant = interp1d(times_eq, arr_interp, axis=axis)
-
-    # get the original array --- backward interpolated onto
-    # the original times
-    arr_orig = interpolant(times_shift)
-
-    # return the original array
-    return arr_orig
+##############################################################
+ROUTINES FOR FIELD AMPLITUDES, LENGTH SCALES AND NON-D NUMBERS
+##############################################################
 
 def field_amp(dirname, the_file=None):
     # Make empty dictionary for field-amplitude arrays
