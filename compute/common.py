@@ -14,50 +14,54 @@ from rayleigh_diagnostics_alt import slicelevels
 from compute_grid_info import compute_grid_info, compute_theta_grid,\
         compute_r_grid
 
-###############################
-# BASIC ASTROPHYSICAL CONSTANTS
-###############################
-
-# Solar radius, luminosity, and mass (as we have been assuming in Rayleigh)
-rsun = 6.957e10  # value taken from IAU recommendation: arxiv, 1510.07674
-                 # should probably figure out how Nick chose 
-                 # 5.000 and 6.586209 as the base of the CZ and location 
-                 # of 3rd density scale height (Comparing polytrope to 
-                 # model S?)
-G = 6.67e-8      # Rounded to two decimals in Rayleigh...
-lsun = 3.846e33  # Used in Rayleigh: disagrees with IAU recommended value 
-                 # of 3.828e33
-msun = 1.98891e33 # FROM WIKIPEDIA: 1.98847 \pm 0.00007
-                  # From IAU recommendation: 1.9885, with 
-                  # G = 6.67408 \pm 0.00031 (10^-8 c.g.s.)
-                # NOTE: ALL THESE QUANTITIES CHANGE IN TIME (except G, if
-                # the cosmologists are right...)
-
-#Thermodyanmic variables
-c_P = 3.5e8
-thermo_gamma = 5./3.
-thermo_R = c_P*(1. - 1./thermo_gamma)
-
-# I am now calling r_m the base of the convection zone, 
-# while r_i (the inner shell radius) can vary
-rhobcz = 0.18053428
-tempbcz = 2111256.4
-rbcz = 5.0e10
-rbcz_nond = rbcz/rsun
-rmax_n3 = 6.5860209e10 # Radii consistent with the bottom 3 density scale 
-        # heights in the Sun rho_i above corresponds to the density
-        # at the base of the convection zone
-
-#######################################
-# RANDOM CONSTANTS FOR COMPUTE ROUTINES
-#######################################
-
 # handy class for making dictionaries "dot-accessible" "key-accessible" and vice versa
 class dotdict(dict):
     """dot.notation access to dictionary attributes"""
     __getattr__ = dict.get
     __setattr__ = dict.__setitem__
     __delattr__ = dict.__delitem__
+
+
+###############################
+# BASIC ASTROPHYSICAL CONSTANTS
+###############################
+
+# universal gravitational constant
+guniv= 6.67e-8      # Rounded to two decimals in Rayleigh...
+
+# solar stuff
+sun = dotdict(dict({}))
+
+# Solar radius, luminosity, and mass (as we have been assuming in Rayleigh)
+rsun = sun.r = 6.957e10  # value taken from IAU recommendation: arxiv, 1510.07674
+                 # should probably figure out how Nick chose 
+                 # 5.000 and 6.586209 as the base of the CZ and location 
+                 # of 3rd density scale height (Comparing polytrope to 
+                 # model S?)
+lsun = sun.l = 3.846e33  # Used in Rayleigh: disagrees with IAU recommended value 
+                 # of 3.828e33
+msun = sun.m = 1.98891e33 # FROM WIKIPEDIA: 1.98847 \pm 0.00007
+                  # From IAU recommendation: 1.9885, with 
+                  # G = 6.67408 \pm 0.00031 (10^-8 c.g.s.)
+                # NOTE: ALL THESE QUANTITIES CHANGE IN TIME (except G, if
+                # the cosmologists are right...)
+
+#Thermodyanmic variables
+sun.cp = 3.5e8
+gammaideal = 5./3.
+sun.thermor = sun.cp*(1. - 1./gammaideal)
+
+# solar base of the convection zone stuff
+sun.rhobcz = 0.18053428
+sun.tempbcz = 2111256.4
+sun.rbcz = 5.0e10
+sun.rbcznond = sun.rbcz/sun.r
+# radius for the third density scale height (according to model S)
+sun.rnrho3 = 6.5860209e10 
+
+#######################################
+# RANDOM CONSTANTS FOR COMPUTE ROUTINES
+#######################################
 
 # width of print messages in parallel routines
 lent = 50
