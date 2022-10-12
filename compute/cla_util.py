@@ -1,14 +1,13 @@
 # Routines to deal with command-line arguments (CLAs)
-# It's a long one!
 # Created: 04/17/2021
 
 import numpy as np
-#from common import get_parameter, get_domain_bounds, array_of_strings, is_an_int, rsun
 from common import *
 from varprops import *
 from lut import *
 
 def read_cla_vals(args, i):
+    # read values associated with CLA arg (from string after --arg)
     args_after = args[i+1:]
     nafter = len(args_after)
     iend_found = False
@@ -34,16 +33,20 @@ def read_cla_vals(args, i):
         vals = vals[0]
     return vals
 
-def read_clas_raw(args): # avoid get_parameter stuff
+def read_clas_raw(args): 
+    # get all command-line arguments and their values
+    # avoid get_parameter stuff
     # and fancy argument designation stuff
-    clas0 = dict({})
+
+    # these are the very basic (0th-order) command line arguments
+    clas0 = dotdict()
     clas0['routinename'] = args[0].split('/')[-1][:-3]
     dirname = args[1]
     clas0['dirname'] = dirname
     clas0['tag'] = ''
 
     # get the other arguments
-    clas = dict({})
+    clas = dotdict()
     args = args[2:]
     nargs = len(args)
     for i in range(nargs):
@@ -55,8 +58,13 @@ def read_clas_raw(args): # avoid get_parameter stuff
     return dotdict(clas0), dotdict(clas)
 
 def read_clas(args):
+    # get all command-line arguments and their values
+    # interpret certain special CLAs and values like 
+    # --nosave and 
+    # --rvals all
+
     # first get basic info
-    clas0 = dict({})
+    clas0 = dotdict()
     clas0['routinename'] = args[0].split('/')[-1][:-3]
     dirname = args[1]
     clas0['dirname'] = dirname
@@ -67,27 +75,16 @@ def read_clas(args):
     clas0['tag'] = ''
 
     # see if magnetism/rotation are on
-    magnetism = get_parameter(dirname, 'magnetism')
-    clas0['magnetism'] = magnetism
-    rotation = get_parameter(dirname, 'rotation')
-    clas0['rotation'] = rotation
-
-    # get the spherical domain
-    ncheby, domain_bounds = get_domain_bounds(dirname)
-    rMIN = domain_bounds[0]/rsun
-    rMAX = domain_bounds[-1]/rsun
-    shell_depth = rMAX - rMIN
-    if len(ncheby) == 2:
-        rBCZ = domain_bounds[1]/rsun
-        shell_depth_cz = rMAX - rBCZ
-        shell_depth_rz = rBCZ - rMIN
+    clas0['magnetism'] = get_parameter(dirname, 'magnetism')
+    clas0['rotation'] = get_parameter(dirname, 'rotation')
 
     # get the other arguments
     clas = dict({})
     args = args[2:]
     nargs = len(args)
     for i in range(nargs):
-        # some arguments get treated differently
+        # some arguments get treated differently 
+        # (they have keyword shortcuts)
         # basic args first
         arg = args[i]
         if arg == '--noshow':
@@ -110,22 +107,14 @@ def read_clas(args):
         elif arg == '--tag':
             clas0['tag'] = '_' + args[i+1]
 
-        elif arg == '--depths':
-            clas['rvals'] = rMAX - read_cla_vals(args, i)*d
-        elif arg == '--depthscz':
-            clas['rvals'] = rMAX - read_cla_vals(args, i)*shell_depth_cz
-        elif arg == '--depthirz':
-            clas['rvals'] = rBCZ - read_cla_vals(args, i)*shell_depth_rz
         elif arg == '--rvals':
             if args[i+1] == 'default':
                 clas['rvals'] = get_default_rvals(clas0['dirname'])
-            elif args[i+1] == 'all':
-                clas['rvals'] = 'all'
+            elif isall(args[i+1]):
+                clas['rvals'] = get_sliceinfo(clas0.dirname).rvals
             else:
                 clas['rvals'] = read_cla_vals(args, i)
-        elif arg == '--rvalscm':
-            clas['rvals'] = read_cla_vals(args, i)/rsun
-        elif arg == '--rrange':
+        elif arg == '--rrange': # specify range of rvals
             rbot, rtop, nrvals = read_cla_vals(args, i)
             nrvals = int(nrvals)
             clas['rvals'] = np.linspace(rtop, rbot, nrvals)
@@ -138,15 +127,12 @@ def read_clas(args):
         
         # desired quantity list (or group)
         elif arg == '--qvals': # able to specify either index or quantity name
-            if not isall(args[i+1]): # if it's 'all', do nothing
+            if isall(args[i+1]):
+                clas['rvals'] = get_sliceinfo(clas0.dirname).qvals
+            else:
                 # qvals....make sure it's an integer array
                 qvals = make_array(read_cla_vals(args, i))
                 qvals = parse_quantities(qvals)[0]
-                # leave qvals = 'all' alone; (calling script may want to 
-                # use this for something specific
-                # 04/13/22: at some point, find a cleaner way of doing this
-            else:
-                qvals = 'all'
             clas['qvals'] = qvals
         elif arg == '--latrange':
             latmin, latmax, nlatvals = read_cla_vals(args, i)

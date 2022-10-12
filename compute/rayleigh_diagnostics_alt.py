@@ -925,12 +925,14 @@ class Equatorial_Slices:
         self.lut = get_lut(self.qv)
         fd.close()
 
-class slicelevels:
-    """Rayleigh Structure just containing rvals (and inds) of a Shell_Spectra or Shell_Slice file
+class sliceinfo:
+    """Rayleigh Structure just containing rvals, qv, and rinds of a Shell_Spectra or Shell_Slice file
     ----------------------------------
-    self.nr                                       : no. radial points
-    self.radius[0:nr-1]                           : radii of the output
-    self.inds[0:nr-1]                             : radial indices of the output
+    self.nr                                      : no. radial points
+    self.nq                                      : no. quantities output
+    self.rvals[0:nr-1]                           : radii of the output (alias radius)
+    self.rinds[0:nr-1]                           : radial indices of the output (alias inds)
+    self.qv[0:nq-1]                              : quantity codes output (alias qvals)
     """
 
     def __init__(self,filename='none',path='Shell_Slices/'):
@@ -955,8 +957,10 @@ class slicelevels:
         qv = np.reshape(swapread(fd,dtype='int32',count=nq,swap=bs),(nq), order = 'F')
 
         self.nr = nr
-        self.radius = np.reshape(swapread(fd,dtype='float64',count=nr,swap=bs),(nr), order = 'F')
-        self.inds = np.reshape(swapread(fd,dtype='int32',count=nr,swap=bs),(nr), order = 'F')
+        self.nq = nq
+        self.radius = self.rvals = np.reshape(swapread(fd,dtype='float64',count=nr,swap=bs),(nr), order = 'F')
+        self.inds = self.rinds = np.reshape(swapread(fd,dtype='int32',count=nr,swap=bs),(nr), order = 'F')
+        self.qv = self.qvals = np.sort(qv)
         fd.close()
 
 
