@@ -691,32 +691,10 @@ def get_parameter(dirname, parameter):
 # in main_input, so need special routines to extract them
 #########################################################
 
-def get_lum(dirname):
-    # Make lstar = lsun unless otherwise specified in main_input
-    try:
-        # First see if we can get c_10 from equation_coefficients:
-        try:
-            eq = equation_coefficients()
-            eq.read(dirname + '/equation_coefficients')
-            lstar = eq.constants[9]
-            print("Got luminosity from 'equation_coefficients' file")
-        except: # otherwise get "luminosity" from main_input
-            lstar = get_parameter(dirname, 'luminosity')
-            print ("Got luminosity from 'main_input' file")
-    except:
-        lstar = lsun
-        print ("Cannot find luminosity in either 'equation_coefficients'")
-        print("or 'main_input' files. Setting luminosity to lsun.")
-    return lstar
-
+# for backwards compatibility (remove references as you see them)
 def compute_Prot(dirname):
-    try:
-        Om0 = get_parameter(dirname, 'angular_velocity')
-    except:
-        eq = equation_coefficients()
-        eq.read(dirname + '/equation_coefficients')
-        Om0 = eq.constants[0]/2.
-    return 2*np.pi/Om0
+    eq = get_eq(dirname)
+    return eq.prot
 
 def get_domain_bounds(dirname):
     try:
@@ -913,59 +891,6 @@ def get_grid_info(dirname):
 # Routines associated with grid info
 ####################################
 
-def integrate_in_r(arr, dirname):
-    # routine to integrate in radius (over each domain separately)
-    di = get_grid_info(dirname)
-    rw = di['rw']
-    nr = len(rw)
-    ndim = arr.ndim
-    newshape = [nr]
-    for i in range(ndim - 1):
-        newshape = [1] + newshape
-    rw_nd = rw.reshape(newshape)
-    ncheby, domain_bounds = get_domain_bounds(dirname)
-    ndomains = len(ncheby)
-   
-    # start the return with the fully averaged arr
-    li = [np.sum(arr*rw_nd, axis=ndim-1)]
-
-    # loop over the domains and integrate
-    if ndomains > 1:
-        ir2 = nr
-        ir1 = ir2 - ncheby[0]
-        for idom in range(ndomains):
-            if idom > 0:
-                ir2 -= ncheby[idom - 1]
-                ir1 -= ncheby[idom]
-            rw_loc = rw_nd[..., ir1:ir2]
-            li.append(np.sum(arr[..., ir1:ir2]*rw_loc, axis=ndim-1))
-    return li
-
-def get_volumes(dirname):
-    # routine to integrate in radius (over each domain separately)
-    di = get_grid_info(dirname)
-    rr = di['rr']
-    nr = di['nr']
-    fact = 4.0*np.pi/3.0
-    ncheby, domain_bounds = get_domain_bounds(dirname)
-    ndomains = len(ncheby)
-   
-    # start the return with the full volume
-    li = [fact*(np.max(rr)**3.0 - np.min(rr)**3.0)]
-
-    # loop over the domains and integrate
-    if ndomains > 1:
-        ir2 = nr
-        ir1 = ir2 - ncheby[0]
-        for idom in range(ndomains):
-            if idom > 0:
-                ir2 -= ncheby[idom - 1]
-                ir1 -= ncheby[idom]
-            r1 = rr[ir1]
-            r2 = rr[ir2 - 1]
-            li.append(fact*(r2**3.0 - r1**3.0))
-    return li
-
 def interpret_rvals(dirname, rvals):
     # interpret array of rvals (array of strings), some could have the special keywords, rmin, rmid, rmax
     # but otherwise assumed to be float
@@ -1021,6 +946,19 @@ def get_sliceinfo(dirname, datatype='Shell_Slices', fname=None):
     if fname is None:
         fname = file_list[0]
     return sliceinfo(fname, path=radatadir)
+
+def get_vol(dirname, r1='rmin', r2='rmax'):
+    # get the shell volume in the range (r1, r2)
+    r1, r2 = interpret_rvals(dirname, np.array([r1, r2]))
+    return 4./3.*np.pi*(r2**3 - r1**3)
+
+def volav_in_radius(dirname, arr, r1='rmin', r2='rmax'):
+    gi = get_grid_info(dirname)
+    rr, rw = gi.rr, gi.rw
+    r1, r2 = interpret_rvals(dirname, np.array([r1, r2]))
+    ir1, ir2 = np.argmin(np.abs(rr - r1)), np.argmin(np.abs(rr - r2))
+    return np.sum((arr*rw)[ir2:ir1+1])/np.sum(rw[ir2:ir1+1])
+
 
 ############################################
 # ROUTINES FOR TIME PARAMETERS OF SIMULATION

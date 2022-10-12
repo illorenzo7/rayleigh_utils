@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.integrate import cumtrapz
 import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
@@ -26,6 +27,22 @@ def get_numbers_input(dirname, r1='rmin', r2='rmax'):
     di.dc = eq.rho[ir1]/eq.rho[ir2]
 
     # Prandtl number
+    nu_volav = volav_in_radius(dirname, eq.nu, r1, r2)
+    k_volav = volav_in_radius(dirname, eq.kappa, r1, r2)
+    di.pr = nu_volav/k_volav
+
+    # flux rayleigh number
+    vol = get_vol(dirname)
+    flux_rad = vol/(4*np.pi*eq.rr**2)*np.cumsum(eq.Q*gi.rw)
+    flux_nonrad = eq.lum/(4*np.pi*eq.rr**2) - flux_rad
+    flux_volav = volav_in_radius(dirname, flux_nonrad, r1, r2)
+    rho_volav = volav_in_radius(dirname, eq.rho, r1, r2)
+    T_volav = volav_in_radius(dirname, eq.T, r1, r2)
+    kappa_volav = volav_in_radius(dirname, eq.kappa, r1, r2)
+    g_volav = volav_in_radius(dirname, eq.g, r1, r2)
+    cp = get_parameter(dirname, 'pressure_specific_heat')
+    H = r2 - r1
+    di.raf = g_volav*flux_volav*H**4/(cp*rho_volav*T_volav*nu_volav*kappa_volav)
 
 
     return di
