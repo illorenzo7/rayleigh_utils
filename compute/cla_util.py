@@ -6,8 +6,8 @@ from common import *
 from varprops import *
 from lut import *
 
-def read_cla_vals(args, i):
-    # read values associated with CLA arg (from string after --arg)
+def read_string_after_arg(args, i):
+    # read string with CLA arg (i.e., the string after --arg)
     args_after = args[i+1:]
     nafter = len(args_after)
     iend_found = False
@@ -18,8 +18,11 @@ def read_cla_vals(args, i):
             iend_found = True
     if not iend_found:
         iend = nafter
-    vals_string = args_after[:iend]
+    return args_after[:iend]
 
+def read_cla_vals(args, i):
+    # read values associated with CLA arg (from string after --arg)
+    vals_string = read_string_after_arg(args, i)
     vals = []
     if len(vals_string) == 0: # must be a boolean set to True
         vals.append(True)
@@ -113,9 +116,13 @@ def read_clas(args):
             elif isall(args[i+1]):
                 clas['rvals'] = get_sliceinfo(clas0.dirname).rvals
             else:
-                clas['rvals'] = read_cla_vals(args, i)
+                string_after = get_string_after_arg(args, i)
+                clas['rvals'] = interpret_rvals(clas0.dirname,\
+                        string_after.split())
         elif arg == '--rrange': # specify range of rvals
-            rbot, rtop, nrvals = read_cla_vals(args, i)
+            vals_after = get_string_after_arg(args, i).split()
+            nrvals = int(vals_after[2])
+            rbot, rtop = interpret_rvals(clas0.dirname, vals_after[:2])
             nrvals = int(nrvals)
             clas['rvals'] = np.linspace(rtop, rbot, nrvals)
 
