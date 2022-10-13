@@ -39,10 +39,10 @@ def get_numbers_input(dirname, r1='rmin', r2='rmax'):
     rho_volav = volav_in_radius(dirname, eq.rho, r1, r2)
     T_volav = volav_in_radius(dirname, eq.T, r1, r2)
     kappa_volav = volav_in_radius(dirname, eq.kappa, r1, r2)
-    g_volav = volav_in_radius(dirname, eq.g, r1, r2)
+    g_volav = volav_in_radius(dirname, np.abs(eq.g), r1, r2)
     cp = get_parameter(dirname, 'pressure_specific_heat')
     H = r2 - r1
-    di.raf = g_volav*flux_volav*H**4/(cp*rho_volav*T_volav*nu_volav*kappa_volav)
+    di.raf = g_volav*flux_volav*H**4/(cp*rho_volav*T_volav*nu_volav*kappa_volav**2)
 
 
     return di
