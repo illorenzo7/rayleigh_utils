@@ -5,30 +5,26 @@ import numpy as np
 from scipy.integrate import simpson
 import sys, os
 sys.path.append(os.environ['raco'])
-from common import *
+from common import guniv, sun
 from cla_util import *
-import lane_emden as le
 
-def compute_polytrope(ri, ro, Nrho, nr, poly_n, rho_i):
-    d = ro - ri
-    beta = ri/ro
-    poly_gamma = (poly_n + 1.)/poly_n
-    msun = 1.98891e33
-    gas_constant = c_P*(1. - 1./poly_gamma)
+def compute_polytrope(rmin=sun.rbcz, rmax=sun.rnrho3, nrho=3.0, nr=500, poly_n=1.5, rhomin=sun.rhobcz, mstar=sun.m, cp=sun.cp):
+    d = rmax - rmin
+    beta = rmin/rmax
+    gas_constant = cp/(poly_n + 1)
 
-    r = np.linspace(ro, ri, nr)
-
-    exp = np.exp(Nrho/poly_n)
+    rr = np.linspace(rmax, rmin, nr)
+    exp = np.exp(nrho/poly_n)
 
     c0 = (1.+beta)/(1.-beta) * (1-beta*exp)/(1.+beta*exp)
     c1 = (1.+beta)*beta/(1.-beta)**2  * (exp - 1.)/(beta*exp + 1.)
 
-    zeta = c0 + c1*d/r
-    zeta_i = (1. + beta)*exp/(1. + beta*exp)
+    zeta = c0 + c1*d/rr
+    zetamin = (1. + beta)*exp/(1. + beta*exp)
 
-    rho_c = rho_i/zeta_i**poly_n
+    rho_c = rhomin/zetamin**poly_n
 
-    T_c = G*msun/(c_P*c1*d)
+    T_c = guniv*mstar/(cp*c1*d)
 
     P_c = gas_constant*rho_c*T_c
 

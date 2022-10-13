@@ -8,8 +8,7 @@ import sys, os, pickle
 from string_to_num import string_to_number_or_array
 sys.path.append(os.environ['rapp'])
 from reference_tools import equation_coefficients
-from rayleigh_diagnostics import G_Avgs, Shell_Slices, ReferenceState,\
-    TransportCoeffs, GridInfo
+from rayleigh_diagnostics import G_Avgs, Shell_Slices, GridInfo
 from rayleigh_diagnostics_alt import sliceinfo
 from compute_grid_info import compute_grid_info, compute_theta_grid,\
         compute_r_grid
@@ -776,10 +775,30 @@ def compute_tdt(dirname, mag=False, visc=False, tach=False):
 # Get basic radial coefficients (grid info, reference state) associated with sim.
 #################################################################################
 
-def get_eq(dirname, fname='equation_coefficients'): 
+def get_eq(dirname, fname=None): 
     # return a human readable version of equation_coefficients
-    # [dirname], either using equation_coefficients or 
-    # transport/reference files
+    # for [dirname], using either (in order of priority)
+
+    # 1. binary file specified by fname
+    # 2. equation_coefficients file
+    # 3. custom_reference_binary file
+    # 4. polytrope + transport coefs defined by main_input
+
+    # unless we're getting things directly from equation_coefficients 
+    # (the file output when the simulation is actually run)
+    # overwrite some of the equation constants with whatever is 
+    # in main_input
+
+    overwrite = True
+    if fname is None:
+        if os.path.exists(dirname + '/' + 'equation_coefficients'):
+            fname = 'equation_coefficients'
+            overwrite = False
+        elif os.path.exists(dirname + '/' + 'custom_reference_binary'):
+            fname = 'custom_reference_binary'
+
+    if fname is None: # no binary file; get everything from main_input
+
     if os.path.exists(dirname + '/' + fname):
         # by default, get info from equation_coefficients (if file exists)
         eq = equation_coefficients()
