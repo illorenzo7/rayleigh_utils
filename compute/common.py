@@ -638,52 +638,62 @@ def strip_dirname(dirname, wrap=False):
     return dirname_stripped
 
 def get_parameter(dirname, parameter):
-    # read a paremter from main_input
+    # read a parameter from main_input
+
+    # first read in main_input
     f = open(dirname + '/main_input')
     lines = f.readlines()
-    n = len(lines)
 
-    # search for parameter, line-by-line
-    for i in range(n):
+    # pare down this down a bit
+    lines_new = []
+    for i in range(len(lines)):
         # process each line
         line = lines[i]
 
         # make lower case
         line = line.lower()
 
-        # remove spaces and newline character (at the end of each line)
+        # remove spaces and newline/tab characters
         line = line.replace(' ', '')
         line = line.replace('\n', '')
+        line = line.replace('\t', '')
 
-        if line == '':
-            continue
-        
-        # remove possible trailing comma from line
-        if line[-1] == ',':
-            line = line[:-1]
+        # some lines will be blank:
+        if line != '':
+            # only keep line if it's not a comment
+            if line[0] != "!":
+                # remove trailing comments
+                i_exclamation = line.find('!')
+                if i_exclamation != -1: # find returns -1 if character 
+                        # wasn't found (i.e. there were no comments)
+                    line = line[:i_exclamation]
+                lines_new.append(line)
 
-        # line ready to process
-        # only lines with "=" are relevant
-        # ignore the ones commented out with !
-        if '=' in line and line[0] != '!':
-            if '!' in line:
-                # there was a comment after the code statement
-                # throw it away!
-                excl_index = line.index('!')
-                line = line[:excl_index]
+    # see if parameter is there --- search line by line
+    st_param = ''
+    for i in range(len(lines_new)):
+        line = lines_new[i]
+        if line[:len(parameter)] == parameter: # found the parameter
+            st_param += line.split('=')[1]
+            # sometimes values continue on next line(s)
+            keep_searching = True
+            for j in range(i+1, len(lines_new)):
+                if "=" in lines_new[j]:
+                    keep_searching = False
+                if keep_searching:
+                    st_param += lines_new[j]
+    if st_param != '': # we successfully read the parameter
+        return string_to_number_or_array(st_param)
+    else: # we couldn't find parameter explicitly
 
-            lhs, rhs = line.split('=')
-            if parameter == lhs: # found the parameter!
-                num_string = rhs
-                return (string_to_number_or_array(num_string))
-
-    # if we reached this point, nothing was returned
-    if parameter in ['magnetism', 'use_extrema', 'rotation']:
-        return False # if these weren't specified, they are false
-    else:
-        raise Exception('The parameter ' + parameter + ' was not\n' +\
-                        'specified in run: ' + dirname + '. \n' +\
-                        'exiting NOW\n')
+        # these parameters still have a value (False)
+        # if they weren't specified
+        if parameter in ['magnetism', 'use_extrema', 'rotation']:
+            return False # if these weren't specified, they are false
+        else: # or finally, the parameter might just not be there
+            raise Exception('The parameter ' + parameter + ' was not\n' +\
+                            'specified in run: ' + dirname + '. \n' +\
+                            'exiting NOW\n')
 
 #########################################################
 # some parameters (like luminosity and domain_bounds) can 
