@@ -798,8 +798,14 @@ def get_eq(dirname, fname=None):
             fname = 'custom_reference_binary'
 
     if fname is None: # no binary file; get everything from main_input
+        poly_n = get_parameter(dirname, 'poly_n')
+        poly_nrho = get_parameter(dirname, 'poly_nrho')
+        poly_mass = get_parameter(dirname, 'poly_mass')
+        poly_rho_i = get_parameter(dirname, 'poly_rho_i')
+        cp = get_parameter(dirname, 'pressure_specific_heat')
 
-    if os.path.exists(dirname + '/' + fname):
+
+    else:
         # by default, get info from equation_coefficients (if file exists)
         eq = equation_coefficients()
         eq.read(dirname + '/' + fname)
@@ -828,45 +834,6 @@ def get_eq(dirname, fname=None):
         eq_hr.eta = eq.constants[6]*eq.functions[6] # these are built-in to
         eq_hr.dlneta = eq.functions[12] # equation_coefficients as "zero"
         eq_hr.lum = eq.constants[9]
-    else:
-        ref = ReferenceState(dirname + '/reference')
-        eq_hr = eq_human_readable(ref.nr)
-
-        eq_hr.radius = eq_hr.rr = ref.radius
-        eq_hr.density = ref.density
-        eq_hr.rho = eq_hr.density
-        eq_hr.dlnrho = ref.dlnrho
-        eq_hr.d2lnrho = ref.d2lnrho
-        eq_hr.temperature = ref.temperature
-        eq_hr.T = eq_hr.temperature
-        eq_hr.dlnT = ref.dlnt
-        eq_hr.pressure = sun.thermor*eq_hr.rho*eq_hr.T
-        eq_hr.P = eq_hr.pressure
-        eq_hr.gravity = ref.gravity
-        eq_hr.g = eq_hr.gravity
-        eq_hr.dsdr = ref.dsdr
-        eq_hr.heating = eq_hr.rho*eq_hr.T*ref.heating
-        eq_hr.Q = eq_hr.heating
-        # 'transport' didn't always used to exist, so only read it if possible
-        if os.path.exists(dirname + '/transport'):
-            trans = TransportCoeffs(dirname + '/transport')
-            eq_hr.nu = trans.nu
-            eq_hr.dlnu = trans.dlnu
-            eq_hr.kappa = trans.kappa
-            eq_hr.dlnkappa = trans.dlnkappa
-            try:
-                eq_hr.eta = trans.eta
-                eq_hr.dlneta = dlneta # this will fail for hydro cases
-                # "trans" will not have attributes eta, dlneta
-            except: # if it failed, just keep the arrays zero             
-                pass # (magnetism = False)
-        else:
-            print ("get_eq(): neither 'equation_coefficients' nor 'transport' found")
-            print ("nu, dlnu, etc. will be zero")
-            eq_hr.nu = np.zeros_like(eq_hr.rr)
-            eq_hr.dlnu = np.zeros_like(eq_hr.rr)
-            eq_hr.kappa = np.zeros_like(eq_hr.rr)
-            eq_hr.dlnkappa = np.zeros_like(eq_hr.rr)
         eq_hr.lum = get_parameter(dirname, 'luminosity')
     return eq_hr
 
