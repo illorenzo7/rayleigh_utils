@@ -32,7 +32,7 @@ def get_numbers_input(dirname, r1='rmin', r2='rmax'):
     di.pr = nu_volav/k_volav
 
     # flux rayleigh number
-    vol = get_vol(dirname)
+    vol = get_vol(dirname, r1, r2)
     flux_rad = vol/(4*np.pi*eq.rr**2)*np.cumsum(eq.Q*gi.rw)
     flux_nonrad = eq.lum/(4*np.pi*eq.rr**2) - flux_rad
     flux_volav = volav_in_radius(dirname, flux_nonrad, r1, r2)
