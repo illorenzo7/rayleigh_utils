@@ -7,6 +7,7 @@ from scipy.interpolate import interp1d
 import sys, os, pickle
 from string_to_num import string_to_number_or_array
 sys.path.append(os.environ['rapp'])
+
 from reference_tools import equation_coefficients
 from rayleigh_diagnostics import G_Avgs, Shell_Slices, GridInfo
 from rayleigh_diagnostics_alt import sliceinfo
@@ -26,7 +27,7 @@ class dotdict(dict):
 ###############################
 
 # universal gravitational constant
-guniv= 6.67e-8      # Rounded to two decimals in Rayleigh...
+g_univ= 6.67e-8      # Rounded to two decimals in Rayleigh...
 
 # solar stuff
 sun = dotdict(dict({}))
@@ -46,17 +47,17 @@ msun = sun.m = 1.98891e33 # FROM WIKIPEDIA: 1.98847 \pm 0.00007
                 # the cosmologists are right...)
 
 #Thermodyanmic variables
-sun.cp = 3.5e8
-gammaideal = 5./3.
-sun.thermor = sun.cp*(1. - 1./gammaideal)
+sun.c_p = 3.5e8
+gamma_ideal = 5./3.
+sun.gas_constant = sun.c_p*(1. - 1./gamma_ideal)
 
 # solar base of the convection zone stuff
-sun.rhobcz = 0.18053428
-sun.tempbcz = 2111256.4
+sun.rho_bcz = 0.18053428
+sun.temp_bcz = 2111256.4
 sun.rbcz = 5.0e10
-sun.rbcznond = sun.rbcz/sun.r
+sun.rbcz_nond = sun.rbcz/sun.r
 # radius for the third density scale height (according to model S)
-sun.rnrho3 = 6.5860209e10 
+sun.r_nrho3 = 6.5860209e10 
 
 #######################################
 # RANDOM CONSTANTS FOR COMPUTE ROUTINES
@@ -79,7 +80,7 @@ buff_line = buffer_line = "=============================================="
 default_latvals = np.array([-85., -75., -60., -45., -30., -15., 0., 15., 30., 45., 60., 75., 85.])
 # default radial levels within a given zone 
 # (samples basically every 12.5% of the way through, and at the top)
-basedepths = np.array([0.05, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 0.95, 1.0])
+base_depths = np.array([0.05, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 0.95, 1.0])
 
 ######################################
 # FORMATTING ROUTINES FOR PRINT OUTPUT
@@ -775,6 +776,55 @@ def compute_tdt(dirname, mag=False, visc=False, tach=False):
 # Get basic radial coefficients (grid info, reference state) associated with sim.
 #################################################################################
 
+def compute_polytrope(rmin=sun.rbcz, rmax=sun.r_nrho3, nr=500, rr=None, poly_nrho=3.0, poly_n=1.5, poly_rho_i=sun.rho_bcz, poly_mass=sun.m, c_p=sun.c_p):
+    # compute polytrope from N_rho and inner density, following 
+    # Jones et al. (2011)
+
+    di = dotdict()
+
+    if rr is None:
+        di.rr = rr = np.linspace(rmax, rmin, nr)
+    else:
+        di.rr = rr
+        rmin, rmax = np.min(rr), np.max(rr)
+        nr = len(rr)
+
+    d = rmax - rmin
+    beta = rmin/rmax
+    gas_constant = c_p/(poly_n + 1)
+    poly_gamma = (poly_n + 1)/poly_n
+
+    exp = np.exp(poly_nrho/poly_n)
+
+    zeta_o = (beta + 1)/(beta*exp + 1)
+    zeta_i = (1 + beta - zeta_o)/beta
+    c0 = (2*zeta_o - beta - 1)/(1 - beta)
+    c1 = (1 + beta)*(1 - zeta_o)/(1 - beta)**2
+    zeta = c0 + c1*d/rr
+
+    tmp_c = g_univ*poly_mass/(c_p*c1*d)
+    rho_c = poly_rho_i/zeta_i**poly_n
+    prs_c = gas_constant*rho_c*tmp_c
+
+    di.rho = rho_c*zeta**(poly_n)
+    di.prs = prs_c*zeta**(poly_n+1.)
+    di.tmp = tmp_c*zeta
+    di.grav = g_univ*poly_mass/rr**2
+    
+    dzeta = -c1*d/rr**2
+    d2zeta = 2*c1*d/rr**3
+    dlnzeta = dzeta/zeta
+    d2lnzeta = d2zeta/zeta - dzeta/zeta**2 
+
+    di.dlnrho = poly_n*dlnzeta
+    di.d2lnrho = poly_n*d2lnzeta
+    di.dlntmp = dlnzeta
+
+    dlnprs = di.dlnrho + di.dlntmp
+    di.dsdr = c_p*(dlnprs/poly_gamma - di.dlnrho)
+
+    return di
+
 def get_eq(dirname, fname=None): 
     # return a human readable version of equation_coefficients
     # for [dirname], using either (in order of priority)
@@ -783,6 +833,9 @@ def get_eq(dirname, fname=None):
     # 2. equation_coefficients file
     # 3. custom_reference_binary file
     # 4. polytrope + transport coefs defined by main_input
+
+    # human readable equation coefficients object to store reference state
+    eq_hr = dotdict()
 
     # unless we're getting things directly from equation_coefficients 
     # (the file output when the simulation is actually run)
@@ -798,19 +851,20 @@ def get_eq(dirname, fname=None):
             fname = 'custom_reference_binary'
 
     if fname is None: # no binary file; get everything from main_input
-        poly_n = get_parameter(dirname, 'poly_n')
         poly_nrho = get_parameter(dirname, 'poly_nrho')
-        poly_mass = get_parameter(dirname, 'poly_mass')
+        poly_n = get_parameter(dirname, 'poly_n')
         poly_rho_i = get_parameter(dirname, 'poly_rho_i')
-        cp = get_parameter(dirname, 'pressure_specific_heat')
-
+        poly_mass = get_parameter(dirname, 'poly_mass')
+        c_p = get_parameter(dirname, 'pressure_specific_heat')
+        rr = get_grid_info(dirname).rr
+        poly = compute_polytrope(rr=rr, poly_nrho=poly_nrho, poly_n=poly_n, poly_rho_i=poly_rho_i, poly_mass=poly_mass, c_p=c_p)
 
     else:
         # by default, get info from equation_coefficients (if file exists)
+        # still  need c_p from main_input for gravity
+        c_p = get_parameter(dirname, 'pressure_specific_heat')
         eq = equation_coefficients()
         eq.read(dirname + '/' + fname)
-        #eq_hr = eq_human_readable(eq.nr)
-        eq_hr = dotdict(dict({}))
         eq_hr.radius = eq_hr.rr = eq.radius
         eq_hr.density = eq.functions[0]
         eq_hr.rho = eq_hr.density
@@ -821,10 +875,10 @@ def get_eq(dirname, fname=None):
         eq_hr.pressure = sun.thermor*eq_hr.rho*eq_hr.T
         eq_hr.P = eq_hr.pressure
         eq_hr.dlnT = eq.functions[9]
-        eq_hr.gravity = eq.functions[1]/eq_hr.rho*sun.cp
+        eq_hr.gravity = eq.functions[1]/eq_hr.rho*c_p
         eq_hr.g = eq_hr.gravity
         eq_hr.dsdr = eq.functions[13]
-        eq_hr.Nsq = (eq_hr.g/sun.cp)*eq_hr.dsdr
+        eq_hr.Nsq = (eq_hr.grav/c_p)*eq_hr.dsdr
         eq_hr.heating = eq.constants[9]*eq.functions[5]
         eq_hr.Q = eq_hr.heating
         eq_hr.nu = eq.constants[4]*eq.functions[2]
@@ -930,9 +984,9 @@ def get_default_rvals(dirname, rvals=None):
         rbot = rvals[ir]
         rtop = rvals[ir+1]
         if ir == 0: # for the first domain, include the bottom boundary
-            rvals_to_add = np.hstack((rbot, rbot + (rtop - rbot)*basedepths))
+            rvals_to_add = np.hstack((rbot, rbot + (rtop - rbot)*base_depths))
         else:
-            rvals_to_add = rbot + (rtop - rbot)*basedepths
+            rvals_to_add = rbot + (rtop - rbot)*base_depths
         rvals_out = np.hstack((rvals_out, rvals_to_add))
     return rvals_out
 

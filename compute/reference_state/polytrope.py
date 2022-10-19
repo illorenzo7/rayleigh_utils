@@ -5,39 +5,11 @@ import numpy as np
 from scipy.integrate import simpson
 import sys, os
 sys.path.append(os.environ['raco'])
-from common import guniv, sun
+from common import g_univ, sun
 from cla_util import *
 
-def compute_polytrope(rmin=sun.rbcz, rmax=sun.rnrho3, nrho=3.0, nr=500, poly_n=1.5, rhomin=sun.rhobcz, mstar=sun.m, cp=sun.cp):
-    d = rmax - rmin
-    beta = rmin/rmax
-    gas_constant = cp/(poly_n + 1)
 
-    rr = np.linspace(rmax, rmin, nr)
-    exp = np.exp(nrho/poly_n)
-
-    c0 = (1.+beta)/(1.-beta) * (1-beta*exp)/(1.+beta*exp)
-    c1 = (1.+beta)*beta/(1.-beta)**2  * (exp - 1.)/(beta*exp + 1.)
-
-    zeta = c0 + c1*d/rr
-    zetamin = (1. + beta)*exp/(1. + beta*exp)
-
-    rho_c = rhomin/zetamin**poly_n
-
-    T_c = guniv*mstar/(cp*c1*d)
-
-    P_c = gas_constant*rho_c*T_c
-
-    S_c = c_P*np.log(P_c**(1./poly_gamma)/rho_c) 
-    # for an adiabatic polytrope,
-            # S is constant everywhere
-    rho_nd = zeta**(poly_n)
-    P_nd = zeta**(poly_n+1.)
-    T_nd = zeta
-    return dict({'rho': rho_c*rho_nd, 'P': P_c*P_nd,\
-            'T': T_c*T_nd, 'S': S_c*np.ones(nr)})
-
-compute_polytrope2_kwargs_default = dict({'Nrho': 3, 'r0': rbcz, 'r1': None, 'rho0': rhobcz, 'T0': tempbcz, 'mstar': msun, 'poly_n': 1.5, 'gas_constant_star': thermo_R})
+compute_polytrope2_kwargs_default = dict({'Nrho': 3, 'r0': rbcz, 'r1': None, 'rho0': rhobcz, 'T0': tempbcz, 'poly_mass': msun, 'poly_n': 1.5, 'gas_constant_star': thermo_R})
 
 def compute_polytrope2(**kwargs):
     # overwrite defaults
@@ -45,7 +17,7 @@ def compute_polytrope2(**kwargs):
     # check for bad keys
     find_bad_keys(compute_polytrope2_kwargs_default, kwargs, 'compute_polytrope2()')
 
-    poly_a = G*kw.mstar/((kw.poly_n + 1)*kw.gas_constant_star*kw.T0*kw.r0)
+    poly_a = G*kw.poly_mass/((kw.poly_n + 1)*kw.gas_constant_star*kw.T0*kw.r0)
     nr = 100000 # make this grid super fine
     if kw.r1 is None:
         rmax = kw.r0*poly_a/(poly_a - 1) # at rmax, rho = 0
@@ -75,13 +47,3 @@ def compute_polytrope2(**kwargs):
     S = cv_star*(kw.poly_n/1.5 - 1)*(np.log(r/kw.r0) - np.log(poly_a + (1 - poly_a)*(r/kw.r0)))
 
     return dict({'rr': r, 'rho': rho, 'dlnrho': dlnrho, 'd2lnrho': dlnrho, 'P': P, 'T': T,  'dlnT': dlnT, 'dSdr': dSdr, 'S': S})
-
-
-def compute_lane_emden(ri, ro, nr, poly_n, poly_mstar):
-    xi, theta = le.lane_emden(poly_n, nr)
-    integ = simpson(theta**poly_n, xi)
-    rho_c = 1
-
-
-
-
