@@ -677,7 +677,7 @@ def get_parameter(dirname, parameter):
             # sometimes values continue on next line(s)
             keep_searching = True
             for j in range(i+1, len(lines_new)):
-                if "=" in lines_new[j]:
+                if "=" in lines_new[j] or lines_new[j] == '/':
                     keep_searching = False
                 if keep_searching:
                     st_param += lines_new[j]
@@ -783,26 +783,39 @@ def get_grid_info(dirname):
     # or directly from main_input if grid_info doesn't exist
     di = dotdict()
 
+    # get basic grid (colocation points and weights)
     if os.path.exists(dirname + '/grid_info'):
-
         gi = GridInfo(dirname + '/grid_info', '')
         # 1D arrays
-        di['rr'] = gi.radius
-        di['tt'] = gi.theta
+        di.rr = rr = gi.radius
+        di.rw = rr = gi.rweights
+        di.tt = tt = gi.theta
+        di.tw = tt = gi.tweights
+    else:
+        ncheby, domain_bounds = get_domain_bounds(dirname)
+        nt = get_parameter(dirname, 'n_theta')
+        out = compute_grid_info(ncheby, domain_bounds, nt)
+        di.rr = rr = out[0]
+        di.rw = rr = out[1]
+        di.tt = tt = out[2]
+        di.tw = tt = out[3]
 
-    di['cost'] = gi.costheta
-    di['sint'] = gi.sintheta
+    # some derivative theta (tt) quantities 
+    di['cost'] = np.cos(tt)
+    di['sint'] = np.sin(tt)
     di['cott'] = di['cost']/di['sint']
     di['tt_lat'] = (np.pi/2 - di['tt'])*180/np.pi
-    di['phi'] = gi.phi
-    di['lons'] = gi.phi*180./np.pi
-    di['rw'] = gi.rweights
-    di['tw'] = gi.tweights
-    di['pw'] = gi.pweights
+
     # grid dimensions
-    di['nr'] = gi.nr
-    di['nt'] = gi.ntheta
-    di['nphi'] = gi.nphi
+    di['nr'] = nr =  len(rr)
+    di['nt'] = nt = len(tt)
+    di['nphi'] = nphi = 2*nt
+
+    # phi stuff
+    di['phi'] = phi = np.linspace(0, 2*np.pi, nphi, endpoint=False)
+    di['lons'] = di.phi*180./np.pi
+    di['pw'] = 1./nphi + np.zeros(nphi)
+
     # 2D arrays (theta, r)
     di['tt_2d'] = di['tt'].reshape((di['nt'], 1))
     di['sint_2d'] = np.sin(di['tt_2d'])
@@ -825,7 +838,7 @@ def get_grid_info(dirname):
     di['rw_3d'] = di['rw'].reshape((1, 1, di['nr']))
     di['xx_3d'] = di['rr_3d']*di['sint_3d']
     di['zz_3d'] = di['rr_3d']*di['cost_3d']
-    return dotdict(di_out)
+    return di
 
 
 def interpret_rvals(dirname, rvals):

@@ -53,7 +53,7 @@ def compute_r_grid(nr, r1, r2, rmin=None, rmax=None):
     rw[-1] *= 0.5 # Guass-Lobatto (use_extrema = True)
     return rr, rw
 
-def compute_grid_info(domain_bounds, ncheby, nt):
+def compute_grid_info(ncheby, domain_bounds, nt):
     ndomains = len(ncheby)
     nr = int(np.sum(ncheby))
     rmin, rmax = domain_bounds[0], domain_bounds[-1]
