@@ -11,7 +11,7 @@ sys.path.append(os.environ['rapp'])
 from reference_tools import equation_coefficients
 from rayleigh_diagnostics import G_Avgs, Shell_Slices, GridInfo
 from rayleigh_diagnostics_alt import sliceinfo
-from grid_info import compute_grid_info, compute_theta_grid, compute_r_grid
+from grid_info import compute_grid_info
 
 # handy class for making dictionaries "dot-accessible" "key-accessible" and vice versa
 class dotdict(dict):
@@ -781,13 +781,13 @@ def get_grid_info(dirname):
     # or directly from main_input if grid_info doesn't exist
     di = dotdict()
 
-    if os.path.exists(dirname + '/' + 'equation_coefficients'):
-        fname = 'equation_coefficients'
+    if os.path.exists(dirname + '/grid_info'):
 
-    gi = GridInfo(dirname + '/grid_info', '')
-    # 1D arrays
-    di['rr'] = gi.radius
-    di['tt'] = gi.theta
+        gi = GridInfo(dirname + '/grid_info', '')
+        # 1D arrays
+        di['rr'] = gi.radius
+        di['tt'] = gi.theta
+
     di['cost'] = gi.costheta
     di['sint'] = gi.sintheta
     di['cott'] = di['cost']/di['sint']
