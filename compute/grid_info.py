@@ -47,34 +47,33 @@ def compute_r_grid(nr, r1, r2, rmin=None, rmax=None):
     # Transform x --> r via an affine transformation
     x1, x2 = np.min(x), np.max(x)
     rr = r1 + (x - x1)*(r2 - r1)/(x2 - x1)
-    int_scale = 3.*np.pi/((rmax**3. - rmin**3.)*nr_loc)*\
-            (r2 - r1)/(xmax - xmin)
-    rw = int_scale*r**2.*np.sqrt(1. - x**2.)
+    int_scale = 3.*np.pi/((rmax**3. - rmin**3.)*nr)*(r2 - r1)/(x2 - x1)
+    rw = int_scale*rr**2.*np.sqrt(1. - x**2.)
     rw[0] *= 0.5 # These multiplications are only justified for
     rw[-1] *= 0.5 # Guass-Lobatto (use_extrema = True)
-    return r, rw
+    return rr, rw
 
 def compute_grid_info(domain_bounds, ncheby, nt):
     ndomains = len(ncheby)
-    nr = np.sum(ncheby)
+    nr = int(np.sum(ncheby))
     rmin, rmax = domain_bounds[0], domain_bounds[-1]
 
-    r = np.zeros(nr)
+    rr = np.zeros(nr)
     rw = np.zeros(nr)
 
     # Compute the radial collocation points/weights
-    ir_min, ir_max = nr - ncheby[0], nr - 1
+    ir2, ir1 = nr - ncheby[0], nr - 1
     for idomain in range(ndomains):
         r1, r2 = domain_bounds[idomain], domain_bounds[idomain+1]
         nr_loc = ncheby[idomain]
 
-        r_loc, rw_loc = compute_r_grid(nr_loc, r1, r2, rmin, rmax)
-        r[ir_min:ir_max + 1] = r_loc
-        rw[ir_min:ir_max + 1] = rw_loc
+        rr_loc, rw_loc = compute_r_grid(nr_loc, r1, r2, rmin, rmax)
+        rr[ir2:ir1 + 1] = rr_loc
+        rw[ir2:ir1 + 1] = rw_loc
         
         if idomain < ndomains - 1:
-            ir_min -= ncheby[idomain + 1]
-            ir_max -= ncheby[idomain]
+            ir2 -= ncheby[idomain + 1]
+            ir1 -= ncheby[idomain]
 
     # Now compute Legendre collocation points and weights (theta weights)
     tt, tw = compute_theta_grid(nt)

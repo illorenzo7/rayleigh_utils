@@ -698,21 +698,26 @@ def get_parameter(dirname, parameter):
 # in main_input, so need special routines to extract them
 #########################################################
 
-# for backwards compatibility (remove references as you see them)
+# for backwards compatibility (remove references as I see them)
 def compute_Prot(dirname):
     eq = get_eq(dirname)
     return eq.prot
 
 def get_domain_bounds(dirname):
-    try:
+    # get radial domain bounds associated with simulation
+
+    # see if things are multi-domain
+    domain_bounds = get_parameter(dirname, 'domain_bounds')
+    ncheby = get_parameter(dirname, 'ncheby')
+
+    if domain_bounds is None or ncheby is None: # need to determine these
+        # a different way
+
         # if one-domain, should be able to get rmin, rmax somehow
-        # (no way I can think of to determine if it's one domain
-        # without just trying it, seeing if I get error)
-        try: # can set boundaries via rmin, rmax directly
-            rmin, rmax = get_parameter(dirname, 'rmin'),\
-                    get_parameter(dirname, 'rmax')
-        except: # ... or can set boundaries via aspect ratio and
-            # shell depth
+        rmin, rmax = get_parameter(dirname, 'rmin'),\
+                get_parameter(dirname, 'rmax')
+        if rmin is None or rmax is None: # if still None, one more option
+            # ... or can set boundaries via aspect ratio shell depth
             aspect_ratio = get_parameter(dirname, 'aspect_ratio')
             shell_depth = get_parameter(dirname, 'shell_depth')
             rmin = shell_depth/(1/aspect_ratio - 1)
@@ -721,9 +726,6 @@ def get_domain_bounds(dirname):
         nr = get_parameter(dirname, 'n_r')
         domain_bounds = np.array([rmin, rmax])
         ncheby = np.array([nr])
-    except: # otherwise things must be multi-domain
-        domain_bounds = get_parameter(dirname, 'domain_bounds')
-        ncheby = get_parameter(dirname, 'ncheby')
     return ncheby, domain_bounds
 
 def compute_tdt(dirname, mag=False, visc=False, tach=False):
