@@ -688,12 +688,10 @@ def get_parameter(dirname, parameter):
 
         # these parameters still have a value (False)
         # if they weren't specified
-        if parameter in ['magnetism', 'use_extrema', 'rotation']:
+        if parameter in ['magnetism', 'rotation']:
             return False # if these weren't specified, they are false
         else: # or finally, the parameter might just not be there
-            raise Exception('The parameter ' + parameter + ' was not\n' +\
-                            'specified in run: ' + dirname + '. \n' +\
-                            'exiting NOW\n')
+            return None
 
 #########################################################
 # some parameters (like luminosity and domain_bounds) can 
@@ -776,6 +774,131 @@ def compute_tdt(dirname, mag=False, visc=False, tach=False):
 # Get basic radial coefficients (grid info, reference state) associated with sim.
 #################################################################################
 
+####################################
+# Routines associated with grid info
+####################################
+def get_grid_info(dirname):
+    # get basic grid info; try to read from grid_info file
+    # or directly from main_input if grid_info doesn't exist
+    di = dotdict()
+
+    if os.path.exists(dirname + '/' + 'equation_coefficients'):
+        fname = 'equation_coefficients'
+
+    gi = GridInfo(dirname + '/grid_info', '')
+    # 1D arrays
+    di['rr'] = gi.radius
+    di['tt'] = gi.theta
+    di['cost'] = gi.costheta
+    di['sint'] = gi.sintheta
+    di['cott'] = di['cost']/di['sint']
+    di['tt_lat'] = (np.pi/2 - di['tt'])*180/np.pi
+    di['phi'] = gi.phi
+    di['lons'] = gi.phi*180./np.pi
+    di['rw'] = gi.rweights
+    di['tw'] = gi.tweights
+    di['pw'] = gi.pweights
+    # grid dimensions
+    di['nr'] = gi.nr
+    di['nt'] = gi.ntheta
+    di['nphi'] = gi.nphi
+    # 2D arrays (theta, r)
+    di['tt_2d'] = di['tt'].reshape((di['nt'], 1))
+    di['sint_2d'] = np.sin(di['tt_2d'])
+    di['cost_2d'] = np.cos(di['tt_2d'])
+    di['cott_2d'] = di['cost_2d']/di['sint_2d']
+    di['tw_2d'] = di['tw'].reshape((di['nt'], 1))
+    di['rr_2d'] = di['rr'].reshape((1, di['nr']))
+    di['rw_2d'] = di['rw'].reshape((1, di['nr']))
+    di['xx'] = di['rr_2d']*di['sint_2d']
+    di['zz'] = di['rr_2d']*di['cost_2d']
+    # 3D arrays (phi, theta, r)
+    di['phi_3d'] = di['phi'].reshape((di['nphi'], 1, 1))
+    di['pw_3d'] = di['pw'].reshape((di['nphi'], 1, 1))
+    di['tt_3d'] = di['tt'].reshape((1, di['nt'], 1))
+    di['sint_3d'] = np.sin(di['tt_3d'])
+    di['cost_3d'] = np.cos(di['tt_3d'])
+    di['cott_3d'] = di['cost_3d']/di['sint_3d']
+    di['tw_3d'] = di['tw'].reshape((1, di['nt'], 1))
+    di['rr_3d'] = di['rr'].reshape((1, 1, di['nr']))
+    di['rw_3d'] = di['rw'].reshape((1, 1, di['nr']))
+    di['xx_3d'] = di['rr_3d']*di['sint_3d']
+    di['zz_3d'] = di['rr_3d']*di['cost_3d']
+    return dotdict(di_out)
+
+
+def interpret_rvals(dirname, rvals):
+    # interpret array of rvals (array of strings), some could have the special keywords, rmin, rmid, rmax
+    # but otherwise assumed to be float
+
+    # get the actual min/max/mid of the full domain:
+    ncheby, domain_bounds = get_domain_bounds(dirname)
+    rmin, rmax = np.min(domain_bounds), np.max(domain_bounds)
+    rmid = 0.5*(rmin + rmax)
+
+    gi = get_grid_info(dirname)
+    rr = gi.rr
+    rvals_out = []
+    rvals = make_array(rvals)
+    for rval in rvals:
+        if rval == 'rmin':
+            rvals_out.append(rmin)
+        elif rval == 'rmid':
+            rvals_out.append(rmid)
+        elif rval == 'rmax':
+            rvals_out.append(rmax)
+        else:
+            # get the closest r value to the one specified
+            ind = np.argmin(np.abs(rr - float(rval)))
+            rvals_out.append(rr[ind])   
+    return np.array(rvals_out)
+
+def get_default_rvals(dirname, rvals=None):
+    # default sampling locations
+    # to specify multiple domains, need to specify boundary points (rvals, in cm)
+    ncheby, domain_bounds = get_domain_bounds(dirname)
+    rmin, rmax = np.min(domain_bounds), np.max(domain_bounds)
+
+    if rvals is None:
+        rvals = np.array([rmin, rmax])
+    else:
+        rvals = interpret_rvals(dirname, rvals)
+        rvals = np.sort(rvals) # easier if rvals are in ascending order
+
+    rvals_out = np.array([])
+    for ir in range(len(rvals) - 1): # rvals define len(rvals) - 1 domains
+        rbot = rvals[ir]
+        rtop = rvals[ir+1]
+        if ir == 0: # for the first domain, include the bottom boundary
+            rvals_to_add = np.hstack((rbot, rbot + (rtop - rbot)*base_depths))
+        else:
+            rvals_to_add = rbot + (rtop - rbot)*base_depths
+        rvals_out = np.hstack((rvals_out, rvals_to_add))
+    return rvals_out
+
+def get_sliceinfo(dirname, datatype='Shell_Slices', fname=None):
+    radatadir = dirname + '/' + datatype + '/'
+    file_list, int_file_list, nfiles = get_file_lists_all(radatadir)
+    if fname is None:
+        fname = file_list[0]
+    return sliceinfo(fname, path=radatadir)
+
+def get_vol(dirname, r1='rmin', r2='rmax'):
+    # get the shell volume in the range (r1, r2)
+    r1, r2 = interpret_rvals(dirname, np.array([r1, r2]))
+    return 4./3.*np.pi*(r2**3 - r1**3)
+
+def volav_in_radius(dirname, arr, r1='rmin', r2='rmax'):
+    gi = get_grid_info(dirname)
+    rr, rw = gi.rr, gi.rw
+    r1, r2 = interpret_rvals(dirname, np.array([r1, r2]))
+    ir1, ir2 = np.argmin(np.abs(rr - r1)), np.argmin(np.abs(rr - r2))
+    return np.sum((arr*rw)[ir2:ir1+1])/np.sum(rw[ir2:ir1+1])
+
+##########################################
+# Routines associated with reference state
+##########################################
+
 def compute_polytrope(rmin=sun.rbcz, rmax=sun.r_nrho3, nr=500, rr=None, poly_nrho=3.0, poly_n=1.5, poly_rho_i=sun.rho_bcz, poly_mass=sun.m, c_p=sun.c_p):
     # compute polytrope from N_rho and inner density, following 
     # Jones et al. (2011)
@@ -851,163 +974,109 @@ def get_eq(dirname, fname=None):
             fname = 'custom_reference_binary'
 
     if fname is None: # no binary file; get everything from main_input
+        gi = get_grid_info(dirname)
+        eq_hr.rr = gi.rr 
+        zero = np.zeros_like(eq_hr.rr)
+
         poly_nrho = get_parameter(dirname, 'poly_nrho')
         poly_n = get_parameter(dirname, 'poly_n')
         poly_rho_i = get_parameter(dirname, 'poly_rho_i')
         poly_mass = get_parameter(dirname, 'poly_mass')
         c_p = get_parameter(dirname, 'pressure_specific_heat')
-        rr = get_grid_info(dirname).rr
-        poly = compute_polytrope(rr=rr, poly_nrho=poly_nrho, poly_n=poly_n, poly_rho_i=poly_rho_i, poly_mass=poly_mass, c_p=c_p)
+        poly = compute_polytrope(rr=eq_hr.rr, poly_nrho=poly_nrho, poly_n=poly_n, poly_rho_i=poly_rho_i, poly_mass=poly_mass, c_p=c_p)
+
+        # get the background reference state
+        eq_hr.rho = poly.rho 
+        eq_hr.dlnrho = poly.dlnrho
+        eq_hr.d2lnrho = poly.d2lnrho
+        eq_hr.tmp = poly.tmp
+        eq_hr.prs = poly.prs
+        eq_hr.dlntmp = poly.dlntmp
+        eq_hr.grav = poly.grav
+        eq_hr.dsdr = poly.dsdr
+        eq_hr.nsq = poly.dsdr
+
+        # get heating
+        eq_hr.lum = get_parameter('luminosity')
+        heating_type = get_parameter(dirname, 'heating_type')
+        if heating_type is None: # default heating_type = 0
+            eq_hr.heat = zero
+        elif heating_type == 1: # heating proportional to pressure
+                                # "consant entropy heating"
+            eq_hr.heat = eq_hr.prs - eq_hr.prs[0]
+            integral = volav_in_radius(dirname, eq_hr.heat)
+            eq_hr.heat = eq_hr.heat*eq_hr.lum/integral
+        elif heating_type == 4: # constant energy heating
+            eq_hr.heat = zero + eq_hr.lum/get_vol(dirname)
+        eq_hr.heat = eq.constants[9]*eq.functions[5]
+
+        # get the transport coefficients
+        nu_top = get_parameter(dirname, 'nu_top')
+        kappa_top = get_parameter(dirname, 'kappa_top')
+        nu_type = get_parameter(dirname, 'nu_type')
+        kappa_type = get_parameter(dirname, 'kappa_type')
+
+        if nu_type is None or nu_type == 1:
+            eq_hr.nu = zero + nu_top
+            eq_hr.dlnu = zero
+        elif nu_type == 2:
+            nu_power = get_parameter(dirname, 'nu_power')
+            eq_hr.nu = nu_top*(eq_hr.rho/eq_hr.rho[0])**nu_power
+            eq_hr.dlnu = nu_power*eq_hr.dlnrho
+
+        if kappa_type is None or kappa_type == 1:
+            eq_hr.kappa = zero + kappa_top
+            eq_hr.dlkappa = zero
+        elif kappa_type == 2:
+            kappa_power = get_parameter(dirname, 'nu_power')
+            eq_hr.kappa = kappa_top*(eq_hr.rho/eq_hr.rho[0])**kappa_power
+            eq_hr.dlnkappa = kappa_power*eq_hr.dlnkappa
+        
+        magnetism = get_parameter(dirname, 'magnetism')
+        if magnetism:
+            if eta_type is None or eta_type == 1:
+                eq_hr.eta = zero + eta_top
+                eq_hr.dlneta = zero
+            elif eta_type == 2:
+                eta_power = get_parameter(dirname, 'eta_power')
+                eq_hr.eta = eta_top*(eq_hr.rho/eq_hr.rho[0])**eta_power
+                eq_hr.dlneta = eta_power*eq_hr.dlnrho
 
     else:
         # by default, get info from equation_coefficients (if file exists)
         # still  need c_p from main_input for gravity
-        c_p = get_parameter(dirname, 'pressure_specific_heat')
+        eq_hr.c_p = c_p = get_parameter(dirname, 'pressure_specific_heat')
+        # assume gas is ideal
+        gas_constant = (gamma_ideal-1)*c_p/gamma_ideal
+
+        # get the background reference state
         eq = equation_coefficients()
         eq.read(dirname + '/' + fname)
-        eq_hr.radius = eq_hr.rr = eq.radius
-        eq_hr.density = eq.functions[0]
-        eq_hr.rho = eq_hr.density
+        eq_hr.rr = eq.radius
+        eq_hr.rho = eq.functions[0]
         eq_hr.dlnrho = eq.functions[7]
         eq_hr.d2lnrho = eq.functions[8]
-        eq_hr.temperature = eq.functions[3]
-        eq_hr.T = eq_hr.temperature
-        eq_hr.pressure = sun.thermor*eq_hr.rho*eq_hr.T
-        eq_hr.P = eq_hr.pressure
-        eq_hr.dlnT = eq.functions[9]
-        eq_hr.gravity = eq.functions[1]/eq_hr.rho*c_p
-        eq_hr.g = eq_hr.gravity
+        eq_hr.tmp = eq.functions[3]
+        eq_hr.prs = gas_constant*eq_hr.rho*eq_hr.tmp
+        eq_hr.dlntmp = eq.functions[9]
+        eq_hr.grav = eq.functions[1]/eq_hr.rho*c_p
         eq_hr.dsdr = eq.functions[13]
-        eq_hr.Nsq = (eq_hr.grav/c_p)*eq_hr.dsdr
-        eq_hr.heating = eq.constants[9]*eq.functions[5]
-        eq_hr.Q = eq_hr.heating
+        eq_hr.nsq = (eq_hr.grav/c_p)*eq_hr.dsdr
+        eq_hr.heat = eq.constants[9]*eq.functions[5]
+        eq_hr.lum = eq.constants[9]
+
+        # get the transport coefficients
         eq_hr.nu = eq.constants[4]*eq.functions[2]
         eq_hr.dlnu = eq.functions[10]
         eq_hr.kappa = eq.constants[5]*eq.functions[4]
         eq_hr.dlnkappa = eq.functions[11]
         eq_hr.eta = eq.constants[6]*eq.functions[6] # these are built-in to
         eq_hr.dlneta = eq.functions[12] # equation_coefficients as "zero"
-        eq_hr.lum = eq.constants[9]
-        eq_hr.lum = get_parameter(dirname, 'luminosity')
+
+        # finally, get the rotation rate
+        eq_hr.om0 = eq.constants[0]/2
+
     return eq_hr
-
-def get_grid_info(dirname):
-    # get basic grid info
-    di_out = dict({})
-    gi = GridInfo(dirname + '/grid_info', '')
-    # 1D arrays
-    di_out['rr'] = gi.radius
-    di_out['shell_depth'] = np.max(gi.radius) - np.min(gi.radius)
-    di_out['tt'] = gi.theta
-    di_out['cost'] = gi.costheta
-    di_out['sint'] = gi.sintheta
-    di_out['cott'] = di_out['cost']/di_out['sint']
-    di_out['tt_lat'] = (np.pi/2 - di_out['tt'])*180/np.pi
-    di_out['phi'] = gi.phi
-    di_out['lons'] = gi.phi*180./np.pi
-    di_out['rw'] = gi.rweights
-    di_out['tw'] = gi.tweights
-    di_out['pw'] = gi.pweights
-    # grid dimensions
-    di_out['nr'] = gi.nr
-    di_out['nt'] = gi.ntheta
-    di_out['nphi'] = gi.nphi
-    # 2D arrays (theta, r)
-    di_out['tt_2d'] = di_out['tt'].reshape((di_out['nt'], 1))
-    di_out['sint_2d'] = np.sin(di_out['tt_2d'])
-    di_out['cost_2d'] = np.cos(di_out['tt_2d'])
-    di_out['cott_2d'] = di_out['cost_2d']/di_out['sint_2d']
-    di_out['tw_2d'] = di_out['tw'].reshape((di_out['nt'], 1))
-    di_out['rr_2d'] = di_out['rr'].reshape((1, di_out['nr']))
-    di_out['rw_2d'] = di_out['rw'].reshape((1, di_out['nr']))
-    di_out['xx'] = di_out['rr_2d']*di_out['sint_2d']
-    di_out['zz'] = di_out['rr_2d']*di_out['cost_2d']
-    # 3D arrays (phi, theta, r)
-    di_out['phi_3d'] = di_out['phi'].reshape((di_out['nphi'], 1, 1))
-    di_out['pw_3d'] = di_out['pw'].reshape((di_out['nphi'], 1, 1))
-    di_out['tt_3d'] = di_out['tt'].reshape((1, di_out['nt'], 1))
-    di_out['sint_3d'] = np.sin(di_out['tt_3d'])
-    di_out['cost_3d'] = np.cos(di_out['tt_3d'])
-    di_out['cott_3d'] = di_out['cost_3d']/di_out['sint_3d']
-    di_out['tw_3d'] = di_out['tw'].reshape((1, di_out['nt'], 1))
-    di_out['rr_3d'] = di_out['rr'].reshape((1, 1, di_out['nr']))
-    di_out['rw_3d'] = di_out['rw'].reshape((1, 1, di_out['nr']))
-    di_out['xx_3d'] = di_out['rr_3d']*di_out['sint_3d']
-    di_out['zz_3d'] = di_out['rr_3d']*di_out['cost_3d']
-    return dotdict(di_out)
-
-
-####################################
-# Routines associated with grid info
-####################################
-
-def interpret_rvals(dirname, rvals):
-    # interpret array of rvals (array of strings), some could have the special keywords, rmin, rmid, rmax
-    # but otherwise assumed to be float
-
-    # get the actual min/max/mid of the full domain:
-    ncheby, domain_bounds = get_domain_bounds(dirname)
-    rmin, rmax = np.min(domain_bounds), np.max(domain_bounds)
-    rmid = 0.5*(rmin + rmax)
-
-    gi = get_grid_info(dirname)
-    rr = gi.rr
-    rvals_out = []
-    rvals = make_array(rvals)
-    for rval in rvals:
-        if rval == 'rmin':
-            rvals_out.append(rmin)
-        elif rval == 'rmid':
-            rvals_out.append(rmid)
-        elif rval == 'rmax':
-            rvals_out.append(rmax)
-        else:
-            # get the closest r value to the one specified
-            ind = np.argmin(np.abs(rr - float(rval)))
-            rvals_out.append(rr[ind])   
-    return np.array(rvals_out)
-
-def get_default_rvals(dirname, rvals=None):
-    # default sampling locations
-    # to specify multiple domains, need to specify boundary points (rvals, in cm)
-    ncheby, domain_bounds = get_domain_bounds(dirname)
-    rmin, rmax = np.min(domain_bounds), np.max(domain_bounds)
-
-    if rvals is None:
-        rvals = np.array([rmin, rmax])
-    else:
-        rvals = interpret_rvals(dirname, rvals)
-        rvals = np.sort(rvals) # easier if rvals are in ascending order
-
-    rvals_out = np.array([])
-    for ir in range(len(rvals) - 1): # rvals define len(rvals) - 1 domains
-        rbot = rvals[ir]
-        rtop = rvals[ir+1]
-        if ir == 0: # for the first domain, include the bottom boundary
-            rvals_to_add = np.hstack((rbot, rbot + (rtop - rbot)*base_depths))
-        else:
-            rvals_to_add = rbot + (rtop - rbot)*base_depths
-        rvals_out = np.hstack((rvals_out, rvals_to_add))
-    return rvals_out
-
-def get_sliceinfo(dirname, datatype='Shell_Slices', fname=None):
-    radatadir = dirname + '/' + datatype + '/'
-    file_list, int_file_list, nfiles = get_file_lists_all(radatadir)
-    if fname is None:
-        fname = file_list[0]
-    return sliceinfo(fname, path=radatadir)
-
-def get_vol(dirname, r1='rmin', r2='rmax'):
-    # get the shell volume in the range (r1, r2)
-    r1, r2 = interpret_rvals(dirname, np.array([r1, r2]))
-    return 4./3.*np.pi*(r2**3 - r1**3)
-
-def volav_in_radius(dirname, arr, r1='rmin', r2='rmax'):
-    gi = get_grid_info(dirname)
-    rr, rw = gi.rr, gi.rw
-    r1, r2 = interpret_rvals(dirname, np.array([r1, r2]))
-    ir1, ir2 = np.argmin(np.abs(rr - r1)), np.argmin(np.abs(rr - r2))
-    return np.sum((arr*rw)[ir2:ir1+1])/np.sum(rw[ir2:ir1+1])
 
 
 ############################################
@@ -1104,7 +1173,7 @@ def get_default_varnames(dirname):
 
 def field_amp(dirname, the_file=None):
     # Make empty dictionary for field-amplitude arrays
-    di_out = dotdict(dict([]))
+    di = dotdict()
 
     # See if run is magnetic
     magnetism = get_parameter(dirname, 'magnetism')
