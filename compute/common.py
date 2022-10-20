@@ -698,11 +698,6 @@ def get_parameter(dirname, parameter):
 # in main_input, so need special routines to extract them
 #########################################################
 
-# for backwards compatibility (remove references as I see them)
-def compute_Prot(dirname):
-    eq = get_eq(dirname)
-    return eq.prot
-
 def get_domain_bounds(dirname):
     # get radial domain bounds associated with simulation
 
@@ -727,49 +722,6 @@ def get_domain_bounds(dirname):
         domain_bounds = np.array([rmin, rmax])
         ncheby = np.array([nr])
     return ncheby, domain_bounds
-
-def compute_tdt(dirname, mag=False, visc=False, tach=False):
-    # Returns computed diffusion time (in sec) across whole layer
-    # If tach=True, return diffusion time across whole layer,
-    # across CZ and across RZ (tuple of 3)
-    # Read in the diffusion profile
-    eq = get_eq(dirname)
-    rr = eq.radius
-    if mag:
-        diff = eq.eta
-    elif visc:
-        diff = eq.nu
-    else:
-        diff = eq.kappa
-
-    # Compute and return the diffusion time
-    if tach:
-        domain_bounds = get_parameter(dirname, 'domain_bounds')
-        ri, rm, ro = domain_bounds
-        rmid = 0.5*(ri + ro)
-        rmidrz = 0.5*(ri + rm)
-        rmidcz = 0.5*(rm + ro)
-
-        irmidrz = np.argmin(np.abs(rr - rmidrz))
-        irmidcz = np.argmin(np.abs(rr - rmidcz))
-        irmid = np.argmin(np.abs(rr - rmid))
-
-        diff_midrz = diff[irmidrz]
-        diff_midcz = diff[irmidcz]
-        diff_mid = diff[irmid]
-
-        Hrz = rm - ri
-        Hcz = ro - rm
-        H = ro - ri
-
-        return Hrz**2.0/diff_midrz, Hcz**2.0/diff_midcz, H**2.0/diff_mid
-    else:
-        ri, ro = np.min(rr), np.max(rr)
-        rmid = 0.5*(ri + ro)
-        irmid = np.argmin(np.abs(rr - rmid))
-        diff_mid = diff[irmid]
-        H = ro - ri
-        return H**2.0/diff_mid
 
 #################################################################################
 # Get basic radial coefficients (grid info, reference state) associated with sim.
@@ -974,6 +926,10 @@ def get_eq(dirname, fname=None):
     # human readable equation coefficients object to store reference state
     eq_hr = dotdict()
 
+    # need this no matter what -- not sure if it works for non-D anelastic
+    # (i.e. may set dissipation number instead)
+    eq_hr.c_p = get_parameter(dirname, 'pressure_specific_heat')
+
     # read reference state from binary file or main_input
     if fname is None:
         if os.path.exists(dirname + '/' + 'equation_coefficients'):
@@ -990,8 +946,7 @@ def get_eq(dirname, fname=None):
         poly_n = get_parameter(dirname, 'poly_n')
         poly_rho_i = get_parameter(dirname, 'poly_rho_i')
         poly_mass = get_parameter(dirname, 'poly_mass')
-        c_p = get_parameter(dirname, 'pressure_specific_heat')
-        poly = compute_polytrope(rr=eq_hr.rr, poly_nrho=poly_nrho, poly_n=poly_n, poly_rho_i=poly_rho_i, poly_mass=poly_mass, c_p=c_p)
+        poly = compute_polytrope(rr=eq_hr.rr, poly_nrho=poly_nrho, poly_n=poly_n, poly_rho_i=poly_rho_i, poly_mass=poly_mass, c_p=eq_hr.c_p)
 
         # get the background reference state
         eq_hr.rho = poly.rho 
@@ -1049,12 +1004,14 @@ def get_eq(dirname, fname=None):
                 eq_hr.eta = eta_top*(eq_hr.rho/eq_hr.rho[0])**eta_power
                 eq_hr.dlneta = eta_power*eq_hr.dlnrho
 
+        # finally, get the rotation rate
+        eq_hr.om0 = get_parameter(dirname, 'angular_velocity')
+        eq_hr.prot = 2*np.pi/eq_hr.om0
+
     else:
         # by default, get info from equation_coefficients (if file exists)
-        # still  need c_p from main_input for gravity
-        eq_hr.c_p = c_p = get_parameter(dirname, 'pressure_specific_heat')
         # assume gas is ideal
-        gas_constant = (gamma_ideal-1)*c_p/gamma_ideal
+        gas_constant = (gamma_ideal-1)*eq_hr.c_p/gamma_ideal
 
         # get the background reference state
         eq = equation_coefficients()
@@ -1066,9 +1023,9 @@ def get_eq(dirname, fname=None):
         eq_hr.tmp = eq.functions[3]
         eq_hr.prs = gas_constant*eq_hr.rho*eq_hr.tmp
         eq_hr.dlntmp = eq.functions[9]
-        eq_hr.grav = eq.functions[1]/eq_hr.rho*c_p
+        eq_hr.grav = eq.functions[1]/eq_hr.rho*eq_hr.c_p
         eq_hr.dsdr = eq.functions[13]
-        eq_hr.nsq = (eq_hr.grav/c_p)*eq_hr.dsdr
+        eq_hr.nsq = (eq_hr.grav/eq_hr.c_p)*eq_hr.dsdr
         eq_hr.heat = eq.constants[9]*eq.functions[5]
         eq_hr.lum = eq.constants[9]
 
@@ -1082,6 +1039,7 @@ def get_eq(dirname, fname=None):
 
         # finally, get the rotation rate
         eq_hr.om0 = eq.constants[0]/2
+        eq_hr.prot = 2*np.pi/eq_hr.om0
 
     return eq_hr
 
@@ -1089,6 +1047,55 @@ def get_eq(dirname, fname=None):
 ############################################
 # ROUTINES FOR TIME PARAMETERS OF SIMULATION
 ############################################
+
+# for backwards compatibility (remove references as I see them)
+def compute_Prot(dirname):
+    eq = get_eq(dirname)
+    return eq.prot
+
+def compute_tdt(dirname, mag=False, visc=False, tach=False):
+    # Returns computed diffusion time (in sec) across whole layer
+    # If tach=True, return diffusion time across whole layer,
+    # across CZ and across RZ (tuple of 3)
+    # Read in the diffusion profile
+    eq = get_eq(dirname)
+    rr = eq.radius
+    if mag:
+        diff = eq.eta
+    elif visc:
+        diff = eq.nu
+    else:
+        diff = eq.kappa
+
+    # Compute and return the diffusion time
+    if tach:
+        domain_bounds = get_parameter(dirname, 'domain_bounds')
+        ri, rm, ro = domain_bounds
+        rmid = 0.5*(ri + ro)
+        rmidrz = 0.5*(ri + rm)
+        rmidcz = 0.5*(rm + ro)
+
+        irmidrz = np.argmin(np.abs(rr - rmidrz))
+        irmidcz = np.argmin(np.abs(rr - rmidcz))
+        irmid = np.argmin(np.abs(rr - rmid))
+
+        diff_midrz = diff[irmidrz]
+        diff_midcz = diff[irmidcz]
+        diff_mid = diff[irmid]
+
+        Hrz = rm - ri
+        Hcz = ro - rm
+        H = ro - ri
+
+        return Hrz**2.0/diff_midrz, Hcz**2.0/diff_midcz, H**2.0/diff_mid
+    else:
+        ri, ro = np.min(rr), np.max(rr)
+        rmid = 0.5*(ri + ro)
+        irmid = np.argmin(np.abs(rr - rmid))
+        diff_mid = diff[irmid]
+        H = ro - ri
+        return H**2.0/diff_mid
+
 
 def get_time_unit(dirname):
     # get basic time unit of simulation (rotation period or diffusion time)
