@@ -1005,7 +1005,7 @@ def get_eq(dirname, fname=None):
         eq_hr.nsq = poly.dsdr
 
         # get heating
-        eq_hr.lum = get_parameter('luminosity')
+        eq_hr.lum = get_parameter(dirname, 'luminosity')
         heating_type = get_parameter(dirname, 'heating_type')
         if heating_type is None: # default heating_type = 0
             eq_hr.heat = zero
@@ -1016,7 +1016,6 @@ def get_eq(dirname, fname=None):
             eq_hr.heat = eq_hr.heat*eq_hr.lum/integral
         elif heating_type == 4: # constant energy heating
             eq_hr.heat = zero + eq_hr.lum/get_vol(dirname)
-        eq_hr.heat = eq.constants[9]*eq.functions[5]
 
         # get the transport coefficients
         nu_top = get_parameter(dirname, 'nu_top')
