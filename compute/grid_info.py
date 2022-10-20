@@ -25,29 +25,26 @@ def compute_theta_grid(nt):
     tt = np.arccos(cost)
     return tt, tw
 
-def compute_r_grid(nr, rmin, rmax, use_extrema=False):
+def compute_r_grid(nr, rmin, rmax):
     r = np.zeros(nr)
     rw = np.zeros(nr)
 
     # Compute the radial collocation points/weights
     x = np.zeros(nr)
     for ix in range(nr):
-        if use_extrema:
-            x[ix] = np.cos(ix*np.pi/(nr - 1))
-        else:
-            x[ix] = np.cos((ix + 0.5)*np.pi/(nr))
+        x[ix] = np.cos((ix + 0.5)*np.pi/(nr))
 
     # Transform x --> r via an affine transformation
     xmin, xmax = np.min(x), np.max(x)
     r = rmin + (x - xmin)*(rmax - rmin)/(xmax - xmin)
     int_scale = 3.*np.pi/((rmax**3. - rmin**3.)*nr)*\
             (rmax - rmin)/(xmax - xmin)
-    rw = int_scale * r**2. * np.sqrt(1. - x**2.)
+    rw = int_scale*r**2.*np.sqrt(1. - x**2.)
     rw[0] *= 0.5 # These multiplications are only justified for
     rw[-1] *= 0.5 # Guass-Lobatto (use_extrema = True)
     return r, rw
 
-def compute_grid_info(domain_bounds, ncheby, nt, use_extrema=False):
+def compute_grid_info(domain_bounds, ncheby, nt):
     ndomains = len(ncheby)
     nr = np.sum(ncheby)
     ri, ro = domain_bounds[0], domain_bounds[-1]
@@ -62,22 +59,8 @@ def compute_grid_info(domain_bounds, ncheby, nt, use_extrema=False):
     for idomain in range(ndomains):
         rmin, rmax = domain_bounds[idomain], domain_bounds[idomain+1]
         nr_loc = ncheby[idomain]
-        x = np.zeros(nr_loc)
-        r_loc = np.zeros(nr_loc)
-        for ix in range(nr_loc):
-            if use_extrema:
-                x[ix] = np.cos(ix*np.pi/(nr_loc - 1))
-            else:
-                x[ix] = np.cos((ix + 0.5)*np.pi/(nr_loc))
-        # Transform x --> r via an affine transformation
-        xmin, xmax = np.min(x), np.max(x)
-        r_loc = rmin + (x - xmin)*(rmax - rmin)/(xmax - xmin)
-        int_scale = 3.*np.pi/((ro**3. - ri**3.)*nr_loc)*\
-                (rmax - rmin)/(xmax - xmin)
-        rw_loc = int_scale * r_loc**2. * np.sqrt(1. - x**2.)
-        rw_loc[0] *= 0.5 # These multiplications are only justified for
-        rw_loc[-1] *= 0.5 # Guass-Lobatto (use_extrema = True)
 
+        r_loc, rw_loc = compute_r_grid(nr+loc, rmin, rmax)
         r[ir_min:ir_max + 1] = r_loc
         rw[ir_min:ir_max + 1] = rw_loc
         
