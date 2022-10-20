@@ -11,8 +11,7 @@ sys.path.append(os.environ['rapp'])
 from reference_tools import equation_coefficients
 from rayleigh_diagnostics import G_Avgs, Shell_Slices, GridInfo
 from rayleigh_diagnostics_alt import sliceinfo
-from compute_grid_info import compute_grid_info, compute_theta_grid,\
-        compute_r_grid
+from grid_info import compute_grid_info, compute_theta_grid, compute_r_grid
 
 # handy class for making dictionaries "dot-accessible" "key-accessible" and vice versa
 class dotdict(dict):
