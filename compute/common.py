@@ -672,7 +672,7 @@ def get_parameter(dirname, parameter):
     st_param = ''
     for i in range(len(lines_new)):
         line = lines_new[i]
-        if line[:len(parameter)] == parameter: # found the parameter
+        if line.split('=')[0] == parameter: # found the parameter
             st_param += line.split('=')[1]
             # sometimes values continue on next line(s)
             keep_searching = True
@@ -974,16 +974,10 @@ def get_eq(dirname, fname=None):
     # human readable equation coefficients object to store reference state
     eq_hr = dotdict()
 
-    # unless we're getting things directly from equation_coefficients 
-    # (the file output when the simulation is actually run)
-    # overwrite some of the equation constants with whatever is 
-    # in main_input
-
-    overwrite = True
+    # read reference state from binary file or main_input
     if fname is None:
         if os.path.exists(dirname + '/' + 'equation_coefficients'):
             fname = 'equation_coefficients'
-            overwrite = False
         elif os.path.exists(dirname + '/' + 'custom_reference_binary'):
             fname = 'custom_reference_binary'
 
