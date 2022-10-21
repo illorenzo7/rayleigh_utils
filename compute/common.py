@@ -1187,7 +1187,7 @@ def get_default_varnames(dirname):
 
 def field_amp(dirname, the_file=None):
     # Make empty dictionary for field-amplitude arrays
-    di = dotdict()
+    di_out = dotdict()
 
     # See if run is magnetic
     magnetism = get_parameter(dirname, 'magnetism')
@@ -1195,7 +1195,7 @@ def field_amp(dirname, the_file=None):
     # First get density
     eq = get_eq(dirname)
     rho = eq.rho
-    rr = eq.radius
+    rr = eq.rr
     nr = len(rr)
     di_out['rr'] = rr
     di_out['nr'] = nr
@@ -1203,208 +1203,203 @@ def field_amp(dirname, the_file=None):
     # Get data directory
     datadir = dirname + '/data/'
 
-    # Try to read in the Shell_Avgs data
-    try:
-        if the_file is None: # default
-            the_file = get_widest_range_file(datadir, 'Shell_Avgs')
-        print ('field_amp(): reading ' + the_file)
-        di = get_dict(the_file)
-        di_out['iter1'], di_out['iter2'] = get_iters_from_file(the_file)
-        vals = di['vals']
-        lut = di['lut']
+    # Read in the Shell_Avgs data
+    if the_file is None: # default
+        the_file = get_widest_range_file(datadir, 'Shell_Avgs')
+    print ('field_amp(): reading ' + the_file)
+    di = get_dict(the_file)
+    di_out['iter1'], di_out['iter2'] = get_iters_from_file(the_file)
+    vals = di['vals']
+    lut = di['lut']
 
-        # Read in velocity-squared of flows
-        # get this from kinetic energy
-        vsqr = 2.0*vals[:, 0, lut[402]]/eq.rho
-        vsqt = 2.0*vals[:, 0, lut[403]]/eq.rho
-        vsqp = 2.0*vals[:, 0, lut[404]]/eq.rho
+    # Read in velocity-squared of flows
+    # get this from kinetic energy
+    vsqr = 2.0*vals[:, 0, lut[402]]/eq.rho
+    vsqt = 2.0*vals[:, 0, lut[403]]/eq.rho
+    vsqp = 2.0*vals[:, 0, lut[404]]/eq.rho
 
-        vsqr_fluc = 2.0*vals[:, 0, lut[410]]/eq.rho
-        vsqt_fluc = 2.0*vals[:, 0, lut[411]]/eq.rho
-        vsqp_fluc = 2.0*vals[:, 0, lut[412]]/eq.rho
+    vsqr_fluc = 2.0*vals[:, 0, lut[410]]/eq.rho
+    vsqt_fluc = 2.0*vals[:, 0, lut[411]]/eq.rho
+    vsqp_fluc = 2.0*vals[:, 0, lut[412]]/eq.rho
+
+    # inherently positive, but avoid slightly negative
+    # (machine error) when 0
+    vsqr_mean = np.abs(vsqr - vsqr_fluc)
+    vsqt_mean = np.abs(vsqt - vsqt_fluc)
+    vsqp_mean = np.abs(vsqp - vsqp_fluc)
+
+    # get the velocity amplitudes
+    di_out['vr'] = np.sqrt(vsqr)
+    di_out['vt'] = np.sqrt(vsqt)
+    di_out['vp'] = np.sqrt(vsqp)
+    di_out['vpol'] = np.sqrt(vsqr + vsqt)
+    di_out['vhor'] = np.sqrt(vsqt + vsqp)
+    di_out['v'] = np.sqrt(vsqr + vsqt + vsqp)
+
+    di_out['vrfluc'] = np.sqrt(vsqr_fluc)
+    di_out['vtfluc'] = np.sqrt(vsqt_fluc)
+    di_out['vpfluc'] = np.sqrt(vsqp_fluc)
+    di_out['vpolfluc'] = np.sqrt(vsqr_fluc + vsqt_fluc)
+    di_out['vhorfluc'] = np.sqrt(vsqt_fluc + vsqp_fluc)
+    di_out['vfluc'] = np.sqrt(vsqr_fluc + vsqt_fluc + vsqp_fluc)
+
+    di_out['vrmean'] = np.sqrt(vsqr_mean)
+    di_out['vtmean'] = np.sqrt(vsqt_mean)
+    di_out['vpmean'] = np.sqrt(vsqp_mean)
+    di_out['vpolmean'] = np.sqrt(vsqr_mean + vsqt_mean)
+    di_out['vhormean'] = np.sqrt(vsqt_mean + vsqp_mean)
+    di_out['vmean'] = np.sqrt(vsqr_mean + vsqt_mean + vsqp_mean)
+
+    # Read in enstrophy of convective flows
+    omsqr = vals[:, 0, lut[314]] 
+    omsqt = vals[:, 0, lut[315]]
+    omsqp = vals[:, 0, lut[316]]
+
+    omsqr_fluc = vals[:, 0, lut[317]] 
+    omsqt_fluc = vals[:, 0, lut[318]]
+    omsqp_fluc = vals[:, 0, lut[319]]
+
+    # inherently positive, but avoid slightly negative
+    # (machine error) when 0
+    omsqr_mean = np.abs(omsqr - omsqr_fluc)
+    omsqt_mean = np.abs(omsqt - omsqt_fluc)
+    omsqp_mean = np.abs(omsqp - omsqp_fluc)
+
+    # get the vorticity amplitudes
+    di_out['omr'] = np.sqrt(omsqr)
+    di_out['omt'] = np.sqrt(omsqt)
+    di_out['omp'] = np.sqrt(omsqp)
+    di_out['ompol'] = np.sqrt(omsqr + omsqt)
+    di_out['omhor'] = np.sqrt(omsqt + omsqp)
+    di_out['om'] = np.sqrt(omsqr + omsqt + omsqp)
+
+    di_out['omrfluc'] = np.sqrt(omsqr_fluc)
+    di_out['omtfluc'] = np.sqrt(omsqt_fluc)
+    di_out['ompfluc'] = np.sqrt(omsqp_fluc)
+    di_out['ompolfluc'] = np.sqrt(omsqr_fluc + omsqt_fluc)
+    di_out['omhorfluc'] = np.sqrt(omsqt_fluc + omsqp_fluc)
+    di_out['omfluc'] = np.sqrt(omsqr_fluc + omsqt_fluc + omsqp_fluc)
+
+    di_out['omrmean'] = np.sqrt(omsqr_mean)
+    di_out['omtmean'] = np.sqrt(omsqt_mean)
+    di_out['ompmean'] = np.sqrt(omsqp_mean)
+    di_out['ompolmean'] = np.sqrt(omsqr_mean + omsqt_mean)
+    di_out['omhormean'] = np.sqrt(omsqt_mean + omsqp_mean)
+    di_out['ommean'] = np.sqrt(omsqr_mean + omsqt_mean + omsqp_mean)
+
+    # get some thermo amplitudes
+
+    # full spherical moments
+    ssq = vals[:, 1, lut[501]]
+    dsdrsq = vals[:, 1, lut[507]]
+    psq = vals[:, 1, lut[502]]
+    dpdrsq = vals[:, 1, lut[508]]
+
+    # spherical means (square them)
+    ssq_sphmean = vals[:, 0, lut[501]]**2
+    psq_sphmean = vals[:, 0, lut[502]]**2
+    dsdrsq_sphmean = vals[:, 0, lut[507]]**2
+    dpdrsq_sphmean = vals[:, 0, lut[508]]**2
+
+    # spherical fluctuations
+    # inherently positive, but avoid slightly negative
+    # (machine error) when 0
+    ssq_sphfluc = np.abs(ssq - ssq_sphmean)
+    dsdrsq_sphfluc = np.abs(dsdrsq - dsdrsq_sphmean)
+    psq_sphfluc = np.abs(psq - psq_sphmean)
+    dpdrsq_sphfluc = np.abs(dpdrsq - dpdrsq_sphmean)
+
+    # add thermo amplitudes to dictionary        
+    di_out['s'] = np.sqrt(ssq)
+    di_out['ssphfluc'] = np.sqrt(ssq_sphfluc)
+    di_out['ssphmean'] = np.sqrt(ssq_sphmean)
+
+    di_out['p'] = np.sqrt(psq)
+    di_out['psphfluc'] = np.sqrt(psq_sphfluc)
+    di_out['psphmean'] = np.sqrt(psq_sphmean)
+    
+    di_out['dsdr'] = np.sqrt(dsdrsq)
+    di_out['dsdrsphfluc'] = np.sqrt(dsdrsq_sphfluc)
+    di_out['dsdrsphmean'] = np.sqrt(dsdrsq_sphmean)
+
+    di_out['dpdr'] = np.sqrt(dpdrsq)
+    di_out['dpdrsphfluc'] = np.sqrt(dpdrsq_sphfluc)
+    di_out['dpdrsphmean'] = np.sqrt(dpdrsq_sphmean)
+
+    if magnetism:
+        # Read in squared B-fields
+        # get this from magnetic energy
+        eightpi = 8.*np.pi
+        bsqr = eightpi*vals[:, 0, lut[1102]]
+        bsqt = eightpi*vals[:, 0, lut[1103]]
+        bsqp = eightpi*vals[:, 0, lut[1104]]
+
+        bsqr_fluc = eightpi*vals[:, 0, lut[1110]]
+        bsqt_fluc = eightpi*vals[:, 0, lut[1111]]
+        bsqp_fluc = eightpi*vals[:, 0, lut[1112]]
 
         # inherently positive, but avoid slightly negative
         # (machine error) when 0
-        vsqr_mean = np.abs(vsqr - vsqr_fluc)
-        vsqt_mean = np.abs(vsqt - vsqt_fluc)
-        vsqp_mean = np.abs(vsqp - vsqp_fluc)
+        bsqr_mean = np.abs(bsqr - bsqr_fluc)
+        bsqt_mean = np.abs(bsqt - bsqt_fluc)
+        bsqp_mean = np.abs(bsqp - bsqp_fluc)
 
-        # get the velocity amplitudes
-        di_out['vr'] = np.sqrt(vsqr)
-        di_out['vt'] = np.sqrt(vsqt)
-        di_out['vp'] = np.sqrt(vsqp)
-        di_out['vpol'] = np.sqrt(vsqr + vsqt)
-        di_out['vhor'] = np.sqrt(vsqt + vsqp)
-        di_out['v'] = np.sqrt(vsqr + vsqt + vsqp)
+        di_out['br'] = np.sqrt(bsqr)
+        di_out['bt'] = np.sqrt(bsqt)
+        di_out['bp'] = np.sqrt(bsqp)
+        di_out['bpol'] = np.sqrt(bsqr + bsqt)
+        di_out['bhor'] = np.sqrt(bsqt + bsqp)
+        di_out['b'] = np.sqrt(bsqr + bsqt + bsqp)
 
-        di_out['vrfluc'] = np.sqrt(vsqr_fluc)
-        di_out['vtfluc'] = np.sqrt(vsqt_fluc)
-        di_out['vpfluc'] = np.sqrt(vsqp_fluc)
-        di_out['vpolfluc'] = np.sqrt(vsqr_fluc + vsqt_fluc)
-        di_out['vhorfluc'] = np.sqrt(vsqt_fluc + vsqp_fluc)
-        di_out['vfluc'] = np.sqrt(vsqr_fluc + vsqt_fluc + vsqp_fluc)
+        di_out['brfluc'] = np.sqrt(bsqr_fluc)
+        di_out['btfluc'] = np.sqrt(bsqt_fluc)
+        di_out['bpfluc'] = np.sqrt(bsqp_fluc)
+        di_out['bpolfluc'] = np.sqrt(bsqr_fluc + bsqt_fluc)
+        di_out['bhorfluc'] = np.sqrt(bsqt_fluc + bsqp_fluc)
+        di_out['bfluc'] = np.sqrt(bsqr_fluc + bsqt_fluc + bsqp_fluc)
 
-        di_out['vrmean'] = np.sqrt(vsqr_mean)
-        di_out['vtmean'] = np.sqrt(vsqt_mean)
-        di_out['vpmean'] = np.sqrt(vsqp_mean)
-        di_out['vpolmean'] = np.sqrt(vsqr_mean + vsqt_mean)
-        di_out['vhormean'] = np.sqrt(vsqt_mean + vsqp_mean)
-        di_out['vmean'] = np.sqrt(vsqr_mean + vsqt_mean + vsqp_mean)
+        di_out['brmean'] = np.sqrt(bsqr_mean)
+        di_out['btmean'] = np.sqrt(bsqt_mean)
+        di_out['bpmean'] = np.sqrt(bsqp_mean)
+        di_out['bpolmean'] = np.sqrt(bsqr_mean + bsqt_mean)
+        di_out['bhormean'] = np.sqrt(bsqt_mean + bsqp_mean)
+        di_out['bmean'] = np.sqrt(bsqr_mean + bsqt_mean + bsqp_mean)
 
-        # Read in enstrophy of convective flows
-        omsqr = vals[:, 0, lut[314]] 
-        omsqt = vals[:, 0, lut[315]]
-        omsqp = vals[:, 0, lut[316]]
+        # Read in squared current densities
+        jsqr = vals[:, 0, lut[1014]]
+        jsqt = vals[:, 0, lut[1017]]
+        jsqp = vals[:, 0, lut[1020]]
 
-        omsqr_fluc = vals[:, 0, lut[317]] 
-        omsqt_fluc = vals[:, 0, lut[318]]
-        omsqp_fluc = vals[:, 0, lut[319]]
+        jsqr_fluc = vals[:, 0, lut[1015]]
+        jsqt_fluc = vals[:, 0, lut[1018]]
+        jsqp_fluc = vals[:, 0, lut[1021]]
 
         # inherently positive, but avoid slightly negative
         # (machine error) when 0
-        omsqr_mean = np.abs(omsqr - omsqr_fluc)
-        omsqt_mean = np.abs(omsqt - omsqt_fluc)
-        omsqp_mean = np.abs(omsqp - omsqp_fluc)
+        jsqr_mean = np.abs(jsqr - jsqr_fluc)
+        jsqt_mean = np.abs(jsqt - jsqt_fluc)
+        jsqp_mean = np.abs(jsqp - jsqp_fluc)
 
-        # get the vorticity amplitudes
-        di_out['omr'] = np.sqrt(omsqr)
-        di_out['omt'] = np.sqrt(omsqt)
-        di_out['omp'] = np.sqrt(omsqp)
-        di_out['ompol'] = np.sqrt(omsqr + omsqt)
-        di_out['omhor'] = np.sqrt(omsqt + omsqp)
-        di_out['om'] = np.sqrt(omsqr + omsqt + omsqp)
+        di_out['jr'] = np.sqrt(jsqr)
+        di_out['jt'] = np.sqrt(jsqt)
+        di_out['jp'] = np.sqrt(jsqp)
+        di_out['jpol'] = np.sqrt(jsqr + jsqt)
+        di_out['jhor'] = np.sqrt(jsqt + jsqp)
+        di_out['j'] = np.sqrt(jsqr + jsqt + jsqp)
 
-        di_out['omrfluc'] = np.sqrt(omsqr_fluc)
-        di_out['omtfluc'] = np.sqrt(omsqt_fluc)
-        di_out['ompfluc'] = np.sqrt(omsqp_fluc)
-        di_out['ompolfluc'] = np.sqrt(omsqr_fluc + omsqt_fluc)
-        di_out['omhorfluc'] = np.sqrt(omsqt_fluc + omsqp_fluc)
-        di_out['omfluc'] = np.sqrt(omsqr_fluc + omsqt_fluc + omsqp_fluc)
+        di_out['jrfluc'] = np.sqrt(jsqr_fluc)
+        di_out['jtfluc'] = np.sqrt(jsqt_fluc)
+        di_out['jpfluc'] = np.sqrt(jsqp_fluc)
+        di_out['jpolfluc'] = np.sqrt(jsqr_fluc + jsqt_fluc)
+        di_out['jhorfluc'] = np.sqrt(jsqt_fluc + jsqp_fluc)
+        di_out['jfluc'] = np.sqrt(jsqr_fluc + jsqt_fluc + jsqp_fluc)
 
-        di_out['omrmean'] = np.sqrt(omsqr_mean)
-        di_out['omtmean'] = np.sqrt(omsqt_mean)
-        di_out['ompmean'] = np.sqrt(omsqp_mean)
-        di_out['ompolmean'] = np.sqrt(omsqr_mean + omsqt_mean)
-        di_out['omhormean'] = np.sqrt(omsqt_mean + omsqp_mean)
-        di_out['ommean'] = np.sqrt(omsqr_mean + omsqt_mean + omsqp_mean)
-
-        # get some thermo amplitudes
-
-        # full spherical moments
-        ssq = vals[:, 1, lut[501]]
-        dsdrsq = vals[:, 1, lut[507]]
-        psq = vals[:, 1, lut[502]]
-        dpdrsq = vals[:, 1, lut[508]]
-
-        # spherical means (square them)
-        ssq_sphmean = vals[:, 0, lut[501]]**2
-        psq_sphmean = vals[:, 0, lut[502]]**2
-        dsdrsq_sphmean = vals[:, 0, lut[507]]**2
-        dpdrsq_sphmean = vals[:, 0, lut[508]]**2
-
-        # spherical fluctuations
-        # inherently positive, but avoid slightly negative
-        # (machine error) when 0
-        ssq_sphfluc = np.abs(ssq - ssq_sphmean)
-        dsdrsq_sphfluc = np.abs(dsdrsq - dsdrsq_sphmean)
-        psq_sphfluc = np.abs(psq - psq_sphmean)
-        dpdrsq_sphfluc = np.abs(dpdrsq - dpdrsq_sphmean)
-
-        # add thermo amplitudes to dictionary        
-        di_out['s'] = np.sqrt(ssq)
-        di_out['ssphfluc'] = np.sqrt(ssq_sphfluc)
-        di_out['ssphmean'] = np.sqrt(ssq_sphmean)
-
-        di_out['p'] = np.sqrt(psq)
-        di_out['psphfluc'] = np.sqrt(psq_sphfluc)
-        di_out['psphmean'] = np.sqrt(psq_sphmean)
-        
-        di_out['dsdr'] = np.sqrt(dsdrsq)
-        di_out['dsdrsphfluc'] = np.sqrt(dsdrsq_sphfluc)
-        di_out['dsdrsphmean'] = np.sqrt(dsdrsq_sphmean)
-
-        di_out['dpdr'] = np.sqrt(dpdrsq)
-        di_out['dpdrsphfluc'] = np.sqrt(dpdrsq_sphfluc)
-        di_out['dpdrsphmean'] = np.sqrt(dpdrsq_sphmean)
-
-        if magnetism:
-            # Read in squared B-fields
-            # get this from magnetic energy
-            eightpi = 8.*np.pi
-            bsqr = eightpi*vals[:, 0, lut[1102]]
-            bsqt = eightpi*vals[:, 0, lut[1103]]
-            bsqp = eightpi*vals[:, 0, lut[1104]]
-
-            bsqr_fluc = eightpi*vals[:, 0, lut[1110]]
-            bsqt_fluc = eightpi*vals[:, 0, lut[1111]]
-            bsqp_fluc = eightpi*vals[:, 0, lut[1112]]
-
-            # inherently positive, but avoid slightly negative
-            # (machine error) when 0
-            bsqr_mean = np.abs(bsqr - bsqr_fluc)
-            bsqt_mean = np.abs(bsqt - bsqt_fluc)
-            bsqp_mean = np.abs(bsqp - bsqp_fluc)
-
-            di_out['br'] = np.sqrt(bsqr)
-            di_out['bt'] = np.sqrt(bsqt)
-            di_out['bp'] = np.sqrt(bsqp)
-            di_out['bpol'] = np.sqrt(bsqr + bsqt)
-            di_out['bhor'] = np.sqrt(bsqt + bsqp)
-            di_out['b'] = np.sqrt(bsqr + bsqt + bsqp)
-
-            di_out['brfluc'] = np.sqrt(bsqr_fluc)
-            di_out['btfluc'] = np.sqrt(bsqt_fluc)
-            di_out['bpfluc'] = np.sqrt(bsqp_fluc)
-            di_out['bpolfluc'] = np.sqrt(bsqr_fluc + bsqt_fluc)
-            di_out['bhorfluc'] = np.sqrt(bsqt_fluc + bsqp_fluc)
-            di_out['bfluc'] = np.sqrt(bsqr_fluc + bsqt_fluc + bsqp_fluc)
-
-            di_out['brmean'] = np.sqrt(bsqr_mean)
-            di_out['btmean'] = np.sqrt(bsqt_mean)
-            di_out['bpmean'] = np.sqrt(bsqp_mean)
-            di_out['bpolmean'] = np.sqrt(bsqr_mean + bsqt_mean)
-            di_out['bhormean'] = np.sqrt(bsqt_mean + bsqp_mean)
-            di_out['bmean'] = np.sqrt(bsqr_mean + bsqt_mean + bsqp_mean)
-
-            # Read in squared current densities
-            jsqr = vals[:, 0, lut[1014]]
-            jsqt = vals[:, 0, lut[1017]]
-            jsqp = vals[:, 0, lut[1020]]
-
-            jsqr_fluc = vals[:, 0, lut[1015]]
-            jsqt_fluc = vals[:, 0, lut[1018]]
-            jsqp_fluc = vals[:, 0, lut[1021]]
-
-            # inherently positive, but avoid slightly negative
-            # (machine error) when 0
-            jsqr_mean = np.abs(jsqr - jsqr_fluc)
-            jsqt_mean = np.abs(jsqt - jsqt_fluc)
-            jsqp_mean = np.abs(jsqp - jsqp_fluc)
-
-            di_out['jr'] = np.sqrt(jsqr)
-            di_out['jt'] = np.sqrt(jsqt)
-            di_out['jp'] = np.sqrt(jsqp)
-            di_out['jpol'] = np.sqrt(jsqr + jsqt)
-            di_out['jhor'] = np.sqrt(jsqt + jsqp)
-            di_out['j'] = np.sqrt(jsqr + jsqt + jsqp)
-
-            di_out['jrfluc'] = np.sqrt(jsqr_fluc)
-            di_out['jtfluc'] = np.sqrt(jsqt_fluc)
-            di_out['jpfluc'] = np.sqrt(jsqp_fluc)
-            di_out['jpolfluc'] = np.sqrt(jsqr_fluc + jsqt_fluc)
-            di_out['jhorfluc'] = np.sqrt(jsqt_fluc + jsqp_fluc)
-            di_out['jfluc'] = np.sqrt(jsqr_fluc + jsqt_fluc + jsqp_fluc)
-
-            di_out['jrmean'] = np.sqrt(jsqr_mean)
-            di_out['jtmean'] = np.sqrt(jsqt_mean)
-            di_out['jpmean'] = np.sqrt(jsqp_mean)
-            di_out['jpolmean'] = np.sqrt(jsqr_mean + jsqt_mean)
-            di_out['jhormean'] = np.sqrt(jsqt_mean + jsqp_mean)
-            di_out['jmean'] = np.sqrt(jsqr_mean + jsqt_mean + jsqp_mean)
-
-    except:
-        print ("field_amplitudes(): need to compute Shell_Avgs time avg")
-        print ("returning empty dictionary")
+        di_out['jrmean'] = np.sqrt(jsqr_mean)
+        di_out['jtmean'] = np.sqrt(jsqt_mean)
+        di_out['jpmean'] = np.sqrt(jsqp_mean)
+        di_out['jpolmean'] = np.sqrt(jsqr_mean + jsqt_mean)
+        di_out['jhormean'] = np.sqrt(jsqt_mean + jsqp_mean)
+        di_out['jmean'] = np.sqrt(jsqr_mean + jsqt_mean + jsqp_mean)
 
     # Return the dictionary 
     return di_out
@@ -1419,7 +1414,7 @@ def length_scales(dirname, the_file=None):
     # First get mixing length scale + grid
     eq = get_eq(dirname)
     hrho = -1./eq.dlnrho
-    rr = eq.radius
+    rr = eq.rr
     nr = len(rr)
 
     di_out['rr'] = rr
@@ -1527,129 +1522,4 @@ def get_numbers(dirname, the_file=None, shell_depth=None):
     # (then, diagnostic ones)
 
     return 
-
-def nonD_numbers(dirname, rbcz=None):
-    # all the nonD numbers (as functions of radius and in different zones)
-    # we could ever want
-
-    # Make empty dictionary for length_scale arrays
-    di_out = dict([])
-
-    # See if run is magnetic
-    magnetism = get_parameter(dirname, 'magnetism')
-    rotation = get_parameter(dirname, 'rotation')
-
-    # get reference state
-    eq = get_eq(dirname)
-    rr = eq.radius
-    nr = len(rr)
-    #di_out['rr'] = rr
-    #di_out['nr'] = nr
-
-    di_amp = field_amp(dirname)
-    di_len = length_scales(dirname)
-
-    # get the reference state
-    eq = get_eq(dirname)
-
-    # get the Reynolds numbers
-    shell_depth = di_len['shell_depth']
-    hrho = di_len['L_rho']
-
-    di_out['Re'] = di_amp['vamp']*shell_depth/eq.nu
-    di_out['Re_fluc'] = di_amp['vfluc']*shell_depth/eq.nu
-    di_out['Re_mean'] = di_amp['vmean']*shell_depth/eq.nu
-
-    di_out['Rehrho'] = di_amp['vamp']*hrho/eq.nu
-    di_out['Rehrho_fluc'] = di_amp['vfluc']*hrho/eq.nu
-    di_out['Rehrho_mean'] = di_amp['vfluc']*hrho/eq.nu
-
-    L_om = di_len['L_om']
-    di_out['Revort'] = di_amp['vamp']*L_om/eq.nu
-    di_out['Revort_fluc'] = di_amp['vfluc']*L_om/eq.nu
-    di_out['Revort_mean'] = di_amp['vmean']*L_om/eq.nu
-
-    # Read in the Shell_Spectra data
-    datadir = dirname + '/data/'
-    the_file = get_widest_range_file(datadir, 'Shell_Spectra')
-    if the_file == '':
-        have_spec = False
-    else: 
-        have_spec = True
-
-    if have_spec:
-        ir_spec = di_len['ir_spec']
-        rr_spec = di_len['rr_spec']
-        L_v = di_len['L_v']
-        di_out['Respec'] = (di_amp['vamp']/eq.nu)[ir_spec]*L_v
-        di_out['Respec_fluc'] = (di_amp['vfluc']/eq.nu)[ir_spec]*L_v
-        di_out['Respec_mean'] = (di_amp['vmean']/eq.nu)[ir_spec]*L_v
-
-    if magnetism: # magnetic Reynolds numbers Rm
-        L_J = di_len['L_J']
-        di_out['Rm'] = di_amp['vamp']*L_J/eq.eta
-        di_out['Rm_fluc'] = di_amp['vfluc']*L_J/eq.eta
-        di_out['Rm_mean'] = di_amp['vmean']*L_J/eq.eta
-
-        if have_spec:
-            L_B = di_len['L_B']
-            di_out['Rmspec'] = (di_amp['vamp']/eq.eta)[ir_spec]*L_B
-            di_out['Rmspec_fluc'] = (di_amp['vfluc']/eq.eta)[ir_spec]*L_B
-            di_out['Rmspec_mean'] = (di_amp['vmean']/eq.eta)[ir_spec]*L_B
-
-    if rotation: # Rossby numbers
-        Om0 = 2*np.pi/compute_Prot(dirname)
-        di_out['Ro'] = di_amp['vamp']/(2.0*Om0*shell_depth)
-        di_out['Ro_fluc'] = di_amp['vfluc']/(2.0*Om0*shell_depth)
-        di_out['Ro_mean'] = di_amp['vmean']/(2.0*Om0*shell_depth)
-
-        di_out['Rohrho'] = di_amp['vamp']/(2.0*Om0*hrho)
-        di_out['Rohrho_fluc'] = di_amp['vfluc']/(2.0*Om0*hrho)
-        di_out['Rohrho_mean'] = di_amp['vmean']/(2.0*Om0*hrho)
-
-        di_out['Rovort'] = di_amp['vamp']/(2.0*Om0*L_om)
-        di_out['Rovort_fluc'] = di_amp['vfluc']/(2.0*Om0*L_om)
-        di_out['Rovort_mean'] = di_amp['vmean']/(2.0*Om0*L_om)
-
-        if have_spec:
-            di_out['Rospec'] = (di_amp['vamp']/eq.eta)[ir_spec]/(2.0*Om0*L_v)
-            di_out['Rospec_fluc'] = (di_amp['vfluc']/eq.eta)[ir_spec]/(2.0*Om0*L_v)
-            di_out['Rospec_mean'] = (di_amp['vmean']/eq.eta)[ir_spec]/(2.0*Om0*L_v)
-
-    # now compute the global average of all numbers
-    gi = GridInfo(dirname + '/grid_info', '')
-    rw = gi.rweights
-    if not rbcz is None:
-        irbcz = np.argmin(np.abs(rr/rsun - rbcz))
-        if have_spec:
-            irbcz_spec = np.argmin(np.abs(rr_spec/rsun - rbcz))
-        if not (irbcz == 0 or irbcz == nr - 1):
-            rwcz = rw[:irbcz+1]/np.sum(rw[:irbcz+1])
-            rwrz = rw[irbcz+1:]/np.sum(rw[irbcz+1:])
-        else:
-            print ('nonD_numbers(): dude, you entered a stupid value for')
-            print ('rbcz. you set rbcz = %1.3e' %rbcz)
-            print ('it needs be in the range [%.3f, %.3f]' %(np.min(rr)/rsun, np.max(rr)/rsun))
-            print ('resetting rbcz = None')
-            rbcz = None
-
-    all_keys = list(di_out.keys())
-    for key in all_keys:
-        if 'spec' in key:
-            di_out[key + '_gav'] = np.mean(di_out[key])
-        else:
-            di_out[key + '_gav'] = np.sum(di_out[key]*rw)
-        if not rbcz is None:
-            if 'spec' in key:
-                if not (irbcz_spec == 0 or irbcz_spec == len(rr_spec) - 1):
-                    di_out[key + '_cz'] = np.mean(di_out[key][:irbcz_spec+1])
-                    di_out[key + '_rz'] = np.mean(di_out[key][irbcz_spec+1:])
-                else:
-                    di_out[key + '_cz'] = di_out[key]
-                    di_out[key + '_rz'] = di_out[key]
-            else:
-                di_out[key + '_cz'] = np.sum(di_out[key][:irbcz+1]*rwcz)
-                di_out[key + '_rz'] = np.sum(di_out[key][irbcz+1:]*rwrz)
-    # I think we got it all!
-    return di_out
 
