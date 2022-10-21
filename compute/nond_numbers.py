@@ -28,17 +28,16 @@ def get_numbers_input(dirname, r1='rmin', r2='rmax'):
 
     # Prandtl number
     nu_volav = volav_in_radius(dirname, eq.nu, r1, r2)
-    k_volav = volav_in_radius(dirname, eq.kappa, r1, r2)
-    di.pr = nu_volav/k_volav
+    kappa_volav = volav_in_radius(dirname, eq.kappa, r1, r2)
+    di.pr = nu_volav/kappa_volav
 
     # flux rayleigh number
-    vol = get_vol(dirname, r1, r2)
+    vol = get_vol(dirname) # make sure to get the whole volume here...
     flux_rad = vol/(4*np.pi*eq.rr**2)*np.cumsum(eq.heat*gi.rw)
     flux_nonrad = eq.lum/(4*np.pi*eq.rr**2) - flux_rad
     flux_volav = volav_in_radius(dirname, flux_nonrad, r1, r2)
     rho_volav = volav_in_radius(dirname, eq.rho, r1, r2)
     tmp_volav = volav_in_radius(dirname, eq.tmp, r1, r2)
-    kappa_volav = volav_in_radius(dirname, eq.kappa, r1, r2)
     grav_volav = volav_in_radius(dirname, np.abs(eq.grav), r1, r2)
     shell_depth = r2 - r1
     di.raf = grav_volav*flux_volav*shell_depth**4/(eq.c_p*rho_volav*tmp_volav*nu_volav*kappa_volav**2)
@@ -62,5 +61,13 @@ def get_numbers_input(dirname, r1='rmin', r2='rmax'):
         csq = dprs/drho
         csq_volav = volav_in_radius(dirname, csq, r1, r2)
         di.sound = (csq_volav/shell_depth*2)/eq.om0**2
+
+    if magnetism:
+        # magnetic Prandtl
+        eta_volav = volav_in_radius(dirname, eq.eta, r1, r2)
+        di.prm = nu_volav/eta_volav
+
+        # "magnetic Ekman number"
+        di.ekm = eta_volav/(eq.om0*shell_depth**2)
 
     return di
