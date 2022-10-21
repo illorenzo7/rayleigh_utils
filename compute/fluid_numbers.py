@@ -88,7 +88,7 @@ def get_numbers_input(dirname, r1='rmin', r2='rmax'):
 
     return di
 
-def get_numbers_output(dirname, shell_depth=None):
+def get_numbers_output(dirname, shell_depth=None, the_file=None, the_file_az=None):
     # get diagnostic numbers (e.g., Re and Ro) as functions of radius
 
     # dictionary for output
@@ -104,7 +104,6 @@ def get_numbers_output(dirname, shell_depth=None):
 
     # get field amplitudes and length scales
     di_amp = field_amp(dirname)
-    di_len = length_scales(dirname)
 
     # get non-rotating, non-magnetic numbers first:
 
@@ -113,6 +112,15 @@ def get_numbers_output(dirname, shell_depth=None):
     di.remean = di_amp['vmean']*shell_depth/eq.nu
     di.refluc = di_amp['vfluc']*shell_depth/eq.nu
 
+    # get ratios of KE in mean vs. fluc flows
+    ke = eq.rho*di_amp.v**2/2
+    kemean = eq.rho*di_amp.vmean**2/2
+    kefluc = eq.rho*di_amp.vfluc**2/2
+
+    di.kemean = kemean/ke
+    di.kefluc = kefluc/ke
+
+    # rotational numbers
     if rotation:
         om0 = eq.om0
         # get the Rossby numbers
@@ -123,6 +131,32 @@ def get_numbers_output(dirname, shell_depth=None):
         di.rovortmean = di_amp.ommean/(2.0*om0)
         di.rovortfluc = di_amp.omfluc/(2.0*om0)
 
+        # rotation contrast
+        datadir = dirname + '/data/'
+        if the_file_az is None:
+            the_file_az = get_widest_range_file(datadir, 'AZ_Avgs')
+        print ("get_numbers_output(): reading " + the_file_az)
+        di_az = get_dict(the_file_az)
+        vals_az = di_az['vals']
+        lut_az = di_az['lut']
+        vp_av = vals_az[:, :, lut_az[3]]
+
+        # Get necessary grid info
+        gi = get_grid_info(dirname)
+
+        # Get differential rotation in the rotating frame. 
+        rotrate = vp_av/gi.xx
+
+        # rotation contrast between equator and 60 degrees
+        latcut = 60
+        iteq = np.argmin(np.abs(gi.tt_lat))
+        itnorth = np.argmin(np.abs(gi.tt_lat - latcut))
+        itsouth = np.argmin(np.abs(gi.tt_lat + latcut))
+        roteq = rotrate[iteq, :]
+        rotpol = 0.5*(rotrate[itnorth, :] + rotrate[itsouth, :])
+        di.diffrot = (roteq - rotpol)/om0
+
+    # magnetic numbers
     if magnetism:
         # magnetic Reynolds numbers
         di.rem = di_amp['v']*shell_depth/eq.eta
@@ -130,5 +164,11 @@ def get_numbers_output(dirname, shell_depth=None):
         di.remfluc = di_amp['vfluc']*shell_depth/eq.eta
 
         # plasma beta
+        pgas = eq.prs
+        pmag = di_amp.b**2/(8*np.pi)
+        di.beta = pgas/pmag
+
+        # ratio of mag. energy to kin. energy
+        di.me = pmag/ke
 
     return di
