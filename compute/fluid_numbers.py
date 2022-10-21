@@ -1,9 +1,6 @@
 import numpy as np
-from scipy.integrate import cumtrapz
 import sys, os
-sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
-from rayleigh_diagnostics import Shell_Avgs, GridInfo
 from common import *
 
 numbers_input_def = dotdict({
