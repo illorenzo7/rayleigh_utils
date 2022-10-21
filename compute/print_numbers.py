@@ -26,10 +26,15 @@ for ishell in range(len(rvals) - 1):
 
     di = get_numbers_input(dirname, r1, r2)
     print (buff_line)
-    print ("INPUT NON-D NUMBERS")
+    print ("NON-DIMENSIONAL NUMBERS (INPUT PARAMETERS)")
     print (buff_line)
     print (("Shell #%02i: r1 = " + fmt + ", r2 = " + fmt)\
             %(ishell + 1, r1, r2))
     print (buff_line)
-    print (di)
+    lendef1 = 10
+    lendef2 = 35
+    for key in di.keys():
+        print (fill_str(numbers_input_def[key][0], lendef1, ' '), end='')
+        print (fill_str(numbers_input_def[key][1], lendef2, ' '), end='')
+        print (fmt %di[key])
     print (buff_line)

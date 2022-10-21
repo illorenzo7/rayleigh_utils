@@ -6,6 +6,22 @@ sys.path.append(os.environ['raco'])
 from rayleigh_diagnostics import Shell_Avgs, GridInfo
 from common import *
 
+numbers_input_def = dotdict({
+    "aspect": ("A", "r_1/r_2"),
+    "nrho": ("N_rho", "ln(rho_1/rho_2)"),
+    "dc": ("DC", "exp(N_rho)"),
+    "pr": ("Pr", "nu/kappa"),
+    "raf": ("Ra_F", "g*F*H^4/(c_p*rho*T*nu*kappa^2)"),
+    "di": ("Di", "g*H/(c_p*T)"),
+    "ek": ("Ek", "nu/(Om_0*H^2)"), 
+    "ta": ("Ta", "1/Ek^2"),
+    "buoy": ("B", "N^2/Om_0^2"),
+    "sound": ("SC", "(c/H)^2/Om_0^2"),
+    "prm": ("Pr_m", "nu/eta"),
+    "ekm": ("Ek_m", "Ek/Pr_m")
+    })
+
+
 def get_numbers_input(dirname, r1='rmin', r2='rmax'):
     di = dotdict()
     rotation = get_parameter(dirname, 'rotation')
@@ -15,8 +31,7 @@ def get_numbers_input(dirname, r1='rmin', r2='rmax'):
 
     # aspect ratio
     r1, r2 = interpret_rvals(dirname, np.array([r1, r2]))
-    di.r1, di.r2 = r1, r2
-    di.aspect = r2/r1
+    di.aspect = r1/r2
 
     # density contrast
     eq = get_eq(dirname)
@@ -25,6 +40,7 @@ def get_numbers_input(dirname, r1='rmin', r2='rmax'):
     ir1 = np.argmin(np.abs(rr - r1))
     ir2 = np.argmin(np.abs(rr - r2))
     di.dc = eq.rho[ir1]/eq.rho[ir2]
+    di.nrho = np.log(di.dc)
 
     # Prandtl number
     nu_volav = volav_in_radius(dirname, eq.nu, r1, r2)
