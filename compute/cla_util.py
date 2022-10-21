@@ -116,15 +116,14 @@ def read_clas(args):
             elif isall(args[i+1]):
                 clas['rvals'] = get_sliceinfo(clas0.dirname).rvals
             else:
-                string_after = get_string_after_arg(args, i)
-                clas['rvals'] = interpret_rvals(clas0.dirname,\
-                        string_after.split())
+                string_after = read_string_after_arg(args, i)
+                clas['rvals'] = interpret_rvals(clas0.dirname, string_after)
         elif arg == '--rrange': # specify range of rvals
-            vals_after = get_string_after_arg(args, i).split()
+            vals_after = read_string_after_arg(args, i)
             nrvals = int(vals_after[2])
             rbot, rtop = interpret_rvals(clas0.dirname, vals_after[:2])
             nrvals = int(nrvals)
-            clas['rvals'] = np.linspace(rtop, rbot, nrvals)
+            clas['rvals'] = np.linspace(rbot, rtop, nrvals)
 
         # specify a desired time
         elif arg in ['--iter', '--prot', '--tdt', '--sec']:

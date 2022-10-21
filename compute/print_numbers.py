@@ -8,6 +8,11 @@ from cla_util import *
 from common import *
 from fluid_numbers import *
 
+# print the purpose of routine
+print (buff_line)
+print ("NON-DIMENSIONAL NUMBERS (INPUT PARAMETERS)")
+print (buff_line)
+
 # read in args
 args = sys.argv 
 clas0, clas = read_clas(args)
@@ -25,10 +30,7 @@ for ishell in range(len(rvals) - 1):
     r2 = rvals[ishell+1]
 
     di = get_numbers_input(dirname, r1, r2)
-    print (buff_line)
-    print ("NON-DIMENSIONAL NUMBERS (INPUT PARAMETERS)")
-    print (buff_line)
-    print (("Shell #%02i: r1 = " + fmt + ", r2 = " + fmt)\
+    print (("Shell #%02i: r_1 = " + fmt + ", r_2 = " + fmt)\
             %(ishell + 1, r1, r2))
     print (buff_line)
     lendef1 = 10
