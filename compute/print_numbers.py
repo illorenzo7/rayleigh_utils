@@ -15,4 +15,21 @@ dirname = clas0.dirname
 magnetism = clas0.magnetism
 rotation = clas0.rotation
 
+rvals = clas.rvals
+if rvals is None:
+    rvals = interpret_rvals(dirname, ['rmin', 'rmax'])
 
+fmt = "%1.2e"
+for ishell in range(len(rvals) - 1):
+    r1 = rvals[ishell]
+    r2 = rvals[ishell+1]
+
+    di = get_numbers_input(dirname, r1, r2)
+    print (buff_line)
+    print ("INPUT NON-D NUMBERS")
+    print (buff_line)
+    print (("Shell #%02i: r1 = " + fmt + ", r2 = " + fmt)\
+            %(ishell + 1, r1, r2))
+    print (buff_line)
+    print (di)
+    print (buff_line)
