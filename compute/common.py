@@ -1196,9 +1196,7 @@ def field_amp(dirname, the_file=None):
     eq = get_eq(dirname)
     rho = eq.rho
     rr = eq.rr
-    nr = len(rr)
     di_out['rr'] = rr
-    di_out['nr'] = nr
 
     # Get data directory
     datadir = dirname + '/data/'
@@ -1415,10 +1413,8 @@ def length_scales(dirname, the_file=None):
     eq = get_eq(dirname)
     hrho = -1./eq.dlnrho
     rr = eq.rr
-    nr = len(rr)
 
     di_out['rr'] = rr
-    di_out['nr'] = nr
     di_out.hrho = hrho
 
     # Get data directory

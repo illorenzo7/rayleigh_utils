@@ -93,16 +93,6 @@ def get_numbers_output(dirname, r1='rmin', r2='rmax'):
     rotation = get_parameter(dirname, 'rotation')
     magnetism = get_parameter(dirname, 'magnetism')
 
-
-    # get non-rotating, non-magnetic numbers first:
-
-def nonD_numbers(dirname, rbcz=None):
-    # all the nonD numbers (as functions of radius and in different zones)
-    # we could ever want
-
-    # Make empty dictionary for length_scale arrays
-    di_out = dict([])
-
     # See if run is magnetic
     magnetism = get_parameter(dirname, 'magnetism')
     rotation = get_parameter(dirname, 'rotation')
