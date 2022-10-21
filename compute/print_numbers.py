@@ -9,23 +9,10 @@ from common import *
 from fluid_numbers import *
 
 # read in args
-args = sys.argv
-magnetism = False
-listall = False
+args = sys.argv 
+clas0, clas = read_clas(args)
+dirname = clas0.dirname
+magnetism = clas0.magnetism
+rotation = clas0.rotation
 
-for arg in args:
-    if arg == '--mag':
-        magnetism = True
 
-groupname = args[1]
-
-try:
-    qgroup = get_quantity_group(groupname, magnetism)
-except:
-    print ('qgroup %s does not exist.' %groupname)
-    sys.exit(1)
-
-qvals = qgroup['qvals']
-
-print ('qgroup %s -->' %groupname)
-print ("qvals = " + arr_to_str(qvals, "%i"))

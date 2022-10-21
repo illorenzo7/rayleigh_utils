@@ -82,7 +82,7 @@ def read_clas(args):
     clas0['rotation'] = get_parameter(dirname, 'rotation')
 
     # get the other arguments
-    clas = dict({})
+    clas = dotdict()
     args = args[2:]
     nargs = len(args)
     for i in range(nargs):
@@ -150,4 +150,4 @@ def read_clas(args):
             key = arg[2:]
             clas[key] = read_cla_vals(args, i)
 
-    return dotdict(clas0), dotdict(clas)
+    return clas0, clas
