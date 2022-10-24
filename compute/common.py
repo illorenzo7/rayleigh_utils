@@ -39,6 +39,7 @@ rsun = sun.r = 6.957e10  # value taken from IAU recommendation: arxiv, 1510.0767
                  # model S?)
 lsun = sun.l = 3.846e33  # Used in Rayleigh: disagrees with IAU recommended value 
                  # of 3.828e33
+                 # Update 10/24/2022: Camissasa & Featherstone 2022 uses 3.839e33...revisit this
 msun = sun.m = 1.98891e33 # FROM WIKIPEDIA: 1.98847 \pm 0.00007
                   # From IAU recommendation: 1.9885, with 
                   # G = 6.67408 \pm 0.00031 (10^-8 c.g.s.)
