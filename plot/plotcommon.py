@@ -335,7 +335,12 @@ def lineplot(xx, profiles, ax, **kwargs):
     kw.xvals = make_array(kw.xvals, tolist=True)
     kw.yvals = make_array(kw.yvals, tolist=True)
 
-    # deal with scalar "lists"
+    # deal with scalar 1-D arrays (everything must be "lists")
+    if not isinstance(profiles, list):
+        if isinstance(profiles, np.ndarray):
+            if profiles.ndim == 1:
+                profiles = [profiles]
+
     nprofiles = len(profiles)
     if np.isscalar(kw.markers):
         kw.markers = [kw.markers]*nprofiles

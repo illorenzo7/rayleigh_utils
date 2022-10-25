@@ -6,60 +6,65 @@ from scipy.integrate import cumtrapz
 import matplotlib.pyplot as plt
 
 import sys, os
-sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
+sys.path.append(os.environ['rapl'])
 
 from common import *
-from plotref import plotref
+from plotcommon import *
+from cla_util import *
 
-# Get the run directory on which to perform the analysis
-dirname = sys.argv[1]
+# Get CLAs
+args = sys.argv
+clas0, clas = read_clas(args)
+dirname = clas0.dirname
 dirname_stripped = strip_dirname(dirname)
 
-# Directory with data and plots, make the plotting directory if it doesn't
-# already exist    
-datadir = dirname + '/data/'
-plotdir = dirname + '/plots/'
+# allowed args + defaults
+kwargs_default = dotdict()
+kwargs_default.update(make_figure_kwargs_default)
+kwargs_default.update(lineplot_kwargs_default)
 
-args = sys.argv[2:]
-nargs = len(args)
-fname = 'equation_coefficients'
-xminmax = None
-ylog = False
-for i in range(nargs):
-    arg = args[i]
-    if arg == '-plotdir':
-        plotdir = args[i+1]
-    if arg == '-log':
-        ylog = True
-    elif arg == '-fname':
-        fname = args[i+1]
-    elif arg == '-crb':
-        fname = 'custom_reference_binary'
-    elif arg == '-xminmax':
-        xminmax = float(args[i+1]), float(args[i+2])
+# change kwargs with clas
+kw = update_dict(kwargs_default, clas)
+kw_make_figure = update_dict(make_figure_kwargs_default, clas)
+kw_lineplot = update_dict(lineplot_kwargs_default, clas)
 
-eq = get_eq(dirname, fname=fname)
-r = eq.radius
-T = eq.temperature
-rho = eq.density
-p = eq.pressure
-dlnT = eq.dlnT
-dlnrho = eq.dlnrho
-dsdr = eq.dsdr
-# Integrate to obtain s(r)
-s = cumtrapz(dsdr, r, initial=0)
-d2lnrho = eq.d2lnrho
-gravity = eq.gravity
-Q = eq.Q
-    
-fig, axs = plotref(r, T, rho, p, dlnT, dlnrho, s, dsdr,\
-    d2lnrho, gravity, Q, color='k', xminmax=xminmax, ylog=ylog)
+# find bad keys
+find_bad_keys(kwargs_default, clas, clas0['routinename'], justwarn=True)
 
+# read reference state
+eq = get_eq(dirname)
 
-plt.tight_layout() 
-    
-axs[0,0].set_title(dirname_stripped, ha='left')
-    
-plt.savefig(plotdir +  'reference_state.png', dpi=300)
-plt.show()
+# things to plot and ylabels
+profiles = [eq.grav]
+ylabels = ['gravity']
+
+# Create the plot; start with plotting all the energy fluxes
+nplots = 10
+kw_make_figure.nplots = nplots
+fig, axs, fpar = make_figure(**kw_make_figure)
+
+# x label
+kw_lineplot.xlabel = 'radius'
+
+for iplot in [0]:
+#for iplot in range(nplots):
+    ax = axs.flatten()[iplot]
+    kw_lineplot.ylabel = ylabels[iplot]
+    lineplot(eq.rr, profiles[iplot], ax, **kw_lineplot)
+
+# make title 
+the_title = dirname_stripped + '\nbackground reference state'
+margin_x = fpar['margin_left'] + fpar['sub_margin_left']
+margin_y = default_margin/fpar['height_inches']
+fig.text(margin_x, 1 - margin_y, the_title,\
+         ha='left', va='top', fontsize=default_titlesize)
+
+# save the figure, maybe
+if clas0['saveplot']:
+    plotdir = my_mkdir(clas0['plotdir'])
+    savefile = plotdir + clas0['routinename'] + clas0['tag'] + '.png'
+    print ('saving figure at ' + savefile)
+    plt.savefig(savefile, dpi=300)
+if clas0['showplot']:
+    plt.show()
