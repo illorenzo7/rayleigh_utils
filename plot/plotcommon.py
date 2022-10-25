@@ -475,7 +475,9 @@ def lineplot(xx, profiles, ax, **kwargs):
         plt.xticks(fontsize=kw.fontsize)
         plt.yticks(fontsize=kw.fontsize)
 
-        # Get the y-axis in scientific notation
+        # Get the non-log in scientific notation
+        if not kw.xlogscale:
+            plt.ticklabel_format(useMathText=True, axis='x', scilimits=(0,0))
         if not kw.logscale:
             plt.ticklabel_format(useMathText=True, axis='y', scilimits=(0,0))
 
