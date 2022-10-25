@@ -989,7 +989,7 @@ def get_eq(dirname, fname=None):
 
         if kappa_type is None or kappa_type == 1:
             eq_hr.kappa = zero + kappa_top
-            eq_hr.dlkappa = zero
+            eq_hr.dlnkappa = zero
         elif kappa_type == 2:
             kappa_power = get_parameter(dirname, 'nu_power')
             eq_hr.kappa = kappa_top*(eq_hr.rho/eq_hr.rho[0])**kappa_power
@@ -1034,8 +1034,9 @@ def get_eq(dirname, fname=None):
         eq_hr.dlnu = eq.functions[10]
         eq_hr.kappa = eq.constants[5]*eq.functions[4]
         eq_hr.dlnkappa = eq.functions[11]
-        eq_hr.eta = eq.constants[6]*eq.functions[6] # these are built-in to
-        eq_hr.dlneta = eq.functions[12] # equation_coefficients as "zero"
+        if magnetism:
+            eq_hr.eta = eq.constants[6]*eq.functions[6] # these are built-in to
+            eq_hr.dlneta = eq.functions[12] # equation_coefficients as "zero"
 
         # finally, get the rotation rate
         eq_hr.om0 = eq.constants[0]/2
