@@ -931,6 +931,9 @@ def get_eq(dirname, fname=None):
     # (i.e. may set dissipation number instead)
     eq_hr.c_p = get_parameter(dirname, 'pressure_specific_heat')
 
+    # and this no matter what
+    magnetism = get_parameter(dirname, 'magnetism')
+
     # read reference state from binary file or main_input
     if fname is None:
         if os.path.exists(dirname + '/' + 'equation_coefficients'):
@@ -995,7 +998,6 @@ def get_eq(dirname, fname=None):
             eq_hr.kappa = kappa_top*(eq_hr.rho/eq_hr.rho[0])**kappa_power
             eq_hr.dlnkappa = kappa_power*eq_hr.dlnkappa
         
-        magnetism = get_parameter(dirname, 'magnetism')
         if magnetism:
             if eta_type is None or eta_type == 1:
                 eq_hr.eta = zero + eta_top
