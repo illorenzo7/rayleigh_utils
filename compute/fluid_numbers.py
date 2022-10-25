@@ -112,10 +112,25 @@ def get_numbers_output(dirname, shell_depth=None, the_file=None, the_file_az=Non
 
     # get non-rotating, non-magnetic numbers first:
 
-    # get the Reynolds numbers
+    # get the Mach numbers
+    dlnprs = eq.dlnrho + eq.dlntmp
+    dprs = eq.prs*dlnprs
+    drho = eq.rho*eq.dlnrho
+    csq = dprs/drho
+
+    di.ma = di_amp.v/np.sqrt(csq)
+    di.mamean = di_amp.vmean/np.sqrt(csq)
+    di.mafluc = di_amp.vfluc/np.sqrt(csq)
+
+    # get the system Reynolds numbers
     di.re = di_amp['v']*shell_depth/eq.nu
     di.remean = di_amp['vmean']*shell_depth/eq.nu
     di.refluc = di_amp['vfluc']*shell_depth/eq.nu
+
+    # get the vorticity ("real") Reynolds numbers
+    di.revort = di_amp['v']**2/di_amp.om/eq.nu
+    di.revortmean = di_amp['vmean']**2/di_amp.ommean/eq.nu
+    di.revortfluc = di_amp['vfluc']**2/di_amp.omfluc/eq.nu
 
     # get ratios of KE in mean vs. fluc flows
     ke = eq.rho*di_amp.v**2/2
@@ -128,10 +143,13 @@ def get_numbers_output(dirname, shell_depth=None, the_file=None, the_file_az=Non
     # rotational numbers
     if rotation:
         om0 = eq.om0
-        # get the Rossby numbers
+        
+        # get the system Rossby numbers
         di.ro = di_amp.v/(2.0*om0*shell_depth)
         di.romean = di_amp.vmean/(2.0*om0*shell_depth)
         di.rofluc = di_amp.vfluc/(2.0*om0*shell_depth)
+
+        # get the vorticity ("real") Rossby numbers
         di.rovort = di_amp.om/(2.0*om0)
         di.rovortmean = di_amp.ommean/(2.0*om0)
         di.rovortfluc = di_amp.omfluc/(2.0*om0)
@@ -163,10 +181,15 @@ def get_numbers_output(dirname, shell_depth=None, the_file=None, the_file_az=Non
 
     # magnetic numbers
     if magnetism:
-        # magnetic Reynolds numbers
+        # system magnetic Reynolds numbers
         di.rem = di_amp['v']*shell_depth/eq.eta
         di.remmean = di_amp['vmean']*shell_depth/eq.eta
         di.remfluc = di_amp['vfluc']*shell_depth/eq.eta
+
+        # current ("real") magnetic Reynolds numbers
+        di.remcur = di_amp['v']*(di_amp.b/di_amp.j)/eq.eta
+        di.remcurmean = di_amp['vmean']*(di_amp.bmean/di_amp.jmean)/eq.eta
+        di.remcurfluc = di_amp['vfluc']*(di_amp.bfluc/di_amp.jfluc)/eq.eta
 
         # plasma beta
         pgas = eq.prs
