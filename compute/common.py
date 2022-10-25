@@ -904,7 +904,7 @@ def compute_polytrope(rmin=sun.rbcz, rmax=sun.r_nrho3, nr=500, rr=None, poly_nrh
     dzeta = -c1*d/rr**2
     d2zeta = 2*c1*d/rr**3
     dlnzeta = dzeta/zeta
-    d2lnzeta = d2zeta/zeta - dzeta/zeta**2 
+    d2lnzeta = d2zeta/zeta - dzeta**2/zeta**2 
 
     di.dlnrho = poly_n*dlnzeta
     di.d2lnrho = poly_n*d2lnzeta
@@ -961,7 +961,7 @@ def get_eq(dirname, fname=None):
         eq_hr.dlntmp = poly.dlntmp
         eq_hr.grav = poly.grav
         eq_hr.dsdr = poly.dsdr
-        eq_hr.nsq = poly.dsdr
+        eq_hr.nsq = poly.dsdr*eq_hr.grav/eq_hr.c_p
 
         # get heating
         eq_hr.lum = get_parameter(dirname, 'luminosity')
@@ -972,6 +972,7 @@ def get_eq(dirname, fname=None):
                                 # "consant entropy heating"
             eq_hr.heat = eq_hr.prs - eq_hr.prs[0]
             integral = volav_in_radius(dirname, eq_hr.heat)
+            integral *= get_vol(dirname)
             eq_hr.heat = eq_hr.heat*eq_hr.lum/integral
         elif heating_type == 4: # constant energy heating
             eq_hr.heat = zero + eq_hr.lum/get_vol(dirname)
