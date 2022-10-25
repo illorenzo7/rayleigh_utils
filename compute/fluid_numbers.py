@@ -10,6 +10,7 @@ numbers_input_def = dotdict({
     "pr": ("Pr", "nu/kappa"),
     "raf": ("Ra_F", "g*F*H^4/(c_p*rho*T*nu*kappa^2)"),
     "di": ("Di", "g*H/(c_p*T)"),
+    "soundbuoy": ("CsN", "(c/H)^2/N^2)"),
     "ek": ("Ek", "nu/(Om_0*H^2)"), 
     "ta": ("Ta", "1/Ek^2"),
     "buoy": ("B", "N^2/Om_0^2"),
@@ -58,21 +59,28 @@ def get_numbers_input(dirname, r1='rmin', r2='rmax'):
     # dissipation number
     di.di = grav_volav*shell_depth/(eq.c_p*tmp_volav)
 
+    # sound crossing frequency to buoyancy
+
+    # buoyancy
+    nsq_volav = volav_in_radius(dirname, eq.nsq, r1, r2)
+
+    # sound speed squared
+    dlnprs = eq.dlnrho + eq.dlntmp
+    dprs = eq.prs*dlnprs
+    drho = eq.rho*eq.dlnrho
+    csq = dprs/drho
+    csq_volav = volav_in_radius(dirname, csq, r1, r2)
+    di.soundbuoy = (csq_volav/shell_depth*2)/nsq_volav
+
     if rotation:
         # Ekman and Taylor
         di.ek = nu_volav/(eq.om0*shell_depth**2)
         di.ta = 1/di.ek**2
 
         # buoyancy
-        nsq_volav = volav_in_radius(dirname, eq.nsq, r1, r2)
         di.buoy = nsq_volav/eq.om0**2
 
         # ratio of rotation period to sound crossing time (squared)
-        dlnprs = eq.dlnrho + eq.dlntmp
-        dprs = eq.prs*dlnprs
-        drho = eq.rho*eq.dlnrho
-        csq = dprs/drho
-        csq_volav = volav_in_radius(dirname, csq, r1, r2)
         di.sound = (csq_volav/shell_depth*2)/eq.om0**2
 
     if magnetism:
