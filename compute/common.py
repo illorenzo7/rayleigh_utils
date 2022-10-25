@@ -1011,9 +1011,6 @@ def get_eq(dirname, fname=None):
 
     else:
         # by default, get info from equation_coefficients (if file exists)
-        # assume gas is ideal
-        gas_constant = (gamma_ideal-1)*eq_hr.c_p/gamma_ideal
-
         # get the background reference state
         eq = equation_coefficients()
         eq.read(dirname + '/' + fname)
@@ -1022,13 +1019,15 @@ def get_eq(dirname, fname=None):
         eq_hr.dlnrho = eq.functions[7]
         eq_hr.d2lnrho = eq.functions[8]
         eq_hr.tmp = eq.functions[3]
-        eq_hr.prs = gas_constant*eq_hr.rho*eq_hr.tmp
         eq_hr.dlntmp = eq.functions[9]
         eq_hr.grav = eq.functions[1]/eq_hr.rho*eq_hr.c_p
         eq_hr.dsdr = eq.functions[13]
-        eq_hr.nsq = (eq_hr.grav/eq_hr.c_p)*eq_hr.dsdr
         eq_hr.heat = eq.constants[9]*eq.functions[5]
         eq_hr.lum = eq.constants[9]
+
+        # assume gas is ideal and get pressure
+        gas_constant = (gamma_ideal-1)*eq_hr.c_p/gamma_ideal
+        eq_hr.prs = gas_constant*eq_hr.rho*eq_hr.tmp
 
         # get the transport coefficients
         eq_hr.nu = eq.constants[4]*eq.functions[2]
@@ -1041,6 +1040,14 @@ def get_eq(dirname, fname=None):
         # finally, get the rotation rate
         eq_hr.om0 = eq.constants[0]/2
         eq_hr.prot = 2*np.pi/eq_hr.om0
+
+    # some derivative quantities
+
+    # buoyancy frequency
+    eq_hr.nsq = (eq_hr.grav/eq_hr.c_p)*eq_hr.dsdr
+
+    # density scale height
+    eq_hr.hrho = -1/eq_hr.dlnrho
 
     return eq_hr
 

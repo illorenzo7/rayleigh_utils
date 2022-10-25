@@ -36,19 +36,25 @@ find_bad_keys(kwargs_default, clas, clas0['routinename'], justwarn=True)
 eq = get_eq(dirname)
 
 # things to plot and ylabels
-profiles = [eq.grav]
-ylabels = ['gravity']
+profiles = [eq.grav, eq.dsdr, eq.nsq, eq.heat,\
+        eq.rho, eq.tmp, eq.dlnrho, eq.hrho,\
+        eq.d2lnrho, eq.dlntmp, eq.prs]
+ylabels = ['gravity (g)', r'$d\overline{S}/dr$', r'$N^2=(g/c_p)d\overline{S}/dr$', 'heating (Q)',\
+        r'$\overline{\rho}$', r'$\overline{T}$', r'$dln\overline{\rho}/dr$', r'$H_\rho=-(dln\overline{\rho}/dr)^{-1}$',\
+        r'$d^2ln\rho/dr^2$', r'$dln\overline{T}/dr$', r'$\overline{P}=\overline{\rho}\mathcal{R}\overline{T}$']
 
 # Create the plot; start with plotting all the energy fluxes
-nplots = 10
+nplots = 11
+ncol = 4
 kw_make_figure.nplots = nplots
+kw_make_figure.ncol = ncol
 fig, axs, fpar = make_figure(**kw_make_figure)
 
 # x label
 kw_lineplot.xlabel = 'radius'
 
-for iplot in [0]:
-#for iplot in range(nplots):
+#for iplot in [0]:
+for iplot in range(nplots):
     ax = axs.flatten()[iplot]
     kw_lineplot.ylabel = ylabels[iplot]
     lineplot(eq.rr, profiles[iplot], ax, **kw_lineplot)
