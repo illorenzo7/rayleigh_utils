@@ -40,8 +40,8 @@ profiles = [eq.grav, eq.dsdr, eq.nsq, eq.heat,\
         eq.rho, eq.tmp, eq.dlnrho, eq.hrho,\
         eq.d2lnrho, eq.dlntmp, eq.prs]
 ylabels = ['gravity (g)', r'$d\overline{S}/dr$', r'$N^2=(g/c_p)d\overline{S}/dr$', 'heating (Q)',\
-        r'$\overline{\rho}$', r'$\overline{T}$', r'$dln\overline{\rho}/dr$', r'$H_\rho=-(dln\overline{\rho}/dr)^{-1}$',\
-        r'$d^2ln\rho/dr^2$', r'$dln\overline{T}/dr$', r'$\overline{P}=\overline{\rho}\mathcal{R}\overline{T}$']
+        'density (' + r'$\overline{\rho}$' + ')', 'temperature (' + r'$\overline{T}$' + ')', r'$dln\overline{\rho}/dr$', r'$H_\rho=-(dln\overline{\rho}/dr)^{-1}$',\
+        r'$d^2ln\rho/dr^2$', r'$dln\overline{T}/dr$', 'pressure (' + r'$\overline{P}=\overline{\rho}\mathcal{R}\overline{T}$' + ')']
 
 # Create the plot; start with plotting all the energy fluxes
 nplots = 11
