@@ -35,8 +35,12 @@ for ishell in range(len(rvals) - 1):
     print (buff_line)
     lendef1 = 10
     lendef2 = 35
+    count = 0
     for key in di.keys():
         print (fill_str(numbers_input_def[key][0], lendef1, ' '), end='')
         print (fill_str(numbers_input_def[key][1], lendef2, ' '), end='')
         print (fmt %di[key])
+        if (count + 1) in linebreaks_input:
+            print("")
+        count += 1
     print (buff_line)

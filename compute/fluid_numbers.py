@@ -3,18 +3,22 @@ import sys, os
 sys.path.append(os.environ['raco'])
 from common import *
 
+linebreaks_input = [3, 7, 11]
 numbers_input_def = dotdict({
     "aspect": ("A", "r_1/r_2"),
     "nrho": ("N_rho", "ln(rho_1/rho_2)"),
     "dc": ("DC", "exp(N_rho)"),
+
     "pr": ("Pr", "nu/kappa"),
     "raf": ("Ra_F", "g*F*H^4/(c_p*rho*T*nu*kappa^2)"),
     "di": ("Di", "g*H/(c_p*T)"),
     "soundbuoy": ("CsN", "(c/H)^2/N^2)"),
+
     "ek": ("Ek", "nu/(Om_0*H^2)"), 
     "ta": ("Ta", "1/Ek^2"),
     "buoy": ("B", "N^2/Om_0^2"),
     "sound": ("SC", "(c/H)^2/Om_0^2"),
+
     "prm": ("Pr_m", "nu/eta"),
     "ekm": ("Ek_m", "Ek/Pr_m")
     })
@@ -93,6 +97,7 @@ def get_numbers_input(dirname, r1='rmin', r2='rmax'):
 
     return di
 
+linebreaks_output = [3, 6, 9, 11, 14, 17, 18, 21, 24, 25]
 numbers_output_def = dotdict({
     "ma": ("Ma", "v/c"),
     "mamean": ("Ma_mean","<v>/c"),
@@ -117,7 +122,7 @@ numbers_output_def = dotdict({
     "rovortmean": ("Ro_vort,mean", "<om>/(2*Om_0)"),
     "rovortfluc": ("Ro_vort,fluc", "om'/(2*Om_0)"),
 
-    "diffrot": ("DR", "DOm/Om_0"),
+    "diffrot": ("DR", "(Om_eq - Om_60)/Om_0"),
 
     "rem": ("Re_m", "v*H/eta"),
     "remmean": ("Re_m,mean", "<v>*H/eta"),
@@ -128,6 +133,7 @@ numbers_output_def = dotdict({
     "remcurfluc": ("Re_m,cur,fluc", "v'*(B'/J')/eta"),
 
     "beta": ("plasma beta", "8*pi*P/B^2"),
+    
     "me": ("ME", "(B^2/(8*pi)) / (rho*v^2/2)") })
 
 

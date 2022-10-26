@@ -54,10 +54,14 @@ for ishell in range(len(rvals) - 1):
     print (buff_line)
     lendef1 = 25
     lendef2 = 35
+    count = 0
     for key in di.keys():
         print (fill_str(numbers_output_def[key][0], lendef1, ' '), end='')
         print (fill_str(numbers_output_def[key][1], lendef2, ' '), end='')
         # get the actual number (volume average)
         num = volav_in_radius(dirname, di[key], r1, r2)
         print (fmt %num)
+        if (count + 1) in linebreaks_output:
+            print("")
+        count += 1
     print (buff_line)
