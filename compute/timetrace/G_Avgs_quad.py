@@ -61,7 +61,6 @@ import sys, os
 sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
 from rayleigh_diagnostics import G_Avgs, Shell_Avgs, AZ_Avgs
-from derived_quantities import derive_quantity
 
 if rank == 0:
     # modules needed only by proc 0 
@@ -104,7 +103,6 @@ if rank == 0:
     kwargs_default['nquadlat'] = None # "high and low" latitudes in both North and South
     kwargs_default['latbounds'] = None
     kwargs_default['ilatbounds'] = None
-    kwargs_default['derive'] = None
 
     # update these possibly
     kw = update_dict(kwargs_default, clas)
@@ -144,12 +142,6 @@ if rank == 0:
     nquadlat = len(ilatbounds) - 1
     nquadr = len(irvals) - 1
     nquad = nquadlat*nquadr
-
-    # deal with derived quantities....make sure it's an integer array
-    derive = kw.derive
-    if not derive is None:
-        derive = make_array(kw.derive)
-        derive = parse_quantities(derive)[0]
 
     # update the actual boundary vals
     latbounds = tt_lat[ilatbounds]
@@ -204,10 +196,10 @@ else: # recieve my_files, my_nfiles
 # Broadcast dirname, radatadir, etc.
 if rank == 0:
     meta = [\
-dirname, dataname, radatadir, ilatbounds, irvals, tw, rw, derive]
+dirname, dataname, radatadir, ilatbounds, irvals, tw, rw]
 else:
     meta = None
-dirname, dataname, radatadir, ilatbounds, irvals, tw, rw, derive = comm.bcast(meta, root=0)
+dirname, dataname, radatadir, ilatbounds, irvals, tw, rw = comm.bcast(meta, root=0)
 
 # figure out which reading_func to use
 if dataname == 'G_Avgs':
@@ -245,17 +237,8 @@ for i in range(my_nfiles):
         else:
             vals_loc = a.vals
 
-        # check if we need derived quantities 
-        lut = a.lut
-        nq = a.nq
-        if not derive is None:
-            for qval in derive:
-                vals_to_add = derive_quantity(dirname, vals_loc, lut, qval, timeaxis=True)
-                vals_loc = np.concatenate((vals_loc, vals_to_add), axis=-2)
-                lut[qval] = nq
-                nq += 1
-
         # Get the values in the separate quadrants
+        nq = a.nq
         vals_gav = np.zeros((nq, nquadlat, nquadr))
         # note: the default is nquadlat, nquadr = 1, 1 (yes "extra" dimensions)
         for ilat in range(nquadlat): # remember: tt_lat is INCREASING
@@ -352,7 +335,7 @@ if rank == 0:
     # Get first and last iters of files
     iter1, iter2 = int_file_list[0], int_file_list[-1]
     f = open(savefile, 'wb')
-    di_sav = {'vals': vals, 'times': times, 'iters': iters, 'lut': lut, 'qv': a.qv, 'volumes': volumes, 'volume_full': np.sum(volumes), 'rvals': rvals, 'latbounds': latbounds}
+    di_sav = {'vals': vals, 'times': times, 'iters': iters, 'lut': a.lut, 'qv': a.qv, 'volumes': volumes, 'volume_full': np.sum(volumes), 'rvals': rvals, 'latbounds': latbounds}
     if 'nquad' in savefile:
         di_sav[ 'vals_full'] = vals_full
     pickle.dump(di_sav, f, protocol=4)
