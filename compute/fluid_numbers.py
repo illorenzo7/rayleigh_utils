@@ -97,6 +97,14 @@ def get_numbers_input(dirname, r1='rmin', r2='rmax'):
 
     return di
 
+# numbers groups
+numbers_output_groups = ["Mach numbers", "Reynolds numbers", "vort. Reynolds num.", "KE fractions",\
+        "Rossby numbers", "vort. Rossby num.", "DR fraction",\
+        "mag. Reynolds num.", "mag. current Reyn.", "plasma beta", "ME fraction"]
+numbers_output_ngroup = 4
+numbers_output_ngroup_rot = 3
+numbers_output_ngroup_mag = 4
+
 linebreaks_output = [3, 6, 9, 11, 14, 17, 18, 21, 24, 25]
 numbers_output_def = dotdict({
     "ma": ("Ma", "v/c"),
