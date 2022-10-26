@@ -10,7 +10,7 @@ from fluid_numbers import *
 
 # print the purpose of routine
 print (buff_line)
-print ("NON-DIMENSIONAL NUMBERS (INPUT PARAMETERS)")
+print ("NON-DIMENSIONAL NUMBERS (OUTPUT PARAMETERS)")
 print (buff_line)
 
 # read in args
@@ -23,6 +23,9 @@ rotation = clas0.rotation
 rvals = clas.rvals
 if rvals is None:
     rvals = interpret_rvals(dirname, ['rmin', 'rmax'])
+
+# get the output numbers
+di = get_numbers_output(dirname, shell_depth)
 
 fmt = "%1.2e"
 for ishell in range(len(rvals) - 1):
