@@ -1052,6 +1052,11 @@ def get_eq(dirname, fname=None):
     # density scale height
     eq_hr.hrho = -1/eq_hr.dlnrho
 
+    # thermal diffusion time
+    rmin, rmax = np.min(eq_hr.rr), np.max(eq_hr.rr)
+    irmid = np.argmin(np.abs(eq_hr.rr - (rmin + rmax)/2))
+    eq_hr.tdt = (rmax - rmin)**2/eq_hr.kappa[irmid]
+
     return eq_hr
 
 
@@ -1064,49 +1069,9 @@ def compute_Prot(dirname):
     eq = get_eq(dirname)
     return eq.prot
 
-def compute_tdt(dirname, mag=False, visc=False, tach=False):
-    # Returns computed diffusion time (in sec) across whole layer
-    # If tach=True, return diffusion time across whole layer,
-    # across CZ and across RZ (tuple of 3)
-    # Read in the diffusion profile
+def compute_tdt(dirname):
     eq = get_eq(dirname)
-    rr = eq.radius
-    if mag:
-        diff = eq.eta
-    elif visc:
-        diff = eq.nu
-    else:
-        diff = eq.kappa
-
-    # Compute and return the diffusion time
-    if tach:
-        domain_bounds = get_parameter(dirname, 'domain_bounds')
-        ri, rm, ro = domain_bounds
-        rmid = 0.5*(ri + ro)
-        rmidrz = 0.5*(ri + rm)
-        rmidcz = 0.5*(rm + ro)
-
-        irmidrz = np.argmin(np.abs(rr - rmidrz))
-        irmidcz = np.argmin(np.abs(rr - rmidcz))
-        irmid = np.argmin(np.abs(rr - rmid))
-
-        diff_midrz = diff[irmidrz]
-        diff_midcz = diff[irmidcz]
-        diff_mid = diff[irmid]
-
-        Hrz = rm - ri
-        Hcz = ro - rm
-        H = ro - ri
-
-        return Hrz**2.0/diff_midrz, Hcz**2.0/diff_midcz, H**2.0/diff_mid
-    else:
-        ri, ro = np.min(rr), np.max(rr)
-        rmid = 0.5*(ri + ro)
-        irmid = np.argmin(np.abs(rr - rmid))
-        diff_mid = diff[irmid]
-        H = ro - ri
-        return H**2.0/diff_mid
-
+    return eq.tdt
 
 def get_time_unit(dirname):
     # get basic time unit of simulation (rotation period or diffusion time)
