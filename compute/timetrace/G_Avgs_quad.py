@@ -1,9 +1,6 @@
 ##################################################################
 # Routine to trace Rayleigh data in time, in different quadrants
 # of the meridional plane
-# Author: Loren Matilsky
-# Created: 12/18/2018
-# Revised: 09/05/2021
 ##################################################################
 # This routine computes the trace in time of global averages in various 
 # quadrants
@@ -90,7 +87,7 @@ if rank == 0:
     rw = di_grid['rw']
     tw = di_grid['tw']
     rr = di_grid['rr']
-    rmin, rmax = np.min(rr)/rsun, np.max(rr)/rsun
+    rmin, rmax = np.min(rr), np.max(rr)
     cost = di_grid['cost']
     tt_lat = di_grid['tt_lat']
     latmin, latmax = np.min(tt_lat), np.max(tt_lat)
@@ -108,21 +105,24 @@ if rank == 0:
     kw = update_dict(kwargs_default, clas)
 
     # deal w/ radial boundaries
+    
+    # first see if user specified rvals via nquadr
+    if not kw.nquadr is None: # equally spaced domain boundaries 
+        kw.rvals = np.linspace(rmin, rmax, kw.nquadr + 1)
 
-    if kw.rvals is None:
-        # see if user specified 
-    if not kw.nquadr is None: # equally spaced domain boundaries (not the default)
-        kw.rvals = np.linspace(rmax, rmin, kw.nquadr + 1) # remember: rr is DECREASING
+    # want to end up with kw.irvals 
+    # if --irvals wasn't specified directly, get it from kw.rvals
     if kw.irvals is None: # this is the default
         if kw.rvals is None: # this is the default
-            irvals = [nr - 1, 0] # as rr increases, r-inds decrease
+            irvals = [nr - 1, 0] # as rvals increases, irvals decrease
             dataname = 'G_Avgs'
         else:
-            kw.rvals = np.sort(kw.rvals) # rr decreases
-            irvals = inds_from_vals(rr/rsun, kw.rvals)
+            kw.rvals = np.sort(kw.rvals)
+            irvals = inds_from_vals(rr, kw.rvals)
             dataname = 'Shell_Avgs'
-    else:
-        irvals = np.sort(kw.irvals)[::-1] # r-inds derease
+    else: # irvals was specified directly
+        irvals = np.sort(kw.irvals)[::-1] # irvals should always decrease
+        # (corresponding rvals increase)
         dataname = 'Shell_Avgs'
 
     # deal w/ latitudinal boundaries
@@ -145,22 +145,18 @@ if rank == 0:
 
     # update the actual boundary vals
     latbounds = tt_lat[ilatbounds]
-    rvals = rr[irvals]/rsun
+    rvals = rr[irvals]
 
     # compute the volumes of each quadrant
     volumes = np.zeros((nquadlat, nquadr))
-    for ilat in range(nquadlat): # remember: tt_lat is INCREASING
+    for ilat in range(nquadlat):
         it1 = ilatbounds[ilat]
         it2 = ilatbounds[ilat + 1]
 
-        for ir in range(nquadr): # remember: rvals increase but r-inds decrease
-            ir1 = irvals[ir + 1]
-            ir2 = irvals[ir]
+        for ir in range(nquadr):
+            ir1 = irvals[ir]
+            ir2 = irvals[ir + 1]
             volumes[ilat, ir] = 2.*np.pi/3.*(rr[ir2]**3. - rr[ir1]**3.)*(cost[it2] - cost[it1])
-
-    print (buff_line) 
-    print (volumes)
-    print (buff_line) 
 
     # Get the Rayleigh data directory
     radatadir = dirname + '/' + dataname + '/'

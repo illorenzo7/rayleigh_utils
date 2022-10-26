@@ -743,7 +743,7 @@ def get_grid_info(dirname):
         di.rr = rr = gi.radius
         di.rw = rr = gi.rweights
         di.tt = tt = gi.theta
-        di.tw = tt = gi.tweights
+        di.tw = tw = gi.tweights
     else:
         ncheby, domain_bounds = get_domain_bounds(dirname)
         nt = get_parameter(dirname, 'n_theta')
@@ -751,7 +751,7 @@ def get_grid_info(dirname):
         di.rr = rr = out[0]
         di.rw = rr = out[1]
         di.tt = tt = out[2]
-        di.tw = tt = out[3]
+        di.tw = tw = out[3]
 
     # some derivative theta (tt) quantities 
     di['cost'] = np.cos(tt)
