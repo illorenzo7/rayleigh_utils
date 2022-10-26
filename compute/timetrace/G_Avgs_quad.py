@@ -99,7 +99,7 @@ if rank == 0:
     # get grid info + default kwargs
     kwargs_default = dict({})
     kwargs_default['nquadr'] = None # can divide up the radial grid into nquadr equally spaced domains
-    kwargs_default['rvals'] = None # can specify radial domain boundaries directly (units of rsun, e.g., 0.721 0.863 0.92)
+    kwargs_default['rvals'] = None # can specify radial domain boundaries directly 
     kwargs_default['irvals'] = None # can specify radial domain boundaries directly (radial index, e.g., 32 64 96
     kwargs_default['nquadlat'] = None # "high and low" latitudes in both North and South
     kwargs_default['latbounds'] = None
@@ -110,11 +110,14 @@ if rank == 0:
     kw = update_dict(kwargs_default, clas)
 
     # deal w/ radial boundaries
+
+    if kw.rvals is None:
+        # see if user specified 
     if not kw.nquadr is None: # equally spaced domain boundaries (not the default)
         kw.rvals = np.linspace(rmax, rmin, kw.nquadr + 1) # remember: rr is DECREASING
     if kw.irvals is None: # this is the default
         if kw.rvals is None: # this is the default
-            irvals = [nr - 1, 0] # rr increases, r-inds decrease
+            irvals = [nr - 1, 0] # as rr increases, r-inds decrease
             dataname = 'G_Avgs'
         else:
             kw.rvals = np.sort(kw.rvals) # rr decreases
@@ -162,6 +165,10 @@ if rank == 0:
             ir1 = irvals[ir + 1]
             ir2 = irvals[ir]
             volumes[ilat, ir] = 2.*np.pi/3.*(rr[ir2]**3. - rr[ir1]**3.)*(cost[it2] - cost[it1])
+
+    print (buff_line) 
+    print (volumes)
+    print (buff_line) 
 
     # Get the Rayleigh data directory
     radatadir = dirname + '/' + dataname + '/'
@@ -216,7 +223,7 @@ if rank == 0:
     t2 = time.time()
     print (format_time(t2 - t1))
     print ("tracing over %i x %i = %i quadrants" %(nquadlat, nquadr, nquad))
-    print ("rvals/rsun = " + arr_to_str(rvals, "%.3f"))
+    print ("rvals = " + arr_to_str(rvals, "%1.2e"))
     print ("latbounds = " + arr_to_str(latbounds, "%.1f"))
     print ('Considering %i %s files for the trace: %s through %s'\
         %(nfiles, dataname, file_list[0], file_list[-1]))

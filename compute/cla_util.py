@@ -118,7 +118,7 @@ def read_clas(args):
             if args[i+1] == 'default':
                 clas['rvals'] = get_default_rvals(clas0['dirname'])
             elif isall(args[i+1]):
-                clas['rvals'] = get_sliceinfo(clas0.dirname).rvals
+                clas['rvals'] = np.sort(get_sliceinfo(clas0.dirname).rvals)
             else:
                 string_after = read_string_after_arg(args, i)
                 clas['rvals'] = interpret_rvals(clas0.dirname, string_after)

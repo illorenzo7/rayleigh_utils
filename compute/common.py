@@ -818,7 +818,7 @@ def interpret_rvals(dirname, rvals):
             # get the closest r value to the one specified
             ind = np.argmin(np.abs(rr - float(rval)))
             rvals_out.append(rr[ind])   
-    return np.array(rvals_out)
+    return np.sort(np.array(rvals_out))
 
 def get_default_rvals(dirname, rvals=None):
     # default sampling locations
@@ -830,7 +830,6 @@ def get_default_rvals(dirname, rvals=None):
         rvals = np.array([rmin, rmax])
     else:
         rvals = interpret_rvals(dirname, rvals)
-        rvals = np.sort(rvals) # easier if rvals are in ascending order
 
     rvals_out = np.array([])
     for ir in range(len(rvals) - 1): # rvals define len(rvals) - 1 domains
