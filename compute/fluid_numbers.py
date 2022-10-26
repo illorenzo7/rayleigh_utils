@@ -93,6 +93,44 @@ def get_numbers_input(dirname, r1='rmin', r2='rmax'):
 
     return di
 
+numbers_output_def = dotdict({
+    "ma": ("Ma", "v/c"),
+    "mamean": ("Ma_mean","<v>/c"),
+    "mafluc": ("Ma_fluc","v'/c"),
+
+    "re": ("Re", "v*H/nu"),
+    "remean": ("Re_mean", "<v>*H/nu"),
+    "refluc": ("Re_fluc", "v'*H/nu"),
+
+    "revort": ("Re_vort", "v^2/(om*nu)"),
+    "revortmean": ("Re_vort,mean", "<v>^2/(<om>*nu)"),
+    "revortfluc": ("Re_vort,fluc", "v'^2/(om'*nu)"),
+
+    "kemean": ("KE_mean", "<v>^2/v^2"),
+    "kefluc": ("KE_fluc", "v'^2/v^2"),
+
+    "ro": ("Ro", "v/(2*H*Om_0)"),
+    "romean": ("Ro_mean", "<v>/(2*H*Om_0)"),
+    "rofluc": ("Ro_fluc", "v'/(2*H*Om_0)"),
+
+    "rovort": ("Ro_vort", "om/(2*Om_0)"),
+    "rovortmean": ("Ro_vort,mean", "<om>/(2*Om_0)"),
+    "rovortfluc": ("Ro_vort,fluc", "om'/(2*Om_0)"),
+
+    "diffrot": ("DR", "DOm/Om_0"),
+
+    "rem": ("Re_m", "v*H/eta"),
+    "remmean": ("Re_m,mean", "<v>*H/eta"),
+    "remfluc": ("Re_m,fluc", "v'*H/eta"),
+
+    "remcur": ("Re_m,cur", "v*(B/J)/eta"),
+    "remcurmean": ("Re_m,cur,mean", "<v>*(<B>/<J>)/eta"),
+    "remcurfluc": ("Re_m,cur,fluc", "v'*(B'/J')/eta"),
+
+    "beta": ("plasma beta", "8*pi*P/B^2"),
+    "me": ("ME", "(B^2/(8*pi)) / (rho*v^2/2)") })
+
+
 def get_numbers_output(dirname, shell_depth=None, the_file=None, the_file_az=None):
     # get diagnostic numbers (e.g., Re and Ro) as functions of radius
 
