@@ -20,26 +20,44 @@ dirname = clas0.dirname
 magnetism = clas0.magnetism
 rotation = clas0.rotation
 
+# allowed args + defaults, then update
+kwargs_default = dict({'the_file': None, 'the_file_az': None, 'sd': None})
+kw = update_dict(kwargs_default, clas)
+
+# need these likely
+rmin, rmax = interpret_rvals(dirname, ['rmin', 'rmax'])
+
+# deal with shell depth (by default use whole shell)
+shell_depth = clas.sd
+if shell_depth is None:
+    shell_depth = rmax - rmin
+
+# print the shell depth we use
+fmt = "%1.2e"
+print (("System shell depth: H = " + fmt + " cm") %shell_depth)
+
+# deal with rvals to average numbers over
 rvals = clas.rvals
 if rvals is None:
-    rvals = interpret_rvals(dirname, ['rmin', 'rmax'])
+    rvals = rmin, rmax
 
 # get the output numbers
-di = get_numbers_output(dirname, shell_depth)
+di = get_numbers_output(dirname, shell_depth, kw.the_file, kw.the_file_az)
 
-fmt = "%1.2e"
+# now print the numbers
 for ishell in range(len(rvals) - 1):
     r1 = rvals[ishell]
     r2 = rvals[ishell+1]
 
-    di = get_numbers_input(dirname, r1, r2)
     print (("Shell #%02i: r_1 = " + fmt + ", r_2 = " + fmt)\
             %(ishell + 1, r1, r2))
     print (buff_line)
-    lendef1 = 10
+    lendef1 = 25
     lendef2 = 35
     for key in di.keys():
-        print (fill_str(numbers_input_def[key][0], lendef1, ' '), end='')
-        print (fill_str(numbers_input_def[key][1], lendef2, ' '), end='')
-        print (fmt %di[key])
+        print (fill_str(numbers_output_def[key][0], lendef1, ' '), end='')
+        print (fill_str(numbers_output_def[key][1], lendef2, ' '), end='')
+        # get the actual number (volume average)
+        num = volav_in_radius(dirname, di[key], r1, r2)
+        print (fmt %num)
     print (buff_line)

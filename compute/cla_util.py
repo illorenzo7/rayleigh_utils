@@ -101,6 +101,10 @@ def read_clas(args):
             clas['sub_width_inches'] = float(args[i+1])
         elif arg == '--usefile':
             clas['the_file'] = args[i+1]
+        elif arg == '--usefileaz':
+            clas['the_file_az'] = args[i+1]
+        elif arg == '--usefilesh':
+            clas['the_file_sh'] = args[i+1]
         elif arg == '--nocontour':
             clas['plotcontours'] = False
         elif arg == '--nobound':
