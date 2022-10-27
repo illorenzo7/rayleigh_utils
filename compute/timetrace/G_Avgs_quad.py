@@ -38,8 +38,6 @@ if rank == 0:
     # import common here
     from common import *
     from cla_util import *
-    lent = 50
-    char = '.'
     nproc = comm.Get_size()
     t1_glob = time.time()
     t1 = t1_glob + 0.0
@@ -48,8 +46,7 @@ if rank == 0:
         print ('communication initialized')
     else:
         print ('processing in serial with 1 rank')
-    print(fill_str('processes importing necessary modules', lent, char),\
-            end='')
+    print(fill_str('processes importing necessary modules'), end='')
 
 # modules needed by everyone
 import numpy as np
@@ -68,8 +65,7 @@ comm.Barrier()
 if rank == 0:
     t2 = time.time()
     print (format_time(t2 - t1))
-    print(fill_str('proc 0 distributing the file lists', lent, char),\
-            end='')
+    print(fill_str('proc 0 distributing the file lists'), end='')
     t1 = time.time()
 
 # proc 0 reads the file lists and distributes them
@@ -215,7 +211,7 @@ if rank == 0:
     print ("latbounds = " + arr_to_str(latbounds, "%.1f"))
     print ('Considering %i %s files for the trace: %s through %s'\
         %(nfiles, dataname, file_list[0], file_list[-1]))
-    print(fill_str('computing', lent, char), end='\r')
+    print(fill_str('computing'), end='\r')
     t1 = time.time()
 
 # Now analyze the data (some processes may not have nquadlat, nquadr, etc.)
@@ -264,16 +260,15 @@ for i in range(my_nfiles):
         my_iters.append(a.iters[j])
     if rank == 0:
         pcnt_done = i/my_nfiles*100.
-        print(fill_str('computing', lent, char) +\
+        print(fill_str('computing') +\
                 ('rank 0 %5.1f%% done' %pcnt_done), end='\r')
 # Checkpoint and time
 comm.Barrier()
 if rank == 0:
     t2 = time.time()
-    print('\n' + fill_str('computing time', lent, char), end='')
+    print('\n' + fill_str('computing time'), end='')
     print (format_time(t2 - t1))
-    print(fill_str('rank 0 collecting and saving the results',\
-            lent, char), end='')
+    print(fill_str('rank 0 collecting and saving the results'), end='')
     t1 = time.time()
 
 # proc 0 now collects the results from each process
@@ -338,7 +333,7 @@ if rank == 0:
     f.close()
     t2 = time.time()
     print (format_time(t2 - t1))
-    print(make_bold(fill_str('total time', lent, char)), end='')
+    print(make_bold(fill_str('total time')), end='')
     print (make_bold(format_time(t2 - t1_glob)))
     print ('data saved at ')
     print (make_bold(savefile))

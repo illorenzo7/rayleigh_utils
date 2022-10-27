@@ -64,7 +64,8 @@ sun.r_nrho3 = 6.5860209e10
 #######################################
 
 # width of print messages in parallel routines
-lent = 50
+lenfill = 50
+charfill = "."
 buff_frac = 0.05 # default buffer to set axes limits
 
 # character to make text bold
@@ -121,10 +122,10 @@ def format_size(nbytes):
         # output G
         return "%1.1f G" %(nbytes/1024**3)
 
-def fill_str(stri, lent, char):
-    len_loc = len(stri)
-    nfill = lent - len_loc
-    return stri + char*nfill
+def fill_str(st, lenfill=lenfill, charfill=charfill):
+    len_st = len(st)
+    nfill = lenfill - len_st
+    return st + charfill*nfill
 
 def make_array(arr, tolist=False, length=None): 
     # arr is scalar, list, or array
