@@ -62,18 +62,25 @@ if rank == 0:
     clas0, clas = read_clas(args)
     dirname = clas0['dirname']
     magnetism = clas0['magnetism']
-    kwargs_default = dict({'rad': False, 'shav': False,  'latvals': default_latvals, 'rvals': None, 'qvals': None, 'groupname': 'b'})
+    kwargs_default = dict({'rad': False, 'shav': False,  'latvals': None, 'rvals': None, 'qvals': None, 'groupname': 'b'})
     kwargs = update_dict(kwargs_default, clas)
+
     if kwargs.rvals is None:
-        rvals = get_default_rvals(dirname, rcut=kwargs.rcut)
-        if kwargs.rcut is None:
-            rtag = ''
-        else:
-            rtag = '_rcut%0.3f' %kwargs.rcut
+        rmin, rmax = get_rminmax(dirname)
+        rvals = np.linspace(rmin, rmax, 13)
+        rtag = ''
     else:
         rvals = kwargs.rvals
         rtag = input("choose a tag name for your chosen rvals: ")
         rtag = '_' + rtag
+
+    if kwargs.latvals is None:
+        latvals = np.linspace(-90., 90., 13)
+        lattag = ''
+    else:
+        latvals = kwargs.latvals
+        lattag = input("choose a tag name for your chosen latvals: ")
+        lattag = '_' + lattag
 
     if kwargs.qvals is None: # it's a quantity group
         groupname = kwargs.groupname
@@ -108,11 +115,11 @@ if rank == 0:
     # get indices associated with desired sample vals
     if not shav:
         if rad:
-            samplevals = kwargs['latvals']
+            samplevals = latvals
             sampleaxis = tt_lat
         else:
             samplevals = rvals
-            sampleaxis = rr/rsun
+            sampleaxis = rr
 
         isamplevals = []
         for sampleval in samplevals:
@@ -172,7 +179,7 @@ if rank == 0:
             fmt = '%.1f'
         else:
             st2 = "rvals = "
-            fmt = '%1.3f'
+            fmt = "%1.3e"
         print(st)
         print (st2 + arr_to_str(samplevals, fmt))
     print(fill_str('computing'), end='\r')
@@ -251,7 +258,7 @@ if rank == 0:
     if not os.path.isdir(datadir):
         os.makedirs(datadir)
 
-    basename += '_' + groupname + rtag
+    basename += '_' + groupname + rtag + lattag
     savename = basename + clas0['tag'] + '-' +\
             file_list[0] + '_' + file_list[-1] + '.pkl'
     savefile = datadir + savename

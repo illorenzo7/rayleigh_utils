@@ -77,12 +77,6 @@ letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l',\
 
 buff_line = buffer_line = "=============================================="
 
-# default latitudes to sample Rayleigh sim
-default_latvals = np.array([-85., -75., -60., -45., -30., -15., 0., 15., 30., 45., 60., 75., 85.])
-# default radial levels within a given zone 
-# (samples basically every 12.5% of the way through, and at the top)
-base_depths = np.array([0.05, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 0.95, 1.0])
-
 ######################################
 # FORMATTING ROUTINES FOR PRINT OUTPUT
 ######################################
@@ -713,6 +707,10 @@ def get_domain_bounds(dirname):
         domain_bounds = np.array([rmin, rmax])
         ncheby = np.array([nr])
     return ncheby, domain_bounds
+
+def get_rminmax(dirname):
+    ncheby, domain_bounds = get_domain_bounds(dirname)
+    return domain_bounds[0], domain_bounds[-1]
 
 #################################################################################
 # Get basic radial coefficients (grid info, reference state) associated with sim.
