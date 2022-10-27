@@ -220,7 +220,7 @@ def isall(arg):
     if np.isscalar(arg):
         isitall = arg
     else:
-        isitall = args[0]
+        isitall = arg[0]
 
     if arg == 'all':
         return True

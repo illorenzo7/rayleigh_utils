@@ -23,8 +23,6 @@ if rank == 0:
     sys.path.append(os.environ['raco'])
     # import common here
     from common import *
-    lent = 50
-    char = '.'
     nproc = comm.Get_size()
     t1_glob = time.time()
     t1 = t1_glob + 0.0
@@ -33,8 +31,7 @@ if rank == 0:
         print ('communication initialized')
     else:
         print ('processing in serial with 1 rank')
-    print(fill_str('processes importing necessary modules', lent, char),\
-            end='')
+    print(fill_str('processes importing necessary modules'), end='')
 
 # modules needed by everyone
 import numpy as np
@@ -53,8 +50,7 @@ comm.Barrier()
 if rank == 0:
     t2 = time.time()
     print (format_time(t2 - t1))
-    print(fill_str('proc 0 distributing the file lists', lent, char),\
-            end='')
+    print(fill_str('proc 0 distributing the file lists'), end='')
     t1 = time.time()
 
 # proc 0 reads the file lists and distributes them
@@ -181,7 +177,7 @@ for irval in irvals:
             print ("irval = ", irval)
             print ("qval = ", qval)
             print (buff_line)
-            print(fill_str('reading data', lent, char), end='\r')
+            print(fill_str('reading data'), end='\r')
             t1_thisfile = time.time()
             t1 = np.copy(t1_thisfile)
 
@@ -205,7 +201,7 @@ for irval in irvals:
                     t1_loc = time.time()
                 t2_loc = time.time()
                 pcnt_done = (i + 1)/my_nfiles*100.0
-                print(fill_str('reading data', lent, char) +\
+                print(fill_str('reading data') +\
                         ('rank 0 %5.1f%% done' %pcnt_done) + ' ' +\
                         format_time(t2_loc - t1_loc) + 3*' ', end='\r')
 
@@ -215,9 +211,9 @@ for irval in irvals:
         if rank == 0:
             t2 = time.time()
 
-            print('\n' + fill_str('reading time', lent, char), end='')
+            print('\n' + fill_str('reading time'), end='')
             print (format_time(t2 - t1))
-            print(fill_str('rank 0 collecting data', lent, char), end='\r')
+            print(fill_str('rank 0 collecting data'), end='\r')
             t1 = time.time()
 
         # proc 0 now collects the slices (trace in time)
@@ -241,7 +237,7 @@ for irval in irvals:
                 if j == 0:
                     t1_loc = time.time()
                 t2_loc = time.time()
-                print(fill_str('rank 0 collecting data from rank %i' %j, lent, char) +\
+                print(fill_str('rank 0 collecting data from rank %i' %j) +\
                         ('%5.1f%% done' %pcnt_done) + ' ' +\
                         format_time(t2_loc - t1_loc) + 3*' ', end='\r')
 
@@ -254,7 +250,7 @@ for irval in irvals:
         if rank == 0:
             t2 = time.time()
 
-            print('\n' + fill_str('collection time', lent, char), end='')
+            print('\n' + fill_str('collection time'), end='')
             print (format_time(t2 - t1))
 
             t1 = time.time()
@@ -286,7 +282,7 @@ for irval in irvals:
 
             t2 = time.time()
             print (format_time(t2 - t1))
-            print(make_bold(fill_str('time for file no. %02i' %count, lent, char)), end='')
+            print(make_bold(fill_str('time for file no. %02i' %count)), end='')
             print (make_bold(format_time(t2 - t1_thisfile)))
             print (buff_line)
 
@@ -297,6 +293,6 @@ for irval in irvals:
 
 if rank == 0:
     t2 = time.time()
-    print(make_bold(fill_str('total time', lent, char)), end='')
+    print(make_bold(fill_str('total time')), end='')
     print (make_bold(format_time(t2 - t1_glob)))
     print (buff_line)

@@ -23,12 +23,12 @@ def read_string_after_arg(args, i):
 def read_cla_vals(args, i):
     # read values associated with CLA arg (from string after --arg)
     vals_string = read_string_after_arg(args, i)
+    print ("vstr = ", vals_string)
     vals = []
     if len(vals_string) == 0: # must be a boolean set to True
         vals.append(True)
-    for st_full in vals_string:
-        for st in st_full.split():
-            vals.append(string_to_number_or_array(st))
+    for st in vals_string:
+        vals.append(string_to_number_or_array(st))
     vals = np.array(vals)
 
     # if the array has only one value, make it not an array
