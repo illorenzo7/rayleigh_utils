@@ -1076,23 +1076,20 @@ def compute_tdt(dirname):
 def get_time_unit(dirname):
     # get basic time unit of simulation (rotation period or diffusion time)
     rotation = get_parameter(dirname, 'rotation')
+    eq = get_eq(dirname)
     if rotation:
-        time_unit = compute_Prot(dirname)
+        time_unit = eq.prot
         time_label = r'${\rm{P_{rot}}}$'
         simple_label = 'rotations'
     else:
-        time_unit = compute_tdt(dirname)
-        time_label = r'${\rm{TDT}}$'
-        simple_label = 'TDT'
+        time_unit = eq.tdt
+        time_label = simple_label = 'TDT'
     return time_unit, time_label, rotation, simple_label
 
 def translate_times(time, dirname, translate_from='iter'):
     # TO USE MUST HAVE G_Avgs_trace file
-    # change between different time units (can translate from: iter, unit (default time unit), 
-    # rotation period, thermal diffusion time, seconds
-
-    # Get the baseline time unit
-    time_unit, time_label, rotation, simple_label = get_time_unit(dirname)
+    # change between different time units (can translate from: 
+    # iter, prot, tdt, sec
 
     # Get the G_Avgs trace
     datadir = dirname + '/data/'
@@ -1108,19 +1105,28 @@ def translate_times(time, dirname, translate_from='iter'):
     times = di['times']
     iters = di['iters']
 
+    # get the equation_coefficients file
+    eq = get_eq(dirname)
+
+    # translate the time
     if translate_from == 'iter':
         ind = np.argmin(np.abs(iters - time))
-    elif translate_from in ['unit', 'prot', 'tdt']:
-        ind = np.argmin(np.abs(times/time_unit - time))
+    elif translate_from == 'prot':
+        ind = np.argmin(np.abs(times/eq.prot - time))
+    elif translate_from == 'tdt':
+        ind = np.argmin(np.abs(times/eq.tdt - time))
     elif translate_from == 'sec':
         ind = np.argmin(np.abs(times - time))
 
-    val_sec = times[ind]
-    val_iter = iters[ind]
-    val_unit = times[ind]/time_unit
-
-    return dotdict(dict({'val_sec': val_sec,'val_iter': val_iter,\
-            'val_unit': val_unit, 'simple_label': simple_label}))
+    # prepare the dictionary to return
+    di = dotdict()
+    di.val_sec = times[ind]
+    di.val_iter = iters[ind]
+    di.val_tdt = times[ind]/eq.tdt
+    rotation = get_parameter(dirname, 'rotation')
+    if rotation:
+        di.val_prot = times[ind]/eq.prot
+    return di
 
 def get_time_string(dirname, iter1, iter2=None, oneline=False):
     # Get the time range in sec
