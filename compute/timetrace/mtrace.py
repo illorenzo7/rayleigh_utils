@@ -106,11 +106,12 @@ if rank == 0:
 
     # and the qvals
     qvals = kw.qvals
-    if isall(qvals):
-        qvals = np.sort(a0.qv)
-
-    if qvals is None:
+    if qvals is None: # default just do v_r
         qvals = np.array([1])
+
+    # maybe qvals can all (everything available)
+    if qvals == np.array(['all']):
+        qvals = np.sort(a0.qv)
     
     # everything must be array
     irvals = make_array(irvals)

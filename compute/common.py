@@ -216,17 +216,6 @@ def is_an_int(string):
         bool_val *= (char >= '0' and char <= '9')
     return(bool(bool_val))
 
-def isall(arg):
-    if np.isscalar(arg):
-        isitall = arg
-    else:
-        isitall = arg[0]
-
-    if arg == 'all':
-        return True
-    else:
-        return False
-
 def frac_nonzero(arr):
     num_nonzero = len(np.where(arr != 0)[0])
     num_total = np.size(arr)
