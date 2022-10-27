@@ -23,7 +23,6 @@ def read_string_after_arg(args, i):
 def read_cla_vals(args, i):
     # read values associated with CLA arg (from string after --arg)
     vals_string = read_string_after_arg(args, i)
-    print ("vstr = ", vals_string)
     vals = []
     if len(vals_string) == 0: # must be a boolean set to True
         vals.append(True)
@@ -64,7 +63,7 @@ def read_clas(args):
     # get all command-line arguments and their values
     # interpret certain special CLAs and values like 
     # --nosave and 
-    # --rvals all
+    # --rvals rmin rmax
 
     # first get basic info
     clas0 = dotdict()
@@ -117,8 +116,8 @@ def read_clas(args):
         elif arg == '--rvals':
             if args[i+1] == 'default':
                 clas['rvals'] = get_default_rvals(clas0['dirname'])
-            elif isall(args[i+1]):
-                clas['rvals'] = np.sort(get_sliceinfo(clas0.dirname).rvals)
+            elif args[i+1] == 'all': # just leave this one alone
+                clas.rvals = 'all'
             else:
                 string_after = read_string_after_arg(args, i)
                 clas['rvals'] = interpret_rvals(clas0.dirname, string_after)
@@ -135,15 +134,6 @@ def read_clas(args):
             di_trans = translate_times(t_loc, dirname, arg[2:])
             clas['val_iter'] = di_trans['val_iter']
         
-        # desired quantity list (or group)
-        elif arg == '--qvals': # able to specify either index or quantity name
-            if isall(args[i+1]):
-                clas['rvals'] = get_sliceinfo(clas0.dirname).qvals
-            else:
-                # qvals....make sure it's an integer array
-                qvals = make_array(read_cla_vals(args, i))
-                qvals = parse_quantities(qvals)[0]
-            clas['qvals'] = qvals
         elif arg == '--latrange':
             latmin, latmax, nlatvals = read_cla_vals(args, i)
             nlatvals = int(nlatvals)
