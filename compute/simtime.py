@@ -16,51 +16,33 @@ from cla_util import *
 args = sys.argv 
 clas0, clas = read_clas(args)
 dirname = clas0.dirname
-magnetism = clas0.magnetism
 rotation = clas0.rotation
 
+# get equation coefficients (for prot and tdt)
+eq = get_eq(dirname)
+
 # Primary ways to get the simulation time
-gav = True      # Use the G_Avgs/ directory directly (default)
-sslice = False  # Use the Shell_Slices/ directory directly
-gtr = False     # Use the pre-computed G_Avgs time trace
-verbose = False
-the_file = None
+kw_default = dotdict()
+kw_default.gav = True      # Use the G_Avgs/ directory directly (default)
+kw_default.sslice = False  # Use the Shell_Slices/ directory directly
+kw_default.gtr = False     # Use the pre-computed G_Avgs time trace
+kw_default.verbose = False
+kw_default.the_file = None
 
-# Get command-line arguments
-args = sys.argv[2:]
-nargs = len(args)
-for i in range(nargs):
-    arg = args[i]
-    if arg == '-sslice': 
-        gav = False
-        sslice = True
-        gtr = False   
-    elif arg == '-gtr':
-        gav = False
-        sslice = False
-        gtr = True
-    elif arg == '-v': # verbose
-        verbose = True
-    elif arg == '-usefile':
-        the_file = args[i+1]
-        the_file = Shell_Avgs_file.split('/')[-1]
-    elif arg == '-mag':
-        mag = True
-    elif arg == '-tach':
-        tach = True
+# change kwargs with clas
+kw = update_dict(kw_default, clas)
 
-datadir = dirname + '/data/'
-
-print ("-------------------------------------------------")
-if gav:
-    gavg_dir = dirname + '/G_Avgs/'
-    file_list, int_file_list, nfiles = get_file_lists_all(gavg_dir)
+# now print the simulation time
+print (buff_line)
+if kw.gav:
+    gav_dir = dirname + '/G_Avgs/'
+    file_list, int_file_list, nfiles = get_file_lists_all(gav_dir)
 
     f1 = file_list[0]
     f2 = file_list[-1]
 
-    a1 = G_Avgs(gavg_dir + f1, '')
-    a2 = G_Avgs(gavg_dir + f2, '')
+    a1 = G_Avgs(gav_dir + f1, '')
+    a2 = G_Avgs(gav_dir + f2, '')
 
     t1 = a1.time[0]
     t2 = a2.time[-1]
@@ -68,9 +50,9 @@ if gav:
     iter1 = a1.iters[0]
     iter2 = a2.iters[-1]
     print ("simtime(): Got timing info from G_Avgs/ directory")
-    print (f1, " to ", f2)
+    print ("iters:", f1, " to ", f2)
 
-elif sslice:
+elif kw.sslice:
     sslice_dir = dirname + '/Shell_Slices/'
     file_list, int_file_list, nfiles = get_file_lists_all(sslice_dir)
 
@@ -88,171 +70,55 @@ elif sslice:
     print ("simtime(): Got timing info from Shell_Slices/ directory")
     print (f1, " to ", f2)
 
-elif gtr:
-    if the_file == None:
-        the_file = get_widest_range_file(datadir, 'G_Avgs_trace')
+elif kw.gtr:
+    if kw.the_file == None:
+        kw.the_file = get_widest_range_file(datadir, 'G_Avgs_trace')
     di = get_dict(the_file)
     times = di['times']
     iters = di['iters']
     t1, t2 = times[0], times[-1]
     iter1, iter2 = iters[0], iters[-1]
     print ("simtime(): Got timing info from data/*trace_G_Avgs* file")
-    print ("fname = ", the_file)
+    print ("fname = ", kw.the_file)
 
 # calculate simulation time (seconds)
 simtime = t2 - t1
 
-# Get viscous/thermal diffusion time(s), and magnetic diffusion time
-# (if present)
-if tach:
-    VDTrz, VDTcz, VDT = compute_tdt(dirname, visc=True, tach=True)
-    TDTrz, TDTcz, TDT = compute_tdt(dirname, tach=True)
-    if mag:
-        MDTrz, MDTcz, MDT = compute_tdt(dirname, mag=True, tach=True)
-else:
-    VDT = compute_tdt(dirname, visc=True)
-    TDT = compute_tdt(dirname)
-    if mag:
-        MDT = compute_tdt(dirname, mag=True)
-
-Pr = TDT/VDT
-
-if mag: # Get the thermal Prandtl number
-    # (assumes same scaling for all diffusions)
-    Prm = MDT/TDT
-
-# Print Prandtl numbers
-fmt = "%7.2f"
-print ("-------------------------------------------------")
-print ("Pr = %.1f" %Pr)
-if mag:
-    print ("Pr_m = %.1f (mag = True)" %Prm)
-print ("-------------------------------------------------")
-
 # run time in millions of iterations
+print (buff_line)
 print ('Delta_t = %7.2f M iter' %((iter2 - iter1)/1.0e6))
-print ("-------------------------------------------------")
 
-# Run time, viscous DTs
-if tach:
-    print (("Delta_t = " + fmt + " RZ VDTs") %(simtime/VDTrz))
-    print (("Delta_t = " + fmt + " CZ VDTs") %(simtime/VDTcz))
-print (("Delta_t = " + fmt + " VDTs") %(simtime/VDT))
-print ("-------------------------------------------------")
-
-# Run time, thermal DTs (only if Prandtl number != 1)
-tol = 1.0e-12
-if np.abs(Pr - 1.0) > tol:
-    if tach:
-        print (("Delta_t = " + fmt + " RZ TDTs") %(simtime/TDTrz))
-        print (("Delta_t = " + fmt + " CZ TDTs") %(simtime/TDTcz))
-    print (("Delta_t = " + fmt + " TDTs") %(simtime/TDT))
-    print ("-------------------------------------------------")
-
-# Run time, magnetic DTs (if available)
-if mag:
-    if np.abs(Prm - 1.0) > tol:
-        if tach:
-            print (("Delta_t = " + fmt + " RZ MDTs") %(simtime/MDTrz))
-            print (("Delta_t = " + fmt + " CZ MDTs") %(simtime/MDTcz))
-        print (("Delta_t = " + fmt + " MDTs") %(simtime/MDT))
-        print ("-------------------------------------------------")
+# run time in thermal diffusion times
+fmt = "%1.3e"
+print (buff_line)
+print (("Delta_t = " + fmt + " TDTs") %(simtime/eq.tdt))
 
 # Run time, P_rot (if available)
-fmt = "%7.1f"
-rotation = get_parameter(dirname, 'rotation')
 if rotation:
-    Prot = compute_Prot(dirname)
-    print (("Delta_t = " + fmt + " P_rot") %(simtime/Prot))
-    print ("-------------------------------------------------")
+    print (buff_line)
+    print (("Delta_t = " + fmt + " rotations") %(simtime/eq.prot))
 
-if verbose:
-    print ('Delta_t = %7.2e sec' %simtime)
-    print ('Delta_t = %7.2e days' %(simtime/86400.))
-    print ("-------------------------------------------------")
+# more stuff in verbose mode
+if kw.verbose:
+    print (buff_line)
+    print (("Delta_t = " + fmt + " sec") %simtime)
+    print (("Delta_t = " + fmt + " days") %(simtime/86400.))
 
+    print (buff_line)
     print ('iter1 = %08i' %iter1)
     print ('iter2 = %08i' %iter2)
-    print ("-------------------------------------------------")
 
-    fmt = "%7.2f"
-    print (("t1 = " + fmt + " VDTs") %(t1/VDT))
-    print (("t2 = " + fmt + " VDTs") %(t2/VDT))
-    print ("-------------------------------------------------")
+    print (("t1 = " + fmt + " TDTs") %(t1/eq.tdt))
+    print (("t2 = " + fmt + " TDTs") %(t2/eq.tdt))
 
-    print (("t1 = " + fmt + " TDTs") %(t1/TDT))
-    print (("t2 = " + fmt + " TDTs") %(t2/TDT))
-    print ("-------------------------------------------------")
-    if mag:
-        print (("t1 = " + fmt + " MDTs") %(t1/MDT))
-        print (("t2 = " + fmt + " MDTs") %(t2/MDT))
-        print ("-------------------------------------------------")
     if rotation:
-        fmt = "%7.1f"
-        print (("t1 = " + fmt + " P_rot") %(t1/Prot))
-        print (("t2 = " + fmt + " P_rot") %(t2/Prot))
-        print ("-------------------------------------------------")
+        print (("t1 = " + fmt + " rotations") %(t1/eq.prot))
+        print (("t2 = " + fmt + " rotations") %(t2/eq.prot))
 
 # Print the various time scales
+print (buff_line)
+print (("1 TDT      = " + fmt + " sec = " + fmt + " days" ) %(eq.tdt, eq.tdt/86400.))
 if rotation:
-    print('1 Prot = %.2f days' %(Prot/86400.))
-    print('Omega_0 = 2*pi/Prot = %.1f nHz' %(1.0/Prot*1.0e9))
-    print('Omega_0 = 2*pi/Prot = %1.1e s^{-1}' %(2*np.pi/Prot))
-    print ("-------------------------------------------------")
-
-if rotation:
-    print('1 VDT    = %7.1f P_rot = %7.1f days' %(VDT/Prot, VDT/86400.))
-else:
-    print('1 VDT    = %7.1f P_rot' %(VDT/Prot))
-if tach:
-    if rotation:
-        print('1 RZ VDT = %7.1f P_rot = %7.1f days' %(VDTrz/Prot,\
-                VDTrz/86400.))
-    else:
-        print('1 RZ VDT = %7.1f P_rot' %(VDTrz/Prot))
-    if rotation:
-        print('1 CZ VDT = %7.1f P_rot = %7.1f days' %(VDTcz/Prot,\
-                VDTcz/86400.))
-    else:
-        print('1 CZ VDT = %7.1f P_rot' %(VDTcz/Prot))
-print ("-------------------------------------------------")
-
-# only print for Pr != 1
-if np.abs(Pr - 1.0) > tol:
-    if rotation:
-        print('1 TDT    = %7.1f P_rot = %7.1f days' %(TDT/Prot, TDT/86400.))
-    else:
-        print('1 TDT    = %7.1f P_rot' %(TDT/Prot))
-    if tach:
-        if rotation:
-            print('1 RZ TDT = %7.1f P_rot = %7.1f days' %(TDTrz/Prot,\
-                    TDTrz/86400.))
-        else:
-            print('1 RZ TDT = %7.1f P_rot' %(TDTrz/Prot))
-        if rotation:
-            print('1 CZ TDT = %7.1f P_rot = %7.1f days' %(TDTcz/Prot,\
-                    TDTcz/86400.))
-        else:
-            print('1 CZ TDT = %7.1f P_rot' %(TDTcz/Prot))
-    print ("-------------------------------------------------")
-
-if mag:
-    # only print for Pr != 1
-    if np.abs(Prm - 1.0) > tol:
-        if rotation:
-            print('1 MDT    = %7.1f P_rot = %7.1f days' %(MDT/Prot,\
-                    MDT/86400.))
-        else:
-            print('1 MDT = %7.1f P_rot = %7.1f' %(MDT/Prot))
-        if tach:
-            if rotation:
-                print('1 RZ MDT = %7.1f P_rot = %7.1f days' %(MDTrz/Prot,\
-                        MDTrz/86400.))
-            else:
-                print('1 RZ MDT = %7.1f P_rot' %(MDTrz/Prot))
-            if rotation:
-                print('1 CZ MDT = %7.1f P_rot = %7.1f days' %(MDTcz/Prot,\
-                        MDTcz/86400.))
-            else:
-                print('1 CZ MDT = %7.1f P_rot' %(MDTcz/Prot))
-        print ("-------------------------------------------------")
+    print (("1 rotation = " + fmt + " sec = " + fmt + " days" ) %(eq.prot, eq.prot/86400.))
+    print(("1 TDT      = " + fmt + " rotations") %(eq.tdt/eq.prot))
+print (buff_line)
