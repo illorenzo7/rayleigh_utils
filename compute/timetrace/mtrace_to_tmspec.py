@@ -9,8 +9,6 @@ import sys, os
 sys.path.append(os.environ['raco'])
 from cla_util import *
 from common import *
-lent = 50
-char = '.'
 
 import numpy as np
 import pickle
