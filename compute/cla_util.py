@@ -138,6 +138,10 @@ def read_clas(args):
             latmin, latmax, nlatvals = read_cla_vals(args, i)
             nlatvals = int(nlatvals)
             clas['latvals'] = np.linspace(latmin, latmax, nlatvals)
+
+        elif arg == '--v':
+            clas.verbose = True
+
         # everyone else is easy...
         elif '--' in arg:
             key = arg[2:]

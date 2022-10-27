@@ -10,17 +10,21 @@ sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from rayleigh_diagnostics import G_Avgs, Shell_Slices
 from common import *
+from cla_util import *
 
-dirname = sys.argv[1]
+# read in args
+args = sys.argv 
+clas0, clas = read_clas(args)
+dirname = clas0.dirname
+magnetism = clas0.magnetism
+rotation = clas0.rotation
 
-# Primary ways to get the 
-use_gav = True      # Use the G_Avgs/ directory directly
-use_sslice = False  # Use the Shell_Slices/ directory directly
-use_gtr = False     # Use the pre-computed G_Avgs time trace
+# Primary ways to get the simulation time
+gav = True      # Use the G_Avgs/ directory directly (default)
+sslice = False  # Use the Shell_Slices/ directory directly
+gtr = False     # Use the pre-computed G_Avgs time trace
 verbose = False
-trace_file = None
-mag = False # don't use magnetic diffusion time by default
-tach = False #  by default don't calculate two diffusion times
+the_file = None
 
 # Get command-line arguments
 args = sys.argv[2:]
@@ -28,18 +32,18 @@ nargs = len(args)
 for i in range(nargs):
     arg = args[i]
     if arg == '-sslice': 
-        use_gav = False
-        use_sslice = True
-        use_gtr = False   
+        gav = False
+        sslice = True
+        gtr = False   
     elif arg == '-gtr':
-        use_gav = False
-        use_sslice = False
-        use_gtr = True
+        gav = False
+        sslice = False
+        gtr = True
     elif arg == '-v': # verbose
         verbose = True
     elif arg == '-usefile':
-        trace_file = args[i+1]
-        trace_file = Shell_Avgs_file.split('/')[-1]
+        the_file = args[i+1]
+        the_file = Shell_Avgs_file.split('/')[-1]
     elif arg == '-mag':
         mag = True
     elif arg == '-tach':
@@ -48,7 +52,7 @@ for i in range(nargs):
 datadir = dirname + '/data/'
 
 print ("-------------------------------------------------")
-if use_gav:
+if gav:
     gavg_dir = dirname + '/G_Avgs/'
     file_list, int_file_list, nfiles = get_file_lists_all(gavg_dir)
 
@@ -66,7 +70,7 @@ if use_gav:
     print ("simtime(): Got timing info from G_Avgs/ directory")
     print (f1, " to ", f2)
 
-elif use_sslice:
+elif sslice:
     sslice_dir = dirname + '/Shell_Slices/'
     file_list, int_file_list, nfiles = get_file_lists_all(sslice_dir)
 
@@ -84,16 +88,16 @@ elif use_sslice:
     print ("simtime(): Got timing info from Shell_Slices/ directory")
     print (f1, " to ", f2)
 
-elif use_gtr:
-    if trace_file == None:
-        trace_file = get_widest_range_file(datadir, 'G_Avgs_trace')
-    di = get_dict(trace_file)
+elif gtr:
+    if the_file == None:
+        the_file = get_widest_range_file(datadir, 'G_Avgs_trace')
+    di = get_dict(the_file)
     times = di['times']
     iters = di['iters']
     t1, t2 = times[0], times[-1]
     iter1, iter2 = iters[0], iters[-1]
     print ("simtime(): Got timing info from data/*trace_G_Avgs* file")
-    print ("fname = ", trace_file)
+    print ("fname = ", the_file)
 
 # calculate simulation time (seconds)
 simtime = t2 - t1
