@@ -810,28 +810,6 @@ def interpret_rvals(dirname, rvals):
             rvals_out.append(rr[ind])   
     return np.sort(np.array(rvals_out))
 
-def get_default_rvals(dirname, rvals=None):
-    # default sampling locations
-    # to specify multiple domains, need to specify boundary points (rvals, in cm)
-    ncheby, domain_bounds = get_domain_bounds(dirname)
-    rmin, rmax = np.min(domain_bounds), np.max(domain_bounds)
-
-    if rvals is None:
-        rvals = np.array([rmin, rmax])
-    else:
-        rvals = interpret_rvals(dirname, rvals)
-
-    rvals_out = np.array([])
-    for ir in range(len(rvals) - 1): # rvals define len(rvals) - 1 domains
-        rbot = rvals[ir]
-        rtop = rvals[ir+1]
-        if ir == 0: # for the first domain, include the bottom boundary
-            rvals_to_add = np.hstack((rbot, rbot + (rtop - rbot)*base_depths))
-        else:
-            rvals_to_add = rbot + (rtop - rbot)*base_depths
-        rvals_out = np.hstack((rvals_out, rvals_to_add))
-    return rvals_out
-
 def get_sliceinfo(dirname, datatype='Shell_Slices', fname=None):
     radatadir = dirname + '/' + datatype + '/'
     file_list, int_file_list, nfiles = get_file_lists_all(radatadir)
@@ -1142,16 +1120,6 @@ def get_time_string(dirname, iter1, iter2=None, oneline=False):
         time_string = (('t = ' + fmt + ' ') %(t1/time_unit)) + time_label
 
     return time_string
-
-# default variable names to plot on slices 
-def get_default_varnames(dirname):
-    magnetism = get_parameter(dirname, 'magnetism')
-    varnames_default = ['vr', 'vt', 'vp', 'omr',\
-                'omt', 'omp', 'sprime', 'pprime', 'ssph', 'psph']
-    if magnetism:
-        varnames_default += ['br', 'bt', 'bp', 'jr', 'jt', 'jp']
-    varnames_default = np.array(varnames_default)    
-    return varnames_default
 
 ##############################################################
 # ROUTINES FOR FIELD AMPLITUDES, LENGTH SCALES AND NON-D NUMBERS

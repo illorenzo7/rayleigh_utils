@@ -34,8 +34,7 @@ if rank == 0:
         print ('communication initialized')
     else:
         print ('processing in serial with 1 rank')
-    print(fill_str('processes importing necessary modules', lent, char),\
-            end='')
+    print(fill_str('processes importing necessary modules'), end='')
 
 # modules needed by everyone
 import numpy as np
@@ -53,8 +52,7 @@ comm.Barrier()
 if rank == 0:
     t2 = time.time()
     print (format_time(t2 - t1))
-    print(fill_str('proc 0 distributing the file lists', lent, char),\
-            end='')
+    print(fill_str('proc 0 distributing the file lists'), end='')
     t1 = time.time()
 
 # proc 0 reads the file lists and distributes them, also the meta data
@@ -64,7 +62,7 @@ if rank == 0:
     clas0, clas = read_clas(args)
     dirname = clas0['dirname']
     magnetism = clas0['magnetism']
-    kwargs_default = dict({'rad': False, 'shav': False,  'latvals': default_latvals, 'rvals': None, 'qvals': None, 'groupname': 'b', 'rcut': None})
+    kwargs_default = dict({'rad': False, 'shav': False,  'latvals': default_latvals, 'rvals': None, 'qvals': None, 'groupname': 'b'})
     kwargs = update_dict(kwargs_default, clas)
     if kwargs.rvals is None:
         rvals = get_default_rvals(dirname, rcut=kwargs.rcut)
@@ -177,7 +175,7 @@ if rank == 0:
             fmt = '%1.3f'
         print(st)
         print (st2 + arr_to_str(samplevals, fmt))
-    print(fill_str('computing', lent, char), end='\r')
+    print(fill_str('computing'), end='\r')
     t1 = time.time()
 
 # Now analyze the data
@@ -203,17 +201,16 @@ for i in range(my_nfiles):
         my_iters.append(a.iters[j])
     if rank == 0:
         pcnt_done = i/my_nfiles*100.0
-        print(fill_str('computing', lent, char) +\
+        print(fill_str('computing') +\
                 ('rank 0 %5.1f%% done' %pcnt_done), end='\r')
 
 # Checkpoint and time
 comm.Barrier()
 if rank == 0:
     t2 = time.time()
-    print('\n' + fill_str('computing time', lent, char), end='')
+    print('\n' + fill_str('computing time'), end='')
     print (format_time(t2 - t1))
-    print(fill_str('rank 0 collecting and saving the results',\
-            lent, char), end='')
+    print(fill_str('rank 0 collecting and saving the results'), end='')
     t1 = time.time()
 
 # proc 0 now collects the results from each process
@@ -272,7 +269,7 @@ if rank == 0:
     f.close()
     t2 = time.time()
     print (format_time(t2 - t1))
-    print(make_bold(fill_str('total time', lent, char)), end='')
+    print(make_bold(fill_str('total time')), end='')
     print (make_bold(format_time(t2 - t1_glob)))
     print ('data saved at ')
     print (make_bold(savefile))
