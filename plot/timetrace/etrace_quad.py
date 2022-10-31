@@ -273,7 +273,7 @@ else:
 for ir in range(nquadr):
     r1 = rvals[ir]
     r2 = rvals[ir+1]
-    title = 'rad. range = [%.3f, %.3f]' %(r1, r2)
+    title = 'rad. range =\n [%1.2e, %1.2e]' %(r1, r2)
     if ir == 0:
         title = dirname_stripped + '\n' + title
     axs[0, ir].set_title(title, fontsize=fontsize)
