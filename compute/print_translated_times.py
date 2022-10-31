@@ -13,12 +13,16 @@ from cla_util import *
 args = sys.argv 
 clas0, clas = read_clas(args)
 dirname = clas0['dirname']
+rotation = clas0.rotation
 val_iter = clas['val_iter']
-di_trans = translate_times(val_iter, dirname)
+di = translate_times(val_iter, dirname)
 
-val_iter = di_trans['val_iter']
-val_unit = di_trans['val_unit']
-simple_label = di_trans['simple_label']
-val_sec = di_trans['val_sec']
+val_iter = di['val_iter']
+val_unit = val_tdt = di['val_tdt']
+label = 'TDTs'
+val_sec = di['val_sec']
+if rotation:
+    val_unit = di.val_prot
+    label = 'rotations'
 
-print ('%08i iter =\n%.3f %s' %(val_iter, val_unit, simple_label))
+print ('%08i iter =\n%.3f %s' %(val_iter, val_unit, label))
