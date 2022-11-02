@@ -14,8 +14,7 @@ print ("NON-DIMENSIONAL NUMBERS (INPUT PARAMETERS)")
 print (buff_line)
 
 # read in args
-args = sys.argv 
-clas0, clas = read_clas(args)
+clas0, clas = read_clas(sys.argv)
 dirname = clas0.dirname
 magnetism = clas0.magnetism
 rotation = clas0.rotation

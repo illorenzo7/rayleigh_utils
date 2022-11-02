@@ -7,29 +7,16 @@
 # or else the logfile specified by --fname
 import numpy as np
 import os, sys
-sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
+from cla_util import *
 from common import *
 
-# Get the run directory on which to perform the analysis
-dirname = sys.argv[1]
-args = sys.argv[2:]
-nargs = len(args)
+# read in args
+clas0, clas = read_clas(sys.argv)
+dirname = clas0.dirname
+rotation = clas0.rotation
 
-# See if user wants to use a different file name than last logfile
-fname = None
-verbose = False
-desired_range = 'all'
-for i in range(nargs):
-    arg = args[i]
-    if arg == '--fname':
-        fname = args[i+1]
-    elif arg == '--v':
-        verbose = True
-    elif arg == '--n':
-        nlines_to_use = int(args[i+1])
-
-if fname is None:
+if clas.fname is None: # default
     lognames = []
     for name in os.listdir(dirname):
         if 'logfile' in name:
@@ -40,22 +27,28 @@ if fname is None:
     else:
         print ('no logfiles found')
         sys.exit()
+else:
+    fname = clas.fname
 
 fullname = dirname + '/' + fname
+print (buff_line)
 print ("In %s:" %fullname)
 di = read_log(fullname)
 iters = di['iters'][1:]
 iters_per_sec = di['iters_per_sec'][1:] # first one is zero for some reason
 delta_t = di['delta_t'][1:]
 
+# treat the iterations just after output separately
 iters_io = di['iters_io']
 iters_per_sec_io = di['iters_per_sec_io'] 
 delta_t_io = di['delta_t_io']
 
 # now adjust this by desired range
-it1, it2 = 0, len(iters)
-for i in range(nargs):
-    arg = args[i]
+it1, it2 = 0, len(iters) # default look at full range
+args = sys.argv
+nargs = len(args)
+for i in range(len(sys.argv)):
+    arg = sys.argv[i]
     if arg == '--f':
         it2 = int(float(args[i+1]))
     if arg == '--n':
@@ -108,7 +101,7 @@ print ("frac run     :    %.3f" %((runtime - iotime)/runtime))
 print ("frac I/O     :    %.3f" %(iotime/runtime))
 print ("niter        :  ", niter)
 
-if verbose:
+if clas.verbose:
     # Get fancy now ...
     print ("===============================")
     # Get the baseline time unit
