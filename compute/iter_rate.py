@@ -104,17 +104,18 @@ print ("niter        :  ", niter)
 if clas.verbose:
     # Get fancy now ...
     print ("===============================")
-    # Get the baseline time unit
-    time_unit, time_label, rotation, simple_label = get_time_unit(dirname)
-    unit_name = simple_label
 
-    simtime_per_hour = dt_av*(iters_per_sec_av*3600.)/\
-            time_unit
-    print ("Simulation rate = %.1f %s/hour" %(simtime_per_hour, unit_name))
-    print ("Simulation rate = %.1f %s/day" %(simtime_per_hour*12.,\
-            unit_name))
-    print ("Simulation rate = %.1f %s/(5 days)" %(simtime_per_hour*12.*5.,\
-            unit_name))
+    # print rates in thermal diffusion times
+    simtime_per_hour = dt_av*(iters_per_sec_av*3600.)
+    eq = get_eq(dirname)
+    print ("Simulation rate = %1.2e TDT/hour" %(simtime_per_hour/eq.tdt))
+    print ("Simulation rate = %1.2e TDT/day" %(simtime_per_hour*12./eq.tdt))
+    print ("Simulation rate = %1.2e TDT/(5 days)" %(simtime_per_hour*12.*5./eq.tdt))
+    if rotation:
+        print ("===============================")
+        print ("Simulation rate = %1.2e rotations/hour" %(simtime_per_hour/eq.prot))
+        print ("Simulation rate = %1.2e rotations/day" %(simtime_per_hour*12./eq.prot))
+        print ("Simulation rate = %1.2e rotations/(5 days)" %(simtime_per_hour*12.*5./eq.prot))
     print ("===============================")
     print ("Simulation rate = %1.2e iters/hour" %(iters_per_sec_av*3600.))
     print ("Simulation rate = %1.2e iters/day"\
