@@ -1,57 +1,39 @@
-# back up all subdirectories of desired directory 
+# extract all subdirectories of desired directory 
 # (argument 1, as a relative path to current working diretory)
-# to lou (argument 2, as a full path)
-# use shiftc and create .tar files
+# from lou 
+# to /nobackup subdir (argument 2, as a full path)
+# use shiftc; write a temporary text file
+# then extract .tar files
 #!/bin/bash
 
-# Read in desired directory and get its subdirectories
-maindir=$1
-#fullpath=`readlink -f $maindir`
-#cd $fullpath
-subdirs=`find $maindir -maxdepth 1 -mindepth 1 -type d -printf '%f\n'`
+# Read in desired directory to extract and get its subdirectories
+extractdir=$1
+subdirs=`find $extractdir -maxdepth 1 -mindepth 1 -type d -printf '%f\n'`
 
-# move in to the desired directory
-cd $maindir
-echo $bufferstring
-echo -n "I am here: "
-echo `pwd`
-# remember current directory to cd back into
-currentdir=`pwd`
-
-# get the backup directory and create it
-backupdir=$2
-mkdir -p $backupdir
-
-# Make the corresponding directory and subdirectories on lou,
-## also launch transfers in the loop
-#fullpath=`readlink -f $maindir`
-#remove="/noabackupp2/lmatilsk"
-#backupdir=${fullpath//$remove/}
+# get the directory to transfer to and create it
+transferdir=$2
+mkdir -p $nb/$transferdir
 
 # make a file of transfer instructions (a list of sources and dest)
 thefile=~/transfer_instructions_tmp
-echo -n '' > $thefile
+echo -n '' > $thefile # erase the current file
+# -n means don't add newline character, which is added by echo by default
+
+# loop over the subdirs and add shift sources and destinations
+# one line at a time
 for subdir in $subdirs
 do
-    #pwd
-    #mkdir $backupdir/$subdir
-    #cd $fullpath/$subdir
-    #ls | tr "\n" " " >> ~/transfer_instructions_tmp
-    #shiftc --create-tar --index-tar --hosts=6 * $backupdir/$subdir/$subdir.tar
-    echo -n $subdir >> $thefile
-    echo -n ' ' >> $thefile
-    echo $backupdir/$subdir.tar >> $thefile
+    echo -n $extractdir/$subdir/\*.tar >> $thefile # extraction dir
+    echo -n ' ' >> $thefile # space
+    echo $nb/$transferdir/$subdir/ >> $thefile # transfer directory
+    mkdir $nb/$transferdir/$subdir # make the transfer directory
 done
 
 # now the actual transfer
 echo $bufferstring
-echo "running shiftc --create-tar --index-tar --hosts=6"
+echo "about to run shiftc --extract-tar --hosts=6"
 echo "on $thefile, which is"
 cat $thefile
 echo $bufferstring
-shiftc --create-tar --index-tar --hosts=6 < $thefile
-cd $currentdir
-echo $bufferstring
-echo -n "I returned here: "
-echo `pwd`
+shiftc --extract-tar --hosts=6 < $thefile
 echo $bufferstring
