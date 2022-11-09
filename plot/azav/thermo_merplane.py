@@ -23,7 +23,7 @@ dirname_stripped = strip_dirname(dirname)
 
 # allowed args + defaults
 # key unique to this script
-kwargs_default = dict({'the_file': None, 'the_file2': None, 'nond': False, 'poverrho': False})
+kwargs_default = dict({'the_file': None, 'the_file2': None, 'nond': False})
 
 # also need make figure kwargs
 make_figure_kwargs_default.update(azav_fig_dimensions)
@@ -71,45 +71,41 @@ prs_2d = (eq.prs).reshape((1, nr))
 tmp_2d = (eq.tmp).reshape((1, nr))
 
 # Compute the NOND zonally averaged thermo. vars
-ent_az = vals[:, :, lut[501]]/eq.cp
+ent_az = vals[:, :, lut[501]]/eq.c_p
 prs_az = vals[:, :, lut[502]]/prs_2d
 
-# Calculate temp, rho from EOS
-tmp_az = (thermo_gamma - 1)/thermo_gamma*prs_az + entropy_az 
+# Calculate temp from EOS
+tmp_az = (eq.gamma - 1)/eq.gamma*prs_az + ent_az 
 
 # Compute the spherically averaged thermo. vars
-entropy_sph = (vals_sph[:, 0, lut_sph[501]]/c_P).reshape((1, nr))
-prs_sph = (vals_sph[:, 0, lut_sph[502]]/prs_2d).reshape((1, nr))
-temp_sph = (thermo_gamma - 1)/thermo_gamma*prs_sph + entropy_sph
-rho_sph = prs_sph - temp_sph
+ent_sph = (vals_sph[:, 0, lut_sph[501]]/eq.c_p).reshape((1, nr))
+prs_sph = (vals_sph[:, 0, lut_sph[502]]/eq.prs).reshape((1, nr))
+tmp_sph = (eq.gamma - 1)/eq.gamma*prs_sph + ent_sph
 
 # Now subtract the spherical mean from the zonal mean
-entropy = entropy_az - entropy_sph
+ent = ent_az - ent_sph
 prs = prs_az - prs_sph
-temp = temp_az - temp_sph
-rho = rho_az - rho_sph
+tmp = tmp_az - tmp_sph
 
 # set the plot name (base of it) here
-basename = 'azav_thermo'
+basename = 'thermo'
 if kw.nond:
-    terms = [entropy, prs, temp, rho]
-    titles = [r'$S/c_P$', r'$P/\overline{P}$', r'$T/\overline{T}$', r'$\rho/\overline{\rho}$']
+    terms = [ent, prs, tmp]
+    titles = [r'$S/c_P$', r'$P/\overline{P}$', r'$T/\overline{T}$']
     basename += '_nond'
+    titletag = '(nondimensional)'
 else:
-    terms = [entropy*c_P, prs*prs_2d, temp*tmp_2d, rho*rho_2d]
-    titles = ['S', 'P', 'T', r'$\rho$']
+    terms = [ent*eq.c_p, prs*prs_2d, tmp*tmp_2d]
+    titles = ['S', 'P', 'T']
     basename += '_dim'
-
-if kw.poverrho:
-    terms.append(prs*prs_2d/rho_2d)
-    titles.append(r'$P/\overline{\rho}$')
+    titletag = '(dimensional)'
 
 # make the main title
 iter1, iter2 = get_iters_from_file(kw.the_file)
 time_string = get_time_string(dirname, iter1, iter2)
 maintitle = dirname_stripped + '\n' +\
-        'Thermal variables: Az. Avg. - Sph. Avg.' + '\n' +\
-        time_string
+        'Thermal variables: Az. Avg. - Sph. Avg.' + '\n' + titletag +\
+        '\n' + time_string
 
 # make figure using usual routine
 fig = plot_azav_grid (terms, rr, cost, maintitle=maintitle, titles=titles, **kw_plot_azav)

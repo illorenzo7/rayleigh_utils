@@ -998,7 +998,7 @@ def get_eq(dirname, fname=None):
         # assume gas is ideal and get pressure
         eq_hr.gamma = gamma_ideal
         eq_hr.gas_constant = (eq_hr.gamma-1)*eq_hr.c_p/eq_hr.gamma
-        eq_hr.prs = eq.gas_constant*eq_hr.rho*eq_hr.tmp
+        eq_hr.prs = eq_hr.gas_constant*eq_hr.rho*eq_hr.tmp
 
         # get the transport coefficients
         eq_hr.nu = eq.constants[4]*eq.functions[2]
