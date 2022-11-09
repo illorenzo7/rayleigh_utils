@@ -1,8 +1,9 @@
 # Author: Loren Matilsky
 # Created: 05/14/2018
 # Updated: 2021
-# prototype for AZ_Avgs scripts. Savename:
-# diffrot-[first iter]_[last iter].npy
+# plots differential rotation contours
+# prototype for AZ_Avgs scripts. 
+# savename: diffrot-[first iter]_[last iter].png
 
 import numpy as np
 import matplotlib.pyplot as plt

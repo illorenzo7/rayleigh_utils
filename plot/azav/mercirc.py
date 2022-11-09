@@ -1,13 +1,9 @@
 # Author: Loren Matilsky
 # Created: 05/14/2018
-# This script plots the meridional circulation cells the meridional plane 
-# for the Rayleigh run directory indicated by [dirname], using the AZ_Avgs
-# data. To use an AZ_Avgs file different than the one associated with the 
-# longest averaging range, run with option
-# -usefile [complete name of desired vavg file]
-# Saves plot in
-# [dirname]_diffrot_[first iter]_[last iter].npy
-
+# Updated: 2022
+# Plots mass flux (stream lines and magnitude)
+# savename: mercirc-[first iter]_[last iter].png
+ 
 import numpy as np
 import matplotlib.pyplot as plt
 import sys, os
@@ -44,14 +40,13 @@ kw_make_figure = update_dict(make_figure_kwargs_default, clas)
 
 # check for bad keys
 find_bad_keys(kwargs_default, clas, clas0['routinename'], justwarn=True)
-print(kw_make_figure.sub_margin_bottom_inches)
 if not kw.rbcz is None:  # need room for two colorbars
     kw_make_figure.sub_margin_bottom_inches *= 2
     print(kw_make_figure.sub_margin_bottom_inches)
 
 # Get density
 eq = get_eq(dirname)
-rho = eq.density
+rho = eq.rho
 
 # Directory with data and plots, make the plotting directory if it doesn't
 # already exist    
