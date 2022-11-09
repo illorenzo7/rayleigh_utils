@@ -927,6 +927,8 @@ def get_eq(dirname, fname=None):
         eq_hr.grav = poly.grav
         eq_hr.dsdr = poly.dsdr
         eq_hr.nsq = poly.dsdr*eq_hr.grav/eq_hr.c_p
+        eq_hr.gamma = (poly_n+1)/poly_n
+        eq_hr.gas_constant = eq_hr.c_p/(poly_n + 1)
 
         # get heating
         eq_hr.lum = get_parameter(dirname, 'luminosity')
@@ -994,8 +996,9 @@ def get_eq(dirname, fname=None):
         eq_hr.lum = eq.constants[9]
 
         # assume gas is ideal and get pressure
-        gas_constant = (gamma_ideal-1)*eq_hr.c_p/gamma_ideal
-        eq_hr.prs = gas_constant*eq_hr.rho*eq_hr.tmp
+        eq_hr.gamma = gamma_ideal
+        eq_hr.gas_constant = (eq_hr.gamma-1)*eq_hr.c_p/eq_hr.gamma
+        eq_hr.prs = eq.gas_constant*eq_hr.rho*eq_hr.tmp
 
         # get the transport coefficients
         eq_hr.nu = eq.constants[4]*eq.functions[2]

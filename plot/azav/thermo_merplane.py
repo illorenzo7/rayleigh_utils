@@ -66,21 +66,20 @@ cost = di_grid['cost']
 
 # reference state variables
 eq = get_eq(dirname)
-ref_rho = (eq.density).reshape((1, nr))
-ref_prs = (eq.pressure).reshape((1, nr))
-ref_temp = (eq.temperature).reshape((1, nr))
+rho_2d = (eq.rho).reshape((1, nr))
+prs_2d = (eq.prs).reshape((1, nr))
+tmp_2d = (eq.tmp).reshape((1, nr))
 
 # Compute the NOND zonally averaged thermo. vars
-entropy_az = vals[:, :, lut[501]]/c_P
-prs_az = vals[:, :, lut[502]]/ref_prs
+ent_az = vals[:, :, lut[501]]/eq.cp
+prs_az = vals[:, :, lut[502]]/prs_2d
 
 # Calculate temp, rho from EOS
-temp_az = (thermo_gamma - 1)/thermo_gamma*prs_az + entropy_az 
-rho_az = prs_az - temp_az
+tmp_az = (thermo_gamma - 1)/thermo_gamma*prs_az + entropy_az 
 
 # Compute the spherically averaged thermo. vars
 entropy_sph = (vals_sph[:, 0, lut_sph[501]]/c_P).reshape((1, nr))
-prs_sph = (vals_sph[:, 0, lut_sph[502]]/ref_prs).reshape((1, nr))
+prs_sph = (vals_sph[:, 0, lut_sph[502]]/prs_2d).reshape((1, nr))
 temp_sph = (thermo_gamma - 1)/thermo_gamma*prs_sph + entropy_sph
 rho_sph = prs_sph - temp_sph
 
@@ -97,12 +96,12 @@ if kw.nond:
     titles = [r'$S/c_P$', r'$P/\overline{P}$', r'$T/\overline{T}$', r'$\rho/\overline{\rho}$']
     basename += '_nond'
 else:
-    terms = [entropy*c_P, prs*ref_prs, temp*ref_temp, rho*ref_rho]
+    terms = [entropy*c_P, prs*prs_2d, temp*tmp_2d, rho*rho_2d]
     titles = ['S', 'P', 'T', r'$\rho$']
     basename += '_dim'
 
 if kw.poverrho:
-    terms.append(prs*ref_prs/ref_rho)
+    terms.append(prs*prs_2d/rho_2d)
     titles.append(r'$P/\overline{\rho}$')
 
 # make the main title
