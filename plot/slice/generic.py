@@ -18,7 +18,7 @@ dirname = clas0.dirname
 dirname_stripped = strip_dirname(dirname)
 
 # SPECIFIC ARGS
-kwargs_default = dotdict(dict({'the_file': None, 'av': False, 'val_iter': int(1e9), 'irvals': np.array([0]), 'rvals': None, 'varnames': np.array(['vr']), 'labelbyindex': False, 'skip': None, 'nframes': None, 'lonav': False}))
+kwargs_default = dotdict(dict({'the_file': None, 'av': False, 'val_iter': int(1e9), 'irvals': np.array([0]), 'rvals': None, 'varnames': np.array(['vr']), 'labelbyindex': False, 'skip': None, 'nframes': None}))
 # this guy need to update right away to choose fig dimensions
 if 'type' in clas:
     plottype = clas.type
@@ -106,17 +106,17 @@ else:
 
 # get the rvals we want
 if not kw.rvals is None: # irvals haven't been set directly
-    if isall(kw.rvals):
+    if kw.rvals == 'all':
         kw.irvals = np.arange(a0.nr)
     else:
         kw.rvals = make_array(kw.rvals)
         kw.irvals = np.zeros_like(kw.rvals, dtype='int')
         for i in range(len(kw.rvals)):
-            kw.irvals[i] = np.argmin(np.abs(a0.radius/rsun - kw.rvals[i]))
+            kw.irvals[i] = np.argmin(np.abs(a0.radius - kw.rvals[i]))
 
 # get the vars we want
-if isall(kw.varnames):
-    kw.varnames = get_default_varnames(dirname)
+if kw.varnames == 'all':
+    kw.varnames = array_of_strings(a0.qv)
 
 # loop over rvals/vars and make plots
 print (buff_line)
@@ -149,7 +149,7 @@ for fname in file_list:
 
         for irval in kw.irvals:
             field = vals[:, :, irval]
-            rval = a.radius[irval]/rsun 
+            rval = a.radius[irval]
 
             # Display at terminal what we are plotting
             if kw.av:
@@ -159,11 +159,9 @@ for fname in file_list:
             if kw.labelbyindex:
                 savename += ('_' + simple_label + ('_irval%03i' %irval) + '.png')
             else:
-                savename += ('_' + simple_label + ('_rval%0.3f' %rval) + '.png')
+                savename += ('_' + simple_label + ('_rval%1.2e' %rval) + '.png')
 
             # make plot
-            if kw.lonav:
-                kw_make_figure.nplots = 2
             fig, axs, fpar = make_figure(**kw_make_figure)
             ax = axs[0, 0]
             if plottype == 'moll':
@@ -185,30 +183,12 @@ for fname in file_list:
                 time_string = get_time_string(dirname, a.iters[0])
 
             if plottype == 'moll':
-                slice_info = varlabel + 5*' ' + (r'$r/R_\odot\ =\ %0.3f$' %rval) + 5*' ' + ('clon = %4.0f' %kw.clon)
+                slice_info = varlabel + 5*' ' + (r'$r\ =\ %1.3e$' %rval) + ' cm' +  5*' ' + ('clon = %4.0f' %kw.clon)
             if plottype == 'speclm':
-                slice_info = varlabel + 5*' ' + (r'$r/R_\odot\ =\ %0.3f$' %rval)
+                slice_info = varlabel + 5*' ' + (r'$r\  =\ %1.3e$' %rval) + ' cm'
 
             title = dirname_stripped + '\n' + slice_info + '\n' + time_string
             ax.set_title(title, va='bottom', fontsize=default_titlesize)
-
-            if kw.lonav:
-                ax = axs[0, 1]
-                angle = np.arccos(a.costheta)
-                tt_lat = 180/np.pi*(np.pi/2 - angle)
-                fieldav = np.mean(field, axis=0)
-                ax.plot(fieldav, tt_lat)
-                ax.set_xlabel('lon. avg.')
-                ax.set_ylim(-90, 90)
-                # ignore pm 75 degrees
-                lat1 = -75
-                lat2 = 75
-                ith1 = np.argmin(np.abs(tt_lat - lat1))
-                ith2 = np.argmin(np.abs(tt_lat - lat2))
-                xmin = np.min(fieldav[ith1:ith2+1])
-                xmax = np.max(fieldav[ith1:ith2+1])
-                ax.set_xlim(xmin, xmax)
-                #ax.set_ylabel('latitude (deg)')
 
             # save by default
             if clas0['saveplot']:

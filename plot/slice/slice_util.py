@@ -160,8 +160,6 @@ def plot_moll(field_orig, costheta, fig, ax, **kwargs):
     # Shouldn't have to do this but Python is stupid with arrays
     field = np.copy(field_orig)    
 
-    print ('kw.nlevs = ', kw.nlevelsfield)
-
     # Get the Mollweide projection coordinates associated with costheta
     xx, yy = mollweide_transform(costheta)
 
