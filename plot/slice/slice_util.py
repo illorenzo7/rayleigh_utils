@@ -147,7 +147,7 @@ def ortho_transform(r,lat,lon,lat0=0,lon0=0):
     return xs,ys,idx
 
 # Mollweide plotting routine
-plot_moll_kwargs_default = dict({'clon': 0., 'plotlonlines': True, 'lonvals': None, 'plotlatlines': True, 'latvals': np.arange(-60., 90., 30.), 'linewidth': default_lw, 'plotboundary': True})
+plot_moll_kwargs_default = dict({'clon': 0., 'plotlonlines': True, 'lonvals': np.arange(0., 360., 60.), 'plotlatlines': True, 'latvals': np.arange(-60., 90., 30.), 'linewidth': default_lw, 'plotboundary': True})
 # change default plotcontours --> False in my_contourf
 my_contourf_kwargs_default['plotcontours'] = False
 plot_moll_kwargs_default.update(my_contourf_kwargs_default)
@@ -178,8 +178,6 @@ def plot_moll(field_orig, costheta, fig, ax, **kwargs):
     tt = np.arccos(costheta)
     lat = np.pi/2. - tt # these "latitudes" are in radians...
     lon = np.linspace(-np.pi, np.pi, 2*len(tt), endpoint=False)
-    if kw.lonvals is None:
-        kw.lonvals = np.arange(0., 360., 30.)
     
     npoints = 100
     if kw.plotlonlines:
@@ -212,4 +210,3 @@ def plot_moll(field_orig, costheta, fig, ax, **kwargs):
         psivals = np.linspace(0, 2*np.pi, 100)
         xvals, yvals = 2.*np.cos(psivals), np.sin(psivals)
         ax.plot(xvals, yvals, 'k', linewidth=1.5*kw.linewidth)
-
