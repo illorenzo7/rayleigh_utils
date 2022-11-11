@@ -148,9 +148,14 @@ def ortho_transform(r,lat,lon,lat0=0,lon0=0):
 
 # Mollweide plotting routine
 plot_moll_kwargs_default = dict({'clon': 0., 'plotlonlines': True, 'lonvals': np.arange(0., 360., 60.), 'plotlatlines': True, 'latvals': np.arange(-60., 90., 30.), 'linewidth': default_lw, 'plotboundary': True})
+
 # change default plotcontours --> False in my_contourf
 my_contourf_kwargs_default['plotcontours'] = False
 plot_moll_kwargs_default.update(my_contourf_kwargs_default)
+
+# ortho similar, but also need "clat":
+plot_ortho_kwargs_default = plot_moll_kwargs_default.copy()
+plot_ortho_kwargs_default['clat'] = 20.
 
 def plot_moll(field_orig, costheta, fig, ax, **kwargs):
     kw = update_dict(plot_moll_kwargs_default, kwargs)
