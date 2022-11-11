@@ -116,7 +116,7 @@ def get_slice(a, varname, dirname=None, j=0):
         return the_slice
 
 # mollweide + ortho transforms
-def mollweide_transform(costheta, clon=0., shrinkage=1., precision=1.e-3): 
+def mollweide_transform(costheta, shrinkage=1., precision=1.e-3): 
     # compute the spherical coordinates
     ntheta = len(costheta)
     nphi = 2*ntheta
@@ -139,12 +139,26 @@ def mollweide_transform(costheta, clon=0., shrinkage=1., precision=1.e-3):
     ys = shrinkage*np.sin(beta)
     return xs, ys
 
-def ortho_transform(r,lat,lon,lat0=0,lon0=0):
-    xs = r*np.cos(lat)*np.sin(lon-lon0)
-    ys = r*(np.cos(lat0)*np.sin(lat)-np.sin(lat0)*np.cos(lat)*np.cos(lon-lon0))
-    cosc = np.sin(lat0)*np.sin(lat)+np.cos(lat0)*np.cos(lat)*np.cos(lon-lon0) #cosine of angular distance from center of view
-    idx = np.where(cosc>=0) #these indices are on front of the globe, the rest should be clipped.
-    return xs,ys,idx
+def ortho_transform(costheta, clat=0., shrinkage=1.):
+    # compute the spherical coordinates
+    ntheta = len(costheta)
+    nphi = 2*ntheta
+    tt = np.arccos(costheta)
+    lat = np.pi/2. - tt # these "latitudes" are in radians...
+    lon = np.linspace(-np.pi, np.pi, nphi, endpoint=False)
+    clat = np.pi/180*clat # convert clat, degrees --> radians
+
+    # get a "meshgrid" from 1D arrays
+    lon, lat = np.meshgrid(lon, lat, indexing='ij')
+   
+    # do ortho projection
+    xs = shrinkage*np.cos(lat)*np.sin(lon)
+    ys = shrinkage*(np.cos(clat)*np.sin(lat) -\
+        np.sin(clat)*np.cos(lat)*np.cos(lon))
+    cosc = np.sin(clat)*np.sin(lat)+np.cos(clat)*np.cos(lat)*np.cos(lon) #cosine of angular distance from center of view
+    idxgood = np.where(cosc>=0) #these indices are on front of the globe, the rest should be clipped.
+    idxbad = np.where(cosc<0)
+    return xs,ys,idxgood,idxbad
 
 # Mollweide plotting routine
 plot_moll_kwargs_default = dict({'clon': 0., 'plotlonlines': True, 'lonvals': np.arange(0., 360., 60.), 'plotlatlines': True, 'latvals': np.arange(-60., 90., 30.), 'linewidth': default_lw, 'plotboundary': True})
