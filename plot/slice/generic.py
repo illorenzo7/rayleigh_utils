@@ -31,8 +31,13 @@ print ("PLOT TYPE: " + plottype)
 
 if plottype == 'moll':
     fig_dimensions = moll_fig_dimensions
+if plottype == 'ortho':
+    fig_dimensions = ortho_fig_dimensions
+if plottype in ['moll', 'ortho']:
     plotting_func = plot_moll_or_ortho
     plotting_func_kwargs_default = plot_moll_or_ortho_kwargs_default
+    if plottype == 'ortho':
+        plotting_func_kwargs_default['ortho'] = True
     dataname = 'Shell_Slices'
     reading_func = Shell_Slices
 if plottype == 'speclm':
@@ -164,7 +169,7 @@ for fname in file_list:
             # make plot
             fig, axs, fpar = make_figure(**kw_make_figure)
             ax = axs[0, 0]
-            if plottype == 'moll':
+            if plottype in ['moll', 'ortho']:
                 plotting_args = field, a.costheta, fig, ax
             if plottype == 'speclm':
                 plotting_args = field, fig, ax
@@ -182,7 +187,7 @@ for fname in file_list:
             else:
                 time_string = get_time_string(dirname, a.iters[0])
 
-            if plottype == 'moll':
+            if plottype in ['moll', 'ortho']:
                 slice_info = varlabel + 5*' ' + (r'$r\ =\ %1.3e$' %rval) + ' cm' +  5*' ' + ('clon = %4.0f' %kw.clon)
             if plottype == 'speclm':
                 slice_info = varlabel + 5*' ' + (r'$r\  =\ %1.3e$' %rval) + ' cm'
