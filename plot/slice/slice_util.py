@@ -162,8 +162,8 @@ def ortho_transform(costheta, clat=0., shrinkage=1.):
 
 # Mollweide ortho ortho plotting routine
 plot_moll_or_ortho_kwargs_default = dict({'clon': 0., 'clat': 20., 'shrinkage': 1., 'plotlonlines': True, 'lonvals': np.arange(0., 360., 60.), 'plotlatlines': True, 'latvals': np.arange(-60., 90., 30.), 'linewidth': default_lw, 'plotboundary': True, 'ortho': False})
-
 plot_moll_or_ortho_kwargs_default.update(my_contourf_kwargs_default)
+plot_moll_or_ortho_kwargs_default['plotcontours'] = False
 
 def plot_moll_or_ortho(field_orig, costheta, fig, ax, **kwargs):
     kw = update_dict(plot_moll_or_ortho_kwargs_default, kwargs)
