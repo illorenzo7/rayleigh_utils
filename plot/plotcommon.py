@@ -589,6 +589,8 @@ def contourf_minmax(field, **kwargs):
         dummy, n2 = np.shape(field)
         icut = int(n2*kw.buff_ignore2)
         field = np.copy(field[:, icut:n2-icut])
+    # purge the field of nans
+    field = field[np.where(1 - np.isnan(field))]
     if kw.fullrange or kw.symlog:
         maxabs = np.max(np.abs(field))
         minmax = -maxabs, maxabs       
