@@ -137,11 +137,11 @@ def mollweide_transform(costheta, shrinkage=1., precision=1.e-3):
                 np.pi*np.sin(lat))/(2.+2.*np.cos(2.*beta))
     # get a "meshgrid" from 1D arrays
     lon, beta = np.meshgrid(lon, beta, indexing='ij')
-    xs = 2./np.pi*shrinkage*lon*np.cos(beta)
-    ys = shrinkage*np.sin(beta)
-    return xs, ys
+    xx = 2./np.pi*shrinkage*lon*np.cos(beta)
+    yy = shrinkage*np.sin(beta)
+    return xx, yy
 
-def ortho_transform(costheta, clat=0., shrinkage=1.):
+def ortho_transform(costheta, clat=20., shrinkage=1.):
     # compute the spherical coordinates
     ntheta = len(costheta)
     nphi = 2*ntheta
@@ -154,13 +154,13 @@ def ortho_transform(costheta, clat=0., shrinkage=1.):
     lon, lat = np.meshgrid(lon, lat, indexing='ij')
    
     # do ortho projection
-    xs = shrinkage*np.cos(lat)*np.sin(lon)
-    ys = shrinkage*(np.cos(clat)*np.sin(lat) -\
+    xx = shrinkage*np.cos(lat)*np.sin(lon)
+    yy = shrinkage*(np.cos(clat)*np.sin(lat) -\
         np.sin(clat)*np.cos(lat)*np.cos(lon))
     cosc = np.sin(clat)*np.sin(lat)+np.cos(clat)*np.cos(lat)*np.cos(lon) #cosine of angular distance from center of view
-    idxgood = np.where(cosc>=0) #these indices are on front of the globe, the rest should be clipped.
-    idxbad = np.where(cosc<0)
-    return xs,ys,idxgood,idxbad
+    igood = np.where(cosc>=0) #these indices are on front of the globe, the rest should be clipped.
+    ibad = np.where(cosc<0)
+    return xx,yy,igood,ibad
 
 # Mollweide ortho ortho plotting routine
 plot_moll_or_ortho_kwargs_default = dict({'clon': 0., 'clat': 20., 'shrinkage': 1., 'plotlonlines': True, 'lonvals': np.arange(0., 360., 60.), 'plotlatlines': True, 'latvals': np.arange(-60., 90., 30.), 'linewidth': default_lw, 'plotboundary': True, 'ortho': False})
@@ -178,25 +178,26 @@ def plot_moll_or_ortho(field_orig, costheta, fig, ax, **kwargs):
     # Shouldn't have to do this but Python is stupid with arrays
     field = np.copy(field_orig)    
 
-    # Get the projection coordinates associated with costheta
-    if kw.ortho:
-        xx, yy, idxgood, idxbad = ortho_transform(costheta, clat=kw.clat, shrinkage=kw.shrinkage)
-        field[idxbad] = np.nan
-        xx_masked = np.copy(xx)
-        yy_masked = np.copy(yy)
-        xx_masked[idxbad] = np.nan
-        yy_masked[idxbad] = np.nan
-    else:
-        xx, yy = mollweide_transform(costheta)
-        xx_masked = np.copy(xx)
-        yy_masked = np.copy(yy)
-
     # shift the field so that the clon is in the ~center of the array
     difflon = 180. - kw.clon # basically difflon is the amount the clon
     # must be shifted to arrive at 180, which is near the center of array
     nphi = 2*len(costheta)
     iphi_shift = int(difflon/360.*nphi)
     field = np.roll(field, iphi_shift, axis=0)
+
+    # Get the projection coordinates associated with costheta
+    if kw.ortho:
+        xx, yy, igood, ibad = ortho_transform(costheta, clat=kw.clat, shrinkage=kw.shrinkage)
+
+        field[ibad] = np.nan
+        xx_masked = np.copy(xx)
+        yy_masked = np.copy(yy)
+        xx_masked[ibad] = np.nan
+        yy_masked[ibad] = np.nan
+    else:
+        xx, yy = mollweide_transform(costheta)
+        xx_masked = np.copy(xx)
+        yy_masked = np.copy(yy)
 
     # make the color plot plot
     my_contourf(xx, yy, field, fig, ax, **kw_my_contourf)
