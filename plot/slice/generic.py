@@ -31,8 +31,8 @@ print ("PLOT TYPE: " + plottype)
 
 if plottype == 'moll':
     fig_dimensions = moll_fig_dimensions
-    plotting_func = plot_moll 
-    plotting_func_kwargs_default = plot_moll_kwargs_default
+    plotting_func = plot_moll_or_ortho
+    plotting_func_kwargs_default = plot_moll_or_ortho_kwargs_default
     dataname = 'Shell_Slices'
     reading_func = Shell_Slices
 if plottype == 'speclm':

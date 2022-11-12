@@ -160,27 +160,34 @@ def ortho_transform(costheta, clat=0., shrinkage=1.):
     idxbad = np.where(cosc<0)
     return xs,ys,idxgood,idxbad
 
-# Mollweide plotting routine
-plot_moll_kwargs_default = dict({'clon': 0., 'plotlonlines': True, 'lonvals': np.arange(0., 360., 60.), 'plotlatlines': True, 'latvals': np.arange(-60., 90., 30.), 'linewidth': default_lw, 'plotboundary': True})
+# Mollweide ortho ortho plotting routine
+plot_moll_or_ortho_kwargs_default = dict({'clon': 0., 'clat': 20., 'shrinkage': 1., 'plotlonlines': True, 'lonvals': np.arange(0., 360., 60.), 'plotlatlines': True, 'latvals': np.arange(-60., 90., 30.), 'linewidth': default_lw, 'plotboundary': True, 'ortho': False})
 
-# change default plotcontours --> False in my_contourf
-my_contourf_kwargs_default['plotcontours'] = False
-plot_moll_kwargs_default.update(my_contourf_kwargs_default)
+plot_moll_or_ortho_kwargs_default.update(my_contourf_kwargs_default)
 
-# ortho similar, but also need "clat":
-plot_ortho_kwargs_default = plot_moll_kwargs_default.copy()
-plot_ortho_kwargs_default['clat'] = 20.
-
-def plot_moll(field_orig, costheta, fig, ax, **kwargs):
-    kw = update_dict(plot_moll_kwargs_default, kwargs)
-    find_bad_keys(plot_moll_kwargs_default, kwargs, 'plot_moll')
-    kw_my_contourf = update_dict(my_contourf_kwargs_default, kwargs)
+def plot_moll_or_ortho(field_orig, costheta, fig, ax, **kwargs):
+    kw = update_dict(plot_moll_or_ortho_kwargs_default, kwargs)
+    find_bad_keys(plot_moll_or_ortho_kwargs_default, kwargs, 'plot_moll_or_otho')
+    # change default plotcontours --> False in my_contourf
+    tmp = my_contourf_kwargs_default.copy()
+    tmp['plotcontours'] = False
+    kw_my_contourf = update_dict(tmp, kwargs)
         
     # Shouldn't have to do this but Python is stupid with arrays
     field = np.copy(field_orig)    
 
-    # Get the Mollweide projection coordinates associated with costheta
-    xx, yy = mollweide_transform(costheta)
+    # Get the projection coordinates associated with costheta
+    if kw.ortho:
+        xx, yy, idxgood, idxbad = ortho_transform(costheta, clat=kw.clat, shrinkage=kw.shrinkage)
+        field[idxbad] = np.nan
+        xx_masked = np.copy(xx)
+        yy_masked = np.copy(yy)
+        xx_masked[idxbad] = np.nan
+        yy_masked[idxbad] = np.nan
+    else:
+        xx, yy = mollweide_transform(costheta)
+        xx_masked = np.copy(xx)
+        yy_masked = np.copy(yy)
 
     # shift the field so that the clon is in the ~center of the array
     difflon = 180. - kw.clon # basically difflon is the amount the clon
@@ -189,7 +196,7 @@ def plot_moll(field_orig, costheta, fig, ax, **kwargs):
     iphi_shift = int(difflon/360.*nphi)
     field = np.roll(field, iphi_shift, axis=0)
 
-    # make the Mollweide plot
+    # make the color plot plot
     my_contourf(xx, yy, field, fig, ax, **kw_my_contourf)
 
     # Draw parallels and meridians, evenly spaced by 30 degrees
@@ -197,7 +204,6 @@ def plot_moll(field_orig, costheta, fig, ax, **kwargs):
     tt = np.arccos(costheta)
     lat = np.pi/2. - tt # these "latitudes" are in radians...
     lon = np.linspace(-np.pi, np.pi, 2*len(tt), endpoint=False)
-    
     npoints = 100
     if kw.plotlonlines:
         for lonval in kw.lonvals:
@@ -214,7 +220,7 @@ def plot_moll(field_orig, costheta, fig, ax, **kwargs):
                 lon_loc += 360.
             lon_loc *= (np.pi/180.)
             imer = np.argmin(np.abs(lon - lon_loc))
-            ax.plot(xx[imer, :], yy[imer, :], 'k', linewidth=linewidth)
+            ax.plot(xx_masked[imer, :], yy_masked[imer, :], 'k', linewidth=linewidth)
     if kw.plotlatlines:
         for latval in kw.latvals:
             if latval == 0.: 
@@ -222,10 +228,12 @@ def plot_moll(field_orig, costheta, fig, ax, **kwargs):
             else:
                 linewidth = kw.linewidth
             ilat = np.argmin(np.abs(lat - latval*np.pi/180.))
-            ax.plot(xx[:, ilat], yy[:, ilat], 'k', linewidth=linewidth)
+            ax.plot(xx_masked[:, ilat], yy_masked[:, ilat], 'k', linewidth=linewidth)
 
     if kw.plotboundary:
         # Plot outer boundary
         psivals = np.linspace(0, 2*np.pi, 100)
         xvals, yvals = 2.*np.cos(psivals), np.sin(psivals)
+        if kw.ortho:
+            xvals /= 2.
         ax.plot(xvals, yvals, 'k', linewidth=1.5*kw.linewidth)
