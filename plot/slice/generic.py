@@ -187,12 +187,20 @@ for fname in file_list:
             else:
                 time_string = get_time_string(dirname, a.iters[0])
 
-            if plottype in ['moll', 'ortho']:
-                slice_info = varlabel + 5*' ' + (r'$r\ =\ %1.3e$' %rval) + ' cm' +  5*' ' + ('clon = %4.0f' %kw.clon)
+            if plottype == 'moll':
+                location_and_perspective = (r'$r\ =\ %1.3e$' %rval) +\
+                        ('\nclon = %4.0f' %kw.clon)
+
+            if plottype == 'ortho':
+                location_and_perspective = (r'$r\ =\ %1.3e$' %rval) +\
+                        ('\nclon = %4.0f   clat = %4.0f' %(kw.clon, kw.clat))
             if plottype == 'speclm':
                 slice_info = varlabel + 5*' ' + (r'$r\  =\ %1.3e$' %rval) + ' cm'
 
-            title = dirname_stripped + '\n' + slice_info + '\n' + time_string
+            title = dirname_stripped + '\n' +\
+                    varlabel + '\n' +\
+                    location_and_perspective + '\n' +\
+                    time_string
             ax.set_title(title, va='bottom', fontsize=default_titlesize)
 
             # save by default

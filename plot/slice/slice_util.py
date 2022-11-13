@@ -11,11 +11,19 @@ from plotcommon import *
 from rayleigh_diagnostics import GridInfo # for doing averages
 
 # default fig dimensions
-moll_fig_dimensions = dict({'sub_width_inches': 6, 'sub_aspect': 1/2, 'sub_margin_left_inches': default_margin, 'sub_margin_top_inches': 1/2, 'sub_margin_bottom_inches': 1/2, 'margin_top_inches': 1/4})
+generic_slice_fig_dimensions = dict({'sub_height_inches': 3., 'sub_margin_left_inches': 1/4, 'sub_margin_right_inches': 1/4, 'sub_margin_top_inches': 1, 'sub_margin_bottom_inches': 1/2, 'margin_top_inches': default_margin})
 
-ortho_fig_dimensions = dict({'sub_width_inches': 3, 'sub_aspect': 1, 'sub_margin_left_inches': default_margin, 'sub_margin_top_inches': 1/2, 'sub_margin_bottom_inches': 1/2, 'margin_top_inches': 1/4})
+moll_fig_dimensions = dict({'sub_aspect': 1/2})
+ortho_fig_dimensions = dict({'sub_aspect': 1})
+mer_fig_dimensions = dict({'sub_aspect': 2})
 
-spec_2D_fig_dimensions = dict({'sub_width_inches': 6, 'sub_aspect': 1, 'sub_margin_left_inches': default_margin_ylabel, 'sub_margin_top_inches': 1/2, 'sub_margin_bottom_inches': 1/2, 'sub_margin_right_inches': 7/8, 'margin_top_inches': 1/4})
+moll_fig_dimensions.update(generic_slice_fig_dimensions)
+ortho_fig_dimensions.update(generic_slice_fig_dimensions)
+mer_fig_dimensions.update(generic_slice_fig_dimensions)
+
+spec_2D_fig_dimensions = eq_fig_dimensions = ortho_fig_dimensions
+
+#dict({'sub_width_inches': 6, 'sub_aspect': 1, 'sub_margin_left_inches': default_margin_ylabel, 'sub_margin_top_inches': 1/2, 'sub_margin_bottom_inches': 1/2, 'sub_margin_right_inches': 7/8, 'margin_top_inches': 1/4})
 
 # routines to get various Rayleigh slices
 def prime(field): # mean along first axis (phi axis)
