@@ -18,13 +18,13 @@ dirname = clas0.dirname
 dirname_stripped = strip_dirname(dirname)
 
 # SPECIFIC ARGS
-kwargs_default = dotdict(dict({'the_file': None, 'av': False, 'val_iter': int(1e9), 'irvals': np.array([0]), 'rvals': None, 'varnames': np.array(['vr']), 'labelbyindex': False, 'skip': None, 'nframes': None}))
+kwargs_default = dotdict(dict({'type': None,'iter': 'last', 'isamplevals': np.array([0]), 'samplevals': None, 'varnames': np.array(['vr'])}))
+
 # this guy need to update right away to choose fig dimensions
-if 'type' in clas:
-    plottype = clas.type
-    del clas.type
-else:
+if 'type' is None:
     plottype = 'moll'
+else:
+    plottype = clas.type
 
 print (buff_line)
 print ("PLOT TYPE: " + plottype)
@@ -72,25 +72,10 @@ if kw.av:
     basename += 'av'
 plotdir = my_mkdir(clas0['plotdir'] + basename + clas0['tag'] + '/')
 
-# get shell slice, range (for movie), or average
-onefile = True
-for arg in args:
-    if arg in range_options:
-        onefile = False
-if onefile:
-    args += ['--iter', str(kw.val_iter)]
 
 # Get desired file names in datadir and their integer counterparts
 radatadir = dirname + '/' + dataname + '/'
 file_list, int_file_list, nfiles = get_file_lists(radatadir, args)
-
-if not kw.nframes is None:
-    kw.skip = nfiles//kw.nframes
-
-if not kw.skip is None:
-    file_list = file_list[::kw.skip]
-    int_file_list = int_file_list[::kw.skip]
-    nfiles = len(int_file_list)
 
 # need one of these no matter what
 print ("reading " + dataname + '/' + file_list[0])

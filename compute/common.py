@@ -390,6 +390,24 @@ def get_file_lists(radatadir, args):
     file_list = file_list[index_first:index_last + 1]
     int_file_list = int_file_list[index_first:index_last + 1]
     nfiles = index_last - index_first + 1
+
+    # see if user wants to skip any files or get specific number 
+    # (nfiles) in the range
+    nargs = len(args)
+    for i in range(nargs):
+        arg = args[i]
+        if arg == '--skip':
+            nskip = int(args[i+1])
+            file_list = file_list[::skip]
+            int_file_list = int_file_list[::skip]
+            nfiles = len(int_file_list)
+        if arg == '--nfiles':
+            ndesiredfiles = int(args[i+1])
+            nskip = nfiles//ndesiredfiles
+            file_list = file_list[::skip]
+            int_file_list = int_file_list[::skip]
+            nfiles = len(int_file_list)
+
     return file_list, int_file_list, nfiles
 
 def get_desired_range(int_file_list, args):
@@ -462,8 +480,10 @@ def get_desired_range(int_file_list, args):
         index_first = 0
     if index_last > nfiles - 1: 
         index_last = nfiles - 1
+
     # Return the desired indices
     return index_first, index_last
+
 
 ########################################################################
 # ROUTINES FOR CHARACTERIZING/READING RAYLEIGH POST-PROCESSED DATA FILES
