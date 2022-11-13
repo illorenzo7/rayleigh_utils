@@ -4,11 +4,13 @@ import sys, os
 sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['rapl'])
+sys.path.append(os.environ['rapl'] + '/azav')
 from common import *
 from plotcommon import *
 from cla_util import *
 from slice_util import *
-from rayleigh_diagnostics import Shell_Slices, Shell_Spectra
+from rayleigh_diagnostics import Shell_Slices, Equatorial_Slices, Meridional_Slices
+from azav_util import azav_fig_dimensions, plot_azav
 #from get_slice import get_slice, get_label
 
 # Get CLAs
@@ -28,7 +30,6 @@ else:
 
 print (buff_line)
 print ("PLOT TYPE: " + plottype)
-
 if plottype == 'moll':
     fig_dimensions = moll_fig_dimensions
 if plottype == 'ortho':
@@ -40,6 +41,19 @@ if plottype in ['moll', 'ortho']:
         plotting_func_kwargs_default['ortho'] = True
     dataname = 'Shell_Slices'
     reading_func = Shell_Slices
+if plottype == 'eq':
+    fig_dimensions = eq_fig_dimensions
+    plotting_func = plot_eq
+    plotting_func_kwargs_default = plot_eq_kwargs_default
+    dataname = 'Equatorial_Slices'
+    reading_func = Equatorial_Slices
+if plottype == 'mer':
+    fig_dimensions = azav_fig_dimensions
+    plotting_func = plot_mer
+    plotting_func_kwargs_default = plot_mer_kwargs_default
+    dataname = 'Meridional_Slices'
+    reading_func = Meridional_Slices
+
 if plottype == 'speclm':
     fig_dimensions = spec_2D_fig_dimensions
     plotting_func = my_pcolormesh
@@ -52,26 +66,25 @@ if plottype == 'speclm':
     dataname = 'Shell_Spectra'
     reading_func = Shell_Spectra
 
+# now we can update the default kwargs
 kwargs_default.update(plotting_func_kwargs_default)
 make_figure_kwargs_default.update(fig_dimensions)
 kwargs_default.update(make_figure_kwargs_default)
 
-find_bad_keys(kwargs_default, clas, 'plot/slice/generic', justwarn=True)
+find_bad_keys(kwargs_default, clas, 'plot/slice/raslice', justwarn=True)
 
+# update relevant keyword args
 kw = update_dict(kwargs_default, clas)
 kw_plotting_func = update_dict(plotting_func_kwargs_default, clas)
 kw_make_figure = update_dict(make_figure_kwargs_default, clas)
 
-# needs to be arrays
-kw.irvals = make_array(kw.irvals)
+# these need to be arrays
+kw.isamplevals = make_array(kw.isamplevals)
 kw.varnames = array_of_strings(make_array(kw.varnames))
 
 # make plot directory if nonexistent
 basename = plottype
-if kw.av:
-    basename += 'av'
 plotdir = my_mkdir(clas0['plotdir'] + basename + clas0['tag'] + '/')
-
 
 # Get desired file names in datadir and their integer counterparts
 radatadir = dirname + '/' + dataname + '/'
@@ -81,40 +94,39 @@ file_list, int_file_list, nfiles = get_file_lists(radatadir, args)
 print ("reading " + dataname + '/' + file_list[0])
 a0 = reading_func(radatadir + file_list[0], '')
 print ("done reading")
+print ('plotting %i %s files: %s through %s'\
+    %(nfiles, dataname, file_list[0], file_list[-1]))
 
-if kw.av: # use time-averaged file
-    datadir = dirname + '/data/'
-    if kw.the_file is None:
-        kw.the_file = get_widest_range_file(datadir, dataname)
-    iter1, iter2 = get_iters_from_file(kw.the_file)
-    print ("plotting average file: " + kw.the_file)
-    di = get_dict(kw.the_file)
-    a0.vals = di['vals'][..., np.newaxis]
-else:
-    print ('plotting %i %s files: %s through %s'\
-        %(nfiles, dataname, file_list[0], file_list[-1]))
+# need to know which sample values are available
+if plottype in ['moll', 'ortho']:
+    samplevals_avail = a0.radius
+    samplelabel = 'rval'
+if plottype == 'mer':
+    samplevals_avail = a0.phi*180/np.pi
+    samplelabel
+# for equatorial slices it doesn't matter -- only one equator!
 
-# get the rvals we want
-if not kw.rvals is None: # irvals haven't been set directly
-    if kw.rvals == 'all':
-        kw.irvals = np.arange(a0.nr)
+# get the samplevals we want
+if not kw.samplevals is None: # samplevals have been set directly
+    if kw.samplevals == 'all':
+        kw.isamplevals = np.arange(len(samplevals_avail))
     else:
-        kw.rvals = make_array(kw.rvals)
-        kw.irvals = np.zeros_like(kw.rvals, dtype='int')
-        for i in range(len(kw.rvals)):
-            kw.irvals[i] = np.argmin(np.abs(a0.radius - kw.rvals[i]))
+        kw.samplevals = make_array(kw.samplevals)
+        kw.isamplevals = np.zeros_like(kw.samplevals, dtype='int')
+        for i in range(len(kw.samplevals)):
+            kw.isamplevals[i] = np.argmin(np.abs(samplevals_avail - kw.samplevals[i]))
 
 # get the vars we want
 if kw.varnames == 'all':
     kw.varnames = array_of_strings(a0.qv)
 
-# loop over rvals/vars and make plots
+# loop over samplevals/vars and make plots
 print (buff_line)
 print ("about to plot:")
-print ("irvals = ", kw.irvals)
+print ("isamplevals = ", kw.isamplevals)
 print ("varnames = ", kw.varnames)
 print ("nfiles = ", nfiles)
-nfigures = len(kw.irvals)*len(kw.varnames)*nfiles
+nfigures = len(kw.isamplevals)*len(kw.varnames)*nfiles
 print ("nfigures = ", nfigures)
 print (buff_line)
 
@@ -137,9 +149,9 @@ for fname in file_list:
         else:
             varlabel, simple_label = get_label(varname)
 
-        for irval in kw.irvals:
-            field = vals[:, :, irval]
-            rval = a.radius[irval]
+        for isampleval in kw.isamplevals:
+            field = vals[:, :, isampleval]
+            sampleval = a.radius[isampleval]
 
             # Display at terminal what we are plotting
             if kw.av:
@@ -147,9 +159,9 @@ for fname in file_list:
             else:
                 savename = basename + '_' + str(a.iters[0]).zfill(8)
             if kw.labelbyindex:
-                savename += ('_' + simple_label + ('_irval%03i' %irval) + '.png')
+                savename += ('_' + simple_label + ('_isampleval%03i' %isampleval) + '.png')
             else:
-                savename += ('_' + simple_label + ('_rval%1.2e' %rval) + '.png')
+                savename += ('_' + simple_label + ('_sampleval%1.2e' %sampleval) + '.png')
 
             # make plot
             fig, axs, fpar = make_figure(**kw_make_figure)
@@ -173,14 +185,14 @@ for fname in file_list:
                 time_string = get_time_string(dirname, a.iters[0])
 
             if plottype == 'moll':
-                location_and_perspective = (r'$r\ =\ %1.3e$' %rval) +\
+                location_and_perspective = (r'$r\ =\ %1.3e$' %sampleval) +\
                         ('\nclon = %4.0f' %kw.clon)
 
             if plottype == 'ortho':
-                location_and_perspective = (r'$r\ =\ %1.3e$' %rval) +\
+                location_and_perspective = (r'$r\ =\ %1.3e$' %sampleval) +\
                         ('\nclon = %4.0f   clat = %4.0f' %(kw.clon, kw.clat))
             if plottype == 'speclm':
-                slice_info = varlabel + 5*' ' + (r'$r\  =\ %1.3e$' %rval) + ' cm'
+                slice_info = varlabel + 5*' ' + (r'$r\  =\ %1.3e$' %sampleval) + ' cm'
 
             title = dirname_stripped + '\n' +\
                     varlabel + '\n' +\

@@ -169,11 +169,11 @@ def ortho_transform(costheta, clat=20., shrinkage=1.):
     return xx,yy,igood,ibad
 
 # Mollweide ortho ortho plotting routine
-plot_moll_or_ortho_kwargs_default = dict({'clon': 0., 'clat': 20., 'shrinkage': 1., 'plotlonlines': True, 'lonvals': np.arange(0., 360., 60.), 'plotlatlines': True, 'latvals': np.arange(-60., 90., 30.), 'linewidth': default_lw, 'plotboundary': True, 'ortho': False})
+plot_moll_or_ortho_kwargs_default = dict({'clon': 0., 'clat': 20., 'shrinkage': 1., 'plotlonlines': True, 'lonvals': np.arange(0., 360., 30.), 'plotlatlines': True, 'latvals': np.arange(-60., 90., 30.), 'linewidth': default_lw, 'plotboundary': True, 'ortho': False})
 plot_moll_or_ortho_kwargs_default.update(my_contourf_kwargs_default)
 plot_moll_or_ortho_kwargs_default['plotcontours'] = False
 
-def plot_moll_or_ortho(field_orig, costheta, fig, ax, **kwargs):
+def plot_moll_or_ortho(field, costheta, fig, ax, **kwargs):
     kw = update_dict(plot_moll_or_ortho_kwargs_default, kwargs)
     find_bad_keys(plot_moll_or_ortho_kwargs_default, kwargs, 'plot_moll_or_otho')
     # change default plotcontours --> False in my_contourf
@@ -182,7 +182,7 @@ def plot_moll_or_ortho(field_orig, costheta, fig, ax, **kwargs):
     kw_my_contourf = update_dict(tmp, kwargs)
         
     # Shouldn't have to do this but Python is stupid with arrays
-    field = np.copy(field_orig)    
+    field = np.copy(field)    
 
     # shift the field so that the clon is in the ~center of the array
     difflon = 180. - kw.clon # basically difflon is the amount the clon
