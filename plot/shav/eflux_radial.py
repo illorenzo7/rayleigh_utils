@@ -20,6 +20,9 @@ clas0, clas = read_clas(args)
 dirname = clas0['dirname']
 dirname_stripped = strip_dirname(dirname)
 
+# equation coefficients
+eq = get_eq(dirname)
+
 # allowed args + defaults
 kwargs_default = dict({'the_file': None, 'mark_bcz': False})
 kwargs_default.update(make_figure_kwargs_default)
@@ -56,7 +59,6 @@ if True in np.isnan(hflux):
     print ("Computing manually from discrete integral")
     print (buffer_line)
     hflux = np.zeros_like(eflux)
-    eq = get_eq(dirname)
     rr = eq.radius
     rr2 = rr**2.
     #rho = eq.density
@@ -126,7 +128,7 @@ profiles.append(tflux)
 kw_lineplot.labels.append('total')
 
 # integrate and normalize
-lstar = get_lum(dirname)
+lstar = eq.lum
 fpr = 4*np.pi*rr**2
 profiles_int = []
 for profile in profiles:
@@ -137,7 +139,7 @@ fig, axs, fpar = make_figure(**kw_make_figure)
 ax = axs[0,0]
 
 # x and y labels
-kw_lineplot.xlabel = r'$r/R_\odot$'
+kw_lineplot.xlabel = 'r'
 kw_lineplot.ylabel = r'$4\pi r^2$' + '(flux)/' + r'$L_*$'
 
 # Try to find the BCZ from where enthalpy flux goes negative, if desired
@@ -145,8 +147,8 @@ kw_lineplot.ylabel = r'$4\pi r^2$' + '(flux)/' + r'$L_*$'
 if kw.mark_bcz:
     irneg = np.argmin(eflux[20:] > 0) + 20 # argmin gives first place condition breaks down
     irpos = np.argmin(eflux[20:] > 0) + 19 # remember radial indices are reversed
-    rrneg = rr[irneg]/rsun
-    rrpos = rr[irpos]/rsun
+    rrneg = rr[irneg]
+    rrpos = rr[irpos]
     efluxneg = eflux[irneg]
     efluxpos = eflux[irpos]
     slope =  (efluxpos - efluxneg)/(rrpos - rrneg)
@@ -161,23 +163,23 @@ if kw.mark_bcz:
     irbcz = np.copy(irneg)
     irpos = np.argmin(eflux[irbcz:] < tol) + irbcz
     irneg = np.argmin(eflux[irbcz:] < tol) + irbcz - 1
-    rrneg = rr[irneg]/rsun
-    rrpos = rr[irpos]/rsun
+    rrneg = rr[irneg]
+    rrpos = rr[irpos]
     efluxneg = eflux[irneg]
     efluxpos = eflux[irpos]
     slope =  (efluxpos - efluxneg)/(rrpos - rrneg)
     rov_est = rrneg - efluxneg/slope # remember rrneg is above now
     kw_lineplot.xvals.append(rov_est)
 
-lineplot(rr/rsun, profiles_int, ax, **kw_lineplot)
+lineplot(rr, profiles_int, ax, **kw_lineplot)
 
 # make title 
 iter1, iter2 = get_iters_from_file(kw.the_file)
 time_string = get_time_string(dirname, iter1, iter2) 
 the_title = dirname_stripped + '\n' +  'radial energy flux' + '\n' + time_string
 if kw.mark_bcz:
-    the_title += ('\n' + r'$r_{BCZ}/R_\odot = %.3f$' %rbcz_est)
-    the_title += ('\n' + r'$r_{os}/R_\odot = %.3f$' %rov_est)
+    the_title += ('\n' + r'$r_{BCZ} = %1.3e$' %rbcz_est)
+    the_title += ('\n' + r'$r_{os} = %1.3e$' %rov_est)
 
 margin_x = fpar['margin_left'] + fpar['sub_margin_left']
 margin_y = default_margin/fpar['height_inches']
