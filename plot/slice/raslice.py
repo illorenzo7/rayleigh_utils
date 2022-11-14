@@ -182,7 +182,7 @@ for fname in file_list:
                 location_and_perspective =\
                     (samplelabel + ' = ' + samplefmt) %sampleval +\
                         ('\nclon = ' + lon_fmt) %kw.clon +\
-                        '\nclat = ' + lat_format(kw.clat)
+                        '   clat = ' + lat_format(kw.clat)
             elif plottype == 'eq':
                 location_and_perspective = ('clon = ' + lon_fmt) %kw.clon 
             elif plottype == 'mer':
