@@ -29,7 +29,7 @@ else:
     plottype = clas.type
 
 print (buff_line)
-print ("PLOT TYPE: " + plottype)
+print ("plottype = " + plottype)
 if plottype == 'moll':
     fig_dimensions = moll_fig_dimensions
 if plottype == 'ortho':
@@ -101,9 +101,11 @@ print ('plotting %i %s files: %s through %s'\
 if plottype in ['moll', 'ortho']:
     samplevals_avail = a0.radius
     samplelabel = 'rval'
+    samplefmt = '%1.3e'
 if plottype == 'mer':
     samplevals_avail = a0.phi*180/np.pi
-    samplelabel
+    samplelabel = 'lon'
+    samplefmt = lon_fmt
 # for equatorial slices it doesn't matter -- only one equator!
 
 # get the samplevals we want
@@ -116,18 +118,22 @@ if not kw.samplevals is None: # samplevals have been set directly
         for i in range(len(kw.samplevals)):
             kw.isamplevals[i] = np.argmin(np.abs(samplevals_avail - kw.samplevals[i]))
 
+# these are the sample vals we end up with
+kw.samplevals = kw.samplevals_avail[kw.isamplevals]
+
 # get the vars we want
 if kw.varnames == 'all':
     kw.varnames = array_of_strings(a0.qv)
 
 # loop over samplevals/vars and make plots
 print (buff_line)
-print ("about to plot:")
-print ("isamplevals = ", kw.isamplevals)
-print ("varnames = ", kw.varnames)
-print ("nfiles = ", nfiles)
+if not plottype == 'eq':
+    print ("i%ss =" %samplelabel, kw.isamplevals)
+    print ("%ss =" %samplelabel, kw.samplevals)
+print ("varnames =", kw.varnames)
+print ("nfiles =", nfiles)
 nfigures = len(kw.isamplevals)*len(kw.varnames)*nfiles
-print ("nfigures = ", nfigures)
+print ("nfigures =", nfigures)
 print (buff_line)
 
 for fname in file_list:
@@ -138,8 +144,6 @@ for fname in file_list:
     for varname in kw.varnames:
         # get the desired field variable
         vals = get_slice(a, varname, dirname=dirname)
-        if plottype == 'speclm' and not kw.av:
-            vals = np.abs(vals)**2
 
         # variable labels
         basic = is_basic(varname)
@@ -149,50 +153,51 @@ for fname in file_list:
         else:
             varlabel, simple_label = get_label(varname)
 
+        # loop over the sampling locations
         for isampleval in kw.isamplevals:
-            field = vals[:, :, isampleval]
-            sampleval = a.radius[isampleval]
+            sampleval = kw.samplevals[isampleval]
+            if dataname == 'Shell_Slices':
+                field = vals[:, :, isampleval]
+            elif dataname == 'Meridional_Slices':
+                field = vals[isampleval, :, :]
+            else:
+                field = vals[:, :]
 
-            # Display at terminal what we are plotting
-            if kw.av:
-                savename = basename + '_' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8)
-            else:
-                savename = basename + '_' + str(a.iters[0]).zfill(8)
-            if kw.labelbyindex:
-                savename += ('_' + simple_label + ('_isampleval%03i' %isampleval) + '.png')
-            else:
-                savename += ('_' + simple_label + ('_sampleval%1.2e' %sampleval) + '.png')
+            # Display at terminal what we are plotting (and saving)
+            savename = basename + '_' + str(a.iters[0]).zfill(8) + '_' + simple_label 
+            if not plottype == 'eq':
+                savename += ('_' + samplelabel + samplefmt) %sampleval
+                
+            savename += '.png'
 
             # make plot
             fig, axs, fpar = make_figure(**kw_make_figure)
             ax = axs[0, 0]
             if plottype in ['moll', 'ortho']:
                 plotting_args = field, a.costheta, fig, ax
-            if plottype == 'speclm':
-                plotting_args = field, fig, ax
-                kw_plotting_func.cbar_pos = 'right'
+            elif plottype == 'mer':
+                plotting_args = field, a.radius, a.costheta, fig, ax
+            elif plottype == 'eq':
+                plotting_args = field, a.radius, fig, ax
 
             plotting_func(*plotting_args, **kw_plotting_func)
 
-            # make lebels
-            ax.set_xlabel('sph. harm. deg. (l)', fontsize=default_labelsize)
-            ax.set_ylabel('azimuthal wavenumber (m)', fontsize=default_labelsize)
-
             # make title
-            if kw.av:
-                time_string = get_time_string(dirname, iter1, iter2, oneline=True)
-            else:
-                time_string = get_time_string(dirname, a.iters[0])
+            time_string = get_time_string(dirname, a.iters[0])
 
             if plottype == 'moll':
-                location_and_perspective = (r'$r\ =\ %1.3e$' %sampleval) +\
-                        ('\nclon = %4.0f' %kw.clon)
-
-            if plottype == 'ortho':
-                location_and_perspective = (r'$r\ =\ %1.3e$' %sampleval) +\
-                        ('\nclon = %4.0f   clat = %4.0f' %(kw.clon, kw.clat))
-            if plottype == 'speclm':
-                slice_info = varlabel + 5*' ' + (r'$r\  =\ %1.3e$' %sampleval) + ' cm'
+                location_and_perspective =\
+                    (samplelabel + ' = ' + samplefmt) %sampleval +\
+                        ('\nclon = ' + lon_fmt) %kw.clon
+            elif plottype == 'ortho':
+                location_and_perspective =\
+                    (samplelabel + ' = ' + samplefmt) %sampleval +\
+                        ('\nclon = ' + lon_fmt) %kw.clon +\
+                        '\nclat = ' + lat_format(kw.clat)
+            elif plottype == 'eq':
+                location_and_perspective = ('clon = ' + lon_fmt) %kw.clon 
+            elif plottype == 'mer':
+                location_and_perspective = (samplelabel + ' = ' + samplefmt) %sampleval
 
             title = dirname_stripped + '\n' +\
                     varlabel + '\n' +\

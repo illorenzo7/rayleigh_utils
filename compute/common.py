@@ -141,12 +141,14 @@ def make_array(arr, tolist=False, length=None):
     else:
         return (np.array(out))
 
+lon_fmt = '%05.1f'
+
 def lat_format(latval):
     if latval < 0:
         hemisphere = 'S'
     else:
-        hemisphere = 'N'
-    return hemisphere + '%02.0f' %np.abs(latval)
+        hemisphere = 'n'
+    return hemisphere + '%03.1f' %np.abs(latval)
 
 def array_of_strings(arr):
     li = []

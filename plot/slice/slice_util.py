@@ -252,7 +252,7 @@ plot_eqslice_kwargs_default = dict({'clon': 0., 'plotlonlines': True, 'lonvals':
 plot_eqslice_kwargs_default.update(my_contourf_kwargs_default)
 plot_eqslice_kwargs_default['plotcontours'] = False
 
-def plot_eqslice(field_orig, costheta, fig, ax, **kwargs):
+def plot_eqslice(field, rr, fig, ax, **kwargs):
     kw = update_dict(plot_moll_or_ortho_kwargs_default, kwargs)
     find_bad_keys(plot_moll_or_ortho_kwargs_default, kwargs, 'plot_moll_or_otho')
     # change default plotcontours --> False in my_contourf
