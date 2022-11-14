@@ -21,7 +21,7 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = get_parameter(dirname, 'magnetism')
 
 # SPECIFIC ARGS for etrace:
-kwargs_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'nodyn': False, 'dynfrac': 0.5, 'xvals': np.array([]), 'inte': False, 'nquadr': None, 'nquadlat': None, 'etype': 'tot', 'legfrac': None, 'nomag': False, 'noke': False})
+kwargs_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'growth': False, 'growthfrac': 0.5, 'xvals': np.array([]), 'inte': False, 'nquadr': None, 'nquadlat': None, 'etype': 'tot', 'legfrac': None, 'nomag': False, 'noke': False})
 
 # make figure kwargs
 lineplot_fig_dimensions['margin_top_inches'] = 3/4
@@ -45,8 +45,8 @@ coords = kwargs.coords
 ntot = kwargs.ntot
 xiter = kwargs.xiter
 logscale = kwargs.log
-nodyn = kwargs.nodyn
-dynfrac = kwargs.dynfrac
+growth = kwargs.growth
+growthfrac = kwargs.growthfrac
 xvals = make_array(kwargs.xvals)
 plot_inte = kwargs.inte
 nquadlat = kwargs.nquadlat
@@ -206,8 +206,16 @@ for ilat in range(nquadlat):
 
         # KINETIC
         # collect all the total energies together for min/max vals
+
+        # see if we should plot the growth phase
+        if growth:
+            itcut = 0
+        else:
+            tcut = tmin + growthfrac*(tmax - tmin)
+            itcut = np.argmin(np.abs(times - tcut))
+
         if not noke:
-            all_e += [rke, tke, pke, ke]
+            all_e += [rke[itcut:], tke[itcut:], pke[itcut:], ke[itcut:]]
             
             ax.plot(xaxis, ke, color_order[0],\
                     linewidth=lw_ke, label=r'$\rm{KE_{tot}}$')
@@ -220,18 +228,13 @@ for ilat in range(nquadlat):
 
         # INTERNAL
         if plot_inte:
-            all_e += [inte]
+            all_e += [inte[itcut:]]
             ax.plot(xaxis, inte, color_order[4], linewidth=lw_ke,\
                     label='INTE')
 
         # MAGNETIC
         if not nomag:
             if magnetism:
-                if nodyn:
-                    tcut = tmin + dynfrac*(tmax - tmin)
-                    itcut = np.argmin(np.abs(times - tcut))
-                else:
-                    itcut = 0
                 all_e += [rme[itcut:], tme[itcut:], pme[itcut:], me[itcut:]]
 
                 ax.plot(xaxis, me, color=color_order[0], linestyle='--',\

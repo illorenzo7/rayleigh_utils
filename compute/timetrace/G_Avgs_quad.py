@@ -207,7 +207,7 @@ if rank == 0:
     t2 = time.time()
     print (format_time(t2 - t1))
     print ("tracing over %i x %i = %i quadrants" %(nquadlat, nquadr, nquad))
-    print ("rvals = " + arr_to_str(rvals, "%1.2e"))
+    print ("rvals = " + arr_to_str(rvals, "%1.3e"))
     print ("latbounds = " + arr_to_str(latbounds, "%.1f"))
     print ('Considering %i %s files for the trace: %s through %s'\
         %(nfiles, dataname, file_list[0], file_list[-1]))
