@@ -430,7 +430,7 @@ def get_desired_range(int_file_list, args):
             if desired_iter == 'first':
                 desired_iter = int_file_list[0]
             elif desired_iter == 'last':
-                desired__iter = int_file_list[-1]
+                desired_iter = int_file_list[-1]
             else:
                 desired_iter = int(desired_iter)
             index = np.argmin(np.abs(int_file_list - desired_iter))

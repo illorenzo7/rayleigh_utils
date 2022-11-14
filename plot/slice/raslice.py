@@ -10,11 +10,11 @@ from plotcommon import *
 from cla_util import *
 from slice_util import *
 from rayleigh_diagnostics import Shell_Slices, Equatorial_Slices, Meridional_Slices
-from azav_util import azav_fig_dimensions, plot_azav
+from azav_util import plot_azav
 #from get_slice import get_slice, get_label
 
 # Get CLAs
-args = sys.argv 
+args = sys.argv
 clas0, clas = read_clas(args)
 dirname = clas0.dirname
 dirname_stripped = strip_dirname(dirname)
@@ -23,7 +23,7 @@ dirname_stripped = strip_dirname(dirname)
 kwargs_default = dotdict(dict({'type': None,'iter': 'last', 'isamplevals': np.array([0]), 'samplevals': None, 'varnames': np.array(['vr'])}))
 
 # this guy need to update right away to choose fig dimensions
-if 'type' is None:
+if clas.type is None:
     plottype = 'moll'
 else:
     plottype = clas.type
@@ -48,23 +48,11 @@ if plottype == 'eq':
     dataname = 'Equatorial_Slices'
     reading_func = Equatorial_Slices
 if plottype == 'mer':
-    fig_dimensions = azav_fig_dimensions
+    fig_dimensions = mer_fig_dimensions
     plotting_func = plot_mer
     plotting_func_kwargs_default = plot_mer_kwargs_default
     dataname = 'Meridional_Slices'
     reading_func = Meridional_Slices
-
-if plottype == 'speclm':
-    fig_dimensions = spec_2D_fig_dimensions
-    plotting_func = my_pcolormesh
-    plotting_func_kwargs_default = my_pcolormesh_kwargs_default
-    # need to change some things for speclm
-    plotting_func_kwargs_default['logscale'] = True
-    plotting_func_kwargs_default['posdef'] = True
-    #contourf_minmax_kwargs_default['buff_ignore1'] = None
-    #contourf_minmax_kwargs_default['buff_ignore2'] = None
-    dataname = 'Shell_Spectra'
-    reading_func = Shell_Spectra
 
 # now we can update the default kwargs
 kwargs_default.update(plotting_func_kwargs_default)
@@ -88,6 +76,8 @@ plotdir = my_mkdir(clas0['plotdir'] + basename + clas0['tag'] + '/')
 
 # Get desired file names in datadir and their integer counterparts
 radatadir = dirname + '/' + dataname + '/'
+# by default get only last file
+args = np.array(['--iter', 'last'] + list(args))
 file_list, int_file_list, nfiles = get_file_lists(radatadir, args)
 
 # need one of these no matter what
@@ -119,7 +109,7 @@ if not kw.samplevals is None: # samplevals have been set directly
             kw.isamplevals[i] = np.argmin(np.abs(samplevals_avail - kw.samplevals[i]))
 
 # these are the sample vals we end up with
-kw.samplevals = kw.samplevals_avail[kw.isamplevals]
+kw.samplevals = samplevals_avail[kw.isamplevals]
 
 # get the vars we want
 if kw.varnames == 'all':
@@ -128,8 +118,8 @@ if kw.varnames == 'all':
 # loop over samplevals/vars and make plots
 print (buff_line)
 if not plottype == 'eq':
-    print ("i%ss =" %samplelabel, kw.isamplevals)
-    print ("%ss =" %samplelabel, kw.samplevals)
+    print ("i%ss = " %samplelabel + arr_to_str(kw.isamplevals, '%i'))
+    print ("%ss = " %samplelabel + arr_to_str(kw.samplevals, samplefmt))
 print ("varnames =", kw.varnames)
 print ("nfiles =", nfiles)
 nfigures = len(kw.isamplevals)*len(kw.varnames)*nfiles
