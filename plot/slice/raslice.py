@@ -108,7 +108,8 @@ if not kw.samplevals is None: # samplevals have been set directly
             kw.isamplevals[i] = np.argmin(np.abs(samplevals_avail - kw.samplevals[i]))
 
 # these are the sample vals we end up with
-kw.samplevals = samplevals_avail[kw.isamplevals]
+if not plottype == 'eq':
+    kw.samplevals = samplevals_avail[kw.isamplevals]
 
 # get the vars we want
 if kw.varnames == 'all':
@@ -117,6 +118,7 @@ if kw.varnames == 'all':
 # loop over samplevals/vars and make plots
 print (buff_line)
 if not plottype == 'eq':
+    # print sampling locations
     print ("i%ss = " %samplelabel + arr_to_str(kw.isamplevals, '%i'))
     print ("%ss = " %samplelabel + arr_to_str(kw.samplevals, samplefmt))
 print ("varnames =", kw.varnames)
@@ -144,17 +146,17 @@ for fname in file_list:
 
         # loop over the sampling locations
         for isampleval in kw.isamplevals:
-            sampleval = kw.samplevals[isampleval]
             if dataname == 'Shell_Slices':
                 field = vals[:, :, isampleval]
             elif dataname == 'Meridional_Slices':
                 field = vals[isampleval, :, :]
-            else:
+            else: # equatorial slices
                 field = vals[:, :]
 
             # Display at terminal what we are plotting (and saving)
             savename = basename + '_' + str(a.iters[0]).zfill(8) + '_' + simple_label 
             if not plottype == 'eq':
+                sampleval = kw.samplevals[isampleval]
                 savename += ('_' + samplelabel + samplefmt) %sampleval
                 
             savename += '.png'
