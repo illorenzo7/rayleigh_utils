@@ -58,7 +58,6 @@ if plottype == 'mer':
 kwargs_default.update(plotting_func_kwargs_default)
 make_figure_kwargs_default.update(fig_dimensions)
 kwargs_default.update(make_figure_kwargs_default)
-
 find_bad_keys(kwargs_default, clas, 'plot/slice/raslice', justwarn=True)
 
 # update relevant keyword args
@@ -201,7 +200,7 @@ for fname in file_list:
                 plt.savefig(plotdir + savename, dpi=300)
             # always show if nfigures is 1
             if nfigures == 1 and clas0['showplot']:
-                print ("displaying " + savename)
+                print ("displaying " + plotdir + savename)
                 plt.show()   
             plt.close()
 print (buff_line)

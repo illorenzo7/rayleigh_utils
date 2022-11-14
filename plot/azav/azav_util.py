@@ -422,12 +422,13 @@ def streamfunction(vr,vt,r,cost,order=0):
 
 plot_azav_grid_kwargs_default = dict({'maintitle': None, 'titles': None, 'shav': False, 'tw': None, 'totsig': None})
 plot_azav_grid_kwargs_default.update(plot_azav_kwargs_default)
-make_figure_kwargs_default.update(azav_fig_dimensions)
-plot_azav_grid_kwargs_default.update(make_figure_kwargs_default)
+make_figure_kw_az = make_figure_kwargs_default.copy()
+make_figure_kw_az.update(azav_fig_dimensions)
+plot_azav_grid_kwargs_default.update(make_figure_kw_az)
 # need a nother make_figure_kwargs for the shav plot (possibly)
-make_figure_kwargs_default_shav = dict({**make_figure_kwargs_default})
-make_figure_kwargs_default_shav.update(lineplot_fig_dimensions)
-for key, val in make_figure_kwargs_default_shav.items():
+make_figure_kw_shav = make_figure_kw_az.copy()
+make_figure_kw_shav.update(lineplot_fig_dimensions)
+for key, val in make_figure_kw_shav.items():
     plot_azav_grid_kwargs_default[key + '_shav'] = val
 
 def plot_azav_grid(terms, rr, cost, **kwargs):
@@ -435,9 +436,9 @@ def plot_azav_grid(terms, rr, cost, **kwargs):
 
     kw = update_dict(plot_azav_grid_kwargs_default, kwargs)
     kw_plot_azav = update_dict(plot_azav_kwargs_default, kwargs)
-    kw_make_figure = update_dict(make_figure_kwargs_default, kwargs)
+    kw_make_figure = update_dict(make_figure_kw_az, kwargs)
     kw_make_figure_shav = dict({})
-    for key in make_figure_kwargs_default_shav:
+    for key in make_figure_kw_shav:
         kw_make_figure_shav[key] = kw[key + '_shav']
     kw_make_figure_shav = dotdict(kw_make_figure_shav)
 
