@@ -156,7 +156,7 @@ for fname in file_list:
             # Display at terminal what we are plotting (and saving)
             savename = basename + '_' + str(a.iters[0]).zfill(8) + '_' + simple_label 
             if not plottype == 'eq':
-                sampleval = kw.samplevals[isampleval]
+                sampleval = samplevals_avail[isampleval]
                 savename += ('_' + samplelabel + samplefmt) %sampleval
                 
             savename += '.png'
