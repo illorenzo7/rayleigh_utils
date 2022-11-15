@@ -47,7 +47,7 @@ datatype = 'timelat'
 sampleaxis = di_grid['tt_lat']
 if kw.rad:
     datatype = 'timerad'
-    sampleaxis = di_grid['rr']/rsun
+    sampleaxis = di_grid['rr']
 elif kw.lon:
     if not kw.om is None:
         om0 = 1/time_unit*1e9 # frame rate, nHz
@@ -55,7 +55,7 @@ elif kw.lon:
     sampleaxis = di_grid['lons']
 elif kw.shav:
     datatype = 'timeshav'
-    sampleaxis = di_grid['rr']/rsun
+    sampleaxis = di_grid['rr']
 
 dataname = datatype
 if 'groupname' in kw:
@@ -129,7 +129,7 @@ if not kw.shav: # kw.shav means integrated over latitude, so can't choose
     # specific latitude levels
     if not kw.samplevals is None: # isamplevals being set indirectly
         # check for special 'all' option
-        if isall(kw.samplevals):
+        if kw.samplevals == 'all':
             kw.isamplevals = np.arange(len(samplevals_avail))
         else:
             kw.samplevals = make_array(kw.samplevals)
@@ -144,10 +144,10 @@ for isampleval in kw.isamplevals:
 
     # set some labels 
     axislabel = 'latitude (deg)'
-    samplelabel =  r'$r/R_\odot$' + ' = %.3f' %sampleval
-    position_tag = '_rval%.3f' %sampleval
+    samplelabel = 'r = %1.3e' %sampleval
+    position_tag = '_rval%1.3e' %sampleval
     if kw.rad:
-        axislabel = r'$r/R_\odot$'
+        axislabel = 'r'
         samplelabel = 'lat = ' + lat_format(sampleval)
         position_tag = '_lat' + lat_format(sampleval)
     elif kw.lon:
