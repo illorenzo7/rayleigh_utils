@@ -285,15 +285,15 @@ def plot_eq(field, rr, fig, ax, **kwargs):
     rr_2d = rr.reshape((1, nr))
     phi_2d = phi.reshape((nphi, 1))
 
-    # cartesian grid
+    # cartesian grid # put phi=0 lower center
     rmax = np.max(rr)
-    xx = rr_2d*np.cos(phi_2d)/rmax
-    yy = rr_2d*np.sin(phi_2d)/rmax
+    xx = rr_2d*np.sin(phi_2d)/rmax
+    yy = -rr_2d*np.cos(phi_2d)/rmax
 
-    # make the color plot plot
+    # make the color plot
     my_contourf(xx, yy, field, fig, ax, **kw_my_contourf)
 
-    # lontitude lines
+    # longitude lines
     npoints = 100
     if kw.plotlonlines:
         for lonval in kw.lonvals:
