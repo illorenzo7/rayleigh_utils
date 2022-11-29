@@ -834,12 +834,22 @@ def get_sliceinfo(dirname, datatype='Shell_Slices', fname=None):
     file_list, int_file_list, nfiles = get_file_lists_all(radatadir)
     if fname is None:
         fname = file_list[0]
-
+    
+    di = dotdict()
     if datatype in ['Shell_Slices', 'Shell_Spectra']:
-        return sliceinfo(fname, path=radatadir)
-    elif datatype == 'Meridional_Slices':
-        a = Meridional_Slices(radatadir + fname, '')
-        return a.phi
+        a = sliceinfo(fname, path=radatadir)
+        di.samplevals = a.radius
+        di.isamplevals = a.inds
+    else:
+        if datatype == 'Meridional_Slices':
+            a = Meridional_Slices(radatadir + fname, '')
+            di.samplevals = a.phi
+            di.isamplevals = a.phi_inds
+        elif datatype == 'Equatorial_Slices':
+            a = Equatorial_Slices(radatadir + fname, '')
+            # no sampling locations
+    di.qv = a.qv
+    return di
 
 def get_vol(dirname, r1='rmin', r2='rmax'):
     # get the shell volume in the range (r1, r2)
