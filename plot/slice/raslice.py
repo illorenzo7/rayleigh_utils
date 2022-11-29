@@ -97,19 +97,15 @@ kw_make_figure = update_dict(make_figure_kwargs_default, clas)
 kw.isamplevals = make_array(kw.isamplevals)
 kw.varnames = array_of_strings(make_array(kw.varnames))
 
-# need one of these no matter what
-if rank == 0:
-    print ("reading " + dataname + '/' + file_list[0])
-a0 = reading_func(radatadir + str(my_files[0]).zfill(8), '')
-print ("done reading")
-
 # need to know which sample values are available
 if plottype in ['moll', 'ortho']:
-    samplevals_avail = a0.radius
+    radlevs = get_sliceinfo(dirname, 'Shell_Slices')
+    samplevals_avail = radlevs.radius
     samplelabel = 'rval'
     samplefmt = '%1.3e'
 if plottype == 'mer':
-    samplevals_avail = a0.phi*180/np.pi
+    lonvals = get_sliceinfo(dirname, 'Meridional_Slices')
+    samplevals_avail = lonvals.phi*180/np.pi
     samplelabel = 'lon'
     samplefmt = lon_fmt
 # for equatorial slices it doesn't matter -- only one equator!

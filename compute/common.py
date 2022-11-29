@@ -834,7 +834,12 @@ def get_sliceinfo(dirname, datatype='Shell_Slices', fname=None):
     file_list, int_file_list, nfiles = get_file_lists_all(radatadir)
     if fname is None:
         fname = file_list[0]
-    return sliceinfo(fname, path=radatadir)
+
+    if datatype in ['Shell_Slices', 'Shell_Spectra']:
+        return sliceinfo(fname, path=radatadir)
+    elif datatype == 'Meridional_Slices':
+        a = Meridional_Slices(radatadir + fname, '')
+        return a.phi
 
 def get_vol(dirname, r1='rmin', r2='rmax'):
     # get the shell volume in the range (r1, r2)
