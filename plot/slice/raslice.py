@@ -148,8 +148,10 @@ if rank == 0:
             kw.isamplevals = inds_from_vals(sliceinfo.samplevals, kw.samplevals)
 
     # these are the sample vals we end up with
-    if 
-    kw.samplevals = samplevals_avail[kw.isamplevals]
+    if plottype == 'eq':
+        kw.samplevals = np.array([0.0])
+    else:
+        kw.samplevals = sliceinfo.samplevals[kw.isamplevals]
     nsamplevals = len(kw.samplevals)
 
     # say what we are plotting
@@ -188,7 +190,7 @@ if rank == 0:
                         if plottype == 'eq':
                             sampleval = 0. # (just a placeholder)
                         else:
-                            sampleval = kw.samplevals[sampleval]
+                            sampleval = sliceinfo.samplevals[isampleval]
                         plotting_instructions.append(dotdict({'fname': fname,\
                                 'varname': varname,\
                                 'clon': clon,\
