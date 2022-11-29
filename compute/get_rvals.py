@@ -20,8 +20,11 @@ if kw.type == 'speclm':
     datatype = 'Shell_Spectra'
 
 # get the radial levels
-radlevs = get_slice_levels(dirname, datatype=datatype)
-print ('irvals     =', radlevs.inds)
-print ('rvals      = ' + arr_to_str(radlevs.radius, "%1.3e"))
-print ('rvals/rsun = ' + arr_to_str(radlevs.radius/rsun, "%.3f"))
+radlevs = get_sliceinfo(dirname, datatype=datatype)
+print (buff_line)
+print ('iirvals     =', arr_to_str(np.arange(radlevs.nr), '%9i'))
+print (buff_line)
+print ('irvals      =', arr_to_str(radlevs.inds, '%9i'))
+print (buff_line)
+print ('rvals       = ' + arr_to_str(radlevs.radius, "%9.3e"))
 print (buff_line)

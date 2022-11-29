@@ -35,7 +35,8 @@ sys.path.append(os.environ['rapl'] + '/azav')
 from plotcommon import *
 from cla_util import *
 from slice_util import *
-from rayleigh_diagnostics import Shell_Slices, Equatorial_Slices, Meridional_Slices
+from rayleigh_diagnostics import Equatorial_Slices, Meridional_Slices
+from rayleigh_diagnostics_alt import Shell_Slices
 from azav_util import plot_azav
 #from get_slice import get_slice, get_label
 
@@ -46,7 +47,7 @@ dirname = clas0.dirname
 dirname_stripped = strip_dirname(dirname)
 
 # SPECIFIC ARGS
-kwargs_default = dotdict(dict({'type': None, 'isamplevals': np.array([0]), 'samplevals': None, 'varnames': np.array(['vr'])}))
+kwargs_default = dotdict(dict({'type': None, 'isamplevals': np.array([0]), 'samplevals': None, 'varnames': np.array(['vr']), 'clons': None, 'clats': None, 'clonrange': None, 'clatrange': None}))
 
 # this guy need to update right away to choose fig dimensions
 if clas.type is None:
@@ -84,7 +85,8 @@ if plottype == 'mer':
 kwargs_default.update(plotting_func_kwargs_default)
 make_figure_kwargs_default.update(fig_dimensions)
 kwargs_default.update(make_figure_kwargs_default)
-find_bad_keys(kwargs_default, clas, 'plot/slice/raslice', justwarn=True)
+if rank == 0:
+    find_bad_keys(kwargs_default, clas, 'plot/slice/raslice', justwarn=True)
 
 # update relevant keyword args
 kw = update_dict(kwargs_default, clas)
@@ -94,53 +96,6 @@ kw_make_figure = update_dict(make_figure_kwargs_default, clas)
 # these need to be arrays
 kw.isamplevals = make_array(kw.isamplevals)
 kw.varnames = array_of_strings(make_array(kw.varnames))
-
-# only rank 0 needs to do the following
-if rank == 0:
-    # make plot directory if nonexistent
-    basename = plottype
-    plotdir = my_mkdir(clas0['plotdir'] + basename + clas0['tag'] + '/')
-
-    # Get desired file names in datadir and their integer counterparts
-    radatadir = dirname + '/' + dataname + '/'
-    clas_mod = dict({'iter': 'last'})
-    clas_mod.update(clas)
-    file_list, int_file_list, nfiles = get_file_lists(radatadir, clas_mod)
-
-# checkpoint and time
-comm.Barrier()
-if rank == 0:
-    t2 = time.time()
-    print (format_time(t2 - t1))
-    print(fill_str('proc 0 distributing the file lists'), end='')
-    t1 = time.time()
-
-# distribute the file lists
-if rank == 0:
-    # Get the problem size
-    nproc_min, nproc_max, n_per_proc_min, n_per_proc_max =\
-            opt_workload(nfiles, nproc)
-
-    # Distribute file_list to each process
-    for k in range(nproc - 1, -1, -1):
-        # distribute the partial file list to other procs 
-        if k < nproc_max: # first processes analyzes more files
-            my_nfiles = np.copy(n_per_proc_max)
-            istart = k*my_nfiles
-            iend = istart + my_nfiles
-        else: # last processes analyze fewer files
-            my_nfiles = np.copy(n_per_proc_min)
-            istart = nproc_max*n_per_proc_max + (k - nproc_max)*my_nfiles
-            iend = istart + my_nfiles
-
-        # Get the file list portion for rank k
-        my_files = np.copy(int_file_list[istart:iend])
-
-        # send  my_files, my_nfiles if nproc > 1
-        if k >= 1:
-            comm.send([my_files, my_nfiles], dest=k)
-else: # recieve my_files, my_nfiles
-    my_files, my_nfiles = comm.recv(source=0)
 
 # need one of these no matter what
 if rank == 0:
@@ -192,6 +147,54 @@ print ("nfiles =", nfiles)
 nfigures = len(kw.isamplevals)*len(kw.varnames)*nfiles
 print ("nfigures =", nfigures)
 print (buff_line)
+
+# only rank 0 needs to do the following
+if rank == 0:
+    # make plot directory if nonexistent
+    basename = plottype
+    plotdir = my_mkdir(clas0['plotdir'] + basename + clas0['tag'] + '/')
+
+    # Get desired file names in datadir and their integer counterparts
+    radatadir = dirname + '/' + dataname + '/'
+    clas_mod = dict({'iter': 'last'})
+    clas_mod.update(clas)
+    file_list, int_file_list, nfiles = get_file_lists(radatadir, clas_mod)
+
+# checkpoint and time
+comm.Barrier()
+if rank == 0:
+    t2 = time.time()
+    print (format_time(t2 - t1))
+    print(fill_str('proc 0 distributing the file lists'), end='')
+    t1 = time.time()
+
+# distribute the file lists
+if rank == 0:
+    # Get the problem size
+    nproc_min, nproc_max, n_per_proc_min, n_per_proc_max =\
+            opt_workload(nfiles, nproc)
+
+    # Distribute file_list to each process
+    for k in range(nproc - 1, -1, -1):
+        # distribute the partial file list to other procs 
+        if k < nproc_max: # first processes analyzes more files
+            my_nfiles = np.copy(n_per_proc_max)
+            istart = k*my_nfiles
+            iend = istart + my_nfiles
+        else: # last processes analyze fewer files
+            my_nfiles = np.copy(n_per_proc_min)
+            istart = nproc_max*n_per_proc_max + (k - nproc_max)*my_nfiles
+            iend = istart + my_nfiles
+
+        # Get the file list portion for rank k
+        my_files = np.copy(int_file_list[istart:iend])
+
+        # send  my_files, my_nfiles if nproc > 1
+        if k >= 1:
+            comm.send([my_files, my_nfiles], dest=k)
+else: # recieve my_files, my_nfiles
+    my_files, my_nfiles = comm.recv(source=0)
+
 
 for fname in file_list:
     if fname == file_list[0]:
