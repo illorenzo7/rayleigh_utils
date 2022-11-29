@@ -64,7 +64,7 @@ if rank == 0:
     radatadir = dirname + '/' + dataname + '/'
 
     # Get all the file names in datadir and their integer counterparts
-    file_list, int_file_list, nfiles = get_file_lists(radatadir, args)
+    file_list, int_file_list, nfiles = get_file_lists(radatadir, clas)
 
     # read first file for some metadata
     a0 = reading_func(radatadir + file_list[0], '')

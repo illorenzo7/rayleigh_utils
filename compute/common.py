@@ -412,7 +412,6 @@ def get_file_lists(radatadir, clas):
     return file_list, int_file_list, nfiles
 
 def get_desired_range(int_file_list, clas):
-    print (clas)
     # Get first and last index (within the int_file_list) associated with the desired range
 
     # By default, the range will always be the last 100 files:

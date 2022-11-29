@@ -22,7 +22,7 @@ dirname = clas0['dirname']
 radatadir = dirname + '/Shell_Slices/'
 
 # Get all the file names in datadir and their integer counterparts
-file_list, int_file_list, nfiles = get_file_lists(radatadir, args)
+file_list, int_file_list, nfiles = get_file_lists(radatadir, clas)
 
 # read first file for some metadata
 a0 = Shell_Slices(radatadir + file_list[0], '')

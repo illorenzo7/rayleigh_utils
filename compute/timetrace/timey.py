@@ -101,7 +101,7 @@ if rank == 0:
     radatadir = dirname + '/' + dataname + '/'
 
     # get desired analysis range
-    file_list, int_file_list, nfiles = get_file_lists(radatadir, args)
+    file_list, int_file_list, nfiles = get_file_lists(radatadir, clas)
 
     # get the problem size
     nproc_min, nproc_max, n_per_proc_min, n_per_proc_max =\
