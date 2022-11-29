@@ -1,5 +1,4 @@
 import matplotlib.pyplot as plt
-import time
 import numpy as np
 import sys, os
 sys.path.append(os.environ['raco'])
@@ -82,7 +81,6 @@ file_list, int_file_list, nfiles = get_file_lists(radatadir, clas_mod)
 
 # need one of these no matter what
 print ("reading " + dataname + '/' + file_list[0])
-t1 = time.time()
 a0 = reading_func(radatadir + file_list[0], '')
 print ("done reading")
 print ('plotting %i %s files: %s through %s'\
@@ -134,9 +132,6 @@ for fname in file_list:
         a = a0
     else:
         a = reading_func(radatadir + fname, '')
-    t2 = time.time()
-    print ("took %1.3e sec" %(t2-t1))
-    t1 = t2
     for varname in kw.varnames:
         # get the desired field variable
         vals = get_slice(a, varname, dirname=dirname)
@@ -209,8 +204,4 @@ for fname in file_list:
             if nfigures == 1 and clas0['showplot']:
                 print ("displaying " + plotdir + savename)
                 plt.show()   
-            t2 = time.time()
-            print ("took %1.3e sec" %(t2-t1))
-            t1 = t2
-            print (buff_line)            
             plt.close()
