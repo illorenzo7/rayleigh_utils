@@ -1,11 +1,37 @@
-import matplotlib.pyplot as plt
-import numpy as np
+# Author: Loren Matilsky
+# Date created: 11/29/2022
+# Description: go-to slice plotting routine for everything
+
+# initialize communication
+from mpi4py import MPI
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
+
+# import common
 import sys, os
 sys.path.append(os.environ['raco'])
+from common import *
+
+# start the clock
+comm.Barrier()
+if rank == 0:
+    import time
+    nproc = comm.Get_size()
+    t1_glob = time.time()
+    t1 = t1_glob + 0.0
+    if nproc > 1:
+        print ('processing in parallel with %i ranks' %nproc)
+        print ('communication initialized')
+    else:
+        print ('processing in serial with 1 rank')
+    print(fill_str('processes are now prepping for plotting job'), end='')
+
+# additional modules needed
+import matplotlib.pyplot as plt
+import numpy as np
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['rapl'])
 sys.path.append(os.environ['rapl'] + '/azav')
-from common import *
 from plotcommon import *
 from cla_util import *
 from slice_util import *
@@ -69,22 +95,58 @@ kw_make_figure = update_dict(make_figure_kwargs_default, clas)
 kw.isamplevals = make_array(kw.isamplevals)
 kw.varnames = array_of_strings(make_array(kw.varnames))
 
-# make plot directory if nonexistent
-basename = plottype
-plotdir = my_mkdir(clas0['plotdir'] + basename + clas0['tag'] + '/')
+# only rank 0 needs to do the following
+if rank == 0:
+    # make plot directory if nonexistent
+    basename = plottype
+    plotdir = my_mkdir(clas0['plotdir'] + basename + clas0['tag'] + '/')
 
-# Get desired file names in datadir and their integer counterparts
-radatadir = dirname + '/' + dataname + '/'
-clas_mod = dict({'iter': 'last'})
-clas_mod.update(clas)
-file_list, int_file_list, nfiles = get_file_lists(radatadir, clas_mod)
+    # Get desired file names in datadir and their integer counterparts
+    radatadir = dirname + '/' + dataname + '/'
+    clas_mod = dict({'iter': 'last'})
+    clas_mod.update(clas)
+    file_list, int_file_list, nfiles = get_file_lists(radatadir, clas_mod)
+
+# checkpoint and time
+comm.Barrier()
+if rank == 0:
+    t2 = time.time()
+    print (format_time(t2 - t1))
+    print(fill_str('proc 0 distributing the file lists'), end='')
+    t1 = time.time()
+
+# distribute the file lists
+if rank == 0:
+    # Get the problem size
+    nproc_min, nproc_max, n_per_proc_min, n_per_proc_max =\
+            opt_workload(nfiles, nproc)
+
+    # Distribute file_list to each process
+    for k in range(nproc - 1, -1, -1):
+        # distribute the partial file list to other procs 
+        if k < nproc_max: # first processes analyzes more files
+            my_nfiles = np.copy(n_per_proc_max)
+            istart = k*my_nfiles
+            iend = istart + my_nfiles
+        else: # last processes analyze fewer files
+            my_nfiles = np.copy(n_per_proc_min)
+            istart = nproc_max*n_per_proc_max + (k - nproc_max)*my_nfiles
+            iend = istart + my_nfiles
+
+        # Get the file list portion for rank k
+        my_files = np.copy(int_file_list[istart:iend])
+
+        # send  my_files, my_nfiles if nproc > 1
+        if k >= 1:
+            comm.send([my_files, my_nfiles], dest=k)
+else: # recieve my_files, my_nfiles
+    my_files, my_nfiles = comm.recv(source=0)
 
 # need one of these no matter what
-print ("reading " + dataname + '/' + file_list[0])
-a0 = reading_func(radatadir + file_list[0], '')
+if rank == 0:
+    print ("reading " + dataname + '/' + file_list[0])
+a0 = reading_func(radatadir + str(my_files[0]).zfill(8), '')
 print ("done reading")
-print ('plotting %i %s files: %s through %s'\
-    %(nfiles, dataname, file_list[0], file_list[-1]))
 
 # need to know which sample values are available
 if plottype in ['moll', 'ortho']:
@@ -117,6 +179,10 @@ if kw.varnames == 'all':
 
 # loop over samplevals/vars and make plots
 print (buff_line)
+print ('plotting %i %s files: %s through %s'\
+    %(nfiles, dataname, file_list[0], file_list[-1]))
+
+
 if not plottype == 'eq':
     # print sampling locations
     print ("i%ss = " %samplelabel + arr_to_str(kw.isamplevals, '%i'))
