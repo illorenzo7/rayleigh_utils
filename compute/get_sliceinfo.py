@@ -11,20 +11,30 @@ dirname = clas0.dirname
 dirname_stripped = strip_dirname(dirname)
 
 # SPECIFIC ARGS
-kwargs_default = dotdict(dict({'type': 'moll'}))
+kwargs_default = dotdict({'radtype': 'sslice'})
 kw = update_dict(kwargs_default, clas)
+radtype = kw.radtype
 
-if kw.type == 'moll':
-    datatype = 'Shell_Slices'
-if kw.type == 'speclm':
-    datatype = 'Shell_Spectra'
+if radtype == 'sslice':
+    dataname = 'Shell_Slices'
+    samplelabel = 'rvals'
+if radtype == 'merslice':
+    dataname = 'Meridional_Slices'
+    samplelabel = 'lonvals'
+if radtype == 'eqslice':
+    dataname = 'Equatorial_Slices'
 
-# get the radial levels
-radlevs = get_sliceinfo(dirname, datatype=datatype)
-print (buff_line)
-print ('iirvals     =', arr_to_str(np.arange(radlevs.nr), '%9i'))
-print (buff_line)
-print ('irvals      =', arr_to_str(radlevs.inds, '%9i'))
-print (buff_line)
-print ('rvals       = ' + arr_to_str(radlevs.radius, "%9.3e"))
-print (buff_line)
+# get the sampling locations
+di = get_sliceinfo(dirname, dataname=dataname)
+print ('qv =', arr_to_str(di.qv, '%i'))
+
+if not radtype == 'eqslice':
+    print (buff_line)
+    print ("%i sampling locations" %di.nsamplevals)
+    print (buff_line)
+    print ('iisamplevals     =', arr_to_str(np.arange(di.nsamplevals), '%9i'))
+    print (buff_line)
+    print ('isamplevals      =', arr_to_str(di.isamplevals, '%9i'))
+    print (buff_line)
+    print ('samplevals       = ' + arr_to_str(di.samplevals, "%9.3e"))
+    print (buff_line)

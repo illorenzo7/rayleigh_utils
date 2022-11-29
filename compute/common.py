@@ -9,7 +9,7 @@ from string_to_num import string_to_number_or_array
 sys.path.append(os.environ['rapp'])
 
 from reference_tools import equation_coefficients
-from rayleigh_diagnostics import G_Avgs, Shell_Slices, GridInfo
+from rayleigh_diagnostics import G_Avgs, Shell_Slices, Shell_Spectra, Meridional_Slices, Equatorial_Slices, GridInfo
 from rayleigh_diagnostics_alt import sliceinfo
 from grid_info import compute_grid_info
 
@@ -829,23 +829,25 @@ def interpret_rvals(dirname, rvals):
             rvals_out.append(rr[ind])   
     return np.sort(np.array(rvals_out))
 
-def get_sliceinfo(dirname, datatype='Shell_Slices', fname=None):
-    radatadir = dirname + '/' + datatype + '/'
+def get_sliceinfo(dirname, dataname='Shell_Slices', fname=None):
+    radatadir = dirname + '/' + dataname + '/'
     file_list, int_file_list, nfiles = get_file_lists_all(radatadir)
     if fname is None:
         fname = file_list[0]
     
     di = dotdict()
-    if datatype in ['Shell_Slices', 'Shell_Spectra']:
+    if dataname in ['Shell_Slices', 'Shell_Spectra']:
         a = sliceinfo(fname, path=radatadir)
+        di.nsamplevals = a.nr
         di.samplevals = a.radius
         di.isamplevals = a.inds
     else:
-        if datatype == 'Meridional_Slices':
+        if dataname == 'Meridional_Slices':
             a = Meridional_Slices(radatadir + fname, '')
-            di.samplevals = a.phi
+            di.nsamplevals = a.nphi
+            di.samplevals = 180*a.phi/np.pi
             di.isamplevals = a.phi_inds
-        elif datatype == 'Equatorial_Slices':
+        elif dataname == 'Equatorial_Slices':
             a = Equatorial_Slices(radatadir + fname, '')
             # no sampling locations
     di.qv = a.qv
