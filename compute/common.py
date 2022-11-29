@@ -195,6 +195,7 @@ def find_bad_keys(dict_orig, dict_update, funcname, justwarn=False):
 ########################
 
 def inds_from_vals(arr, arrvals):
+    arrvals = make_array(arrvals)
     nind = len(arrvals)
     indarr = np.zeros(nind, 'int')
     for i in range(nind):

@@ -47,7 +47,7 @@ dirname = clas0.dirname
 dirname_stripped = strip_dirname(dirname)
 
 # SPECIFIC ARGS
-kwargs_default = dotdict(dict({'type': None, 'isamplevals': np.array([0]), 'samplevals': None, 'varnames': np.array(['vr']), 'clons': None, 'clats': None, 'clonrange': None, 'clatrange': None}))
+kwargs_default = dotdict(dict({'type': None, 'isamplevals': 0, 'samplevals': None, 'varnames': 'vr', 'clons': None, 'clats': None, 'clonrange': None, 'clatrange': None}))
 
 # this guy need to update right away to choose fig dimensions
 if clas.type is None:
@@ -68,6 +68,8 @@ if plottype in ['moll', 'ortho']:
         plotting_func_kwargs_default['ortho'] = True
     dataname = 'Shell_Slices'
     reading_func = Shell_Slices
+    samplelabel = 'rval'
+    samplefmt = '%1.3e'
 if plottype == 'eq':
     fig_dimensions = eq_fig_dimensions
     plotting_func = plot_eq
@@ -80,6 +82,8 @@ if plottype == 'mer':
     plotting_func_kwargs_default = plot_mer_kwargs_default
     dataname = 'Meridional_Slices'
     reading_func = Meridional_Slices
+    samplelabel = 'lonval'
+    samplefmt = lon_fmt
 
 # now we can update the default kwargs
 kwargs_default.update(plotting_func_kwargs_default)
@@ -93,180 +97,223 @@ kw = update_dict(kwargs_default, clas)
 kw_plotting_func = update_dict(plotting_func_kwargs_default, clas)
 kw_make_figure = update_dict(make_figure_kwargs_default, clas)
 
-# these need to be arrays
-kw.isamplevals = make_array(kw.isamplevals)
-kw.varnames = array_of_strings(make_array(kw.varnames))
-
-# need to know which sample values are available
-if plottype in ['moll', 'ortho']:
-    radlevs = get_sliceinfo(dirname, 'Shell_Slices')
-    samplevals_avail = radlevs.radius
-    samplelabel = 'rval'
-    samplefmt = '%1.3e'
-if plottype == 'mer':
-    lonvals = get_sliceinfo(dirname, 'Meridional_Slices')
-    samplevals_avail = lonvals.phi*180/np.pi
-    samplelabel = 'lon'
-    samplefmt = lon_fmt
-# for equatorial slices it doesn't matter -- only one equator!
-
-# get the samplevals we want
-if not kw.samplevals is None: # samplevals have been set directly
-    if kw.samplevals == 'all':
-        kw.isamplevals = np.arange(len(samplevals_avail))
-    else:
-        kw.samplevals = make_array(kw.samplevals)
-        kw.isamplevals = np.zeros_like(kw.samplevals, dtype='int')
-        for i in range(len(kw.samplevals)):
-            kw.isamplevals[i] = np.argmin(np.abs(samplevals_avail - kw.samplevals[i]))
-
-# these are the sample vals we end up with
-if not plottype == 'eq':
-    kw.samplevals = samplevals_avail[kw.isamplevals]
-
-# get the vars we want
-if kw.varnames == 'all':
-    kw.varnames = array_of_strings(a0.qv)
-
-# loop over samplevals/vars and make plots
-print (buff_line)
-print ('plotting %i %s files: %s through %s'\
-    %(nfiles, dataname, file_list[0], file_list[-1]))
-
-
-if not plottype == 'eq':
-    # print sampling locations
-    print ("i%ss = " %samplelabel + arr_to_str(kw.isamplevals, '%i'))
-    print ("%ss = " %samplelabel + arr_to_str(kw.samplevals, samplefmt))
-print ("varnames =", kw.varnames)
-print ("nfiles =", nfiles)
-nfigures = len(kw.isamplevals)*len(kw.varnames)*nfiles
-print ("nfigures =", nfigures)
-print (buff_line)
-
-# only rank 0 needs to do the following
+# figure out all the different plots we need
 if rank == 0:
     # make plot directory if nonexistent
     basename = plottype
     plotdir = my_mkdir(clas0['plotdir'] + basename + clas0['tag'] + '/')
 
-    # Get desired file names in datadir and their integer counterparts
+    # get desired file names in datadir and their integer counterparts
     radatadir = dirname + '/' + dataname + '/'
     clas_mod = dict({'iter': 'last'})
     clas_mod.update(clas)
     file_list, int_file_list, nfiles = get_file_lists(radatadir, clas_mod)
 
+    # figure out with clons and clats we need
+    if not kw.clonrange is None:
+        clonmin, clonmax, nclon = kw.clonrange
+        kw.clons = np.linspace(clonmin, clonmax, nclon)
+    if kw.clons is None:
+        kw.clons = np.array([0.0])
+    nclon = len(kw.clons)
+
+    if not kw.clatrange is None:
+        clatmin, clatmax, nclat = kw.clatrange
+        kw.clats = np.linspace(clatmin, clatmax, nclat)
+    if kw.clats is None:
+        kw.clats = np.array([20.0])
+    nclat = len(kw.clats)
+
+    # get desired varnames
+    sliceinfo = get_sliceinfo(dirname, dataname)
+    if kw.varnames == 'all':
+        kw.varnames = array_of_strings(sliceinfo.qv)
+    # no matter what, this needs to be an array of strings string
+    kw.varnames = array_of_strings(make_array(kw.varnames))
+    nq = len(kw.varnames)
+
+    # get desired sampling locations
+    # note: for equatorial slices it doesn't matter -- only one equator!
+
+    # first the indices must be an array
+    kw.isamplevals = make_array(kw.isamplevals)
+
+    # get the samplevals we want
+    if not kw.samplevals is None: # samplevals have been set directly
+        # need the available sampling locations
+        if kw.samplevals == 'all':
+            kw.isamplevals = np.arange(sliceinfo.nsamplevals)
+        else:
+            kw.samplevals = make_array(kw.samplevals)
+            kw.isamplevals = inds_from_vals(sliceinfo.samplevals, kw.samplevals)
+
+    # these are the sample vals we end up with
+    if 
+    kw.samplevals = samplevals_avail[kw.isamplevals]
+    nsamplevals = len(kw.samplevals)
+
+    # say what we are plotting
+    print (buff_line)
+
+    # print file list
+    print ('plotting %i %s files: %s through %s'\
+        %(nfiles, dataname, file_list[0], file_list[-1]))
+
+    # print varnames
+    print ("varnames =", kw.varnames)
+
+    # (possibly) clons and clats
+    if not plottype == 'mer':
+        print ("clons =", kw.clons)
+    if plottype == 'ortho':
+        print ("clats =", kw.clats)
+
+    # (possibly) sampling locations
+    if not plottype == 'eq':
+        print ("i%ss = " %samplelabel + arr_to_str(kw.isamplevals, '%i'))
+        print ("%ss = " %samplelabel + arr_to_str(kw.samplevals, samplefmt))
+
+    # calculate total number of figures
+    nfigures = nclat*nclon*nsamplevals*nq**nfiles
+    print ("nfigures =", nfigures)
+    print (buff_line)
+
+    # prepare the epic loop!
+    plotting_instructions = []
+    for fname in file_list:
+        for varname in kw.varnames:
+            for clon in kw.clons:
+                for clat in kw.clats:
+                    for isampleval in kw.isamplevals:
+                        if plottype == 'eq':
+                            sampleval = 0. # (just a placeholder)
+                        else:
+                            sampleval = kw.samplevals[sampleval]
+                        plotting_instructions.append(dotdict({'fname': fname,\
+                                'varname': varname,\
+                                'clon': clon,\
+                                'clat': clat,\
+                                'isampleval': isampleval,\
+                                'sampleval': sampleval}))
+                        
 # checkpoint and time
 comm.Barrier()
 if rank == 0:
     t2 = time.time()
     print (format_time(t2 - t1))
-    print(fill_str('proc 0 distributing the file lists'), end='')
+    print(fill_str('proc 0 distributing plotting instructions'), end='')
     t1 = time.time()
 
-# distribute the file lists
+# distribute the plotting instructions
 if rank == 0:
-    # Get the problem size
+    # get the problem size
     nproc_min, nproc_max, n_per_proc_min, n_per_proc_max =\
-            opt_workload(nfiles, nproc)
+            opt_workload(nfigures, nproc)
 
-    # Distribute file_list to each process
+    # distribute plotting instructions to each process
     for k in range(nproc - 1, -1, -1):
         # distribute the partial file list to other procs 
         if k < nproc_max: # first processes analyzes more files
-            my_nfiles = np.copy(n_per_proc_max)
-            istart = k*my_nfiles
-            iend = istart + my_nfiles
+            my_nfigures = np.copy(n_per_proc_max)
+            istart = k*my_nfigures
+            iend = istart + my_nfigures
         else: # last processes analyze fewer files
-            my_nfiles = np.copy(n_per_proc_min)
-            istart = nproc_max*n_per_proc_max + (k - nproc_max)*my_nfiles
-            iend = istart + my_nfiles
+            my_nfigures = np.copy(n_per_proc_min)
+            istart = nproc_max*n_per_proc_max + (k - nproc_max)*my_nfigures
+            iend = istart + my_nfigures
 
-        # Get the file list portion for rank k
-        my_files = np.copy(int_file_list[istart:iend])
+        # get the file list portion for rank k
+        my_instructions = plotting_instructions[istart:iend]
 
-        # send  my_files, my_nfiles if nproc > 1
+        # send  my_files, my_nfigures if nproc > 1
         if k >= 1:
-            comm.send([my_files, my_nfiles], dest=k)
-else: # recieve my_files, my_nfiles
-    my_files, my_nfiles = comm.recv(source=0)
+            comm.send([my_instructions, my_nfigures], dest=k)
+else: # recieve my_files, my_nfigures
+    my_instructions, my_nfigures = comm.recv(source=0)
 
+# now loop over and plot figures
+for ifigure in range(my_nfigures):
+    # local instructions for this plot
+    inst = my_instructions[ifigure]
+    fname = inst.fname
+    varname = inst.varname
+    clon = inst.clon
+    clat = inst.clat
+    isampleval = inst.isampleval
+    sampleval = inst.sampleval
 
-for fname in file_list:
-    if fname == file_list[0]:
-        a = a0
+    # get the time slice
+    a = reading_func(radatadir + inst.fname, '')
+
+    # get the variable
+    vals = get_slice(a, inst.varname, dirname=dirname)
+    basic = is_basic(varname)
+    if basic:
+        varlabel = get_label(varname)
+        simple_label = varname
     else:
-        a = reading_func(radatadir + fname, '')
-    for varname in kw.varnames:
-        # get the desired field variable
-        vals = get_slice(a, varname, dirname=dirname)
+        varlabel, simple_label = get_label(varname)
 
-        # variable labels
-        basic = is_basic(varname)
-        if basic:
-            varlabel = get_label(varname)
-            simple_label = varname
-        else:
-            varlabel, simple_label = get_label(varname)
+    # get sample location
+    if dataname == 'Shell_Slices':
+        field = vals[:, :, isampleval]
+    elif dataname == 'Meridional_Slices':
+        field = vals[isampleval, :, :]
+    else: # equatorial slices
+        field = vals
 
-        # loop over the sampling locations
-        for isampleval in kw.isamplevals:
-            if dataname == 'Shell_Slices':
-                field = vals[:, :, isampleval]
-            elif dataname == 'Meridional_Slices':
-                field = vals[isampleval, :, :]
-            else: # equatorial slices
-                field = vals[:, :]
+    # get plot name
+    savename = basename + '_' + fname + '_' + simple_label 
+    if not plottype == 'mer':
+        savename += ('clon' + lon_fmt) %kw.clon
+    if plottype == 'ortho':
+        savename += ('ccolat' + lon_fmt) %(90.0 - kw.clat)
+    if not plottype == 'eq':
+        savename += ('_' + samplelabel + samplefmt) %sampleval
+    savename += '.png'
 
-            # Display at terminal what we are plotting (and saving)
-            savename = basename + '_' + str(a.iters[0]).zfill(8) + '_' + simple_label 
-            if not plottype == 'eq':
-                sampleval = samplevals_avail[isampleval]
-                savename += ('_' + samplelabel + samplefmt) %sampleval
-                
-            savename += '.png'
+    # make plot
+    fig, axs, fpar = make_figure(**kw_make_figure)
+    ax = axs[0, 0]
+    if plottype in ['moll', 'ortho']:
+        plotting_args = field, a.costheta, fig, ax
+    elif plottype == 'mer':
+        plotting_args = field, a.radius, a.costheta, fig, ax
+    elif plottype == 'eq':
+        plotting_args = field, a.radius, fig, ax
 
-            # make plot
-            fig, axs, fpar = make_figure(**kw_make_figure)
-            ax = axs[0, 0]
-            if plottype in ['moll', 'ortho']:
-                plotting_args = field, a.costheta, fig, ax
-            elif plottype == 'mer':
-                plotting_args = field, a.radius, a.costheta, fig, ax
-            elif plottype == 'eq':
-                plotting_args = field, a.radius, fig, ax
+    plotting_func(*plotting_args, **kw_plotting_func)
 
-            plotting_func(*plotting_args, **kw_plotting_func)
+    # make title
+    time_string = get_time_string(dirname, a.iters[0])
 
-            # make title
-            time_string = get_time_string(dirname, a.iters[0])
+    if plottype == 'moll':
+        location_and_perspective =\
+            (samplelabel + ' = ' + samplefmt) %sampleval +\
+                ('\nclon = ' + lon_fmt) %kw.clon
+    elif plottype == 'ortho':
+        location_and_perspective =\
+            (samplelabel + ' = ' + samplefmt) %sampleval +\
+                ('\nclon = ' + lon_fmt) %kw.clon +\
+                '   clat = ' + lat_format(kw.clat)
+    elif plottype == 'eq':
+        location_and_perspective = ('clon = ' + lon_fmt) %kw.clon 
+    elif plottype == 'mer':
+        location_and_perspective = (samplelabel + ' = ' + samplefmt) %sampleval
 
-            if plottype == 'moll':
-                location_and_perspective =\
-                    (samplelabel + ' = ' + samplefmt) %sampleval +\
-                        ('\nclon = ' + lon_fmt) %kw.clon
-            elif plottype == 'ortho':
-                location_and_perspective =\
-                    (samplelabel + ' = ' + samplefmt) %sampleval +\
-                        ('\nclon = ' + lon_fmt) %kw.clon +\
-                        '   clat = ' + lat_format(kw.clat)
-            elif plottype == 'eq':
-                location_and_perspective = ('clon = ' + lon_fmt) %kw.clon 
-            elif plottype == 'mer':
-                location_and_perspective = (samplelabel + ' = ' + samplefmt) %sampleval
+    title = dirname_stripped + '\n' +\
+            varlabel + '\n' +\
+            location_and_perspective + '\n' +\
+            time_string
+    ax.set_title(title, va='bottom', fontsize=default_titlesize)
 
-            title = dirname_stripped + '\n' +\
-                    varlabel + '\n' +\
-                    location_and_perspective + '\n' +\
-                    time_string
-            ax.set_title(title, va='bottom', fontsize=default_titlesize)
-
-            # save by default
-            if clas0['saveplot']:
-                print ("saving " + plotdir + savename)
-                plt.savefig(plotdir + savename, dpi=300)
-            # always show if nfigures is 1
-            if nfigures == 1 and clas0['showplot']:
-                print ("displaying " + plotdir + savename)
-                plt.show()   
-            plt.close()
+    # save by default
+    if clas0['saveplot']:
+        if rank == 0:
+            print ("rank = 0, saving " + plotdir + savename)
+        plt.savefig(plotdir + savename, dpi=300)
+    # always show if nfigures is 1
+    if nfigures == 1 and clas0['showplot']:
+        print ("displaying " + plotdir + savename)
+        plt.show()   
+    plt.close()
