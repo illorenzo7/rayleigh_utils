@@ -24,7 +24,6 @@ if rank == 0:
         print ('communication initialized')
     else:
         print ('processing in serial with 1 rank')
-    print(fill_str('processes are now prepping for plotting job'), end='')
 
 # additional modules needed
 import matplotlib.pyplot as plt
@@ -198,16 +197,9 @@ if rank == 0:
                                 'isampleval': isampleval,\
                                 'sampleval': sampleval}))
                         
-# checkpoint and time
-comm.Barrier()
-if rank == 0:
-    t2 = time.time()
-    print (format_time(t2 - t1))
-    print(fill_str('proc 0 distributing plotting instructions'), end='')
-    t1 = time.time()
-
 # distribute the plotting instructions
 if rank == 0:
+    print(fill_str('proc 0 distributing plotting instructions'), end='')
     # get the problem size
     nproc_min, nproc_max, n_per_proc_min, n_per_proc_max =\
             opt_workload(nfigures, nproc)
@@ -267,9 +259,9 @@ for ifigure in range(my_nfigures):
     # get plot name
     savename = basename + '_' + fname + '_' + simple_label 
     if not plottype == 'mer':
-        savename += ('clon' + lon_fmt) %kw.clon
+        savename += ('_clon' + lon_fmt) %kw.clon
     if plottype == 'ortho':
-        savename += ('ccolat' + lon_fmt) %(90.0 - kw.clat)
+        savename += ('_ccolat' + lon_fmt) %(90.0 - kw.clat)
     if not plottype == 'eq':
         savename += ('_' + samplelabel + samplefmt) %sampleval
     savename += '.png'
@@ -311,11 +303,20 @@ for ifigure in range(my_nfigures):
 
     # save by default
     if clas0['saveplot']:
-        if rank == 0:
-            print ("rank = 0, saving " + plotdir + savename)
         plt.savefig(plotdir + savename, dpi=300)
     # always show if nfigures is 1
     if nfigures == 1 and clas0['showplot']:
-        print ("displaying " + plotdir + savename)
         plt.show()   
     plt.close()
+    
+# Checkpoint and time
+comm.Barrier()
+if rank == 0:
+    t2 = time.time()
+    print('\n' + fill_str('plotting time'), end='')
+    print (format_time(t2 - t1))
+    t1 = time.time()
+
+if nfigures == 1 and clas0['showplot']:
+    print ("saved " + plotdir + savename)
+print (buff_line)
