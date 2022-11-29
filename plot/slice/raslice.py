@@ -84,6 +84,9 @@ if plottype == 'mer':
     samplelabel = 'lonval'
     samplefmt = lon_fmt
 
+# Rayleigh data dir
+radatadir = dirname + '/' + dataname + '/'
+
 # now we can update the default kwargs
 kwargs_default.update(plotting_func_kwargs_default)
 make_figure_kwargs_default.update(fig_dimensions)
@@ -91,6 +94,7 @@ kwargs_default.update(make_figure_kwargs_default)
 if rank == 0:
     find_bad_keys(kwargs_default, clas, 'plot/slice/raslice', justwarn=True)
 
+    basename = plottype
 # update relevant keyword args
 kw = update_dict(kwargs_default, clas)
 kw_plotting_func = update_dict(plotting_func_kwargs_default, clas)
@@ -99,11 +103,9 @@ kw_make_figure = update_dict(make_figure_kwargs_default, clas)
 # figure out all the different plots we need
 if rank == 0:
     # make plot directory if nonexistent
-    basename = plottype
     plotdir = my_mkdir(clas0['plotdir'] + basename + clas0['tag'] + '/')
 
     # get desired file names in datadir and their integer counterparts
-    radatadir = dirname + '/' + dataname + '/'
     clas_mod = dict({'iter': 'last'})
     clas_mod.update(clas)
     file_list, int_file_list, nfiles = get_file_lists(radatadir, clas_mod)
@@ -175,7 +177,7 @@ if rank == 0:
         print ("%ss = " %samplelabel + arr_to_str(kw.samplevals, samplefmt))
 
     # calculate total number of figures
-    nfigures = nclat*nclon*nsamplevals*nq**nfiles
+    nfigures = nclat*nclon*nsamplevals*nq*nfiles
     print ("nfigures =", nfigures)
     print (buff_line)
 
@@ -190,12 +192,12 @@ if rank == 0:
                             sampleval = 0. # (just a placeholder)
                         else:
                             sampleval = sliceinfo.samplevals[isampleval]
-                        plotting_instructions.append(dotdict({'fname': fname,\
-                                'varname': varname,\
-                                'clon': clon,\
-                                'clat': clat,\
-                                'isampleval': isampleval,\
-                                'sampleval': sampleval}))
+                        plotting_instructions.append([fname,\
+                                varname,\
+                                clon,\
+                                clat,\
+                                isampleval,\
+                                sampleval])
                         
 # distribute the plotting instructions
 if rank == 0:
@@ -218,7 +220,6 @@ if rank == 0:
 
         # get the file list portion for rank k
         my_instructions = plotting_instructions[istart:iend]
-
         # send  my_files, my_nfigures if nproc > 1
         if k >= 1:
             comm.send([my_instructions, my_nfigures], dest=k)
@@ -228,19 +229,14 @@ else: # recieve my_files, my_nfigures
 # now loop over and plot figures
 for ifigure in range(my_nfigures):
     # local instructions for this plot
-    inst = my_instructions[ifigure]
-    fname = inst.fname
-    varname = inst.varname
-    clon = inst.clon
-    clat = inst.clat
-    isampleval = inst.isampleval
-    sampleval = inst.sampleval
-
+    fname, varname, clon, clat, isampleval, sampleval =\
+            my_instructions[ifigure]
+            
     # get the time slice
-    a = reading_func(radatadir + inst.fname, '')
+    a = reading_func(radatadir + fname, '')
 
     # get the variable
-    vals = get_slice(a, inst.varname, dirname=dirname)
+    vals = get_slice(a, varname, dirname=dirname)
     basic = is_basic(varname)
     if basic:
         varlabel = get_label(varname)
