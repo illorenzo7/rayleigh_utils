@@ -75,8 +75,6 @@ plotdir = my_mkdir(clas0['plotdir'] + basename + clas0['tag'] + '/')
 
 # Get desired file names in datadir and their integer counterparts
 radatadir = dirname + '/' + dataname + '/'
-# by default get only last file
-args = np.array(['--iter', 'last'] + list(args))
 file_list, int_file_list, nfiles = get_file_lists(radatadir, args)
 
 # need one of these no matter what
