@@ -379,7 +379,7 @@ def get_file_lists_all(radatadir):
     
     return file_list, int_file_list, nfiles
 
-def get_file_lists(radatadir, args):
+def get_file_lists(radatadir, clas):
     # Get file names in datadir and their integer counterparts
     # (only the ones in the desired range determined by args)
     # all the "action" occurs in get_desired_range() function below
@@ -387,7 +387,7 @@ def get_file_lists(radatadir, args):
     # get all files
     file_list, int_file_list, nfiles = get_file_lists_all(radatadir)
     # get the desired range
-    index_first, index_last = get_desired_range(int_file_list, args)
+    index_first, index_last = get_desired_range(int_file_list, clas)
     # Remove parts of file lists we don't need
     file_list = file_list[index_first:index_last + 1]
     int_file_list = int_file_list[index_first:index_last + 1]
@@ -395,16 +395,15 @@ def get_file_lists(radatadir, args):
 
     # see if user wants to skip any files or get specific number 
     # (nfiles) in the range
-    nargs = len(args)
-    for i in range(nargs):
-        arg = args[i]
-        if arg == '--skip':
-            nskip = int(args[i+1])
+    for key, val in clas.items():
+        val = make_array(val)
+        if key == 'skip':
+            nskip = int(val[0])
             file_list = file_list[::skip]
             int_file_list = int_file_list[::skip]
             nfiles = len(int_file_list)
-        if arg == '--nfiles':
-            ndesiredfiles = int(args[i+1])
+        if key == 'nfiles':
+            ndesiredfiles = int(val[0])
             nskip = nfiles//ndesiredfiles
             file_list = file_list[::skip]
             int_file_list = int_file_list[::skip]
@@ -412,21 +411,22 @@ def get_file_lists(radatadir, args):
 
     return file_list, int_file_list, nfiles
 
-def get_desired_range(int_file_list, args):
+def get_desired_range(int_file_list, clas):
+    print (clas)
     # Get first and last index (within the int_file_list) associated with the desired range
-    nargs = len(args)
-    nfiles = len(int_file_list)
+
     # By default, the range will always be the last 100 files:
+    nfiles = len(int_file_list)
     index_first, index_last = nfiles - 100, nfiles - 1
 
     # user can modify this default in a number of ways
-    for i in range(nargs):
-        arg = args[i]
-        if arg in ['--range', '--centerrange', '--leftrange',\
-                '--rightrange', '--iter']: # first arg will be iter no.
+    for key, val in clas.items():
+        val = make_array(val)
+        if key in ['range', 'centerrange', 'leftrange',\
+                'rightrange', 'iter']: # first arg will be iter no.
             # 'first' means first available file.
             # 'last' means last available file.
-            desired_iter = args[i+1]
+            desired_iter = val[0]
             if desired_iter == 'first':
                 desired_iter = int_file_list[0]
             elif desired_iter == 'last':
@@ -434,15 +434,15 @@ def get_desired_range(int_file_list, args):
             else:
                 desired_iter = int(desired_iter)
             index = np.argmin(np.abs(int_file_list - desired_iter))
-        if arg in ['--centerrange', '--rightrange', '--leftrange']:
+        if key in ['centerrange', 'rightrange', 'leftrange']:
             # many options include an "ndatafiles" argument
-            ndatafiles = int(args[i+2])
-        if arg in ['--n', '--f']:
-            ndatafiles = int(args[i+1])
-        if arg == '--range': # average between two specific files
+            ndatafiles = int(val[1])
+        if key in ['n', 'f']:
+            ndatafiles = int(val[0])
+        if key == 'range': # average between two specific files
             index_first = index # first arg is first desired iter
             # also need last iter
-            desired_iter = args[i+2]
+            desired_iter = int(val[1])
             if desired_iter == 'first':
                 desired_iter = int_file_list[0]
             elif desired_iter == 'last':
@@ -450,31 +450,31 @@ def get_desired_range(int_file_list, args):
             else:
                 desired_iter = int(desired_iter)
             index_last = np.argmin(np.abs(int_file_list - desired_iter))
-        elif arg == '--centerrange': #range centered around specific file
+        if key == 'centerrange': #range centered around specific file
             if ndatafiles % 2 == 0: #ndatafiles is even
                 index_first = index - ndatafiles//2 + 1
                 index_last = index + ndatafiles//2
             else:  #ndatafiles is odd
                 index_first = index - ndatafiles//2
                 index_last = index + ndatafiles//2
-        elif arg == '--leftrange': # range with specific file first
+        if key == 'leftrange': # range with specific file first
             index_first = index
             index_last = index + ndatafiles - 1
-        elif arg == '--rightrange': # range with specific file last
+        if key == 'rightrange': # range with specific file last
             index_last = index
             index_first = index - ndatafiles + 1
-        elif arg == '--n': 
+        if key == 'n': 
             # range with certain no. files ending with the last
             index_last = nfiles - 1
             index_first = nfiles - ndatafiles
-        elif arg == '--f': 
+        if key == 'f': 
             # range with certain no. files starting with the first
             index_first = 0
             index_last = ndatafiles - 1
-        elif arg == '--all': # all files
+        if key == 'all': # all files
             index_first = 0
             index_last = nfiles - 1
-        elif arg == '--iter': # just get 1 iter
+        if key == 'iter': # just get 1 iter
             index_first = index_last = index
     # Check to see if either of the indices fall "out of bounds"
     # and if they do replace them with the first or last index

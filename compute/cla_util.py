@@ -128,12 +128,6 @@ def read_clas(args):
             nrvals = int(nrvals)
             clas['rvals'] = np.linspace(rbot, rtop, nrvals)
 
-        # specify a desired time
-        elif arg in ['--iter', '--prot', '--tdt', '--sec']:
-            t_loc = float(args[i+1])
-            di_trans = translate_times(t_loc, dirname, arg[2:])
-            clas['val_iter'] = di_trans['val_iter']
-        
         elif arg == '--latrange':
             latmin, latmax, nlatvals = read_cla_vals(args, i)
             nlatvals = int(nlatvals)

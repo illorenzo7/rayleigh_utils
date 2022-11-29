@@ -11,7 +11,7 @@ dirname = clas0.dirname
 dirname_stripped = strip_dirname(dirname)
 
 # SPECIFIC ARGS
-kwargs_default = dotdict(dict({'the_file': None, 'av': False, 'val_iter': int(1e9), 'type': 'moll'}))
+kwargs_default = dotdict(dict({'type': 'moll'}))
 kw = update_dict(kwargs_default, clas)
 
 if kw.type == 'moll':
