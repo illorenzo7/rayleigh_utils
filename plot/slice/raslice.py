@@ -55,8 +55,6 @@ if clas.type is None:
 else:
     plottype = clas.type
 
-print (buff_line)
-print ("plottype = " + plottype)
 if plottype == 'moll':
     fig_dimensions = moll_fig_dimensions
 if plottype == 'ortho':
@@ -93,6 +91,8 @@ kwargs_default.update(plotting_func_kwargs_default)
 make_figure_kwargs_default.update(fig_dimensions)
 kwargs_default.update(make_figure_kwargs_default)
 if rank == 0:
+    print (buff_line)
+    print ("plottype = " + plottype)
     find_bad_keys(kwargs_default, clas, 'plot/slice/raslice', justwarn=True)
 
 # update relevant keyword args
@@ -215,6 +215,13 @@ if rank == 0:
                                 isampleval,\
                                 sampleval])
 
+# Broadcast some meta data
+if rank == 0:
+    meta = [basename, plotdir]
+else:
+    meta = None
+basename, plotdir = comm.bcast(meta, root=0)
+
 # Checkpoint
 comm.Barrier()
 if rank == 0:
@@ -245,6 +252,14 @@ if rank == 0:
             comm.send([my_instructions, my_nfigures], dest=k)
 else: # recieve my_files, my_nfigures
     my_instructions, my_nfigures = comm.recv(source=0)
+
+# Checkpoint and time
+comm.Barrier()
+if rank == 0:
+    t2 = time.time()
+    print (format_time(t2 - t1))
+    print(fill_str('beginning the plotting job'))
+    t1 = time.time()
 
 # now loop over and plot figures
 for ifigure in range(my_nfigures):
@@ -339,4 +354,4 @@ if rank == 0:
     print (format_time(t2 - t1))
     print(make_bold(fill_str('total time')), end='')
     print (make_bold(format_time(t2 - t1_glob)))
-print (buff_line)
+    print (buff_line)
