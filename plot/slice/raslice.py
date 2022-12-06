@@ -24,7 +24,7 @@ if rank == 0:
         print ('communication initialized')
     else:
         print ('processing in serial with 1 rank')
-    print(fill_str('proc 0 preparing problem size'), end='')
+    print(fill_str('proc 0 preparing problem size'))
 
 # additional modules needed
 import matplotlib.pyplot as plt
@@ -167,28 +167,33 @@ if rank == 0:
         %(nfiles, dataname, file_list[0], file_list[-1]))
 
     # print varnames
+    print (buff_line)
     print (("plotting %i variables:\nvarnames = " %nq) +\
             arr_to_str(kw.varnames, "%s"))
 
     # (possibly) clons and clats
     if not plottype == 'mer':
         # print clons
+        print (buff_line)
         print (("plotting %i central longitudes:\nclons = " %nclon) +\
                 arr_to_str(kw.clons, lon_fmt))
     if plottype == 'ortho':
         # print clats
+        print (buff_line)
         print (("plotting %i central latitudes:\nclats = " %nclat) +\
                 arr_to_str(kw.clats, lat_fmt))
 
     # (possibly) sampling locations
     if not plottype == 'eq':
+        print (buff_line)
         print ("plotting %i sampling locations:" %nsamplevals)
         print ("i%ss = " %samplelabel + arr_to_str(kw.isamplevals, '%i'))
         print ("%ss = " %samplelabel + arr_to_str(kw.samplevals, samplefmt))
 
     # calculate total number of figures
     nfigures = nclat*nclon*nsamplevals*nq*nfiles
-    print ("nfigures = %i x %i x %i x %i x %i = %i",\
+    print (buff_line)
+    print ("nfigures = %i x %i x %i x %i x %i = %i"\
             %(nclat, nclon, nsamplevals, nq, nfiles, nfigures))
     print (buff_line)
 
@@ -210,17 +215,13 @@ if rank == 0:
                                 isampleval,\
                                 sampleval])
 
-# Checkpoint and time
+# Checkpoint
 comm.Barrier()
 if rank == 0:
-    t2 = time.time()
-    print (format_time(t2 - t1))
     print(fill_str('proc 0 distributing the plotting instructions'), end='')
-    t1 = time.time()
                         
 # distribute the plotting instructions
 if rank == 0:
-    print(fill_str('proc 0 distributing plotting instructions'), end='')
     # get the problem size
     nproc_min, nproc_max, n_per_proc_min, n_per_proc_max =\
             opt_workload(nfigures, nproc)
@@ -320,9 +321,9 @@ for ifigure in range(my_nfigures):
     if clas0['saveplot']:
         plt.savefig(plotdir + savename, dpi=300)
     if rank == 0:
-        pcnt_done = i/my_nfigures*100.
+        pcnt_done = (ifigure+1)/my_nfigures*100.
         # print what we saved and how far along we are
-        print(fill_str("saved " + plotdir + savename) + \
+        print(fill_str("saved " + plotdir + savename) + '\n' +\
                 ('rank 0 %5.1f%% done' %pcnt_done), end='\r')
         # always show if nfigures is 1
         if nfigures == 1 and clas0['showplot']:
