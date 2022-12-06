@@ -122,13 +122,14 @@ def fill_str(st, lenfill=lenfill, charfill=charfill):
     return st + charfill*nfill
 
 lon_fmt = '%05.1f'
+lat_fmt = '%+05.1f'
 
-def lat_format(latval):
-    if latval < 0:
-        hemisphere = 'S'
-    else:
-        hemisphere = 'n'
-    return hemisphere + '%03.1f' %np.abs(latval)
+#def lat_format(latval):
+#    if latval < 0:
+#        hemisphere = 'S'
+#    else:
+#        hemisphere = 'n'
+#    return hemisphere + '%03.1f' %np.abs(latval)
 
 def array_of_strings(arr):
     li = []

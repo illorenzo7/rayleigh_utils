@@ -24,6 +24,7 @@ if rank == 0:
         print ('communication initialized')
     else:
         print ('processing in serial with 1 rank')
+    print(fill_str('proc 0 preparing problem size'), end='')
 
 # additional modules needed
 import matplotlib.pyplot as plt
@@ -130,7 +131,7 @@ if rank == 0:
 
     # get desired varnames
     sliceinfo = get_sliceinfo(dirname, dataname)
-    if kw.varnames == 'all':
+    if isall(kw.varnames):
         kw.varnames = array_of_strings(sliceinfo.qv)
     # no matter what, this needs to be an array of strings string
     kw.varnames = array_of_strings(make_array(kw.varnames))
@@ -145,7 +146,7 @@ if rank == 0:
     # get the samplevals we want
     if not kw.samplevals is None: # samplevals have been set directly
         # need the available sampling locations
-        if kw.samplevals == 'all':
+        if isall(kw.samplevals):
             kw.isamplevals = np.arange(sliceinfo.nsamplevals)
         else:
             kw.samplevals = make_array(kw.samplevals)
@@ -155,33 +156,40 @@ if rank == 0:
     if plottype == 'eq':
         kw.samplevals = np.array([0.0])
     else:
-        kw.samplevals = sliceinfo.samplevals[kw.isamplevals]
+        kw.samplevals = make_array(sliceinfo.samplevals[kw.isamplevals])
     nsamplevals = len(kw.samplevals)
 
     # say what we are plotting
     print (buff_line)
 
     # print file list
-    print ('plotting %i %s files: %s through %s'\
+    print ('plotting %i %s files:\n%s through %s'\
         %(nfiles, dataname, file_list[0], file_list[-1]))
 
     # print varnames
-    print ("varnames =", kw.varnames)
+    print (("plotting %i variables:\nvarnames = " %nq) +\
+            arr_to_str(kw.varnames, "%s"))
 
     # (possibly) clons and clats
     if not plottype == 'mer':
-        print ("clons =", kw.clons)
+        # print clons
+        print (("plotting %i central longitudes:\nclons = " %nclon) +\
+                arr_to_str(kw.clons, lon_fmt))
     if plottype == 'ortho':
-        print ("clats =", kw.clats)
+        # print clats
+        print (("plotting %i central latitudes:\nclats = " %nclat) +\
+                arr_to_str(kw.clats, lat_fmt))
 
     # (possibly) sampling locations
     if not plottype == 'eq':
+        print ("plotting %i sampling locations:" %nsamplevals)
         print ("i%ss = " %samplelabel + arr_to_str(kw.isamplevals, '%i'))
         print ("%ss = " %samplelabel + arr_to_str(kw.samplevals, samplefmt))
 
     # calculate total number of figures
     nfigures = nclat*nclon*nsamplevals*nq*nfiles
-    print ("nfigures =", nfigures)
+    print ("nfigures = %i x %i x %i x %i x %i = %i",\
+            %(nclat, nclon, nsamplevals, nq, nfiles, nfigures))
     print (buff_line)
 
     # prepare the epic loop!
@@ -201,6 +209,14 @@ if rank == 0:
                                 clat,\
                                 isampleval,\
                                 sampleval])
+
+# Checkpoint and time
+comm.Barrier()
+if rank == 0:
+    t2 = time.time()
+    print (format_time(t2 - t1))
+    print(fill_str('proc 0 distributing the plotting instructions'), end='')
+    t1 = time.time()
                         
 # distribute the plotting instructions
 if rank == 0:
@@ -303,19 +319,23 @@ for ifigure in range(my_nfigures):
     # save by default
     if clas0['saveplot']:
         plt.savefig(plotdir + savename, dpi=300)
-    # always show if nfigures is 1
-    if nfigures == 1 and clas0['showplot']:
-        plt.show()   
+    if rank == 0:
+        pcnt_done = i/my_nfigures*100.
+        # print what we saved and how far along we are
+        print(fill_str("saved " + plotdir + savename) + \
+                ('rank 0 %5.1f%% done' %pcnt_done), end='\r')
+        # always show if nfigures is 1
+        if nfigures == 1 and clas0['showplot']:
+            plt.show()   
+    # close figure at end of loop
     plt.close()
-    
+
 # Checkpoint and time
 comm.Barrier()
 if rank == 0:
     t2 = time.time()
     print('\n' + fill_str('plotting time'), end='')
     print (format_time(t2 - t1))
-    t1 = time.time()
-
-if nfigures == 1 and clas0['showplot']:
-    print ("saved " + plotdir + savename)
+    print(make_bold(fill_str('total time')), end='')
+    print (make_bold(format_time(t2 - t1_glob)))
 print (buff_line)
