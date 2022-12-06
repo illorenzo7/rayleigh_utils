@@ -94,7 +94,6 @@ kwargs_default.update(make_figure_kwargs_default)
 if rank == 0:
     find_bad_keys(kwargs_default, clas, 'plot/slice/raslice', justwarn=True)
 
-    basename = plottype
 # update relevant keyword args
 kw = update_dict(kwargs_default, clas)
 kw_plotting_func = update_dict(plotting_func_kwargs_default, clas)
@@ -103,14 +102,17 @@ kw_make_figure = update_dict(make_figure_kwargs_default, clas)
 # figure out all the different plots we need
 if rank == 0:
     # make plot directory if nonexistent
+    basename = plottype
     plotdir = my_mkdir(clas0['plotdir'] + basename + clas0['tag'] + '/')
 
     # get desired file names in datadir and their integer counterparts
+    # by default, read in last available file
     clas_mod = dict({'iter': 'last'})
     clas_mod.update(clas)
     file_list, int_file_list, nfiles = get_file_lists(radatadir, clas_mod)
 
-    # figure out with clons and clats we need
+    # figure out what clons and clats we need
+    kw.clons = make_array(kw.clons)
     if not kw.clonrange is None:
         clonmin, clonmax, nclon = kw.clonrange
         kw.clons = np.linspace(clonmin, clonmax, nclon)
@@ -118,6 +120,7 @@ if rank == 0:
         kw.clons = np.array([0.0])
     nclon = len(kw.clons)
 
+    kw.clats = make_array(kw.clats)
     if not kw.clatrange is None:
         clatmin, clatmax, nclat = kw.clatrange
         kw.clats = np.linspace(clatmin, clatmax, nclat)

@@ -121,26 +121,6 @@ def fill_str(st, lenfill=lenfill, charfill=charfill):
     nfill = lenfill - len_st
     return st + charfill*nfill
 
-def make_array(arr, tolist=False, length=None): 
-    # arr is scalar, list, or array
-    # convert everything to a list
-    if arr is None:
-        return None
-    elif np.isscalar(arr):
-        out = [arr]
-    else:
-        out = list(arr)
-
-    # if length was specified (only good if OG length was 1
-    # make the list that length
-    if not length is None and len(out) == 1:
-        out = out*length
-
-    if tolist:
-        return out
-    else:
-        return (np.array(out))
-
 lon_fmt = '%05.1f'
 
 def lat_format(latval):
@@ -162,6 +142,37 @@ def arr_to_str(a, fmt):
         st += (fmt + ' ') %ele
     return '[' + st[:-1] + ']'
 
+# basic array utilities
+def make_array(arr, tolist=False, length=None): 
+    # arr is scalar, list, or array
+    # convert everything to a list
+    if arr is None:
+        return None
+    elif np.isscalar(arr):
+        out = [arr]
+    else:
+        out = list(arr)
+
+    # if length was specified (only good if OG length was 1
+    # make the list that length
+    if not length is None and len(out) == 1:
+        out = out*length
+
+    if tolist:
+        return out
+    else:
+        return np.array(out)
+
+def isall(arg):
+    if np.isscalar(arg):
+        if arg == 'all':
+            return True
+        else:
+            return False
+    else:
+        return False
+
+# dictionary utils
 def update_dict(dict_orig, dict_update):
     dict_out = {**dict_orig} # start with original dict
     for key, val in dict_update.items():
