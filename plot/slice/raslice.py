@@ -290,9 +290,9 @@ for ifigure in range(my_nfigures):
     # get plot name
     savename = basename + '_' + fname + '_' + simple_label 
     if not plottype == 'mer':
-        savename += ('_clon' + lon_fmt) %kw.clon
+        savename += ('_clon' + lon_fmt) %clon
     if plottype == 'ortho':
-        savename += ('_ccolat' + lon_fmt) %(90.0 - kw.clat)
+        savename += ('_ccolat' + lon_fmt) %(90.0 - clat)
     if not plottype == 'eq':
         savename += ('_' + samplelabel + samplefmt) %sampleval
     savename += '.png'
@@ -322,14 +322,14 @@ for ifigure in range(my_nfigures):
     if plottype == 'moll':
         location_and_perspective =\
             (samplelabel + ' = ' + samplefmt) %sampleval +\
-                ('\n' + r'$\phi_0$' + ' = ' + lon_fmt_tex) %kw.clon
+                ('\n' + r'$\phi_0$' + ' = ' + lon_fmt_tex) %clon
     elif plottype == 'ortho':
         location_and_perspective =\
             (samplelabel + ' = ' + samplefmt) %sampleval +\
-                ('\n' + r'$\phi_0$' + ' = ' + lon_fmt_tex) %kw.clon +\
-                ('    ' + r'$\lambda_0$' + ' = ' + lat_fmt_tex) %kw.clat
+                ('\n' + r'$\phi_0$' + ' = ' + lon_fmt_tex) %clon +\
+                ('    ' + r'$\lambda_0$' + ' = ' + lat_fmt_tex) %clat
     elif plottype == 'eq':
-        location_and_perspective = r'$\phi_0$' + ' = ' + lon_fmt_tex) %kw.clon
+        location_and_perspective = (r'$\phi_0$' + ' = ' + lon_fmt_tex) %clon
     elif plottype == 'mer':
         location_and_perspective = (samplelabel + ' = ' + samplefmt) %sampleval
 
