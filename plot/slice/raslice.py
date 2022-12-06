@@ -266,7 +266,9 @@ for ifigure in range(my_nfigures):
     # local instructions for this plot
     fname, varname, clon, clat, isampleval, sampleval =\
             my_instructions[ifigure]
-            
+    kw_plotting_func.clon = clon        
+    kw_plotting_func.clat = clat
+
     # get the time slice
     a = reading_func(radatadir + fname, '')
 
