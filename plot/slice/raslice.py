@@ -204,8 +204,6 @@ if rank == 0:
             for clon in kw.clons:
                 for clat in kw.clats:
                     for isampleval in kw.isamplevals:
-                               
-
                         if plottype == 'eq':
                             sampleval = 0. # (just a placeholder)
                         else:
@@ -324,14 +322,14 @@ for ifigure in range(my_nfigures):
     if plottype == 'moll':
         location_and_perspective =\
             (samplelabel + ' = ' + samplefmt) %sampleval +\
-                ('\nclon = ' + lon_fmt) %kw.clon
+                ('\n' + r'$\phi_0$' + ' = ' + lon_fmt_tex) %kw.clon
     elif plottype == 'ortho':
         location_and_perspective =\
             (samplelabel + ' = ' + samplefmt) %sampleval +\
-                ('\nclon = ' + lon_fmt) %kw.clon +\
-                '   clat = ' + lat_format(kw.clat)
+                ('\n' + r'$\phi_0$' + ' = ' + lon_fmt_tex) %kw.clon +\
+                ('    ' + r'$\lambda_0$' + ' = ' + lat_fmt_tex) %kw.clat
     elif plottype == 'eq':
-        location_and_perspective = ('clon = ' + lon_fmt) %kw.clon 
+        location_and_perspective = r'$\phi_0$' + ' = ' + lon_fmt_tex) %kw.clon
     elif plottype == 'mer':
         location_and_perspective = (samplelabel + ' = ' + samplefmt) %sampleval
 

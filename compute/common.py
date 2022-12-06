@@ -124,6 +124,9 @@ def fill_str(st, lenfill=lenfill, charfill=charfill):
 lon_fmt = '%05.1f'
 lat_fmt = '%+05.1f'
 
+lon_fmt_tex = '%05.1f' + r'$^\circ$'
+lat_fmt_tex = '%+05.1f' + r'$^\circ$'
+
 #def lat_format(latval):
 #    if latval < 0:
 #        hemisphere = 'S'
