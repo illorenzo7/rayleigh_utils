@@ -47,7 +47,7 @@ dirname = clas0.dirname
 dirname_stripped = strip_dirname(dirname)
 
 # SPECIFIC ARGS
-kwargs_default = dotdict(dict({'type': None, 'isamplevals': 0, 'samplevals': None, 'varnames': 'vr', 'clons': None, 'clats': None, 'clonrange': None, 'clatrange': None}))
+kwargs_default = dotdict(dict({'type': None, 'isamplevals': 0, 'samplevals': None, 'varnames': 'vr', 'clons': None, 'clats': None, 'clonrange': None, 'clatrange': None, 't0': False}))
 
 # this guy need to update right away to choose fig dimensions
 if clas.type is None:
@@ -204,6 +204,8 @@ if rank == 0:
             for clon in kw.clons:
                 for clat in kw.clats:
                     for isampleval in kw.isamplevals:
+                               
+
                         if plottype == 'eq':
                             sampleval = 0. # (just a placeholder)
                         else:
@@ -310,7 +312,14 @@ for ifigure in range(my_nfigures):
     plotting_func(*plotting_args, **kw_plotting_func)
 
     # make title
-    time_string = get_time_string(dirname, a.iters[0])
+    if kw.t0:
+        iter0 = int(fname)
+        floatwidth = 6
+    else:
+        iter0 = None
+        floatwidth = None
+
+    time_string = get_time_string(dirname, a.iters[0], iter0=iter0, floatwidth=floatwidth)
 
     if plottype == 'moll':
         location_and_perspective =\

@@ -1148,20 +1148,36 @@ def translate_times(time, dirname, translate_from='iter'):
         di.val_prot = times[ind]/eq.prot
     return di
 
-def get_time_string(dirname, iter1, iter2=None, oneline=False):
+def get_time_string(dirname, iter1, iter2=None, oneline=False, iter0=None, floatwidth=None, floatprec=None):
+    # see if user wants to subtract off base time
+    if not iter0 is None:
+        t0 = translate_times(iter0, dirname, translate_from='iter')['val_sec']
+    else:
+        t0 = None
+
     # Get the time range in sec
     t1 = translate_times(iter1, dirname, translate_from='iter')['val_sec']
+    if not t0 is None:
+        t1 -= t0
     if not iter2 == None:
         t2 = translate_times(iter2, dirname, translate_from='iter')['val_sec']
+        if not t0 is None:
+            t2 -= t0
 
     # Get the baseline time unit
     time_unit, time_label, rotation, simple_label = get_time_unit(dirname)
 
     # set the averaging-interval label
-    if rotation:
-        fmt = '%.0f' # measure rotations
+    if floatprec is None:
+        if rotation:
+            floatprec = 2
+        else:
+            floatprec = 4
+
+    if floatwidth is None:
+        fmt = '%.' + str(floatprec) + 'f' # measure rotations
     else:
-        fmt = '%.3f'
+        fmt = '%0' + str(floatwidth) + '.' + str(floatprec) + 'f'
 
     if not iter2 is None:
         if oneline:
