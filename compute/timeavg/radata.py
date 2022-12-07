@@ -104,7 +104,7 @@ if rank == 0:
     radatadir = dirname + '/' + dataname + '/'
 
     # Get desired file names in datadir and their integer counterparts
-    file_list, int_file_list, nfiles = get_file_lists(radatadir, args)
+    file_list, int_file_list, nfiles = get_file_lists(radatadir, clas)
     weight = 1.0/nfiles # this is the averaging weight
 
     # Get the problem size
