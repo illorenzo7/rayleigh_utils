@@ -141,4 +141,3 @@ def quantities_available(quantities):
     for q in quantities:
         available.append(quantity_available(q))
     return available
-
