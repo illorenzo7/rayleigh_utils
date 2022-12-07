@@ -47,7 +47,7 @@ dirname = clas0.dirname
 dirname_stripped = strip_dirname(dirname)
 
 # SPECIFIC ARGS
-kwargs_default = dotdict(dict({'type': None, 'isamplevals': 0, 'samplevals': None, 'varnames': 'vr', 'clons': None, 'clats': None, 'clonrange': None, 'clatrange': None, 't0': False}))
+kwargs_default = dotdict(dict({'type': None, 'isamplevals': 0, 'samplevals': None, 'varnames': 'vr', 'clons': None, 'clats': None, 'clonrange': None, 'clatrange': None, 't0': False, 'movie': False, 'moviesampleval': False, 'movieclon': False, 'movieclat': False, 'shrink': False}))
 
 # this guy need to update right away to choose fig dimensions
 if clas.type is None:
@@ -102,10 +102,6 @@ kw_make_figure = update_dict(make_figure_kwargs_default, clas)
 
 # figure out all the different plots we need
 if rank == 0:
-    # make plot directory if nonexistent
-    basename = plottype
-    plotdir = my_mkdir(clas0['plotdir'] + basename + clas0['tag'] + '/')
-
     # get desired file names in datadir and their integer counterparts
     # by default, read in last available file
     clas_mod = dict({'iter': 'last'})
@@ -201,26 +197,75 @@ if rank == 0:
     plotting_instructions = []
     for fname in file_list:
         for varname in kw.varnames:
+            basic = is_basic(varname)
+            if basic:
+                varlabel = get_label(varname)
+                simple_label = varname
+            else:
+                varlabel, simple_label = get_label(varname)
             for clon in kw.clons:
                 for clat in kw.clats:
                     for isampleval in kw.isamplevals:
+                        # get the sample val
                         if plottype == 'eq':
                             sampleval = 0. # (just a placeholder)
                         else:
                             sampleval = sliceinfo.samplevals[isampleval]
+
+                        # now we're in the big loop
+                        # get plot directory and image name to save the file
+                        if kw.movie:
+                            plotdir = plottype + '_movie_time/' + simple_label
+                            if not plottype == 'mer':
+                                plotdir += ('_clon' + lon_fmt) %clon
+                            if plottype == 'ortho':
+                                plotdir += ('_ccolat' + lon_fmt) %(90.0 - clat)
+                            if not plottype == 'eq':
+                                plotdir += ('_' + samplelabel + samplefmt) %sampleval
+                            savename = 'img%04i.png' %count
+                        elif kw.moviesampleval:
+                            plotdir = plottype + '_movie_' + sample_label + '/' + fname + '_' + simple_label
+                            if not plottype == 'mer':
+                                plotdir += ('_clon' + lon_fmt) %clon
+                            if plottype == 'ortho':
+                                plotdir += ('_ccolat' + lon_fmt) %(90.0 - clat)
+                            savename = 'img%04i.png' %count
+                        elif kw.movieclon:
+                            plotdir = plottype + '_movie_clon/' + fname + '_' + simple_label
+                            if plottype == 'ortho':
+                                plotdir += ('_ccolat' + lon_fmt) %(90.0 - clat)
+                            if not plottype == 'eq':
+                                plotdir += ('_' + samplelabel + samplefmt) %sampleval
+                        elif kw.movieclat:
+                            plotdir = plottype + '_movie_clat/' + fname + '_' + simple_label
+                            if not plottype == 'mer':
+                                plotdir += ('_clon' + lon_fmt) %clon
+                            if not plottype == 'eq':
+                                plotdir += ('_' + samplelabel + samplefmt) %sampleval
+                            savename = 'img%04i.png' %count
+                        else:
+                            plotdir = clas0['plotdir'] + plottype + clas0['tag']
+                            savename = plottype + '_' + fname + '_' + simple_label 
+                            if not plottype == 'mer':
+                                savename += ('_clon' + lon_fmt) %clon
+                            if plottype == 'ortho':
+                                savename += ('_ccolat' + lon_fmt) %(90.0 - clat)
+                            if not plottype == 'eq':
+                                savename += ('_' + samplelabel + samplefmt) %sampleval
+                            savename += '.png'
+
+                        savefile = plotdir + '/' + savename
+                        plotdir = my_mkdir(plotdir)
+
                         plotting_instructions.append([fname,\
                                 varname,\
                                 clon,\
                                 clat,\
                                 isampleval,\
-                                sampleval])
+                                sampleval,\
+                                savefile,\
+                                varlabel])
 
-# Broadcast some meta data
-if rank == 0:
-    meta = [basename, plotdir]
-else:
-    meta = None
-basename, plotdir = comm.bcast(meta, root=0)
 
 # Checkpoint
 comm.Barrier()
@@ -264,7 +309,7 @@ if rank == 0:
 # now loop over and plot figures
 for ifigure in range(my_nfigures):
     # local instructions for this plot
-    fname, varname, clon, clat, isampleval, sampleval =\
+    fname, varname, clon, clat, isampleval, sampleval, savefile, varlabel =\
             my_instructions[ifigure]
     kw_plotting_func.clon = clon        
     kw_plotting_func.clat = clat
@@ -274,12 +319,6 @@ for ifigure in range(my_nfigures):
 
     # get the variable
     vals = get_slice(a, varname, dirname=dirname)
-    basic = is_basic(varname)
-    if basic:
-        varlabel = get_label(varname)
-        simple_label = varname
-    else:
-        varlabel, simple_label = get_label(varname)
 
     # get sample location
     if dataname == 'Shell_Slices':
@@ -288,16 +327,6 @@ for ifigure in range(my_nfigures):
         field = vals[isampleval, :, :]
     else: # equatorial slices
         field = vals
-
-    # get plot name
-    savename = basename + '_' + fname + '_' + simple_label 
-    if not plottype == 'mer':
-        savename += ('_clon' + lon_fmt) %clon
-    if plottype == 'ortho':
-        savename += ('_ccolat' + lon_fmt) %(90.0 - clat)
-    if not plottype == 'eq':
-        savename += ('_' + samplelabel + samplefmt) %sampleval
-    savename += '.png'
 
     # make plot
     fig, axs, fpar = make_figure(**kw_make_figure)
@@ -343,11 +372,11 @@ for ifigure in range(my_nfigures):
 
     # save by default
     if clas0['saveplot']:
-        plt.savefig(plotdir + savename, dpi=300)
+        plt.savefig(savefile, dpi=300)
     if rank == 0:
         pcnt_done = (ifigure+1)/my_nfigures*100.
         # print what we saved and how far along we are
-        print(fill_str("saved " + plotdir + savename) + '\n' +\
+        print(fill_str("saved " + savefile) + '\n' +\
                 ('rank 0 %5.1f%% done' %pcnt_done), end='\r')
         # always show if nfigures is 1
         if nfigures == 1 and clas0['showplot']:
