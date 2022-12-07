@@ -195,7 +195,12 @@ if rank == 0:
 
     # prepare the epic loop!
     plotting_instructions = []
+    if kw.movie:
+        count = 0
     for fname in file_list:
+        if kw.movie:
+            count += 1
+
         for varname in kw.varnames:
             basic = is_basic(varname)
             if basic:
@@ -203,9 +208,24 @@ if rank == 0:
                 simple_label = varname
             else:
                 varlabel, simple_label = get_label(varname)
+
+            if kw.movieclon:
+                count = 0
             for clon in kw.clons:
+                if kw.movieclon:
+                    count += 1
+
+                if kw.movieclat:
+                    count = 0
                 for clat in kw.clats:
+                    if kw.movieclat:
+                        count += 1
+
+                    if kw.moviesampleval:
+                        count = 0
                     for isampleval in kw.isamplevals:
+                        if kw.moviesampleval:
+                            count += 1
                         # get the sample val
                         if plottype == 'eq':
                             sampleval = 0. # (just a placeholder)
