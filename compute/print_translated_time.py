@@ -14,15 +14,14 @@ args = sys.argv
 clas0, clas = read_clas(args)
 dirname = clas0['dirname']
 rotation = clas0.rotation
-val_iter = clas['val_iter']
-di = translate_times(val_iter, dirname)
 
-val_iter = di['val_iter']
-val_unit = val_tdt = di['val_tdt']
-label = 'TDTs'
-val_sec = di['val_sec']
-if rotation:
-    val_unit = di.val_prot
-    label = 'rotations'
+rotation = clas0.rotation
 
-print ('%08i iter =\n%.3f %s' %(val_iter, val_unit, label))
+# only need one clas here (iter, prot, tdt, sec)
+for key, val in clas.items():
+    translate_from = key
+    tval = val
+
+di = translate_times(tval, dirname, translate_from=translate_from)
+for key, val in di.items():
+    print ("%8s = %1.3e" %(key,val))

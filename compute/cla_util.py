@@ -1,6 +1,8 @@
 # Routines to deal with command-line arguments (CLAs)
 # Created: 04/17/2021
 
+import sys, os
+sys.path.append(os.environ['raco'] + '/quantities_util')
 import numpy as np
 from common import *
 from varprops import *
