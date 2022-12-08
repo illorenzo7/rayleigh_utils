@@ -42,30 +42,9 @@ char = '.'
 t1_glob = time.time()
 t1 = t1_glob + 0.0
 
-if radtype == 'azav':
-    reading_func = AZ_Avgs
-    dataname = 'AZ_Avgs'
-if radtype == 'shav':
-    reading_func = Shell_Avgs
-    dataname = 'Shell_Avgs'
-if radtype == 'gav':
-    reading_func = G_Avgs
-    dataname = 'G_Avgs'
-if radtype == 'spec':
-    reading_func = Shell_Spectra
-    dataname = 'Shell_Spectra'
-if radtype == 'specalt':
-    reading_func = rdalt.Shell_Spectra
-    dataname = 'Shell_Spectra'
-if radtype == 'sslice':
-    reading_func = Shell_Slices
-    dataname = 'Shell_Slices'
-if radtype == 'merslice':
-    reading_func = Meridional_Slices
-    dataname = 'Meridional_Slices'
-if radtype == 'eqslice':
-    reading_func = Equatorial_Slices
-    dataname = 'Equatorial_Slices'
+# get reading function and dataname from the di_radtypes container
+reading_func = di_radtypes[radtype].reading_func
+dataname = di_radtypes[radtype].dataname
 
 # Get the Rayleigh data directory
 radatadir = dirname + '/' + dataname + '/'
