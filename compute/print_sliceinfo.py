@@ -10,19 +10,20 @@ clas0, clas = read_clas(args)
 dirname = clas0.dirname
 dirname_stripped = strip_dirname(dirname)
 
-# SPECIFIC ARGS
+# overwrite defaults
 kwargs_default = dotdict({'radtype': 'sslice'})
 kw = update_dict(kwargs_default, clas)
 radtype = kw.radtype
 
+# get the data directory
+datadir = dirname + '/data/'
+dataname = di_radtypes[radtype].dataname
+radatadir = dirname + '/' + dataname
+
 if radtype == 'sslice':
-    dataname = 'Shell_Slices'
     samplelabel = 'rvals'
 if radtype == 'merslice':
-    dataname = 'Meridional_Slices'
     samplelabel = 'lonvals'
-if radtype == 'eqslice':
-    dataname = 'Equatorial_Slices'
 
 # state what we are about to print
 print (buff_line)
