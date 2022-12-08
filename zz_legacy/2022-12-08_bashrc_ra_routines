@@ -1,0 +1,139 @@
+#!/bin/bash
+# RAYLEIGH COMPUTING SHORTCUTS
+
+# state what's going on
+echo $bufferstring
+echo "Executing $envdir/bashrc_ra_routines"
+
+# non-parallel routines
+alias gi="python $raco/grid_info.py"
+alias qi="python $raco/quantity_index.py"
+alias tachrefquart="python $raco/reference_state/generate_CZ_RZ_reference-quart.py"
+alias tachreftanh="python $raco/reference_state/generate_CZ_RZ_reference-tanh.py"
+alias heatingczonly="python $raco/reference_state/heating_CZ_only.py"
+alias heatingczrz="python $raco/reference_state/heating_CZ_RZ-tanh.py"
+alias outerdsdr="python $raco/reference_state/outer_dsdr.py"
+alias ttrans="python $raco/print_translated_times.py"
+alias simt="python $raco/simtime.py"
+alias irate="python $raco/iter_rate.py"
+alias nodestats="python $raco/nodestats.py"
+
+# TIMEAVG routines # parallelized ------------------------ 
+alias tav="$ppc $raco/timeavg/radata.py"
+alias indspecav="$ppc $raco/timeavg/induct_spec.py"
+alias indspecavt="$ppc $raco/timeavg/induct_spec_theta.py"
+alias magtorque="$ppc $raco/timeavg/mag_torque.py"
+alias indalt="$ppc $raco/timeavg/induct_alt.py"
+alias indaltnum="$ppc $raco/timeavg/induct_alt_num.py"
+alias vxb="$ppc $raco/timeavg/vcrossb.py"
+alias bcor="$ppc $raco/timeavg/bcor.py"
+alias meprod="$ppc $raco/timeavg/me_prod.py"
+alias meprodshear="$ppc $raco/timeavg/me_prod_shear.py"
+alias meprodadvec="$ppc $raco/timeavg/me_prod_advec.py"
+alias meprodmean="$ppc $raco/timeavg/me_prod_mean.py"
+alias meprodt="$ppc $raco/timeavg/me_prod_theta.py"
+alias ferraro="$ppc $raco/timeavg/ferraro.py"
+alias findcorrupt="$ppc $raco/findcorrupt.py"
+
+# helper (non-parallel) -------------------------------
+alias tavjoin="python $raco/timeavg/timeavg_join.py"
+alias ttrjoin="python $raco/timetrace/timetrace_join.py"
+alias timeread="python $raco/timeread.py"
+alias getsliceinfo="python $raco/get_sliceinfo.py"
+alias qgroup="python $raco/print_qgroup.py"
+alias printnumbersinput="python $raco/print_numbers_input.py"
+alias printnumbersoutput="python $raco/print_numbers_output.py"
+
+# TIMETRACE routines
+# parallelized ------------------------
+alias gtr="$ppc $raco/timetrace/G_Avgs_quad.py"
+alias poynt="$ppc $raco/timetrace/poynt.py"
+alias ty="$ppc $raco/timetrace/timey.py"
+alias tlon="$ppc $raco/timetrace/timelon.py" 
+alias tspec="$ppc $raco/timetrace/tspec.py"
+alias tmspec="$ppc $raco/timetrace/tmspec.py"
+alias mtrace="$ppc $raco/timetrace/mtrace.py"
+alias mtracetotmspec="python $raco/timetrace/mtrace_to_tmspec.py"
+alias mtracetomtimerad="python $raco/timetrace/mtrace_to_mtimerad.py"
+alias mtracetotmspecemf="python $raco/timetrace/mtrace_to_tmspec_emf.py"
+alias mtraceemf="$ppc $raco/timetrace/mtrace_emf.py"
+alias merty="$ppc $raco/timetrace/mertimey.py"
+
+# PLOTTING routines (parallelized)
+alias dramommc="$ppc $rapl/azav/dr_amom_mc_times_sample.py"
+alias torquetimes="$ppc $rapl/azav/torque_times_sample.py"
+alias molltimes="$ppc $rapl/sslice/moll_times_sample.py"
+
+# RAYLEIGH PLOTTING SHORTCUTS (non-parallel)
+
+# sim parameters
+alias res="python $rapl/resolution.py"
+alias ref="python $rapl/reference.py"
+alias trans="python $rapl/transport.py"
+alias eqconst="python $raco/eq_constants.py"
+alias freq="python $raco/output_freq.py"
+
+# AZ_Avgs routines
+alias azav="python $rapl/azav/azav.py"
+
+# mean flows
+alias dr="python $rapl/azav/diffrot.py"
+alias drr="python $rapl/azav/diffrot_rslice.py"
+alias drder="python $rapl/azav/diffrot_derivs.py"
+alias drdershav="python $rapl/azav/diffrot_derivs_shav.py"
+alias amom="python $rapl/azav/amom.py"
+alias mc="python $rapl/azav/mercirc.py"
+
+# mean fields
+alias Bmaz="python $rapl/azav/Bm_azav.py"
+
+# torque
+alias torque="python $rapl/azav/torque.py"
+alias torquert="python $rapl/azav/torque_rt.py"
+
+# thermal state
+alias thermo="python $rapl/azav/thermo_merplane.py"
+alias thermonond="python $rapl/azav/thermo_merplane_nond.py"
+alias tw="python $rapl/azav/simple_thermal_wind.py"
+
+# energy stuff
+alias kem="python $rapl/azav/ke_merplane.py"
+alias toten="python $rapl/azav/toten.py"
+alias totenvst="python $rapl/azav/toten_vs_time.py"
+
+# line plots
+alias etr="python $rapl/timetrace/etrace_quad.py"
+alias timetrq="python $rapl/timetrace/timetrace_quad.py"
+alias plotpoynt="python $rapl/timetrace/poynt.py"
+alias amomtr="python $rapl/timetrace/Ltrace.py"
+alias amomtrq="python $rapl/timetrace/Ltrace_quad.py"
+alias efr="python $rapl/shav/eflux_radial.py"
+alias numbersoutput="python $rapl/shav/numbers_output.py"
+alias efrvst="python $rapl/shav/eflux_radial_vs_time.py"
+alias vamp="python $rapl/shav/vamp.py"
+alias bamp="python $rapl/shav/bamp.py"
+alias vavamp="python $rapl/shav/va_to_vamp.py"
+alias eft="python $rapl/eflux_latitudinal.py"
+alias eft2="python $rapl/eflux_latitudinal-2.py"
+alias mertimey="python $rapl/timetrace/mertimey.py"
+alias mtracetimelat="python $rapl/timetrace/mtracetimelat.py"
+alias mtracetimelatemf="python $rapl/timetrace/mtracetimelat_emf.py"
+
+# slice plotting routines
+alias raslice="$ppc $rapl/slice/raslice.py"
+alias spec="python $rapl/slice/spec.py"
+#alias speclm="python $rapl/slice/spec_lm.py"
+alias specl="python $rapl/slice/spec_l.py"
+
+# time-(something), i.e., timey
+alias timey="python $rapl/timetrace/timey.py"
+alias timelon="python $rapl/timetrace/timelon.py"
+alias torsosc="python $rapl/timetrace/tors_osc.py"
+alias plottspec="python $rapl/timetrace/tspec.py"
+alias plottmspec="python $rapl/timetrace/tmspec.py"
+alias plottmspecemf="python $rapl/timetrace/tmspec_emf.py"
+alias powerrange="python $rapl/timetrace/tspec_power_in_range.py"
+alias powerrangetm="python $rapl/timetrace/tmspec_power_in_range.py"
+
+# Remove spaces (not really a Rayleigh routine but need a spot for it)
+alias rmspace="python $raco/remove_spaces.py"
