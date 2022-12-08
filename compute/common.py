@@ -9,7 +9,7 @@ from string_to_num import string_to_number_or_array
 sys.path.append(os.environ['rapp'])
 
 from reference_tools import equation_coefficients
-from rayleigh_diagnostics import G_Avgs, Shell_Slices, Shell_Spectra, Meridional_Slices, Equatorial_Slices, GridInfo
+from rayleigh_diagnostics import G_Avgs, AZ_Avgs, Shell_Avgs, Shell_Slices, Shell_Spectra, Meridional_Slices, Equatorial_Slices, GridInfo
 from rayleigh_diagnostics_alt import sliceinfo
 from grid_util import compute_grid_info
 
@@ -19,6 +19,16 @@ class dotdict(dict):
     __getattr__ = dict.get
     __setattr__ = dict.__setitem__
     __delattr__ = dict.__delitem__
+
+# container holding basic info about the Rayleigh datatypes
+di_radtypes = dotdict({\
+    'azav': dotdict({'reading_func': AZ_Avgs, 'dataname': 'AZ_Avgs'}),\
+    'shav': dotdict({'reading_func': Shell_Avgs, 'dataname': 'Shell_Avgs'}),\
+    'gav': dotdict({'reading_func': G_Avgs, 'dataname': 'G_Avgs'}),\
+    'spec': dotdict({'reading_func': Shell_Spectra, 'dataname': 'Shell_Spectra'}),\
+    'sslice': dotdict({'reading_func': Shell_Slices, 'dataname': 'Shell_Slices'}),\
+    'mer': dotdict({'reading_func': Meridional_Slices, 'dataname': 'Meridional_Slices'}),\
+    'eq': dotdict({'reading_func': Equatorial_Slices, 'dataname': 'Equatorial_Slices'}) })
 
 
 ###############################

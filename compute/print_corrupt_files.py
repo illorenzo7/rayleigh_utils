@@ -44,7 +44,7 @@ sys.path.append(os.environ['rapp'])
 from rayleigh_diagnostics import AZ_Avgs, Shell_Avgs, G_Avgs,\
         Shell_Spectra, Shell_Slices, Meridional_Slices, Equatorial_Slices
 
-# Broadcast the desired datatype (azav by default)
+# broadcast the desired datatype (azav by default)
 kwargs_default = dict({'radtype': 'azav'})
 if rank == 0:
     # get the CLAs
@@ -53,31 +53,15 @@ if rank == 0:
     # overwrite defaults
     kw = update_dict(kwargs_default, clas)
     radtype = kw.radtype
-else:
-    radtype = None
-radtype = comm.bcast(radtype, root=0)
 
-if radtype == 'azav':
-    reading_func = AZ_Avgs
-    dataname = 'AZ_Avgs'
-if radtype == 'shav':
-    reading_func = Shell_Avgs
-    dataname = 'Shell_Avgs'
-if radtype == 'gav':
-    reading_func = G_Avgs
-    dataname = 'G_Avgs'
-if radtype == 'spec':
-    reading_func = Shell_Spectra
-    dataname = 'Shell_Spectra'
-if radtype == 'sslice':
-    reading_func = Shell_Slices
-    dataname = 'Shell_Slices'
-if radtype == 'merslice':
-    reading_func = Meridional_Slices
-    dataname = 'Meridional_Slices'
-if radtype == 'eqslice':
-    reading_func = Equatorial_Slices
-    dataname = 'Equatorial_Slices'
+    # get reading function and dataname from the di_radtypes container
+    reading_func = di_radtypes[radtype].reading_func
+    dataname = di_radtypes[radtype].dataname
+    meta = [radtype, reading_func, dataname]
+else:
+    meta = None
+radtype, reading_func, dataname = comm.bcast(meta, root=0)
+
 
 # proc 0 reads the file lists and distributes them
 if rank == 0:
