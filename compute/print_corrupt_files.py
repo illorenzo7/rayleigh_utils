@@ -88,7 +88,7 @@ if rank == 0:
     radatadir = dirname + '/' + dataname + '/'
 
     # Get all the file names in datadir and their integer counterparts
-    file_list, int_file_list, nfiles = get_file_lists(radatadir, args)
+    file_list, int_file_list, nfiles = get_file_lists(radatadir, clas)
     print (buff_line)
     print ('Considering %i %s files: %s through %s'\
         %(nfiles, dataname, file_list[0], file_list[-1]))
