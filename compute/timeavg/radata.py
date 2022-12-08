@@ -5,7 +5,7 @@
 ##################################################################
 # This routine computes the time average of Rayleigh data
 # default data type is azav. to specify another 
-# (specav, gav, shav, ssav, merav, eqav) use
+# (spec, gav, shav, sslice, merav, eqav) use
 # --radtype [radataname]
 ##################################################################
 
@@ -38,66 +38,27 @@ if rank == 0:
     print(fill_str('processes importing necessary modules', lent, char),\
             end='')
 
-# modules needed by everyone
+# modules needed by everyone (need to see the rayleigh_diagnostics
+# module in post_processing)
 import numpy as np
-# data type and reading function
 import sys, os
 sys.path.append(os.environ['rapp'])
 
-# import the reading routines
-from rayleigh_diagnostics import AZ_Avgs, Shell_Avgs, G_Avgs,\
-        Shell_Spectra, Shell_Slices, Meridional_Slices, Equatorial_Slices
-
-# Broadcast the desired datatype (azav by default)
+# proc 0 reads the file lists and distributes them
 if rank == 0:
     # get the CLAs
     args = sys.argv
     clas0, clas = read_clas(args)
-    if 'radtype' in clas:
-        radtype = clas['radtype']
-    else:
-        radtype = 'azav' # default
-else:
-    radtype = None
-radtype = comm.bcast(radtype, root=0)
 
-if radtype == 'azav':
-    reading_func = AZ_Avgs
-    dataname = 'AZ_Avgs'
-if radtype == 'shav':
-    reading_func = Shell_Avgs
-    dataname = 'Shell_Avgs'
-if radtype == 'gav':
-    reading_func = G_Avgs
-    dataname = 'G_Avgs'
-if radtype == 'specav':
-    reading_func = Shell_Spectra
-    dataname = 'Shell_Spectra'
-if radtype == 'ssav':
-    reading_func = Shell_Slices
-    dataname = 'Shell_Slices'
-if radtype == 'merav':
-    reading_func = Meridional_Slices
-    dataname = 'Meridional_Slices'
-if radtype == 'eqav':
-    reading_func = Equatorial_Slices
-    dataname = 'Equatorial_Slices'
+    # overwrite defaults
+    kwargs_default = dict({'radtype': 'azav'})
+    kw = update_dict(kwargs_default, clas)
+    radtype = kw.radtype
 
-if rank == 0:
-    # modules needed only by proc 0 
-    import pickle
+    # get reading function and dataname from the di_radtypes container
+    reading_func = di_radtypes[radtype].reading_func
+    dataname = di_radtypes[radtype].dataname
 
-# Checkpoint and time
-comm.Barrier()
-if rank == 0:
-    t2 = time.time()
-    print (format_time(t2 - t1))
-    print(fill_str('proc 0 distributing the file lists', lent, char),\
-            end='')
-    t1 = time.time()
-
-# proc 0 reads the file lists and distributes them
-if rank == 0:
     dirname = clas0['dirname']
 
     # Get the Rayleigh data directory
@@ -119,7 +80,7 @@ if rank == 0:
                                           # (ntimes, nq) for some reason
     else:
         shape = np.shape(a0.vals[..., 0]) #
-    if radtype == 'specav':
+    if radtype == 'spec':
         shape_lpower = np.shape(a0.lpower[:, :, :, 0, :]) # time axis
         # in weird place on this one
 
@@ -144,17 +105,25 @@ if rank == 0:
 else: # recieve my_files
     my_files = comm.recv(source=0)
 
+# broadcast radtype first
+if rank == 0:
+    meta = radtype
+else:
+    meta = None
+radtype = comm.bcast(meta, root=0)
+
 # Broadcast dirname, radatadir, nq, etc.
 if rank == 0:
-    meta = [dirname, radatadir, shape, weight]
-    if radtype == 'specav':
+    meta = [reading_func, dirname, radatadir, shape, weight]
+    if radtype == 'spec':
         meta.append(shape_lpower)
 else:
     meta = None
-if radtype == 'specav':
-    dirname, radatadir, shape, weight, shape_lpower = comm.bcast(meta, root=0)
+
+if radtype == 'spec':
+    reading_func, dirname, radatadir, shape, weight, shape_lpower = comm.bcast(meta, root=0)
 else:
-    dirname, radatadir, shape, weight = comm.bcast(meta, root=0)
+    reading_func, dirname, radatadir, shape, weight = comm.bcast(meta, root=0)
 
 # Checkpoint and time
 comm.Barrier()
@@ -168,7 +137,7 @@ if rank == 0:
 
 # Now analyze the data
 my_vals = np.zeros(shape)
-if radtype == 'specav':
+if radtype == 'spec':
     my_lpower = np.zeros(shape_lpower)
 my_nfiles = len(my_files)
 for i in range(my_nfiles):
@@ -181,7 +150,7 @@ for i in range(my_nfiles):
         axis_to_average = 0
     else:
         axis_to_average = len(shape)
-    if radtype == 'specav':
+    if radtype == 'spec':
         my_vals += np.mean(np.abs(a.vals)**2.0, axis=axis_to_average)*weight
         my_lpower += np.mean(a.lpower, axis=3)*weight
     else:
@@ -206,7 +175,7 @@ if rank == 0:
 if rank == 0:
     # Initialize zero-filled 'vals' array to store the data
     vals = np.zeros(shape)
-    if radtype == 'specav':
+    if radtype == 'spec':
         lpower = np.zeros(shape_lpower)
 
     # Gather the results into this "master" array
@@ -214,16 +183,16 @@ if rank == 0:
         if j >= 1:
             # Get my_vals from rank j
             my_vals = comm.recv(source=j, tag=0)
-            if radtype == 'specav':
+            if radtype == 'spec':
                 my_lpower = comm.recv(source=j, tag=1)
         # "my_vals" are all weighted: their sum equals the overall average
         vals += my_vals 
-        if radtype == 'specav':
+        if radtype == 'spec':
             lpower += my_lpower
 
 else: # other processes send their data
     comm.send(my_vals, dest=0, tag=0)
-    if radtype == 'specav':
+    if radtype == 'spec':
         comm.send(my_lpower, dest=0, tag=1)
 
 # Make sure proc 0 collects all data
@@ -248,9 +217,9 @@ if rank == 0:
     # save the data
     f = open(savefile, 'wb')
     di_sav = {'vals': vals, 'lut': a0.lut, 'qv': a0.qv}
-    if radtype == 'specav':
+    if radtype == 'spec':
         di_sav['lpower'] = lpower
-    if radtype in ['specav', 'ssav']:
+    if radtype in ['spec', 'sslice']:
         di_sav['rvals'] = a.radius/rsun
     pickle.dump(di_sav, f, protocol=4)
     f.close()

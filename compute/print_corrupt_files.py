@@ -37,20 +37,19 @@ if rank == 0:
         print ('processing in serial with 1 rank')
     print(fill_str('processes importing necessary modules', lent, char))
 
-# modules needed by everyone
+# modules needed by everyone (need to see the rayleigh_diagnostics
+# module in post_processing)
 import sys, os
-sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
-from rayleigh_diagnostics import AZ_Avgs, Shell_Avgs, G_Avgs,\
-        Shell_Spectra, Shell_Slices, Meridional_Slices, Equatorial_Slices
 
 # broadcast the desired datatype (azav by default)
-kwargs_default = dict({'radtype': 'azav'})
 if rank == 0:
     # get the CLAs
     args = sys.argv
     clas0, clas = read_clas(args)
+
     # overwrite defaults
+    kwargs_default = dict({'radtype': 'azav'})
     kw = update_dict(kwargs_default, clas)
     radtype = kw.radtype
 
