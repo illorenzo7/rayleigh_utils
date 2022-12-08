@@ -1,15 +1,16 @@
-"""
-Author: Loren Matilsky
-Created: 09/13/21
-Wrapper for Ryan's parse_quantity
+# Author: Loren Matilsky
+# ACreated: 09/13/21
+# AWrapper for Ryan's parse_quantity
 
-This script prints the Rayleigh index or variable name associated with a
-given quantity.
+# AThis script prints the Rayleigh index or variable name associated with a
+# Agiven quantity.
 
-Takes as an argument a user-specified diagnostic quantity or 
-quantity index, and translates between the two."""
+# ATakes as an argument a user-specified diagnostic quantity or 
+# Aquantity index, and translates between the two.
 
-import sys, lut
+import sys, os
+sys.path.append(os.environ['raco'] + '/quantities_util')
+import lut
 from common import make_bold
 quantity_or_index = sys.argv[1]
 
