@@ -63,8 +63,8 @@ sun.gas_constant = sun.c_p*(1. - 1./gamma_ideal)
 
 # solar base of the convection zone stuff
 sun.rho_bcz = 0.18053428
-sun.temp_bcz = 2111256.4
-sun.rbcz = 5.0e10
+sun.tmp_bcz = 2111256.4
+sun.r_bcz = sun.rbcz = 5.0e10
 sun.rbcz_nond = sun.rbcz/sun.r
 # radius for the third density scale height (according to model S)
 sun.r_nrho3 = 6.5860209e10 
