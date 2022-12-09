@@ -14,7 +14,8 @@
 # --rmin, --rmax, --rt
 # Inner, outer, and transition radii (default rmin = 0.1*rstar
 # (i.e. very deep shell; don't need to use all of it)
-# rt = 5e10, rmax = 0.99*rsun (as close to surface as my simple
+# rt = 5e10 (solar convection zone in mind)
+# rmax = 0.99*rsun (as close to surface as my simple
 # hydro model allows)
 
 # --mstar
@@ -24,25 +25,31 @@
 # stellar radius, default rstar = rsun
 #
 # --rhot
-# Density at transition boundary, default rhobcz ~ 0.18
+# Density at transition boundary, default sun.rho_bcz ~ 0.18
 #
-# --tempt
-# Temperature at transition boundary default tempbcz ~ 2.1e6
+# --tmpt
+# Temperature at transition boundary default sun.tmp_bcz ~ 2.1e6
 #
 # --k
 # Stiffness k, default 2.0 (define in units of dsdr in RZ / (cp/rstar) for consistency
 # 
 # --delta
-# Transition width delta as a fraction of rstar, default 0.05
+# Transition width delta, default 0.05*rsun
 #
-# --gam
-# specific heat ratio gamma, default thermo_gamma = 5.0/3.0
+# --gamma
+# specific heat ratio gamma, default gamma_ideal = 5/3
 #
 # --cp
-# pressure specific heat cp, default c_P = 3.5e8
+# pressure specific heat cp, default sun.c_p = 3.5e8
 #
 # --mag
 # Whether magnetism is True or False, default False (hydro)
+#
+# --fname
+# File to save reference state in (default custom_reference_binary)
+#
+# --nr
+# Default number of radial (evenly spaced) grid points. Default 10,000 (very fine)
 
 import numpy as np
 import sys, os
@@ -61,7 +68,7 @@ clas0, clas = read_clas_raw(args)
 dirname = clas0['dirname']
 
 # Set default kwargs
-kw_default = dotdict(dict({'rmin': 0.1, 'rmax': 0.99, 'rt': 0.72, 'mstar': msun, 'rstar': rsun, 'rhot': rhobcz, 'tempt': tempbcz, 'k': 2.0, 'delta': 0.03, 'gam': thermo_gamma, 'cp': c_P, 'mag': False, 'fname': 'custom_reference_binary', 'nr': 10000}))
+kw_default = dotdict(dict({'rmin': 0.1*sun.r, 'rmax': 0.99*sun.r, 'rt': sun.r_bcz, 'mstar': msun, 'rstar': rsun, 'rhot': sun.rho_bcz, 'tmpt': sun.tmp_bcz, 'k': 2.0, 'delta': 0.05*sun.r, 'gamma': gamma_ideal, 'cp': sun.c_p, 'mag': False, 'fname': 'custom_reference_binary', 'nr': 10000}))
 
 # overwrite defaults
 kw = update_dict(kw_default, clas)
@@ -70,20 +77,14 @@ kw = update_dict(kw_default, clas)
 find_bad_keys(kw_default, clas, clas0['routinename'], justwarn=True)
 
 # compute gas constant R
-kw.R = kw.cp*(kw.gam-1)/kw.gam
-prst = kw.rhot*kw.R*kw.tempt
-
-# Make everything physical length
-kw.delta *= kw.rstar
-kw.rmin *= kw.rstar
-kw.rt *= kw.rstar
-kw.rmax *= kw.rstar
+gas_constant = kw.cp*(kw.gamma-1)/kw.gamma
+prst = kw.rhot*gas_constant*kw.tmpt
 
 # compute reference state on super-fine grid to interpolate onto later    
 rr = np.linspace(kw.rmax, kw.rmin, kw.nr) # keep radius in decreasing order for consistency with Rayleigh convention
 
-# Define an entropy profile that is +1 for r < rt - delta, 0 for r > rt,
-# and continuously differentiable in between (use simplest def., a tanh)
+# Define an entropy profile that is about +1 for r < rt - delta, 0 for r > rt,
+# and continuously differentiable (a tanh) in between
 
 s = kw.k*kw.cp*kw.rt/kw.rstar*0.5*((rr/kw.rt - 1.0) -\
         (kw.delta/kw.rt)*np.log(np.cosh((rr - kw.rt)/kw.delta)))
@@ -91,15 +92,15 @@ dsdr = kw.k*kw.cp/kw.rstar*0.5*(1.0 - np.tanh((rr - kw.rt)/kw.delta))
 d2sdr2 = -kw.k*kw.cp/kw.rstar*(0.5/kw.delta)*(1./np.cosh((rr - kw.rt)/kw.delta))**2.
 
 # Make gravity due to a point mass at the origin
-g = G*kw.mstar/rr**2.0
+g = g_univ*kw.mstar/rr**2.0
 dgdr = -2.0*g/rr
 
 T, rho, p, dlnT, dlnrho, dlnp, d2lnrho =\
     arbitrary_atmosphere(rr, s, dsdr, d2sdr2, g,\
-                         dgdr, kw.rt, kw.tempt, prst, kw.cp, kw.gam)
+                         dgdr, kw.rt, kw.tmpt, prst, kw.cp, kw.gamma)
 
 print(buff_line)
-print("Computed atmosphere for RZ-CZ, ds/dr joined with a tanh")
+print("Computed atmosphere for RZ-CZ, ds/dr joined with a quartic")
 print("nr         : %i" %kw.nr) 
 print("rstar      : %1.8e cm" %kw.rstar) 
 print("mstar      : %1.8e  g" %kw.mstar) 
@@ -109,8 +110,8 @@ print("rmax/rstar : %.8f    " %(kw.rmax/kw.rstar))
 print("delta/rstar: %.8f"  %(kw.delta/kw.rstar))
 print("stiffness k: %1.8e"  %kw.k)
 print("stiffness  : %1.8e"  %(kw.k*kw.cp/kw.rstar))
-print("stiffness = (dsdr in RZ)")
-print("k = (stiffness)/(cp/rstar)")
+print("...where stiffness := (dsdr in RZ)")
+print("and k = (stiffness)/(cp/rstar)")
 print(buff_line)
 
 # Now write to file using the equation_coefficients framework
