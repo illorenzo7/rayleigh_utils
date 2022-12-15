@@ -1,12 +1,11 @@
 ###############################################
 # Author: Loren Matilsky
 # Date created: 04/14/2020
+# Updated: 12/15/2022
 #
 # This script plots varius length_scales as functions of
-# radius using from the Shell_Avgs/Shell_Spectra data
+# radius using shav data
 
-import matplotlib as mpl
-mpl.use('TkAgg')
 import matplotlib.pyplot as plt
 plt.rcParams['mathtext.fontset'] = 'dejavuserif'
 csfont = {'fontname':'DejaVu Serif'}
