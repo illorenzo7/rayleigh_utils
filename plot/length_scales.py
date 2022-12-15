@@ -7,13 +7,11 @@
 # radius using shav data
 
 import matplotlib.pyplot as plt
-plt.rcParams['mathtext.fontset'] = 'dejavuserif'
-csfont = {'fontname':'DejaVu Serif'}
 import numpy as np
 import sys, os
-sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from common import *
+from cla_util import *
 
 # Get the run directory on which to perform the analysis
 dirname = sys.argv[1]

@@ -4,7 +4,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import sys, os
-sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
 from grid_util import compute_grid_info
 from common import *
