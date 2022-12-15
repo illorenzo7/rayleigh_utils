@@ -55,7 +55,7 @@ def compute_r_grid(nr, r1, r2, rmin=None, rmax=None):
 
 def compute_grid_info(ncheby, domain_bounds, nt):
     ndomains = len(ncheby)
-    nr = int(np.sum(ncheby))
+    nr = np.sum(ncheby)
     rmin, rmax = domain_bounds[0], domain_bounds[-1]
 
     rr = np.zeros(nr)
