@@ -6,8 +6,9 @@ import numpy as np
 import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
-from compute_grid_info import compute_grid_info
+from grid_util import compute_grid_info
 from common import *
+from cla_util import *
 
 # Get CLAs
 args = sys.argv
@@ -19,13 +20,13 @@ dirname_stripped = strip_dirname(dirname)
 ncheby, domain_bounds = get_domain_bounds(dirname)
 
 # allowed args + defaults
-kwargs_default = dict({'ncheby': ncheby, 'rbounds': domain_bounds, 'nt': get_parameter(dirname, 'n_theta'), 'rvals': None, 'latvals': None, 'lonvals': None, 'rminmax': None, 'latmin': None, 'lonminmax': None, 'rnorm': None})
+kwargs_default = dict({'ncheby': ncheby, 'rvals': domain_bounds, 'nt': get_parameter(dirname, 'n_theta'), 'rvals': None, 'latvals': None, 'lonvals': None, 'rminmax': None, 'latmin': None, 'lonminmax': None, 'rnorm': None})
 
 # overwrite defaults
 kw = update_dict(kwargs_default, clas)
 
 # calculate problemsize grid
-print (buffline)
+print (buff_line)
 print ("plotting grid for:")
 print ("nt = nphi/2 =", kw.nt)
 print ("ncheby =", kw.ncheby)
@@ -63,7 +64,7 @@ lonmin, lonmax = phi_lon[0], phi_lon[-1]
 if kw.rnorm is None:
     kw.rnorm = rsun
 rr /= rnorm                                           
-print (buffline)
+print (buff_line)
 print ("normalizing grid spacing by rnorm =", kw.rnorm)
 
 # calculate grid spacing
