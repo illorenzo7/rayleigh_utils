@@ -9,7 +9,7 @@ from grid_util import compute_grid_info
 from common import *
 from cla_util import *
 
-# Get CLAs
+# get CLAs
 args = sys.argv
 clas0, clas = read_clas(args)
 dirname = clas0['dirname']

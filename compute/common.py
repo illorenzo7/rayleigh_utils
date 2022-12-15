@@ -1442,6 +1442,9 @@ def length_scales(dirname, the_file=None):
     datadir = dirname + '/data/'
 
     # Get field amplitudes
+    if the_file is None: # default
+        the_file = get_widest_range_file(datadir, 'Shell_Avgs')
+    di_out['iter1'], di_out['iter2'] = get_iters_from_file(the_file)
     print ('length_scales(): ', end='')
     fa = field_amp(dirname, the_file=the_file)
 
