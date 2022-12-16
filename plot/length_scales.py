@@ -25,20 +25,28 @@ kwargs_default = dict({'the_file': None})
 kwargs_default.update(make_figure_kwargs_default)
 #lineplot_kwargs_default['legfrac'] = 0.3
 lineplot_kwargs_default['plotleg'] = True
+lineplot_kwargs_default['ncolleg'] = 2
+lineplot_kwargs_default['logscale'] = True
 kwargs_default.update(lineplot_kwargs_default)
 kw = update_dict(kwargs_default, clas)
 kw_make_figure = update_dict(make_figure_kwargs_default, clas)
 kw_lineplot = update_dict(lineplot_kwargs_default, clas)
 
 di_ls = length_scales(dirname)
-rr = di_ls['rr']
-kw_lineplot.labels = [r'$|\mathbf{v}|/|\mathbf{\omega}|$']
-profiles = [di_ls.v]
+rr = di_ls.rr
+kw_lineplot.labels = ['|v|/|om|', '|<v>|/|<om>|', "|v'|/|om'|"]
+profiles = [di_ls.v, di_ls.vmean, di_ls.vfluc]
+
+magnetism = clas0.magnetism
+if magnetism:
+    profiles += [di_ls.b, di_ls.bmean, di_ls.bfluc]
+    kw_lineplot.labels += ['|B|/|J|', '|<B>|/|<J>|', "|B'|/|J'|"]
 
 # create the plot
 fig, axs, fpar = make_figure(**kw_make_figure)
 ax = axs[0,0]
-kw_lineplot.xlabel = 'r'
+kw_lineplot.xlabel = 'radius'
+kw_lineplot.xlabel = 'length scale'
 
 lineplot(rr, profiles, ax, **kw_lineplot)
 
