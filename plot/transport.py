@@ -1,8 +1,10 @@
-# Created: 05/03/2019
 # Author: Loren Matilsky
+# Created: 12/19/2022
+#
+# Description: Script to plot radial diffusivity profiles 
+# from the equation_coefficients file
 
 import numpy as np
-from scipy.integrate import cumtrapz
 import matplotlib.pyplot as plt
 
 import sys, os

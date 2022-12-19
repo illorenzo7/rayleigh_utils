@@ -1,6 +1,8 @@
-# Plot location of Chebyshev, Legendre, and Fourier collocation points
-# Can also plot radial/theta/phi locations to see how many points 
-# are in various intervals
+# Author: Loren Matilsky
+# Created: 12/19/2022
+#
+# Description: Script to plot location of Chebyshev, Legendre, and Fourier collocation points
+
 import matplotlib.pyplot as plt
 import numpy as np
 import sys, os
