@@ -1,8 +1,8 @@
 # Author: Loren Matilsky
 # Created: 12/19/2022
 #
-# This script plots varius length_scales as functions of
-# radius using shav data
+# Description: Script to plot varius length scales as functions of
+# radius using Shell_Avgs data
 
 import matplotlib.pyplot as plt
 import numpy as np

@@ -1,5 +1,8 @@
-# Module for routines common to many plotting scripts
-# Created: 02/08/2019
+# Author: Loren Matilsky
+# Created: 12/19/2022
+#
+# Description: Module for routines common to many plotting scripts
+
 import numpy as np
 from matplotlib import colors, ticker
 import matplotlib.pyplot as plt
