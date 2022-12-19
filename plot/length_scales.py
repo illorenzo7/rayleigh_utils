@@ -1,7 +1,5 @@
-###############################################
 # Author: Loren Matilsky
-# Date created: 04/14/2020
-# Updated: 12/15/2022
+# Created: 12/19/2022
 #
 # This script plots varius length_scales as functions of
 # radius using shav data
@@ -46,14 +44,14 @@ if magnetism:
 fig, axs, fpar = make_figure(**kw_make_figure)
 ax = axs[0,0]
 kw_lineplot.xlabel = 'radius'
-kw_lineplot.xlabel = 'length scale'
+kw_lineplot.ylabel = 'length scale'
 
 lineplot(rr, profiles, ax, **kw_lineplot)
 
 # make title 
 iter1, iter2 = di_ls.iter1, di_ls.iter2
 time_string = get_time_string(dirname, iter1, iter2) 
-the_title = dirname_stripped + '\n' +  'radial energy flux' + '\n' + time_string
+the_title = dirname_stripped + '\n' +  'fluid length scales' + '\n' + time_string
 if kw.mark_bcz:
     the_title += ('\n' + r'$r_{BCZ} = %1.3e$' %rbcz_est)
     the_title += ('\n' + r'$r_{os} = %1.3e$' %rov_est)
