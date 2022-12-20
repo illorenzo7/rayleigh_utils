@@ -131,6 +131,9 @@ def fill_str(st, lenfill=lenfill, charfill=charfill):
     nfill = lenfill - len_st
     return st + charfill*nfill
 
+# various formats for numbers
+flt_fmt = '%1.3e'
+
 lon_fmt = '%05.1f'
 lat_fmt = '%+05.1f'
 
@@ -832,6 +835,10 @@ def get_grid_info(dirname):
 def interpret_rvals(dirname, rvals):
     # interpret array of rvals (array of strings), some could have the special keywords, rmin, rmid, rmax
     # but otherwise assumed to be float
+
+    # check if None first
+    if rvals is None:
+        return None
 
     # get the actual min/max/mid of the full domain:
     ncheby, domain_bounds = get_domain_bounds(dirname)

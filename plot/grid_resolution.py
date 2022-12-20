@@ -19,20 +19,25 @@ dirname_stripped = strip_dirname(dirname)
 
 # get the current grid info and plot that unless user tells me not to
 ncheby, domain_bounds = get_domain_bounds(dirname)
-r0_tmp = 0.5*(domain_bounds[0] + domain_bounds[-1])
 
 # allowed args + defaults
-kwargs_default = dict({'ncheby': ncheby, 'dombounds': domain_bounds, 'nt': get_parameter(dirname, 'n_theta'), 'r0': r0_tmp, 'rvals': None, 'latvals': None, 'lonvals': None, 'rminmax': None, 'latminmax': None, 'lonminmax': None, 'rnorm': None})
+kwargs_default = dict({'ncheby': ncheby, 'dombounds': domain_bounds, 'nt': get_parameter(dirname, 'n_theta'), 'r0': 'rmid', 'rvals': None, 'latvals': None, 'lonvals': None, 'rminmax': None, 'latminmax': None, 'lonminmax': None, 'rnorm': None})
 
 # overwrite defaults
 kw = update_dict(kwargs_default, clas)
+
+# interpret r0 and domain_bounds
+kw.r0 = interpret_rvals(dirname, kw.r0)[0]
+kw.domain_bounds = interpret_rvals(dirname, kw.domain_bounds)
+kw.rvals = interpret_rvals(dirname, kw.rvals)
 
 # calculate problemsize grid
 print (buff_line)
 print ("plotting grid for:")
 print ("nt = nphi/2 =", kw.nt)
 print ("ncheby =", kw.ncheby)
-print ("domain_bounds =", kw.dombounds)
+print ("r0 = " + flt_fmt %kw.r0)
+print ("domain_bounds = " + arr_to_str(kw.dombounds, '%1.3e'))
 rr, rw, tt, tw = compute_grid_info(kw.ncheby, kw.dombounds, kw.nt)
 
 # adjust which portion of grid to look at (minmax kwargs)
@@ -48,6 +53,7 @@ tt_lat = 180./np.pi*(np.pi/2. - tt)
 if not kw.latminmax is None:
     ilatmin = np.argmin(np.abs(tt_lat - kw.latminmax[0]))
     ilatmax = np.argmin(np.abs(tt_lat - kw.latminmax[1]))
+    tt = tt[ilatmin:ilatmax+1]
     tt_lat = tt_lat[ilatmin:ilatmax+1]
 
 # calculate grid spacing
@@ -55,17 +61,19 @@ if not kw.latminmax is None:
 # radial
 nr = len(rr)
 dr = np.zeros(nr)
-dr[:-1] = rr[:-1] - rr[1:]
+dr[1:-1] = 0.5*(rr[:-2] - rr[2:])
+dr[0] = dr[1]
 dr[-1] = dr[-2]
 
 # theta
 nt = len(tt)
 dt = np.zeros(nt)
-dt[:-1] = tt[:-1] - tt[1:]
+dt[1:-1] = 0.5*(tt[:-2] - tt[2:])
 dt[-1] = dt[-2]
+dt[0] = dt[1]
 
 # generate the plot (1 row of 3 subplots)
-fig, axs = plt.subplots(1, 3, sharey=True, figsize=(12,4))
+fig, axs = plt.subplots(1, 3, sharey=True, figsize=(8,3))
 
 # plot delta_r
 size = 0.5
@@ -74,14 +82,14 @@ plt.scatter(rr, dr, color='k', s=size)
 
 # make the "rval" location red and big
 ir0 = np.argmin(np.abs(rr - kw.r0))
-plt.scatter(kw.r0, dr[ir0], color='r', s=3*size)
+plt.scatter(kw.r0, dr[ir0], color='r', s=10*size)
 
 # set xy axes properties
 rmin, rmax = np.min(rr), np.max(rr)
-H = rmax - rmin
-plt.xlim(rmin - 0.01*H, rmax + 0.01*H)
-plt.xlabel('r (cm)')
-plt.ylabel(r'$\delta r/(r_{\rm{max}}-r_{\rm{min}})$')
+Dr = rmax - rmin
+plt.xlim(rmin - 0.01*Dr, rmax + 0.01*Dr)
+plt.xlabel('radius')
+plt.ylabel(r'$\delta r$')
 
 # plot r0 * delta_theta
 plt.sca(axs[1])
@@ -89,8 +97,10 @@ tt_lat = 180./np.pi*(np.pi/2. - tt)
 plt.scatter(tt_lat, dt*kw.r0, color='k', s=size)
 
 # set xy axes properties
-plt.xlim(-90., 90.)
-plt.xlabel('latitude (deg)')
+latmin, latmax = np.min(tt_lat), np.max(tt_lat)
+Dlat = latmax - latmin
+plt.xlim(latmin - 0.01*Dlat, latmax + 0.01*Dlat)
+plt.xlabel('latitude')
 plt.ylabel(r'$r_0\delta\theta$')
 
 # plot r0 * sin(theta) * dphi
@@ -100,9 +110,10 @@ axs[2].scatter(tt_lat, kw.r0*sint*dphi, color='k', s=size)
 
 # set xy axes properties
 plt.sca(axs[2])
-plt.xlim(-90., 90.)
-plt.xlabel('latitude (deg)')
+plt.xlim(latmin - 0.01*Dlat, latmax + 0.01*Dlat)
+plt.xlabel('latitude')
 plt.ylabel(r'$r_0\sin\theta\delta\phi$')
+plt.yscale('log')
 
 # get ticks everywhere
 for ax in axs.flatten():
@@ -113,7 +124,7 @@ for ax in axs.flatten():
 
 # make title(s)
 axs[0].set_title(dirname_stripped + '\nGrid resolution\n' +\
-        (r'$r_0=%1.3e\ cm$' %kw.r0))
+        (r'$r_0=$' + flt_fmt  %kw.r0))
 
 plt.tight_layout()
 
