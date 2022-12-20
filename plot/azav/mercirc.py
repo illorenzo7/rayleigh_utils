@@ -1,8 +1,7 @@
 # Author: Loren Matilsky
-# Created: 05/14/2018
-# Updated: 2022
-# Plots mass flux (stream lines and magnitude)
-# savename: mercirc-[first iter]_[last iter].png
+# Created: 12/19/2022
+#
+# Description: Script to plot mass flux (stream lines and magnitude)
  
 import numpy as np
 import matplotlib.pyplot as plt

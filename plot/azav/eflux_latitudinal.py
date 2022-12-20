@@ -1,12 +1,9 @@
-###############################################
 # Author: Loren Matilsky
-# Date created: 11/18
-# Last modified: 11/18/2018
+# Created: 12/19/2022
 #
-# This script computes the "cone"-averages latitudinal energy flux in the 
-# spherical domain as a function of radius. 
-# Plots various average energy fluxes, integrated over cones of opening angle theta
-# Since Rayleigh has no "cone"-averages, we assume symmetry in phi and use the AZ_Avgs
+# Description: Script to plot the "cone-averaged" colatitudinal 
+# energy fluxes as functions of theta
+# Since Rayleigh has no "cone-averages", we use the AZ_Avgs
 
 import matplotlib as mpl
 mpl.use('TkAgg')

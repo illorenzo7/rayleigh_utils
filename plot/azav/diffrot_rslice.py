@@ -1,11 +1,7 @@
 # Author: Loren Matilsky
-# Created: 05/14/2018
-# This script generates differential rotation plotted along radial lines for
-# the Rayleigh run directory indicated by [dirname]. To use  time-averaged 
-# AZ_Avgs file different than the one associated with the longest averaging 
-# range, use -usefile [complete name of desired vavg file]
-# Saves plot in
-# [dirname]_diffrot_rslice_[first iter]_[last iter].npy
+# Created: 12/19/2022
+#
+# Description: Script to plot rotation rate along radial lines 
 
 # Import relevant modules
 import numpy as np

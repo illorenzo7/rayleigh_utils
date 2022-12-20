@@ -1,8 +1,11 @@
 # Author: Loren Matilsky
-# Created: 05/14/2018
-# Updated: 2021
-# prototype for AZ_Avgs scripts. Savename:
-# diffrot-[first iter]_[last iter].npy
+# Created: 12/19/2022
+#
+# Description: Script to plot the "simple" thermal-wind equation in 
+# the meridional plane:
+# d(Om^2)/dz = (g/r^2 sin(th))*(d/dth)(S'/c_p)
+# without LBR this should also include 
+# (1/r^2 sin(th)) * (d(S_bar)/dr)/c_p * (d/dth)(P'/rho_bar)
 
 import numpy as np
 import matplotlib.pyplot as plt

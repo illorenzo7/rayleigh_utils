@@ -1,8 +1,8 @@
 # Author: Loren Matilsky
-# Created: 01/29/2019
-# plots <P>, <S> (spherical average subtracted) 
-# and derives <rho>, <T>
-# to normalize by the background reference state, select
+# Created: 12/19/2022
+#
+# Description: Script to plot <P>, <S> (spherical average subtracted) 
+# To normalize by the background reference state, select
 # --nond
 
 import numpy as np

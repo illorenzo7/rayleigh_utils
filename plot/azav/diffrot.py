@@ -1,9 +1,7 @@
 # Author: Loren Matilsky
-# Created: 05/14/2018
-# Updated: 2021
-# plots differential rotation contours
-# prototype for AZ_Avgs scripts. 
-# savename: diffrot-[first iter]_[last iter].png
+# Created: 12/19/2022
+#
+# Description: Script to plot rotation-rate contours in meridional plane
 
 import numpy as np
 import matplotlib.pyplot as plt

@@ -1,8 +1,7 @@
-# This file contains utilities useful for plotting the data from azimuthal
-# averages,
-# files in the directory AZ_Avgs.
-# Written by Nick Featherstone
-# First modified by Loren Matilsky, 03/09/2018
+# Author: Loren Matilsky, adapted from Nick Featherstone
+# Created: 12/19/2022
+#
+# Description: Module for routines useful for plotting AZ_Avgs data
 
 import numpy as np
 import matplotlib.pyplot as plt

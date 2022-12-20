@@ -1,13 +1,8 @@
 # Author: Loren Matilsky
-# Created: 03/01/2021
-# This script plots mean-shear induction terms in the meridional plane 
-# breaks up into latitudinal and radial shear
-# ...for the Rayleigh run directory indicated by [dirname]. 
-# To use an AZ_Avgs file
-# different than the one associated with the longest averaging range, use
-# -usefile [complete name of desired AZ_Avgs file]
-# Saves plot in
-# [dirname]_induction_phi_mean_[first iter]_[last iter].png
+# Created: 12/19/2022
+#
+# Description: Script to plot the mean shear (dOm/dr and 1/r DOm/dth)
+# in meridional plane
 
 import numpy as np
 import pickle

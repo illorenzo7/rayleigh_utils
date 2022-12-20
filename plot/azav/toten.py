@@ -1,18 +1,14 @@
 # Author: Loren Matilsky
-# Created: 12/30/2019
-# This script plots each term in the total energy equation in the 
-# meridional plane,
+# Created: 12/19/2022
+#
+# Description: Script to plot 
+# each term in the total energy equation in the meridional plane,
 # each term's latitudinally (spherically) integrated profile vs. radius,
 # and the total integrated rate of change of the energy.
+
 # Plots the total energy equation, KE eq., ME eq., and heat eq. separately
 # to choose only one plot, specify
 # -tot, -ke, -inte, -me
-# Analyzes Rayleigh run directory indicated by [dirname]. To use an
-# AZ_Avgs file different than the one associated with the longest 
-# averaging range, use
-# -usefile [complete name of desired AZ_Avgs file]
-# Saves plot in
-# [dirname]_toten_[first iter]_[last iter].png
 
 import numpy as np
 import pickle

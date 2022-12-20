@@ -1,11 +1,8 @@
-##################################################################
-# Routine to plot arbitrary variables (AZ_Avgs)
 # Author: Loren Matilsky
-# Created: 01/28/2019
-##################################################################
-# This script plots the quantitities specified by --qvals
-# default is v
-##################################################################
+# Created: 12/19/2022
+#
+# Description: Script to plot arbitrary list of quantitities 
+# (specified by --qvals; default v)
 
 import numpy as np
 import matplotlib.pyplot as plt
