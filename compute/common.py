@@ -956,9 +956,11 @@ def get_eq(dirname, fname=None):
     # human readable equation coefficients object to store reference state
     eq_hr = dotdict()
 
-    # need this no matter what -- not sure if it works for non-D anelastic
-    # (i.e. may set dissipation number instead)
+    # need this no matter what -- 
+    # 12/22/2022: dirty trick to get things to work for non-D anelastic
     eq_hr.c_p = get_parameter(dirname, 'pressure_specific_heat')
+    if eq_hr.c_p is None:
+        eq_hr.c_p = 1.
 
     # and this no matter what
     magnetism = get_parameter(dirname, 'magnetism')
@@ -1054,7 +1056,7 @@ def get_eq(dirname, fname=None):
         eq_hr.d2lnrho = eq.functions[8]
         eq_hr.tmp = eq.functions[3]
         eq_hr.dlntmp = eq.functions[9]
-        eq_hr.grav = eq.functions[1]/eq_hr.rho*eq_hr.c_p
+        eq_hr.grav = eq.functions[1]*eq_hr.c_p/(eq.constants[1]*eq_hr.rho)
         eq_hr.dsdr = eq.functions[13]
         eq_hr.heat = eq.constants[9]*eq.functions[5]
         eq_hr.lum = eq.constants[9]
