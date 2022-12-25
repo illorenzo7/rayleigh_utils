@@ -22,6 +22,7 @@ magnetism = clas0.magnetism
 
 # allowed args + defaults
 kwargs_default = dotdict()
+kwargs_default.fname = None
 kwargs_default.update(make_figure_kwargs_default)
 kwargs_default.update(lineplot_kwargs_default)
 
@@ -34,7 +35,7 @@ kw_lineplot = update_dict(lineplot_kwargs_default, clas)
 find_bad_keys(kwargs_default, clas, clas0['routinename'], justwarn=True)
 
 # read reference state
-eq = get_eq(dirname)
+eq = get_eq(dirname, kw.fname)
 
 # things to plot and ylabels
 nplots = 4

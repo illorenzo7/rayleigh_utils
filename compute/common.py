@@ -973,6 +973,7 @@ def get_eq(dirname, fname=None):
             fname = 'custom_reference_binary'
 
     if fname is None: # no binary file; get everything from main_input
+        print ("get_eq(): inferring reference state from main_input")
         gi = get_grid_info(dirname)
         eq_hr.rr = gi.rr 
         zero = np.zeros_like(eq_hr.rr)
@@ -1048,6 +1049,7 @@ def get_eq(dirname, fname=None):
     else:
         # by default, get info from equation_coefficients (if file exists)
         # get the background reference state
+        print ("get_eq(): reading reference state from file:", fname)
         eq = equation_coefficients()
         eq.read(dirname + '/' + fname)
         eq_hr.rr = eq.radius
