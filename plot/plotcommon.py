@@ -290,6 +290,18 @@ def lineplot_minmax(xx, profiles, **kwargs):
     if kw.symmetrize:
         maxabs = max(abs(ymin), abs(ymax))
         ymin, ymax = -maxabs, maxabs
+
+    # need to check for singular transormations (ymin = ymax)
+    tol = 1.0e-10
+
+    if np.abs(ymax - ymin) < tol: # it's a singular transformation!
+        # first check for zero = zero singularity
+        if np.abs(ymin) < tol and np.abs(ymax) < tol: # it's zero = zero
+            ymin, ymax = -1.0, 1.0
+        else: # ymin = ymax (but finite) singularity
+            maxabs = np.abs(ymin)
+            ymin, ymax = ymin - 0.5*maxabs, ymin + 0.5*maxabs
+
     return ymin, ymax
 
 def get_symlog_params(field, field_max=None):
