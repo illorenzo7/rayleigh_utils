@@ -1034,6 +1034,8 @@ def get_eq(dirname, fname=None):
             eq_hr.dlnkappa = kappa_power*eq_hr.dlnkappa
         
         if magnetism:
+            eta_type = get_parameter(dirname, 'eta_type')
+            eta_top = get_parameter(dirname, 'eta_top')
             if eta_type is None or eta_type == 1:
                 eq_hr.eta = zero + eta_top
                 eq_hr.dlneta = zero
