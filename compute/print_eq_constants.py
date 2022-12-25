@@ -6,7 +6,6 @@ import numpy as np
 import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
-sys.path.append(os.environ['idref'])
 
 from common import *
 from reference_tools import equation_coefficients
@@ -20,9 +19,9 @@ nargs = len(args)
 custom_name = None
 for i in range(nargs):
     arg = args[i]
-    if arg == '-fname':
+    if arg == '--fname':
         custom_name = args[i+1]
-    elif arg == '-crb':
+    elif arg == '--crb':
         custom_name = 'custom_reference_binary'
 
 # Directory with data and plots, make the plotting directory if it doesn't
