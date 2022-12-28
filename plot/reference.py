@@ -37,14 +37,17 @@ eq = get_eq(dirname, kw.fname)
 
 # things to plot and ylabels
 profiles = [eq.grav, eq.dsdr, eq.nsq, eq.heat,\
-        eq.rho, eq.tmp, eq.dlnrho, eq.hrho,\
+        eq.rho, eq.tmp, eq.dlnrho,\
         eq.d2lnrho, eq.dlntmp, eq.prs]
 ylabels = ['gravity (g)', r'$d\overline{S}/dr$', r'$N^2=(g/c_p)d\overline{S}/dr$', 'heating (Q)',\
-        'density (' + r'$\overline{\rho}$' + ')', 'temperature (' + r'$\overline{T}$' + ')', r'$dln\overline{\rho}/dr$', r'$H_\rho=-(dln\overline{\rho}/dr)^{-1}$',\
+        'density (' + r'$\overline{\rho}$' + ')', 'temperature (' + r'$\overline{T}$' + ')', r'$dln\overline{\rho}/dr$', \
         r'$d^2ln\rho/dr^2$', r'$dln\overline{T}/dr$', 'pressure (' + r'$\overline{P}=\overline{\rho}\mathcal{R}\overline{T}$' + ')']
+if not eq.hrho is None:
+    profiles.insert(6,eq.hrho)
+    ylabels.insert(6,r'$H_\rho=-(dln\overline{\rho}/dr)^{-1}$')
 
-# Create the plot; start with plotting all the energy fluxes
-nplots = 11
+# create the plot; start with plotting all the energy fluxes
+nplots = len(profiles)
 ncol = 4
 kw_make_figure.nplots = nplots
 kw_make_figure.ncol = ncol

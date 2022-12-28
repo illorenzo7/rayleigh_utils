@@ -249,6 +249,24 @@ def rms(array):
     else:
         return np.sqrt(np.mean(array**2))
 
+def minabs(array):
+    return np.min(np.abs(array))
+
+def maxabs(array):
+    return np.max(np.abs(array))
+
+def close_to_zero(array):
+    # see if an array has values too close to zero to divide by
+    tol = 1.0e-12
+    the_rms = rms(array)
+    if the_rms > 1.0e-100: # we can divide by the rms
+        if minabs(array)/the_rms < tol:
+            return True
+        else:
+            return False
+    else: # rms must be zero...it's an array of zeros!
+        return True
+
 # derivative routines
 def drad(arr, rr): # this works for any dimension array, as long as
     # the radial index is the last one
@@ -1088,8 +1106,9 @@ def get_eq(dirname, fname=None):
     # buoyancy frequency
     eq_hr.nsq = (eq_hr.grav/eq_hr.c_p)*eq_hr.dsdr
 
-    # density scale height
-    eq_hr.hrho = -1/eq_hr.dlnrho
+    # density scale height--only set if rho is not constant
+    if not close_to_zero(eq_hr.dlnrho):
+        eq_hr.hrho = -1/eq_hr.dlnrho
 
     # thermal diffusion time
     rmin, rmax = np.min(eq_hr.rr), np.max(eq_hr.rr)
