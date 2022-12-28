@@ -47,7 +47,7 @@ ylabels = ['viscosity (' + r'$\nu$' + ')', 'thermometric conductivity (' + r'$\k
 if magnetism:
     nplots += 2
     profiles.insert(2, eq.eta)
-    ylabels.insert(2, 'magnetic diffusivity (' + r'$\kappa$' + ')')
+    ylabels.insert(2, 'magnetic diffusivity (' + r'$\eta$' + ')')
     profiles.insert(5, eq.dlneta)
     ylabels.insert(5, r'$dln\eta/dr$')
 
