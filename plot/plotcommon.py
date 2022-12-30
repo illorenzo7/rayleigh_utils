@@ -292,8 +292,7 @@ def lineplot_minmax(xx, profiles, **kwargs):
         ymin, ymax = -maxabs, maxabs
 
     # need to check for singular transormations (ymin = ymax)
-    tol = 1.0e-10
-
+    tol = 1.0e-100
     if np.abs(ymax - ymin) < tol: # it's a singular transformation!
         # first check for zero = zero singularity
         if np.abs(ymin) < tol and np.abs(ymax) < tol: # it's zero = zero
