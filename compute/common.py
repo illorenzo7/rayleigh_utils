@@ -1106,10 +1106,6 @@ def get_eq(dirname, fname=None):
     # buoyancy frequency
     eq_hr.nsq = (eq_hr.grav/eq_hr.c_p)*eq_hr.dsdr
 
-    # density scale height--only set if rho is not constant
-    if not close_to_zero(eq_hr.dlnrho):
-        eq_hr.hrho = -1/eq_hr.dlnrho
-
     # thermal diffusion time
     rmin, rmax = np.min(eq_hr.rr), np.max(eq_hr.rr)
     irmid = np.argmin(np.abs(eq_hr.rr - (rmin + rmax)/2))
@@ -1457,11 +1453,11 @@ def length_scales(dirname, the_file=None):
 
     # First get mixing length scale + grid
     eq = get_eq(dirname)
-    hrho = -1./eq.dlnrho
-    rr = eq.rr
+    if not close_to_zero(eq.dlnrho):
+        hrho = -1./eq.dlnrho
+        di_out.hrho = hrho
 
-    di_out['rr'] = rr
-    di_out.hrho = hrho
+    di_out['rr'] = rr = eq.rr
 
     # Get data directory
     datadir = dirname + '/data/'

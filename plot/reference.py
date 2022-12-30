@@ -42,8 +42,8 @@ profiles = [eq.grav, eq.dsdr, eq.nsq, eq.heat,\
 ylabels = ['gravity (g)', r'$d\overline{S}/dr$', r'$N^2=(g/c_p)d\overline{S}/dr$', 'heating (Q)',\
         'density (' + r'$\overline{\rho}$' + ')', 'temperature (' + r'$\overline{T}$' + ')', r'$dln\overline{\rho}/dr$', \
         r'$d^2ln\rho/dr^2$', r'$dln\overline{T}/dr$', 'pressure (' + r'$\overline{P}=\overline{\rho}\mathcal{R}\overline{T}$' + ')']
-if not eq.hrho is None:
-    profiles.insert(6,eq.hrho)
+if not close_to_zero(eq.dlnrho):
+    profiles.insert(6,-1.0/eq.dlnrho)
     ylabels.insert(6,r'$H_\rho=-(dln\overline{\rho}/dr)^{-1}$')
 
 # create the plot; start with plotting all the energy fluxes
