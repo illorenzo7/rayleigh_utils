@@ -28,6 +28,8 @@ for i in range(nargs):
 # already exist    
 
 eq = equation_coefficients()
+c_dict = reverse_dict(eq.c_dict)
+
 if custom_name is None:
     custom_name = 'equation_coefficients'
 eq.read(dirname + '/' + custom_name)
@@ -36,4 +38,6 @@ print ("For file: ", custom_name)
 print ("In directory: ", dirname_stripped)
 print ("The equation_coefficients constants are: ")
 for i in range(len(eq.constants)): # should always be 10?
-    print ('c_%i: %1.3e' %(i + 1, eq.constants[i]))
+    cnum = fill_str('c_%i' %(i+1), 4, ' ')
+    cname = fill_str(c_dict[i+1], 15, ' ')
+    print ('%s = %s = %1.3e' %(cnum, cname, eq.constants[i]))
