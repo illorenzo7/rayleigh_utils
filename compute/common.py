@@ -215,6 +215,9 @@ def find_bad_keys(dict_orig, dict_update, funcname, justwarn=False):
             print ("exiting")
             sys.exit()
 
+def reverse_dict(di):
+    return dict((v, u) for u, v in di.items())
+
 ########################
 # BASIC COMPUTE ROUTINES
 ########################
