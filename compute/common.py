@@ -426,38 +426,6 @@ def get_file_lists_all(radatadir):
     
     return file_list, int_file_list, nfiles
 
-def get_file_lists(radatadir, clas):
-    # Get file names in datadir and their integer counterparts
-    # (only the ones in the desired range determined by args)
-    # all the "action" occurs in get_desired_range() function below
-
-    # get all files
-    file_list, int_file_list, nfiles = get_file_lists_all(radatadir)
-    # get the desired range
-    index_first, index_last = get_desired_range(int_file_list, clas)
-    # Remove parts of file lists we don't need
-    file_list = file_list[index_first:index_last + 1]
-    int_file_list = int_file_list[index_first:index_last + 1]
-    nfiles = index_last - index_first + 1
-
-    # see if user wants to skip any files or get specific number 
-    # (nfiles) in the range
-    for key, val in clas.items():
-        val = make_array(val)
-        if key == 'skip':
-            nskip = int(val[0])
-            file_list = file_list[::skip]
-            int_file_list = int_file_list[::skip]
-            nfiles = len(int_file_list)
-        if key == 'nfiles':
-            ndesiredfiles = int(val[0])
-            nskip = nfiles//ndesiredfiles
-            file_list = file_list[::skip]
-            int_file_list = int_file_list[::skip]
-            nfiles = len(int_file_list)
-
-    return file_list, int_file_list, nfiles
-
 def get_desired_range(int_file_list, clas):
     # Get first and last index (within the int_file_list) associated with the desired range
 
@@ -485,10 +453,10 @@ def get_desired_range(int_file_list, clas):
             ndatafiles = int(val[1])
         if key in ['n', 'f']:
             ndatafiles = int(val[0])
-        if key == 'range': # average between two specific files
+        if key == 'range': # consider range between two specific files
             index_first = index # first arg is first desired iter
-            # also need last iter
-            desired_iter = int(val[1])
+            # also need last desired iter
+            desired_iter = val[1]
             if desired_iter == 'first':
                 desired_iter = int_file_list[0]
             elif desired_iter == 'last':
@@ -531,6 +499,38 @@ def get_desired_range(int_file_list, clas):
 
     # Return the desired indices
     return index_first, index_last
+
+def get_file_lists(radatadir, clas):
+    # Get file names in datadir and their integer counterparts
+    # (only the ones in the desired range determined by args)
+    # all the "action" occurs in get_desired_range() function below
+
+    # get all files
+    file_list, int_file_list, nfiles = get_file_lists_all(radatadir)
+    # get the desired range
+    index_first, index_last = get_desired_range(int_file_list, clas)
+    # Remove parts of file lists we don't need
+    file_list = file_list[index_first:index_last + 1]
+    int_file_list = int_file_list[index_first:index_last + 1]
+    nfiles = index_last - index_first + 1
+
+    # see if user wants to skip any files or get specific number 
+    # (nfiles) in the range
+    for key, val in clas.items():
+        val = make_array(val)
+        if key == 'skip':
+            nskip = int(val[0])
+            file_list = file_list[::skip]
+            int_file_list = int_file_list[::skip]
+            nfiles = len(int_file_list)
+        if key == 'nfiles':
+            ndesiredfiles = int(val[0])
+            nskip = nfiles//ndesiredfiles
+            file_list = file_list[::skip]
+            int_file_list = int_file_list[::skip]
+            nfiles = len(int_file_list)
+
+    return file_list, int_file_list, nfiles
 
 
 ########################################################################
