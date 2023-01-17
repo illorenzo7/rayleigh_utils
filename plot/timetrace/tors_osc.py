@@ -51,7 +51,7 @@ datatype = 'timelat'
 sampleaxis = di_grid['tt_lat']
 if kw.rad:
     datatype = 'timerad'
-    sampleaxis = di_grid['rr']/rsun
+    sampleaxis = di_grid['rr']
 elif kw.lon:
     if not kw.om is None:
         om0 = 1/time_unit*1e9 # frame rate, nHz
@@ -59,7 +59,7 @@ elif kw.lon:
     sampleaxis = di_grid['lons']
 elif kw.shav:
     datatype = 'timeshav'
-    sampleaxis = di_grid['rr']/rsun
+    sampleaxis = di_grid['rr']
 
 dataname = datatype
 thename = datatype
