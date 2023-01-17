@@ -26,6 +26,8 @@ kwargs_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': 
 # make figure kwargs
 lineplot_fig_dimensions['margin_top_inches'] = 3/4
 make_figure_kwargs_default.update(lineplot_fig_dimensions)
+make_figure_kwargs_default['margin_top_inches'] += 2*default_line_height
+
 kwargs_default.update(make_figure_kwargs_default)
 
 # plots two more columns with energies in CZ and RZ separately 
@@ -277,15 +279,23 @@ for ir in range(nquadr):
     r1 = rvals[ir]
     r2 = rvals[ir+1]
     title = 'rad. range =\n [%1.2e, %1.2e]' %(r1, r2)
-    if ir == 0:
-        title = dirname_stripped + '\n' + title
     axs[0, ir].set_title(title, fontsize=fontsize)
 
-# y labels
+# y labels / side titles
 for it in range(nquadlat):
     lat1 = latbounds[it]
     lat2 = latbounds[it+1]
     axs[it, 0].set_ylabel('lat. range = [%.1f, %.1f]' %(lat1, lat2), fontsize=fontsize)
+
+# overall title 
+iter1, iter2 = get_iters_from_file(the_file)
+time_string = get_time_string(dirname, iter1, iter2) 
+the_title = dirname_stripped + '\n' +  'energy trace' + '\n' + time_string
+margin_x = fpar['margin_left'] + fpar['sub_margin_left']
+margin_y = default_margin/fpar['height_inches']
+fig.text(margin_x, 1 - margin_y, the_title,\
+         ha='left', va='top', fontsize=default_titlesize)
+
 
 # mark times if desired
 for ax in axs.flatten():
@@ -301,8 +311,6 @@ for ax in axs.flatten():
     plt.tick_params(top=True, right=True, direction='in', which='both')
 
 # Save the plot
-iter1, iter2 = get_iters_from_file(the_file)
-# Tag the plot by whether or not the x axis is in "time" or "iteration"
 tag = clas0['tag']
 if xiter and tag == '':
     tag = '_xiter'
