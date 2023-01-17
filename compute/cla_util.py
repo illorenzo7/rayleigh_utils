@@ -95,6 +95,13 @@ def read_clas(args):
             clas0['showplot'] = False
         elif arg == '--nosave':
             clas0['saveplot'] = False
+        elif arg == '--datadir':
+            clas0['datadir'] = args[i+1] + '/'
+        elif arg == '--plotdir':
+            clas0['plotdir'] = args[i+1] + '/'
+        elif arg == '--tag':
+            clas0['tag'] = '_' + args[i+1]
+
         # then the rest of the args
         elif arg == '--width':
             clas['fig_width_inches'] = float(args[i+1])
@@ -112,13 +119,9 @@ def read_clas(args):
             clas['plotboundary'] = False
         elif arg == '--nolat':
             clas['plotlatlines'] = False
-        elif arg == '--tag':
-            clas0['tag'] = '_' + args[i+1]
 
         elif arg == '--rvals':
-            if args[i+1] == 'default':
-                clas['rvals'] = get_default_rvals(clas0['dirname'])
-            elif args[i+1] == 'all': # just leave this one alone
+            if args[i+1] == 'all': # just leave this one alone
                 clas.rvals = 'all'
             else:
                 string_after = read_string_after_arg(args, i)
