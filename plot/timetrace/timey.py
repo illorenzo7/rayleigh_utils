@@ -45,10 +45,18 @@ di_grid = get_grid_info(dirname)
 
 if kw.rad:
     datatype = 'timerad'
-    sampleaxis = di_grid['rr']
+    plotlabel = 'time-radius trace'
+    yaxis = di_grid['rr']
+    axislabel = 'radius'
+    samplefmt = lat_fmt
+    samplename = 'latval'
 else:
     datatype = 'timelat'
-    sampleaxis = di_grid['tt_lat']
+    plotlabel = 'time-latitude trace'
+    yaxis = di_grid['tt_lat']
+    axislabel = 'latitude (deg)'
+    samplefmt = '%1.3e'
+    samplename = 'rval'
 
 dataname = datatype
 if 'groupname' in kw:
@@ -74,18 +82,6 @@ samplevals_avail = di['samplevals']
 iter1, iter2 = get_iters_from_file(kw.the_file)
 times /= time_unit
 
-# Subtract DR, if desired
-if kw.lon:
-    if not kw.om is None:
-        print ("plotting in rotating frame om = %.1f nHz" %kw.om)
-        print ("compare this to frame rate    = %.1f nHz" %om0)
-        phi_deflections = (times*(kw.om - om0)) % 1 # between zero and one
-        nphi = len(sampleaxis)
-        for it in range(len(times)):
-            phi_deflection = phi_deflections[it]
-            nroll = int(phi_deflection*nphi)
-            vals[it] = np.roll(vals[it], -nroll, axis=0)
-
 # maybe thin data
 if not kw.ntot == 'full':
     print ("ntot = %i" %kw.ntot)
@@ -104,10 +100,8 @@ for qval in kw.qvals:
 # set figure dimensions
 sub_width_inches = 7.5
 sub_height_inches = 2.0
-margin_bottom_inches = 3/8 # space for x-axis label
-margin_top_inches = 1
-if kw.lon:
-    margin_top_inches =  1 + 1/4
+margin_bottom_inches = 1/4 # space for x-axis label
+margin_top_inches = 1.25
 margin_left_inches = 5/8 # space for latitude label
 margin_right_inches = 7/8 # space for colorbar
 if 'ycut' in clas:
@@ -130,16 +124,17 @@ for isampleval in kw.isamplevals:
     sampleval = samplevals_avail[isampleval]
 
     # set some labels 
-    axislabel = 'latitude (deg)'
-    samplelabel = 'r = %1.3e' %sampleval
-    position_tag = '_rval%1.3e' %sampleval
-    if kw.rad:
-        axislabel = 'r'
-        samplelabel = ('lat = ' + lat_fmt) %sampleval
-        position_tag = ('_colat' + lon_fmt) %(90.0 - sampleval)
+    samplelabel = samplename + ' = ' + (samplefmt %sampleval)
+    if kw.rad: # label things by colat (not lat) to be in sequential order
+        position_tag = ('_colatval' + lon_fmt) %(90.0 - sampleval)
+    else:
+        position_tag = '_' + samplename + (samplefmt %sampleval)
 
     # Put some useful information on the title
-    maintitle = dirname_stripped + '\n' + samplelabel
+    maintitle = dirname_stripped + '\n' +\
+            plotlabel + '\n' +\
+            'groupname = ' + kw.groupname + '\n' +\
+            samplelabel
     if kw.navg is None:
         maintitle += '\nt_avg = none'
     else:
@@ -148,7 +143,7 @@ for isampleval in kw.isamplevals:
 
     maintitle += '\nm=0 (lon. avg.)'
 
-    print('plotting sampleval = %0.3f (i = %02i)' %(sampleval, isampleval))
+    print('plotting ' + samplelabel + ' (i = %02i)' %isampleval)
    
     # make plot
     fig, axs, fpar = make_figure(nplots=nplots, ncol=1, sub_width_inches=sub_width_inches, sub_height_inches=sub_height_inches, margin_left_inches=margin_left_inches, margin_right_inches=margin_right_inches, margin_top_inches=margin_top_inches, margin_bottom_inches=margin_bottom_inches)
@@ -159,7 +154,7 @@ for isampleval in kw.isamplevals:
             field = terms[iplot][:, isampleval, :]
         else:
             field = terms[iplot][:, :, isampleval]
-        plot_timey(field, times, sampleaxis, fig, ax, **kw_plot_timey)
+        plot_timey(field, times, yaxis, fig, ax, **kw_plot_timey)
                 
         #  title the plot
         ax.set_title(kw.titles[iplot], fontsize=fontsize)
