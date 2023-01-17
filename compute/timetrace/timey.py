@@ -62,7 +62,7 @@ if rank == 0:
     clas0, clas = read_clas(args)
     dirname = clas0['dirname']
     magnetism = clas0['magnetism']
-    kwargs_default = dict({'rad': False, 'shav': False,  'latvals': None, 'rvals': None, 'qvals': None, 'groupname': 'b'})
+    kwargs_default = dict({'rad': False, 'latvals': None, 'rvals': None, 'qvals': None, 'groupname': 'b'})
     kwargs = update_dict(kwargs_default, clas)
 
     if kwargs.rvals is None:
@@ -91,13 +91,9 @@ if rank == 0:
         groupname = input("choose a groupname to save your data: ")
 
     rad = kwargs['rad']
-    shav = kwargs['shav']
 
     # get the Rayleigh data directory
-    if shav:
-        dataname = 'Shell_Avgs'
-    else: 
-        dataname = 'AZ_Avgs'
+    dataname = 'AZ_Avgs'
     radatadir = dirname + '/' + dataname + '/'
 
     # get desired analysis range
@@ -113,21 +109,20 @@ if rank == 0:
     tt_lat = di_grid['tt_lat']
 
     # get indices associated with desired sample vals
-    if not shav:
-        if rad:
-            samplevals = latvals
-            sampleaxis = tt_lat
-        else:
-            samplevals = rvals
-            sampleaxis = rr
+    if rad:
+        samplevals = latvals
+        sampleaxis = tt_lat
+    else:
+        samplevals = rvals
+        sampleaxis = rr
 
-        isamplevals = []
-        for sampleval in samplevals:
-            isamplevals.append(np.argmin(np.abs(sampleaxis - sampleval)))
-        isamplevals = np.array(isamplevals)
-        # recompute the actual sample values we get
-        samplevals = sampleaxis[isamplevals]
-        nsamplevals = len(samplevals)
+    isamplevals = []
+    for sampleval in samplevals:
+        isamplevals.append(np.argmin(np.abs(sampleaxis - sampleval)))
+    isamplevals = np.array(isamplevals)
+    # recompute the actual sample values we get
+    samplevals = sampleaxis[isamplevals]
+    nsamplevals = len(samplevals)
 
     # Distribute file_list to each process
     for k in range(nproc - 1, -1, -1):
@@ -152,16 +147,12 @@ else: # recieve appropriate file info if rank > 1
 
 # broadcast meta data
 if rank == 0:
-    meta = [dirname, radatadir, qvals, rad, shav]
-    if not shav:
-        meta += [isamplevals, nsamplevals]
+    meta = [dirname, radatadir, qvals, rad, isamplevals, nsamplevals]
 else:
     meta = None
 
 the_bcast = comm.bcast(meta, root=0)
-dirname, radatadir, qvals, rad, shav = the_bcast[:5]
-if not shav:
-    isamplevals, nsamplevals = the_bcast[5:]
+dirname, radatadir, qvals, rad, isamplevals, nsamplevals = the_bcast
 
 # Checkpoint and time
 comm.Barrier()
@@ -170,18 +161,17 @@ if rank == 0:
     print (format_time(t2 - t1))
     print ('Considering %i %s files for the trace: %s through %s'\
         %(nfiles, dataname, file_list[0], file_list[-1]))
-    if not shav:
-        print ("sampling values:")
-        print ("qvals = " + arr_to_str(qvals, "%i"))
-        st = "sampling locations:"
-        if rad:
-            st2 = "lats = "
-            fmt = '%.1f'
-        else:
-            st2 = "rvals = "
-            fmt = "%1.3e"
-        print(st)
-        print (st2 + arr_to_str(samplevals, fmt))
+    print ("sampling values:")
+    print ("qvals = " + arr_to_str(qvals, "%i"))
+    st = "sampling locations:"
+    if rad:
+        st2 = "lats = "
+        fmt = '%.1f'
+    else:
+        st2 = "rvals = "
+        fmt = "%1.3e"
+    print(st)
+    print (st2 + arr_to_str(samplevals, fmt))
     print(fill_str('computing'), end='\r')
     t1 = time.time()
 
@@ -190,18 +180,13 @@ my_times = []
 my_iters = []
 my_vals = []
 
-if shav:
-    reading_func = Shell_Avgs
-else: 
-    reading_func = AZ_Avgs
+reading_func = AZ_Avgs
 
 for i in range(my_nfiles):
     a = reading_func(radatadir + str(my_files[i]).zfill(8), '')
     for j in range(a.niter):
         if rad:
             my_vals.append(a.vals[:, :, :, j][isamplevals, :,  :][:, :, a.lut[qvals]])
-        elif shav:
-            my_vals.append(a.vals[:, :, :, j][:, :, a.lut[qvals]])
         else:
             my_vals.append(a.vals[:, :, :, j][:, isamplevals, :][:, :, a.lut[qvals]])
         my_times.append(a.time[j])
@@ -248,8 +233,6 @@ if rank == 0:
     # and first and last iteration files for the trace
     if rad:
         basename = 'timerad'
-    elif shav:
-        basename = 'timeshav'
     else:
         basename = 'timelat'
 
@@ -270,8 +253,7 @@ if rank == 0:
     times = np.array(times)
     iters = np.array(iters)
     di_sav = dict({'vals': vals, 'times': times, 'iters': iters, 'qvals': qvals})
-    if not shav:
-        di_sav['samplevals'] = samplevals
+    di_sav['samplevals'] = samplevals
     pickle.dump(di_sav, f, protocol=4)
     f.close()
     t2 = time.time()

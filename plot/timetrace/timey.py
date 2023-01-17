@@ -23,7 +23,7 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = clas0['magnetism']
 
 # defaults
-kwargs_default = dict({'the_file': None, 'ntot': 500, 'clat': 10, 'dlat': 0, 'om': None, 'rad': False, 'lon': False, 'shav': False, 'isamplevals': np.array([0]), 'samplevals': None, 'rcut': None, 'groupname': 'b'})
+kwargs_default = dict({'the_file': None, 'ntot': 500, 'clat': 10, 'dlat': 0, 'om': None, 'rad': False, 'lon': False, 'isamplevals': np.array([0]), 'samplevals': None, 'groupname': 'b'})
 kwargs_default.update(plot_timey_kwargs_default)
 
 # check for bad keys
@@ -43,25 +43,16 @@ time_unit, time_label, rotation, simple_label = get_time_unit(dirname)
 # get grid info
 di_grid = get_grid_info(dirname)
 
-datatype = 'timelat'
-sampleaxis = di_grid['tt_lat']
 if kw.rad:
     datatype = 'timerad'
     sampleaxis = di_grid['rr']
-elif kw.lon:
-    if not kw.om is None:
-        om0 = 1/time_unit*1e9 # frame rate, nHz
-    datatype = 'timelon_clat' + lat_format(clat) + '_dlat%03.0f' %dlat
-    sampleaxis = di_grid['lons']
-elif kw.shav:
-    datatype = 'timeshav'
-    sampleaxis = di_grid['rr']
+else:
+    datatype = 'timelat'
+    sampleaxis = di_grid['tt_lat']
 
 dataname = datatype
 if 'groupname' in kw:
     dataname += '_' + kw.groupname
-if not kw.rcut is None:
-    dataname += '_rcut%0.3f' %kw.rcut
 
 #dataname += clas0['tag']
 
@@ -77,8 +68,7 @@ vals = di['vals']
 times = di['times']
 iters = di['iters']
 qvals_avail = np.array(di['qvals'])
-if not kw.shav:
-    samplevals_avail = di['samplevals']
+samplevals_avail = di['samplevals']
 
 # time range
 iter1, iter2 = get_iters_from_file(kw.the_file)
@@ -125,22 +115,19 @@ if 'ycut' in clas:
 nplots = len(terms)
 
 # determine desired levels to plot
-if not kw.shav: # kw.shav means integrated over latitude, so can't choose
-    # specific latitude levels
-    if not kw.samplevals is None: # isamplevals being set indirectly
-        # check for special 'all' option
-        if kw.samplevals == 'all':
-            kw.isamplevals = np.arange(len(samplevals_avail))
-        else:
-            kw.samplevals = make_array(kw.samplevals)
-            kw.isamplevals = np.zeros_like(kw.samplevals, dtype='int')
-            for i in range(len(kw.samplevals)):
-                kw.isamplevals[i] = np.argmin(np.abs(samplevals_avail - kw.samplevals[i]))
+if not kw.samplevals is None: # isamplevals being set indirectly
+    # check for special 'all' option
+    if kw.samplevals == 'all':
+        kw.isamplevals = np.arange(len(samplevals_avail))
+    else:
+        kw.samplevals = make_array(kw.samplevals)
+        kw.isamplevals = np.zeros_like(kw.samplevals, dtype='int')
+        for i in range(len(kw.samplevals)):
+            kw.isamplevals[i] = np.argmin(np.abs(samplevals_avail - kw.samplevals[i]))
 
 # Loop over the desired levels and save plots
 for isampleval in kw.isamplevals:
-    if not kw.shav:
-        sampleval = samplevals_avail[isampleval]
+    sampleval = samplevals_avail[isampleval]
 
     # set some labels 
     axislabel = 'latitude (deg)'
@@ -152,9 +139,7 @@ for isampleval in kw.isamplevals:
         position_tag = ('_colat' + lon_fmt) %(90.0 - sampleval)
 
     # Put some useful information on the title
-    maintitle = dirname_stripped 
-    if not kw.shav:
-        maintitle += '\n' + samplelabel
+    maintitle = dirname_stripped + '\n' + samplelabel
     if kw.navg is None:
         maintitle += '\nt_avg = none'
     else:
@@ -163,8 +148,7 @@ for isampleval in kw.isamplevals:
 
     maintitle += '\nm=0 (lon. avg.)'
 
-    if not kw.shav:
-        print('plotting sampleval = %0.3f (i = %02i)' %(sampleval, isampleval))
+    print('plotting sampleval = %0.3f (i = %02i)' %(sampleval, isampleval))
    
     # make plot
     fig, axs, fpar = make_figure(nplots=nplots, ncol=1, sub_width_inches=sub_width_inches, sub_height_inches=sub_height_inches, margin_left_inches=margin_left_inches, margin_right_inches=margin_right_inches, margin_top_inches=margin_top_inches, margin_bottom_inches=margin_bottom_inches)
