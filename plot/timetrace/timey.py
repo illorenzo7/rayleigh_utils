@@ -148,21 +148,8 @@ for isampleval in kw.isamplevals:
     position_tag = '_rval%1.3e' %sampleval
     if kw.rad:
         axislabel = 'r'
-        samplelabel = 'lat = ' + lat_format(sampleval)
-        position_tag = '_lat' + lat_format(sampleval)
-    elif kw.lon:
-        axislabel = 'longitude (deg)'
-        samplelabel = 'clat = ' + lat_format(clat) + '\n' +  r'$r/R_\odot$' + ' = %.3f' %sampleval
-        if not kw.om is None:
-            samplelabel += '\n' + (r'$\Omega_{\rm{frame}}$' + ' = %.1f nHz ' + '\n' + r'$\Omega_{\rm{frame}} - \Omega_0$' + ' = %.2f nHz') %(om, om - om0)
-        else:
-            samplelabel += '\n' + r'$\Omega_{\rm{frame}} = \Omega_0$'
-
-        position_tag = '_clat' + lat_format(clat) + '_rval%.3f' %sampleval
-    elif kw.shav:
-        axislabel = r'$r/R_\odot$'
-        samplelabel = ''
-        position_tag = ''
+        samplelabel = ('lat = ' + lat_fmt) %sampleval
+        position_tag = ('_colat' + lon_fmt) %(90.0 - sampleval)
 
     # Put some useful information on the title
     maintitle = dirname_stripped 

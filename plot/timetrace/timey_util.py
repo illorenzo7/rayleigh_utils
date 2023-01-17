@@ -107,7 +107,7 @@ def plot_timey(field, times, yy, fig, ax, **kwargs):
         plotting_func(times_2d1, yy_2d1, field1, fig, ax, **kw_plotting_func)
 
     if not kw.ycut is None:
-        plotting_func.minmax = kw.minmax2
+        kw_plotting_func.minmax = kw.minmax2
         if kw.posdef: 
             kw_plotting_func.cmap = 'cividis'
         else:
