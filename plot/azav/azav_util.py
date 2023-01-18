@@ -425,7 +425,7 @@ plot_azav_grid_kwargs_default.update(plot_azav_kwargs_default)
 make_figure_kw_az = make_figure_kwargs_default.copy()
 make_figure_kw_az.update(azav_fig_dimensions)
 plot_azav_grid_kwargs_default.update(make_figure_kw_az)
-# need a nother make_figure_kwargs for the shav plot (possibly)
+# need another make_figure_kwargs for the shav plot (possibly)
 make_figure_kw_shav = make_figure_kw_az.copy()
 make_figure_kw_shav.update(lineplot_fig_dimensions)
 for key, val in make_figure_kw_shav.items():
