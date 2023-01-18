@@ -40,9 +40,10 @@ kw_make_figure = update_dict(make_figure_kwargs_default, clas)
 
 # check for bad keys
 find_bad_keys(kwargs_default, clas, clas0['routinename'], justwarn=True)
-if not kw.rbcz is None:  # need room for two colorbars
+if not kw.rcut is None:  
+    # need room for two colorbars and line up top stating rcut 
+    kw_make_figure.margin_top_inches += 1/4
     kw_make_figure.sub_margin_bottom_inches *= 2
-    print(kw_make_figure.sub_margin_bottom_inches)
 
 # Get density
 eq = get_eq(dirname)
@@ -100,8 +101,14 @@ iter1, iter2 = get_iters_from_file(kw.the_file)
 time_string = get_time_string(dirname, iter1, iter2, threelines=True)
 margin_x = fpar['margin_left'] + fpar['sub_margin_left']
 margin_y = default_margin/fpar['height_inches']
-the_title = dirname_stripped + '\n' + 'Mass flux (circulation)\n' + time_string
-ax.set_title(the_title, fontsize=default_titlesize)
+maintitle = dirname_stripped + '\n' + 'mass flux (circulation)\n' + time_string
+if not kw.rcut is None:
+    maintitle += '\nrcut = %1.3e' %kw.rcut
+
+margin_x = fpar['margin_left'] + fpar['sub_margin_left']
+margin_y = default_margin/fpar['height_inches']
+fig.text(margin_x, 1 - margin_y, maintitle,\
+         ha='left', va='top', fontsize=default_titlesize)
 
 # save the figure
 plotdir = my_mkdir(clas0['plotdir'])

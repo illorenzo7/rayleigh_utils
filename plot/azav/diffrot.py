@@ -26,7 +26,7 @@ dirname_stripped = strip_dirname(dirname, wrap=True)
 kwargs_default = dict({'the_file': None})
 
 # also need make figure kwargs
-azav_fig_dimensions['margin_top_inches'] = 1.25
+azav_fig_dimensions['margin_top_inches'] = 1
 make_figure_kwargs_default.update(azav_fig_dimensions)
 kwargs_default.update(make_figure_kwargs_default)
 
@@ -37,15 +37,17 @@ plot_azav_kwargs_default['nosci'] = True
 plot_azav_kwargs_default['cbar_prec'] = 1
 kwargs_default.update(plot_azav_kwargs_default)
 
-# overwrite defaults
+# overwrite defaults, first main kwargs
 kw = update_dict(kwargs_default, clas)
 kw_plot_azav = update_dict(plot_azav_kwargs_default, clas)
 kw_make_figure = update_dict(make_figure_kwargs_default, clas)
 
 # check for bad keys
 find_bad_keys(kwargs_default, clas, clas0['routinename'], justwarn=True)
-if not kw.rbcz is None:  # need room for two colorbars
-    kw_make_figure.margin_bottom_inches *= 2
+if not kw.rcut is None:  
+    # need room for two colorbars and line up top stating rcut 
+    kw_make_figure.margin_top_inches += 1/4
+    kw_make_figure.sub_margin_bottom_inches *= 2
 
 # get data
 if kw.the_file is None:
@@ -80,10 +82,13 @@ plot_azav (Om, rr, cost, fig, ax, **kw_plot_azav)
 # make title 
 iter1, iter2 = get_iters_from_file(kw.the_file)
 time_string = get_time_string(dirname, iter1, iter2, threelines=True) 
+maintitle = dirname_stripped + '\n' +  r'$\Omega - \Omega_0$' + '\n' + time_string + '\n' + r'$\Delta\Omega_{\rm{60}}$' + (' = %.1f nHz' %Delta_Om)
+if not kw.rcut is None:
+    maintitle += '\nrcut = %1.3e' %kw.rcut
+    
 margin_x = fpar['margin_left'] + fpar['sub_margin_left']
 margin_y = default_margin/fpar['height_inches']
-the_title = dirname_stripped + '\n' +  r'$\Omega - \Omega_0$' + '\n' + time_string + '\n' + r'$\Delta\Omega_{\rm{60}}$' + (' = %.1f nHz' %Delta_Om)
-fig.text(margin_x, 1 - margin_y, the_title,\
+fig.text(margin_x, 1 - margin_y, maintitle,\
          ha='left', va='top', fontsize=default_titlesize)
 
 # save the figure
