@@ -29,8 +29,6 @@ make_figure_kwargs_default.update(azav_fig_dimensions)
 kwargs_default.update(make_figure_kwargs_default)
 
 # of course, plot_azav kwargs, but need to change a few
-plot_azav_kwargs_default['nosci'] = True
-plot_azav_kwargs_default['cbar_prec'] = 1
 kwargs_default.update(plot_azav_kwargs_default)
 
 # overwrite defaults

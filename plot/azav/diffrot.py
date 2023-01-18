@@ -30,7 +30,7 @@ azav_fig_dimensions['margin_top_inches'] = 1
 make_figure_kwargs_default.update(azav_fig_dimensions)
 kwargs_default.update(make_figure_kwargs_default)
 
-# of course, plot_azav kwargs, but need to change a few
+# and of course need plot_azav kwargs
 plot_azav_kwargs_default['plotlatlines'] = False
 kwargs_default.update(plot_azav_kwargs_default)
 
