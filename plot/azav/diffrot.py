@@ -32,9 +32,6 @@ kwargs_default.update(make_figure_kwargs_default)
 
 # of course, plot_azav kwargs, but need to change a few
 plot_azav_kwargs_default['plotlatlines'] = False
-plot_azav_kwargs_default['units'] = 'nHz'
-plot_azav_kwargs_default['nosci'] = True
-plot_azav_kwargs_default['cbar_prec'] = 1
 kwargs_default.update(plot_azav_kwargs_default)
 
 # overwrite defaults, first main kwargs
@@ -67,7 +64,7 @@ xx = di_grid['xx']
 
 # Get differential rotation in the rotating frame. 
 Om = vp_av/xx
-Om *= 1.0e9/2/np.pi # rad/s --> nHz
+Om *= 1.0/(2.0*np.pi) # rad/s --> Hz
 
 # DR contrast between 0 and 60 degrees
 it0, it60_N, it60_S = np.argmin(np.abs(tt_lat)), np.argmin(np.abs(tt_lat - 60)), np.argmin(np.abs(tt_lat + 60))
@@ -82,7 +79,7 @@ plot_azav (Om, rr, cost, fig, ax, **kw_plot_azav)
 # make title 
 iter1, iter2 = get_iters_from_file(kw.the_file)
 time_string = get_time_string(dirname, iter1, iter2, threelines=True) 
-maintitle = dirname_stripped + '\n' +  r'$\Omega - \Omega_0$' + '\n' + time_string + '\n' + r'$\Delta\Omega_{\rm{60}}$' + (' = %.1f nHz' %Delta_Om)
+maintitle = dirname_stripped + '\n' +  r'$(\Omega - \Omega_0)/2\pi$' + '\n' + time_string + '\n' + r'$\Delta\Omega_{\rm{60}}$' + (' = %1.2e' %Delta_Om)
 if not kw.rcut is None:
     maintitle += '\nrcut = %1.3e' %kw.rcut
     
