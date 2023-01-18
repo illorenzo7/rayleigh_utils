@@ -139,7 +139,7 @@ fig, axs, fpar = make_figure(**kw_make_figure)
 ax = axs[0,0]
 
 # x and y labels
-kw_lineplot.xlabel = 'r'
+kw_lineplot.xlabel = 'radius'
 kw_lineplot.ylabel = r'$4\pi r^2$' + '(flux)/' + r'$L_*$'
 
 # Try to find the BCZ from where enthalpy flux goes negative, if desired
