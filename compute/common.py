@@ -1198,7 +1198,7 @@ def translate_times(time, dirname, translate_from='iter'):
         di.val_prot = times[ind]/eq.prot
     return di
 
-def get_time_string(dirname, iter1, iter2=None, oneline=False, iter0=None, floatwidth=None, floatprec=None):
+def get_time_string(dirname, iter1, iter2=None, oneline=False, threelines=False, iter0=None, floatwidth=None, floatprec=None):
     # see if user wants to subtract off base time
     if not iter0 is None:
         t0 = translate_times(iter0, dirname, translate_from='iter')['val_sec']
@@ -1232,8 +1232,14 @@ def get_time_string(dirname, iter1, iter2=None, oneline=False, iter0=None, float
     if not iter2 is None:
         if oneline:
             time_string = (('t = ' + fmt + ' to ' + fmt) %(t1/time_unit, t2/time_unit)) + ' ' + time_label + ' ' + r'$(\Delta t$' + ' = ' + (fmt %((t2 - t1)/time_unit)) + ' ' + time_label + ')'
+        elif threelines:
+            time_string =\
+        't = ' + (fmt %(t1/time_unit)) + ' ' + time_label + ' to\n' + \
+        't = ' + (fmt %(t2/time_unit)) + ' ' + time_label  + '\n' +\
+        r'$(\Delta t$' + ' = ' + (fmt %((t2 - t1)/time_unit)) + ' ' + time_label + ')'
         else:
-            time_string = (('t = ' + fmt + ' to ' + fmt) %(t1/time_unit, t2/time_unit)) + ' ' + time_label + '\n' + r'$\Delta t$' + ' = ' + (fmt %((t2 - t1)/time_unit)) + ' ' + time_label
+            time_string = (('t = ' + fmt + ' to ' + fmt) %(t1/time_unit, t2/time_unit)) + ' ' + time_label +\
+                    '\n' + r'$\Delta t$' + ' = ' + (fmt %((t2 - t1)/time_unit)) + ' ' + time_label
     else:
         time_string = (('t = ' + fmt + ' ') %(t1/time_unit)) + time_label
 
