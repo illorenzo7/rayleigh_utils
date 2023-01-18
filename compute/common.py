@@ -537,7 +537,7 @@ def get_file_lists(radatadir, clas):
 # ROUTINES FOR CHARACTERIZING/READING RAYLEIGH POST-PROCESSED DATA FILES
 ########################################################################
 
-def get_widest_range_file(datadir, dataname):
+def get_widest_range_file(datadir, dataname, stringent=True):
     # Find the desired post-processed file(s) in the data directory. If there are 
     # multiple, by default choose the one with widest range as far
     # as the input raw data files are concerned (i.e., the largest last_iter - first_iter)
@@ -548,8 +548,12 @@ def get_widest_range_file(datadir, dataname):
         specific_files = []
         for i in range(len(datafiles)):
             datafile = datafiles[i]
-            if dataname == datafile.split('-')[0]:
-                specific_files.append(datafile)
+            if stringent:
+                if dataname == get_dataname_from_file(datafile):
+                    specific_files.append(datafile)
+            else:
+                if dataname in get_dataname_from_file(datafile):
+                    specific_files.append(datafile)
 
         ranges = []
         iters1 = []
@@ -661,7 +665,7 @@ def get_iters_from_file(filename):
     iters_st = filename_end.split('_')
     iter1, iter2 = int(iters_st[0]), int(iters_st[1])
     return iter1, iter2
-        
+ 
 ##################################################################################
 # ROUTINES TO GET BASIC INFO ABOUT A RAYLEIGH SIMULATION, GIVEN THE SIM. DIRECTORY
 ##################################################################################
@@ -1144,18 +1148,27 @@ def get_time_unit(dirname):
     return time_unit, time_label, rotation, simple_label
 
 def translate_times(time, dirname, translate_from='iter'):
-    # TO USE MUST HAVE G_Avgs_trace file
     # change between different time units (can translate from: 
     # iter, prot, tdt, sec
+    # TO USE MUST HAVE G_Avgs_trace file or equivalent 
+    # (time-lat, time-rad, etc.)
 
-    # Get the G_Avgs trace
+    # Get a time trace data file for the translation
     datadir = dirname + '/data/'
-    the_file = get_widest_range_file(datadir, 'G_Avgs_trace')
+    # first try the G_Avgs_trace...
+    the_file = get_widest_range_file(datadir, 'G_Avgs_trace', stringent=False)
+    if the_file is None: # next, try time-radius
+        the_file = get_widest_range_file(datadir + '/timelat', '', stringent=False)
+    if the_file is None: # finally, try time-radius
+        the_file = get_widest_range_file(datadir + '/timerad', '', stringent=False)
+
+    # finally, translate the times or else exit with error
     if the_file is None:
-        print ("translate_times(): you need to have G_Avgs_trace file")
+        print ("translate_times(): you need to have a trace file")
         print ("to use me! Exiting.")
         sys.exit()
     else:
+        print ("translate_times(): translating from " + the_file)
         di = get_dict(the_file)
 
     # Get times and iters from trace file
