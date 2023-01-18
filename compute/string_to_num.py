@@ -15,7 +15,13 @@ def how_to_treat_numberstring(string):
     elif all (char in int_chars for char in string):
         return 'int'
     elif all (char in float_chars for char in string):
-        return 'float'    
+        if not string[0] in (int_chars + ['.']): # this must be a string, like d10.0
+            return 'string'
+        elif string[-2:] == '.0': # convert things like 1e3 --> '1000.0'
+            # to ints
+            return 'int'
+        else:
+            return 'float'    
     else: # just a string!
         return 'string'
 

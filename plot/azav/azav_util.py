@@ -14,10 +14,10 @@ from common import *
 from plotcommon import *
 
 # default azav fig dimensions
-azav_fig_dimensions = dict({'sub_width_inches': 2, 'sub_aspect': 2, 'sub_margin_left_inches': default_margin, 'sub_margin_top_inches': 1/4, 'sub_margin_bottom_inches': 1/2, 'margin_top_inches': 1})
+azav_fig_dimensions = dict({'sub_width_inches': 2, 'sub_aspect': 2, 'sub_margin_left_inches': default_margin, 'sub_margin_top_inches': 1/4, 'sub_margin_bottom_inches': 1/2, 'margin_top_inches': 0.875})
 
 # plot_azav needs my_contourf args, then some
-plot_azav_kwargs_default = dict({'rbcz': None, 'minmaxrz': None, 'cmaprz': None, 'rvals': np.array([]), 'plotlatlines': True, 'latvals': np.arange(-60., 90., 30.), 'plotboundary': True,\
+plot_azav_kwargs_default = dict({'rcut': None, 'minmax2': None, 'cmap2': None, 'rvals': np.array([]), 'plotlatlines': True, 'latvals': np.arange(-60., 90., 30.), 'plotboundary': True,\
         'linestyles1': np.array(['-']), 'linewidths1': np.array([default_lw]), 'linecolors1': np.array(['k']),\
        'linestyles2': np.array(['-']), 'linewidths2': np.array([default_lw]), 'linecolors2': np.array(['k'])})
 
@@ -46,38 +46,38 @@ def plot_azav(field, rr, cost, fig, ax,  **kwargs):
     xx_full = rr_2d*sint_2d/rmax
     yy_full = rr_2d*cost_2d/rmax
 
-    if kw.rbcz is None: # just plotting 1 domain
+    if kw.rcut is None: # just plotting 1 domain
         xx = xx_full
         yy = yy_full
         field = field_full
     else: # plotting two domains
-        irbcz = np.argmin(np.abs(rr/rsun - kw.rbcz))
+        ircut = np.argmin(np.abs(rr - kw.rcut))
 
-        field = field[:, :irbcz+1]
-        xx = (rr_2d*sint_2d)[:, :irbcz+1]/rmax
-        yy = (rr_2d*cost_2d)[:, :irbcz+1]/rmax
+        field = field[:, :ircut+1]
+        xx = (rr_2d*sint_2d)[:, :ircut+1]/rmax
+        yy = (rr_2d*cost_2d)[:, :ircut+1]/rmax
 
-        fieldrz = field_full[:, irbcz+1:]
-        xxrz = (rr_2d*sint_2d)[:, irbcz+1:]/rmax
-        yyrz = (rr_2d*cost_2d)[:, irbcz+1:]/rmax
+        field2 = field_full[:, ircut+1:]
+        xx2 = (rr_2d*sint_2d)[:, ircut+1:]/rmax
+        yy2 = (rr_2d*cost_2d)[:, ircut+1:]/rmax
 
     # plot the CZ field
     my_contourf(xx, yy, field, fig, ax, **kw_my_contourf)
 
     # possibly plot RZ field
-    if not kw.rbcz is None: 
+    if not kw.rcut is None: 
         # will need to change some contourf kwargs:
-        kw_my_contourf.minmax = kw.minmaxrz
+        kw_my_contourf.minmax = kw.minmax2
         kw_my_contourf.allticksoff = False # no need to turn off ticks twice
-        if kw.cmaprz is None:
+        if kw.cmap2 is None:
             if kw.posdef: 
                 kw_my_contourf.cmap = 'cividis'
             else:
                 kw_my_contourf.cmap = 'PuOr_r'    
         else:
-            kw_my_contourf.cmap = kw.cmaprz
+            kw_my_contourf.cmap = kw.cmap2
         kw_my_contourf.cbar_no = 2
-        my_contourf(xxrz, yyrz, fieldrz, fig, ax, **kw_my_contourf)
+        my_contourf(xx2, yy2, field2, fig, ax, **kw_my_contourf)
 
     # potentially plot coordinate lines
     if not kw.plotlatlines:
@@ -101,7 +101,7 @@ def plot_azav(field, rr, cost, fig, ax,  **kwargs):
 
         if kw.plotboundary:
             if ind == 1:
-                to_add = [np.min(rr/rsun), np.max(rr/rsun)]
+                to_add = [np.min(rr), np.max(rr)]
             if ind == 2:
                 to_add = [np.min(tt_lat), np.max(tt_lat)]
             vals = [to_add[0]] + vals + [to_add[1]]
@@ -113,7 +113,7 @@ def plot_azav(field, rr, cost, fig, ax,  **kwargs):
         for i in range(len(vals)):
             val = vals[i]
             if ind == 1:
-                irval = np.argmin(np.abs(rr/rsun - val))
+                irval = np.argmin(np.abs(rr - val))
                 xline, yline = xx_full[:, irval], yy_full[:, irval]
             if ind == 2:
                 ilatval = np.argmin(np.abs(tt_lat - val))
@@ -154,38 +154,38 @@ def plot_azav_half(field, rr, cost, fig, ax,  **kwargs):
     xx_full = rr_2d*sint_2d/rmax
     yy_full = rr_2d*cost_2d/rmax
 
-    if kw.rbcz is None: # just plotting 1 domain
+    if kw.rcut is None: # just plotting 1 domain
         xx = xx_full
         yy = yy_full
         field = field_full
     else: # plotting two domains
-        irbcz = np.argmin(np.abs(rr/rsun - kw.rbcz))
+        ircut = np.argmin(np.abs(rr - kw.rcut))
 
-        field = field[:, :irbcz+1]
-        xx = (rr_2d*sint_2d)[:, :irbcz+1]/rmax
-        yy = (rr_2d*cost_2d)[:, :irbcz+1]/rmax
+        field = field[:, :ircut+1]
+        xx = (rr_2d*sint_2d)[:, :ircut+1]/rmax
+        yy = (rr_2d*cost_2d)[:, :ircut+1]/rmax
 
-        fieldrz = field_full[:, irbcz+1:]
-        xxrz = (rr_2d*sint_2d)[:, irbcz+1:]/rmax
-        yyrz = (rr_2d*cost_2d)[:, irbcz+1:]/rmax
+        field2 = field_full[:, ircut+1:]
+        xx2 = (rr_2d*sint_2d)[:, ircut+1:]/rmax
+        yy2 = (rr_2d*cost_2d)[:, ircut+1:]/rmax
 
     # plot the CZ field
     my_contourf(xx, yy, field, fig, ax, **kw_my_contourf)
 
     # possibly plot RZ field
-    if not kw.rbcz is None: 
+    if not kw.rcut is None: 
         # will need to change some contourf kwargs:
-        kw_my_contourf.minmax = kw.minmaxrz
+        kw_my_contourf.minmax = kw.minmax2
         kw_my_contourf.allticksoff = False # no need to turn off ticks twice
-        if kw.cmaprz is None:
+        if kw.cmap2 is None:
             if kw.posdef: 
                 kw_my_contourf.cmap = 'cividis'
             else:
                 kw_my_contourf.cmap = 'PuOr_r'    
         else:
-            kw_my_contourf.cmap = kw.cmaprz
+            kw_my_contourf.cmap = kw.cmap2
         kw_my_contourf.cbar_no = 2
-        my_contourf(xxrz, yyrz, fieldrz, fig, ax, **kw_my_contourf)
+        my_contourf(xx2, yy2, field2, fig, ax, **kw_my_contourf)
 
     # potentially plot coordinate lines
     if not kw.plotlatlines:
@@ -209,7 +209,7 @@ def plot_azav_half(field, rr, cost, fig, ax,  **kwargs):
 
         if kw.plotboundary:
             if ind == 1:
-                to_add = [np.min(rr/rsun), np.max(rr/rsun)]
+                to_add = [np.min(rr), np.max(rr)]
             if ind == 2:
                 to_add = [np.min(tt_lat), np.max(tt_lat)]
             vals = [to_add[0]] + vals + [to_add[1]]
@@ -221,7 +221,7 @@ def plot_azav_half(field, rr, cost, fig, ax,  **kwargs):
         for i in range(len(vals)):
             val = vals[i]
             if ind == 1:
-                irval = np.argmin(np.abs(rr/rsun - val))
+                irval = np.argmin(np.abs(rr - val))
                 xline, yline = xx_full[:, irval], yy_full[:, irval]
             if ind == 2:
                 ilatval = np.argmin(np.abs(tt_lat - val))
@@ -424,7 +424,7 @@ plot_azav_grid_kwargs_default.update(plot_azav_kwargs_default)
 make_figure_kw_az = make_figure_kwargs_default.copy()
 make_figure_kw_az.update(azav_fig_dimensions)
 plot_azav_grid_kwargs_default.update(make_figure_kw_az)
-# need a nother make_figure_kwargs for the shav plot (possibly)
+# need another make_figure_kwargs for the shav plot (possibly)
 make_figure_kw_shav = make_figure_kw_az.copy()
 make_figure_kw_shav.update(lineplot_fig_dimensions)
 for key, val in make_figure_kw_shav.items():
@@ -488,7 +488,7 @@ def plot_azav_grid(terms, rr, cost, **kwargs):
     # make plot
     kw_make_figure.nplots = nplots
     kw_make_figure.ncol = kw.ncol
-    if not kw.rbcz is None:
+    if not kw.rcut is None:
         kw_make_figure.sub_margin_bottom_inches *= 2
     fig, axs, fpar = make_figure(**kw_make_figure)
 
@@ -496,10 +496,10 @@ def plot_azav_grid(terms, rr, cost, **kwargs):
     if kw.shav:
         kw_make_figure_shav.nplots = nplots
         kw_make_figure_shav.ncol = kw.ncol
-        if not kw.rbcz is None:
+        if not kw.rcut is None:
             kw_make_figure_shav.sub_margin_bottom_inches *= 2
 
-        if kw.rbcz is None:
+        if kw.rcut is None:
             kw_make_figure_shav.sub_margin_right_inches = default_margin
         else:
             kw_make_figure_shav.sub_margin_right_inches = default_margin_ylabel
@@ -528,7 +528,7 @@ def plot_azav_grid(terms, rr, cost, **kwargs):
         if kw.shav:
             av_term = np.sum(terms[iplot]*tw_2d, axis=0)
             av_ax = av_axs[irow, icol]
-            lineplot(rr/rsun, [av_term], av_ax, xlabel=xlabel, title=title_loc, xcut=kw.rbcz, xvals=kw.rvals, minmax=kw.minmax, minmax2=kw.minmaxrz, plotleg=False)
+            lineplot(rr, [av_term], av_ax, xlabel=xlabel, title=title_loc, xcut=kw.rcut, xvals=kw.rvals, minmax=kw.minmax, minmax2=kw.minmax2, plotleg=False)
 
     # Put the main title in upper left
     fig.text(fpar['margin_left'] + fpar['sub_margin_left'], 1.0 - fpar['margin_top'], kw.maintitle, ha='left', va='bottom', fontsize=default_titlesize)

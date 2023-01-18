@@ -30,8 +30,8 @@ then
     select=$(($select - 1))
 fi
 
-nprow=`python $rau/zz_runscripts/nprow.py $nprocs`
-npcol=`python $rau/zz_runscripts/npcol.py $nprocs`
+nprow=`python $rau/bash/nprow.py $nprocs`
+npcol=`python $rau/bash/npcol.py $nprocs`
 
 echo "#PBS -l select=$select:ncpus=$ncpus:model=$modeltype" >> lscript
 echo "#PBS -q long" >> lscript

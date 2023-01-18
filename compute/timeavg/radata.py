@@ -202,8 +202,6 @@ comm.Barrier()
 if rank == 0:
     # create data directory if it doesn't already exist
     datadir = clas0['datadir']
-    if datadir is None:
-        datadir = dirname + '/data/'
     if not os.path.isdir(datadir):
         os.makedirs(datadir)
 

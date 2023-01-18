@@ -299,7 +299,7 @@ comm.Barrier()
 # proc 0 saves the data
 if rank == 0:
     # create data directory if it doesn't already exist
-    datadir = dirname + '/data/'
+    datadir = clas0['datadir']
     if not os.path.isdir(datadir):
         os.makedirs(datadir)
 

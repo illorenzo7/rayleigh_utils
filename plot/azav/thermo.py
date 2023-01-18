@@ -26,21 +26,24 @@ dirname_stripped = strip_dirname(dirname)
 kwargs_default = dict({'the_file': None, 'the_file2': None, 'nond': False})
 
 # also need make figure kwargs
-make_figure_kwargs_default.update(azav_fig_dimensions)
-kwargs_default.update(make_figure_kwargs_default)
+#azav_fig_dimensions['margin_top_inches'] = 1.
+#make_figure_kwargs_default.update(azav_fig_dimensions)
+#kwargs_default.update(make_figure_kwargs_default)
 
-# of course, plot_azav kwargs
-kwargs_default.update(plot_azav_kwargs_default)
+# of course, plot_azav_grid kwargs
+plot_azav_grid_kwargs_default['margin_top_inches'] = 1
+kwargs_default.update(plot_azav_grid_kwargs_default)
 
 # overwrite defaults
 kw = update_dict(kwargs_default, clas)
-kw_plot_azav = update_dict(plot_azav_kwargs_default, clas)
-kw_make_figure = update_dict(make_figure_kwargs_default, clas)
+kw_plot_azav_grid = update_dict(plot_azav_grid_kwargs_default, clas)
 
 # check for bad keys
 find_bad_keys(kwargs_default, clas, clas0['routinename'], justwarn=True)
-if not kw.rbcz is None:  # need room for two colorbars
-    kw_make_figure.margin_bottom_inches *= 2
+if not kw.rcut is None:  
+    # need room for two colorbars and line up top stating rcut 
+    kw_plot_azav_grid.margin_top_inches += 1/4
+    kw_plot_azav_grid.sub_margin_bottom_inches *= 2
 
 # get data
 if kw.the_file is None:
@@ -104,11 +107,15 @@ else:
 iter1, iter2 = get_iters_from_file(kw.the_file)
 time_string = get_time_string(dirname, iter1, iter2)
 maintitle = dirname_stripped + '\n' +\
-        'Thermal variables: Az. Avg. - Sph. Avg.' + '\n' + titletag +\
+        'thermal variables: AZ_Avgs - Shell_Avgs' + '\n' + titletag +\
         '\n' + time_string
+if not kw.rcut is None:
+    maintitle += '\nrcut = %1.3e' %kw.rcut
+kw_plot_azav_grid.maintitle = maintitle
+kw_plot_azav_grid.titles = titles
 
 # make figure using usual routine
-fig = plot_azav_grid (terms, rr, cost, maintitle=maintitle, titles=titles, **kw_plot_azav)
+fig = plot_azav_grid (terms, rr, cost, **kw_plot_azav_grid)
 
 # save the figure
 plotdir = my_mkdir(clas0['plotdir'] + 'azav/')

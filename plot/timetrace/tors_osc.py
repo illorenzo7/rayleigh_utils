@@ -23,7 +23,14 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = clas0['magnetism']
 
 # defaults
-kwargs_default = dict({'the_file': None, 'ntot': 2000, 'clat': 10, 'dlat': 0, 'om': None, 'rad': False, 'lon': False, 'shav': False, 'isamplevals': np.array([0]), 'samplevals': None, 'rcut': None, 'groupname': 'v', 'sub': False})
+kwargs_default = dict({'the_file': None, 'ntot': 500, 'clat': 10, 'dlat': 0, 'om': None, 'rad': False, 'lon': False, 'isamplevals': np.array([0]), 'samplevals': None, 'groupname': 'v', 'nosub': False})
+
+# also need make figure kwargs
+timey_fig_dimensions['margin_top_inches'] = 1.0
+make_figure_kwargs_default.update(timey_fig_dimensions)
+kwargs_default.update(make_figure_kwargs_default)
+
+# of course, also need plot_timey kwargs
 kwargs_default.update(plot_timey_kwargs_default)
 
 # check for bad keys
@@ -31,11 +38,18 @@ find_bad_keys(kwargs_default, clas, clas0['routinename'], justwarn=True)
 
 # overwrite defaults
 kw = update_dict(kwargs_default, clas)
+kw_plot_timey = update_dict(plot_timey_kwargs_default, clas)
+kw_make_figure = update_dict(make_figure_kwargs_default, clas)
+
+# might need two colorbars
+if not kw.ycut is None:  # need room for two colorbars
+    kw_make_figure.sub_margin_right_inches *= 2
+
 # add in groupname keys
 kw.update(get_quantity_group(kw.groupname, magnetism))
+
 # user may have wanted to change some groupname keys
 kw = update_dict(kw, clas)
-kw_plot_timey = update_dict(plot_timey_kwargs_default, clas)
 
 # baseline time unit
 time_unit, time_label, rotation, simple_label = get_time_unit(dirname)
@@ -47,34 +61,27 @@ rr = di_grid['rr']
 nr = di_grid['nr']
 nt = di_grid['nt']
 
-datatype = 'timelat'
-sampleaxis = di_grid['tt_lat']
 if kw.rad:
     datatype = 'timerad'
-    sampleaxis = di_grid['rr']/rsun
-elif kw.lon:
-    if not kw.om is None:
-        om0 = 1/time_unit*1e9 # frame rate, nHz
-    datatype = 'timelon_clat' + lat_format(clat) + '_dlat%03.0f' %dlat
-    sampleaxis = di_grid['lons']
-elif kw.shav:
-    datatype = 'timeshav'
-    sampleaxis = di_grid['rr']/rsun
+    plotlabel = 'torsional oscillation: time-radius'
+    yaxis = di_grid['rr']
+    axislabel = 'radius'
+    samplefmt = lat_fmt
+    samplename = 'latval'
+else:
+    datatype = 'timelat'
+    plotlabel = 'torsional oscillation: time-latitude'
+    yaxis = di_grid['tt_lat']
+    axislabel = 'latitude (deg)'
+    samplefmt = '%1.3e'
+    samplename = 'rval'
 
-dataname = datatype
-thename = datatype
-if 'groupname' in kw:
-    dataname += '_' + kw.groupname
-    thename += '_torsosc'
-    if kw.sub:
-        thename += 'sub'
-if not kw.rcut is None:
-    dataname += '_rcut%0.3f' %kw.rcut
-    thename += '_rcut%0.3f' %kw.rcut
+dataname = datatype + '_' + kw.groupname
 
 # get data
 if kw.the_file is None:
-    kw.the_file = get_widest_range_file(clas0['datadir'] + 'timelat/', dataname)
+    kw.the_file = get_widest_range_file(clas0['datadir'] +\
+            datatype + '/', dataname)
 
 # Read in the data
 print ('reading ' + kw.the_file)
@@ -83,24 +90,11 @@ vals = di['vals']
 times = di['times']
 iters = di['iters']
 qvals_avail = np.array(di['qvals'])
-if not kw.shav:
-    samplevals_avail = di['samplevals']
+samplevals_avail = di['samplevals']
 
 # time range
 iter1, iter2 = get_iters_from_file(kw.the_file)
 times /= time_unit
-
-# Subtract DR, if desired
-if kw.lon:
-    if not kw.om is None:
-        print ("plotting in rotating frame om = %.1f nHz" %kw.om)
-        print ("compare this to frame rate    = %.1f nHz" %om0)
-        phi_deflections = (times*(kw.om - om0)) % 1 # between zero and one
-        nphi = len(sampleaxis)
-        for it in range(len(times)):
-            phi_deflection = phi_deflections[it]
-            nroll = int(phi_deflection*nphi)
-            vals[it] = np.roll(vals[it], -nroll, axis=0)
 
 # maybe thin data
 if not kw.ntot == 'full':
@@ -111,132 +105,90 @@ if not kw.ntot == 'full':
     vals = thin_data(vals, kw.ntot)
     print ("after thin_data: len(times) = %i" %len(times))
 
-# get rsintheta (xx)
+# get differential rotation
+qind = np.argmin(np.abs(qvals_avail - 3))
+vp = vals[:, :, :, qind]
 if kw.rad:
-    xx = (sint[kw.isamplevals]).reshape((1,len(kw.isamplevals),1))*\
-        rr.reshape((1, 1, nr))
+    sampletheta = np.pi/2.0 - samplevals_avail*np.pi/180.0
+    xx = rr.reshape((1, 1, nr))*\
+            np.sin(sampletheta).reshape((1, len(sampletheta), 1))
 else:
-    xx = (rr[kw.isamplevals]).reshape((1,1,len(kw.isamplevals)))*\
-        sint.reshape((1, nt, 1))
-
-
-# get raw traces of desired variables
-terms = []
-for qval in [3]:
-    qind = np.argmin(np.abs(qvals_avail - qval))
-    terms.append(vals[:, :, :, qind]/xx/(2*np.pi)) # diffrot in nHz
-    if kw.sub:
-        dummy, n1, n2 = np.shape(terms[-1])
-        tempmean = np.mean(terms[-1], axis=0).reshape((1, n1, n2))
-        terms[0] -= tempmean
-
-kw.titles = ['diff. rot (full om, Hz)']
-if kw.sub:
-    kw.titles = ['diff. rot (om - om0, Hz)']
-
-# set figure dimensions
-sub_width_inches = 7.5
-sub_height_inches = 2.0
-margin_bottom_inches = 1/2 # space for x-axis label
-margin_top_inches = 3/4
-if kw.lon:
-    margin_top_inches =  1 + 1/4
-margin_left_inches = 5/8 # space for latitude label
-margin_right_inches = 7/8 # space for colorbar
-if 'ycut' in clas:
-    margin_right_inches *= 2
-nplots = len(terms)
+    xx = samplevals_avail.reshape((1, 1, len(samplevals_avail)))*\
+            sint.reshape((1, nt, 1))
+            
+diffrot = vp/xx/(2*np.pi) # diffrot in Hz
+if kw.nosub: # full Omega (no subtraction)
+    subplottitle = 'diff. rot (full om, Hz)'
+else:
+    dummy, n1, n2 = np.shape(diffrot)
+    tempmean = np.mean(diffrot, axis=0).reshape((1, n1, n2))
+    diffrot -= tempmean
+    subplottitle = 'diff. rot (om - om0, Hz)'
 
 # determine desired levels to plot
-if not kw.shav: # kw.shav means integrated over latitude, so can't choose
-    # specific latitude levels
-    if not kw.samplevals is None: # isamplevals being set indirectly
-        if isall(kw.samplevals):
-            kw.isamplevals = np.arange(len(samplevals_avail))
-        else:
-            kw.samplevals = make_array(kw.samplevals)
-            kw.isamplevals = np.zeros_like(kw.samplevals, dtype='int')
-            for i in range(len(kw.samplevals)):
-                kw.isamplevals[i] = np.argmin(np.abs(samplevals_avail - kw.samplevals[i]))
-
-# these all need to be arrays
-kw.qvals = make_array(kw.qvals)
-kw.isamplevals = make_array(kw.isamplevals)
-kw.samplevals = make_array(kw.samplevals)
-
+if not kw.samplevals is None: # isamplevals being set indirectly
+    # check for special 'all' option
+    if kw.samplevals == 'all':
+        kw.isamplevals = np.arange(len(samplevals_avail))
+    else:
+        kw.samplevals = make_array(kw.samplevals)
+        kw.isamplevals = np.zeros_like(kw.samplevals, dtype='int')
+        for i in range(len(kw.samplevals)):
+            kw.isamplevals[i] = np.argmin(np.abs(samplevals_avail - kw.samplevals[i]))
 
 # Loop over the desired levels and save plots
 for isampleval in kw.isamplevals:
-    if not kw.shav:
-        sampleval = samplevals_avail[isampleval]
+    sampleval = samplevals_avail[isampleval]
 
     # set some labels 
-    axislabel = 'latitude (deg)'
-    samplelabel =  r'$r/R_\odot$' + ' = %.3f' %sampleval
-    position_tag = '_rval%.3f' %sampleval
-    if kw.rad:
-        axislabel = r'$r/R_\odot$'
-        samplelabel = 'lat = ' + lat_format(sampleval)
-        position_tag = '_lat' + lat_format(sampleval)
-    elif kw.lon:
-        axislabel = 'longitude (deg)'
-        samplelabel = 'clat = ' + lat_format(clat) + '\n' +  r'$r/R_\odot$' + ' = %.3f' %sampleval
-        if not kw.om is None:
-            samplelabel += '\n' + (r'$\Omega_{\rm{frame}}$' + ' = %.1f nHz ' + '\n' + r'$\Omega_{\rm{frame}} - \Omega_0$' + ' = %.2f nHz') %(om, om - om0)
-        else:
-            samplelabel += '\n' + r'$\Omega_{\rm{frame}} = \Omega_0$'
+    samplelabel = samplename + ' = ' + (samplefmt %sampleval)
+    if kw.rad: # label things by colat (not lat) to be in sequential order
+        position_tag = ('_colatval' + lon_fmt) %(90.0 - sampleval)
+    else:
+        position_tag = '_' + samplename + (samplefmt %sampleval)
 
-        position_tag = '_clat' + lat_format(clat) + '_rval%.3f' %sampleval
-    elif kw.shav:
-        axislabel = r'$r/R_\odot$'
-        samplelabel = ''
-        position_tag = ''
+
+    print('plotting ' + samplelabel + ' (i = %02i)' %isampleval)
+   
+    # make plot
+    fig, axs, fpar = make_figure(**kw_make_figure)
+    ax = axs[0, 0]
+    if kw.rad:
+        field = diffrot[:, isampleval, :]
+    else:
+        field = diffrot[:, :, isampleval]
+    plot_timey(field, times, yaxis, fig, ax, **kw_plot_timey)
+            
+    #  title the plot
+    ax.set_title(subplottitle, fontsize=fontsize)
+
+    # time label
+    ax.set_xlabel('time (' + time_label + ')', fontsize=fontsize)
+    # ylabel on middle strip
+    ax.set_ylabel(axislabel, fontsize=fontsize)
 
     # Put some useful information on the title
-    maintitle = dirname_stripped 
-    if not kw.shav:
-        maintitle += '\n' + samplelabel
+    maintitle = dirname_stripped + '\n' +\
+            plotlabel + '\n' +\
+            samplelabel
     if kw.navg is None:
         maintitle += '\nt_avg = none'
     else:
         averaging_time = (times[-1] - times[0])/len(times)*kw.navg
         maintitle += '\n' + ('t_avg = %.1f Prot' %averaging_time)
 
-    if not kw.shav:
-        print('plotting sampleval = %0.3f (i = %02i)' %(sampleval, isampleval))
-   
-    # make plot
-    fig, axs, fpar = make_figure(nplots=nplots, ncol=1, sub_width_inches=sub_width_inches, sub_height_inches=sub_height_inches, margin_left_inches=margin_left_inches, margin_right_inches=margin_right_inches, margin_top_inches=margin_top_inches, margin_bottom_inches=margin_bottom_inches)
-
-    for iplot in range(nplots):
-        ax = axs[iplot, 0]
-        if kw.rad:
-            field = terms[iplot][:, isampleval, :]
-        else:
-            field = terms[iplot][:, :, isampleval]
-        plot_timey(field, times, sampleaxis, fig, ax, **kw_plot_timey)
-                
-        #  title the plot
-        ax.set_title(kw.titles[iplot], fontsize=fontsize)
-
-        # Turn the x tick labels off for the top strips
-        #if iplot < nplots - 1:
-        #    ax.set_xticklabels([])
-        # Put time label on bottom strip        
-        if iplot == nplots - 1:
-            ax.set_xlabel('time (' + time_label + ')', fontsize=fontsize)
-        # Put ylabel on middle strip
-        if iplot == nplots//2:
-            ax.set_ylabel(axislabel, fontsize=fontsize)
-
-    fig.text(fpar['margin_left'], 1 - fpar['margin_top'], maintitle, fontsize=fontsize, ha='left', va='bottom')
+    maintitle += '\nm=0 (lon. avg.)'
+    margin_x = fpar['margin_left'] + fpar['sub_margin_left']
+    margin_y = default_margin/fpar['height_inches']
+    fig.text(margin_x, 1 - margin_y, maintitle,\
+             ha='left', va='top', fontsize=default_titlesize)
 
     # Save the plot
     if clas0['saveplot']:
         # Make appropriate file name to save
 
         # save the figure
-        basename = thename + '_%08i_%08i' %(iter1, iter2)
+        basename = dataname + '_%08i_%08i' %(iter1, iter2)
         plotdir = my_mkdir(clas0['plotdir'] + '/' + datatype + clas0['tag'])
         if kw.lon and not om is None:
             basename += '_om%.0f' %om
@@ -249,4 +201,4 @@ for isampleval in kw.isamplevals:
         plt.show()
     else:
         plt.close()
-    print ("=======================================")
+    print (buff_line)

@@ -10,6 +10,9 @@ from matplotlib import colors
 from common import *
 from plotcommon import *
 
+# default timey fig dimensions
+timey_fig_dimensions = dict({'sub_width_inches': 7.5, 'sub_height_inches': 2.0, 'margin_top_inches': 1.25, 'sub_margin_left_inches': 5/8, 'sub_margin_right_inches': 7/8})
+
 # plot_timey needs my_contourf/my_pcolormesh args, then some
 plot_timey_kwargs_default = dict({'ycut': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'yminmax': None, 'ymin': None, 'ymax': None,'minmax2': None, 'timevals': np.array([]), 'yvals': np.array([]), 'navg': None, 'plotboundary': True, 'linestyles1': np.array(['-']), 'linewidths1': np.array([default_lw]), 'linecolors1': np.array(['k']),\
        'linestyles2': np.array(['-']), 'linewidths2': np.array([default_lw]), 'linecolors2': np.array(['k']),\
@@ -107,7 +110,7 @@ def plot_timey(field, times, yy, fig, ax, **kwargs):
         plotting_func(times_2d1, yy_2d1, field1, fig, ax, **kw_plotting_func)
 
     if not kw.ycut is None:
-        plotting_func.minmax = kw.minmax2
+        kw_plotting_func.minmax = kw.minmax2
         if kw.posdef: 
             kw_plotting_func.cmap = 'cividis'
         else:

@@ -218,6 +218,9 @@ def find_bad_keys(dict_orig, dict_update, funcname, justwarn=False):
             print ("exiting")
             sys.exit()
 
+def reverse_dict(di):
+    return dict((v, u) for u, v in di.items())
+
 ########################
 # BASIC COMPUTE ROUTINES
 ########################
@@ -251,6 +254,24 @@ def rms(array):
         return 0
     else:
         return np.sqrt(np.mean(array**2))
+
+def minabs(array):
+    return np.min(np.abs(array))
+
+def maxabs(array):
+    return np.max(np.abs(array))
+
+def close_to_zero(array):
+    # see if an array has values too close to zero to divide by
+    tol = 1.0e-12
+    the_rms = rms(array)
+    if the_rms > 1.0e-100: # we can divide by the rms
+        if minabs(array)/the_rms < tol:
+            return True
+        else:
+            return False
+    else: # rms must be zero...it's an array of zeros!
+        return True
 
 # derivative routines
 def drad(arr, rr): # this works for any dimension array, as long as
@@ -408,38 +429,6 @@ def get_file_lists_all(radatadir):
     
     return file_list, int_file_list, nfiles
 
-def get_file_lists(radatadir, clas):
-    # Get file names in datadir and their integer counterparts
-    # (only the ones in the desired range determined by args)
-    # all the "action" occurs in get_desired_range() function below
-
-    # get all files
-    file_list, int_file_list, nfiles = get_file_lists_all(radatadir)
-    # get the desired range
-    index_first, index_last = get_desired_range(int_file_list, clas)
-    # Remove parts of file lists we don't need
-    file_list = file_list[index_first:index_last + 1]
-    int_file_list = int_file_list[index_first:index_last + 1]
-    nfiles = index_last - index_first + 1
-
-    # see if user wants to skip any files or get specific number 
-    # (nfiles) in the range
-    for key, val in clas.items():
-        val = make_array(val)
-        if key == 'skip':
-            nskip = int(val[0])
-            file_list = file_list[::skip]
-            int_file_list = int_file_list[::skip]
-            nfiles = len(int_file_list)
-        if key == 'nfiles':
-            ndesiredfiles = int(val[0])
-            nskip = nfiles//ndesiredfiles
-            file_list = file_list[::skip]
-            int_file_list = int_file_list[::skip]
-            nfiles = len(int_file_list)
-
-    return file_list, int_file_list, nfiles
-
 def get_desired_range(int_file_list, clas):
     # Get first and last index (within the int_file_list) associated with the desired range
 
@@ -467,10 +456,10 @@ def get_desired_range(int_file_list, clas):
             ndatafiles = int(val[1])
         if key in ['n', 'f']:
             ndatafiles = int(val[0])
-        if key == 'range': # average between two specific files
+        if key == 'range': # consider range between two specific files
             index_first = index # first arg is first desired iter
-            # also need last iter
-            desired_iter = int(val[1])
+            # also need last desired iter
+            desired_iter = val[1]
             if desired_iter == 'first':
                 desired_iter = int_file_list[0]
             elif desired_iter == 'last':
@@ -514,12 +503,44 @@ def get_desired_range(int_file_list, clas):
     # Return the desired indices
     return index_first, index_last
 
+def get_file_lists(radatadir, clas):
+    # Get file names in datadir and their integer counterparts
+    # (only the ones in the desired range determined by args)
+    # all the "action" occurs in get_desired_range() function below
+
+    # get all files
+    file_list, int_file_list, nfiles = get_file_lists_all(radatadir)
+    # get the desired range
+    index_first, index_last = get_desired_range(int_file_list, clas)
+    # Remove parts of file lists we don't need
+    file_list = file_list[index_first:index_last + 1]
+    int_file_list = int_file_list[index_first:index_last + 1]
+    nfiles = index_last - index_first + 1
+
+    # see if user wants to skip any files or get specific number 
+    # (nfiles) in the range
+    for key, val in clas.items():
+        val = make_array(val)
+        if key == 'skip':
+            nskip = int(val[0])
+            file_list = file_list[::skip]
+            int_file_list = int_file_list[::skip]
+            nfiles = len(int_file_list)
+        if key == 'nfiles':
+            ndesiredfiles = int(val[0])
+            nskip = nfiles//ndesiredfiles
+            file_list = file_list[::skip]
+            int_file_list = int_file_list[::skip]
+            nfiles = len(int_file_list)
+
+    return file_list, int_file_list, nfiles
+
 
 ########################################################################
 # ROUTINES FOR CHARACTERIZING/READING RAYLEIGH POST-PROCESSED DATA FILES
 ########################################################################
 
-def get_widest_range_file(datadir, dataname):
+def get_widest_range_file(datadir, dataname, stringent=True):
     # Find the desired post-processed file(s) in the data directory. If there are 
     # multiple, by default choose the one with widest range as far
     # as the input raw data files are concerned (i.e., the largest last_iter - first_iter)
@@ -530,8 +551,12 @@ def get_widest_range_file(datadir, dataname):
         specific_files = []
         for i in range(len(datafiles)):
             datafile = datafiles[i]
-            if dataname == datafile.split('-')[0]:
-                specific_files.append(datafile)
+            if stringent:
+                if dataname == get_dataname_from_file(datafile):
+                    specific_files.append(datafile)
+            else:
+                if dataname in get_dataname_from_file(datafile):
+                    specific_files.append(datafile)
 
         ranges = []
         iters1 = []
@@ -643,7 +668,7 @@ def get_iters_from_file(filename):
     iters_st = filename_end.split('_')
     iter1, iter2 = int(iters_st[0]), int(iters_st[1])
     return iter1, iter2
-        
+ 
 ##################################################################################
 # ROUTINES TO GET BASIC INFO ABOUT A RAYLEIGH SIMULATION, GIVEN THE SIM. DIRECTORY
 ##################################################################################
@@ -963,9 +988,11 @@ def get_eq(dirname, fname=None):
     # human readable equation coefficients object to store reference state
     eq_hr = dotdict()
 
-    # need this no matter what -- not sure if it works for non-D anelastic
-    # (i.e. may set dissipation number instead)
+    # need this no matter what -- 
+    # 12/22/2022: dirty trick to get things to work for non-D anelastic
     eq_hr.c_p = get_parameter(dirname, 'pressure_specific_heat')
+    if eq_hr.c_p is None:
+        eq_hr.c_p = 1.
 
     # and this no matter what
     magnetism = get_parameter(dirname, 'magnetism')
@@ -978,6 +1005,7 @@ def get_eq(dirname, fname=None):
             fname = 'custom_reference_binary'
 
     if fname is None: # no binary file; get everything from main_input
+        print ("get_eq(): inferring reference state from main_input")
         gi = get_grid_info(dirname)
         eq_hr.rr = gi.rr 
         zero = np.zeros_like(eq_hr.rr)
@@ -1038,6 +1066,8 @@ def get_eq(dirname, fname=None):
             eq_hr.dlnkappa = kappa_power*eq_hr.dlnkappa
         
         if magnetism:
+            eta_type = get_parameter(dirname, 'eta_type')
+            eta_top = get_parameter(dirname, 'eta_top')
             if eta_type is None or eta_type == 1:
                 eq_hr.eta = zero + eta_top
                 eq_hr.dlneta = zero
@@ -1053,6 +1083,7 @@ def get_eq(dirname, fname=None):
     else:
         # by default, get info from equation_coefficients (if file exists)
         # get the background reference state
+        print ("get_eq(): reading reference state from file:", fname)
         eq = equation_coefficients()
         eq.read(dirname + '/' + fname)
         eq_hr.rr = eq.radius
@@ -1061,7 +1092,7 @@ def get_eq(dirname, fname=None):
         eq_hr.d2lnrho = eq.functions[8]
         eq_hr.tmp = eq.functions[3]
         eq_hr.dlntmp = eq.functions[9]
-        eq_hr.grav = eq.functions[1]/eq_hr.rho*eq_hr.c_p
+        eq_hr.grav = eq.functions[1]*eq_hr.c_p/(eq.constants[1]*eq_hr.rho)
         eq_hr.dsdr = eq.functions[13]
         eq_hr.heat = eq.constants[9]*eq.functions[5]
         eq_hr.lum = eq.constants[9]
@@ -1088,9 +1119,6 @@ def get_eq(dirname, fname=None):
 
     # buoyancy frequency
     eq_hr.nsq = (eq_hr.grav/eq_hr.c_p)*eq_hr.dsdr
-
-    # density scale height
-    eq_hr.hrho = -1/eq_hr.dlnrho
 
     # thermal diffusion time
     rmin, rmax = np.min(eq_hr.rr), np.max(eq_hr.rr)
@@ -1127,18 +1155,27 @@ def get_time_unit(dirname):
     return time_unit, time_label, rotation, simple_label
 
 def translate_times(time, dirname, translate_from='iter'):
-    # TO USE MUST HAVE G_Avgs_trace file
     # change between different time units (can translate from: 
     # iter, prot, tdt, sec
+    # TO USE MUST HAVE G_Avgs_trace file or equivalent 
+    # (time-lat, time-rad, etc.)
 
-    # Get the G_Avgs trace
+    # Get a time trace data file for the translation
     datadir = dirname + '/data/'
-    the_file = get_widest_range_file(datadir, 'G_Avgs_trace')
+    # first try the G_Avgs_trace...
+    the_file = get_widest_range_file(datadir, 'G_Avgs_trace', stringent=False)
+    if the_file is None: # next, try time-radius
+        the_file = get_widest_range_file(datadir + '/timelat', '', stringent=False)
+    if the_file is None: # finally, try time-radius
+        the_file = get_widest_range_file(datadir + '/timerad', '', stringent=False)
+
+    # finally, translate the times or else exit with error
     if the_file is None:
-        print ("translate_times(): you need to have G_Avgs_trace file")
+        print ("translate_times(): you need to have a trace file")
         print ("to use me! Exiting.")
         sys.exit()
     else:
+        print ("translate_times(): translating from " + the_file)
         di = get_dict(the_file)
 
     # Get times and iters from trace file
@@ -1168,7 +1205,7 @@ def translate_times(time, dirname, translate_from='iter'):
         di.val_prot = times[ind]/eq.prot
     return di
 
-def get_time_string(dirname, iter1, iter2=None, oneline=False, iter0=None, floatwidth=None, floatprec=None):
+def get_time_string(dirname, iter1, iter2=None, oneline=False, threelines=False, iter0=None, floatwidth=None, floatprec=None):
     # see if user wants to subtract off base time
     if not iter0 is None:
         t0 = translate_times(iter0, dirname, translate_from='iter')['val_sec']
@@ -1202,8 +1239,14 @@ def get_time_string(dirname, iter1, iter2=None, oneline=False, iter0=None, float
     if not iter2 is None:
         if oneline:
             time_string = (('t = ' + fmt + ' to ' + fmt) %(t1/time_unit, t2/time_unit)) + ' ' + time_label + ' ' + r'$(\Delta t$' + ' = ' + (fmt %((t2 - t1)/time_unit)) + ' ' + time_label + ')'
+        elif threelines:
+            time_string =\
+        't = ' + (fmt %(t1/time_unit)) + ' ' + time_label + ' to\n' + \
+        't = ' + (fmt %(t2/time_unit)) + ' ' + time_label  + '\n' +\
+        r'$(\Delta t$' + ' = ' + (fmt %((t2 - t1)/time_unit)) + ' ' + time_label + ')'
         else:
-            time_string = (('t = ' + fmt + ' to ' + fmt) %(t1/time_unit, t2/time_unit)) + ' ' + time_label + '\n' + r'$\Delta t$' + ' = ' + (fmt %((t2 - t1)/time_unit)) + ' ' + time_label
+            time_string = (('t = ' + fmt + ' to ' + fmt) %(t1/time_unit, t2/time_unit)) + ' ' + time_label +\
+                    '\n' + r'$\Delta t$' + ' = ' + (fmt %((t2 - t1)/time_unit)) + ' ' + time_label
     else:
         time_string = (('t = ' + fmt + ' ') %(t1/time_unit)) + time_label
 
@@ -1439,11 +1482,11 @@ def length_scales(dirname, the_file=None):
 
     # First get mixing length scale + grid
     eq = get_eq(dirname)
-    hrho = -1./eq.dlnrho
-    rr = eq.rr
+    if not close_to_zero(eq.dlnrho):
+        hrho = -1./eq.dlnrho
+        di_out.hrho = hrho
 
-    di_out['rr'] = rr
-    di_out.hrho = hrho
+    di_out['rr'] = rr = eq.rr
 
     # Get data directory
     datadir = dirname + '/data/'
