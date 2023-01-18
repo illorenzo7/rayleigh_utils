@@ -52,7 +52,7 @@ def plot_azav(field, rr, cost, fig, ax,  **kwargs):
         yy = yy_full
         field = field_full
     else: # plotting two domains
-        irbcz = np.argmin(np.abs(rr/rsun - kw.rbcz))
+        irbcz = np.argmin(np.abs(rr - kw.rbcz))
 
         field = field[:, :irbcz+1]
         xx = (rr_2d*sint_2d)[:, :irbcz+1]/rmax
@@ -102,7 +102,7 @@ def plot_azav(field, rr, cost, fig, ax,  **kwargs):
 
         if kw.plotboundary:
             if ind == 1:
-                to_add = [np.min(rr/rsun), np.max(rr/rsun)]
+                to_add = [np.min(rr), np.max(rr)]
             if ind == 2:
                 to_add = [np.min(tt_lat), np.max(tt_lat)]
             vals = [to_add[0]] + vals + [to_add[1]]
@@ -114,7 +114,7 @@ def plot_azav(field, rr, cost, fig, ax,  **kwargs):
         for i in range(len(vals)):
             val = vals[i]
             if ind == 1:
-                irval = np.argmin(np.abs(rr/rsun - val))
+                irval = np.argmin(np.abs(rr - val))
                 xline, yline = xx_full[:, irval], yy_full[:, irval]
             if ind == 2:
                 ilatval = np.argmin(np.abs(tt_lat - val))
@@ -160,7 +160,7 @@ def plot_azav_half(field, rr, cost, fig, ax,  **kwargs):
         yy = yy_full
         field = field_full
     else: # plotting two domains
-        irbcz = np.argmin(np.abs(rr/rsun - kw.rbcz))
+        irbcz = np.argmin(np.abs(rr - kw.rbcz))
 
         field = field[:, :irbcz+1]
         xx = (rr_2d*sint_2d)[:, :irbcz+1]/rmax
@@ -210,7 +210,7 @@ def plot_azav_half(field, rr, cost, fig, ax,  **kwargs):
 
         if kw.plotboundary:
             if ind == 1:
-                to_add = [np.min(rr/rsun), np.max(rr/rsun)]
+                to_add = [np.min(rr), np.max(rr)]
             if ind == 2:
                 to_add = [np.min(tt_lat), np.max(tt_lat)]
             vals = [to_add[0]] + vals + [to_add[1]]
@@ -222,7 +222,7 @@ def plot_azav_half(field, rr, cost, fig, ax,  **kwargs):
         for i in range(len(vals)):
             val = vals[i]
             if ind == 1:
-                irval = np.argmin(np.abs(rr/rsun - val))
+                irval = np.argmin(np.abs(rr - val))
                 xline, yline = xx_full[:, irval], yy_full[:, irval]
             if ind == 2:
                 ilatval = np.argmin(np.abs(tt_lat - val))
@@ -529,7 +529,7 @@ def plot_azav_grid(terms, rr, cost, **kwargs):
         if kw.shav:
             av_term = np.sum(terms[iplot]*tw_2d, axis=0)
             av_ax = av_axs[irow, icol]
-            lineplot(rr/rsun, [av_term], av_ax, xlabel=xlabel, title=title_loc, xcut=kw.rbcz, xvals=kw.rvals, minmax=kw.minmax, minmax2=kw.minmaxrz, plotleg=False)
+            lineplot(rr, [av_term], av_ax, xlabel=xlabel, title=title_loc, xcut=kw.rbcz, xvals=kw.rvals, minmax=kw.minmax, minmax2=kw.minmaxrz, plotleg=False)
 
     # Put the main title in upper left
     fig.text(fpar['margin_left'] + fpar['sub_margin_left'], 1.0 - fpar['margin_top'], kw.maintitle, ha='left', va='bottom', fontsize=default_titlesize)
