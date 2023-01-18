@@ -97,7 +97,7 @@ plot_azav (psi, rr, cost, fig, ax, **kw_plot_azav)
 
 # make title 
 iter1, iter2 = get_iters_from_file(kw.the_file) 
-time_string = get_time_string(dirname, iter1, iter2)
+time_string = get_time_string(dirname, iter1, iter2, threelines=True)
 margin_x = fpar['margin_left'] + fpar['sub_margin_left']
 margin_y = default_margin/fpar['height_inches']
 the_title = dirname_stripped + '\n' + 'Mass flux (circulation)\n' + time_string
