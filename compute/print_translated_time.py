@@ -24,4 +24,8 @@ for key, val in clas.items():
 
 di = translate_times(tval, dirname, translate_from=translate_from)
 for key, val in di.items():
-    print ("%8s = %1.3e" %(key,val))
+    if key == 'val_iter':
+        fmt = "%8s = %i" 
+    else:
+        fmt = "%8s = %1.3e" 
+    print (fmt %(key,val))
