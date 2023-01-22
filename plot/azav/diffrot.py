@@ -24,7 +24,7 @@ dirname_stripped = strip_dirname(dirname, wrap=True)
 kwargs_default = dict({'the_file': None})
 
 # also need make figure kwargs
-azav_fig_dimensions['margin_top_inches'] = 1
+azav_fig_dimensions['margin_top_inches'] += 0.25
 make_figure_kwargs_default.update(azav_fig_dimensions)
 kwargs_default.update(make_figure_kwargs_default)
 
@@ -77,7 +77,7 @@ plot_azav (Om, rr, cost, fig, ax, **kw_plot_azav)
 # make title 
 iter1, iter2 = get_iters_from_file(kw.the_file)
 time_string = get_time_string(dirname, iter1, iter2, threelines=True) 
-maintitle = dirname_stripped + '\n' +  r'$(\Omega - \Omega_0)/2\pi$' + '\n' + time_string + '\n' + r'$\Delta\Omega_{\rm{60}}$' + (' = %1.2e' %Delta_Om)
+maintitle = dirname_stripped + '\n' +  r'$(\Omega - \Omega_0)/2\pi$' + '\n' + time_string + '\n' + r'$\Delta\Omega_{\rm{60}}/2\pi$' + (' = %1.2e' %Delta_Om)
 if not kw.rcut is None:
     maintitle += '\nrcut = %1.3e' %kw.rcut
     
