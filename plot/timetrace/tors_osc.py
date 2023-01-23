@@ -115,15 +115,21 @@ if kw.rad:
 else:
     xx = samplevals_avail.reshape((1, 1, len(samplevals_avail)))*\
             sint.reshape((1, nt, 1))
-            
-diffrot = vp/xx/(2*np.pi) # diffrot in Hz
+
+# frame rate
+eq = get_eq(dirname)
+Om0 = 2*np.pi/eq.prot
+
+# differential rotation in the rotating frame. 
+Om = vp/xx
+
 if kw.nosub: # full Omega (no subtraction)
-    subplottitle = 'diff. rot (full om, Hz)'
+    subplottitle = 'full rotation: ' + r'$(\Omega - \Omega_0)/\Omega_0$'
 else:
-    dummy, n1, n2 = np.shape(diffrot)
-    tempmean = np.mean(diffrot, axis=0).reshape((1, n1, n2))
-    diffrot -= tempmean
-    subplottitle = 'diff. rot (om - om0, Hz)'
+    dummy, n1, n2 = np.shape(Om)
+    tempmean = np.mean(Om, axis=0).reshape((1, n1, n2))
+    Om -= tempmean
+    subplottitle = 'residual rotation: ' + r'$(\Omega - \langle\Omega\rangle_t)/\Omega_0$'
 
 # determine desired levels to plot
 if not kw.samplevals is None: # isamplevals being set indirectly
@@ -154,9 +160,9 @@ for isampleval in kw.isamplevals:
     fig, axs, fpar = make_figure(**kw_make_figure)
     ax = axs[0, 0]
     if kw.rad:
-        field = diffrot[:, isampleval, :]
+        field = Om[:, isampleval, :]/Om0
     else:
-        field = diffrot[:, :, isampleval]
+        field = Om[:, :, isampleval]/Om0
     plot_timey(field, times, yaxis, fig, ax, **kw_plot_timey)
             
     #  title the plot
@@ -188,7 +194,7 @@ for isampleval in kw.isamplevals:
         # Make appropriate file name to save
 
         # save the figure
-        basename = dataname + '_%08i_%08i' %(iter1, iter2)
+        basename = 'torsosc_%08i_%08i' %(iter1, iter2)
         plotdir = my_mkdir(clas0['plotdir'] + '/' + datatype + clas0['tag'])
         if kw.lon and not om is None:
             basename += '_om%.0f' %om
