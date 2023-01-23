@@ -66,11 +66,8 @@ if rank == 0:
     # Get all the file names in datadir and their integer counterparts
     file_list, int_file_list, nfiles = get_file_lists(radatadir, clas)
 
-    # read first file for some metadata
-    a0 = reading_func(radatadir + file_list[0], '')
-
     # set default values for qval and irval
-    kwargs_default = dict({'irvals': np.array([0]), 'rvals': None, 'qvals': None, 'mmax': None})
+    kwargs_default = dict({'irvals': np.array([0]), 'rvals': None, 'qvals': None, 'mmax': 10})
 
     # overwrite defaults
     kw = update_dict(kwargs_default, clas)
@@ -84,25 +81,24 @@ if rank == 0:
     # dealiased no. mvalues
     # remember to dealias---otherwise we are saving a bunch of
     # NOTHING!
-    mmax = kw.mmax
-    if mmax is None: # may manually strip even more m-values to
+    #mmax = kw.mmax
+    #if mmax is None: # may manually strip even more m-values to
         # save space
-        nm = int(np.floor(2./3.*nt))
-    else:
-        nm = mmax
+    #    nm = int(np.floor(2./3.*nt))
+    #else:
+    nm = kw.mmax
     mvals = np.arange(nm)
 
-
     # get the rvals we want
+    info = get_sliceinfo(dirname)
+    rvals_avail = info.samplevals
     irvals = kw.irvals
     if not kw.rvals is None: # irvals haven't been set directly
         if isall(kw.rvals):
-            irvals = np.arange(a0.nr)
+            irvals = np.arange(info.nsamplevals)
         else:
             kw.rvals = make_array(kw.rvals)
-            irvals = np.zeros_like(kw.rvals, dtype='int')
-            for i in range(len(kw.rvals)):
-                irvals[i] = np.argmin(np.abs(a0.radius - kw.rvals[i]))
+            irvals = inds_from_vals(rvals_avail, kw.rvals)
 
     # and the qvals
     qvals = kw.qvals
@@ -110,11 +106,11 @@ if rank == 0:
         qvals = np.array([1])
 
     # maybe qvals can all (everything available)
-    if qvals == np.array(['all']):
-        qvals = np.sort(a0.qv)
+    if isall(qvals):
+        qvals = np.sort(info.qv)
     
     # everything must be array
-    irvals = make_array(irvals)
+    #irvals = make_array(irvals)
     qvals = make_array(qvals)
 
     # Get the problem size

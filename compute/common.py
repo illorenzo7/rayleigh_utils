@@ -865,13 +865,19 @@ def interpret_rvals(dirname, rvals):
     if rvals is None:
         return None
 
+    # get grid
+    gi = get_grid_info(dirname)
+    rr = gi.rr
+
     # get the actual min/max/mid of the full domain:
     ncheby, domain_bounds = get_domain_bounds(dirname)
     rmin, rmax = np.min(domain_bounds), np.max(domain_bounds)
     rmid = 0.5*(rmin + rmax)
 
-    gi = get_grid_info(dirname)
-    rr = gi.rr
+    # replace these with their closest actual values in rr
+    rmin, rmid, rmax = rr[inds_from_vals(rr, [rmin, rmid, rmax])]
+
+    # compute desired rvals
     rvals_out = []
     rvals = make_array(rvals)
     for rval in rvals:
