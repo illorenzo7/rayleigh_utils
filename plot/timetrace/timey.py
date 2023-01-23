@@ -182,7 +182,7 @@ for isampleval in kw.isamplevals:
         # Make appropriate file name to save
 
         # save the figure
-        basename = dataname + '_%08i_%08i' %(iter1, iter2)
+        basename = dataname + '-%08i_%08i' %(iter1, iter2)
         plotdir = my_mkdir(clas0['plotdir'] + '/' + datatype + clas0['tag'])
         if kw.lon and not om is None:
             basename += '_om%.0f' %om
