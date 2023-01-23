@@ -22,10 +22,14 @@ dirname_stripped = strip_dirname(dirname)
 
 # allowed args + defaults
 kwargs_default = dict({'the_file': None, 'latvals': np.array([0., 15., 30., 45., 60., 75.])})
+
+make_figure_kwargs_default['margin_top_inches'] += 0.25
 kwargs_default.update(make_figure_kwargs_default)
+
 lineplot_kwargs_default['legfrac'] = 1/5
 lineplot_kwargs_default['plotleg'] = True
 kwargs_default.update(lineplot_kwargs_default)
+
 kw = update_dict(kwargs_default, clas)
 kw_make_figure = update_dict(make_figure_kwargs_default, clas)
 kw_lineplot = update_dict(lineplot_kwargs_default, clas)
@@ -45,18 +49,18 @@ vals = di['vals']
 lut = di['lut']
 vp_av = vals[:, :, lut[3]]
 
-# Get necessary grid info
+# get necessary grid info
 di_grid = get_grid_info(dirname)
 rr = di_grid['rr']
 tt_lat = di_grid['tt_lat']
 xx = di_grid['xx']
 
-# Get frame rate rotation and compute differential rotation in the 
-# lab frame. 
-Om0 = 2*np.pi/compute_Prot(dirname)
-Om = vp_av/xx + Om0
-Om *= 1e9/2/np.pi # convert from rad/s --> nHz
-Om0 *= 1e9/2/np.pi # convert from rad/s --> nHz
+# frame rate
+eq = get_eq(dirname)
+Om0 = 2*np.pi/eq.prot
+
+# differential rotation in the rotating frame. 
+Om = vp_av/xx
 
 # DR contrast between 0 and 60 degrees
 it0, it60_N, it60_S = np.argmin(np.abs(tt_lat)), np.argmin(np.abs(tt_lat - 60)), np.argmin(np.abs(tt_lat + 60))
@@ -74,21 +78,27 @@ for latval in kw.latvals:
     latitude = (tt_lat[ilat_N] - tt_lat[ilat_S])/2 
     # (this is the actual value we get)
     Om_vs_r = (Om[ilat_N, :] + Om[ilat_S, :])/2
-    profiles.append(Om_vs_r)
+    profiles.append(Om_vs_r/Om0)
     kw_lineplot.labels.append(r'$\rm{%2.1f}$' %latitude + r'$^\circ$')
-   
+
+# x and y labels
+kw_lineplot.xlabel = 'radius'
+kw_lineplot.ylabel = 'normalized rotation rate'
+
 # show the frame rotation rate
-kw_lineplot.yvals = make_array(kw_lineplot.yvals, tolist=True)
-kw_lineplot.yvals.append(Om0)
-lineplot(rr/rsun, profiles, ax, **kw_lineplot)
+#kw_lineplot.yvals = make_array(kw_lineplot.yvals, tolist=True)
+#kw_lineplot.yvals.append(Om0)
+lineplot(rr, profiles, ax, **kw_lineplot)
 
 # make title 
 iter1, iter2 = get_iters_from_file(kw.the_file)
 time_string = get_time_string(dirname, iter1, iter2) 
-the_title = dirname_stripped + '\n' +  r'$\Omega(r,\theta)$' + '\n' + time_string + '\n' + r'$\Delta\Omega_{\rm{60}}$' + (' = %.1f nHz' %Delta_Om)
+
+maintitle = dirname_stripped + '\n' +  r'$\Omega/\Omega_0 - 1$' + ', radial slices\n' + time_string + '\n' + r'$\Delta\Omega_{\rm{60}}/\Omega_0$' + (' = %1.2e' %(Delta_Om/Om0))
+
 margin_x = fpar['margin_left'] + fpar['sub_margin_left']
 margin_y = default_margin/fpar['height_inches']
-fig.text(margin_x, 1 - margin_y, the_title, ha='left', va='top', fontsize=default_titlesize)
+fig.text(margin_x, 1 - margin_y, maintitle, ha='left', va='top', fontsize=default_titlesize)
 
 # save the figure
 plotdir = my_mkdir(clas0['plotdir'])
