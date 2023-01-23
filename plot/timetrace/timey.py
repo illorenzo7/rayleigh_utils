@@ -43,6 +43,7 @@ kw_make_figure = update_dict(make_figure_kwargs_default, clas)
 # might need two colorbars
 if not kw.ycut is None:  # need room for two colorbars
     kw_make_figure.sub_margin_right_inches *= 2
+    kw_make_figure.margin_top_inches += 1/4
 
 # add in groupname keys
 kw.update(get_quantity_group(kw.groupname, magnetism))
@@ -172,6 +173,9 @@ for isampleval in kw.isamplevals:
         maintitle += '\n' + ('t_avg = %.1f Prot' %averaging_time)
 
     maintitle += '\nm=0 (lon. avg.)'
+    if not kw.ycut is None:
+        maintitle += '\nycut = %1.3e' %kw.ycut
+
     margin_x = fpar['margin_left'] + fpar['sub_margin_left']
     margin_y = default_margin/fpar['height_inches']
     fig.text(margin_x, 1 - margin_y, maintitle,\
