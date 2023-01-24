@@ -24,7 +24,7 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = clas0['magnetism']
 
 # defaults
-kwargs_default = dict({'irvals': np.array([0]), 'rvals': None, 'ntot': 500, 'groupname': 'b', 'mmax': 10, 'mval': 1, 'imag': False, 'abs': False, 'qvals': None})
+kwargs_default = dict({'irvals': np.array([0]), 'rvals': None, 'ntot': 500, 'groupname': 'b', 'mmax': 10, 'mval': 1, 'imag': False, 'abs': False, 'qvals': None, 'rad': False})
 
 # also need make figure kwargs
 timey_fig_dimensions['margin_top_inches'] += 1/4
@@ -57,13 +57,20 @@ time_unit, time_label, rotation, simple_label = get_time_unit(dirname)
 # get grid info
 di_grid = get_grid_info(dirname)
 
-# time-latitude stuff
-datatype = 'timelat'
-plotlabel = 'time-latitude trace, complex m'
-yaxis = di_grid['tt_lat']
-axislabel = 'latitude (deg)'
-samplefmt = '%1.3e'
-samplename = 'rval'
+if kw.rad:
+    datatype = 'timerad'
+    plotlabel = 'time-radius trace'
+    yaxis = di_grid['rr']
+    axislabel = 'radius'
+    samplefmt = lat_fmt
+    samplename = 'latval'
+else:
+    datatype = 'timelat'
+    plotlabel = 'time-latitude trace'
+    yaxis = di_grid['tt_lat']
+    axislabel = 'latitude (deg)'
+    samplefmt = '%1.3e'
+    samplename = 'rval'
 
 # mval
 mval = kw.mval
@@ -163,10 +170,14 @@ for irval in irvals:
         count += 1
 
     # set some labels 
+    samplelabel = samplename + ' = ' + (samplefmt %sampleval)
+    if kw.rad: # label things by colat (not lat) to be in sequential order
+        position_tag = ('_colatval' + lon_fmt) %(90.0 - sampleval)
+    else:
+        position_tag = '_' + samplename + (samplefmt %sampleval)
+
     axislabel = 'latitude (deg)'
     sampleval = slice_info.samplevals[irval]
-    samplelabel = samplename + ' = ' + (samplefmt %sampleval)
-    position_tag = '_' + samplename + (samplefmt %sampleval)
 
     # Put some useful information on the title
     maintitle = dirname_stripped + '\n' +\
