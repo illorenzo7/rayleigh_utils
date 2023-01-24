@@ -177,18 +177,23 @@ def get_label(varname):
         return label, simple_label
 
 # groups of quantities
-def get_quantity_group(groupname, magnetism):
-    di_out = dict({'groupname': groupname})
-    ncol = None
-    totsig = None
-    qvals = None
+class quantity_group:
+    def __init__(self, groupname, qvals):
+        self.groupname = groupname
+        self.qvals = qvals
+        self.ncol = 1
+        self.titles = None
+        self.totsig = None
+
+def build_quantity_groups(magnetism):
 
     # set default qvals: velocity + vorticity, Pressure/ entropy
     # then possibly B, del x B
-    if groupname == 'default':
-        qvals = [1, 2, 3, 301, 302, 303, 501, 502]
-        if magnetism:
-            qvals += [801, 802, 803, 1001, 1004, 1007]
+    groupname = 'default'
+    qvals = [1, 2, 3, 301, 302, 303, 501, 502]
+    if magnetism:
+        qvals += [801, 802, 803, 1001, 1004, 1007]
+
 
     if groupname == 'torque':
         qvals = [1819, 1801, 1802, 1803, 1804]
