@@ -102,10 +102,10 @@ if rank == 0:
 
     # and the qvals
     qvals = kw.qvals
-    if qvals is None: # default just do v_r
-        qvals = np.array([1])
+    if qvals is None: # default just do B_phi
+        qvals = np.array([803])
 
-    # maybe qvals can all (everything available)
+    # maybe qvals can be all (everything available)
     if isall(qvals):
         qvals = np.sort(info.qv)
     

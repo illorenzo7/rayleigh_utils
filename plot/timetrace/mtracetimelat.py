@@ -23,18 +23,15 @@ dirname_stripped = strip_dirname(dirname)
 # See if magnetism is "on"
 magnetism = clas0['magnetism']
 
-# Get the Rayleigh data directory
-radatadir = dirname + '/Shell_Slices/'
-
-# Get all the file names in datadir and their integer counterparts
-file_list, int_file_list, nfiles = get_file_lists(radatadir, args)
-
-# read first file for some metadata
-a0 = Shell_Slices(radatadir + file_list[0], '')
-
 # defaults
-kwargs_default = dict({'ntot': 500, 'groupname': 'b', 'irvals': np.array([0]), 'rvals': None, 'mmax': 10, 'mval': 1, 'imag': False, 'abs': False, 'qvals': None})
+kwargs_default = dict({'irvals': np.array([0]), 'rvals': None, 'ntot': 500, 'groupname': 'b', 'mmax': 10, 'mval': 1, 'imag': False, 'abs': False, 'qvals': None})
 
+# also need make figure kwargs
+timey_fig_dimensions['margin_top_inches'] += 1/4
+make_figure_kwargs_default.update(timey_fig_dimensions)
+kwargs_default.update(make_figure_kwargs_default)
+
+# of course, also need plot_timey kwargs
 kwargs_default.update(plot_timey_kwargs_default)
 
 # check for bad keys
@@ -42,10 +39,8 @@ find_bad_keys(kwargs_default, clas, clas0['routinename'], justwarn=True)
 
 # overwrite defaults
 kw = update_dict(kwargs_default, clas)
-
-# user may have wanted to change some groupname keys
-kw = update_dict(kw, clas)
 kw_plot_timey = update_dict(plot_timey_kwargs_default, clas)
+kw_make_figure = update_dict(make_figure_kwargs_default, clas)
 
 # check if we want the real or imaginary vals
 if kw.imag:
@@ -62,28 +57,36 @@ time_unit, time_label, rotation, simple_label = get_time_unit(dirname)
 # get grid info
 di_grid = get_grid_info(dirname)
 
-sampleaxis = di_grid['tt_lat']
+# time-latitude stuff
+datatype = 'timelat'
+plotlabel = 'time-latitude trace, complex m'
+yaxis = di_grid['tt_lat']
+axislabel = 'latitude (deg)'
+samplefmt = '%1.3e'
+samplename = 'rval'
+
+# mval
 mval = kw.mval
 
 # get the rvals we want
+slice_info = get_sliceinfo(dirname)
+rvals_avail = slice_info.samplevals
+
 irvals = kw.irvals
 if not kw.rvals is None: # irvals haven't been set directly
     if isall(kw.rvals):
-        irvals = np.arange(a0.nr)
+        irvals = np.arange(slice_info.nsamplevals)
     else:
         kw.rvals = make_array(kw.rvals)
-        irvals = np.zeros_like(kw.rvals, dtype='int')
-        for i in range(len(kw.rvals)):
-            irvals[i] = np.argmin(np.abs(a0.radius/rsun - kw.rvals[i]))
+        irvals = inds_from_vals(rvals_avail, kw.rvals)
 
 # and the qvals
-qvals = kw.qvals # ... if groupname is specified, this will just be
-                 # the qvals associated with the group, e.g., 
-                 # b <--> 801, 802, 803
+qvals = kw.qvals
 
-if isall(qvals): # probably won't use this option here ... would 
+# maybe qvals can be all (everything available)
+if isall(qvals): # but probably won't use this option here ... would 
     # make too many panels
-    qvals = np.sort(a0.qv)
+    qvals = np.sort(slice_info.qv)
 
 if qvals is None: # it's a quantity group
     groupname = kw.groupname
@@ -102,25 +105,12 @@ irvals = make_array(irvals)
 # mmax (if needed)
 mmax = kw.mmax
 
-# set figure dimensions
-sub_width_inches = 7.5
-sub_height_inches = 2.0
-margin_bottom_inches = 3/8 # space for x-axis label
-margin_top_inches = 1
-if kw.lon:
-    margin_top_inches =  1 + 1/4
-margin_left_inches = 5/8 # space for latitude label
-margin_right_inches = 7/8 # space for colorbar
-if 'ycut' in clas:
-    margin_right_inches *= 2
-
-nplots = len(qvals)
 
 print (buff_line)
 print ("plotting time-latitude trace for mval = %03i" %mval)
 print ("irvals = " + arr_to_str(irvals, "%i"))
-print ("r/rsun = " + arr_to_str(a0.radius[irvals]/rsun, "%.3f"))
-print ("qvals = " + arr_to_str(qvals, "%i"))
+print ("rvals  = " + arr_to_str(slice_info.samplevals[irvals], "%1.3e"))
+print ("qvals  = " + arr_to_str(qvals, "%i"))
 print (buff_line)
 
 # Loop over the desired levels and save plots
@@ -133,6 +123,7 @@ for irval in irvals:
     count = 0
     for qval in qvals:
         dataname = ('mtrace_qval%04i_irval%02i' %(qval, irval))
+        print ("dataname = ", dataname)
 
         # get data
         the_file = get_widest_range_file(clas0['datadir'] +\
@@ -151,7 +142,6 @@ for irval in irvals:
         iters = di['iters']
 
         # time range
-        iter1, iter2 = get_iters_from_file(the_file)
         times /= time_unit
 
         # maybe thin data
@@ -174,18 +164,21 @@ for irval in irvals:
 
     # set some labels 
     axislabel = 'latitude (deg)'
-    rval = a0.radius[irval]/rsun
-    samplelabel =  r'$r/R_\odot$' + ' = %.3f' %rval
-    position_tag = '_rval%.3f' %rval
+    sampleval = slice_info.samplevals[irval]
+    samplelabel = samplename + ' = ' + (samplefmt %sampleval)
+    position_tag = '_' + samplename + (samplefmt %sampleval)
 
     # Put some useful information on the title
-    maintitle = dirname_stripped 
-    maintitle += '\n' + samplelabel
+    maintitle = dirname_stripped + '\n' +\
+            plotlabel + '\n' +\
+            'groupname = ' + kw.groupname + '\n' +\
+            samplelabel
+
     maintitle += '\nmval=%03i' %mval
     if part == 'imag':
-        maintitle += '\nimag part'
+        maintitle += '\nimaginary part'
     elif part == 'abs':
-        maintitle += '\nabs. magnitude'
+        maintitle += '\nabsolute magnitude'
     else:
         maintitle += '\nreal part'
     if kw.navg is None:
@@ -194,22 +187,21 @@ for irval in irvals:
         averaging_time = (times[-1] - times[0])/len(times)*kw.navg
         maintitle += '\n' + ('t_avg = %.1f Prot' %averaging_time)
 
-    print('plotting rval = %0.3f (i = %02i)' %(rval, irval))
+    print('plotting rval = %1.3e (i = %02i)' %(sampleval, irval))
 
     # make plot
-    fig, axs, fpar = make_figure(nplots=nplots, ncol=1, sub_width_inches=sub_width_inches, sub_height_inches=sub_height_inches, margin_left_inches=margin_left_inches, margin_right_inches=margin_right_inches, margin_top_inches=margin_top_inches, margin_bottom_inches=margin_bottom_inches)
+    nplots = kw_make_figure.nplots = len(terms)
+    kw_make_figure.ncol = 1
+    fig, axs, fpar = make_figure(**kw_make_figure)
 
     for iplot in range(nplots):
         ax = axs[iplot, 0]
         field = terms[iplot]
-        plot_timey(field, times, sampleaxis, fig, ax, **kw_plot_timey)
+        plot_timey(field, times, yaxis, fig, ax, **kw_plot_timey)
                 
         #  title the plot
         ax.set_title(titles[iplot], fontsize=fontsize)
 
-        # Turn the x tick labels off for the top strips
-        #if iplot < nplots - 1:
-        #    ax.set_xticklabels([])
         # Put time label on bottom strip        
         if iplot == nplots - 1:
             ax.set_xlabel('time (' + time_label + ')', fontsize=fontsize)
@@ -224,8 +216,8 @@ for irval in irvals:
         # Make appropriate file name to save
 
         # save the figure
-        basename = 'mtracetimelat_' + groupname
-        basename += '-%08i_%08i' %(iter1, iter2)
+        iter1, iter2 = get_iters_from_file(the_file)
+        basename = 'mtracetimelat_' + groupname + '-%08i_%08i' %(iter1, iter2)
         plotdir = my_mkdir(clas0['plotdir'] +\
                 '/mtracetimelat_mval%03i' %mval + clas0['tag'])
         savename = basename + position_tag + '_' + part + '.png'
@@ -237,4 +229,4 @@ for irval in irvals:
         plt.show()
     else:
         plt.close()
-    print ("=======================================")
+    print (buff_line)

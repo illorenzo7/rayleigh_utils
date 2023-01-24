@@ -72,10 +72,7 @@ else:
     samplefmt = '%1.3e'
     samplename = 'rval'
 
-dataname = datatype
-if 'groupname' in kw:
-    dataname += '_' + kw.groupname
-#dataname += clas0['tag']
+dataname = datatype + '_' + kw.groupname
 
 # get data
 if kw.the_file is None:
@@ -92,7 +89,6 @@ qvals_avail = np.array(di['qvals'])
 samplevals_avail = di['samplevals']
 
 # time range
-iter1, iter2 = get_iters_from_file(kw.the_file)
 times /= time_unit
 
 # maybe thin data
@@ -186,6 +182,7 @@ for isampleval in kw.isamplevals:
         # Make appropriate file name to save
 
         # save the figure
+        iter1, iter2 = get_iters_from_file(kw.the_file)
         basename = dataname + '-%08i_%08i' %(iter1, iter2)
         plotdir = my_mkdir(clas0['plotdir'] + '/' + datatype + clas0['tag'])
         if kw.lon and not om is None:
