@@ -47,7 +47,7 @@ dirname = clas0.dirname
 dirname_stripped = strip_dirname(dirname)
 
 # SPECIFIC ARGS
-kwargs_default = dotdict(dict({'type': None, 'isamplevals': 0, 'samplevals': None, 'varnames': 'vr', 'clons': None, 'clats': None, 'clonrange': None, 'clatrange': None, 't0': False, 'movie': False, 'moviesampleval': False, 'movieclon': False, 'movieclat': False, 'shrink': False}))
+kwargs_default = dotdict(dict({'type': None, 'isamplevals': 0, 'samplevals': None, 'rvals': None, 'varnames': 'vr', 'clons': None, 'clats': None, 'clonrange': None, 'clatrange': None, 't0': False, 'movie': False, 'moviesampleval': False, 'movieclon': False, 'movieclat': False, 'shrink': False}))
 
 # this guy need to update right away to choose fig dimensions
 if clas.type is None:
@@ -138,6 +138,10 @@ if rank == 0:
 
     # first the indices must be an array
     kw.isamplevals = make_array(kw.isamplevals)
+
+    # can control samplevals with rvals for time-latitude traces
+    if not kw.rvals is None:
+        kw.samplevals = kw.rvals
 
     # get the samplevals we want
     if not kw.samplevals is None: # samplevals have been set directly
