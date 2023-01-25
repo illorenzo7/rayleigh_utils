@@ -124,7 +124,7 @@ if not kw.samplevals is None: # isamplevals being set indirectly
     if isall(kw.samplevals):
         kw.isamplevals = np.arange(len(samplevals_avail))
     else:
-        kw.samplevals = inds_from_vals(samplevals_avail, kw.samplevals)
+        kw.isamplevals = inds_from_vals(samplevals_avail, kw.samplevals)
 
 # determine desired quantities to plot
 if isall(kw.qvals):
