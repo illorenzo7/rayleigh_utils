@@ -194,7 +194,7 @@ for i in range(my_nfiles):
         if rad:
             my_vals.append(vals_loc[:, isamplevals, :,  :][:, :, :, a.lut[qvals]])
         else:
-            my_vals.append(a.vals[:, :, isamplevals, :][:, :, :, a.lut[qvals]])
+            my_vals.append(vals_loc[:, :, isamplevals, :][:, :, :, a.lut[qvals]])
 
         my_times.append(a.time[j])
         my_iters.append(a.iters[j])
@@ -246,6 +246,7 @@ if rank == 0:
 
     # save the data for each mval individually
     for mval in mvals:
+        # save the data in a sensible name
         if rad:
             basename = 'timerad'
         else:
@@ -262,9 +263,12 @@ if rank == 0:
                 file_list[0] + '_' + file_list[-1] + '.pkl'
         savefile = datadir + savename
 
+        # reduce the vals array
+        vals_sav = vals[:, mval, :, :]
+
         # save the data
         f = open(savefile, 'wb')
-        di_sav = dict({'vals': vals, 'times': times, 'iters': iters, 'qvals': qvals})
+        di_sav = dict({'vals': vals_sav, 'times': times, 'iters': iters, 'qvals': qvals})
         di_sav['samplevals'] = samplevals
         pickle.dump(di_sav, f, protocol=4)
         f.close()
