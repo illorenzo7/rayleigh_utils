@@ -64,8 +64,12 @@ if rank == 0:
     clas0, clas = read_clas(args)
     dirname = clas0['dirname']
     magnetism = clas0['magnetism']
-    kwargs_default = dict({'rad': False, 'samplevals': None, 'qvals': None, 'groupname': 'b'})
+    kwargs_default = dict({'rad': False, 'samplevals': None, 'rvals': None, 'qvals': None, 'groupname': 'b'})
     kw = update_dict(kwargs_default, clas)
+
+    # can control samplevals with rvals directly:
+    if not kw.rad and not kw.rvals is None:
+        kw.samplevals = kw.rvals
 
     # get default sampling locations (samplevals)
     di_grid = get_grid_info(dirname)
