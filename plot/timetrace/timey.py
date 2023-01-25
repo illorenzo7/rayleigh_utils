@@ -23,7 +23,7 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = clas0['magnetism']
 
 # defaults
-kwargs_default = dict({'the_file': None, 'ntot': 500, 'rad': False, 'isamplevals': np.array([0]), 'samplevals': None, 'groupname': 'b'})
+kwargs_default = dict({'rad': False, 'groupname': 'b', 'sampletag': '', 'the_file': None, 'samplevals': None, 'rvals': None, 'qvals': 'all', 'ntot': 500})
 
 # also need make figure kwargs
 make_figure_kwargs_default.update(timey_fig_dimensions)
