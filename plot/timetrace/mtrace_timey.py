@@ -23,7 +23,7 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = clas0['magnetism']
 
 # defaults
-kwargs_default = dict({'rad': False, 'groupname': 'b', 'sampletag': '', 'the_file': None, 'isamplevals': np.array([0]), 'samplevals': None, 'rvals': None, 'qvals': 'all', 'ntot': 500, 'mmax': 10, 'mval': 1, 'imag': False, 'abs': False})
+kwargs_default = dict({'rad': False, 'groupname': 'b', 'sampletag': '', 'the_file': None, 'isamplevals': np.array([0]), 'samplevals': None, 'rvals': None, 'qvals': 'all', 'ntot': 500, 'mval': 1, 'imag': False, 'abs': False})
 
 # also need make figure kwargs
 make_figure_kwargs_default.update(timey_fig_dimensions)
@@ -44,6 +44,15 @@ kw_make_figure = update_dict(make_figure_kwargs_default, clas)
 if not kw.ycut is None:  # need room for two colorbars
     kw_make_figure.sub_margin_right_inches *= 2
     kw_make_figure.margin_top_inches += 1/4
+
+# check if we want the real or imaginary vals
+if kw.imag:
+    part = 'imag'
+elif kw.abs:
+    part = 'abs'
+    kw_plot_timey.posdef = True
+else:
+    part = 'real'
 
 # baseline time unit
 time_unit, time_label, rotation, simple_label = get_time_unit(dirname)
@@ -66,7 +75,7 @@ else:
     samplefmt = '%1.3e'
     samplename = 'rval'
 
-dataname = datatype + '_' + kw.groupname
+dataname = datatype + ('_mval%03i' %kw.mval) '_' + kw.groupname
 if len(kw.sampletag) > 0:
     dataname += '_' + kw.sampletag
 
@@ -79,6 +88,13 @@ if kw.the_file is None:
 print ('reading ' + kw.the_file)
 di = get_dict(kw.the_file)
 vals = di['vals']
+if part == 'imag':
+    vals = np.imag(di['vals'])
+elif part == 'abs':
+    vals = np.abs(di['vals'])
+else:
+    vals = np.real(di['vals'][:, mval, :])
+
 times = di['times']
 iters = di['iters']
 qvals_avail = np.array(di['qvals'])
