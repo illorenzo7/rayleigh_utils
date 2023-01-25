@@ -22,8 +22,10 @@ if rank == 0:
     # info for print messages
     import sys, os
     sys.path.append(os.environ['raco'])
+    #sys.path.append(os.environ['raco'] + '/quantities_util')
     # import common here
     from common import *
+    #from varprops import get_quantity_group
     from cla_util import *
     char = '.'
     nproc = comm.Get_size()
@@ -70,7 +72,7 @@ if rank == 0:
     rr = di_grid['rr']
     tt_lat = di_grid['tt_lat']
 
-    if rad:
+    if kw.rad:
         sampleaxis = tt_lat
     else:
         sampleaxis = rr
@@ -92,7 +94,7 @@ if rank == 0:
         qgroup = get_quantity_group(groupname, magnetism)
         qvals = qgroup['qvals']
     else:
-        qvals = kwargs.qvals
+        qvals = kw.qvals
         groupname = input("choose a groupname to save your data: ")
 
     # get the Rayleigh data directory
@@ -138,7 +140,7 @@ else: # recieve appropriate file info if rank > 1
 
 # broadcast meta data
 if rank == 0:
-    meta = [dirname, radatadir, qvals, rad, isamplevals, nsamplevals]
+    meta = [dirname, radatadir, qvals, kw.rad, isamplevals, nsamplevals]
 else:
     meta = None
 
@@ -232,7 +234,7 @@ if rank == 0:
     if not os.path.isdir(datadir):
         os.makedirs(datadir)
 
-    basename += '_' + groupname + rtag + lattag
+    basename += '_' + groupname + sampletag
     savename = basename + clas0['tag'] + '-' +\
             file_list[0] + '_' + file_list[-1] + '.pkl'
     savefile = datadir + savename
