@@ -62,35 +62,38 @@ if rank == 0:
     clas0, clas = read_clas(args)
     dirname = clas0['dirname']
     magnetism = clas0['magnetism']
-    kwargs_default = dict({'rad': False, 'latvals': None, 'rvals': None, 'qvals': None, 'groupname': 'b'})
-    kwargs = update_dict(kwargs_default, clas)
+    kwargs_default = dict({'rad': False, 'samplevals': None, 'qvals': None, 'groupname': 'b'})
+    kw = update_dict(kwargs_default, clas)
 
-    if kwargs.rvals is None:
-        rmin, rmax = get_rminmax(dirname)
-        rvals = np.linspace(rmin, rmax, 13)
-        rtag = ''
+    # get default sampling locations (samplevals)
+    di_grid = get_grid_info(dirname)
+    rr = di_grid['rr']
+    tt_lat = di_grid['tt_lat']
+
+    if rad:
+        sampleaxis = tt_lat
     else:
-        rvals = kwargs.rvals
-        rtag = input("choose a tag name for your chosen rvals: ")
-        rtag = '_' + rtag
+        sampleaxis = rr
 
-    if kwargs.latvals is None:
-        latvals = np.linspace(-90., 90., 13)
-        lattag = ''
+    if kw.samplevals is None:
+        if kw.rad:
+            samplevals = np.linspace(-90., 90., 13)
+        else:
+            rmin, rmax = get_rminmax(dirname)
+            samplevals = np.linspace(rmin, rmax, 13)
+        sampletag = ''
     else:
-        latvals = kwargs.latvals
-        lattag = input("choose a tag name for your chosen latvals: ")
-        lattag = '_' + lattag
+        samplevals = kw.samplevals
+        sampletag = '_' + input("choose a tag name for your chosen sampling locations: ")
 
-    if kwargs.qvals is None: # it's a quantity group
-        groupname = kwargs.groupname
+    # get sampling quantities we want
+    if kw.qvals is None: # it's a quantity group
+        groupname = kw.groupname
         qgroup = get_quantity_group(groupname, magnetism)
         qvals = qgroup['qvals']
     else:
         qvals = kwargs.qvals
         groupname = input("choose a groupname to save your data: ")
-
-    rad = kwargs['rad']
 
     # get the Rayleigh data directory
     dataname = 'AZ_Avgs'
@@ -103,18 +106,6 @@ if rank == 0:
     nproc_min, nproc_max, n_per_proc_min, n_per_proc_max =\
             opt_workload(nfiles, nproc)
 
-    # get grid information
-    di_grid = get_grid_info(dirname)
-    rr = di_grid['rr']
-    tt_lat = di_grid['tt_lat']
-
-    # get indices associated with desired sample vals
-    if rad:
-        samplevals = latvals
-        sampleaxis = tt_lat
-    else:
-        samplevals = rvals
-        sampleaxis = rr
 
     isamplevals = []
     for sampleval in samplevals:
