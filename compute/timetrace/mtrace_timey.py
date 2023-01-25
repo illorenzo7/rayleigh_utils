@@ -105,7 +105,7 @@ if rank == 0:
         groupname = input("choose a groupname to save your data: ")
 
     # get mvals we want (default m = 1)
-    mvals = kw.mvals
+    mvals = make_array(kw.mvals)
 
     # get the Rayleigh data directory
     radatadir = dirname + '/' + dataname + '/'
