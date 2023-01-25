@@ -100,6 +100,7 @@ if not kw.ntot == 'full':
 
 # can control samplevals with rvals for time-latitude traces
 if not kw.rad and not kw.rvals is None:
+    print ("got here")
     kw.samplevals = kw.rvals
 
 if not kw.samplevals is None: # isamplevals being set indirectly
@@ -107,7 +108,7 @@ if not kw.samplevals is None: # isamplevals being set indirectly
     if isall(kw.samplevals):
         kw.isamplevals = np.arange(len(samplevals_avail))
     else:
-        kw.samplevals = inds_from_vals(samplevals_avail, kw.samplevals)
+        kw.isamplevals = inds_from_vals(samplevals_avail, kw.samplevals)
 
 # determine desired quantities to plot
 if isall(kw.qvals):
