@@ -43,7 +43,9 @@ import numpy as np
 # data type and reading function
 import sys, os
 sys.path.append(os.environ['rapp'])
-from rayleigh_diagnostics import AZ_Avgs, Shell_Avgs
+from rayleigh_diagnostics_alt import Shell_Slices
+reading_func = Shell_Slices
+dataname = 'Shell_Slices'
 
 if rank == 0:
     # modules needed only by proc 0 
@@ -64,7 +66,7 @@ if rank == 0:
     clas0, clas = read_clas(args)
     dirname = clas0['dirname']
     magnetism = clas0['magnetism']
-    kwargs_default = dict({'rad': False, 'samplevals': None, 'rvals': None, 'qvals': None, 'groupname': 'b'})
+    kwargs_default = dict({'rad': False, 'samplevals': None, 'rvals': None, 'qvals': None, 'groupname': 'b', 'mvals': np.array([1])})
     kw = update_dict(kwargs_default, clas)
 
     # can control samplevals with rvals directly:
@@ -72,8 +74,9 @@ if rank == 0:
         kw.samplevals = kw.rvals
 
     # get default sampling locations (samplevals)
-    di_grid = get_grid_info(dirname)
-    rr = di_grid['rr']
+    slice_info = get_sliceinfo(dirname)
+    di_grid = get_eq(dirname)
+    rr = slice_info.samplevals
     tt_lat = di_grid['tt_lat']
 
     if kw.rad:
@@ -85,8 +88,7 @@ if rank == 0:
         if kw.rad:
             samplevals = np.linspace(-90., 90., 13)
         else:
-            rmin, rmax = get_rminmax(dirname)
-            samplevals = np.linspace(rmin, rmax, 13)
+            samplevals = rr
         sampletag = ''
     else:
         samplevals = kw.samplevals
@@ -101,8 +103,10 @@ if rank == 0:
         qvals = kw.qvals
         groupname = input("choose a groupname to save your data: ")
 
+    # get mvals we want (default m = 1)
+    mvals = kw.mvals
+
     # get the Rayleigh data directory
-    dataname = 'AZ_Avgs'
     radatadir = dirname + '/' + dataname + '/'
 
     # get desired analysis range
@@ -111,7 +115,6 @@ if rank == 0:
     # get the problem size
     nproc_min, nproc_max, n_per_proc_min, n_per_proc_max =\
             opt_workload(nfiles, nproc)
-
 
     isamplevals = []
     for sampleval in samplevals:
@@ -144,12 +147,12 @@ else: # recieve appropriate file info if rank > 1
 
 # broadcast meta data
 if rank == 0:
-    meta = [dirname, radatadir, qvals, kw.rad, isamplevals, nsamplevals]
+    meta = [dirname, radatadir, qvals, kw.rad, isamplevals, nsamplevals, mvals]
 else:
     meta = None
 
 the_bcast = comm.bcast(meta, root=0)
-dirname, radatadir, qvals, rad, isamplevals, nsamplevals = the_bcast
+dirname, radatadir, qvals, rad, isamplevals, nsamplevals, mvals = the_bcast
 
 # Checkpoint and time
 comm.Barrier()
@@ -160,6 +163,7 @@ if rank == 0:
         %(nfiles, dataname, file_list[0], file_list[-1]))
     print ("sampling values:")
     print ("qvals = " + arr_to_str(qvals, "%i"))
+    print ("mvals = " + arr_to_str(mvals, "%i"))
     st = "sampling locations:"
     if rad:
         st2 = "lats = "
@@ -177,15 +181,20 @@ my_times = []
 my_iters = []
 my_vals = []
 
-reading_func = AZ_Avgs
-
+# no point in storing extraneous mvals
+mmax = max(mvals)
 for i in range(my_nfiles):
-    a = reading_func(radatadir + str(my_files[i]).zfill(8), '')
+    a = reading_func(radatadir + str(my_files[i]).zfill(8), '', qvals=qvals)
     for j in range(a.niter):
+        vals_loc = a.vals[..., j]
+        vals_loc = np.fft.rfft(vals_loc, axis=0)
+        vals_loc = vals_loc[:mmax+1, ...]
+
         if rad:
-            my_vals.append(a.vals[:, :, :, j][isamplevals, :,  :][:, :, a.lut[qvals]])
+            my_vals.append(vals_loc[:, isamplevals, :,  :][:, :, :, a.lut[qvals]])
         else:
-            my_vals.append(a.vals[:, :, :, j][:, isamplevals, :][:, :, a.lut[qvals]])
+            my_vals.append(a.vals[:, :, isamplevals, :][:, :, :, a.lut[qvals]])
+
         my_times.append(a.time[j])
         my_iters.append(a.iters[j])
     if rank == 0:
@@ -228,34 +237,40 @@ comm.Barrier()
 if rank == 0:
     # Set the timetrace savename by the directory, what we are saving,
     # and first and last iteration files for the trace
-    if rad:
-        basename = 'timerad'
-    else:
-        basename = 'timelat'
 
-    # create data directory if it doesn't already exist
-    datadir = clas0['datadir'] + basename + '/'
-    if not os.path.isdir(datadir):
-        os.makedirs(datadir)
-
-    basename += '_' + groupname + sampletag
-    savename = basename + clas0['tag'] + '-' +\
-            file_list[0] + '_' + file_list[-1] + '.pkl'
-    savefile = datadir + savename
-
-    # save the data
-    f = open(savefile, 'wb')
     # convert everything to arrays
     vals = np.array(vals)
     times = np.array(times)
     iters = np.array(iters)
-    di_sav = dict({'vals': vals, 'times': times, 'iters': iters, 'qvals': qvals})
-    di_sav['samplevals'] = samplevals
-    pickle.dump(di_sav, f, protocol=4)
-    f.close()
+
+    # save the data for each mval individually
+    for mval in mvals:
+        if rad:
+            basename = 'timerad'
+        else:
+            basename = 'timelat'
+
+        # create data directory if it doesn't already exist
+        datadir = clas0['datadir'] + basename + '/'
+        if not os.path.isdir(datadir):
+            os.makedirs(datadir)
+
+        basename += ('_mval%03i' %mval) + '_' + groupname + sampletag
+
+        savename = basename + clas0['tag'] + '-' +\
+                file_list[0] + '_' + file_list[-1] + '.pkl'
+        savefile = datadir + savename
+
+        # save the data
+        f = open(savefile, 'wb')
+        di_sav = dict({'vals': vals, 'times': times, 'iters': iters, 'qvals': qvals})
+        di_sav['samplevals'] = samplevals
+        pickle.dump(di_sav, f, protocol=4)
+        f.close()
+        print ('data saved at ')
+        print (make_bold(savefile))
+
     t2 = time.time()
     print (format_time(t2 - t1))
-    print(make_bold(fill_str('total time')), end='')
+    print (make_bold(fill_str('total time')), end='')
     print (make_bold(format_time(t2 - t1_glob)))
-    print ('data saved at ')
-    print (make_bold(savefile))
