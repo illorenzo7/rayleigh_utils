@@ -23,7 +23,7 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = clas0['magnetism']
 
 # defaults
-kwargs_default = dict({'the_file': None, 'ntot': 500, 'clat': 10, 'dlat': 0, 'om': None, 'rad': False, 'lon': False, 'isamplevals': np.array([0]), 'samplevals': None, 'groupname': 'v', 'nosub': False})
+kwargs_default = dict({'the_file': None, 'ntot': 500, 'clat': 10, 'dlat': 0, 'om': None, 'rad': False, 'lon': False, 'isamplevals': np.array([0]), 'samplevals': None, 'rvals': None, 'groupname': 'v', 'nosub': False})
 
 # also need make figure kwargs
 timey_fig_dimensions['margin_top_inches'] = 1.0
@@ -133,9 +133,14 @@ else:
     subplottitle = 'residual rotation: ' + r'$(\Omega - \langle\Omega\rangle_t)/\Omega_0$'
 
 # determine desired levels to plot
+
+# can control samplevals with rvals for time-latitude traces
+if not kw.rad and not kw.rvals is None:
+    kw.samplevals = kw.rvals
+
 if not kw.samplevals is None: # isamplevals being set indirectly
     # check for special 'all' option
-    if kw.samplevals == 'all':
+    if isall(kw.samplevals):
         kw.isamplevals = np.arange(len(samplevals_avail))
     else:
         kw.samplevals = make_array(kw.samplevals)
