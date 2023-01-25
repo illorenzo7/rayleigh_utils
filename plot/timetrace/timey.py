@@ -23,7 +23,7 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = clas0['magnetism']
 
 # defaults
-kwargs_default = dict({'rad': False, 'groupname': 'b', 'sampletag': '', 'the_file': None, 'samplevals': None, 'rvals': None, 'qvals': 'all', 'ntot': 500})
+kwargs_default = dict({'rad': False, 'groupname': 'b', 'sampletag': '', 'the_file': None, 'isamplevals': np.array([0]), 'samplevals': None, 'rvals': None, 'qvals': 'all', 'ntot': 500})
 
 # also need make figure kwargs
 make_figure_kwargs_default.update(timey_fig_dimensions)
@@ -44,12 +44,6 @@ kw_make_figure = update_dict(make_figure_kwargs_default, clas)
 if not kw.ycut is None:  # need room for two colorbars
     kw_make_figure.sub_margin_right_inches *= 2
     kw_make_figure.margin_top_inches += 1/4
-
-# add in groupname keys
-kw.update(get_quantity_group(kw.groupname, magnetism))
-
-# user may have wanted to change some groupname keys
-kw = update_dict(kw, clas)
 
 # baseline time unit
 time_unit, time_label, rotation, simple_label = get_time_unit(dirname)
@@ -73,6 +67,8 @@ else:
     samplename = 'rval'
 
 dataname = datatype + '_' + kw.groupname
+if len(kw.sampletag) > 0:
+    dataname += '_' + kw.sampletag
 
 # get data
 if kw.the_file is None:
@@ -100,22 +96,31 @@ if not kw.ntot == 'full':
     vals = thin_data(vals, kw.ntot)
     print ("after thin_data: len(times) = %i" %len(times))
 
-# get raw traces of desired variables
+# determine desired levels to plot
+
+# can control samplevals with rvals for time-latitude traces
+if not kw.rad and not kw.rvals is None:
+    kw.samplevals = kw.rvals
+
+if not kw.samplevals is None: # isamplevals being set indirectly
+    # check for special 'all' option
+    if isall(kw.samplevals):
+        kw.isamplevals = np.arange(len(samplevals_avail))
+    else:
+        kw.samplevals = inds_from_vals(samplevals_avail, kw.samplevals)
+
+# determine desired quantities to plot
+if isall(kw.qvals):
+    kw.qvals = qvals_avail
+
 terms = []
 for qval in kw.qvals:
     qind = np.argmin(np.abs(qvals_avail - qval))
     terms.append(vals[:, :, :, qind])
 
-# determine desired levels to plot
-if not kw.samplevals is None: # isamplevals being set indirectly
-    # check for special 'all' option
-    if kw.samplevals == 'all':
-        kw.isamplevals = np.arange(len(samplevals_avail))
-    else:
-        kw.samplevals = make_array(kw.samplevals)
-        kw.isamplevals = np.zeros_like(kw.samplevals, dtype='int')
-        for i in range(len(kw.samplevals)):
-            kw.isamplevals[i] = np.argmin(np.abs(samplevals_avail - kw.samplevals[i]))
+# determine titles
+if kw.titles is None:
+    kw.titles = parse_quantities(kw.qvals)[1]
 
 # Loop over the desired levels and save plots
 for isampleval in kw.isamplevals:
