@@ -59,23 +59,24 @@ time_unit, time_label, rotation, simple_label = get_time_unit(dirname)
 
 # get grid info
 slice_info = get_sliceinfo(dirname)
+di_grid = get_grid_info(dirname)
 
 if kw.rad:
     datatype = 'timerad'
-    plotlabel = 'time-radius trace'
+    plotlabel = 'time-radius trace, ' + part
     yaxis = slice_info.samplevals
     axislabel = 'radius'
     samplefmt = lat_fmt
     samplename = 'latval'
 else:
     datatype = 'timelat'
-    plotlabel = 'time-latitude trace'
+    plotlabel = 'time-latitude trace, ' + part
     yaxis = di_grid['tt_lat']
     axislabel = 'latitude (deg)'
     samplefmt = '%1.3e'
     samplename = 'rval'
 
-dataname = datatype + ('_mval%03i' %kw.mval) '_' + kw.groupname
+dataname = datatype + ('_mval%03i_' %kw.mval) + kw.groupname
 if len(kw.sampletag) > 0:
     dataname += '_' + kw.sampletag
 
@@ -93,7 +94,7 @@ if part == 'imag':
 elif part == 'abs':
     vals = np.abs(di['vals'])
 else:
-    vals = np.real(di['vals'][:, mval, :])
+    vals = np.real(di['vals'])
 
 times = di['times']
 iters = di['iters']
@@ -189,7 +190,7 @@ for isampleval in kw.isamplevals:
         averaging_time = (times[-1] - times[0])/len(times)*kw.navg
         maintitle += '\n' + ('t_avg = %.1f Prot' %averaging_time)
 
-    maintitle += '\nm=0 (lon. avg.)'
+    maintitle += '\nm=%i' %kw.mval
     if not kw.ycut is None:
         maintitle += '\nycut = %1.3e' %kw.ycut
 
