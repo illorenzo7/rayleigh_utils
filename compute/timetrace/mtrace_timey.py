@@ -11,6 +11,9 @@
 #
 # initialize communication
 from mpi4py import MPI
+import sys, os
+sys.path.append(os.environ['raco'])
+
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 
@@ -20,9 +23,7 @@ if rank == 0:
     # timing module
     import time
     # info for print messages
-    import sys, os
     sys.path.append(os.environ['raco'])
-    #sys.path.append(os.environ['raco'] + '/quantities_util')
     # import common here
     from common import *
     #from varprops import get_quantity_group
@@ -75,7 +76,7 @@ if rank == 0:
 
     # get default sampling locations (samplevals)
     slice_info = get_sliceinfo(dirname)
-    di_grid = get_eq(dirname)
+    di_grid = get_grid_info(dirname)
     rr = slice_info.samplevals
     tt_lat = di_grid['tt_lat']
 
