@@ -83,8 +83,7 @@ tflux = hflux + eflux + cflux + kflux + vflux # compute the total flux
 
 # break the enthalpy flux into mean and fluctuating
 print (buff_line)
-if False:
-#if 1458 in qv:
+if 1458 in qv:
     print ("getting enthalpy flux (pp) from qval = 1458")
     eflux_fluc = vals[:, 0, lut[1458]]
     eflux_mean = eflux - eflux_fluc
