@@ -1,343 +1,217 @@
 # Author: Loren Matilsky
-# Created: 12/19/2022
-#
-# Description: Script to plot the "cone-averaged" colatitudinal 
-# energy fluxes as functions of theta
-# Since Rayleigh has no "cone-averages", we use the AZ_Avgs
+# Created: 01/27/2023
+# This script plots the "cone-averaged" colatitudinal 
+# energy fluxes as functions of theta.
+# Since Rayleigh has no "cone-averages", we use the AZ_Avgs.
 
-import matplotlib as mpl
-mpl.use('TkAgg')
-import matplotlib.pyplot as plt
-plt.rcParams['mathtext.fontset'] = 'dejavuserif'
-csfont = {'fontname':'DejaVu Serif'}
 import numpy as np
 import sys, os
-sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
+sys.path.append(os.environ['rapl'])
 from common import *
-from rayleigh_diagnostics import GridInfo
+from plotcommon import *
+from cla_util import *
 
-# Get the run directory on which to perform the analysis
-dirname = sys.argv[1]
+# Get CLAs
+args = sys.argv
+clas0, clas = read_clas(args)
+dirname = clas0['dirname']
 dirname_stripped = strip_dirname(dirname)
 
-# domain bounds
-ncheby, domain_bounds = get_domain_bounds(dirname)
-ri = np.min(domain_bounds)
-ro = np.max(domain_bounds)
-d = ro - ri
-sep_czrz = False # plots the fluxes averaged separately over the two zones 
+# equation coefficients
+eq = get_eq(dirname)
 
-# Directory with data and plots, make the plotting directory if it doesn't
-# already exist    
-datadir = dirname + '/data/'
-plotdir = dirname + '/plots/'
-if (not os.path.isdir(plotdir)):
-    os.makedirs(plotdir)
+# allowed args + defaults
+lineplot_kwargs_default['legfrac'] = 0.3
+lineplot_kwargs_default['plotleg'] = True
+make_figure_kwargs_default.update(lineplot_kwargs_default)
 
-# Find the Shell_Avgs file(s) in the data directory. If there are multiple, by
-# default choose the one with widest range in the average
-the_file = get_widest_range_file(datadir, 'AZ_Avgs')
-minmax = None
+kwargs_default = dict({'the_file': None})
+kwargs_default.update(make_figure_kwargs_default)
 
-# Get command-line arguments to adjust the interval of averaging files
-plotdir = None
+kw = update_dict(kwargs_default, clas)
+kw_lineplot = update_dict(lineplot_kwargs_default, clas)
+kw_make_figure = update_dict(make_figure_kwargs_default, clas)
 
-args = sys.argv[2:]
-nargs = len(args)
-for i in range(nargs):
-    arg = args[i]
-    if arg == '-plotdir':
-        plotdir = args[i+1]
-    if arg == '-usefile':
-        the_file = args[i+1]
-        the_file = the_file.split('/')[-1]
-    elif arg == '-minmax':
-        minmax = float(args[i+1]), float(args[i+2])
-    elif arg == '-czrz':
-        sep_czrz = True
-       
-print ('Getting data from ', datadir + the_file, ' ...')
-di = get_dict(datadir + the_file)
-iter1, iter2 = get_iters_from_file(the_file)
+find_bad_keys(kwargs_default, clas, clas0['routinename'], justwarn=True)
 
-# Get the time range in sec
-t1 = translate_times(iter1, dirname, translate_from='iter')['val_sec']
-t2 = translate_times(iter2, dirname, translate_from='iter')['val_sec']
-
-# Get the baseline time unit
-rotation = get_parameter(dirname, 'rotation')
-if rotation:
-    time_unit = compute_Prot(dirname)
-    time_label = r'$\rm{P_{rot}}$'
-else:
-    time_unit = compute_tdt(dirname)
-    time_label = r'$\rm{TDT}$'
-
-if plotdir is None:
-    plotdir = dirname + '/plots/'
-    if not os.path.isdir(plotdir):
-        os.makedirs(plotdir)
-
-# Make the plot name, labelling the first/last iterations we average over
-savename = dirname_stripped + '_eflux_latitudinal_' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
-print ("Will save plot at ", savename)
-
-# Get grid info
-gi = GridInfo(dirname + '/grid_info')
-nr, nt = gi.nr, gi.ntheta
-rr, tt, cost, sint = gi.radius, gi.theta, gi.costheta, gi.sintheta
-ri, ro = np.min(rr), np.max(rr)
-shell_depth = ro - ri
-rweights = gi.rweights
-if sep_czrz:
-    ir_bcz = get_parameter(dirname, 'ncheby')[1] - 1
-
-#Create the plot
-lw = 1.5 # Bit thicker lines
-
-# Read in the flux data
-#print ('Getting AZ_Avgs data from %s ...' %the_file)
+# get data
+if kw.the_file is None:
+    kw.the_file = get_widest_range_file(clas0['datadir'], 'Shell_Avgs')
+print (buff_line)
+print ('running ' + clas0['routinename'])
+print (buff_line)
+print ('reading ' + kw.the_file)
+di = get_dict(kw.the_file)
 vals = di['vals']
 lut = di['lut']
-qindex_eflux = lut[1456]
-qindex_eflux_pp = lut[1459]
-qindex_cflux = lut[1471]
-qindex_kflux = lut[1924]
-qindex_vflux = lut[1936] # needs minus sign?
+qv = di['qv']
+di_grid = get_grid_info(dirname)
+rr = di_grid['rr']
+nr = di_grid['nr']
 
-# Get the fluxes in the whole meridional plane
-eflux = vals[:, :, qindex_eflux]
-cflux = vals[:, :, qindex_cflux]
-kflux = vals[:, :, qindex_kflux]
-vflux = -vals[:, :, qindex_vflux]
-tflux = eflux + cflux + kflux + vflux # compute the total flux
+eflux = vals[:, 0, lut[1455]]
+hflux = vals[:, 0, lut[1433]]
+if True in np.isnan(hflux):
+    print (buff_line)
+    print ("OUTPUT HEAT FLUX (1433, vol_heat_flux) HAS NANs!!!!")
+    print ("computing heat flux manually from discrete integral")
+    hflux = np.zeros_like(eflux)
+    rr = eq.radius
+    rr2 = rr**2.
+    #rho = eq.density
+    #temp = eq.temperature
+    heat = eq.heating
+    for ir in range(eq.nr - 2, -1, -1):
+        #mean_rho = 0.5*(rho[ir] + rho[ir+1])
+        #mean_t = 0.5*(temp[ir] + temp[ir+1])
+        #mean_t = 0.5*(temp[ir] + temp[ir+1])
+        mean_r2 = 0.5*(rr2[ir] + rr2[ir+1])
+        mean_q = 0.5*(heat[ir] + heat[ir+1])
+        mean_dr = rr[ir] - rr[ir+1]
+        fpr2dr = 4.*np.pi*mean_r2*mean_dr
+        hflux[ir] = hflux[ir+1] + mean_q*fpr2dr
+    hflux = (hflux[0] - hflux)/(4.*np.pi*rr2)
 
-eq = get_eq(dirname)
-try:
-    eflux_pp = vals[:, :, qindex_eflux_pp]
-except:
-    # the fluctuating enthalpy flux wasn't computed directly
-    # so compute it by subtracting out the flux due to meridional 
-    # circulation
-    rho_bar = eq.density
-    T_bar = eq.temperature
-    S_azav = vals[:, :, lut[501]]
-    P_azav = vals[:, :, lut[502]]
-    vt_azav = vals[:, :, lut[2]]
-    eflux_mm = (rho_bar*T_bar*S_azav + P_azav)*vt_azav
-    eflux_pp = eflux - eflux_mm
+cflux = vals[:, 0, lut[1470]]
+kflux = vals[:, 0, lut[1923]]
+vflux = -vals[:, 0, lut[1935]] # remember the minus sign in vflux
+tflux = hflux + eflux + cflux + kflux + vflux # compute the total flux
 
-# Compute eflux_mm if the "try" succeeded
-eflux_mm = eflux - eflux_pp
+# break the enthalpy flux into mean and fluctuating
+print (buff_line)
+if 1458 in qv:
+    print ("getting enthalpy flux (pp) from qval = 1458")
+    eflux_fluc = vals[:, 0, lut[1458]]
+    eflux_mean = eflux - eflux_fluc
+else: # do the decomposition "by hand"
+    print ("getting enthalpy flux (pp) indirectly from AZ_Avgs")
 
-magnetism = get_parameter(dirname, 'magnetism')
-if magnetism:
-    qindex_mflux = lut[2002] # needs multiplication by -1/(4pi)?
-    mflux = -1/(4*np.pi)*vals[:, :, qindex_mflux]
+    # more grid info
+    nt = di_grid['nt']
+    tt, tw = di_grid['tt'], di_grid['tw'] 
+    tw_2d = tw.reshape((nt, 1))
+
+    # reference state
+    eq = get_eq(dirname)
+    rho_ref = (eq.rho).reshape((1, nr))
+    prs_ref = (eq.prs).reshape((1, nr))
+    tmp_ref = (eq.tmp).reshape((1, nr))
+
+    # read AZ_Avgs data
+    if kw.the_file_az is None:
+        kw.the_file_az = get_widest_range_file(clas0['datadir'], 'AZ_Avgs')
+    print ('reading ' + kw.the_file_az)
+    di_az = get_dict(kw.the_file_az)
+    vals_az = di_az['vals']
+    lut_az = di_az['lut']
+
+    vr_av = vals_az[:, :, lut_az[1]]
+    s_av = vals_az[:, :, lut_az[501]]
+    prs_av = vals_az[:, :, lut_az[502]]
+
+    # calculate mean tmp from EOS
+    tmp_av = tmp_ref*( (1.-1./gamma_ideal)*(prs_av/prs_ref) +\
+            s_av/eq.c_p )
+
+    # and, finally, the enthalpy flux from mean/fluc flows
+    eflux_mean_az = rho_ref*eq.c_p*vr_av*tmp_av
+    eflux_mean = np.sum(eflux_mean_az*tw_2d, axis=0)
+    eflux_fluc = eflux - eflux_mean
+
+profiles = [eflux, eflux_mean, eflux_fluc, hflux, cflux, vflux]
+kw_lineplot.labels = ['eflux', 'eflux (mm)', 'eflux (pp)', 'hflux', 'cflux', 'vflux']
+
+if clas0['magnetism']:
+    # A Space Oddysey is actually (-4*pi) TIMES the correct Poynting flux
+    mflux = -vals[:, 0, lut[2001]]/(4*np.pi)
+    profiles.append(mflux)
+    kw_lineplot.labels.append('mflux')
     tflux += mflux
+profiles.append(tflux)
+kw_lineplot.labels.append('total')
 
-# Compute the integrated fluxes
-# At each point in the meridional plane we associate a "ring" of width dr and circumference 2 pi r sin(theta)
-dr = rweights/rr**2/np.sum(rweights/rr**2)*shell_depth
-areas = 2*np.pi*sint.reshape((nt, 1))*rr.reshape((1, nr))*\
-        dr.reshape((1, nr))
+# integrate and normalize
+lstar = eq.lum
+fpr = 4*np.pi*rr**2
+profiles_int = []
+for profile in profiles:
+    profiles_int.append(fpr*profile/lstar)
 
-eflux_int = np.sum(eflux*areas, axis=1)
-eflux_pp_int = np.sum(eflux_pp*areas, axis=1)
-eflux_mm_int = np.sum(eflux_mm*areas, axis=1)
+# Create the plot; start with plotting all the energy fluxes
+fig, axs, fpar = make_figure(**kw_make_figure)
+ax = axs[0,0]
 
-cflux_int = np.sum(cflux*areas, axis=1)
-kflux_int = np.sum(kflux*areas, axis=1)
-vflux_int = np.sum(vflux*areas, axis=1)
-if magnetism:
-    mflux_int = np.sum(mflux*areas, axis=1)
-tflux_int = np.sum(tflux*areas, axis=1)
+# x and y labels
+kw_lineplot.xlabel = 'radius'
+kw_lineplot.ylabel = r'$4\pi r^2$' + '(flux)/' + r'$L_*$'
 
-if sep_czrz:
-    eflux_int_cz = np.sum((eflux*areas)[:, :ir_bcz+1], axis=1)
-    eflux_pp_int_cz = np.sum((eflux_pp*areas)[:, :ir_bcz+1], axis=1)
-    eflux_mm_int_cz = np.sum((eflux_mm*areas)[:, :ir_bcz+1], axis=1)
+# Try to find the BCZ from where enthalpy flux goes negative, if desired
+# avoid the outer boundary
+if kw.mark_bcz:
+    irneg = np.argmin(eflux[20:] > 0) + 20 # argmin gives first place condition breaks down
+    irpos = np.argmin(eflux[20:] > 0) + 19 # remember radial indices are reversed
+    rrneg = rr[irneg]
+    rrpos = rr[irpos]
+    efluxneg = eflux[irneg]
+    efluxpos = eflux[irpos]
+    slope =  (efluxpos - efluxneg)/(rrpos - rrneg)
+    rbcz_est = rrpos - efluxpos/slope
+    kw_lineplot.xvals = make_array(kw_lineplot.xvals, tolist=True)
+    kw_lineplot.xvals.append(rbcz_est)
 
-    cflux_int_cz = np.sum((cflux*areas)[:, :ir_bcz+1], axis=1)
-    kflux_int_cz = np.sum((kflux*areas)[:, :ir_bcz+1], axis=1)
-    vflux_int_cz = np.sum((vflux*areas)[:, :ir_bcz+1], axis=1)
-    if magnetism:
-        mflux_int_cz = np.sum((mflux*areas)[:, :ir_bcz+1], axis=1)
-    tflux_int_cz = np.sum((tflux*areas)[:, :ir_bcz+1], axis=1)
+    # also mark depth of overshoot
+    # see where eflux goes positive
+    mineflux = np.min(eflux)
+    tol = 0.05*mineflux # tol is negative
+    irbcz = np.copy(irneg)
+    irpos = np.argmin(eflux[irbcz:] < tol) + irbcz
+    irneg = np.argmin(eflux[irbcz:] < tol) + irbcz - 1
+    rrneg = rr[irneg]
+    rrpos = rr[irpos]
+    efluxneg = eflux[irneg]
+    efluxpos = eflux[irpos]
+    slope =  (efluxpos - efluxneg)/(rrpos - rrneg)
+    rov_est = rrneg - efluxneg/slope # remember rrneg is above now
+    kw_lineplot.xvals.append(rov_est)
 
-    eflux_int_rz = np.sum((eflux*areas)[:, ir_bcz+1:], axis=1)
-    eflux_pp_int_rz = np.sum((eflux_pp*areas)[:, ir_bcz+1:], axis=1)
-    eflux_mm_int_rz = np.sum((eflux_mm*areas)[:, ir_bcz+1:], axis=1)
+lineplot(rr, profiles_int, ax, **kw_lineplot)
 
-    cflux_int_rz = np.sum((cflux*areas)[:, ir_bcz+1:], axis=1)
-    kflux_int_rz = np.sum((kflux*areas)[:, ir_bcz+1:], axis=1)
-    vflux_int_rz = np.sum((vflux*areas)[:, ir_bcz+1:], axis=1)
-    if magnetism:
-        mflux_int_rz = np.sum((mflux*areas)[:, ir_bcz+1:], axis=1)
-    tflux_int_rz = np.sum((tflux*areas)[:, ir_bcz+1:], axis=1)
+# make title 
+iter1, iter2 = get_iters_from_file(kw.the_file)
+time_string = get_time_string(dirname, iter1, iter2) 
+the_title = dirname_stripped + '\n' +  'radial energy flux' + '\n' + time_string
+if kw.mark_bcz:
+    the_title += ('\n' + r'$r_{BCZ} = %1.3e$' %rbcz_est)
+    the_title += ('\n' + r'$r_{os} = %1.3e$' %rov_est)
 
-# compute the "equilibrium flux" (latitudinal flux needed to balance out
-# any differences between the inner and outer radial fluxes
-cfluxr = vals[:, :, lut[1470]]
-cflux_out = cfluxr[:, 0]
-lum = eq.lum
-rsq_Flux_in = lum/4/np.pi
-integrand = -2*np.pi*(ro**2*cflux_out - rsq_Flux_in*np.ones(nt))
+margin_x = fpar['margin_left'] + fpar['sub_margin_left']
+margin_y = default_margin/fpar['height_inches']
+fig.text(margin_x, 1 - margin_y, the_title,\
+         ha='left', va='top', fontsize=default_titlesize)
 
-if sep_czrz:
-    cflux_bcz = cfluxr[:, ir_bcz]
-    integrand_cz = -2*np.pi*(ro**2*cflux_out - rr[ir_bcz]**2*cflux_bcz)
-    integrand_rz = -2*np.pi*(rr[ir_bcz]**2*cflux_bcz -\
-            rsq_Flux_in*np.ones(nt))
-    
-eqflux_int = np.zeros(nt)
-if sep_czrz:
-    eqflux_int_cz = np.zeros(nt)
-    eqflux_int_rz = np.zeros(nt)
+# save the figure
+plotdir = my_mkdir(clas0['plotdir'])
+savefile = plotdir + clas0['routinename'] + clas0['tag'] + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
 
-# Get the latitudinal integration weights
-gi = GridInfo(dirname + '/grid_info')
-tw = gi.tweights
-for it in range(nt):
-    # Remember the variables are index "backwards" w.r.t. it (theta
-    # runs from pi to 0)
-    #eqflux_int[it] = 2*np.sum(tw[it:]*integrand[it:])
-    if it <= nt//2:
-        eqflux_int[it] = 2*np.sum(tw[it:nt//2]*integrand[it:nt//2])
-    else:
-        eqflux_int[it] = -2*np.sum(tw[nt//2:it]*integrand[nt//2:it])
+# print the top and bottom fluxes
+print (buff_line)
+print ("bottom flux (luminosity in):")
+print ("%1.5e" %(fpr*tflux)[-1])
+print ("bottom heat flux:")
+print ("%1.5e" %(fpr*hflux)[-1])
 
-    if sep_czrz:
-        if it <= nt//2:
-            eqflux_int_cz[it] = 2*np.sum(tw[it:nt//2]*\
-                    integrand_cz[it:nt//2])
-            eqflux_int_rz[it] = 2*np.sum(tw[it:nt//2]*\
-                    integrand_rz[it:nt//2])
-        else:
-            eqflux_int_cz[it] = -2*np.sum(tw[nt//2:it]*\
-                    integrand_cz[nt//2:it])
-            eqflux_int_rz[it] = -2*np.sum(tw[nt//2:it]*\
-                    integrand_rz[nt//2:it])
+print (buff_line)
+print ("top flux (luminosity out):")
+print ("%1.5e" %(fpr*tflux)[0])
+print ("top  cond. flux")
+print ("%1.5e" %(fpr*cflux)[0])
 
-# create figure with 1-3 columns (total, [CZ], [RZ] fluxes)
-if sep_czrz:
-    ncol = 3
-else:
-    ncol = 1
-fig, axs = plt.subplots(1, ncol, figsize=(5.*ncol, 5.),\
-        sharex=True)
-if ncol == 1: # need the axis array to consistently be doubly indexed
-    axs = np.expand_dims(axs, 0)
-
-# Create the plot of total fluxes
-lats = 180*(np.pi/2 - tt)/np.pi
-axs[0].plot(lats, eflux_int/lum, 'm', label=r'$\rm{F}_{enth}$',\
-        linewidth=lw)
-axs[0].plot(lats, eflux_pp_int/lum, 'm--', label=r'$\rm{F}_{enth,\ pp}$',\
-        linewidth=lw)
-axs[0].plot(lats, eflux_mm_int/lum, 'm:', label=r'$\rm{F}_{enth,\ mm}$',\
-        linewidth=lw)
-axs[0].plot(lats, cflux_int/lum, label=r'$\rm{F}_{cond}$', linewidth=lw)
-axs[0].plot(lats, kflux_int/lum, label=r'$\rm{F}_{KE}$', linewidth=lw)
-axs[0].plot(lats, vflux_int/lum, label=r'$\rm{F}_{visc}$', linewidth=lw)
-if magnetism:
-    axs[0].plot(lats, mflux_int/lum, label=r'$\rm{F}_{Poynting}$',\
-            linewidth=lw)
-axs[0].plot(lats, tflux_int/lum, label=r'$\rm{F}_{total}$',\
-        linewidth=lw, color='black')
-axs[0].plot(lats, eqflux_int/lum, 'k--', label=r'$\rm{F}_{eq}$',\
-        linewidth=lw)
-
-# fluxes in different zones, if desired
-if sep_czrz:
-    axs[1].plot(lats, eflux_int_cz/lum, 'm', label=r'$\rm{F}_{enth}$',\
-            linewidth=lw)
-    axs[1].plot(lats, eflux_pp_int_cz/lum, 'm--', label=r'$\rm{F}_{enth,\ pp}$',\
-            linewidth=lw)
-    axs[1].plot(lats, eflux_mm_int_cz/lum, 'm:', label=r'$\rm{F}_{enth,\ mm}$',\
-            linewidth=lw)
-    axs[1].plot(lats, cflux_int_cz/lum, label=r'$\rm{F}_{cond}$', linewidth=lw)
-    axs[1].plot(lats, kflux_int_cz/lum, label=r'$\rm{F}_{KE}$', linewidth=lw)
-    axs[1].plot(lats, vflux_int_cz/lum, label=r'$\rm{F}_{visc}$', linewidth=lw)
-    if magnetism:
-        axs[1].plot(lats, mflux_int_cz/lum, label=r'$\rm{F}_{Poynting}$',\
-                linewidth=lw)
-    axs[1].plot(lats, tflux_int_cz/lum, label=r'$\rm{F}_{total}$',\
-            linewidth=lw, color='black')
-    axs[1].plot(lats, eqflux_int_cz/lum, 'k--', label=r'$\rm{F}_{eq}$',\
-            linewidth=lw)
-
-    axs[2].plot(lats, eflux_int_rz/lum, 'm', label=r'$\rm{F}_{enth}$',\
-            linewidth=lw)
-    axs[2].plot(lats, eflux_pp_int_rz/lum, 'm--', label=r'$\rm{F}_{enth,\ pp}$',\
-            linewidth=lw)
-    axs[2].plot(lats, eflux_mm_int_rz/lum, 'm:', label=r'$\rm{F}_{enth,\ mm}$',\
-            linewidth=lw)
-    axs[2].plot(lats, cflux_int_rz/lum, label=r'$\rm{F}_{cond}$', linewidth=lw)
-    axs[2].plot(lats, kflux_int_rz/lum, label=r'$\rm{F}_{KE}$', linewidth=lw)
-    axs[2].plot(lats, vflux_int_rz/lum, label=r'$\rm{F}_{visc}$', linewidth=lw)
-    if magnetism:
-        axs[2].plot(lats, mflux_int_rz/lum, label=r'$\rm{F}_{Poynting}$',\
-                linewidth=lw)
-    axs[2].plot(lats, tflux_int_rz/lum, label=r'$\rm{F}_{total}$',\
-            linewidth=lw, color='black')
-    axs[2].plot(lats, eqflux_int_rz/lum, 'k--', label=r'$\rm{F}_{eq}$',\
-            linewidth=lw)
-# Get the y-axis in scientific notation
-#plt.ticklabel_format(useMathText=True, axis='y', scilimits=(0))
-
-# Get ticks everywhere
-plt.minorticks_on()
-plt.tick_params(top=True, right=True, direction='in', which='both')
-
-# Set the x limits
-xmin, xmax = -90, 90
-delta_x = xmax - xmin
-plt.xlim(xmin, xmax)
-
-# Set the y-limits 
-maxabs = max((np.max(np.abs(eflux_int)), np.max(np.abs(cflux_int)),\
-        np.max(np.abs(kflux_int)), np.max(np.abs(vflux_int)), np.max(np.abs(tflux_int))))
-
-# Set y limits if user wanted you to
-if not minmax is None:
-    plt.ylim(minmax[0], minmax[1])
-else:
-    ymin, ymax = -1.2*maxabs/lum, 1.2*maxabs/lum
-    delta_y = ymax - ymin
-    plt.ylim(ymin, ymax)
-
-# Label the axes
-plt.xlabel(r'$\rm{Latitude\ (deg)}$', fontsize=12)
-plt.ylabel('(Integrated Energy Flux)' + r'$/L_\odot$',\
-        fontsize=12)
-
-# Label trace interval
-if rotation:
-    time_string = ('t = %.1f to %.1f ' %(t1/time_unit, t2/time_unit))\
-            + time_label + (r'$\ (\Delta t = %.1f\ $'\
-            %((t2 - t1)/time_unit)) + time_label + ')'
-else:
-    time_string = ('t = %.3f to %.3f ' %(t1/time_unit, t2/time_unit))\
-            + time_label + (r'$\ (\Delta t = %.3f\ $'\
-            %((t2 - t1)/time_unit)) + time_label + ')'
-
-# Make title
-the_title = dirname_stripped + '\n' + 'latitudinal energy flux, ' +\
-        time_string
-plt.title(the_title, **csfont)
-
-# Create a see-through legend
-leg=plt.legend(loc='lower left',shadow=True, ncol=3,fontsize=10)
-leg.get_frame().set_alpha(0.3)
-
-# Last command
-plt.tight_layout()
-
-# Save the plot
-print ('Saving the eflux plot at ' + plotdir + savename + ' ...')
-plt.savefig(plotdir + savename, dpi=300)
-
-# Show the plot
-plt.show()
+if clas0['saveplot']:
+    print (buff_line)
+    print ('saving figure at:')
+    print(savefile)
+    plt.savefig(savefile, dpi=300)
+if clas0['showplot']:
+    plt.show()
+print (buff_line)
