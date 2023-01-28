@@ -982,7 +982,7 @@ def compute_polytrope(rmin=sun.rbcz, rmax=sun.r_nrho3, nr=500, rr=None, poly_nrh
 
     return di
 
-def get_eq(dirname, fname=None): 
+def get_eq(dirname, fname=None, verbose=False): 
     # return a human readable version of equation_coefficients
     # for [dirname], using either (in order of priority)
 
@@ -1011,7 +1011,8 @@ def get_eq(dirname, fname=None):
             fname = 'custom_reference_binary'
 
     if fname is None: # no binary file; get everything from main_input
-        print ("get_eq(): inferring reference state from main_input")
+        if verbose:
+            print ("get_eq(): inferring reference state from main_input")
         gi = get_grid_info(dirname)
         eq_hr.rr = gi.rr 
         zero = np.zeros_like(eq_hr.rr)
@@ -1089,7 +1090,8 @@ def get_eq(dirname, fname=None):
     else:
         # by default, get info from equation_coefficients (if file exists)
         # get the background reference state
-        print ("get_eq(): reading reference state from file:", fname)
+        if verbose:
+            print ("get_eq(): reading reference state from file:", fname)
         eq = equation_coefficients()
         eq.read(dirname + '/' + fname)
         eq_hr.rr = eq.radius
@@ -1160,7 +1162,7 @@ def get_time_unit(dirname):
         time_label = simple_label = 'TDT'
     return time_unit, time_label, rotation, simple_label
 
-def translate_times(time, dirname, translate_from='iter'):
+def translate_times(time, dirname, translate_from='iter', verbose=False):
     # change between different time units (can translate from: 
     # iter, prot, tdt, sec
     # TO USE MUST HAVE G_Avgs_trace file or equivalent 
@@ -1181,7 +1183,8 @@ def translate_times(time, dirname, translate_from='iter'):
         print ("to use me! Exiting.")
         sys.exit()
     else:
-        print ("translate_times(): translating from " + the_file)
+        if verbose:
+            print ("translate_times(): translating from " + the_file)
         di = get_dict(the_file)
 
     # Get times and iters from trace file
