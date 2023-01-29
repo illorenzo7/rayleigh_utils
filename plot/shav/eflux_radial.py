@@ -23,7 +23,7 @@ eq = get_eq(dirname)
 # allowed args + defaults
 lineplot_kwargs_default['legfrac'] = 0.3
 lineplot_kwargs_default['plotleg'] = True
-make_figure_kwargs_default.update(lineplot_kwargs_default)
+make_figure_kwargs_default.update(lineplot_fig_dimensions)
 
 kwargs_default = dict({'the_file': None, 'the_file_az': None, 'mark_bcz': False})
 kwargs_default.update(make_figure_kwargs_default)

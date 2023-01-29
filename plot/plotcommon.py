@@ -28,7 +28,7 @@ default_margin_title = 3/4
 sub_width_inches_default, sub_height_inches_default = 3.5, 2.5
 
 # lineplots 
-lineplot_fig_dimensions = dotdict(dict({'sub_width_inches': sub_width_inches_default, 'sub_height_inches': sub_height_inches_default, 'sub_margin_top_inches': 1/4, 'sub_margin_bottom_inches': default_margin_xlabel, 'sub_margin_left_inches': default_margin_ylabel, 'margin_top_inches': 1}))
+lineplot_fig_dimensions = dotdict(dict({'sub_width_inches': sub_width_inches_default, 'sub_height_inches': sub_height_inches_default, 'sub_margin_top_inches': 1/4, 'sub_margin_bottom_inches': default_margin_xlabel, 'sub_margin_left_inches': default_margin_ylabel, 'margin_top_inches': 1.0}))
 
 def axis_range(ax): # gets subplot coordinates on a figure in "normalized"
         # coordinates
