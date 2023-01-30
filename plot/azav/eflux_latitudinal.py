@@ -22,8 +22,7 @@ dirname_stripped = strip_dirname(dirname)
 eq = get_eq(dirname)
 
 # allowed args + defaults
-lineplot_kwargs_default['legfrac'] = 0.3
-lineplot_kwargs_default['plotleg'] = True
+lineplot_kwargs_default['noscix'] = True
 make_figure_kwargs_default.update(lineplot_fig_dimensions)
 
 kwargs_default = dict({'the_file': None, 'rvals': None})
@@ -196,6 +195,13 @@ for ishell in range(nshells):
     kw_lineplot.title = 'rad. range =\n [%1.3e, %1.3e]' %(r1, r2)
 
     # make the plot
+    # for first shell, plot a legend
+    if ishell == 0:
+        #kw_lineplot.legfrac = 0.3
+        kw_lineplot.plotleg = True
+    else:
+        kw_lineplot.plotleg = False
+
     lineplot(90.0 - tt_lat, profiles_int, axs[0, ishell], **kw_lineplot)
 
 # make title 

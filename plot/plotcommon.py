@@ -334,7 +334,7 @@ def sci_format(num, ndec=1):
     return ((r'$%1.' + (r'%i' %ndec) + r'f\times10^{%i}$')\
             %(mantissa, exponent))
 
-lineplot_kwargs_default = dict({'xlabel': None, 'ylabel': None, 'title': None, 'xvals': np.array([]), 'yvals': np.array([]), 'labels': None, 'xlogscale': False, 'xminmax': None, 'minmax': None, 'xcut': None, 'minmax2': None, 'scatter': False, 'colors': color_order, 'linestyles': style_order[0], 'markers': marker_order[0], 'lw': default_lw, 's': default_s, 'ncolleg': 3, 'fontsize': default_labelsize})
+lineplot_kwargs_default = dict({'xlabel': None, 'ylabel': None, 'title': None, 'xvals': np.array([]), 'yvals': np.array([]), 'labels': None, 'xlogscale': False, 'xminmax': None, 'minmax': None, 'xcut': None, 'minmax2': None, 'scatter': False, 'colors': color_order, 'linestyles': style_order[0], 'markers': marker_order[0], 'lw': default_lw, 's': default_s, 'ncolleg': 3, 'fontsize': default_labelsize, 'nosci': False, 'noscix': False, 'nosciy': False})
 lineplot_kwargs_default.update(lineplot_minmax_kwargs_default)
 
 def lineplot(xx, profiles, ax, **kwargs):
@@ -423,8 +423,7 @@ def lineplot(xx, profiles, ax, **kwargs):
     if kw.xcut is None:
         plt.sca(ax)
         plt.minorticks_on()
-        plt.tick_params(top=True, right=True, direction='in',\
-                which='both')
+        plt.tick_params(top=True, right=True, direction='in', which='both')
         if not kw.ylabel is None:
             plt.ylabel(kw.ylabel, fontsize=kw.fontsize)
     else:
@@ -434,8 +433,7 @@ def lineplot(xx, profiles, ax, **kwargs):
         ax_right.yaxis.tick_right()
         plt.sca(ax_left)
         plt.minorticks_on()
-        plt.tick_params(top=True, left=True, right=False, direction='in',\
-                which='both')
+        plt.tick_params(top=True, left=True, right=False, direction='in', which='both')
         if not kw.ylabel is None:
             ax_left.set_ylabel(kw.ylabel, fontsize=kw.fontsize)
             ax_left.yaxis.set_label_position('left')
@@ -490,10 +488,13 @@ def lineplot(xx, profiles, ax, **kwargs):
         plt.yticks(fontsize=kw.fontsize)
 
         # Get the non-log in scientific notation
-        if not kw.xlogscale:
-            plt.ticklabel_format(useMathText=True, axis='x', scilimits=(0,0))
-        if not kw.logscale:
-            plt.ticklabel_format(useMathText=True, axis='y', scilimits=(0,0))
+        if not kw.nosci:
+            if not kw.noscix:
+                if not kw.xlogscale:
+                    plt.ticklabel_format(useMathText=True, axis='x', scilimits=(0,0))
+            if not kw.nosciy:
+                if not kw.logscale:
+                    plt.ticklabel_format(useMathText=True, axis='y', scilimits=(0,0))
 
     # make the legend
     if kw.plotleg:
