@@ -59,21 +59,14 @@ if True in np.isnan(hflux):
     print (buff_line)
     print ("OUTPUT HEAT FLUX (1433, vol_heat_flux) HAS NANs!!!!")
     print ("computing heat flux manually from discrete integral")
-    hflux = np.zeros_like(eflux)
-    rr = eq.radius
+    hflux = np.zeros(nr)
     rr2 = rr**2.
-    #rho = eq.density
-    #temp = eq.temperature
-    heat = eq.heating
-    for ir in range(eq.nr - 2, -1, -1):
-        #mean_rho = 0.5*(rho[ir] + rho[ir+1])
-        #mean_t = 0.5*(temp[ir] + temp[ir+1])
-        #mean_t = 0.5*(temp[ir] + temp[ir+1])
-        mean_r2 = 0.5*(rr2[ir] + rr2[ir+1])
-        mean_q = 0.5*(heat[ir] + heat[ir+1])
+    for ir in range(nr - 2, -1, -1):
+        mean_rr2 = 0.5*(rr2[ir] + rr2[ir+1])
+        mean_heat = 0.5*(eq.heat[ir] + eq.heat[ir+1])
         mean_dr = rr[ir] - rr[ir+1]
-        fpr2dr = 4.*np.pi*mean_r2*mean_dr
-        hflux[ir] = hflux[ir+1] + mean_q*fpr2dr
+        fpr2dr = 4.*np.pi*mean_rr2*mean_dr
+        hflux[ir] = hflux[ir+1] + mean_heat*fpr2dr
     hflux = (hflux[0] - hflux)/(4.*np.pi*rr2)
 
 cflux = vals[:, 0, lut[1470]]
