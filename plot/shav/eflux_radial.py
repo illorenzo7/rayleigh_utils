@@ -89,7 +89,6 @@ else: # do the decomposition "by hand"
     tw_2d = tw.reshape((nt, 1))
 
     # reference state
-    eq = get_eq(dirname)
     rho_ref = (eq.rho).reshape((1, nr))
     prs_ref = (eq.prs).reshape((1, nr))
     tmp_ref = (eq.tmp).reshape((1, nr))
