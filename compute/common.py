@@ -787,6 +787,10 @@ def get_rminmax(dirname):
     ncheby, domain_bounds = get_domain_bounds(dirname)
     return domain_bounds[0], domain_bounds[-1]
 
+def get_latminmax(dirname):
+    tt_lat = get_grid_info(dirname).tt_lat
+    return np.min(tt_lat), np.max(tt_lat)
+
 #################################################################################
 # Get basic radial coefficients (grid info, reference state) associated with sim.
 #################################################################################
