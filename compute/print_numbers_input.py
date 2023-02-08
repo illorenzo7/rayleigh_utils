@@ -23,13 +23,12 @@ rvals = clas.rvals
 if rvals is None:
     rvals = interpret_rvals(dirname, ['rmin', 'rmax'])
 
-fmt = "%1.2e"
 for ishell in range(len(rvals) - 1):
     r1 = rvals[ishell]
     r2 = rvals[ishell+1]
 
     di = get_numbers_input(dirname, r1, r2)
-    print (("Shell #%02i: r_1 = " + fmt + ", r_2 = " + fmt)\
+    print (("Shell #%02i: r_1 = " + flt_fmt + ", r_2 = " + flt_fmt)\
             %(ishell + 1, r1, r2))
     print (buff_line)
     lendef1 = 10
@@ -38,7 +37,7 @@ for ishell in range(len(rvals) - 1):
     for key in di.keys():
         print (fill_str(numbers_input_def[key][0], lendef1, ' '), end='')
         print (fill_str(numbers_input_def[key][1], lendef2, ' '), end='')
-        print (fmt %di[key])
+        print (flt_fmt %di[key])
         if (count + 1) in linebreaks_input:
             print("")
         count += 1
