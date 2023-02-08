@@ -92,7 +92,6 @@ if rank == 0:
     kwargs_default = dict({})
     kwargs_default['rvals'] = None # can specify radial domain boundaries directly 
     kwargs_default['irvals'] = None # can specify radial domain boundaries directly (radial index, e.g., 32 64 96
-    kwargs_default['nquadlat'] = None # "high and low" latitudes in both North and South
     kwargs_default['latvals'] = None
     kwargs_default['ilatvals'] = None
 
@@ -117,8 +116,6 @@ if rank == 0:
         dataname = 'Shell_Avgs'
 
     # deal w/ latitudinal boundaries
-    if not kw.nquadlat is None: # equally spaced domain boundaries (not the default)
-        kw.latvals = np.linspace(latmin, latmax, kw.nquadlat + 1) # remember: tt_lat is INCREASING
     if kw.ilatvals is None: # this is the default
         if kw.latvals is None: # this is the default
             ilatvals = [0, nt - 1]
