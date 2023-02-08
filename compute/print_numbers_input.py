@@ -33,13 +33,9 @@ for ishell in range(len(rvals) - 1):
     r1 = rvals[ishell]
     r2 = rvals[ishell+1]
     print (make_bold("Shell #%02i:" %(ishell + 1)))
-    print (make_bold(fill_str('r_1', lendef1 + lendef2, ' ')), end='')
-    print (make_bold(flt_fmt %r1))
-    print (make_bold(fill_str('r_2', lendef1 + lendef2, ' ')), end='')
-    print (make_bold(flt_fmt %r2))
-    print (make_bold(fill_str('H', lendef1, ' ')), end='')
-    print (make_bold(fill_str('r_2 - r_1', lendef2, ' ')), end='')
-    print (make_bold(flt_fmt %(r2-r1)))
+    print (make_bold('r_1           = ' + flt_fmt %r1))
+    print (make_bold('r_2           = ' + flt_fmt %r2))
+    print (make_bold('H = r_2 - r_1 = '+ flt_fmt %(r2-r1)))
     print (buff_line)
 
     # then non-D numbers in shell
