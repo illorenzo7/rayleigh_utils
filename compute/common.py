@@ -798,13 +798,15 @@ def get_latminmax(dirname):
 ####################################
 # Routines associated with grid info
 ####################################
-def get_grid_info(dirname):
+def get_grid_info(dirname, verbose=False):
     # get basic grid info; try to read from grid_info file
     # or directly from main_input if grid_info doesn't exist
     di = dotdict()
 
     # get basic grid (colocation points and weights)
     if os.path.exists(dirname + '/grid_info'):
+        if verbose:
+            print ("get_grid_info(): reading grid from grid_info")
         gi = GridInfo(dirname + '/grid_info', '')
         # 1D arrays
         di.rr = rr = gi.radius
@@ -812,6 +814,8 @@ def get_grid_info(dirname):
         di.tt = tt = gi.theta
         di.tw = tw = gi.tweights
     else:
+        if verbose:
+            print ("get_grid_info(): inferring grid from main_input")
         ncheby, domain_bounds = get_domain_bounds(dirname)
         nt = get_parameter(dirname, 'n_theta')
         out = compute_grid_info(ncheby, domain_bounds, nt)
@@ -1269,7 +1273,7 @@ def get_time_string(dirname, iter1, iter2=None, oneline=False, threelines=False,
 # ROUTINES FOR FIELD AMPLITUDES, LENGTH SCALES AND NON-D NUMBERS
 ##############################################################
 
-def field_amp(dirname, the_file=None):
+def field_amp(dirname, the_file=None, verbose=False):
     # Make empty dictionary for field-amplitude arrays
     di_out = dotdict()
 
@@ -1288,7 +1292,8 @@ def field_amp(dirname, the_file=None):
     # Read in the Shell_Avgs data
     if the_file is None: # default
         the_file = get_widest_range_file(datadir, 'Shell_Avgs')
-    print ('field_amp(): reading ' + the_file)
+    if verbose:
+        print ('field_amp(): reading ' + the_file)
     di = get_dict(the_file)
     di_out['iter1'], di_out['iter2'] = get_iters_from_file(the_file)
     vals = di['vals']
@@ -1486,7 +1491,7 @@ def field_amp(dirname, the_file=None):
     # Return the dictionary 
     return di_out
 
-def length_scales(dirname, the_file=None):
+def length_scales(dirname, the_file=None, verbose=False):
     # Make empty dictionary for length_scale arrays
     di_out = dotdict(dict([]))
 
@@ -1508,7 +1513,8 @@ def length_scales(dirname, the_file=None):
     if the_file is None: # default
         the_file = get_widest_range_file(datadir, 'Shell_Avgs')
     di_out['iter1'], di_out['iter2'] = get_iters_from_file(the_file)
-    print ('length_scales(): ', end='')
+    if verbose:
+        print ('length_scales(): ', end='')
     fa = field_amp(dirname, the_file=the_file)
 
     # Compute lengthscales (from flows) and put them in dictionary

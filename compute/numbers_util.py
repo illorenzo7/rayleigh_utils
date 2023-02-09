@@ -22,7 +22,7 @@ numbers_input_def = dotdict({
     })
 
 
-def get_numbers_input(dirname, r1='rmin', r2='rmax'):
+def get_numbers_input(dirname, r1='rmin', r2='rmax', verbose=False):
     di = dotdict()
     rotation = get_parameter(dirname, 'rotation')
     magnetism = get_parameter(dirname, 'magnetism')
@@ -34,8 +34,8 @@ def get_numbers_input(dirname, r1='rmin', r2='rmax'):
     di.aspect = r1/r2
 
     # density contrast
-    eq = get_eq(dirname)
-    gi = get_grid_info(dirname)
+    eq = get_eq(dirname, verbose=verbose)
+    gi = get_grid_info(dirname, verbose=verbose)
     rr = gi.rr
     ir1 = np.argmin(np.abs(rr - r1))
     ir2 = np.argmin(np.abs(rr - r2))
@@ -130,7 +130,7 @@ numbers_output_def = dotdict({
     "me": ("ME", "(B^2/(8*pi)) / (rho*v^2/2)") })
 
 
-def get_numbers_output(dirname, r1='rmin', r2='rmax', the_file=None, the_file_az=None):
+def get_numbers_output(dirname, r1='rmin', r2='rmax', the_file=None, the_file_az=None, verbose=False):
     # get diagnostic numbers (e.g., Re and Ro), quantities vol. avg.'d 
     # between r1 and r2
    
@@ -144,11 +144,11 @@ def get_numbers_output(dirname, r1='rmin', r2='rmax', the_file=None, the_file_az
     magnetism = get_parameter(dirname, 'magnetism')
 
     # get reference state
-    eq = get_eq(dirname)
+    eq = get_eq(dirname, verbose=verbose)
     rr = eq.rr
 
     # get field amplitudes
-    di_amp_vsr = field_amp(dirname) # this one contains full radial profiles
+    di_amp_vsr = field_amp(dirname, verbose=verbose) # this one contains full radial profiles
     di_amp = dotdict(di_amp_vsr) # profiles averaged between (r1, r2)
     # average each radial profile between (r1, r2):
     for key, profile in di_amp.items():
@@ -223,7 +223,8 @@ def get_numbers_output(dirname, r1='rmin', r2='rmax', the_file=None, the_file_az
         datadir = dirname + '/data/'
         if the_file_az is None:
             the_file_az = get_widest_range_file(datadir, 'AZ_Avgs')
-        print ("get_numbers_output(): reading " + the_file_az)
+        if verbose:
+            print ("get_numbers_output(): reading " + the_file_az)
         di_az = get_dict(the_file_az)
         vals_az = di_az['vals']
         lut_az = di_az['lut']
