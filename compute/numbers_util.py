@@ -130,10 +130,15 @@ numbers_output_def = dotdict({
     "me": ("ME", "(B^2/(8*pi)) / (rho*v^2/2)") })
 
 
-def get_numbers_output(dirname, shell_depth=None, the_file=None, the_file_az=None):
-    # get diagnostic numbers (e.g., Re and Ro) as functions of radius
+def get_numbers_output(dirname, r1='rmin', r2='rmax', the_file=None, the_file_az=None):
+    # get diagnostic numbers (e.g., Re and Ro), quantities vol. avg.'d 
+    # between r1 and r2
+   
+    # desired shell
+    r1, r2 = interpret_rvals(dirname, np.array([r1, r2]))
+    shell_depth = r2 - r1
 
-    # dictionary for output
+    # dictionary for output, rotation, magnetism
     di = dotdict()
     rotation = get_parameter(dirname, 'rotation')
     magnetism = get_parameter(dirname, 'magnetism')
@@ -141,11 +146,28 @@ def get_numbers_output(dirname, shell_depth=None, the_file=None, the_file_az=Non
     # get reference state
     eq = get_eq(dirname)
     rr = eq.rr
-    if shell_depth is None:
-        shell_depth = np.max(rr) - np.min(rr)
 
-    # get field amplitudes and length scales
-    di_amp = field_amp(dirname)
+    # get field amplitudes
+    di_amp_vsr = field_amp(dirname) # this one contains full radial profiles
+    di_amp = dotdict(di_amp_vsr) # profiles averaged between (r1, r2)
+    # average each radial profile between (r1, r2):
+    for key, profile in di_amp.items():
+        if not key in ['rr', 'iter1', 'iter2']:
+            # rr, iter1, iter2 shouldn't be averaged
+            
+            # see if it's a thermal variable or field variable
+            # (the field variables should be averaged in quadrature)
+            fieldvar = False
+            if key[0] in ['v', 'b', 'j']:
+                fieldvar = True
+            if key[:2] == 'om':
+                fieldvar = True
+
+            if fieldvar:
+                volav_sq = volav_in_radius(dirname, profile**2, r1, r2)
+                di_amp[key] = np.sqrt(volav_sq)
+            else:
+                di_amp[key] = volav_in_radius(dirname, profile, r1, r2)
 
     # get non-rotating, non-magnetic numbers first:
 
@@ -154,28 +176,34 @@ def get_numbers_output(dirname, shell_depth=None, the_file=None, the_file_az=Non
     dprs = eq.prs*dlnprs
     drho = eq.rho*eq.dlnrho
     csq = dprs/drho
+    csq_volav = volav_in_radius(dirname, csq, r1, r2)
 
-    di.ma = di_amp.v/np.sqrt(csq)
-    di.mamean = di_amp.vmean/np.sqrt(csq)
-    di.mafluc = di_amp.vfluc/np.sqrt(csq)
+    di.ma = di_amp.v/np.sqrt(csq_volav)
+    di.mamean = di_amp.vmean/np.sqrt(csq_volav)
+    di.mafluc = di_amp.vfluc/np.sqrt(csq_volav)
 
     # get the system Reynolds numbers
-    di.re = di_amp['v']*shell_depth/eq.nu
-    di.remean = di_amp['vmean']*shell_depth/eq.nu
-    di.refluc = di_amp['vfluc']*shell_depth/eq.nu
+    nu_volav = volav_in_radius(dirname, eq.nu, r1, r2)
+    di.re = di_amp.v*shell_depth/nu_volav
+    di.remean = di_amp.vmean*shell_depth/nu_volav
+    di.refluc = di_amp.vfluc*shell_depth/nu_volav
 
     # get the vorticity ("real") Reynolds numbers
-    di.revort = di_amp['v']**2/di_amp.om/eq.nu
-    di.revortmean = di_amp['vmean']**2/di_amp.ommean/eq.nu
-    di.revortfluc = di_amp['vfluc']**2/di_amp.omfluc/eq.nu
+    di.revort = di_amp.v**2/di_amp.om/nu_volav
+    di.revortmean = di_amp.vmean**2/di_amp.ommean/nu_volav
+    di.revortfluc = di_amp.vfluc**2/di_amp.omfluc/nu_volav
 
     # get ratios of KE in mean vs. fluc flows
-    ke = eq.rho*di_amp.v**2/2
-    kemean = eq.rho*di_amp.vmean**2/2
-    kefluc = eq.rho*di_amp.vfluc**2/2
+    ke = eq.rho*di_amp_vsr.v**2/2
+    kemean = eq.rho*di_amp_vsr.vmean**2/2
+    kefluc = eq.rho*di_amp_vsr.vfluc**2/2
+    
+    ke_volav = volav_in_radius(dirname, ke, r1, r2)
+    kemean_volav = volav_in_radius(dirname, kemean, r1, r2)
+    kefluc_volav = volav_in_radius(dirname, kefluc, r1, r2)
 
-    di.kemean = kemean/ke
-    di.kefluc = kefluc/ke
+    di.kemean = kemean_volav/ke_volav
+    di.kefluc = kefluc_volav/ke_volav
 
     # rotational numbers
     if rotation:
@@ -214,26 +242,29 @@ def get_numbers_output(dirname, shell_depth=None, the_file=None, the_file_az=Non
         itsouth = np.argmin(np.abs(gi.tt_lat + latcut))
         roteq = rotrate[iteq, :]
         rotpol = 0.5*(rotrate[itnorth, :] + rotrate[itsouth, :])
-        di.diffrot = (roteq - rotpol)/om0
+        diffrot = (roteq - rotpol)/om0
+        di.diffrot = volav_in_radius(dirname, diffrot, r1, r2)
 
     # magnetic numbers
     if magnetism:
         # system magnetic Reynolds numbers
-        di.rem = di_amp['v']*shell_depth/eq.eta
-        di.remmean = di_amp['vmean']*shell_depth/eq.eta
-        di.remfluc = di_amp['vfluc']*shell_depth/eq.eta
+        eta_volav = volav_in_radius(dirname, eq.eta, r1, r2)
+        di.rem = di_amp.v*shell_depth/eta_volav
+        di.remmean = di_amp.vmean*shell_depth/eta_volav
+        di.remfluc = di_amp.vfluc*shell_depth/eta_volav
 
         # current ("real") magnetic Reynolds numbers
-        di.remcur = di_amp['v']*(di_amp.b/di_amp.j)/eq.eta
-        di.remcurmean = di_amp['vmean']*(di_amp.bmean/di_amp.jmean)/eq.eta
-        di.remcurfluc = di_amp['vfluc']*(di_amp.bfluc/di_amp.jfluc)/eq.eta
+        di.remcur = di_amp.v*(di_amp.b/di_amp.j)/eta_volav
+        di.remcurmean = di_amp.vmean*(di_amp.bmean/di_amp.jmean)/eta_volav
+        di.remcurfluc = di_amp.vfluc*(di_amp.bfluc/di_amp.jfluc)/eta_volav
 
         # plasma beta
-        pgas = eq.prs
-        pmag = di_amp.b**2/(8*np.pi)
-        di.beta = pgas/pmag
+        pgas_volav = volav_in_radius(dirname, eq.prs, r1, r2)
+        pmag = di_amp_vsr.b**2/(8*np.pi)
+        pmag_volav = volav_in_radius(dirname, pmag, r1, r2)
+        di.beta = pgas_volav/pmag_volav
 
         # ratio of mag. energy to kin. energy
-        di.me = pmag/ke
+        di.me = pmag_volav/ke_volav
 
     return di
