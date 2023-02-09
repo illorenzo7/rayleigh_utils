@@ -1,6 +1,6 @@
 # Author: Loren Matilsky
 # Created: 10/21/2022
-# print numbers characterizing simulation
+# print output numbers characterizing simulation
 
 import sys, os
 sys.path.append(os.environ['raco'])
@@ -14,53 +14,37 @@ print ("NON-DIMENSIONAL NUMBERS (OUTPUT PARAMETERS)")
 print (buff_line)
 
 # read in args
-args = sys.argv 
-clas0, clas = read_clas(args)
+clas0, clas = read_clas(sys.argv)
 dirname = clas0.dirname
 magnetism = clas0.magnetism
 rotation = clas0.rotation
 
-# allowed args + defaults, then update
-kwargs_default = dict({'the_file': None, 'the_file_az': None, 'sd': None})
-kw = update_dict(kwargs_default, clas)
-
-# need these likely
-rmin, rmax = interpret_rvals(dirname, ['rmin', 'rmax'])
-
-# deal with shell depth (by default use whole shell)
-shell_depth = clas.sd
-if shell_depth is None:
-    shell_depth = rmax - rmin
-
-# print the shell depth we use
-fmt = "%1.2e"
-print (("System shell depth: H = " + fmt + " cm") %shell_depth)
-
-# deal with rvals to average numbers over
 rvals = clas.rvals
 if rvals is None:
-    rvals = rmin, rmax
+    rvals = interpret_rvals(dirname, ['rmin', 'rmax'])
 
-# get the output numbers
-di = get_numbers_output(dirname, shell_depth, kw.the_file, kw.the_file_az)
+# length of print "tabs" for formatting below
+lendef1 = 25
+lendef2 = 35
 
-# now print the numbers
+# loop over shells and output numbers
 for ishell in range(len(rvals) - 1):
+    # print shell info first
     r1 = rvals[ishell]
     r2 = rvals[ishell+1]
-
-    print (("Shell #%02i: r_1 = " + fmt + ", r_2 = " + fmt)\
-            %(ishell + 1, r1, r2))
+    print (make_bold("Shell #%02i:" %(ishell + 1)))
+    print (make_bold('r_1           = ' + flt_fmt %r1))
+    print (make_bold('r_2           = ' + flt_fmt %r2))
+    print (make_bold('H = r_2 - r_1 = '+ flt_fmt %(r2-r1)))
     print (buff_line)
-    lendef1 = 25
-    lendef2 = 35
+
+    # then non-D numbers in shell
+    di = get_numbers_output(dirname, r1, r2)
     count = 0
     for key in di.keys():
         print (fill_str(numbers_output_def[key][0], lendef1, ' '), end='')
         print (fill_str(numbers_output_def[key][1], lendef2, ' '), end='')
-        # get the actual number (volume average)
-        num = volav_in_radius(dirname, di[key], r1, r2)
-        print (fmt %num)
+        print (flt_fmt %di[key])
         if (count + 1) in linebreaks_output:
             print("")
         count += 1
