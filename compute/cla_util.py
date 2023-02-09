@@ -137,6 +137,10 @@ def read_clas(args):
             nquadr = read_cla_vals(args, i)
             clas['rvals'] = np.linspace(rmin, rmax, nquadr + 1)
 
+            # also want to save nquadr in this case
+            key = arg[2:]
+            clas[key] = read_cla_vals(args, i)
+
         elif arg == '--latrange':
             latmin, latmax, nlatvals = read_cla_vals(args, i)
             nlatvals = int(nlatvals)
