@@ -79,7 +79,7 @@ print ('Getting data from ' + the_file)
 di = get_dict(the_file)
 vals = di['vals']
 rvals = di['rvals']
-latbounds = di['latbounds']
+latvals = di['latvals']
 lut = di['lut']
 times = di['times']
 iters = di['iters']
@@ -283,8 +283,8 @@ for ir in range(nquadr):
 
 # y labels / side titles
 for it in range(nquadlat):
-    lat1 = latbounds[it]
-    lat2 = latbounds[it+1]
+    lat1 = latvals[it]
+    lat2 = latvals[it+1]
     axs[it, 0].set_ylabel('lat. range = [%.1f, %.1f]' %(lat1, lat2), fontsize=fontsize)
 
 # overall title 
