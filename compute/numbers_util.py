@@ -3,7 +3,7 @@ import sys, os
 sys.path.append(os.environ['raco'])
 from common import *
 
-linebreaks_input = [3, 6, 9]
+linebreaks_input = [3, 7, 11]
 numbers_input_def = dotdict({
     "aspect": ("A", "r_1/r_2"),
     "nrho": ("N_rho", "ln(rho_1/rho_2)"),
@@ -12,10 +12,12 @@ numbers_input_def = dotdict({
     "pr": ("Pr", "nu/kappa"),
     "raf": ("Ra_F", "g*F*H^4/(c_p*rho*T*nu*kappa^2)"),
     "di": ("Di", "g*H/(c_p*T)"),
+    "bvisc": ("B_visc", "N^2*H^4/nu^2"),
 
     "ek": ("Ek", "nu/(Om_0*H^2)"), 
     "ta": ("Ta", "1/Ek^2"),
-    "buoy": ("B", "(N/(2*Om_0))^2"),
+    "rafmod": ("Ra_F*", "Ra_F*Ek^2/Pr"),
+    "brot": ("B_rot", "N^2/(Om_0)^2"),
 
     "prm": ("Pr_m", "nu/eta"),
     "ekm": ("Ek_m", "Ek/Pr_m")
@@ -61,16 +63,20 @@ def get_numbers_input(dirname, r1='rmin', r2='rmax', verbose=False):
     # dissipation number
     di.di = grav_volav*shell_depth/(eq.c_p*tmp_volav)
 
-    # buoyancy
+    # buoyancy number (viscous)
     nsq_volav = volav_in_radius(dirname, eq.nsq, r1, r2)
+    di.bvisc = nsq_volav*shell_depth**4/nu_volav**2
 
     if rotation:
         # Ekman and Taylor
         di.ek = nu_volav/(eq.om0*shell_depth**2)
-        di.ta = 1/di.ek**2
+        di.ta = 1.0/di.ek**2
+
+        # modified Rayleigh
+        di.rafmod = di.raf*di.ek**2/di.pr
 
         # buoyancy
-        di.buoy = nsq_volav/(2.0*eq.om0)**2
+        di.brot = di.bvisc*di.ek**2
 
     if magnetism:
         # magnetic Prandtl
