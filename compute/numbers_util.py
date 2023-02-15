@@ -3,7 +3,7 @@ import sys, os
 sys.path.append(os.environ['raco'])
 from common import *
 
-linebreaks_input = [3, 7, 11]
+linebreaks_input = [3, 8, 12]
 numbers_input_def = dotdict({
     "aspect": ("A", "r_1/r_2"),
     "nrho": ("N_rho", "ln(rho_1/rho_2)"),
@@ -13,11 +13,15 @@ numbers_input_def = dotdict({
     "raf": ("Ra_F", "g*F*H^4/(c_p*rho*T*nu*kappa^2)"),
     "di": ("Di", "g*H/(c_p*T)"),
     "bvisc": ("B_visc", "N^2*H^4/nu^2"),
+    "he": ("He", "Q*H^4/(rho*nu^2*kappa)"),
+    #"he2": ("He_2", "He*Di/Ra_F"),
 
     "ek": ("Ek", "nu/(Om_0*H^2)"), 
-    "ta": ("Ta", "1/Ek^2"),
-    "rafmod": ("Ra_F*", "Ra_F*Ek^2/Pr"),
+    #"ta": ("Ta", "1/Ek^2"),
+    "rafmod": ("Ra_mod", "Ra_F*Ek^2/Pr"),
     "brot": ("B_rot", "N^2/(Om_0)^2"),
+    "hemod": ("He_mod", "Q/[rho*H^2*(Om_0)^3]"),
+    #"hemod2": ("Me_mod,2", "He_mod*Di/Ra_mod"),
 
     "prm": ("Pr_m", "nu/eta"),
     "ekm": ("Ek_m", "Ek/Pr_m")
@@ -63,6 +67,11 @@ def get_numbers_input(dirname, r1='rmin', r2='rmax', verbose=False):
     # dissipation number
     di.di = grav_volav*shell_depth/(eq.c_p*tmp_volav)
 
+    # heating number
+    Q_volav = volav_in_radius(dirname, eq.heat)
+    di.he = Q_volav*shell_depth**4/(rho_volav*nu_volav**2*kappa_volav)
+    #di.he2 = di.he*di.di/di.raf
+
     # buoyancy number (viscous)
     nsq_volav = volav_in_radius(dirname, eq.nsq, r1, r2)
     di.bvisc = nsq_volav*shell_depth**4/nu_volav**2
@@ -70,12 +79,16 @@ def get_numbers_input(dirname, r1='rmin', r2='rmax', verbose=False):
     if rotation:
         # Ekman and Taylor
         di.ek = nu_volav/(eq.om0*shell_depth**2)
-        di.ta = 1.0/di.ek**2
+        #di.ta = 1.0/di.ek**2
 
         # modified Rayleigh
         di.rafmod = di.raf*di.ek**2/di.pr
 
-        # buoyancy
+        # modified heating number
+        di.hemod = di.he*di.ek**3/di.pr
+        #di.hemod2 = di.hemod*di.di/di.rafmod
+
+        # buoyancy number (rotational)
         di.brot = di.bvisc*di.ek**2
 
     if magnetism:
