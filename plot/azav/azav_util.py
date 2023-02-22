@@ -14,14 +14,14 @@ from common import *
 from plotcommon import *
 
 # default azav fig dimensions
-azav_fig_dimensions = dict({'sub_width_inches': 2, 'sub_margin_left_inches': default_margin, 'sub_margin_top_inches': 1/4, 'sub_margin_bottom_inches': 1, 'margin_top_inches': 1})
+azav_fig_dimensions = dict({'sub_width_inches': 2, 'sub_margin_left_inches': 1/2, 'sub_margin_top_inches': 1/4, 'sub_margin_bottom_inches': 1, 'margin_top_inches': 1})
 
 # plot_azav needs my_contourf args, then some
 plot_azav_kwargs_default = dict(
         {'rcut': None, 'minmax2': None, 'cmap2': None, 'rvals': np.array([]), 'plotlatlines': True, 'latvals': np.arange(-60., 90., 30.), 'plotboundary': True,
         'linestyles1': np.array(['-']), 'linewidths1': np.array([default_lw]), 'linecolors1': np.array(['k']),
        'linestyles2': np.array(['-']), 'linewidths2': np.array([default_lw]), 'linecolors2': np.array(['k']),
-       'halfplane': False, 'fontsize': default_labelsize
+       'halfplane': False, 'fontsize': default_labelsize, 'plotaxis': True
        })
 
 # add in my_contourf stuff
@@ -133,7 +133,7 @@ def plot_azav(field, rr, cost, fig, ax,  **kwargs):
                 xline, yline = xx_full[ilatval, :], yy_full[ilatval, :]
             ax.plot(xline, yline, linewidth=linewidths[i], linestyle=linestyles[i], color=linecolors[i])
         
-        if kw.plotboundary: # plot x and z coordinate axes
+        if kw.plotaxis: # plot x and z coordinate axes
             ax.axis('on')
             plt.sca(ax)
             plt.minorticks_on()
