@@ -14,14 +14,14 @@ from common import *
 from plotcommon import *
 
 # default azav fig dimensions
-azav_fig_dimensions = dict({'sub_aspect': 2.0, 'sub_width_inches': 2, 'sub_margin_left_inches': default_margin, 'sub_margin_top_inches': 1/4, 'sub_margin_bottom_inches': 1/2, 'margin_top_inches': 1.0})
+azav_fig_dimensions = dict({'sub_width_inches': 2, 'sub_margin_left_inches': default_margin, 'sub_margin_top_inches': 1/4, 'sub_margin_bottom_inches': 1, 'margin_top_inches': 1})
 
 # plot_azav needs my_contourf args, then some
 plot_azav_kwargs_default = dict(
         {'rcut': None, 'minmax2': None, 'cmap2': None, 'rvals': np.array([]), 'plotlatlines': True, 'latvals': np.arange(-60., 90., 30.), 'plotboundary': True,
         'linestyles1': np.array(['-']), 'linewidths1': np.array([default_lw]), 'linecolors1': np.array(['k']),
        'linestyles2': np.array(['-']), 'linewidths2': np.array([default_lw]), 'linecolors2': np.array(['k']),
-       'halfplane': False
+       'halfplane': False, 'fontsize': default_labelsize
        })
 
 # add in my_contourf stuff
@@ -33,13 +33,16 @@ def plot_azav(field, rr, cost, fig, ax,  **kwargs):
     kw = update_dict(plot_azav_kwargs_default, kwargs)
     kw_my_contourf = update_dict(my_contourf_kwargs_default, kwargs)
 
-    # make copy of field
-    field_full = np.copy(field)
+    # make copies of field and costheta
+    # (effectively stop Python from passing arrays by reference)
+    field = np.copy(field)
+    cost = np.copy(cost)
 
     # if "half plane" only plot northern hemisphere
     if kw.halfplane:
         iteq = np.argmin(np.abs(cost))
-        field_full = field_full[iteq:, :]
+        field = field[iteq:, :]
+        cost = cost[iteq:]
 
     # grid info
     nt, nr = len(cost), len(rr)
@@ -57,11 +60,12 @@ def plot_azav(field, rr, cost, fig, ax,  **kwargs):
     if kw.rcut is None: # just plotting 1 domain
         xx = xx_full
         yy = yy_full
-        field = field_full
-    else: # plotting two domains
+    else: # plotting 2 domains
         ircut = np.argmin(np.abs(rr - kw.rcut))
 
-        field = field[:, :ircut+1]
+        field_full = np.copy(field)
+
+        field = field_full[:, :ircut+1]
         xx = (rr_2d*sint_2d)[:, :ircut+1]/rmax
         yy = (rr_2d*cost_2d)[:, :ircut+1]/rmax
 
@@ -69,10 +73,11 @@ def plot_azav(field, rr, cost, fig, ax,  **kwargs):
         xx2 = (rr_2d*sint_2d)[:, ircut+1:]/rmax
         yy2 = (rr_2d*cost_2d)[:, ircut+1:]/rmax
 
-    # plot the CZ field
+    # plot the first (upper) field
+    kw_my_contourf.cbar_no = 1 + kw.plotboundary
     my_contourf(xx, yy, field, fig, ax, **kw_my_contourf)
 
-    # possibly plot RZ field
+    # possibly plot a second (lower) field
     if not kw.rcut is None: 
         # will need to change some contourf kwargs:
         kw_my_contourf.minmax = kw.minmax2
@@ -84,7 +89,7 @@ def plot_azav(field, rr, cost, fig, ax,  **kwargs):
                 kw_my_contourf.cmap = 'PuOr_r'    
         else:
             kw_my_contourf.cmap = kw.cmap2
-        kw_my_contourf.cbar_no = 2
+        kw_my_contourf.cbar_no = 2 + kw.plotboundary
         my_contourf(xx2, yy2, field2, fig, ax, **kw_my_contourf)
 
     # potentially plot coordinate lines
@@ -127,6 +132,23 @@ def plot_azav(field, rr, cost, fig, ax,  **kwargs):
                 ilatval = np.argmin(np.abs(tt_lat - val))
                 xline, yline = xx_full[ilatval, :], yy_full[ilatval, :]
             ax.plot(xline, yline, linewidth=linewidths[i], linestyle=linestyles[i], color=linecolors[i])
+        
+        if kw.plotboundary: # plot x and z coordinate axes
+            ax.axis('on')
+            plt.sca(ax)
+            plt.minorticks_on()
+            plt.tick_params(top=True, right=True, direction='in', which='both')
+            plt.xlabel(r'$x/r_{\rm{out}}$', fontsize=kw.fontsize)
+            plt.ylabel(r'$z/r_{\rm{out}}$', fontsize=kw.fontsize)
+
+        # reset the axis limits (contourf has already done its thing;
+        # but for this one we either want 1 x 1 (half-plane) or 1 x 2
+        lilbit = 0.01
+        ax.set_xlim(-lilbit, 1.0 + lilbit)
+        if kw.halfplane:
+            ax.set_ylim(-lilbit, 1.0 + lilbit)
+        else:
+            ax.set_ylim(-1.0 -lilbit, 1.0 + lilbit)
 
 def streamfunction(vr,vt,r,cost,order=0):
     """------------------------------------------------------------
