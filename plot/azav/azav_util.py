@@ -14,12 +14,15 @@ from common import *
 from plotcommon import *
 
 # default azav fig dimensions
-azav_fig_dimensions = dict({'sub_width_inches': 2, 'sub_margin_left_inches': default_margin, 'sub_margin_top_inches': 1/4, 'sub_margin_bottom_inches': 1/2, 'margin_top_inches': 1.0})
+azav_fig_dimensions = dict({'sub_aspect': 2.0, 'sub_width_inches': 2, 'sub_margin_left_inches': default_margin, 'sub_margin_top_inches': 1/4, 'sub_margin_bottom_inches': 1/2, 'margin_top_inches': 1.0})
 
 # plot_azav needs my_contourf args, then some
-plot_azav_kwargs_default = dict({'rcut': None, 'minmax2': None, 'cmap2': None, 'rvals': np.array([]), 'plotlatlines': True, 'latvals': np.arange(-60., 90., 30.), 'plotboundary': True,\
-        'linestyles1': np.array(['-']), 'linewidths1': np.array([default_lw]), 'linecolors1': np.array(['k']),\
-       'linestyles2': np.array(['-']), 'linewidths2': np.array([default_lw]), 'linecolors2': np.array(['k'])})
+plot_azav_kwargs_default = dict(
+        {'rcut': None, 'minmax2': None, 'cmap2': None, 'rvals': np.array([]), 'plotlatlines': True, 'latvals': np.arange(-60., 90., 30.), 'plotboundary': True,
+        'linestyles1': np.array(['-']), 'linewidths1': np.array([default_lw]), 'linecolors1': np.array(['k']),
+       'linestyles2': np.array(['-']), 'linewidths2': np.array([default_lw]), 'linecolors2': np.array(['k']),
+       'halfplane': False
+       })
 
 # add in my_contourf stuff
 my_contourf_kwargs_default['cbar_aspect'] = 1/8
@@ -32,6 +35,11 @@ def plot_azav(field, rr, cost, fig, ax,  **kwargs):
 
     # make copy of field
     field_full = np.copy(field)
+
+    # if "half plane" only plot northern hemisphere
+    if kw.halfplane:
+        iteq = np.argmin(np.abs(cost))
+        field_full = field_full[iteq:, :]
 
     # grid info
     nt, nr = len(cost), len(rr)
