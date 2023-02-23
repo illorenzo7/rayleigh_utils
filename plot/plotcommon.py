@@ -198,7 +198,7 @@ def make_figure(**kwargs):
     if which_spec == 'fig':
         sub_width_inches = (width_inches - margin_left_inches - margin_right_inches - ncol*(sub_margin_left_inches + sub_margin_right_inches))/ncol
         sub_height_inches = (height_inches - margin_bottom_inches - margin_top_inches - nrow*(sub_margin_bottom_inches + sub_margin_top_inches))/nrow
-        sub_aspect = sub_height/sub_width
+        sub_aspect = sub_height_inches/sub_width_inches
 
     if which_spec == 'sub':
         width_inches = ncol*(sub_width_inches + sub_margin_left_inches + sub_margin_right_inches) + margin_left_inches + margin_right_inches
