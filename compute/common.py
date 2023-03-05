@@ -1002,13 +1002,10 @@ def get_eq(dirname, fname=None, verbose=False):
     # human readable equation coefficients object to store reference state
     eq_hr = dotdict()
 
-    # need this no matter what -- 
-    # 12/22/2022: dirty trick to get things to work for non-D anelastic
-    eq_hr.c_p = get_parameter(dirname, 'pressure_specific_heat')
-    if eq_hr.c_p is None:
-        eq_hr.c_p = 1.
+    # figure out type of reference
+    reference_type = get_parameter(dirname, 'reference_type')
 
-    # and this no matter what
+    # see if magnetism is on
     magnetism = get_parameter(dirname, 'magnetism')
 
     # read reference state from binary file or main_input
@@ -1018,128 +1015,132 @@ def get_eq(dirname, fname=None, verbose=False):
         elif os.path.exists(dirname + '/' + 'custom_reference_binary'):
             fname = 'custom_reference_binary'
 
-    if fname is None: # no binary file; get everything from main_input
-        if verbose:
-            print ("get_eq(): inferring reference state from main_input")
-        gi = get_grid_info(dirname)
-        eq_hr.rr = gi.rr 
-        zero = np.zeros_like(eq_hr.rr)
+    if reference_type == 2: # dimensional anelastic
+        eq_hr.c_p = get_parameter(dirname, 'pressure_specific_heat')
 
-        poly_nrho = get_parameter(dirname, 'poly_nrho')
-        poly_n = get_parameter(dirname, 'poly_n')
-        poly_rho_i = get_parameter(dirname, 'poly_rho_i')
-        poly_mass = get_parameter(dirname, 'poly_mass')
-        poly = compute_polytrope(rr=eq_hr.rr, poly_nrho=poly_nrho, poly_n=poly_n, poly_rho_i=poly_rho_i, poly_mass=poly_mass, c_p=eq_hr.c_p)
 
-        # get the background reference state
-        eq_hr.rho = poly.rho 
-        eq_hr.dlnrho = poly.dlnrho
-        eq_hr.d2lnrho = poly.d2lnrho
-        eq_hr.tmp = poly.tmp
-        eq_hr.prs = poly.prs
-        eq_hr.dlntmp = poly.dlntmp
-        eq_hr.grav = poly.grav
-        eq_hr.dsdr = poly.dsdr
-        eq_hr.nsq = poly.dsdr*eq_hr.grav/eq_hr.c_p
-        eq_hr.gamma = (poly_n+1)/poly_n
-        eq_hr.gas_constant = eq_hr.c_p/(poly_n + 1)
+        if fname is None: # no binary file; get everything from main_input
+            if verbose:
+                print ("get_eq(): inferring reference state from main_input")
+            gi = get_grid_info(dirname)
+            eq_hr.rr = gi.rr 
+            zero = np.zeros_like(eq_hr.rr)
 
-        # get heating
-        eq_hr.lum = get_parameter(dirname, 'luminosity')
-        heating_type = get_parameter(dirname, 'heating_type')
-        if heating_type is None: # default heating_type = 0
-            eq_hr.heat = zero
-        elif heating_type == 1: # heating proportional to pressure
-                                # "consant entropy heating"
-            eq_hr.heat = eq_hr.prs - eq_hr.prs[0]
-            integral = volav_in_radius(dirname, eq_hr.heat)
-            integral *= get_vol(dirname)
-            eq_hr.heat = eq_hr.heat*eq_hr.lum/integral
-        elif heating_type == 4: # constant energy heating
-            eq_hr.heat = zero + eq_hr.lum/get_vol(dirname)
+            poly_nrho = get_parameter(dirname, 'poly_nrho')
+            poly_n = get_parameter(dirname, 'poly_n')
+            poly_rho_i = get_parameter(dirname, 'poly_rho_i')
+            poly_mass = get_parameter(dirname, 'poly_mass')
+            poly = compute_polytrope(rr=eq_hr.rr, poly_nrho=poly_nrho, poly_n=poly_n, poly_rho_i=poly_rho_i, poly_mass=poly_mass, c_p=eq_hr.c_p)
 
-        # get the transport coefficients
-        nu_top = get_parameter(dirname, 'nu_top')
-        kappa_top = get_parameter(dirname, 'kappa_top')
-        nu_type = get_parameter(dirname, 'nu_type')
-        kappa_type = get_parameter(dirname, 'kappa_type')
+            # get the background reference state
+            eq_hr.rho = poly.rho 
+            eq_hr.dlnrho = poly.dlnrho
+            eq_hr.d2lnrho = poly.d2lnrho
+            eq_hr.tmp = poly.tmp
+            eq_hr.prs = poly.prs
+            eq_hr.dlntmp = poly.dlntmp
+            eq_hr.grav = poly.grav
+            eq_hr.dsdr = poly.dsdr
+            eq_hr.nsq = poly.dsdr*eq_hr.grav/eq_hr.c_p
+            eq_hr.gamma = (poly_n+1)/poly_n
+            eq_hr.gas_constant = eq_hr.c_p/(poly_n + 1)
 
-        if nu_type is None or nu_type == 1:
-            eq_hr.nu = zero + nu_top
-            eq_hr.dlnu = zero
-        elif nu_type == 2:
-            nu_power = get_parameter(dirname, 'nu_power')
-            eq_hr.nu = nu_top*(eq_hr.rho/eq_hr.rho[0])**nu_power
-            eq_hr.dlnu = nu_power*eq_hr.dlnrho
+            # get heating
+            eq_hr.lum = get_parameter(dirname, 'luminosity')
+            heating_type = get_parameter(dirname, 'heating_type')
+            if heating_type is None: # default heating_type = 0
+                eq_hr.heat = zero
+            elif heating_type == 1: # heating proportional to pressure
+                                    # "consant entropy heating"
+                eq_hr.heat = eq_hr.prs - eq_hr.prs[0]
+                integral = volav_in_radius(dirname, eq_hr.heat)
+                integral *= get_vol(dirname)
+                eq_hr.heat = eq_hr.heat*eq_hr.lum/integral
+            elif heating_type == 4: # constant energy heating
+                eq_hr.heat = zero + eq_hr.lum/get_vol(dirname)
 
-        if kappa_type is None or kappa_type == 1:
-            eq_hr.kappa = zero + kappa_top
-            eq_hr.dlnkappa = zero
-        elif kappa_type == 2:
-            kappa_power = get_parameter(dirname, 'nu_power')
-            eq_hr.kappa = kappa_top*(eq_hr.rho/eq_hr.rho[0])**kappa_power
-            eq_hr.dlnkappa = kappa_power*eq_hr.dlnkappa
-        
-        if magnetism:
-            eta_type = get_parameter(dirname, 'eta_type')
-            eta_top = get_parameter(dirname, 'eta_top')
-            if eta_type is None or eta_type == 1:
-                eq_hr.eta = zero + eta_top
-                eq_hr.dlneta = zero
-            elif eta_type == 2:
-                eta_power = get_parameter(dirname, 'eta_power')
-                eq_hr.eta = eta_top*(eq_hr.rho/eq_hr.rho[0])**eta_power
-                eq_hr.dlneta = eta_power*eq_hr.dlnrho
+            # get the transport coefficients
+            nu_top = get_parameter(dirname, 'nu_top')
+            kappa_top = get_parameter(dirname, 'kappa_top')
+            nu_type = get_parameter(dirname, 'nu_type')
+            kappa_type = get_parameter(dirname, 'kappa_type')
 
-        # finally, get the rotation rate
-        eq_hr.om0 = get_parameter(dirname, 'angular_velocity')
-        eq_hr.prot = 2*np.pi/eq_hr.om0
+            if nu_type is None or nu_type == 1:
+                eq_hr.nu = zero + nu_top
+                eq_hr.dlnu = zero
+            elif nu_type == 2:
+                nu_power = get_parameter(dirname, 'nu_power')
+                eq_hr.nu = nu_top*(eq_hr.rho/eq_hr.rho[0])**nu_power
+                eq_hr.dlnu = nu_power*eq_hr.dlnrho
 
-    else:
-        # by default, get info from equation_coefficients (if file exists)
-        # get the background reference state
-        if verbose:
-            print ("get_eq(): reading reference state from file:", fname)
-        eq = equation_coefficients()
-        eq.read(dirname + '/' + fname)
-        eq_hr.rr = eq.radius
-        eq_hr.rho = eq.functions[0]
-        eq_hr.dlnrho = eq.functions[7]
-        eq_hr.d2lnrho = eq.functions[8]
-        eq_hr.tmp = eq.functions[3]
-        eq_hr.dlntmp = eq.functions[9]
-        eq_hr.grav = eq.functions[1]*eq_hr.c_p/(eq.constants[1]*eq_hr.rho)
-        eq_hr.dsdr = eq.functions[13]
-        eq_hr.heat = eq.constants[9]*eq.functions[5]
-        eq_hr.lum = eq.constants[9]
+            if kappa_type is None or kappa_type == 1:
+                eq_hr.kappa = zero + kappa_top
+                eq_hr.dlnkappa = zero
+            elif kappa_type == 2:
+                kappa_power = get_parameter(dirname, 'kappa_power')
+                eq_hr.kappa = kappa_top*(eq_hr.rho/eq_hr.rho[0])**kappa_power
+                eq_hr.dlnkappa = kappa_power*eq_hr.dlnrho
+            
+            if magnetism:
+                eta_type = get_parameter(dirname, 'eta_type')
+                eta_top = get_parameter(dirname, 'eta_top')
+                if eta_type is None or eta_type == 1:
+                    eq_hr.eta = zero + eta_top
+                    eq_hr.dlneta = zero
+                elif eta_type == 2:
+                    eta_power = get_parameter(dirname, 'eta_power')
+                    eq_hr.eta = eta_top*(eq_hr.rho/eq_hr.rho[0])**eta_power
+                    eq_hr.dlneta = eta_power*eq_hr.dlnrho
 
-        # assume gas is ideal and get pressure
-        eq_hr.gamma = gamma_ideal
-        eq_hr.gas_constant = (eq_hr.gamma-1)*eq_hr.c_p/eq_hr.gamma
-        eq_hr.prs = eq_hr.gas_constant*eq_hr.rho*eq_hr.tmp
+            # finally, get the rotation rate
+            eq_hr.om0 = get_parameter(dirname, 'angular_velocity')
+            eq_hr.prot = 2*np.pi/eq_hr.om0
 
-        # get the transport coefficients
-        eq_hr.nu = eq.constants[4]*eq.functions[2]
-        eq_hr.dlnu = eq.functions[10]
-        eq_hr.kappa = eq.constants[5]*eq.functions[4]
-        eq_hr.dlnkappa = eq.functions[11]
-        if magnetism:
-            eq_hr.eta = eq.constants[6]*eq.functions[6] # these are built-in to
-            eq_hr.dlneta = eq.functions[12] # equation_coefficients as "zero"
+        else:
+            # by default, get info from equation_coefficients (if file exists)
+            # get the background reference state
+            if verbose:
+                print ("get_eq(): reading reference state from file:", fname)
+            eq = equation_coefficients()
+            eq.read(dirname + '/' + fname)
+            eq_hr.rr = eq.radius
+            eq_hr.rho = eq.functions[0]
+            eq_hr.dlnrho = eq.functions[7]
+            eq_hr.d2lnrho = eq.functions[8]
+            eq_hr.tmp = eq.functions[3]
+            eq_hr.dlntmp = eq.functions[9]
+            eq_hr.grav = eq.functions[1]*eq_hr.c_p/(eq.constants[1]*eq_hr.rho)
+            eq_hr.dsdr = eq.functions[13]
+            eq_hr.heat = eq.constants[9]*eq.functions[5]
+            eq_hr.lum = eq.constants[9]
 
-        # finally, get the rotation rate
-        eq_hr.om0 = eq.constants[0]/2
-        eq_hr.prot = 2*np.pi/eq_hr.om0
+            # assume gas is ideal and get pressure
+            eq_hr.gamma = gamma_ideal
+            eq_hr.gas_constant = (eq_hr.gamma-1)*eq_hr.c_p/eq_hr.gamma
+            eq_hr.prs = eq_hr.gas_constant*eq_hr.rho*eq_hr.tmp
 
-    # some derivative quantities
+            # get the transport coefficients
+            eq_hr.nu = eq.constants[4]*eq.functions[2]
+            eq_hr.dlnu = eq.functions[10]
+            eq_hr.kappa = eq.constants[5]*eq.functions[4]
+            eq_hr.dlnkappa = eq.functions[11]
+            if magnetism:
+                eq_hr.eta = eq.constants[6]*eq.functions[6] # these are built-in to
+                eq_hr.dlneta = eq.functions[12] # equation_coefficients as "zero"
 
-    # buoyancy frequency
-    eq_hr.nsq = (eq_hr.grav/eq_hr.c_p)*eq_hr.dsdr
+            # finally, get the rotation rate
+            eq_hr.om0 = eq.constants[0]/2
+            eq_hr.prot = 2*np.pi/eq_hr.om0
 
-    # thermal diffusion time
-    rmin, rmax = np.min(eq_hr.rr), np.max(eq_hr.rr)
-    irmid = np.argmin(np.abs(eq_hr.rr - (rmin + rmax)/2))
-    eq_hr.tdt = (rmax - rmin)**2/eq_hr.kappa[irmid]
+        # some derivative quantities
+
+        # buoyancy frequency
+        eq_hr.nsq = (eq_hr.grav/eq_hr.c_p)*eq_hr.dsdr
+
+        # thermal diffusion time
+        rmin, rmax = np.min(eq_hr.rr), np.max(eq_hr.rr)
+        irmid = np.argmin(np.abs(eq_hr.rr - (rmin + rmax)/2))
+        eq_hr.tdt = (rmax - rmin)**2/eq_hr.kappa[irmid]
 
     return eq_hr
 
