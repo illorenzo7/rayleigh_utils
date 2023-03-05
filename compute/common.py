@@ -1132,6 +1132,31 @@ def get_eq(dirname, fname=None, verbose=False):
             eq_hr.om0 = eq.constants[0]/2
             eq_hr.prot = 2*np.pi/eq_hr.om0
 
+    if reference_type in [1,3, 5]: # Non-D Anelastic (General)
+        if verbose:
+            print ("get_eq(): reading reference state from file:", fname)
+        eq = equation_coefficients()
+        eq.read(dirname + '/' + fname)
+        eq_hr.rr = eq.radius
+        eq_hr.rho = eq.functions[0]
+        eq_hr.dlnrho = eq.functions[7]
+        eq_hr.d2lnrho = eq.functions[8]
+        eq_hr.tmp = eq.functions[3]
+        eq_hr.dlntmp = eq.functions[9]
+        eq_hr.grav = eq.functions[1]/(eq.constants[1]*eq_hr.rho)
+        eq_hr.dsdr = eq.functions[13]
+        eq_hr.heat = eq.constants[9]*eq.functions[5]
+        eq_hr.prs = eq_hr.rho*eq_hr.tmp
+
+        # get the transport coefficients
+        eq_hr.nu = eq.functions[2]
+        eq_hr.dlnu = eq.functions[10]
+        eq_hr.kappa = eq.functions[4]
+        eq_hr.dlnkappa = eq.functions[11]
+        if magnetism:
+            eq_hr.eta = eq.functions[6] # these are built-in to
+            eq_hr.dlneta = eq.functions[12] # equation_coefficients as "zero"
+
         # some derivative quantities
 
         # buoyancy frequency
