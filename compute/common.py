@@ -1003,7 +1003,7 @@ def get_eq(dirname, fname=None, verbose=False):
     eq_hr = dotdict()
 
     # figure out type of reference
-    reference_type = get_parameter(dirname, 'reference_type')
+    eq_hr.reference_type = reference_type = get_parameter(dirname, 'reference_type')
 
     # see if magnetism is on
     magnetism = get_parameter(dirname, 'magnetism')
@@ -1015,9 +1015,13 @@ def get_eq(dirname, fname=None, verbose=False):
         elif os.path.exists(dirname + '/' + 'custom_reference_binary'):
             fname = 'custom_reference_binary'
 
-    if reference_type == 2: # dimensional anelastic
+    # 03/07/23: treat dimensional anelastic specially ("more" parameters
+    # and special history)
+    # Currently my custom states are all like non-D analeastic
+    # But may need to add contingency if use different custom
+    # type in the future
+    if reference_type in [2, 4]:
         eq_hr.c_p = get_parameter(dirname, 'pressure_specific_heat')
-
 
         if fname is None: # no binary file; get everything from main_input
             if verbose:
@@ -1132,12 +1136,29 @@ def get_eq(dirname, fname=None, verbose=False):
             eq_hr.om0 = eq.constants[0]/2
             eq_hr.prot = 2*np.pi/eq_hr.om0
 
-    if reference_type in [1,3, 5]: # Non-D Anelastic (General)
+        # some derivative quantities 
+
+        # buoyancy frequency
+        eq_hr.nsq = (eq_hr.grav/eq_hr.c_p)*eq_hr.dsdr
+
+        # thermal diffusion time
+        kappa_volav = volav_in_radius(dirname, eq_hr.kappa)
+        eq_hr.tdt = (eq_hr.rr[0] - eq_hr.rr[-1])**2/kappa_volav
+
+    else: # reference_type = 1, 3, 5
         if verbose:
             print ("get_eq(): reading reference state from file:", fname)
         eq = equation_coefficients()
         eq.read(dirname + '/' + fname)
+
+        # keep the original functions/constants as "backup"
+        eq_hr.constants = eq.constants
+        eq_hr.functions = eq.functions
+
+        # get radial grid
         eq_hr.rr = eq.radius
+
+        # make suggestive names for the "thermal" functions
         eq_hr.rho = eq.functions[0]
         eq_hr.dlnrho = eq.functions[7]
         eq_hr.d2lnrho = eq.functions[8]
@@ -1146,9 +1167,8 @@ def get_eq(dirname, fname=None, verbose=False):
         eq_hr.grav = eq.functions[1]/(eq.constants[1]*eq_hr.rho)
         eq_hr.dsdr = eq.functions[13]
         eq_hr.heat = eq.constants[9]*eq.functions[5]
-        eq_hr.prs = eq_hr.rho*eq_hr.tmp
 
-        # get the transport coefficients
+        # make suggestive names for the "transport" functions
         eq_hr.nu = eq.functions[2]
         eq_hr.dlnu = eq.functions[10]
         eq_hr.kappa = eq.functions[4]
@@ -1156,16 +1176,18 @@ def get_eq(dirname, fname=None, verbose=False):
         if magnetism:
             eq_hr.eta = eq.functions[6] # these are built-in to
             eq_hr.dlneta = eq.functions[12] # equation_coefficients as "zero"
+        # get rotation and diffusion times (depends on non-D)
+        ek = get_parameter(dirname, 'Ekman_Number')
+        pr = get_parameter(dirname, 'Prandtl_Number')
+        if reference_type == 1:
+            eq_hr.om0 = 1.0/ek
+            vdt = 1.0 # viscous diffusion time
+        elif reference_type in [3, 5]:
+            eq_hr.om0 = 1.0
+            vdt = 1.0/ek # viscous diffusion time
 
-        # some derivative quantities
-
-        # buoyancy frequency
-        eq_hr.nsq = (eq_hr.grav/eq_hr.c_p)*eq_hr.dsdr
-
-        # thermal diffusion time
-        rmin, rmax = np.min(eq_hr.rr), np.max(eq_hr.rr)
-        irmid = np.argmin(np.abs(eq_hr.rr - (rmin + rmax)/2))
-        eq_hr.tdt = (rmax - rmin)**2/eq_hr.kappa[irmid]
+        eq_hr.prot = 2*np.pi/eq_hr.om0
+        eq_hr.tdt = pr*vdt
 
     return eq_hr
 
