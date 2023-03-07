@@ -699,6 +699,9 @@ def strip_dirname(dirname, wrap=False):
 def get_parameter(dirname, parameter):
     # read a parameter from main_input
 
+    # deal only with lower-case
+    parameter = parameter.lower()
+
     # first read in main_input
     f = open(dirname + '/main_input')
     lines = f.readlines()
@@ -1179,6 +1182,7 @@ def get_eq(dirname, fname=None, verbose=False):
         # get rotation and diffusion times (depends on non-D)
         ek = get_parameter(dirname, 'Ekman_Number')
         pr = get_parameter(dirname, 'Prandtl_Number')
+
         if reference_type == 1:
             eq_hr.om0 = 1.0/ek
             vdt = 1.0 # viscous diffusion time
