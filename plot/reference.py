@@ -71,7 +71,8 @@ for iplot in range(nplots):
     lineplot(eq.rr, profiles[iplot], ax, **kw_lineplot)
 
 # make title 
-the_title = dirname_stripped + '\nbackground reference state'
+the_title = dirname_stripped + '\nbackground reference state' +\
+        '\nreference_type = %i' %eq.reference_type
 margin_x = fpar['margin_left'] + fpar['sub_margin_left']
 margin_y = default_margin/fpar['height_inches']
 fig.text(margin_x, 1 - margin_y, the_title,\

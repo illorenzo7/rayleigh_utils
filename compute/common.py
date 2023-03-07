@@ -1007,6 +1007,7 @@ def get_eq(dirname, fname=None, verbose=False):
 
     # figure out type of reference
     eq_hr.reference_type = reference_type = get_parameter(dirname, 'reference_type')
+    eq_hr.heating_type = heating_type = get_parameter(dirname, 'reference_type')
 
     # see if magnetism is on
     magnetism = get_parameter(dirname, 'magnetism')
@@ -1054,7 +1055,6 @@ def get_eq(dirname, fname=None, verbose=False):
 
             # get heating
             eq_hr.lum = get_parameter(dirname, 'luminosity')
-            heating_type = get_parameter(dirname, 'heating_type')
             if heating_type is None: # default heating_type = 0
                 eq_hr.heat = zero
             elif heating_type == 1: # heating proportional to pressure

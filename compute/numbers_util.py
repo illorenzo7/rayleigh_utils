@@ -48,56 +48,56 @@ def get_numbers_input(dirname, r1='rmin', r2='rmax', verbose=False):
     di.dc = eq.rho[ir1]/eq.rho[ir2]
     di.nrho = np.log(di.dc)
 
-    # Prandtl number
-    nu_volav = volav_in_radius(dirname, eq.nu, r1, r2)
-    kappa_volav = volav_in_radius(dirname, eq.kappa, r1, r2)
-    di.pr = nu_volav/kappa_volav
+    if eq.reference_type in [2, 4]:
+        # Prandtl number
+        nu_volav = volav_in_radius(dirname, eq.nu, r1, r2)
+        kappa_volav = volav_in_radius(dirname, eq.kappa, r1, r2)
+        di.pr = nu_volav/kappa_volav
 
-    # flux rayleigh number
-    vol = get_vol(dirname) # make sure to get the whole volume here...
-    flux_rad = vol/(4*np.pi*eq.rr**2)*np.cumsum(eq.heat*gi.rw)
-    flux_nonrad = eq.lum/(4*np.pi*eq.rr**2) - flux_rad
-    flux_volav = volav_in_radius(dirname, flux_nonrad, r1, r2)
-    rho_volav = volav_in_radius(dirname, eq.rho, r1, r2)
-    tmp_volav = volav_in_radius(dirname, eq.tmp, r1, r2)
-    grav_volav = volav_in_radius(dirname, np.abs(eq.grav), r1, r2)
-    shell_depth = r2 - r1
-    di.raf = grav_volav*flux_volav*shell_depth**4/(eq.c_p*rho_volav*tmp_volav*nu_volav*kappa_volav**2)
+        # flux rayleigh number
+        vol = get_vol(dirname) # make sure to get the whole volume here...
+        flux_rad = vol/(4*np.pi*eq.rr**2)*np.cumsum(eq.heat*gi.rw)
+        flux_nonrad = eq.lum/(4*np.pi*eq.rr**2) - flux_rad
+        flux_volav = volav_in_radius(dirname, flux_nonrad, r1, r2)
+        rho_volav = volav_in_radius(dirname, eq.rho, r1, r2)
+        tmp_volav = volav_in_radius(dirname, eq.tmp, r1, r2)
+        grav_volav = volav_in_radius(dirname, np.abs(eq.grav), r1, r2)
+        shell_depth = r2 - r1
+        di.raf = grav_volav*flux_volav*shell_depth**4/(eq.c_p*rho_volav*tmp_volav*nu_volav*kappa_volav**2)
 
-    # dissipation number
-    di.di = grav_volav*shell_depth/(eq.c_p*tmp_volav)
+        # dissipation number
+        di.di = grav_volav*shell_depth/(eq.c_p*tmp_volav)
 
-    # heating number
-    Q_volav = volav_in_radius(dirname, eq.heat)
-    di.he = Q_volav*shell_depth**4/(rho_volav*nu_volav**2*kappa_volav)
-    #di.he2 = di.he*di.di/di.raf
+        # non-D heating integral
+        if eq.heating_type > 0:
+            di.he = eq.lum/(flux_volav*shell_depth**2)
 
-    # buoyancy number (viscous)
-    nsq_volav = volav_in_radius(dirname, eq.nsq, r1, r2)
-    di.bvisc = nsq_volav*shell_depth**4/nu_volav**2
+        # buoyancy number (viscous)
+        nsq_volav = volav_in_radius(dirname, eq.nsq, r1, r2)
+        di.bvisc = nsq_volav*shell_depth**4/nu_volav**2
 
-    if rotation:
-        # Ekman and Taylor
-        di.ek = nu_volav/(eq.om0*shell_depth**2)
-        #di.ta = 1.0/di.ek**2
+        if rotation:
+            # Ekman and Taylor
+            di.ek = nu_volav/(eq.om0*shell_depth**2)
+            #di.ta = 1.0/di.ek**2
 
-        # modified Rayleigh
-        di.rafmod = di.raf*di.ek**2/di.pr
+            # modified Rayleigh
+            di.rafmod = di.raf*di.ek**2/di.pr
 
-        # modified heating number
-        di.hemod = di.he*di.ek**3/di.pr
-        #di.hemod2 = di.hemod*di.di/di.rafmod
+            # modified heating number
+            di.hemod = di.he*di.ek**3/di.pr
+            #di.hemod2 = di.hemod*di.di/di.rafmod
 
-        # buoyancy number (rotational)
-        di.brot = di.bvisc*di.ek**2
+            # buoyancy number (rotational)
+            di.brot = di.bvisc*di.ek**2
 
-    if magnetism:
-        # magnetic Prandtl
-        eta_volav = volav_in_radius(dirname, eq.eta, r1, r2)
-        di.prm = nu_volav/eta_volav
+        if magnetism:
+            # magnetic Prandtl
+            eta_volav = volav_in_radius(dirname, eq.eta, r1, r2)
+            di.prm = nu_volav/eta_volav
 
-        # "magnetic Ekman number"
-        di.ekm = eta_volav/(eq.om0*shell_depth**2)
+            # "magnetic Ekman number"
+            di.ekm = eta_volav/(eq.om0*shell_depth**2)
 
     return di
 
