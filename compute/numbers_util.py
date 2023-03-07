@@ -71,6 +71,8 @@ def get_numbers_input(dirname, r1='rmin', r2='rmax', verbose=False):
         # non-D heating integral
         if eq.heating_type > 0:
             di.he = eq.lum/(flux_volav*shell_depth**2)
+        else:
+            di.he = 0.0
 
         # buoyancy number (viscous)
         nsq_volav = volav_in_radius(dirname, eq.nsq, r1, r2)
