@@ -55,8 +55,9 @@ def get_numbers_input(dirname, r1='rmin', r2='rmax', verbose=False):
 
     vol = get_vol(dirname) # make sure to use the full volume
                 # to calculate the non-radiative heat flux vs radius
+    lstar = vol*np.sum(eq.heat*gi.rw)
     flux_rad = vol/(4*np.pi*eq.rr**2)*np.cumsum(eq.heat*gi.rw)
-    flux_nonrad = eq.lum/(4*np.pi*eq.rr**2) - flux_rad
+    flux_nonrad = lstar/(4*np.pi*eq.rr**2) - flux_rad
     flux_volav = volav_in_radius(dirname, flux_nonrad, r1, r2)
 
     # use the local shell's volume for the luminositiy in the heating
@@ -129,6 +130,10 @@ def get_numbers_input(dirname, r1='rmin', r2='rmax', verbose=False):
         # then adjust them in proportion to the variuos volume averages
         # (this assumes we have non-dimensionalized using volume averages)
 
+        # also need non-D of time (won't work for Boussinesq)
+        nd_time_visc = get_parameter(dirname, "ND_Time_Visc")
+        nd_time_rot = get_parameter(dirname, "ND_Time_Rot")
+
         # Prandtl number
         pr = get_parameter(dirname, "Prandtl_Number")
         di.pr = pr * (nu_volav/kappa_volav)
@@ -142,15 +147,21 @@ def get_numbers_input(dirname, r1='rmin', r2='rmax', verbose=False):
 
         # flux rayleigh number
         di.raf = ra *  ( grav_volav*flux_volav/(rho_volav*tmp_volav*nu_volav*kappa_volav**2) )
+        # also remember flux_volav included factor of 1/Pr or Ek/Pr
+        if nd_time_visc:
+            di.raf *= di.pr
+        elif nd_time_rot:
+            ek = get_parameter(dirname, "Ekman_Number")
+            di.raf *= (di.pr/ek)
 
         # dissipation number (only for reference type 5)
         # not Boussinesq and I don't use ref type 3
-        if reference_type == 5:
-            if get_parameter(dirname, "ND_Time_Visc"): 
-                di = eq.constants[7] * (ra/pr)
-            elif get_parameter(dirname, "ND_Time_Rot"): 
-                di = eq.constants[7] * ramod
-            di.di = di * (grav_volav/tmp_volav)
+        if eq.reference_type == 5:
+            if nd_time_visc:
+                di_loc = eq.constants[7] * (ra/pr)
+            elif nd_time_rot:
+                di_loc = eq.constants[7] * ramod
+            di.di = di_loc * (grav_volav/tmp_volav)
 
         # non-D heating integral
         if eq.heating_type > 0:

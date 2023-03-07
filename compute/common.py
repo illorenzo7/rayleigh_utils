@@ -1167,7 +1167,7 @@ def get_eq(dirname, fname=None, verbose=False):
         eq_hr.d2lnrho = eq.functions[8]
         eq_hr.tmp = eq.functions[3]
         eq_hr.dlntmp = eq.functions[9]
-        eq_hr.grav = eq.functions[1]/(eq.constants[1]*eq_hr.rho)
+        eq_hr.grav = eq.functions[1]/eq_hr.rho
         eq_hr.dsdr = eq.functions[13]
         eq_hr.heat = eq.constants[9]*eq.functions[5]
 
