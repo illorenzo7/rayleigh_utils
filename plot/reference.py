@@ -39,15 +39,20 @@ find_bad_keys(kwargs_default, clas, clas0['routinename'], justwarn=True)
 eq = get_eq(dirname, kw.fname)
 
 # things to plot and ylabels
-profiles = [eq.grav, eq.dsdr, eq.nsq, eq.heat,\
+profiles = [eq.grav, eq.dsdr, eq.heat,\
         eq.rho, eq.tmp, eq.dlnrho,\
         eq.d2lnrho, eq.dlntmp, eq.prs]
-ylabels = ['gravity (g)', r'$d\overline{S}/dr$', r'$N^2=(g/c_p)d\overline{S}/dr$', 'heating (Q)',\
+ylabels = ['gravity (g)', r'$d\overline{S}/dr$',  'heating (Q)',\
         'density (' + r'$\overline{\rho}$' + ')', 'temperature (' + r'$\overline{T}$' + ')', r'$dln\overline{\rho}/dr$', \
         r'$d^2ln\rho/dr^2$', r'$dln\overline{T}/dr$', 'pressure (' + r'$\overline{P}=\overline{\rho}\mathcal{R}\overline{T}$' + ')']
+count = 0
+if eq.reference_type in [2, 4]:
+    profiles.insert(2, eq.nsq)
+    ylabels.insert(2, r'$N^2=(g/c_p)d\overline{S}/dr$')
+    count += 1
 if not close_to_zero(eq.dlnrho):
-    profiles.insert(6,-1.0/eq.dlnrho)
-    ylabels.insert(6,r'$H_\rho=-(dln\overline{\rho}/dr)^{-1}$')
+    profiles.insert(6 + count, -1.0/eq.dlnrho)
+    ylabels.insert(6 + count, r'$H_\rho=-(dln\overline{\rho}/dr)^{-1}$')
 
 # create the plot; start with plotting all the energy fluxes
 nplots = len(profiles)

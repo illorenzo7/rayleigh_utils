@@ -1171,6 +1171,9 @@ def get_eq(dirname, fname=None, verbose=False):
         eq_hr.dsdr = eq.functions[13]
         eq_hr.heat = eq.constants[9]*eq.functions[5]
 
+        # get non-D pressure
+        eq_hr.prs = eq_hr.rho*eq_hr.tmp
+
         # make suggestive names for the "transport" functions
         eq_hr.nu = eq.functions[2]
         eq_hr.dlnu = eq.functions[10]
