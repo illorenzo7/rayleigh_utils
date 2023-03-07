@@ -13,15 +13,12 @@ numbers_input_def = dotdict({
     "raf": ("Ra_F", "g*F*H^4/(c_p*rho*T*nu*kappa^2)"),
     "di": ("Di", "g*H/(c_p*T)"),
     "bvisc": ("B_visc", "N^2*H^4/nu^2"),
-    "he": ("He", "Q*H^4/(rho*nu^2*kappa)"),
-    #"he2": ("He_2", "He*Di/Ra_F"),
+    "he": ("He", "L_star/(F*H^2)"),
 
     "ek": ("Ek", "nu/(Om_0*H^2)"), 
     #"ta": ("Ta", "1/Ek^2"),
     "rafmod": ("Ra_mod", "Ra_F*Ek^2/Pr"),
     "brot": ("B_rot", "N^2/(Om_0)^2"),
-    "hemod": ("He_mod", "Q/[rho*H^2*(Om_0)^3]"),
-    #"hemod2": ("Me_mod,2", "He_mod*Di/Ra_mod"),
 
     "prm": ("Pr_m", "nu/eta"),
     "ekm": ("Ek_m", "Ek/Pr_m")
@@ -85,10 +82,6 @@ def get_numbers_input(dirname, r1='rmin', r2='rmax', verbose=False):
 
             # modified Rayleigh
             di.rafmod = di.raf*di.ek**2/di.pr
-
-            # modified heating number
-            di.hemod = di.he*di.ek**3/di.pr
-            #di.hemod2 = di.hemod*di.di/di.rafmod
 
             # buoyancy number (rotational)
             di.brot = di.bvisc*di.ek**2
