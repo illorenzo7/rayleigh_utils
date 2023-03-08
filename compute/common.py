@@ -1170,6 +1170,7 @@ def get_eq(dirname, fname=None, verbose=False):
         eq_hr.grav = eq.functions[1]/eq_hr.rho
         eq_hr.dsdr = eq.functions[13]
         eq_hr.heat = eq.constants[9]*eq.functions[5]
+        eq_hr.lum = eq.constants[9]
 
         # get non-D pressure
         eq_hr.prs = eq_hr.rho*eq_hr.tmp
