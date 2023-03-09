@@ -1,375 +1,133 @@
-###############################################
 # Author: Loren Matilsky
-# Date created: 11/05/2019
-#
-# This script plots the volume heating terms as functions of
-# radius using from the Shell_Avgs data
+# Created: 03/09/2023
+# This script plots the spherically aveaged terms in the thermal energy 
+# (or entropy) equation as functions of radius using the Shell_Avgs data
 
-import matplotlib as mpl
-mpl.use('TkAgg')
-import matplotlib.pyplot as plt
-plt.rcParams['mathtext.fontset'] = 'dejavuserif'
-csfont = {'fontname':'DejaVu Serif'}
 import numpy as np
 import sys, os
-sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
+sys.path.append(os.environ['rapl'])
 from common import *
-from rayleigh_diagnostics import GridInfo
-from read_eq_vp import read_eq_vp
+from plotcommon import *
+from cla_util import *
 
-# Get the run directory on which to perform the analysis
-dirname = sys.argv[1]
+# Get CLAs
+args = sys.argv
+clas0, clas = read_clas(args)
+dirname = clas0['dirname']
 dirname_stripped = strip_dirname(dirname)
 
-# domain bounds
-ncheby, domain_bounds = get_domain_bounds(dirname)
-ri = np.min(domain_bounds)
-ro = np.max(domain_bounds)
-d = ro - ri
+# equation coefficients
+eq = get_eq(dirname)
 
-# Directory with data and plots, make the plotting directory if it doesn't
-# already exist    
-datadir = dirname + '/data/'
+# allowed args + defaults
+lineplot_kwargs_default['legfrac'] = 0.3
+lineplot_kwargs_default['plotleg'] = True
+make_figure_kwargs_default.update(lineplot_fig_dimensions)
 
-# Find the Shell_Avgs file(s) in the data directory. If there are multiple, by
-# default choose the one with widest range in the average
-Shell_Avgs_file = get_widest_range_file(datadir, 'Shell_Avgs')
+kwargs_default = dict({'the_file': None,  'entropy': False})
+kwargs_default.update(make_figure_kwargs_default)
 
-# Get command-line arguments to adjust the interval of averaging files
-xminmax = None
-minmax = None
-rnorm = None
-rvals = []
-entropy_equation = False
-force_econs = False # By default, no tachocline econs term to worry about
-sep_czrz = False # plots boundary line in between cz/rz and computes
-        # heating separately in both domains
+kw = update_dict(kwargs_default, clas)
+kw_lineplot = update_dict(lineplot_kwargs_default, clas)
+kw_make_figure = update_dict(make_figure_kwargs_default, clas)
 
-plotdir = None
+if not kw.xcut is None: # make room for label on right
+    kw_make_figure.sub_margin_right_inches = default_margin_xlabel
+if kw.mark_bcz: # make room for the bcz label
+    kw_make_figure.margin_top_inches += default_line_height
+find_bad_keys(kwargs_default, clas, clas0['routinename'], justwarn=True)
 
-args = sys.argv[2:]
-nargs = len(args)
-for i in range(nargs):
-    arg = args[i]
-    if arg == '-plotdir':
-        plotdir = args[i+1]
-    if arg == '-usefile':
-        Shell_Avgs_file = args[i+1]
-        Shell_Avgs_file = Shell_Avgs_file.split('/')[-1]
-    elif arg == '-minmax':
-        minmax = float(args[i+1]), float(args[i+2])
-    elif arg == '-xminmax':
-        xminmax = float(args[i+1]), float(args[i+2])
-    elif arg == '-rnorm':
-        rnorm = float(args[i+1])
-    elif arg == '-depths':
-        strings = args[i+1].split()
-        for st in strings:
-            rval = ro - float(st)*d
-            rvals.append(rval)
-    elif arg == '-depthscz':
-        rm = domain_bounds[1]
-        dcz = ro - rm
-        strings = args[i+1].split()
-        for st in strings:
-            rval = ro - float(st)*dcz
-            rvals.append(rval)
-    elif arg == '-depthsrz':
-        rm = domain_bounds[1]
-        drz = rm - ri
-        strings = args[i+1].split()
-        for st in strings:
-            rval = rm - float(st)*drz
-            rvals.append(rval)
-    elif arg == '-rvals':
-        rvals = []
-        strings = args[i+1].split()
-        for st in strings:
-            rval = float(st)*rsun
-            rvals.append(rval)
-    elif arg == '-rvalscm':
-        rvals = []
-        strings = args[i+1].split()
-        for st in strings:
-            rval = float(st)
-            rvals.append(rval)
-        rvals = np.array(rvals)
-    elif arg == '-s':
-        entropy_equation = True
-    elif arg == '-econs':
-        force_econs = True
-    elif arg == '-czrz':
-        sep_czrz = True
-
-lw = 1. # regular lines
-#lw = 1.5 # Bit thicker lines
-
-# Read in the flux data
-print ('Getting heating terms from ' + datadir + Shell_Avgs_file + ' ...')
-di = get_dict(datadir + Shell_Avgs_file)
+# get data
+if kw.the_file is None:
+    kw.the_file = get_widest_range_file(clas0['datadir'], 'Shell_Avgs')
+print (buff_line)
+print ('running ' + clas0['routinename'])
+print (buff_line)
+print ('reading ' + kw.the_file)
+di = get_dict(kw.the_file)
 vals = di['vals']
 lut = di['lut']
-nq = di['nq']
-iter1, iter2 = di['iter1'], di['iter2']
-rr = di['rr']
-ro = di['ro']
-ri = di['ri']
-nr = di['nr']
+qv = di['qv']
+di_grid = get_grid_info(dirname)
+rr = di_grid['rr']
+nr = di_grid['nr']
 
-# Get the rho*T
-eq = get_eq(dirname)
-rhot = eq.density*eq.temperature
+# get rho*T
+rhot = eq.rho*eq.tmp
 
 # Determine the simulation is magnetic
 magnetism = get_parameter(dirname, 'magnetism')
 
 # Make the plot name, labelling the first/last iterations we average over
-if entropy_equation:
-    basename = '_entropy_equation_shav_'
+if kw.entropy:
+    basename = 'entropy_equation_shav'
+    baselabel = 'entropy equation'
 else:
-    basename = '_thermal_energy_shav_'
+    basename = 'thermal_energy_shav'
+    baselabel = 'thermal energy equation'
 
-savename = dirname_stripped + basename +\
-    str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
-
-advec_tot = -vals[:, lut[1401]]
-advec_fluc = -vals[:, lut[1402]]
+advec_tot = -vals[:, 0, lut[1401]]
+advec_fluc = -vals[:, 0, lut[1402]]
 advec_mean = advec_tot - advec_fluc
-advec_vr = -vals[:, lut[1406]]
-cond_heating = vals[:, lut[1421]]
-int_heating = vals[:, lut[1434]]
-visc_heating = vals[:, lut[1435]]*rhot
+cond_heating = vals[:, 0, lut[1421]]
+int_heating = vals[:, 0, lut[1434]]
+visc_heating = vals[:, 0, lut[1435]]
+
+profiles = [advec_tot, advec_fluc, advec_mean, cond_heating, int_heating, visc_heating]
+kw_lineplot.labels = ['advec (tot)', 'advec (fluc)', 'advec (mean)', 'cond', 'Q(r)', 'visc']
+
+
 tot_heating = advec_tot + cond_heating + int_heating + visc_heating
 if magnetism:
-    joule_heating = vals[:, lut[1436]]*rhot
-    have_joule_fluc = False
-    try:
-        joule_heating_fluc = vals[:, lut[1437]]*rhot
-        joule_heating_mean = joule_heating - joule_heating_fluc
-        have_joule_fluc = True
-        print ("Joule heating fluc (1437) output, so plotting ")
-        print ("Reynolds decomposition of Joule heating.")
-    except:
-        print ("Joule heating fluc (1437) not output, ")
-        print ("only plotting total Joule heating.")
+    joule_heating = vals[:, 0, lut[1436]]
+    profiles.append(joule_heating)
     tot_heating += joule_heating
+    kw_lineplot.labels.append('Joule')
 
-if force_econs:
-    AZ_Avgs_file = get_widest_range_file(datadir, 'AZ_Avgs')
-    print ('Getting forcing info from ' + datadir + AZ_Avgs_file)
-    di_az = get_dict(datadir + AZ_Avgs_file)
-    nt = di_az['nt']
-    vals_az = di_az['vals']
-    lut_az = di_az['lut']
-    mean_vp = vals_az[:, :, lut_az[3]]
-    vp2 = vals_az[:, :, lut_az[416]]
-    fluc_vp2 = vals_az[:, :, lut_az[424]]
-    mean_vp2 = vp2 - fluc_vp2
-    tacho_r = get_parameter(dirname, 'tacho_r')
-    print ("read tacho_r = %1.2e" %tacho_r)
-    tacho_dr = get_parameter(dirname, 'tacho_dr')
-    tacho_tau = get_parameter(dirname, 'tacho_tau')
-    force_heating_az = np.zeros((nt, nr))
-    eq = get_eq(dirname)
-    rho = eq.rho
+profiles.append(tot_heating)
+kw_lineplot.labels.append('total')
 
-    if os.path.exists(dirname + '/eq_vp'): 
-        print ("eq_vp file exists, so I assume you have a forcing function which\n quartically matches on to a CZ differential rotation\n with viscous-torque-free buffer zone")
-        tacho_r2 = get_parameter(dirname, 'tacho_r2')
-        i_tacho_r = np.argmin(np.abs(rr - tacho_r))
-        print ("read tacho_r2 = %1.2e" %tacho_r2)
-        eq_vp = read_eq_vp(dirname + '/eq_vp', nt, nr)
-        for it in range(nt):
-            for ir in range(nr):
-                if rr[ir] <= tacho_r2:
-                    if rr[ir] > tacho_r:
-                        # Here is where the DR is forced differentially
-                        # (a "buffer zone" to reduce shear)
-                        desired_vp = eq_vp[it, ir]
-                    elif rr[ir] > tacho_r - tacho_dr*rr[0]:
-                        # Here is where the DR is forced to match 
-                        # quartically from differential to solid-body
-                        desired_vp = eq_vp[it, i_tacho_r]*(1.0 - ( (rr[ir] - tacho_r)/(tacho_dr*rr[0]) )**2)**2
-                    else:
-                        desired_vp = 0.0
-                    force_heating_az[it, ir] = rho[ir]*(mean_vp2[it, ir] -\
-                            desired_vp*mean_vp[it, ir])/tacho_tau
-                else:
-                    force_heating_az[it, ir] = 0.
-    else:
-        forcing_coeff = rho/tacho_tau*0.5*(1.0 - np.tanh((rr - tacho_r)/(tacho_dr*rr[0])))
-        force_heating_az = forcing_coeff.reshape((1, nr))*mean_vp2
+# create the plot; start with plotting all the heating terms
+fig, axs, fpar = make_figure(**kw_make_figure)
+ax = axs[0,0]
 
-    # Calculate the latitudinally integrated forcing work
-    gi = GridInfo(dirname + '/grid_info')
-    tw = gi.tweights
-    force_heating = np.sum(force_heating_az*tw.reshape((nt, 1)), axis=0)
-    tot_heating += force_heating
+# x and y labels
+kw_lineplot.xlabel = 'radius'
+kw_lineplot.ylabel = 'heating per vol.'
 
-# Compute the INTEGRATED total heating
-gi = GridInfo(dirname + '/grid_info', '')
-rw = gi.rweights
-shell_volume = 4.0*np.pi/3.0*(ro**3.0 - ri**3.0)
-tot_heating_integrated = shell_volume*np.sum(tot_heating*rw)
+# change some things if plotting entropy
+if kw.entropy:
+    for i in range(len(profiles)):
+        profiles[i] /= rhot
+        if kw_lineplot.labels[i] == 'Q(r)':
+            kw_lineplot.labels[i] == 'Q(r)/(rho*T)'
+    kw_lineplot.ylabel = 'dS/dt'
 
-if sep_czrz:
-    nr_cz = get_parameter(dirname, 'ncheby')[1]
-    nr_rz = nr - nr_cz
-    rbcz = rr[nr_cz-1]
+lineplot(rr, profiles, ax, **kw_lineplot)
 
-    # get averaging weights for CZ and RZ separately
-    rw_cz = np.copy(rw[:nr_cz])
-    rw_rz = np.copy(rw[nr_cz:])
-    rw_cz /= np.sum(rw_cz)
-    rw_rz /= np.sum(rw_rz)
+# make title 
+iter1, iter2 = get_iters_from_file(kw.the_file)
+time_string = get_time_string(dirname, iter1, iter2) 
+the_title = dirname_stripped + '\n' +  baselabel + '\n' + time_string
+if kw.mark_bcz:
+    the_title += ('\n' + r'$r_{BCZ} = %1.3e$' %rbcz_est)
+    the_title += ('\n' + r'$r_{os} = %1.3e$' %rov_est)
 
-    shell_volume_cz = 4.0*np.pi/3.0*(ro**3.0 - rbcz**3.0)
-    shell_volume_rz = 4.0*np.pi/3.0*(rbcz**3.0 - ri**3.0)
-    tot_heating_integrated_cz =\
-            shell_volume*np.sum(tot_heating[:nr_cz]*rw_cz)
-    tot_heating_integrated_rz =\
-            shell_volume*np.sum(tot_heating[nr_cz:]*rw_rz)
+margin_x = fpar['margin_left'] + fpar['sub_margin_left']
+margin_y = default_margin/fpar['height_inches']
+fig.text(margin_x, 1 - margin_y, the_title,\
+         ha='left', va='top', fontsize=default_titlesize)
 
+# save the figure
+plotdir = my_mkdir(clas0['plotdir'])
+savefile = plotdir + basename + clas0['tag'] + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
 
-if entropy_equation:
-    advec_tot /= rhot
-    advec_fluc /= rhot
-    advec_mean /= rhot
-    advec_vr /= rhot
-    cond_heating /= rhot
-    int_heating /= rhot
-    visc_heating /= rhot
-    tot_heating /= rhot
-    if magnetism:
-        joule_heating /= rhot
-        if have_joule_fluc:
-            joule_heating_fluc /= rhot
-            joule_heating_mean /= rhot
-
-    if force_econs:
-        force_heating /= rhot
-
-# Create the plot
-
-# User can specify what to normalize the radius by
-# By default, normalize by the solar radius
-if rnorm is None:
-    rr_n = rr/rsun
-else:
-    rr_n = rr/rnorm                                           
-
-plt.plot(rr_n, advec_tot, 'm', label='advection tot', linewidth=lw)
-plt.plot(rr_n, advec_fluc, 'm--', label='advection fluc', linewidth=lw)
-plt.plot(rr_n, advec_mean, 'm:', label='advection mean', linewidth=lw)
-plt.plot(rr_n, cond_heating, 'r', label='conductive heating', linewidth=lw)
-plt.plot(rr_n, int_heating, 'g', label='internal heating', linewidth=lw)
-plt.plot(rr_n, visc_heating, 'c', label='viscous heating', linewidth=lw)
-if magnetism:
-    plt.plot(rr_n, joule_heating, 'b', label='Joule heating tot',\
-            linewidth=lw)
-    if have_joule_fluc:
-        plt.plot(rr_n, joule_heating_fluc, 'b--',\
-                label='Joule heating fluc', linewidth=lw)
-        plt.plot(rr_n, joule_heating_mean, 'b:',\
-                label='Joule heating mean', linewidth=lw)
-if force_econs:
-    plt.plot(rr_n, force_heating, 'y',\
-        label='Heating from forcing (econs)', linewidth=lw)
-plt.plot(rr_n, tot_heating, 'k', label='total heating')
-
-# Get the y-axis in scientific notation
-plt.ticklabel_format(useMathText=True, axis='y', scilimits=(0,0))
-
-# Get ticks everywhere
-plt.minorticks_on()
-plt.tick_params(top=True, right=True, direction='in', which='both')
-
-# Set the x limits
-if xminmax is None:
-    xminmax = np.min(rr_n), np.max(rr_n)
-delta_x = xminmax[1] - xminmax[0]
-plt.xlim(xminmax[0], xminmax[1])
-
-# Set the y-limits
-
-if minmax is None:
-    ymin = min(np.min(advec_tot), np.min(advec_fluc),\
-            np.min(advec_mean), np.min(cond_heating), np.min(int_heating),\
-            np.min(visc_heating), np.min(tot_heating)),
-    ymax = max(np.max(advec_tot), np.max(advec_fluc),\
-            np.max(advec_mean), np.max(cond_heating), np.max(int_heating),\
-            np.max(visc_heating), np.max(tot_heating))
-    if magnetism:
-        ymin = min(ymin, np.min(joule_heating))
-        ymax = max(ymax, np.max(joule_heating))
-        if have_joule_fluc:
-            ymin = min(ymin, np.min(joule_heating_fluc),\
-                    np.min(joule_heating_mean))
-            ymax = max(ymax, np.max(joule_heating_fluc),\
-                    np.max(joule_heating_mean))
-    delta_y = ymax - ymin
-    ybuffer = 0.1*delta_y
-    minmax = ymin - 3*ybuffer, ymax + ybuffer
-plt.ylim(minmax[0], minmax[1])
-
-# Label the axes
-if rnorm is None:
-    plt.xlabel(r'$r/R_\odot$',fontsize=12, **csfont)
-else:
-    plt.xlabel(r'r/(%.1e cm)' %rnorm, fontsize=12, **csfont)
-
-# Mark radii if desired
-if sep_czrz:
-    if rvals is None:
-        rvals = np.array([rbcz])
-    else:
-        rvals = np.hstack((rvals, np.array([rbcz])))
-
-if not rvals is None:
-    yvals = np.linspace(minmax[0], minmax[1], 100)
-    for rval in rvals:
-        if rnorm is None:
-            rval_n = rval/rsun
-        else:
-            rval_n = rval/rnorm
-#        plt.ylim(ymin, ymax)
-        plt.plot(rval_n + np.zeros(100), yvals, 'k--')
-
-if entropy_equation:
-    plt.ylabel(r'$\partial S/\partial t\ \rm{(erg\ g^{-1}\ K^{-1}\ s^{-1})}$', fontsize=12, **csfont)
-else:
-    plt.ylabel('heating (' + r'$\rm{erg\ cm^{-3}\ s^{-1}}$' + ')',\
-            fontsize=12, **csfont)
-
-# Make title
-if entropy_equation:
-    basetitle = 'entropy eqn., '
-else:
-    basetitle = 'thermal energy eqn., ' 
-
-lum = 3.846e33
-
-title = dirname_stripped + '\n' + basetitle +\
-          str(iter1).zfill(8) + ' to ' + str(iter2).zfill(8) +\
-          ('\nInteg. Tot. Heating = %9.3e lsun'\
-          %(tot_heating_integrated/lum))
-if sep_czrz:
-    title += ('\nInteg. Tot. Heating (CZ) = %9.3e lsun'\
-            %(tot_heating_integrated_cz/lum)) +\
-        ('\nInteg. Tot. Heating (RZ) = %9.3e lsun'\
-        %(tot_heating_integrated_rz/lum))
-plt.title(title, **csfont)
-
-# Create a see-through legend
-plt.legend(loc='lower left', shadow=True, ncol=2, fontsize=8)
-
-# Last command
-plt.tight_layout()
-
-# Save the plot
-print ('Saving the energy eqn. plot at ' + plotdir + savename)
-plt.savefig(plotdir + savename, dpi=300)
-
-# Show the plot
-plt.show()
+if clas0['saveplot']:
+    print (buff_line)
+    print ('saving figure at:')
+    print(savefile)
+    plt.savefig(savefile, dpi=300)
+if clas0['showplot']:
+    plt.show()
+print (buff_line)
