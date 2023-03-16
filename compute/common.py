@@ -1228,7 +1228,7 @@ def get_time_unit(dirname):
 
 def translate_times(time, dirname, translate_from='iter', verbose=False):
     # change between different time units (can translate from: 
-    # iter, prot, tdt, sec
+    # iter, sim time (or measure sim time in TDT or P_rot)
     # TO USE MUST HAVE G_Avgs_trace file or equivalent 
     # (time-lat, time-rad, etc.)
 
@@ -1261,16 +1261,16 @@ def translate_times(time, dirname, translate_from='iter', verbose=False):
     # translate the time
     if translate_from == 'iter':
         ind = np.argmin(np.abs(iters - time))
+    elif translate_from == 'simt':
+        ind = np.argmin(np.abs(times - time))
     elif translate_from == 'prot':
         ind = np.argmin(np.abs(times/eq.prot - time))
     elif translate_from == 'tdt':
         ind = np.argmin(np.abs(times/eq.tdt - time))
-    elif translate_from == 'sec':
-        ind = np.argmin(np.abs(times - time))
 
     # prepare the dictionary to return
     di = dotdict()
-    di.val_sec = times[ind]
+    di.val_simt = times[ind]
     di.val_iter = iters[ind]
     di.val_tdt = times[ind]/eq.tdt
     rotation = get_parameter(dirname, 'rotation')
@@ -1281,16 +1281,16 @@ def translate_times(time, dirname, translate_from='iter', verbose=False):
 def get_time_string(dirname, iter1, iter2=None, oneline=False, threelines=False, iter0=None, floatwidth=None, floatprec=None):
     # see if user wants to subtract off base time
     if not iter0 is None:
-        t0 = translate_times(iter0, dirname, translate_from='iter')['val_sec']
+        t0 = translate_times(iter0, dirname, translate_from='iter')['val_simt']
     else:
         t0 = None
 
     # Get the time range in sec
-    t1 = translate_times(iter1, dirname, translate_from='iter')['val_sec']
+    t1 = translate_times(iter1, dirname, translate_from='iter')['val_simt']
     if not t0 is None:
         t1 -= t0
     if not iter2 == None:
-        t2 = translate_times(iter2, dirname, translate_from='iter')['val_sec']
+        t2 = translate_times(iter2, dirname, translate_from='iter')['val_simt']
         if not t0 is None:
             t2 -= t0
 
