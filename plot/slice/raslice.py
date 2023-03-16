@@ -247,7 +247,7 @@ if rank == 0:
                         # now we're in the big loop
                         # get plot directory and image name to save the file
                         if kw.movie:
-                            plotdir = plottype + '_movie_time/' + simple_label
+                            plotdir = 'movie_' + plottype + '_time/' + simple_label
                             if not plottype == 'mer':
                                 plotdir += ('_clon' + lon_fmt) %clon
                             if plottype == 'ortho':
@@ -256,20 +256,20 @@ if rank == 0:
                                 plotdir += ('_' + samplelabel + samplefmt) %sampleval
                             savename = 'img%04i.png' %count
                         elif kw.moviesampleval:
-                            plotdir = plottype + '_movie_' + sample_label + '/' + fname + '_' + simple_label
+                            plotdir = 'movie_' + plottype + sample_label + '/' + fname + '_' + simple_label
                             if not plottype == 'mer':
                                 plotdir += ('_clon' + lon_fmt) %clon
                             if plottype == 'ortho':
                                 plotdir += ('_ccolat' + lon_fmt) %(90.0 - clat)
                             savename = 'img%04i.png' %count
                         elif kw.movieclon:
-                            plotdir = plottype + '_movie_clon/' + fname + '_' + simple_label
+                            plotdir = 'movie_' + plottype + '_clon/' + fname + '_' + simple_label
                             if plottype == 'ortho':
                                 plotdir += ('_ccolat' + lon_fmt) %(90.0 - clat)
                             if not plottype == 'eq':
                                 plotdir += ('_' + samplelabel + samplefmt) %sampleval
                         elif kw.movieclat:
-                            plotdir = plottype + '_movie_clat/' + fname + '_' + simple_label
+                            plotdir = 'movie_' + plottype + '_clat/' + fname + '_' + simple_label
                             if not plottype == 'mer':
                                 plotdir += ('_clon' + lon_fmt) %clon
                             if not plottype == 'eq':
