@@ -18,7 +18,7 @@ azav_fig_dimensions = dict({'sub_aspect': 2, 'sub_width_inches': 2, 'sub_margin_
 
 # plot_azav needs my_contourf args, then some
 plot_azav_kwargs_default = dict(
-        {'rcut': None, 'minmax2': None, 'cmap2': None, 'rvals': np.array([]), 'plotlatlines': True, 'latvals': np.arange(-60., 90., 30.), 'plotboundary': True,
+        {'rcut': None, 'minmax2': None, 'cmap2': None, 'rvals': None, 'plotlatlines': True, 'latvals': np.arange(-60., 90., 30.), 'plotboundary': True,
         'linestyles1': np.array(['-']), 'linewidths1': np.array([default_lw]), 'linecolors1': np.array(['k']),
        'linestyles2': np.array(['-']), 'linewidths2': np.array([default_lw]), 'linecolors2': np.array(['k']),
        'halfplane': False, 'fontsize': default_labelsize, 'plotaxis': True
@@ -95,6 +95,9 @@ def plot_azav(field, rr, cost, fig, ax,  **kwargs):
     # potentially plot coordinate lines
     if not kw.plotlatlines:
         kw.latvals = np.array([])
+    if kw.rvals is None:
+        kw.rvals = np.array([])
+
     for ind in [1, 2]:
         if ind == 1:
             vals = make_array(kw.rvals, tolist=True)

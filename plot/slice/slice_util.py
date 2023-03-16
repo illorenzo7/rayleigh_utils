@@ -15,11 +15,9 @@ generic_slice_fig_dimensions = dict({'sub_height_inches': 3., 'sub_margin_left_i
 
 moll_fig_dimensions = dict({'sub_aspect': 1/2})
 ortho_fig_dimensions = dict({'sub_aspect': 1})
-mer_fig_dimensions = dict({'sub_aspect': 2})
 
 moll_fig_dimensions.update(generic_slice_fig_dimensions)
 ortho_fig_dimensions.update(generic_slice_fig_dimensions)
-mer_fig_dimensions.update(generic_slice_fig_dimensions)
 
 eq_fig_dimensions = ortho_fig_dimensions
 

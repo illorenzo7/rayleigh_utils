@@ -37,7 +37,7 @@ from cla_util import *
 from slice_util import *
 from rayleigh_diagnostics import Equatorial_Slices, Meridional_Slices
 from rayleigh_diagnostics_alt import Shell_Slices
-from azav_util import plot_azav
+from azav_util import plot_azav, plot_azav_kwargs_default, azav_fig_dimensions
 #from get_slice import get_slice, get_label
 
 # Get CLAs
@@ -75,9 +75,10 @@ if plottype == 'eq':
     dataname = 'Equatorial_Slices'
     reading_func = Equatorial_Slices
 if plottype == 'mer':
-    fig_dimensions = mer_fig_dimensions
-    plotting_func = plot_mer
-    plotting_func_kwargs_default = plot_mer_kwargs_default
+    fig_dimensions = azav_fig_dimensions
+    plotting_func = plot_azav
+    plotting_func_kwargs_default = plot_azav_kwargs_default
+    plotting_func_kwargs_default['plotcontours'] = False
     dataname = 'Meridional_Slices'
     reading_func = Meridional_Slices
     samplelabel = 'lonval'
@@ -142,9 +143,13 @@ if rank == 0:
     # can control samplevals with rvals for time-latitude traces
     if not kw.rvals is None:
         kw.samplevals = kw.rvals
+    print (kw.isamplevals)
+    print (kw.samplevals)
+    print (kw.rvals)
 
     # get the samplevals we want
     if not kw.samplevals is None: # samplevals have been set directly
+        print ("got here...")
         # need the available sampling locations
         if isall(kw.samplevals):
             kw.isamplevals = np.arange(sliceinfo.nsamplevals)
@@ -157,6 +162,9 @@ if rank == 0:
         kw.samplevals = np.array([0.0])
     else:
         kw.samplevals = make_array(sliceinfo.samplevals[kw.isamplevals])
+        print("got here")
+        print (kw.isamplevals)
+        print (kw.samplevals)
     nsamplevals = len(kw.samplevals)
 
     # say what we are plotting
@@ -335,8 +343,11 @@ for ifigure in range(my_nfigures):
     # local instructions for this plot
     fname, varname, clon, clat, isampleval, sampleval, savefile, varlabel =\
             my_instructions[ifigure]
-    kw_plotting_func.clon = clon        
-    kw_plotting_func.clat = clat
+
+    if not plottype == 'mer':
+        kw_plotting_func.clon = clon        
+    if not plottype in ['mer', 'eq']:
+        kw_plotting_func.clat = clat
 
     # get the time slice
     a = reading_func(radatadir + fname, '')
