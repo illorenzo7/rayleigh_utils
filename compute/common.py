@@ -801,16 +801,19 @@ def get_latminmax(dirname):
 ####################################
 # Routines associated with grid info
 ####################################
-def get_grid_info(dirname, verbose=False):
+def get_grid_info(dirname, verbose=False, fname=None):
     # get basic grid info; try to read from grid_info file
     # or directly from main_input if grid_info doesn't exist
     di = dotdict()
 
+    if fname is None: # default
+        fname = 'grid_info'
+
     # get basic grid (colocation points and weights)
-    if os.path.exists(dirname + '/grid_info'):
+    if os.path.exists(dirname + '/' + fname):
         if verbose:
             print ("get_grid_info(): reading grid from grid_info")
-        gi = GridInfo(dirname + '/grid_info', '')
+        gi = GridInfo(dirname + '/' + fname, '')
         # 1D arrays
         di.rr = rr = gi.radius
         di.rw = rr = gi.rweights
