@@ -528,7 +528,7 @@ def get_file_lists(radatadir, clas):
             nfiles = len(int_file_list)
         if key == 'nfiles':
             ndesiredfiles = int(val[0])
-            nskip = nfiles//ndesiredfiles
+            skip = nfiles//ndesiredfiles
             file_list = file_list[::skip]
             int_file_list = int_file_list[::skip]
             nfiles = len(int_file_list)
