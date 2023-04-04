@@ -47,7 +47,7 @@ dirname = clas0.dirname
 dirname_stripped = strip_dirname(dirname)
 
 # SPECIFIC ARGS
-kwargs_default = dotdict(dict({'type': None, 'isamplevals': 0, 'samplevals': None, 'rvals': None, 'varnames': 'vr', 'clons': None, 'clats': None, 'clonrange': None, 'clatrange': None, 't0': False, 'movie': False, 'moviesampleval': False, 'movieclon': False, 'movieclat': False, 'shrink': False}))
+kwargs_default = dotdict(dict({'type': None, 'isamplevals': 0, 'samplevals': None, 'rvals': None, 'varnames': 'vr', 'clons': None, 'clats': None, 'clonrange': None, 'clatrange': None, 't0': False, 'movie': False, 'moviesampleval': False, 'movieclon': False, 'movieclat': False, 'shrink': False, 'prepend': False}))
 
 # this guy need to update right away to choose fig dimensions
 if clas.type is None:
@@ -278,6 +278,8 @@ if rank == 0:
                         else:
                             plotdir = clas0['plotdir'] + plottype + clas0['tag']
                             savename = plottype + '_' + fname + '_' + simple_label 
+                            if kw.prepend:
+                                savename = dirname_stripped + '_' + savename
                             if not plottype == 'mer':
                                 savename += ('_clon' + lon_fmt) %clon
                             if plottype == 'ortho':
