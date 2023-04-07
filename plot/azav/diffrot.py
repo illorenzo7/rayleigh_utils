@@ -12,6 +12,7 @@ from azav_util import *
 from common import *
 from plotcommon import *
 from cla_util import *
+from numbers_util import get_numbers_output
 
 # Get CLAs
 args = sys.argv
@@ -19,12 +20,18 @@ clas0, clas = read_clas(args)
 dirname = clas0['dirname']
 dirname_stripped = strip_dirname(dirname, wrap=True)
 
+# get desired shells to average over for DR numbers
+rvals = clas.rvals
+if rvals is None:
+    rvals = interpret_rvals(dirname, ['rmin', 'rmax'])
+nshells = len(rvals) - 1
+
 # allowed args + defaults
 # key unique to this script
 kwargs_default = dict({'the_file': None})
 
 # also need make figure kwargs
-azav_fig_dimensions['margin_top_inches'] += 0.25
+azav_fig_dimensions['margin_top_inches'] += 0.5*nshells
 make_figure_kwargs_default.update(azav_fig_dimensions)
 kwargs_default.update(make_figure_kwargs_default)
 
@@ -67,10 +74,6 @@ Om0 = 2*np.pi/eq.prot
 # differential rotation in the rotating frame. 
 Om = vp_av/xx
 
-# DR contrast between 0 and 60 degrees
-it0, it60_N, it60_S = np.argmin(np.abs(tt_lat)), np.argmin(np.abs(tt_lat - 60)), np.argmin(np.abs(tt_lat + 60))
-Delta_Om = Om[it0, 0] - (Om[it60_N, 0] + Om[it60_S, 0])/2
-
 # make plot
 fig, axs, fpar = make_figure(**kw_make_figure)
 ax = axs[0, 0]
@@ -80,7 +83,22 @@ plot_azav (Om/Om0, rr, cost, fig, ax, **kw_plot_azav)
 # make title 
 iter1, iter2 = get_iters_from_file(kw.the_file)
 time_string = get_time_string(dirname, iter1, iter2, threelines=True) 
-maintitle = dirname_stripped + '\n' +  r'$\Omega/\Omega_0 - 1$' + '\n' + time_string + '\n' + r'$\Delta\Omega_{\rm{60}}/\Omega_0$' + (' = %1.2e' %(Delta_Om/Om0))
+maintitle = dirname_stripped + '\n' +  r'$\Omega/\Omega_0 - 1$' + '\n' + time_string 
+
+# get DR numbers in spherical shells
+# loop over shells and add line of text
+for ishell in range(nshells):
+    # print shell info first
+    r1 = rvals[ishell]
+    r2 = rvals[ishell+1]
+
+    # then non-D numbers in shell
+    di = get_numbers_output(dirname, r1, r2)
+    maintitle += '\n' +\
+        ( '(' + flt_fmt + ', ' + flt_fmt + '):') %(r1, r2) +\
+        '\n' + (r'$\Delta\Omega/\Omega_0\ =\ $' + flt_fmt) %di.diffrot
+        #('(r_1, r_2) = (' + flt_fmt + ', ' + flt_fmt + '):') %(r1, r2)# +\
+
 if not kw.rcut is None:
     maintitle += '\nrcut = %1.3e' %kw.rcut
     
