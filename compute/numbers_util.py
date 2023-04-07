@@ -236,7 +236,7 @@ numbers_output_def = dotdict({
     "rovortmean": ("Ro_vort,mean", "<om>/(2*Om_0)"),
     "rovortfluc": ("Ro_vort,fluc", "om'/(2*Om_0)"),
 
-    "diffrot": ("DR", "(Om_eq - Om_60)/Om_0"),
+    "diffrot": ("DR", "rms (Om/Om_0 - 1)"),
 
     "rem": ("Re_m", "v*H/eta"),
     "remmean": ("Re_m,mean", "<v>*H/eta"),
@@ -357,15 +357,9 @@ def get_numbers_output(dirname, r1='rmin', r2='rmax', the_file=None, the_file_az
         # Get differential rotation in the rotating frame. 
         rotrate = vp_av/gi.xx
 
-        # rotation contrast between equator and 60 degrees
-        latcut = 60
-        iteq = np.argmin(np.abs(gi.tt_lat))
-        itnorth = np.argmin(np.abs(gi.tt_lat - latcut))
-        itsouth = np.argmin(np.abs(gi.tt_lat + latcut))
-        roteq = rotrate[iteq, :]
-        rotpol = 0.5*(rotrate[itnorth, :] + rotrate[itsouth, :])
-        diffrot = (roteq - rotpol)/om0
-        di.diffrot = volav_in_radius(dirname, diffrot, r1, r2)
+        # spherical rms. differential rotation
+        rotrate_rms = np.sqrt(np.sum(rotrate**2*gi.tw_2d, axis=0))
+        di.diffrot = volav_in_radius(dirname, rotrate_rms/om0, r1, r2)
 
     # magnetic numbers
     if magnetism:
