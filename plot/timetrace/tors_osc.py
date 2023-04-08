@@ -23,7 +23,7 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = clas0['magnetism']
 
 # defaults
-kwargs_default = dict({'the_file': None, 'ntot': 500, 'clat': 10, 'dlat': 0, 'om': None, 'rad': False, 'lon': False, 'isamplevals': np.array([0]), 'samplevals': None, 'rvals': None, 'groupname': 'v', 'nosub': False})
+kwargs_default = dict({'the_file': None, 'ntot': 500, 'clat': 10, 'dlat': 0, 'om': None, 'rad': False, 'lon': False, 'isamplevals': np.array([0]), 'samplevals': None, 'rvals': None, 'groupname': 'v', 'nosub': False, 'prepend': False})
 
 # also need make figure kwargs
 timey_fig_dimensions['margin_top_inches'] = 1.0
@@ -208,6 +208,8 @@ for isampleval in kw.isamplevals:
         if kw.lon and not om is None:
             basename += '_om%.0f' %om
         savename = basename + position_tag + '.png'
+        if kw.prepend:
+            savename = dirname_stripped + '_' + savename
         print ("saving", plotdir + '/' + savename)
         plt.savefig(plotdir + '/' + savename, dpi=200)
 

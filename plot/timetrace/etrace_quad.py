@@ -21,7 +21,7 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = get_parameter(dirname, 'magnetism')
 
 # SPECIFIC ARGS for etrace:
-kwargs_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'growth': False, 'growthfrac': 0.5, 'xvals': np.array([]), 'inte': False, 'nquadr': None, 'nquadlat': None, 'etype': 'tot', 'legfrac': None, 'nomag': False, 'noke': False})
+kwargs_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'growth': False, 'growthfrac': 0.5, 'xvals': np.array([]), 'inte': False, 'nquadr': None, 'nquadlat': None, 'etype': 'tot', 'legfrac': None, 'nomag': False, 'noke': False, 'prepend': False})
 
 # make figure kwargs
 lineplot_fig_dimensions['margin_top_inches'] = 3/4
@@ -32,31 +32,31 @@ kwargs_default.update(make_figure_kwargs_default)
 
 # plots two more columns with energies in CZ and RZ separately 
 # update these defaults from command-line
-kwargs = update_dict(kwargs_default, clas)
+kw = update_dict(kwargs_default, clas)
 kw_make_figure = update_dict(make_figure_kwargs_default, clas)
 
 fontsize = default_titlesize
-the_file = kwargs.the_file
-xminmax = kwargs.xminmax
-xmin = kwargs.xmin
-xmax = kwargs.xmax
-minmax = kwargs.minmax
-ymin = kwargs.min
-ymax = kwargs.max
-coords = kwargs.coords
-ntot = kwargs.ntot
-xiter = kwargs.xiter
-logscale = kwargs.log
-growth = kwargs.growth
-growthfrac = kwargs.growthfrac
-xvals = make_array(kwargs.xvals)
-plot_inte = kwargs.inte
-nquadlat = kwargs.nquadlat
-nquadr = kwargs.nquadr
-etype = kwargs.etype
-legfrac = kwargs.legfrac
-noke = kwargs.noke
-nomag = kwargs.nomag
+the_file = kw.the_file
+xminmax = kw.xminmax
+xmin = kw.xmin
+xmax = kw.xmax
+minmax = kw.minmax
+ymin = kw.min
+ymax = kw.max
+coords = kw.coords
+ntot = kw.ntot
+xiter = kw.xiter
+logscale = kw.log
+growth = kw.growth
+growthfrac = kw.growthfrac
+xvals = make_array(kw.xvals)
+plot_inte = kw.inte
+nquadlat = kw.nquadlat
+nquadr = kw.nquadr
+etype = kw.etype
+legfrac = kw.legfrac
+noke = kw.noke
+nomag = kw.nomag
 
 # deal with coords (if user wants minmax to only apply to certain subplots)
 if not coords is None:
@@ -317,6 +317,8 @@ if xiter and tag == '':
 plotdir = my_mkdir(clas0['plotdir']) 
 basename = dataname.replace('G_Avgs_trace', 'etrace' + '_' + etype)
 savename = basename + tag + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
+if kw.prepend:
+    savename = dirname_stripped + '_' + savename
 
 if clas0['saveplot']:
     print ('Saving the etrace plot at ' + plotdir + savename)
