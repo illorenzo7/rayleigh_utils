@@ -290,7 +290,7 @@ for it in range(nquadlat):
 # overall title 
 iter1, iter2 = get_iters_from_file(the_file)
 time_string = get_time_string(dirname, iter1, iter2) 
-the_title = dirname_stripped + '\n' +  'energy trace' + '\n' + time_string
+the_title = dirname_stripped + '\n' +  'energy trace (' + etype + ')' + '\n' + time_string
 margin_x = fpar['margin_left'] + fpar['sub_margin_left']
 margin_y = default_margin/fpar['height_inches']
 fig.text(margin_x, 1 - margin_y, the_title,\
