@@ -269,7 +269,7 @@ def get_numbers_output(dirname, r1='rmin', r2='rmax', the_file=None, the_file_az
     rr = eq.rr
 
     # get field amplitudes
-    di_amp_vsr = field_amp(dirname, verbose=verbose) # this one contains full radial profiles
+    di_amp_vsr = field_amp(dirname, the_file=the_file, verbose=verbose) # this one contains full radial profiles
     di_amp = dotdict(di_amp_vsr) # profiles averaged between (r1, r2)
     # average each radial profile between (r1, r2):
     for key, profile in di_amp.items():
