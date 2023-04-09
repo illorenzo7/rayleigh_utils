@@ -29,6 +29,12 @@ kwargs_default.update(plot_azav_grid_kwargs_default)
 # overwrite defaults
 kw = update_dict(kwargs_default, clas)
 kw_plot_azav_grid = update_dict(plot_azav_grid_kwargs_default, clas)
+# deal with possibly different aspect ratios
+if kw.halfplane:
+    kw_plot_azav_grid.sub_aspect = 1
+if kw.modrms:
+    kw_plot_azav_grid.sub_aspect += 1
+    kw_plot_azav_grid.sub_margin_right_inches += 1/2
 
 # deal with desired quantities
 if kw.qvals is None: # it's a quantity group

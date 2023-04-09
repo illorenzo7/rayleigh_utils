@@ -12,6 +12,7 @@ sys.path.append(os.environ['rapl'])
 sys.path.append(os.environ['raco'])
 from common import *
 from plotcommon import *
+from grid_util import compute_theta_grid
 
 # default azav fig dimensions
 azav_fig_dimensions = dict({'sub_aspect': 2, 'sub_width_inches': 2, 'sub_margin_left_inches': 5/8, 'sub_margin_top_inches': 1/4, 'sub_margin_bottom_inches': 1, 'margin_top_inches': 1})
@@ -21,7 +22,8 @@ plot_azav_kwargs_default = dict(
         {'rcut': None, 'minmax2': None, 'cmap2': None, 'rvals': None, 'plotlatlines': True, 'latvals': np.arange(-60., 90., 30.), 'plotboundary': True,
         'linestyles1': np.array(['-']), 'linewidths1': np.array([default_lw]), 'linecolors1': np.array(['k']),
        'linestyles2': np.array(['-']), 'linewidths2': np.array([default_lw]), 'linecolors2': np.array(['k']),
-       'halfplane': False, 'fontsize': default_labelsize, 'plotaxis': True
+       'halfplane': False, 'fontsize': default_labelsize, 'plotaxis': True,\
+        'modrms': False
        })
 
 # add in my_contourf stuff
@@ -52,6 +54,12 @@ def plot_azav(field, rr, cost, fig, ax,  **kwargs):
     cost_2d = cost.reshape((nt, 1)) + zeros
     sint_2d = np.sqrt(1.0 - cost_2d**2.0)
     tt_lat = 180.0/np.pi*(np.pi/2.0 - np.arccos(cost))
+
+    # possibly remove the rms field
+    if kw.modrms:
+        tt, tw = compute_theta_grid(nt)
+        field_rms = np.sqrt(np.sum(field**2*tw.reshape((nt, 1)), axis=0))
+        field /= field_rms.reshape((1, nr))
 
     # use these to plot lines/boundaries
     xx_full = rr_2d*sint_2d/rmax
@@ -152,6 +160,23 @@ def plot_azav(field, rr, cost, fig, ax,  **kwargs):
             ax.set_ylim(-lilbit, 1.0 + lilbit)
         else:
             ax.set_ylim(-1.0 -lilbit, 1.0 + lilbit)
+
+        if kw.modrms:
+            rmin = np.min(rr)
+            shell_depth = rmax - rmin
+            height = (rr - rmin)/shell_depth
+            ymin, ymax = ax.get_ylim()
+            ymin -= 1.0
+            ax.set_ylim(ymin, ymax)
+
+            ax2 = ax.twinx()
+            ax2.plot(height[1:-1], field_rms[1:-1])
+            ax2.set_yscale('log')
+            ymin = np.min(field_rms[1:-1])
+            ymax = np.max(field_rms[1:-1])
+            Dy = ymax/ymin
+            ax2.set_ylim(ymin, ymax*Dy**2)
+            ax.set_xlabel(r'$x/r_{\rm{out}}$' + ' (or height)', fontsize=kw.fontsize)
 
 def streamfunction(vr,vt,r,cost,order=0):
     """------------------------------------------------------------

@@ -249,11 +249,11 @@ def frac_nonzero(arr):
     num_total = np.size(arr)
     return (num_nonzero/num_total)
 
-def rms(array):
+def rms(array, axis=None):
     if np.size(array) == 0:
         return 0
     else:
-        return np.sqrt(np.mean(array**2))
+        return np.sqrt(np.mean(array**2, axis=axis))
 
 def minabs(array):
     return np.min(np.abs(array))
