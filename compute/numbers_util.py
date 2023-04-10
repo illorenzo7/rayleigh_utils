@@ -238,8 +238,8 @@ numbers_output_def = dotdict({
 
     "deltas":   ("PE/PE_est", "(Delta S)/(Delta S)_est"),    
     "raout": ("Ra_out", "g*(Delta S)*H^3/(c_p*nu*kappa)"),
-    "kepe":   ("KE/PE", "rho v^2/ (rho*g_eff*H)"),    
-    "kepeest":   ("KE/PE_est", "rho v^2/ (rho*g_est*H)"),    
+    "kepe":   ("KE/PE", "rho*v^2/(rho*g_eff*H)"),    
+    "kepeest":   ("KE/PE_est", "rho*v^2/(rho*g_est*H)"),    
 
     "kemean": ("KE_mean", "rho<v>^2/(rho v^2)"),
     "kefluc": ("KE_fluc", "rho v'^2/(rho v^2)"),
@@ -280,19 +280,22 @@ def get_numbers_output(dirname, r1='rmin', r2='rmax', the_file=None, the_file_az
     rotation = get_parameter(dirname, 'rotation')
     magnetism = get_parameter(dirname, 'magnetism')
 
+    # need input numbers for some things
+    di_input = get_numbers_input(dirname, r1, r2)
+
     # get reference state
     eq = get_eq(dirname, verbose=verbose)
     rr = eq.rr
 
-    # get shell averaged data
+    # get shell averaged data for some things
     datadir = dirname + '/data/'
     if the_file is None:
         the_file = get_widest_range_file(datadir, 'Shell_Avgs')
     if verbose:
         print ("get_numbers_output(): reading " + the_file)
-    di = get_dict(the_file)
-    vals = di_az['vals']
-    lut = di_az['lut']
+    di_shav = get_dict(the_file)
+    vals = di_shav['vals']
+    lut = di_shav['lut']
 
     # get field amplitudes
     di_amp_vsr = field_amp(dirname, the_file=the_file, verbose=verbose) # this one contains full radial profiles
@@ -342,36 +345,32 @@ def get_numbers_output(dirname, r1='rmin', r2='rmax', the_file=None, the_file_az
 
     # get estimated (and real) potential energy
     tmp_vsr = vals[:, 0, lut[501]]
-    dtmp = tmp_vsr[-1] - tmp_vsr[0]
+    dtmp = tmp_vsr[-1] - tmp_vsr[0] # achieved temperature difference across shell
 
-    # achieved temperature difference across shell
+    # achieved potential energy across shell
+    grav_volav = volav_in_radius(dirname, eq.grav, r1, r2)
     geff = grav_volav*dtmp
     if eq.reference_type in [2, 4]:
         geff /= eq.c_p
-
-    # achieved potential energy across shell
+    rho_volav = volav_in_radius(dirname, eq.rho, r1, r2)
     pe = rho_volav*geff*shell_depth
 
     # estimated potential energy across shell
-    dtmp_est = flux_volav*shell_depth/(rho_volav*tmp_volav*nu_volav*kappa_volav)
-    geff_est = grav_volav*dtmp_est
-    if eq.reference_type in [2, 4]:
-        geff_est /= eq.c_p
+    kappa_volav = volav_in_radius(dirname, eq.kappa, r1, r2)
+    geff_est = di_input.raf*nu_volav*kappa_volav/shell_depth**3
     pe_est = rho_volav*geff_est*shell_depth
 
     # non-D numbers associated with Delta S
-    di.deltas = dtmp/dtmp_est
+    di.deltas = pe/pe_est
     di.raout = grav_volav*dtmp*shell_depth**3/(nu_volav*kappa_volav)
     if eq.reference_type in [2, 4]:
         di.raout /= eq.c_p
-    di.kepe = ke/pe
-    di.kepeest = ke/pe_est
 
     # get ratios of KE in mean vs. fluc flows
     ke = eq.rho*di_amp_vsr.v**2/2
     kemean = eq.rho*di_amp_vsr.vmean**2/2
     kefluc = eq.rho*di_amp_vsr.vfluc**2/2
-    
+
     ke_volav = volav_in_radius(dirname, ke, r1, r2)
     kemean_volav = volav_in_radius(dirname, kemean, r1, r2)
     kefluc_volav = volav_in_radius(dirname, kefluc, r1, r2)
@@ -379,11 +378,14 @@ def get_numbers_output(dirname, r1='rmin', r2='rmax', the_file=None, the_file_az
     di.kemean = kemean_volav/ke_volav
     di.kefluc = kefluc_volav/ke_volav
 
+    # also need KE ratios to PE
+    di.kepe = ke_volav/pe
+    di.kepeest = ke_volav/pe_est
+
     # rotational numbers
     if rotation:
         om0 = eq.om0
 
-        di_input = get_numbers_input(dirname, r1, r2)
         di.raoutmod = di.raout*di_input.ek**2/di_input.pr
         
         # get the system Rossby numbers
@@ -433,7 +435,7 @@ def get_numbers_output(dirname, r1='rmin', r2='rmax', the_file=None, the_file_az
         pgas_volav = volav_in_radius(dirname, eq.prs, r1, r2)
         pmag = di_amp_vsr.b**2/(8*np.pi)
         pmag_volav = volav_in_radius(dirname, pmag, r1, r2)
-        di.beta = pgas_volav/pmag_volav
+        #di.beta = pgas_volav/pmag_volav
 
         # ratio of mag. energy to kin. energy
         di.me = pmag_volav/ke_volav
