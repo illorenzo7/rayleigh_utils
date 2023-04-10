@@ -678,16 +678,8 @@ def get_iters_from_file(filename):
 ###################################
 
 def strip_dirname(dirname, wrap=False):
-    dirname_stripped = dirname.split('/')[-1]
-    if dirname_stripped == '':
-        dirname_stripped = dirname.split('/')[-2]
-    if dirname == '.':
-        dirname_stripped = os.getcwd().split('/')[-1]
-    if dirname == '..':
-        orig_dir = os.getcwd()
-        os.chdir('..')
-        dirname_stripped = os.getcwd().split('/')[-1]
-        os.chdir(orig_dir)
+    full_dirname = os.path.abspath(dirname)
+    dirname_stripped = full_dirname.split('/')[-1]
 
     ncut = 20
     if wrap and len(dirname_stripped) > ncut:
