@@ -211,7 +211,7 @@ numbers_output_ngroup = 4
 numbers_output_ngroup_rot = 3
 numbers_output_ngroup_mag = 4
 
-linebreaks_output = [3, 6, 9, 11, 14, 17, 18, 21, 24, 25]
+linebreaks_output = [3, 6, 9, 12, 14, 17, 20, 21, 24, 27]
 numbers_output_def = dotdict({
     "ma": ("Ma", "v/c"),
     "mamean": ("Ma_mean","<v>/c"),
@@ -225,8 +225,15 @@ numbers_output_def = dotdict({
     "revortmean": ("Re_vort,mean", "<v>^2/(<om>*nu)"),
     "revortfluc": ("Re_vort,fluc", "v'^2/(om'*nu)"),
 
-    "kemean": ("KE_mean", "<v>^2/v^2"),
-    "kefluc": ("KE_fluc", "v'^2/v^2"),
+    "deltas":   ("PE/PE_est", "(Delta S)/(Delta S)_est"),    
+    "raout": ("Ra_out", "g*(Delta S)*H^3/(c_p*nu*kappa)"),
+    "kepe":   ("KE/PE", "rho v^2/ (rho*g_eff*H)"),    
+    "kepeest":   ("KE/PE_est", "rho v^2/ (rho*g_est*H)"),    
+
+    "kemean": ("KE_mean", "rho<v>^2/(rho v^2)"),
+    "kefluc": ("KE_fluc", "rho v'^2/(rho v^2)"),
+
+    "raoutmod": ("Ra_(out,mod)", "Ra_out*Ek^2/Pr"),
 
     "ro": ("Ro", "v/(2*H*Om_0)"),
     "romean": ("Ro_mean", "<v>/(2*H*Om_0)"),
@@ -246,8 +253,6 @@ numbers_output_def = dotdict({
     "remcurmean": ("Re_m,cur,mean", "<v>*(<B>/<J>)/eta"),
     "remcurfluc": ("Re_m,cur,fluc", "v'*(B'/J')/eta"),
 
-    "beta": ("plasma beta", "8*pi*P/B^2"),
-    
     "me": ("ME", "(B^2/(8*pi)) / (rho*v^2/2)") })
 
 
@@ -267,6 +272,16 @@ def get_numbers_output(dirname, r1='rmin', r2='rmax', the_file=None, the_file_az
     # get reference state
     eq = get_eq(dirname, verbose=verbose)
     rr = eq.rr
+
+    # get shell averaged data
+    datadir = dirname + '/data/'
+    if the_file is None:
+        the_file = get_widest_range_file(datadir, 'Shell_Avgs')
+    if verbose:
+        print ("get_numbers_output(): reading " + the_file)
+    di = get_dict(the_file)
+    vals = di_az['vals']
+    lut = di_az['lut']
 
     # get field amplitudes
     di_amp_vsr = field_amp(dirname, the_file=the_file, verbose=verbose) # this one contains full radial profiles
@@ -314,6 +329,33 @@ def get_numbers_output(dirname, r1='rmin', r2='rmax', the_file=None, the_file_az
     di.revortmean = di_amp.vmean**2/di_amp.ommean/nu_volav
     di.revortfluc = di_amp.vfluc**2/di_amp.omfluc/nu_volav
 
+    # get estimated (and real) potential energy
+    tmp_vsr = vals[:, 0, lut[501]]
+    dtmp = tmp_vsr[-1] - tmp_vsr[0]
+
+    # achieved temperature difference across shell
+    geff = grav_volav*dtmp
+    if eq.reference_type in [2, 4]:
+        geff /= eq.c_p
+
+    # achieved potential energy across shell
+    pe = rho_volav*geff*shell_depth
+
+    # estimated potential energy across shell
+    dtmp_est = flux_volav*shell_depth/(rho_volav*tmp_volav*nu_volav*kappa_volav)
+    geff_est = grav_volav*dtmp_est
+    if eq.reference_type in [2, 4]:
+        geff_est /= eq.c_p
+    pe_est = rho_volav*geff_est*shell_depth
+
+    # non-D numbers associated with Delta S
+    di.deltas = dtmp/dtmp_est
+    di.raout = grav_volav*dtmp*shell_depth**3/(nu_volav*kappa_volav)
+    if eq.reference_type in [2, 4]:
+        di.raout /= eq.c_p
+    di.kepe = ke/pe
+    di.kepeest = ke/pe_est
+
     # get ratios of KE in mean vs. fluc flows
     ke = eq.rho*di_amp_vsr.v**2/2
     kemean = eq.rho*di_amp_vsr.vmean**2/2
@@ -329,6 +371,11 @@ def get_numbers_output(dirname, r1='rmin', r2='rmax', the_file=None, the_file_az
     # rotational numbers
     if rotation:
         om0 = eq.om0
+
+        di_input = get_numbers_input(dirname, r1, r2)
+        di.raoutmod = di.raout*di_input.ek**2/di_input.pr
+        rote_volav = (2.0/3.0)*om0**2*volav_in_radius(dirname, eq.rho*eq.rr**2, r1, r2)
+        di.rote = rote
         
         # get the system Rossby numbers
         di.ro = di_amp.v/(2.0*om0*shell_depth)
@@ -341,7 +388,6 @@ def get_numbers_output(dirname, r1='rmin', r2='rmax', the_file=None, the_file_az
         di.rovortfluc = di_amp.omfluc/(2.0*om0)
 
         # rotation contrast
-        datadir = dirname + '/data/'
         if the_file_az is None:
             the_file_az = get_widest_range_file(datadir, 'AZ_Avgs')
         if verbose:
