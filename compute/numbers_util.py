@@ -3,7 +3,7 @@ import sys, os
 sys.path.append(os.environ['raco'])
 from common import *
 
-linebreaks_input = [3, 8, 12]
+linebreaks_input = [3, 8, 15]
 numbers_input_def = dotdict({
     "aspect": ("A", "r_1/r_2"),
     "nrho": ("N_rho", "ln(rho_1/rho_2)"),
@@ -19,6 +19,7 @@ numbers_input_def = dotdict({
     #"ta": ("Ta", "1/Ek^2"),
     "rafmod": ("Ra_mod", "Ra_F*Ek^2/Pr"),
     "brot": ("B_rot", "N^2/(Om_0)^2"),
+    "rote": ("RE/PE_est", "(2/3)*rho*Om_0^2*r^2/(rho*g_est*H)"),
 
     "prm": ("Pr_m", "nu/eta"),
     "ekm": ("Ek_m", "Ek/Pr_m")
@@ -92,6 +93,13 @@ def get_numbers_input(dirname, r1='rmin', r2='rmax', verbose=False):
         shell_depth = r2 - r1
         di.raf = grav_volav*flux_volav*shell_depth**4/(eq.c_p*rho_volav*tmp_volav*nu_volav*kappa_volav**2)
 
+        # estimated potential energy across shell
+        dtmp_est = flux_volav*shell_depth/(rho_volav*tmp_volav*kappa_volav)
+        geff_est = grav_volav*dtmp_est
+        if eq.reference_type in [2, 4]:
+            geff_est /= eq.c_p
+        pe_est = rho_volav*geff_est*shell_depth
+
         # dissipation number
         di.di = grav_volav*shell_depth/(eq.c_p*tmp_volav)
 
@@ -117,6 +125,9 @@ def get_numbers_input(dirname, r1='rmin', r2='rmax', verbose=False):
 
             # buoyancy number (rotational)
             di.brot = di.bvisc*di.ek**2
+
+            rote_volav = (2.0/3.0)*eq.om0**2*volav_in_radius(dirname, eq.rho*eq.rr**2, r1, r2)
+            di.rote = rote_volav/pe_est
 
         if magnetism:
             # magnetic Prandtl
@@ -211,7 +222,7 @@ numbers_output_ngroup = 4
 numbers_output_ngroup_rot = 3
 numbers_output_ngroup_mag = 4
 
-linebreaks_output = [3, 6, 9, 12, 14, 17, 20, 21, 24, 27]
+linebreaks_output = [3, 6, 9, 13, 15, 16, 19, 22, 23, 26, 29]
 numbers_output_def = dotdict({
     "ma": ("Ma", "v/c"),
     "mamean": ("Ma_mean","<v>/c"),
@@ -374,8 +385,6 @@ def get_numbers_output(dirname, r1='rmin', r2='rmax', the_file=None, the_file_az
 
         di_input = get_numbers_input(dirname, r1, r2)
         di.raoutmod = di.raout*di_input.ek**2/di_input.pr
-        rote_volav = (2.0/3.0)*om0**2*volav_in_radius(dirname, eq.rho*eq.rr**2, r1, r2)
-        di.rote = rote
         
         # get the system Rossby numbers
         di.ro = di_amp.v/(2.0*om0*shell_depth)
