@@ -210,11 +210,14 @@ for ilat in range(nquadlat):
         # collect all the total energies together for min/max vals
 
         # see if we should plot the growth phase
-        if growth:
-            itcut = 0
+        if logscale: # only need to worry about this for log-scale
+            if growth:
+                itcut = 0
+            else:
+                tcut = tmin + growthfrac*(tmax - tmin)
+                itcut = np.argmin(np.abs(times - tcut))
         else:
-            tcut = tmin + growthfrac*(tmax - tmin)
-            itcut = np.argmin(np.abs(times - tcut))
+            itcut = 0
 
         if not noke:
             all_e += [rke[itcut:], tke[itcut:], pke[itcut:], ke[itcut:]]
