@@ -3,6 +3,7 @@ import sys, os
 sys.path.append(os.environ['raco'])
 from common import *
 
+# header info for input numbers
 linebreaks_input = [3, 8, 15]
 numbers_input_def = dotdict({
     "aspect": ("A", "r_1/r_2"),
@@ -214,14 +215,7 @@ def get_numbers_input(dirname, r1='rmin', r2='rmax', verbose=False):
 
     return di
 
-# numbers groups
-numbers_output_groups = ["Mach numbers", "Reynolds numbers", "vort. Reynolds num.", "KE fractions",\
-        "Rossby numbers", "vort. Rossby num.", "DR fraction",\
-        "mag. Reynolds num.", "mag. current Reyn.", "plasma beta", "ME fraction"]
-numbers_output_ngroup = 4
-numbers_output_ngroup_rot = 3
-numbers_output_ngroup_mag = 4
-
+# header info for output numbers
 linebreaks_output = [3, 6, 9, 13, 15, 16, 19, 22, 23, 26, 29]
 numbers_output_def = dotdict({
     "ma": ("Ma", "v/c"),
