@@ -126,6 +126,20 @@ def read_clas(args):
             else:
                 string_after = read_string_after_arg(args, i)
                 clas['rvals'] = interpret_rvals(clas0.dirname, string_after)
+        elif arg == '--rzones':
+            zone_heights = np.array([0.05] +\
+                    np.linspace(0.125, 0.875, 7).tolist() + [0.95])
+            string_after = read_string_after_arg(args, i)
+            zone_bounds = np.sort(interpret_rvals(clas0.dirname, string_after))
+            rvals = []
+            ndom = len(zone_bounds) - 1
+            for idom in range(ndom):
+                rbot, rtop = zone_bounds[idom:idom+2]
+                rvals += (rbot + (rtop - rbot)*zone_heights).tolist()
+                if idom < ndom - 1:
+                    rvals += [rtop]
+            clas['rvals'] = np.array(rvals)
+            clas['rzones'] = True # might need to no if this was specified
         elif arg == '--rrange': # specify range of rvals
             vals_after = read_string_after_arg(args, i)
             nrvals = int(vals_after[2])

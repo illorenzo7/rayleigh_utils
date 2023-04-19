@@ -84,9 +84,14 @@ if rank == 0:
     if kw.samplevals is None:
         if kw.rad:
             samplevals = np.linspace(-90., 90., 13)
-        else:
-            rmin, rmax = get_rminmax(dirname)
-            samplevals = np.linspace(rmin, rmax, 13)
+        else: # do things the old way (9 levels away from boundary)
+            zone_heights = np.array([0.05] +\
+                    np.linspace(0.125, 0.875, 7).tolist() + [0.95])
+            rbot, rtop = get_rminmax(dirname)
+            samplevals = rbot + (rtop - rbot)*zone_heights
+        sampletag = ''
+    elif clas.rzones: # treat this as a (tag-free) default for now
+        samplevals = clas['rvals']
         sampletag = ''
     else:
         samplevals = kw.samplevals
