@@ -87,7 +87,7 @@ if rank == 0:
 
     if kw.samplevals is None:
         if kw.rad:
-            samplevals = np.linspace(-90., 90., 13)
+            samplevals = np.array([-85.] + np.linspace(-75., 75., 11).tolist() + [85.])
         else:
             samplevals = rr
         sampletag = ''

@@ -83,7 +83,7 @@ if rank == 0:
 
     if kw.samplevals is None:
         if kw.rad:
-            samplevals = np.linspace(-90., 90., 13)
+            samplevals = np.array([-85.] + np.linspace(-75., 75., 11).tolist() + [85.])
         else: # do things the old way (9 levels away from boundary)
             zone_heights = np.array([0.05] +\
                     np.linspace(0.125, 0.875, 7).tolist() + [0.95])
