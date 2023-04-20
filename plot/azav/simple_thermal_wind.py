@@ -28,28 +28,26 @@ dirname_stripped = strip_dirname(dirname, wrap=True)
 kwargs_default = dict({'the_file': None})
 
 # also need make figure kwargs
-make_figure_kwargs_default.update(azav_fig_dimensions)
-kwargs_default.update(make_figure_kwargs_default)
-kwargs_default.update(plot_azav_kwargs_default)
+#azav_fig_dimensions['margin_top_inches'] += 1.5 
+# make room for subplot labels
+#plot_azav_grid_kwargs_default.update(azav_fig_dimensions)
+kwargs_default.update(plot_azav_grid_kwargs_default)
 
-# overwrite defaults
+# overwrite defaults, first main kwargs
 kw = update_dict(kwargs_default, clas)
-kw_plot_azav = update_dict(plot_azav_kwargs_default, clas)
-kw_make_figure = update_dict(make_figure_kwargs_default, clas)
+kw_plot_azav_grid = update_dict(plot_azav_grid_kwargs_default, clas)
 
 # check for bad keys
 find_bad_keys(kwargs_default, clas, clas0['routinename'], justwarn=True)
-if not kw.rbcz is None:  # need room for two colorbars
-    kw_make_figure.margin_bottom_inches *= 2
 
 # get data
 if kw.the_file is None:
     kw.the_file = get_widest_range_file(clas0['datadir'], 'AZ_Avgs')
+
 print ('Getting data from ' + kw.the_file)
 di = get_dict(kw.the_file)
 vals = di['vals']
 lut = di['lut']
-vp_av = vals[:, :, lut[3]]
 
 # Get necessary grid info
 di_grid = get_grid_info(dirname)
@@ -60,41 +58,40 @@ cost = di_grid['cost']
 cost_2d = di_grid['cost_2d']
 sint_2d = di_grid['sint_2d']
 tt = di_grid['tt']
+xx = di_grid['xx']
 
 # Coriolis term:
 Om0 = get_parameter(dirname, 'angular_velocity')
 vp = vals[:, :, lut[3]]
-# Compute the finite difference axial derivative of vp:
-dvpdr = drad(vp, rr)
-dvpdt = dth(vp, tt)
-dvpdz = cost_2d*dvpdr - sint_2d*dvpdt/rr_2d
-T1 = 2*Om0*dvpdz
+Om = Om0 + vp/xx
+
+# Compute the finite difference axial derivative of Om^2
+dom2dr = drad(Om**2, rr)
+dom2dt = dth(Om**2, tt)
+dom2dz = cost_2d*dom2dr - sint_2d*dom2dt/rr_2d
+T1 = xx*dom2dz
 
 # Baroclinic term:
 eq = get_eq(dirname)
-g = eq.gravity
-ref_rho = eq.density
-ref_temp = eq.temperature
-kappa = eq.kappa
 cond_flux_theta = vals[:, :, lut[1471]]
-dsdrt = -cond_flux_theta/(ref_rho*ref_temp*kappa).reshape((1, nr))
-T2 = -g.reshape((1, nr))*dsdrt/c_P
+dsdrt = -cond_flux_theta/(eq.rho*eq.tmp*eq.kappa).reshape((1, nr))
+T2 = -eq.grav.reshape((1, nr))*dsdrt/eq.c_p
 
 # make the main title
 iter1, iter2 = get_iters_from_file(kw.the_file)
 time_string = get_time_string(dirname, iter1, iter2)
-maintitle = dirname_stripped + '\n' +\
-        'Basic thermal wind balance' + '\n' +\
+kw_plot_azav_grid.maintitle = dirname_stripped + '\n' +\
+        'basic thermal wind balance' + '\n' +\
         time_string
 
 # terms to plot and sub-titles
 terms = [T1, T2, T1 + T2]
-titles = [r'$T_1\equiv2\Omega_0\partial\langle v_\phi\rangle/\partial z$',\
+kw_plot_azav_grid.titles = [r'$T_1\equiv2\Omega_0\partial\langle v_\phi\rangle/\partial z$',\
         r'$T_2\equiv -(g/rc_p)\partial\langle S\rangle/\partial \theta$',\
         r'$T_1+T_2$']
 
 # make figure using usual routine
-fig = plot_azav_grid (terms, rr, cost, maintitle=maintitle, titles=titles, **kw_plot_azav)
+fig = plot_azav_grid (terms, rr, cost, **kw_plot_azav_grid)
 
 # save the figure
 plotdir = my_mkdir(clas0['plotdir'] + 'azav/')
