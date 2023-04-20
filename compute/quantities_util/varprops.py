@@ -72,6 +72,8 @@ var_indices = {\
     'jt'    :       1004,
     'jp'    :       1007}
 
+var_cyl = ['vl', 'vz', 'oml', 'omz', 'bl', 'bz', 'jl', 'jz']
+
 rootlabels = {'v': r'$v$', 'b': r'$B$', 'om': r'$\omega$', 'j': r'$\mathcal{J}$'}
 direclabels = {'r': r'$r$', 't': r'$\theta$', 'p': r'$\phi$', 'l': r'$\lambda$', 'z': r'$z$', 'T': r'$\Theta$', 'P': r'$\Phi$'}
 
@@ -96,7 +98,7 @@ def is_basic(varname_full):
             varname = varname[:-5]
         elif varname[-3:] == 'sph':
             varname = varname[:-3]
-        if not varname in var_indices and not is_an_int(varname):
+        if not varname in var_indices and not is_an_int(varname) and not varname in var_cyl:
             kosher = False
     if kosher:
         return basic
