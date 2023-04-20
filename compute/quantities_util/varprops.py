@@ -215,31 +215,25 @@ def get_quantity_group(groupname, magnetism):
         ncol = 3
 
     if groupname == 'forcer': # linear forces, radial
-        qvals = [lookup('rhov_r'), 1201, 1219, 1237, 1216, 1228]
+        qvals = [1201, 1219, 1237, 1216, 1228]
         if magnetism:
             qvals += [1248]
-        ncol = 3
         totsig = np.ones(len(qvals))
-        totsig[0] = 0
-        totsig[1] = -1
+        totsig[0] = -1
 
     if groupname == 'forcet': # linear forces, theta
-        qvals = [lookup('rhov_theta'), 1202, 1220, 1238, 1229]
+        qvals = [1202, 1220, 1238, 1229]
         if magnetism:
             qvals += [1249]
-        ncol = 3
         totsig = np.ones(len(qvals))
-        totsig[0] = 0
-        totsig[1] = -1
+        totsig[0] = -1
 
     if groupname == 'forcep': # linear forces, phi
-        qvals = [lookup('rhov_phi'), 1203, 1221, 1239, 1230]
+        qvals = [1203, 1221, 1239, 1230]
         if magnetism:
             qvals += [1250]
-        ncol = 3
         totsig = np.ones(len(qvals))
-        totsig[0] = 0
-        totsig[1] = -1
+        totsig[0] = -1
 
     if groupname == 'efr': # energy fluxes, r
         qvals = [1455, 1458, 1470, 1935, 1923]
