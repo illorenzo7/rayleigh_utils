@@ -311,7 +311,7 @@ def dph(arr): # assumes phi falls along first axis
     return np.gradient(arr, dphi, axis=0)
 
 def curlphi(arr_r, arr_t, rr, tt):
-    nt, nr np.shape(arr_r)
+    nt, nr = np.shape(arr_r)
     rr_2d = rr.reshape((1, nr))
     return ( drad(rr_2d*arr_t, rr) - dth(arr_r, tt) )/rr_2d
 
