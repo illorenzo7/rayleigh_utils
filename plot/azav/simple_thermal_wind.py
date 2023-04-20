@@ -37,6 +37,9 @@ kwargs_default.update(plot_azav_grid_kwargs_default)
 kw = update_dict(kwargs_default, clas)
 kw_plot_azav_grid = update_dict(plot_azav_grid_kwargs_default, clas)
 
+# need a bit extra room for subplot labels
+kw_plot_azav_grid.sub_margin_top_inches += 1/4
+
 # check for bad keys
 find_bad_keys(kwargs_default, clas, clas0['routinename'], justwarn=True)
 
