@@ -71,25 +71,24 @@ Om = Om0 + vp/xx
 # Compute the finite difference curls of the r/theta forces
 force_r_adv = -vals[:, :, lut[1201]]
 force_r_adv_rs = -vals[:, :, lut[1210]]
-force_r_cor = -vals[:, :, lut[1219]]
+force_r_cor = vals[:, :, lut[1219]]
 force_r_adv_mm = force_r_adv - force_r_adv_rs + force_r_cor
 force_r_buoy = vals[:, :, lut[1216]]
 force_r_visc = vals[:, :, lut[1228]]
 if clas0['magnetism']:
-    force_r_mag_mm = vals[:, :, lut[1248]]
+    force_r_mag = vals[:, :, lut[1248]]
     force_r_mag_ms = vals[:, :, lut[1260]]
+    force_r_mag_mm = force_r_mag - force_r_mag_ms
 
 force_t_adv = -vals[:, :, lut[1202]]
 force_t_adv_rs = -vals[:, :, lut[1211]]
-force_t_cor = -vals[:, :, lut[1220]]
+force_t_cor = vals[:, :, lut[1220]]
 force_t_adv_mm = force_t_adv - force_t_adv_rs + force_t_cor
 force_t_visc = vals[:, :, lut[1229]]
-
 if clas0['magnetism']:
-    force_r_mag_mm = vals[:, :, lut[1249]]
-    force_r_mag_ms = vals[:, :, lut[1261]]
-    force_t_mag_mm = vals[:, :, lut[1250]]
-    force_t_mag_ms = vals[:, :, lut[1262]]
+    force_t_mag = vals[:, :, lut[1249]]
+    force_t_mag_ms = vals[:, :, lut[1261]]
+    force_t_mag_mm = force_t_mag - force_t_mag_ms
 
 # take the curl (divide by rho first)
 eq = get_eq(dirname)
@@ -98,7 +97,7 @@ rho_2d = eq.rho.reshape((1, nr))
 svort_adv_rs = curlphi(force_r_adv_rs/rho_2d, force_t_adv_rs/rho_2d, rr, tt)
 svort_adv_mm = curlphi(force_r_adv_mm/rho_2d, force_t_adv_mm/rho_2d, rr, tt)
 svort_visc = curlphi(force_r_visc/rho_2d, force_t_visc/rho_2d, rr, tt)
-svort_buoy = curlphi(force_r_buoy, np.zeros_like(force_r_buoy), rr, tt)
+svort_buoy = curlphi(force_r_buoy/rho_2d, np.zeros_like(force_r_buoy), rr, tt)
 if clas0['magnetism']:
     svort_mag_mm = curlphi(force_r_mag_mm/rho_2d, force_t_mag_mm/rho_2d, rr, tt)
     svort_mag_ms = curlphi(force_r_mag_ms/rho_2d, force_t_mag_ms/rho_2d, rr, tt)
