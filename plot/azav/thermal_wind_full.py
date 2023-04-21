@@ -84,9 +84,12 @@ force_t_adv_rs = -vals[:, :, lut[1211]]
 force_t_cor = -vals[:, :, lut[1220]]
 force_t_adv_mm = force_t_adv - force_t_adv_rs + force_t_cor
 force_t_visc = vals[:, :, lut[1229]]
+
 if clas0['magnetism']:
     force_r_mag_mm = vals[:, :, lut[1249]]
     force_r_mag_ms = vals[:, :, lut[1261]]
+    force_t_mag_mm = vals[:, :, lut[1250]]
+    force_t_mag_ms = vals[:, :, lut[1262]]
 
 # take the curl (divide by rho first)
 eq = get_eq(dirname)
@@ -95,7 +98,7 @@ rho_2d = eq.rho.reshape((1, nr))
 svort_adv_rs = curlphi(force_r_adv_rs/rho_2d, force_t_adv_rs/rho_2d, rr, tt)
 svort_adv_mm = curlphi(force_r_adv_mm/rho_2d, force_t_adv_mm/rho_2d, rr, tt)
 svort_visc = curlphi(force_r_visc/rho_2d, force_t_visc/rho_2d, rr, tt)
-svort_buoy = curlphi(force_r_visc/rho_2d, force_t_visc/rho_2d, rr, tt)
+svort_buoy = curlphi(force_r_buoy, np.zeros_like(force_r_buoy), rr, tt)
 if clas0['magnetism']:
     svort_mag_mm = curlphi(force_r_mag_mm/rho_2d, force_t_mag_mm/rho_2d, rr, tt)
     svort_mag_ms = curlphi(force_r_mag_ms/rho_2d, force_t_mag_ms/rho_2d, rr, tt)
@@ -109,13 +112,13 @@ kw_plot_azav_grid.maintitle = dirname_stripped + '\n' +\
 
 # terms to plot and sub-titles
 terms = [svort_buoy, svort_adv_mm, svort_adv_rs, svort_visc]
-kw_plot_azav_grid.titles = ['svort_buoy', 'svort_adv_mm', 'svort_adv_rs', 'svort_visc']
+titles = ['svort_buoy', 'svort_adv_mm', 'svort_adv_rs', 'svort_visc']
 if clas0['magnetism']:
     terms.append(svort_mag_mm)
     terms.append(svort_mag_ms)
-    kw_plot_azav_grid.titles.append('svort_mag_mm')
-    kw_plot_azav_grid.titles.append('svort_mag_ms')
-
+    titles.append('svort_mag_mm')
+    titles.append('svort_mag_ms')
+kw_plot_azav_grid.titles = np.array(titles)
 kw_plot_azav_grid.totsig = np.ones(len(terms))
 
 # make figure using usual routine
