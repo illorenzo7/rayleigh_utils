@@ -12,7 +12,7 @@ from azav_util import *
 from common import *
 from plotcommon import *
 from cla_util import *
-from numbers_util import get_numbers_output
+from numbers_util import get_dr_contrast
 
 # Get CLAs
 args = sys.argv
@@ -28,7 +28,7 @@ nshells = len(rvals) - 1
 
 # allowed args + defaults
 # key unique to this script
-kwargs_default = dict({'the_file': None})
+kwargs_default = dict({'the_file': None, 'verbose': False})
 
 # also need make figure kwargs
 azav_fig_dimensions['margin_top_inches'] += 0.5*nshells
@@ -93,10 +93,10 @@ for ishell in range(nshells):
     r2 = rvals[ishell+1]
 
     # then non-D numbers in shell
-    di = get_numbers_output(dirname, r1, r2)
+    diffrot = get_dr_contrast(dirname, r1, r2, the_file=kw.the_file, verbose=kw.verbose)
     maintitle += '\n' +\
         ( '(' + flt_fmt + ', ' + flt_fmt + '):') %(r1, r2) +\
-        '\n' + (r'$\Delta\Omega/\Omega_0\ =\ $' + flt_fmt) %di.diffrot
+        '\n' + (r'$\Delta\Omega/\Omega_0\ =\ $' + flt_fmt) %diffrot
         #('(r_1, r_2) = (' + flt_fmt + ', ' + flt_fmt + '):') %(r1, r2)# +\
 
 if not kw.rcut is None:

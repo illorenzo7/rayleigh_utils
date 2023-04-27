@@ -260,6 +260,30 @@ numbers_output_def = dotdict({
 
     "me": ("ME", "(B^2/(8*pi)) / (rho*v^2/2)") })
 
+def get_dr_contrast(dirname, r1='rmin', r2='rmax', the_file=None, verbose=False):
+    # rotation contrast
+    if the_file is None:
+        datadir = dirname + '/data/'
+        the_file = get_widest_range_file(datadir, 'AZ_Avgs')
+    if verbose:
+        print ("get_dr_contrast(): reading " + the_file)
+    di = get_dict(the_file)
+    vals = di['vals']
+    lut = di['lut']
+    vp_av = vals[:, :, lut[3]]
+
+    # get grid info
+    gi = get_grid_info(dirname)
+
+    # get background stuff
+    eq = get_eq(dirname)
+
+    # Get differential rotation in the rotating frame. 
+    rotrate = vp_av/gi.xx
+
+    # spherical rms. differential rotation
+    rotrate_rms = np.sqrt(np.sum(rotrate**2*gi.tw_2d, axis=0))
+    return volav_in_radius(dirname, rotrate_rms/eq.om0, r1, r2)
 
 def get_numbers_output(dirname, r1='rmin', r2='rmax', the_file=None, the_file_az=None, verbose=False):
     # get diagnostic numbers (e.g., Re and Ro), quantities vol. avg.'d 
@@ -392,25 +416,7 @@ def get_numbers_output(dirname, r1='rmin', r2='rmax', the_file=None, the_file_az
         di.rovortmean = di_amp.ommean/(2.0*om0)
         di.rovortfluc = di_amp.omfluc/(2.0*om0)
 
-        # rotation contrast
-        if the_file_az is None:
-            the_file_az = get_widest_range_file(datadir, 'AZ_Avgs')
-        if verbose:
-            print ("get_numbers_output(): reading " + the_file_az)
-        di_az = get_dict(the_file_az)
-        vals_az = di_az['vals']
-        lut_az = di_az['lut']
-        vp_av = vals_az[:, :, lut_az[3]]
-
-        # Get necessary grid info
-        gi = get_grid_info(dirname)
-
-        # Get differential rotation in the rotating frame. 
-        rotrate = vp_av/gi.xx
-
-        # spherical rms. differential rotation
-        rotrate_rms = np.sqrt(np.sum(rotrate**2*gi.tw_2d, axis=0))
-        di.diffrot = volav_in_radius(dirname, rotrate_rms/om0, r1, r2)
+        di.diffrot = get_dr_contrast(dirname, r1=r1, r2=r2, the_file=the_file_az, verbose=verbose)
 
     # magnetic numbers
     if magnetism:
