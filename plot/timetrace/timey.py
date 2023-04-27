@@ -100,7 +100,6 @@ if not kw.ntot == 'full':
 
 # can control samplevals with rvals for time-latitude traces
 if not kw.rad and not kw.rvals is None:
-    print ("got here")
     kw.samplevals = kw.rvals
 
 if not kw.samplevals is None: # isamplevals being set indirectly
@@ -122,6 +121,9 @@ for qval in kw.qvals:
 # determine titles
 if kw.titles is None:
     kw.titles = parse_quantities(kw.qvals)[1]
+    if kw.sub:
+        for iplot in range(len(kw.titles)):
+            kw.titles[iplot] += ' (sub. temp. mean)'
 
 # Loop over the desired levels and save plots
 for isampleval in kw.isamplevals:
@@ -154,7 +156,6 @@ for isampleval in kw.isamplevals:
             nx, ny = np.shape(field)
             tempmean = np.mean(field, axis=0).reshape((1, ny))
             field -= tempmean
-            kw.titles[iplot] += ' (sub. temp. mean)'
 
         plot_timey(field, times, yaxis, fig, ax, **kw_plot_timey)
                 
