@@ -23,7 +23,7 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = clas0['magnetism']
 
 # defaults
-kwargs_default = dict({'rad': False, 'groupname': 'b', 'sampletag': '', 'the_file': None, 'isamplevals': np.array([0]), 'samplevals': None, 'rvals': None, 'qvals': 'all', 'ntot': 500, 'prepend': False, 'sub': False})
+kwargs_default = dict({'rad': False, 'groupname': 'b', 'sampletag': '', 'the_file': None, 'isamplevals': np.array([0]), 'samplevals': None, 'rvals': None, 'qvals': 'all', 'ntot': 500, 'prepend': False, 'sub': False, 'xminmax': None, 'xmin': None, 'xmax': None})
 
 # also need make figure kwargs
 make_figure_kwargs_default.update(timey_fig_dimensions)
@@ -84,8 +84,26 @@ iters = di['iters']
 qvals_avail = np.array(di['qvals'])
 samplevals_avail = di['samplevals']
 
-# time range
+# time unit
 times /= time_unit
+
+# set xminmax if not set by user
+if kw.xminmax is None:
+    # set xmin possibly
+    if kw.xmin is None:
+        kw.xmin = np.min(times)
+    # set xmax possibly
+    if kw.xmax is None:
+        kw.xmax = np.max(times)
+    kw.xminmax = kw.xmin, kw.xmax
+
+ixmin = np.argmin(np.abs(times - kw.xminmax[0]))
+ixmax = np.argmin(np.abs(times - kw.xminmax[1]))
+
+# Now shorten all the "x" arrays
+times = times[ixmin:ixmax + 1]
+iters = iters[ixmin:ixmax + 1]
+vals = vals[ixmin:ixmax + 1]
 
 # maybe thin data
 if not kw.ntot == 'full':

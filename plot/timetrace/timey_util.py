@@ -14,7 +14,7 @@ from plotcommon import *
 timey_fig_dimensions = dict({'sub_width_inches': 7.5, 'sub_height_inches': 2.0, 'margin_top_inches': 1.25, 'sub_margin_left_inches': 5/8, 'sub_margin_right_inches': 7/8})
 
 # plot_timey needs my_contourf/my_pcolormesh args, then some
-plot_timey_kwargs_default = dict({'ycut': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'yminmax': None, 'ymin': None, 'ymax': None,'minmax2': None, 'timevals': np.array([]), 'yvals': np.array([]), 'navg': None, 'plotboundary': True, 'linestyles1': np.array(['-']), 'linewidths1': np.array([default_lw]), 'linecolors1': np.array(['k']),\
+plot_timey_kwargs_default = dict({'ycut': None, 'yminmax': None, 'ymin': None, 'ymax': None,'minmax2': None, 'timevals': np.array([]), 'yvals': np.array([]), 'navg': None, 'plotboundary': True, 'linestyles1': np.array(['-']), 'linewidths1': np.array([default_lw]), 'linecolors1': np.array(['k']),\
        'linestyles2': np.array(['-']), 'linewidths2': np.array([default_lw]), 'linecolors2': np.array(['k']),\
        'pcolormesh': False})
 
@@ -55,19 +55,6 @@ def plot_timey(field, times, yy, fig, ax, **kwargs):
         field_full = field_timeavg/kw.navg
         times = times[over2:ntimes - over2]
 
-    # set xminmax if not set by user
-    if kw.xminmax is None:
-        # set xmin possibly
-        if kw.xmin is None:
-            kw.xmin = np.min(times)
-        # set xmax possibly
-        if kw.xmax is None:
-            kw.xmax = np.max(times)
-        kw.xminmax = kw.xmin, kw.xmax
-
-    ixmin = np.argmin(np.abs(times - kw.xminmax[0]))
-    ixmax = np.argmin(np.abs(times - kw.xminmax[1]))
-
     # set yminmax if not set by user
     if kw.yminmax is None:
         # set ymin possibly
@@ -80,10 +67,6 @@ def plot_timey(field, times, yy, fig, ax, **kwargs):
 
     iymin = np.argmin(np.abs(yy - kw.yminmax[0]))
     iymax = np.argmin(np.abs(yy - kw.yminmax[1]))
-
-    # Now shorten all the "x" arrays
-    times = times[ixmin:ixmax + 1]
-    field_full = field_full[ixmin:ixmax + 1]
 
     # Make 2D grids from times/yy
     times_2d_full, yy_2d_full = np.meshgrid(times, yy, indexing='ij')
