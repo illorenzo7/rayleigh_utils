@@ -264,30 +264,46 @@ def get_quantity_group(groupname, magnetism):
         totsig = np.zeros(len(qvals))
         totsig[-2] = totsig[-1] = 1
 
-    if groupname == 'indrmean': # energy fluxes, r, mean
+    if groupname == 'indrmean': # induction, r, mean
         qvals = [1616, 1617, 1618, 1619, 1620]
         totsig = np.zeros(len(qvals))
         totsig[-2] = totsig[-1] = 1
 
-    if groupname == 'indt': # energy fluxes, theta
+    if groupname == 'indt': # induction, theta
         qvals = [802, 1606, 1607, 1608, 1609, 1610]
         totsig = np.zeros(len(qvals))
         totsig[-2] = totsig[-1] = 1
 
-    if groupname == 'indtmean': # energy fluxes, theta, mean
+    if groupname == 'indtmean': # induction, theta, mean
         qvals = [1621, 1622, 1623, 1624, 1625]
         totsig = np.zeros(len(qvals))
         totsig[-2] = totsig[-1] = 1
 
-    if groupname == 'indp': # energy fluxes, phi
+    if groupname == 'indp': # induction, phi
         qvals = [803, 1611, 1612, 1613, 1614, 1615]
         totsig = np.zeros(len(qvals))
         totsig[-2] = totsig[-1] = 1
-
+    
     if groupname == 'indpmean': # energy fluxes, phi, mean
         qvals = [1626, 1627, 1628, 1629, 1630]
         totsig = np.zeros(len(qvals))
         totsig[-2] = totsig[-1] = 1
+
+    if groupname == 'indr29': # induction, r 29
+        qvals = [801, 1601, 1602, 1603, 1604, 2911]
+        totsig = np.zeros(len(qvals))
+        totsig[-2] = totsig[-1] = 1
+
+    if groupname == 'indt29': # induction, theta
+        qvals = [802, 1606, 1607, 1608, 1609, 2912]
+        totsig = np.zeros(len(qvals))
+        totsig[-2] = totsig[-1] = 1
+
+    if groupname == 'indp29': # induction, phi
+        qvals = [803, 1611, 1612, 1613, 1614, 2913]
+        totsig = np.zeros(len(qvals))
+        totsig[-2] = totsig[-1] = 1
+ 
 
     if groupname == 'ke':
         qvals = [402, 403, 404, 410, 411, 412]
