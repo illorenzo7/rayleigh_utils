@@ -32,10 +32,13 @@ datadir = dirname + '/data/'
 delete_old_files = True # delete the partial files by default
 args = sys.argv[2:]
 nargs = len(args)
+tag = ''
 for i in range(nargs):
     arg = args[i]
     if arg == '--nodel':
         delete_old_files = False
+    if arg == '--tag':
+        tag = '_' + args[i+1]
     if arg[-4:] == '.pkl':
         files.append(arg)
 
@@ -86,7 +89,7 @@ di['vals'] = vals
 if dataname == 'Shell_Spectra':
     di['lpower'] = lpower
 
-savename = dataname + '-' +  str(iter1_glob).zfill(8) + '_' +\
+savename = dataname + tag + '-' +  str(iter1_glob).zfill(8) + '_' +\
         str(iter2_glob).zfill(8) + '.pkl'
 savefile = datadir + savename
 f = open(savefile, 'wb')
