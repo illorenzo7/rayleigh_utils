@@ -53,6 +53,7 @@ if not os.path.isdir(datadir):
 # determine files to transform
 kw.mvals = make_array(kw.mvals)
 kw.groupname = make_array(kw.groupname)
+kw.files = make_array(kw.files)
 
 if kw.files is None:
     kw.files = []
