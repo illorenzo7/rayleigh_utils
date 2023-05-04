@@ -144,39 +144,41 @@ def plot_azav(field, rr, cost, fig, ax,  **kwargs):
                 xline, yline = xx_full[ilatval, :], yy_full[ilatval, :]
             ax.plot(xline, yline, linewidth=linewidths[i], linestyle=linestyles[i], color=linecolors[i])
         
-        if kw.plotaxis: # plot x and z coordinate axes
-            ax.axis('on')
-            plt.sca(ax)
-            plt.minorticks_on()
-            plt.tick_params(top=True, right=True, direction='in', which='both')
-            plt.xlabel(r'$x/r_{\rm{out}}$', fontsize=kw.fontsize)
-            plt.ylabel(r'$z/r_{\rm{out}}$', fontsize=kw.fontsize)
+    if kw.plotaxis: # plot x and z coordinate axes
+        ax.axis('on')
+        plt.sca(ax)
+        plt.minorticks_on()
+        plt.tick_params(top=True, right=True, direction='in', which='both')
+        plt.xlabel(r'$x/r_{\rm{out}}$', fontsize=kw.fontsize)
+        plt.ylabel(r'$z/r_{\rm{out}}$', fontsize=kw.fontsize)
+    else:
+        ax.axis('off')
 
-        # reset the axis limits (contourf has already done its thing;
-        # but for this one we either want 1 x 1 (half-plane) or 1 x 2
-        lilbit = 0.01
-        ax.set_xlim(-lilbit, 1.0 + lilbit)
-        if kw.halfplane:
-            ax.set_ylim(-lilbit, 1.0 + lilbit)
-        else:
-            ax.set_ylim(-1.0 -lilbit, 1.0 + lilbit)
+    # reset the axis limits (contourf has already done its thing;
+    # but for this one we either want 1 x 1 (half-plane) or 1 x 2
+    lilbit = 0.01
+    ax.set_xlim(-lilbit, 1.0 + lilbit)
+    if kw.halfplane:
+        ax.set_ylim(-lilbit, 1.0 + lilbit)
+    else:
+        ax.set_ylim(-1.0 -lilbit, 1.0 + lilbit)
 
-        if kw.modrms:
-            rmin = np.min(rr)
-            shell_depth = rmax - rmin
-            height = (rr - rmin)/shell_depth
-            ymin, ymax = ax.get_ylim()
-            ymin -= 1.0
-            ax.set_ylim(ymin, ymax)
+    if kw.modrms:
+        rmin = np.min(rr)
+        shell_depth = rmax - rmin
+        height = (rr - rmin)/shell_depth
+        ymin, ymax = ax.get_ylim()
+        ymin -= 1.0
+        ax.set_ylim(ymin, ymax)
 
-            ax2 = ax.twinx()
-            ax2.plot(height[1:-1], field_rms[1:-1])
-            ax2.set_yscale('log')
-            ymin = np.min(field_rms[1:-1])
-            ymax = np.max(field_rms[1:-1])
-            Dy = ymax/ymin
-            ax2.set_ylim(ymin, ymax*Dy**2)
-            ax.set_xlabel(r'$x/r_{\rm{out}}$' + ' (or height)', fontsize=kw.fontsize)
+        ax2 = ax.twinx()
+        ax2.plot(height[1:-1], field_rms[1:-1])
+        ax2.set_yscale('log')
+        ymin = np.min(field_rms[1:-1])
+        ymax = np.max(field_rms[1:-1])
+        Dy = ymax/ymin
+        ax2.set_ylim(ymin, ymax*Dy**2)
+        ax.set_xlabel(r'$x/r_{\rm{out}}$' + ' (or height)', fontsize=kw.fontsize)
 
 def streamfunction(vr,vt,r,cost,order=0):
     """------------------------------------------------------------
