@@ -18,12 +18,15 @@ plot_timey_kwargs_default = dict({'ycut': None, 'yminmax': None, 'ymin': None, '
        'linestyles2': np.array(['-']), 'linewidths2': np.array([default_lw]), 'linecolors2': np.array(['k']),\
        'pcolormesh': False})
 
-# need to change a few default my_contourf settings
-my_contourf_kwargs_default.update(dict({'plotcontours': False, 'cbar_pos': 'right', 'allticksoff': False}))
-my_pcolormesh_kwargs_default.update(dict({'cbar_pos': 'right'}))
-
-plot_timey_kwargs_default.update(my_contourf_kwargs_default)
-plot_timey_kwargs_default.update(my_pcolormesh_kwargs_default)
+# need to change a few default my_contourf settings,
+# but don't change default kwargs dictionary directly
+tmp1 = my_contourf_kwargs_default.copy()
+tmp2 = my_pcolormesh_kwargs_default.copy()
+tochange = {'plotcontours': False, 'cbar_pos': 'right', 'allticksoff': False}
+tmp1.update(tochange)
+tmp2.update(tochange)
+plot_timey_kwargs_default.update(tmp1)
+plot_timey_kwargs_default.update(tmp2)
 
 # plot time "lat or rad"
 def plot_timey(field, times, yy, fig, ax, **kwargs):
@@ -33,10 +36,10 @@ def plot_timey(field, times, yy, fig, ax, **kwargs):
 
     if kw.pcolormesh:
         plotting_func = my_pcolormesh
-        kw_plotting_func = update_dict(my_pcolormesh_kwargs_default, kwargs)
+        kw_plotting_func = update_dict(tmp2, kwargs)
     else:        
         plotting_func = my_contourf
-        kw_plotting_func = update_dict(my_contourf_kwargs_default, kwargs)
+        kw_plotting_func = update_dict(tmp1, kwargs)
 
     # Work with copy of field (not actual field)
     field_full = np.copy(field)
