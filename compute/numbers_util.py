@@ -16,10 +16,12 @@ numbers_input_def = dotdict({
     "bvisc": ("B_visc", "N^2*H^4/nu^2"),
     "he": ("He", "L_star/(F*H^2)"),
 
-    "ek": ("Ek", "nu/(Om_0*H^2)"), 
-    #"ta": ("Ta", "1/Ek^2"),
+    "ek": ("Ek", "nu/(2*Om_0*H^2)"), 
+    "ta": ("Ta", "1/Ek^2"),
     "rafmod": ("Ra_mod", "Ra_F*Ek^2/Pr"),
-    "brot": ("B_rot", "N^2/(Om_0)^2"),
+    "roc": ("Ro_c", "sqrt(Ra_mod)"),
+    "brot": ("B_rot", "N^2/(2*Om_0)^2"),
+    "sigma": ("sigma", "sqrt(Pr)*N/(2*Om_0)"),
     "rote": ("RE/PE_est", "(2/3)*rho*Om_0^2*r^2/(rho*g_est*H)"),
 
     "prm": ("Pr_m", "nu/eta"),
@@ -118,14 +120,16 @@ def get_numbers_input(dirname, r1='rmin', r2='rmax', verbose=False):
 
         if rotation:
             # Ekman and Taylor
-            di.ek = nu_volav/(eq.om0*shell_depth**2)
-            #di.ta = 1.0/di.ek**2
+            di.ek = nu_volav/(2*eq.om0*shell_depth**2)
+            di.ta = 1.0/di.ek**2
 
             # modified Rayleigh
             di.rafmod = di.raf*di.ek**2/di.pr
+            di.roc = np.sqrt(di.rafmod)
 
             # buoyancy number (rotational)
             di.brot = di.bvisc*di.ek**2
+            di.sigma = np.sqrt(di.brot*di.pr)
 
             rote_volav = (2.0/3.0)*eq.om0**2*volav_in_radius(dirname, eq.rho*eq.rr**2, r1, r2)
             di.rote = rote_volav/pe_est
