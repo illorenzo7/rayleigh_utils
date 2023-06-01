@@ -53,7 +53,6 @@ if not os.path.isdir(datadir):
 # determine files to transform
 kw.mvals = make_array(kw.mvals)
 kw.groupname = make_array(kw.groupname)
-kw.files = make_array(kw.files)
 
 if kw.files is None:
     kw.files = []
@@ -67,6 +66,7 @@ elif isall(kw.files):
     for the_file in allfiles:
         if 'mval' in the_file:
             kw.files.append(datadir_mtrace + '/' + the_file)
+kw.files = make_array(kw.files)
 kw.files = np.sort(kw.files)
 
 print (buff_line)
