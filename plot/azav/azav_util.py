@@ -148,7 +148,8 @@ def plot_azav(field, rr, cost, fig, ax,  **kwargs):
         ax.axis('on')
         plt.sca(ax)
         plt.minorticks_on()
-        plt.tick_params(top=True, right=True, direction='in', which='both')
+        plt.tick_params(top=True, right=True, direction='in', which='both',\
+                labelsize=kw.fontsize)
         plt.xlabel(r'$x/r_{\rm{out}}$', fontsize=kw.fontsize)
         plt.ylabel(r'$z/r_{\rm{out}}$', fontsize=kw.fontsize)
     else:
