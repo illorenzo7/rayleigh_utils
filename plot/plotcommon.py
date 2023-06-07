@@ -500,7 +500,7 @@ def lineplot(xx, profiles, ax, **kwargs):
     if kw.plotleg:
         ax.legend(loc='lower left', ncol=kw.ncolleg, fontsize=0.8*default_labelsize)
 
-add_cbar_kwargs_default = dict({'minmax': None, 'cbar_thick': 1/8, 'cbar_aspect': 1/20, 'cbar_prec': 2, 'cbar_no': 1, 'cbar_pos': 'bottom', 'units': '', 'nosci': False, 'cbar_labels': None, 'cbar_fs': default_labelsize, 'tickvals': None, 'ticklabels': None, 'exp': 0, 'logscale': False, 'posdef': False, 'tol': 0.75, 'no0': False})
+add_cbar_kwargs_default = dict({'minmax': None, 'cbar_thick': 1/8, 'cbar_aspect': 1/20, 'cbar_prec': 2, 'cbar_no': 1, 'cbar_offset': 1/16, 'cbar_pos': 'bottom', 'cbar_total_width': 1/2, 'units': '', 'nosci': False, 'cbar_labels': None, 'cbar_fs': default_labelsize, 'tickvals': None, 'ticklabels': None, 'exp': 0, 'logscale': False, 'posdef': False, 'tol': 0.75, 'no0': False})
 def add_cbar(fig, ax, im, **kwargs):
     # deal with kwargs
     kw = update_dict(add_cbar_kwargs_default, kwargs)
@@ -521,12 +521,14 @@ def add_cbar(fig, ax, im, **kwargs):
             cbar_width = kw.tol*ax_width
 
         # centrally position colorbar underneath the axes
-        label_buff = 3/8/fig_height_inches # needs to contain
-        # the colorbar ticklabels and little buffer space
-        lilbit = 1/16/fig_height_inches
+        cbar_total_height = kw.cbar_total_width/fig_height_inches 
+        # needs to contain
+        # the colorbar ticklabels and little buffer space,
+        # default 1/2
+        lilbit = kw.cbar_offset/fig_height_inches
         cbar_left = ax_left + 0.5*ax_width - 0.5*cbar_width
         cbar_bottom = ax_bottom - lilbit - cbar_height -\
-                (kw.cbar_no - 1)*(label_buff + cbar_height)
+                (kw.cbar_no - 1)*cbar_total_height
     elif kw.cbar_pos == 'right':
         orientation = 'vertical'
         cbar_width = kw.cbar_thick/fig_width_inches
@@ -580,7 +582,7 @@ def add_cbar(fig, ax, im, **kwargs):
 
 
     if kw.cbar_pos == 'bottom':
-        fig.text(cbar_left + cbar_width + lilbit*fig_aspect,\
+        fig.text(cbar_left + cbar_width + 1/16/fig_width_inches,\
                 cbar_bottom + 0.5*cbar_height, cbar_label,\
                 ha='left', va='center', fontsize=kw.cbar_fs) 
     elif kw.cbar_pos == 'right':

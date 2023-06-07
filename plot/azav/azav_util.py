@@ -46,6 +46,9 @@ def plot_azav(field, rr, cost, fig, ax,  **kwargs):
         field = field[iteq:, :]
         cost = cost[iteq:]
 
+    if kw.plotaxis: # make cbar offset bigger
+        kw_my_contourf.cbar_offset = 1/2
+
     # grid info
     nt, nr = len(cost), len(rr)
     zeros = np.zeros((nt, nr))
@@ -82,7 +85,7 @@ def plot_azav(field, rr, cost, fig, ax,  **kwargs):
         yy2 = (rr_2d*cost_2d)[:, ircut+1:]/rmax
 
     # plot the first (upper) field
-    kw_my_contourf.cbar_no = 1 + kw.plotaxis
+    kw_my_contourf.cbar_no = 1
     my_contourf(xx, yy, field, fig, ax, **kw_my_contourf)
 
     # possibly plot a second (lower) field
@@ -97,7 +100,7 @@ def plot_azav(field, rr, cost, fig, ax,  **kwargs):
                 kw_my_contourf.cmap = 'PuOr_r'    
         else:
             kw_my_contourf.cmap = kw.cmap2
-        kw_my_contourf.cbar_no = 2 + kw.plotaxis
+        kw_my_contourf.cbar_no = 2
         my_contourf(xx2, yy2, field2, fig, ax, **kw_my_contourf)
 
     # potentially plot coordinate lines
