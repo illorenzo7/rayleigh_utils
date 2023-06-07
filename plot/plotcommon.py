@@ -500,7 +500,7 @@ def lineplot(xx, profiles, ax, **kwargs):
     if kw.plotleg:
         ax.legend(loc='lower left', ncol=kw.ncolleg, fontsize=0.8*default_labelsize)
 
-add_cbar_kwargs_default = dict({'minmax': None, 'cbar_thick': 1/8, 'cbar_aspect': 1/20, 'cbar_prec': 2, 'cbar_no': 1, 'cbar_offset': 1/16, 'cbar_pos': 'bottom', 'cbar_total_width': 1/2, 'units': '', 'nosci': False, 'cbar_labels': None, 'cbar_fs': default_labelsize, 'tickvals': None, 'ticklabels': None, 'exp': 0, 'logscale': False, 'posdef': False, 'tol': 0.75, 'no0': False})
+add_cbar_kwargs_default = dict({'minmax': None, 'cbar_thick': 1/8, 'cbar_aspect': 1/20, 'cbar_prec': 2, 'cbar_no': 1, 'cbar_offset': None, 'cbar_pos': 'bottom', 'cbar_total_width': 1/2, 'units': '', 'nosci': False, 'cbar_labels': None, 'cbar_fs': default_labelsize, 'tickvals': None, 'ticklabels': None, 'exp': 0, 'logscale': False, 'posdef': False, 'tol': 0.75, 'no0': False})
 def add_cbar(fig, ax, im, **kwargs):
     # deal with kwargs
     kw = update_dict(add_cbar_kwargs_default, kwargs)
@@ -525,6 +525,8 @@ def add_cbar(fig, ax, im, **kwargs):
         # needs to contain
         # the colorbar ticklabels and little buffer space,
         # default 1/2
+        if kw.cbar_offset is None:
+            kw.cbar_offset = 1/16
         lilbit = kw.cbar_offset/fig_height_inches
         cbar_left = ax_left + 0.5*ax_width - 0.5*cbar_width
         cbar_bottom = ax_bottom - lilbit - cbar_height -\

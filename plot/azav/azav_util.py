@@ -47,7 +47,8 @@ def plot_azav(field, rr, cost, fig, ax,  **kwargs):
         cost = cost[iteq:]
 
     if kw.plotaxis: # make cbar offset bigger
-        kw_my_contourf.cbar_offset = 1/2
+        if kw_my_contourf.cbar_offset is None:
+            kw_my_contourf.cbar_offset = 1/2
 
     # grid info
     nt, nr = len(cost), len(rr)
