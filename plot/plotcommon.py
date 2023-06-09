@@ -684,13 +684,13 @@ def contourf_minmax(field, **kwargs):
 my_contourf_kwargs_default = dict({
         # basic flags:
          'plotfield': True,
-         'plotcontours': True, 'ncontours': 8, 'contourlevels': None, 'contourstyles': '--', 'contourcolors': 'k', 'contourwidths': default_lw, 'nlevelsfield': None,
-        # additional colorbar stuff
-        'plotcbar': True, 'cmap': None, 'norm': None, 'units': '',         
+         'plotcontours': True, 'ncontours': 8, 'contourlevels': None, 'contourstyles': '--', 'contourcolors': 'k', 'contourwidths': default_lw, 
+        # colorbar stuff
+        'plotcbar': True, 'cmap': None, 'norm': None, 'units': '', 'nlevels': 64,       
         # only need this for time-lat plots or such, since need ticks there
         'allticksoff': True,\
         # symlog stuff (again)
-        'linthresh': None, 'linscale': None})
+        'minmax': None, 'linthresh': None, 'linscale': None})
 
 # color map stuff: symlog, logscale, posdef, are here:
 my_contourf_kwargs_default.update(contourf_minmax_kwargs_default)
@@ -726,15 +726,11 @@ def my_contourf(xx, yy, field, fig, ax, **kwargs):
     if kw.norm is None and kw.logscale:
         kw.norm = colors.LogNorm(vmin=kw.minmax[0], vmax=kw.minmax[1])
 
-    if kw.nlevelsfield is None:
-        kw.nlevelsfield = 100 # ideal number of filled-in contour regions
-
     if kw.sgnlog: # sgnlog is a special subcase of symlog
         kw.symlog = True
 
     if kw.symlog:
-        n_per_zone = kw.nlevelsfield//2 # number of distinct zones
-        # (negative, linear, positive)
+        # levels determined by linscale and linthresh
         linthresh_default, linscale_default =\
             get_symlog_params(field, field_max=kw.minmax[1], sgnlog=kw.sgnlog)
         if kw.linthresh is None:
@@ -749,20 +745,18 @@ def my_contourf(xx, yy, field, fig, ax, **kwargs):
             linscale=kw.linscale, vmin=kw.minmax[0], vmax=kw.minmax[1])
 
         if kw.sgnlog: # ignore linear area (make it one contour level)
-            levels_neg = -np.logspace(log_max, log_thresh, n_per_zone)
-            levels_pos = np.logspace(log_thresh, log_max, n_per_zone + 1)
+            levels_neg = -np.logspace(log_max, log_thresh, kw.nlevels+1)
+            levels_pos = np.logspace(log_thresh, log_max, kw.nlevels+1)
             levels = np.hstack((levels_neg, levels_pos))
         else: # include linear range (multiple contour levels)
-            levels_neg = -np.logspace(log_max, log_thresh, n_per_zone, endpoint=False)
-            levels_mid = np.linspace(-kw.linthresh, kw.linthresh, n_per_zone, endpoint=False)
-            levels_pos = np.logspace(log_thresh, log_max, n_per_zone + 1)
+            levels_neg = -np.logspace(log_max, log_thresh, kw.nlevels, endpoint=False)
+            levels_mid = np.linspace(-kw.linthresh, kw.linthresh, kw.nlevels, endpoint=False)
+            levels_pos = np.logspace(log_thresh, log_max, kw.nlevels+1)
             levels = np.hstack((levels_neg, levels_mid, levels_pos))
-            kw.nlevelsfield = len(levels)
-
     elif kw.logscale:
-        levels = np.logspace(np.log10(kw.minmax[0]), np.log10(kw.minmax[1]), kw.nlevelsfield)
+        levels = np.logspace(np.log10(kw.minmax[0]), np.log10(kw.minmax[1]), 2*kw.nlevels+1)
     else:
-        levels = np.linspace(kw.minmax[0], kw.minmax[1], kw.nlevelsfield + 1)
+        levels = np.linspace(kw.minmax[0], kw.minmax[1], 2*kw.nlevels+1)
         if kw.fullrange2: # need equally spaced levels on each side of zero
             kw.norm = colors.TwoSlopeNorm(vmin=kw.minmax[0], vcenter=0, vmax=kw.minmax[1])
 
@@ -787,7 +781,7 @@ def my_contourf(xx, yy, field, fig, ax, **kwargs):
         # Determine the contour levels
         if kw.contourlevels is None:
             # just thin out the field levels
-            nskip = kw.nlevelsfield//kw.ncontours
+            nskip = kw.nlevels//kw.ncontours
             kw.contourlevels = levels[::nskip]
             if kw.fullrange2: # need equally spaced levels on 
                 # each side of zero separately
