@@ -705,6 +705,9 @@ def my_contourf(xx, yy, field, fig, ax, **kwargs):
     # make sure Python does not modify any of the arrays it was passed
     field = np.copy(field)
 
+    if kw.sgnlog: # sgnlog is a special subcase of symlog
+        kw.symlog = True
+
     # get default bounds if not specified
     if kw.minmax is None:
         kw.minmax = contourf_minmax(field, **kw_contourf_minmax)
@@ -725,9 +728,6 @@ def my_contourf(xx, yy, field, fig, ax, **kwargs):
     # deal with norm
     if kw.norm is None and kw.logscale:
         kw.norm = colors.LogNorm(vmin=kw.minmax[0], vmax=kw.minmax[1])
-
-    if kw.sgnlog: # sgnlog is a special subcase of symlog
-        kw.symlog = True
 
     if kw.symlog:
         # levels determined by linscale and linthresh
