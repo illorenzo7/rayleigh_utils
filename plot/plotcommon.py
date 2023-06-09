@@ -306,7 +306,7 @@ def lineplot_minmax(xx, profiles, **kwargs):
 
     return ymin, ymax
 
-def get_symlog_params(field, field_max=None):
+def get_symlog_params(field, field_max=None, sgnlog=False):
     if field_max is None:
         #maxabs = np.max(np.abs(field))
         #maxabs_exp = np.floor(np.log10(maxabs))
@@ -317,6 +317,8 @@ def get_symlog_params(field, field_max=None):
     dynamic_range = field_max/linthresh
     dynamic_range_decades = np.log10(dynamic_range)
     linscale = dynamic_range_decades
+    if sgnlog:
+        linscale *= 0.1
     return linthresh, linscale
     
 def saturate_array(arr, my_min, my_max):
@@ -518,6 +520,10 @@ def add_cbar(fig, ax, im, **kwargs):
     ax_left, ax_right, ax_bottom, ax_top = axis_range(ax)
     ax_width = ax_right - ax_left
     ax_height = ax_top - ax_bottom
+
+    if kw.sgnlog: # sgnlog is a special subcase of symlog
+        kw.symlog = True
+
     if kw.cbar_pos == 'bottom':
         orientation = 'horizontal'
         cbar_height = kw.cbar_thick/fig_height_inches
@@ -573,13 +579,19 @@ def add_cbar(fig, ax, im, **kwargs):
             # 3 * (multiple of 4) for symlog
             # 2 * (multiple of 4) otherwise
             if kw.symlog:
-                n_per_zone = nlevelsfield//3
                 maxabs = levelsfield[-1]
-                linthresh = -levelsfield[n_per_zone]
-                kw.tickvals = np.hstack((\
-                    np.linspace(-maxabs, -linthresh, 4, endpoint=False),
-                    np.linspace(-linthresh, linthresh, 4, endpoint=False),
-                    np.linspace(linthresh, maxabs, 5) ))
+                if kw.sgnlog: # ignore linthresh range ticks
+                    # except invisible "zero" tick
+                    linthresh = levelsfield[nlevelsfield//2]
+                    kw.tickvals = np.hstack((\
+                        np.linspace(-maxabs, -linthresh, 5), np.array([0.]),
+                        np.linspace(linthresh, maxabs, 5) ))
+                else:
+                    linthresh = -levelsfield[nlevelsfield//3]
+                    kw.tickvals = np.hstack((\
+                        np.linspace(-maxabs, -linthresh, 4, endpoint=False),
+                        np.linspace(-linthresh, linthresh, 4, endpoint=False),
+                        np.linspace(linthresh, maxabs, 5) ))
                                     
             else:
                 nskip = nlevelsfield//8
@@ -588,29 +600,31 @@ def add_cbar(fig, ax, im, **kwargs):
         if kw.ticklabels is None:
             nticks = len(kw.tickvals)
             kw.ticklabels = ['']*nticks
-            print("len tickval = ", len(kw.tickvals))
-            print("ticklab = ", kw.tickvals)
-            print("ticklab = ", kw.ticklabels)
             if kw.symlog: 
-                # -linthresh and maxabs
-                indvals = [(nticks-1)//3, nticks-1]
-            elif kw.posdef or kw.no0:
-                # just min/max
-                indvals = [0, nticks-1]
+                if kw.sgnlog: # want "plus/minus linthresh" offset by 1
+                    # from actual linthresh
+                    ind = (nticks-1)//2 # location of zero tick
+                    kw.ticklabels[ind] = r'$\pm$' + sci_format(kw.tickvals[ind+1], ndec=kw.cbar_prec, compact=True)
+                    for ind in [0, nticks - 1]:
+                        kw.ticklabels[ind] = sci_format(kw.tickvals[ind], ndec=kw.cbar_prec, compact=True)
+                else: # -linthresh and maxabs
+                    indvals = [(nticks-1)//3, nticks-1]
+                    for ind in indvals:
+                        kw.ticklabels[ind] = sci_format(kw.tickvals[ind], ndec=kw.cbar_prec, compact=True)
             else:
-                # min/max and zero
-                indvals = [0, (nticks-1)//2, nticks-1]
-
-            print ("indv = ", indvals)
-            for ind in indvals:
-                if kw.symlog:
-                    kw.ticklabels[ind] = sci_format(kw.tickvals[ind], ndec=kw.cbar_prec, compact=True)
+                if kw.posdef or kw.no0:
+                    # just min/max
+                    indvals = [0, nticks-1]
                 else:
+                    # min/max and zero
+                    indvals = [0, (nticks-1)//2, nticks-1]
+
+                # loop over indices and set values
+                for ind in indvals:
                     fmt = '%.' + str(kw.cbar_prec) + 'f'
                     kw.ticklabels[ind] = fmt %kw.tickvals[ind]
         cbar.set_ticks(kw.tickvals)
         cbar.set_ticklabels(kw.ticklabels)
-
 
     if kw.cbar_pos == 'bottom':
         fig.text(cbar_left + cbar_width + 1/16/fig_width_inches,\
@@ -715,12 +729,14 @@ def my_contourf(xx, yy, field, fig, ax, **kwargs):
     if kw.nlevelsfield is None:
         kw.nlevelsfield = 32 # ideal number of filled-in contour regions
 
+    if kw.sgnlog: # sgnlog is a special subcase of symlog
+        kw.symlog = True
+
     if kw.symlog:
         n_per_zone = kw.nlevelsfield//2 # number of distinct zones
         # (negative, linear, positive)
-        kw.nlevelsfield = 3*n_per_zone + 1
         linthresh_default, linscale_default =\
-            get_symlog_params(field, field_max=kw.minmax[1])
+            get_symlog_params(field, field_max=kw.minmax[1], sgnlog=kw.sgnlog)
         if kw.linthresh is None:
             kw.linthresh = linthresh_default
         if kw.linscale is None:
@@ -732,8 +748,12 @@ def my_contourf(xx, yy, field, fig, ax, **kwargs):
         levels_mid = np.linspace(-kw.linthresh, kw.linthresh, n_per_zone, endpoint=False)
         levels_pos = np.logspace(log_thresh, log_max, n_per_zone + 1)
         levels = np.hstack((levels_neg, levels_mid, levels_pos))
+        if kw.sgnlog: # ignore linear area
+            levels = np.hstack((levels_neg, levels_pos))
+        kw.nlevelsfield = len(levels)
         kw.norm = colors.SymLogNorm(linthresh=kw.linthresh,\
             linscale=kw.linscale, vmin=kw.minmax[0], vmax=kw.minmax[1])
+
     elif kw.logscale:
         levels = np.logspace(np.log10(kw.minmax[0]), np.log10(kw.minmax[1]), kw.nlevelsfield)
     else:
