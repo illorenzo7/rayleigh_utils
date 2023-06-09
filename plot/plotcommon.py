@@ -328,11 +328,15 @@ def get_exp(num):
     else:
         return 1
 
-def sci_format(num, ndec=1):
+def sci_format(num, ndec=1, compact=False):
     exponent = get_exp(num)
     mantissa = num/10.**exponent
-    return ((r'$%1.' + (r'%i' %ndec) + r'f\times10^{%i}$')\
+    if compact:
+        return ( ('%1.' + ('%i' %ndec) +'fe%i')\
             %(mantissa, exponent))
+    else:
+        return ((r'$%1.' + (r'%i' %ndec) + r'f\times10^{%i}$')\
+                %(mantissa, exponent))
 
 lineplot_kwargs_default = dict({'xlabel': None, 'ylabel': None, 'title': None, 'xvals': np.array([]), 'yvals': np.array([]), 'labels': None, 'xlogscale': False, 'xminmax': None, 'minmax': None, 'xcut': None, 'minmax2': None, 'scatter': False, 'colors': color_order, 'linestyles': style_order[0], 'markers': marker_order[0], 'lw': default_lw, 's': default_s, 'ncolleg': 3, 'fontsize': default_labelsize, 'nosci': False, 'noscix': False, 'nosciy': False})
 lineplot_kwargs_default.update(lineplot_minmax_kwargs_default)
@@ -500,7 +504,7 @@ def lineplot(xx, profiles, ax, **kwargs):
     if kw.plotleg:
         ax.legend(loc='lower left', ncol=kw.ncolleg, fontsize=0.8*default_labelsize)
 
-add_cbar_kwargs_default = dict({'minmax': None, 'cbar_thick': 1/8, 'cbar_aspect': 1/20, 'cbar_prec': 2, 'cbar_no': 1, 'cbar_offset': None, 'cbar_pos': 'bottom', 'cbar_total_width': 1/2, 'units': '', 'nosci': False, 'cbar_fs': default_labelsize, 'tickvals': None, 'ticklabels': None, 'exp': 0, 'logscale': False, 'posdef': False, 'tol': 0.75, 'no0': False})
+add_cbar_kwargs_default = dict({'cbar_thick': 1/8, 'cbar_aspect': 1/20, 'cbar_prec': 2, 'cbar_no': 1, 'cbar_offset': None, 'cbar_pos': 'bottom', 'cbar_total_width': 1/2, 'units': '', 'nosci': False, 'cbar_fs': default_labelsize, 'tickvals': None, 'ticklabels': None, 'exp': 0, 'logscale': False, 'posdef': False, 'symlog': False, 'tol': 0.75, 'no0': False})
 def add_cbar(fig, ax, im, **kwargs):
     # deal with kwargs
     kw = update_dict(add_cbar_kwargs_default, kwargs)
@@ -555,29 +559,56 @@ def add_cbar(fig, ax, im, **kwargs):
     #cbar.ax.tick_params(labelsize=fontsize)   
 
     # ticklabel format
-    if not kw.logscale:
-        if kw.posdef:
-            tickvals = [kw.minmax[0], kw.minmax[1]]
-        else:
-            tickvals = [kw.minmax[0], 0, kw.minmax[1]]
-        if kw.cbar_labels is None:
-            fmt = '%.' + str(kw.cbar_prec) + 'f'
-            ticklabels = []
-            for tickval in tickvals:
-                ticklabels.append(fmt %tickval)
-        else:
-            ticklabels = kw.cbar_labels
-        if not kw.posdef and kw.no0:
-            ticklabels[1] = ''
-        if not kw.ticklabels is None:
-            ticklabels = kw.ticklabels
-        if not kw.tickvals is None:
-            tickvals = kw.tickvals
-        cbar.set_ticks(tickvals)
-        cbar.set_ticklabels(ticklabels)
-    else:
+    if kw.logscale: # set tickvals and labels through "smart locator"
         locator = ticker.LogLocator(subs='all')
         cbar.set_ticks(locator)
+    else: # set tickvals and ticklabels separately, depending on norm
+        levelsfield = np.array(im.get_array())
+        nlevelsfield = len(levelsfield) - 1
+        # first, tickvals
+        if kw.tickvals is None:
+            # just thin out actual field levels
+            # hopefully field levels are a "nice" number:
+            # 3 * (multiple of 4) for symlog
+            # 2 * (multiple of 4) otherwise
+            if kw.symlog:
+                n_per_zone = nlevelsfield//3
+                maxabs = levelsfield[-1]
+                linthresh = -levelsfield[n_per_zone]
+                kw.tickvals = np.hstack((\
+                    np.linspace(-maxabs, -linthresh, 4, endpoint=False),
+                    np.linspace(-linthresh, linthresh, 4, endpoint=False),
+                    np.linspace(linthresh, maxabs, 5) ))
+                                    
+            else:
+                nskip = nlevelsfield//8
+                kw.tickvals = levelsfield[::nskip]
+        # then, ticklabels
+        if kw.ticklabels is None:
+            nticks = len(kw.tickvals)
+            kw.ticklabels = ['']*nticks
+            print("len tickval = ", len(kw.tickvals))
+            print("ticklab = ", kw.tickvals)
+            print("ticklab = ", kw.ticklabels)
+            if kw.symlog: 
+                # -linthresh and maxabs
+                indvals = [(nticks-1)//3, nticks-1]
+            elif kw.posdef or kw.no0:
+                # just min/max
+                indvals = [0, nticks-1]
+            else:
+                # min/max and zero
+                indvals = [0, (nticks-1)//2, nticks-1]
+
+            print ("indv = ", indvals)
+            for ind in indvals:
+                if kw.symlog:
+                    kw.ticklabels[ind] = sci_format(kw.tickvals[ind], ndec=kw.cbar_prec, compact=True)
+                else:
+                    fmt = '%.' + str(kw.cbar_prec) + 'f'
+                    kw.ticklabels[ind] = fmt %kw.tickvals[ind]
+        cbar.set_ticks(kw.tickvals)
+        cbar.set_ticklabels(kw.ticklabels)
 
 
     if kw.cbar_pos == 'bottom':
@@ -661,7 +692,7 @@ def my_contourf(xx, yy, field, fig, ax, **kwargs):
 
     # get default bounds if not specified
     if kw.minmax is None:
-        kw.minmax = kw_add_cbar.minmax = contourf_minmax(field, **kw_contourf_minmax)
+        kw.minmax = contourf_minmax(field, **kw_contourf_minmax)
 
     # plot the field, maybe
     # Factor out the exponent on the field and put it on the color bar
@@ -671,7 +702,7 @@ def my_contourf(xx, yy, field, fig, ax, **kwargs):
         kw_add_cbar.exp = get_exp(maxabs)
         divisor = 10.0**kw_add_cbar.exp
         field /= divisor
-        kw.minmax = kw_add_cbar.minmax = kw.minmax[0]/divisor, kw.minmax[1]/divisor
+        kw.minmax = kw.minmax[0]/divisor, kw.minmax[1]/divisor
 
     # Saturate the array (otherwise contourf will show white areas)
     saturate_array(field, kw.minmax[0], kw.minmax[1])

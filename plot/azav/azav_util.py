@@ -15,7 +15,7 @@ from plotcommon import *
 from grid_util import compute_theta_grid
 
 # default azav fig dimensions
-azav_fig_dimensions = dict({'sub_aspect': 2, 'sub_width_inches': 2, 'sub_margin_left_inches': 3/4,  'sub_margin_right_inches': 3/4, 'sub_margin_top_inches': 1/4, 'sub_margin_bottom_inches': 1, 'margin_top_inches': 1})
+azav_fig_dimensions = dict({'sub_aspect': 2, 'sub_width_inches': 2, 'sub_margin_left_inches': 3/4,  'sub_margin_right_inches': 1, 'sub_margin_top_inches': 1/4, 'sub_margin_bottom_inches': 1, 'margin_top_inches': 1})
 
 # plot_azav needs my_contourf args, then some
 plot_azav_kwargs_default = dict(
