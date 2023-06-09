@@ -549,7 +549,7 @@ def add_cbar(fig, ax, im, **kwargs):
     cbar = plt.colorbar(im, cax=cax, orientation=orientation)
 
     # deal with labels
-    if kw.nosci or kw.logscale:
+    if kw.nosci or kw.logscale or kw.symlog:
         cbar_label = kw.units
     else:
         cbar_label = (r'$\times10^{%i}\ $' %kw.exp) + kw.units
@@ -697,7 +697,7 @@ def my_contourf(xx, yy, field, fig, ax, **kwargs):
     # plot the field, maybe
     # Factor out the exponent on the field and put it on the color bar
     # can turn this behavior off with "nosci=True"
-    if not (kw.nosci or kw.logscale):
+    if not (kw.nosci or kw.logscale or kw.symlog):
         maxabs = max(np.abs(kw.minmax[0]), np.abs(kw.minmax[1]))
         kw_add_cbar.exp = get_exp(maxabs)
         divisor = 10.0**kw_add_cbar.exp
