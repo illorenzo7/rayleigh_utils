@@ -308,9 +308,10 @@ def lineplot_minmax(xx, profiles, **kwargs):
 
 def get_symlog_params(field, field_max=None):
     if field_max is None:
-        maxabs = np.max(np.abs(field))
-        maxabs_exp = np.floor(np.log10(maxabs))
-        field_max = 10.**maxabs_exp
+        #maxabs = np.max(np.abs(field))
+        #maxabs_exp = np.floor(np.log10(maxabs))
+        #field_max = 10.**maxabs_exp
+        field_max = np.max(np.abs(field))
     sig = np.std(field)
     linthresh = 0.15*sig
     dynamic_range = field_max/linthresh
@@ -504,7 +505,7 @@ def lineplot(xx, profiles, ax, **kwargs):
     if kw.plotleg:
         ax.legend(loc='lower left', ncol=kw.ncolleg, fontsize=0.8*default_labelsize)
 
-add_cbar_kwargs_default = dict({'cbar_thick': 1/8, 'cbar_aspect': 1/20, 'cbar_prec': 2, 'cbar_no': 1, 'cbar_offset': None, 'cbar_pos': 'bottom', 'cbar_total_width': 1/2, 'units': '', 'nosci': False, 'cbar_fs': default_labelsize, 'tickvals': None, 'ticklabels': None, 'exp': 0, 'logscale': False, 'posdef': False, 'symlog': False, 'tol': 0.75, 'no0': False})
+add_cbar_kwargs_default = dict({'cbar_thick': 1/8, 'cbar_aspect': 1/20, 'cbar_prec': 2, 'cbar_no': 1, 'cbar_offset': None, 'cbar_pos': 'bottom', 'cbar_total_width': 1/2, 'units': '', 'nosci': False, 'cbar_fs': default_labelsize, 'tickvals': None, 'ticklabels': None, 'exp': 0, 'logscale': False, 'posdef': False, 'symlog': False, 'sgnlog': False, 'tol': 0.75, 'no0': False})
 def add_cbar(fig, ax, im, **kwargs):
     # deal with kwargs
     kw = update_dict(add_cbar_kwargs_default, kwargs)
@@ -621,7 +622,7 @@ def add_cbar(fig, ax, im, **kwargs):
         #        ha='left', va='center', fontsize=kw.fontsize) 
         cax.set_title(cbar_label, ha='left', fontsize=kw.cbar_fs)
 
-contourf_minmax_kwargs_default = dict({'posdef': False, 'logscale': False, 'symlog': False, 'fullrange': False, 'fullrange2': False, 'buff_ignore1': buff_frac, 'buff_ignore2': buff_frac}) 
+contourf_minmax_kwargs_default = dict({'posdef': False, 'logscale': False, 'symlog': False, 'sgnlog': False, 'fullrange': False, 'fullrange2': False, 'buff_ignore1': buff_frac, 'buff_ignore2': buff_frac}) 
 
 def contourf_minmax(field, **kwargs):
     # Get good boundaries to saturate array [field], assuming either
