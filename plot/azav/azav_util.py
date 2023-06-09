@@ -27,7 +27,6 @@ plot_azav_kwargs_default = dict(
        })
 
 # add in my_contourf stuff
-my_contourf_kwargs_default['cbar_aspect'] = 1/8
 plot_azav_kwargs_default.update(my_contourf_kwargs_default)
 
 def plot_azav(field, rr, cost, fig, ax,  **kwargs):

@@ -517,9 +517,7 @@ def add_cbar(fig, ax, im, **kwargs):
         orientation = 'horizontal'
         cbar_height = kw.cbar_thick/fig_height_inches
         cbar_width = cbar_height/kw.cbar_aspect*fig_aspect
-        if cbar_width > kw.tol*ax_width: # don't let cbar be thicker than plot!
-            cbar_width = kw.tol*ax_width
-
+        cbar_width = min(cbar_width, kw.tol*ax_width) # don't let cbar be thicker than plot!
         # centrally position colorbar underneath the axes
         cbar_total_height = kw.cbar_total_width/fig_height_inches 
         # needs to contain
@@ -535,8 +533,7 @@ def add_cbar(fig, ax, im, **kwargs):
         orientation = 'vertical'
         cbar_width = kw.cbar_thick/fig_width_inches
         cbar_height = cbar_width/kw.cbar_aspect/fig_aspect
-        if cbar_height > kw.tol*ax_height: 
-            cbar_height = kw.tol*ax_height
+        cbar_height = min(cbar_height, kw.tol*ax_height) # don't let cbar be longer than plot!
 
         # centrally position colorbar to right of axes
         label_buff = 3/4/fig_width_inches # needs to contain
