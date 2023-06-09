@@ -727,7 +727,7 @@ def my_contourf(xx, yy, field, fig, ax, **kwargs):
         kw.norm = colors.LogNorm(vmin=kw.minmax[0], vmax=kw.minmax[1])
 
     if kw.nlevelsfield is None:
-        kw.nlevelsfield = 32 # ideal number of filled-in contour regions
+        kw.nlevelsfield = 100 # ideal number of filled-in contour regions
 
     if kw.sgnlog: # sgnlog is a special subcase of symlog
         kw.symlog = True
@@ -744,15 +744,20 @@ def my_contourf(xx, yy, field, fig, ax, **kwargs):
         log_thresh = np.log10(kw.linthresh)
         log_max = np.log10(kw.minmax[1])
 
-        levels_neg = -np.logspace(log_max, log_thresh, n_per_zone, endpoint=False)
-        levels_mid = np.linspace(-kw.linthresh, kw.linthresh, n_per_zone, endpoint=False)
-        levels_pos = np.logspace(log_thresh, log_max, n_per_zone + 1)
-        levels = np.hstack((levels_neg, levels_mid, levels_pos))
-        if kw.sgnlog: # ignore linear area
-            levels = np.hstack((levels_neg, levels_pos))
-        kw.nlevelsfield = len(levels)
+        # special symlog norm
         kw.norm = colors.SymLogNorm(linthresh=kw.linthresh,\
             linscale=kw.linscale, vmin=kw.minmax[0], vmax=kw.minmax[1])
+
+        if kw.sgnlog: # ignore linear area (make it one contour level)
+            levels_neg = -np.logspace(log_max, log_thresh, n_per_zone)
+            levels_pos = np.logspace(log_thresh, log_max, n_per_zone + 1)
+            levels = np.hstack((levels_neg, levels_pos))
+        else: # include linear range (multiple contour levels)
+            levels_neg = -np.logspace(log_max, log_thresh, n_per_zone, endpoint=False)
+            levels_mid = np.linspace(-kw.linthresh, kw.linthresh, n_per_zone, endpoint=False)
+            levels_pos = np.logspace(log_thresh, log_max, n_per_zone + 1)
+            levels = np.hstack((levels_neg, levels_mid, levels_pos))
+            kw.nlevelsfield = len(levels)
 
     elif kw.logscale:
         levels = np.logspace(np.log10(kw.minmax[0]), np.log10(kw.minmax[1]), kw.nlevelsfield)
