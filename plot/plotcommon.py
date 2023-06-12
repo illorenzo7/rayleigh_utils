@@ -335,7 +335,10 @@ def sci_format(num, ndec=1, compact=False, nomant=False):
     exponent = get_exp(num)
     mantissa = num/10.**exponent
     if nomant:
-        return (r'$10^{%i}$' %exponent)
+        out = r'$10^{%i}$' %exponent
+        if mantissa < 0:
+            out = r'$-$' + out
+        return out
     elif compact:
         return ( ('%1.' + ('%i' %ndec) +'fe%i')\
             %(mantissa, exponent))
@@ -740,7 +743,8 @@ def my_contourf(xx, yy, field, fig, ax, **kwargs):
         if kw.linscale is None:
             kw.linscale = linscale_default
         log_thresh = np.log10(kw.linthresh)
-        log_max = np.log10(kw.minmax[1])
+        log_max = np.log10(kw.minmax[1])*0.999 # reduce by a bit
+        # (otherwise creates white-filled space outside max contours)
 
         # special symlog norm
         kw.norm = colors.SymLogNorm(linthresh=kw.linthresh,\
