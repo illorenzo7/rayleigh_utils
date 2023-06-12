@@ -331,10 +331,12 @@ def get_exp(num):
     else:
         return 1
 
-def sci_format(num, ndec=1, compact=False):
+def sci_format(num, ndec=1, compact=False, nomant=False):
     exponent = get_exp(num)
     mantissa = num/10.**exponent
-    if compact:
+    if nomant:
+        return (r'$10^{%i}$' %exponent)
+    elif compact:
         return ( ('%1.' + ('%i' %ndec) +'fe%i')\
             %(mantissa, exponent))
     else:
