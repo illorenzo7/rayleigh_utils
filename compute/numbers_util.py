@@ -4,17 +4,16 @@ sys.path.append(os.environ['raco'])
 from common import *
 
 # header info for input numbers
-linebreaks_input = [3, 8, 15]
+linebreaks_input = [4, 7, 13]
 numbers_input_def = dotdict({
     "aspect": ("A", "r_1/r_2"),
     "nrho": ("N_rho", "ln(rho_1/rho_2)"),
     "dc": ("DC", "exp(N_rho)"),
+    "di": ("Di", "g*H/(c_p*T)"),
 
     "pr": ("Pr", "nu/kappa"),
     "raf": ("Ra_F", "g*F*H^4/(c_p*rho*T*nu*kappa^2)"),
-    "di": ("Di", "g*H/(c_p*T)"),
     "bvisc": ("B_visc", "N^2*H^4/nu^2"),
-    "he": ("He", "L_star/(F*H^2)"),
 
     "ek": ("Ek", "nu/(2*Om_0*H^2)"), 
     "ta": ("Ta", "1/Ek^2"),
@@ -22,14 +21,13 @@ numbers_input_def = dotdict({
     "roc": ("Ro_c", "sqrt(Ra_mod)"),
     "brot": ("B_rot", "N^2/(2*Om_0)^2"),
     "sigma": ("sigma", "sqrt(Pr)*N/(2*Om_0)"),
-    "rote": ("RE/PE_est", "(2/3)*rho*Om_0^2*r^2/(rho*g_est*H)"),
 
     "prm": ("Pr_m", "nu/eta"),
     "ekm": ("Ek_m", "Ek/Pr_m")
     })
 
 
-def get_numbers_input(dirname, r1='rmin', r2='rmax', verbose=False):
+def get_numbers_input(dirname, r1='rmin', r2='rmax', verbose=False, diman=False):
     di = dotdict()
     rotation = get_parameter(dirname, 'rotation')
     magnetism = get_parameter(dirname, 'magnetism')
@@ -45,72 +43,45 @@ def get_numbers_input(dirname, r1='rmin', r2='rmax', verbose=False):
     eq = get_eq(dirname, verbose=verbose)
     gi = get_grid_info(dirname, verbose=verbose)
     rr = gi.rr
-    ir1 = np.argmin(np.abs(rr - r1))
-    ir2 = np.argmin(np.abs(rr - r2))
+    ir1, ir2 = inds_from_vals(rr, [r1, r2])
     di.dc = eq.rho[ir1]/eq.rho[ir2]
     di.nrho = np.log(di.dc)
 
-    # get the following volume averages, to be used for all reference_types
-    nu_volav = volav_in_radius(dirname, eq.nu, r1, r2)
-    kappa_volav = volav_in_radius(dirname, eq.kappa, r1, r2)
-    rho_volav = volav_in_radius(dirname, eq.rho, r1, r2)
-    tmp_volav = volav_in_radius(dirname, eq.tmp, r1, r2)
-    grav_volav = volav_in_radius(dirname, eq.grav, r1, r2)
+    # how we get the rest depends on reference_type
+    if eq.reference_type == 2 or diman:
+        # get dimensional volume averages
+        nu_volav = volav_in_radius(dirname, eq.nu, r1, r2)
+        kappa_volav = volav_in_radius(dirname, eq.kappa, r1, r2)
+        rho_volav = volav_in_radius(dirname, eq.rho, r1, r2)
+        tmp_volav = volav_in_radius(dirname, eq.tmp, r1, r2)
+        grav_volav = volav_in_radius(dirname, eq.grav, r1, r2)
+        vol = get_vol(dirname) # make sure to use the full volume
+                    # to calculate the non-radiative heat flux vs radius
+        lstar = vol*np.sum(eq.heat*gi.rw)
+        flux_rad = vol/(4*np.pi*eq.rr**2)*np.cumsum(eq.heat*gi.rw)
+        flux_nonrad = lstar/(4*np.pi*eq.rr**2) - flux_rad
+        flux_volav = volav_in_radius(dirname, flux_nonrad, r1, r2)
 
-    vol = get_vol(dirname) # make sure to use the full volume
-                # to calculate the non-radiative heat flux vs radius
-    lstar = vol*np.sum(eq.heat*gi.rw)
-    flux_rad = vol/(4*np.pi*eq.rr**2)*np.cumsum(eq.heat*gi.rw)
-    flux_nonrad = lstar/(4*np.pi*eq.rr**2) - flux_rad
-    flux_volav = volav_in_radius(dirname, flux_nonrad, r1, r2)
+        # use the local shell's volume for the luminositiy in the heating
+        # integral
+        vol_loc = (4.0*np.pi/3.0)*(r2**3 - r1**3)
+        lum_volint = vol_loc*volav_in_radius(dirname, eq.heat, r1, r2)
 
-    # use the local shell's volume for the luminositiy in the heating
-    # integral
-    vol_loc = (4.0*np.pi/3.0)*(r2**3 - r1**3)
-    lum_volint = vol_loc*volav_in_radius(dirname, eq.heat, r1, r2)
+        # buoyancy frequency
+        nsq = eq.grav*eq.dsdr
+        nsq_volav = volav_in_radius(dirname, nsq, r1, r2)
 
-    # B_visc requires some special attention
-    if eq.reference_type in [2, 4]:
-        nsq_volav = volav_in_radius(dirname, eq.nsq, r1, r2)
-    else:
-        if advect_reference_state:
-            bvisc = get_parameter(dirname, "Buoyancy_Number_Visc")
-            pr = get_parameter(dirname, "Prandtl_Number")
-            if bvisc is None:
-                brot = get_parameter(dirname, "Buoyancy_Number_Rot")
-                ek = get_parameter(dirname, "Ekman_Number")
-                bvisc = brot/ek**2
-            ra = get_parameter(dirname, "Rayleigh_Number")
-            if ra is None:
-                ramod = get_parameter(dirname, "Modified_Rayleigh_Number")
-                ek = get_parameter(dirname, "Ekman_Number")
-                ra = ramod*pr/ek**2
+        # get numbers from ratios of volume integrals
 
-            nsq_volav = ra/(pr*bvisc)*volav_in_radius(eq.grav*eq.dsdr, eq.nsq, r1, r2)
-
-    if eq.reference_type in [2, 4]:
         # Prandtl number
         di.pr = nu_volav/kappa_volav
 
         # flux rayleigh number
         shell_depth = r2 - r1
-        di.raf = grav_volav*flux_volav*shell_depth**4/(eq.c_p*rho_volav*tmp_volav*nu_volav*kappa_volav**2)
-
-        # estimated potential energy across shell
-        dtmp_est = flux_volav*shell_depth/(rho_volav*tmp_volav*kappa_volav)
-        geff_est = grav_volav*dtmp_est
-        if eq.reference_type in [2, 4]:
-            geff_est /= eq.c_p
-        pe_est = rho_volav*geff_est*shell_depth
+        di.raf = grav_volav*flux_volav*shell_depth**4/(rho_volav*tmp_volav*nu_volav*kappa_volav**2)
 
         # dissipation number
-        di.di = grav_volav*shell_depth/(eq.c_p*tmp_volav)
-
-        # non-D heating integral
-        if eq.heating_type > 0:
-            di.he = lum_volint/(flux_volav*shell_depth**2)
-        else:
-            di.he = 0.0
+        di.di = grav_volav*shell_depth/(tmp_volav)
 
         # buoyancy number (viscous)
         if advect_reference_state:
@@ -131,91 +102,53 @@ def get_numbers_input(dirname, r1='rmin', r2='rmax', verbose=False):
             di.brot = di.bvisc*di.ek**2
             di.sigma = np.sqrt(di.brot*di.pr)
 
-            rote_volav = (2.0/3.0)*eq.om0**2*volav_in_radius(dirname, eq.rho*eq.rr**2, r1, r2)
-            di.rote = rote_volav/pe_est
-
         if magnetism:
             # magnetic Prandtl
             eta_volav = volav_in_radius(dirname, eq.eta, r1, r2)
             di.prm = nu_volav/eta_volav
 
-            # "magnetic Ekman number"
-            di.ekm = eta_volav/(eq.om0*shell_depth**2)
-    else: # reference_type = 1,3,5
-        # get the original ("global") numbers from main_input,
-        # then adjust them in proportion to the variuos volume averages
-        # (this assumes we have non-dimensionalized using volume averages)
+            if rotation:
+                # "magnetic Ekman number"
+                di.ekm = eta_volav/(eq.om0*shell_depth**2)
 
-        # also need non-D of time (won't work for Boussinesq)
-        nd_time_visc = get_parameter(dirname, "ND_Time_Visc")
-        nd_time_rot = get_parameter(dirname, "ND_Time_Rot")
-
-        # Prandtl number
-        pr = get_parameter(dirname, "Prandtl_Number")
-        di.pr = pr * (nu_volav/kappa_volav)
-
-        # flux Rayleigh number
-        ra = get_parameter(dirname, "Rayleigh_Number")
-        if ra is None:
-            ramod = get_parameter(dirname, "Modified_Rayleigh_Number")
-            ek = get_parameter(dirname, "Ekman_Number")
-            ra = ramod*pr/ek**2
-
-        # flux rayleigh number
-        di.raf = ra *  ( grav_volav*flux_volav/(rho_volav*tmp_volav*nu_volav*kappa_volav**2) )
-        # also remember flux_volav included factor of 1/Pr or Ek/Pr
-        if nd_time_visc:
-            di.raf *= di.pr
-        elif nd_time_rot:
-            ek = get_parameter(dirname, "Ekman_Number")
-            di.raf *= (di.pr/ek)
-
-        # dissipation number (only for reference type 5)
-        # not Boussinesq and I don't use ref type 3
-        if eq.reference_type == 5:
-            if nd_time_visc:
-                di_loc = eq.constants[7] * (ra/pr)
-            elif nd_time_rot:
-                di_loc = eq.constants[7] * ramod
-            di.di = di_loc * (grav_volav/tmp_volav)
-
-        # non-D heating integral
-        if eq.heating_type > 0:
-            di.he = lum_volint/(flux_volav)
-        else:
-            di.he = 0.0
-
-        if advect_reference_state:
-            # buoyancy number (viscous)
-            bvisc = get_parameter(dirname, "Buoyancy_Number_Visc")
-            if bvisc is None:
-                brot = get_parameter(dirname, "Buoyancy_Number_Rot")
-                ek = get_parameter(dirname, "Ekman_Number")
-                bvisc = brot/ek**2
-            di.bvisc = bvisc * (nsq_volav*nu_volav**2)
-        else:
-            di.bvisc = 0.0
+    elif eq.reference_type == 1: # Boussinesq, get nonD from c's
+        di.pr = 1./eq.constants[5]
+        di.raf = eq.constants[1]*di.pr
+        di.di = 0.
+        di.bvisc = 0.0
 
         if rotation:
-            # Ekman and Taylor
-            ek = get_parameter(dirname, "Ekman_Number")
-            di.ek = ek * nu_volav
-            #di.ta = 1.0/di.ek**2
-
-            # modified Rayleigh
+            di.ek = 1./eq.constants[2]
+            di.ta = 1.0/di.ek**2
             di.rafmod = di.raf*di.ek**2/di.pr
-
-            # buoyancy number (rotational)
-            di.brot = di.bvisc*di.ek**2
+            di.roc = np.sqrt(di.rafmod)
+            di.brot = 0.
+            di.sigma = 0.
 
         if magnetism:
-            # magnetic Prandtl
-            eta_volav = volav_in_radius(dirname, eq.eta, r1, r2)
-            di.prm = nu_volav/eta_volav
+            di.prm = 1.0/eq.constants[6]
+            if rotation:
+                di.ekm = di.ek/di.prm
 
-            # "magnetic Ekman number"
-            ekm = di.ek / di.prm
-            di.ekm = ekm * eta_volav
+    elif eq.reference_type == 5: # General anelastic, get nonD from c's
+        di.pr = 1./eq.constants[5]
+        di.raf = eq.constants[1]*di.pr
+        di.di = eq.constants[7]*di.raf/di.pr
+        di.bvisc = eq.constants[1]*\
+                volav_in_radius(dirname, eq.grav*eq.dsdr, r1, r2)
+
+        if rotation:
+            di.ek = 1./eq.constants[0]
+            di.ta = 1.0/di.ek**2
+            di.rafmod = di.raf*di.ek**2/di.pr
+            di.roc = np.sqrt(di.rafmod)
+            di.brot = di.bvisc*di.ek**2
+            di.sigma = np.sqrt(di.brot*di.pr)
+
+        if magnetism:
+            di.prm = 1.0/eq.constants[6]
+            if rotation:
+                di.ekm = di.ek/di.prm
 
     return di
 
@@ -371,6 +304,7 @@ def get_numbers_output(dirname, r1='rmin', r2='rmax', the_file=None, the_file_az
 
     # achieved potential energy across shell
     grav_volav = volav_in_radius(dirname, eq.grav, r1, r2)
+    # this is g/c_p for dimensional anelastic
     geff = grav_volav*dtmp
     if eq.reference_type in [2, 4]:
         geff /= eq.c_p
