@@ -1310,6 +1310,7 @@ def field_amp(dirname, the_file=None, verbose=False):
     eq = get_eq(dirname)
     rho = eq.rho
     rr = eq.rr
+    nr = eq.nr
     di_out['rr'] = rr
 
     # Get data directory
@@ -1324,6 +1325,7 @@ def field_amp(dirname, the_file=None, verbose=False):
     di_out['iter1'], di_out['iter2'] = get_iters_from_file(the_file)
     vals = di['vals']
     lut = di['lut']
+    qv = di['qv']
 
     # Read in velocity-squared of flows
     # get this from kinetic energy
@@ -1364,13 +1366,18 @@ def field_amp(dirname, the_file=None, verbose=False):
     di_out['vmean'] = np.sqrt(vsqr_mean + vsqt_mean + vsqp_mean)
 
     # Read in enstrophy of convective flows
-    omsqr = vals[:, 0, lut[314]] 
-    omsqt = vals[:, 0, lut[315]]
-    omsqp = vals[:, 0, lut[316]]
+    omsqr = vals[:, 1, lut[301]] 
+    omsqt = vals[:, 1, lut[302]]
+    omsqp = vals[:, 1, lut[303]]
 
-    omsqr_fluc = vals[:, 0, lut[317]] 
-    omsqt_fluc = vals[:, 0, lut[318]]
-    omsqp_fluc = vals[:, 0, lut[319]]
+    if 317 in qv:
+        omsqr_fluc = vals[:, 0, lut[317]] 
+        omsqt_fluc = vals[:, 0, lut[318]]
+        omsqp_fluc = vals[:, 0, lut[319]]
+    else: # just set it to zero for now
+        omsqr_fluc = np.zeros(nr)
+        omsqt_fluc = np.zeros(nr)
+        omsqp_fluc = np.zeros(nr)
 
     # inherently positive, but avoid slightly negative
     # (machine error) when 0
