@@ -154,12 +154,8 @@ def get_numbers_input(dirname, r1='rmin', r2='rmax', verbose=False, diman=False)
     return di
 
 # header info for output numbers
-linebreaks_output = [3, 6, 9, 11, 14, 17, 18, 21, 24, 25]
+linebreaks_output = [3, 6, 8, 11, 14, 15, 18, 21, 22]
 numbers_output_def = dotdict({
-    "ma": ("Ma", "v/c"),
-    "mamean": ("Ma_mean","<v>/c"),
-    "mafluc": ("Ma_fluc","v'/c"),
-
     "re": ("Re", "v*H/nu"),
     "remean": ("Re_mean", "<v>*H/nu"),
     "refluc": ("Re_fluc", "v'*H/nu"),
@@ -269,17 +265,6 @@ def get_numbers_output(dirname, r1='rmin', r2='rmax', the_file=None, the_file_az
                 di_amp[key] = volav_in_radius(dirname, profile, r1, r2)
 
     # get non-rotating, non-magnetic numbers first:
-
-    # get the Mach numbers
-    dlnprs = eq.dlnrho + eq.dlntmp
-    dprs = eq.prs*dlnprs
-    drho = eq.rho*eq.dlnrho
-    csq = dprs/drho
-    csq_volav = volav_in_radius(dirname, csq, r1, r2)
-
-    di.ma = di_amp.v/np.sqrt(csq_volav)
-    di.mamean = di_amp.vmean/np.sqrt(csq_volav)
-    di.mafluc = di_amp.vfluc/np.sqrt(csq_volav)
 
     # get the system Reynolds numbers
     nu_volav = volav_in_radius(dirname, eq.nu, r1, r2)
