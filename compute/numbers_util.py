@@ -175,7 +175,7 @@ numbers_output_def = dotdict({
     "rovortmean": ("Ro_vort,mean", "<om>/(2*Om_0)"),
     "rovortfluc": ("Ro_vort,fluc", "om'/(2*Om_0)"),
 
-    "diffrot": ("DR", "rms (Om/Om_0 - 1)"),
+    "diffrot": ("DR", "<|Om_eq - Om_60|^2>^(1/2)"),
 
     "rem": ("Re_m", "v*H/eta"),
     "remmean": ("Re_m,mean", "<v>*H/eta"),
@@ -187,7 +187,7 @@ numbers_output_def = dotdict({
 
     "me": ("ME", "(B^2/(8*pi)) / (rho*v^2/2)") })
 
-def get_dr_contrast(dirname, r1='rmin', r2='rmax', the_file=None, verbose=False):
+def get_dr_contrast(dirname, r1='rmin', r2='rmax', lat1=0., lat2=60., the_file=None, verbose=False, alt=False):
     # rotation contrast
     if the_file is None:
         datadir = dirname + '/data/'
@@ -208,9 +208,18 @@ def get_dr_contrast(dirname, r1='rmin', r2='rmax', the_file=None, verbose=False)
     # Get differential rotation in the rotating frame. 
     rotrate = vp_av/gi.xx
 
-    # spherical rms. differential rotation
-    rotrate_rms = np.sqrt(np.sum(rotrate**2*gi.tw_2d, axis=0))
-    return volav_in_radius(dirname, rotrate_rms/eq.om0, r1, r2)
+    if alt:
+        # spherical rms. differential rotation
+        dr_contrast = np.sqrt(np.sum(rotrate**2*gi.tw_2d, axis=0))
+    else:
+        nthalf = gi.nt//2
+        tt_lat_sym = gi.tt_lat[nthalf:]
+        rotrate_sym = (rotrate[nthalf:, :] + (rotrate[nthalf-1::-1, :]))/2
+        ilat1, ilat2 = inds_from_vals(tt_lat_sym, [lat1, lat2])
+        dr_contrast = rotrate_sym[ilat1, :] - rotrate_sym[ilat2, :]
+
+    out = volav_in_radius(dirname, dr_contrast**2, r1, r2)**0.5/eq.om0
+    return out
 
 def get_numbers_output(dirname, r1='rmin', r2='rmax', the_file=None, the_file_az=None, verbose=False):
     # get diagnostic numbers (e.g., Re and Ro), quantities vol. avg.'d 
