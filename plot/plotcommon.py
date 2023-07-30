@@ -325,12 +325,6 @@ def saturate_array(arr, my_min, my_max):
     arr[np.where(arr < my_min)] = my_min
     arr[np.where(arr > my_max)] = my_max
 
-def get_exp(num):
-    if num != 0.:
-        return int(np.floor(np.log10(np.abs(num))))
-    else:
-        return 1
-
 def sci_format(num, ndec=1, compact=False, nomant=False):
     exponent = get_exp(num)
     mantissa = num/10.**exponent

@@ -91,6 +91,12 @@ buff_line = buffer_line = "=============================================="
 # FORMATTING ROUTINES FOR PRINT OUTPUT
 ######################################
 
+def get_exp(num):
+    if num != 0.:
+        return int(np.floor(np.log10(np.abs(num))))
+    else:
+        return 1
+
 def make_bold(st):
     return bold_char_begin + st + bold_char_end
 
