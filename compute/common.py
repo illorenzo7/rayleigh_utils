@@ -369,6 +369,20 @@ def sliding_average(vals, times, delta_t):
         slider[it] = np.mean(vals[it1:it2])
     return slider
 
+def sliding_average_inds(vals, nsmooth):
+    # simple sliding average
+    nt = len(vals)
+    slider = np.zeros(nt)
+    for it in range(nt):
+        it1 = it - nsmooth//2
+        it2 = it1 + nsmooth
+        if it1 < 0:
+            it1 = 0
+        if it2 > nt:
+            it2 = nt
+        slider[it] = np.mean(vals[it1:it2])
+    return slider
+
 # Nonlinear Fourier transforms
 def my_nfft(times, arr, axis=0):
     # shift the times to lie in range -1/2, 1/2
