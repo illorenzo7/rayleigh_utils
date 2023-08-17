@@ -506,7 +506,7 @@ def lineplot(xx, profiles, ax, **kwargs):
     if kw.plotleg:
         ax.legend(loc='lower left', ncol=kw.ncolleg, fontsize=0.8*default_labelsize)
 
-add_cbar_kwargs_default = dict({'cbar_thick': 1/8, 'cbar_aspect': 1/20, 'cbar_prec': 2, 'cbar_no': 1, 'cbar_offset': None, 'cbar_pos': 'bottom', 'cbar_total_width': 1/2, 'units': '', 'nosci': False, 'cbar_fs': default_labelsize, 'tickvals': None, 'ticklabels': None, 'exp': 0, 'logscale': False, 'posdef': False, 'symlog': False, 'sgnlog': False, 'tol': 0.75, 'no0': False})
+add_cbar_kwargs_default = dict({'cbar_thick': 1/8, 'cbar_aspect': 1/20, 'cbar_prec': 2, 'cbar_no': 1, 'cbar_offset': None, 'cbar_pos': 'bottom', 'cbar_total_width': 1/2, 'units': '', 'nosci': False, 'cbar_fs': default_labelsize, 'tickvals': None, 'ticklabels': None, 'exp': 0, 'logscale': False, 'posdef': False, 'fullrange2': False, 'symlog': False, 'sgnlog': False, 'tol': 0.75, 'no0': False})
 def add_cbar(fig, ax, im, **kwargs):
     # deal with kwargs
     kw = update_dict(add_cbar_kwargs_default, kwargs)
@@ -591,7 +591,8 @@ def add_cbar(fig, ax, im, **kwargs):
                         np.linspace(-maxabs, -linthresh, 4, endpoint=False),
                         np.linspace(-linthresh, linthresh, 4, endpoint=False),
                         np.linspace(linthresh, maxabs, 5) ))
-                                    
+            elif kw.fullrange2:
+                kw.tickvals = np.array([levelsfield[0], 0., levelsfield[-1]])
             else:
                 nskip = nlevelsfield//8
                 kw.tickvals = levelsfield[::nskip]
@@ -622,6 +623,8 @@ def add_cbar(fig, ax, im, **kwargs):
                 for ind in indvals:
                     fmt = '%.' + str(kw.cbar_prec) + 'f'
                     kw.ticklabels[ind] = fmt %kw.tickvals[ind]
+                if kw.fullrange2: # remove zero tick
+                    kw.ticklabels[1] = ''
         cbar.set_ticks(kw.tickvals)
         cbar.set_ticklabels(kw.ticklabels)
 
