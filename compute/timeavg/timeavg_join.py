@@ -68,9 +68,28 @@ for i in range(nfiles):
 
 # average the files together
 di0 = di_list[0]
+
+# figure out the overlap of the values that are output in each dictionary
+qv0 = di0['qv']
+qv = np.copy(qv0)
+for i in range(nfiles - 1):
+    qv = np.intersect1d(qv, get_dict(files[i + 1])['qv'])
+nq = len(qv)
+
+# also need to update the lookup table
+lut = np.zeros_like(di0['lut']) + 4000
+lut[qv] = np.arange(nq)
+
+# rearrange first axis in vals to correspond to qv
 vals = np.zeros_like(di0['vals'])
+q_inds0 = np.zeros(nq, dtype=int)
+for iq in range(nq):
+    q_inds0[iq] = np.argmin(np.abs(qv0 - qv[iq]))
+vals = vals[..., q_inds0]
+
 if dataname == 'Shell_Spectra':
     lpower = np.zeros_like(di0['lpower'])
+    lpower = lpower[..., q_inds0, :]
 
 for i in range(nfiles):
     print('adding %s' %files[i])
@@ -78,14 +97,23 @@ for i in range(nfiles):
     weight_loc = weights[i]
     print ('weight = %.3f' %weight_loc)
     vals_loc = di_loc['vals']
+    # build array of (sorted) qv indices the dictionary to average
+    q_inds2 = np.zeros(nq, dtype='int')
+    for iq in range(nq):
+        q_inds2[iq] = np.argmin(np.abs(di_loc['qv'] - qv[iq]))
+    vals_loc = vals_loc[..., q_inds2]
+
     vals += vals_loc*weight_loc
     if dataname == 'Shell_Spectra':
         lpower_loc = di_loc['lpower']
+        lpower_loc = lpower_loc[..., q_inds2, :]
         lpower += lpower_loc*weight_loc
 
 # Initialize joined dictionary, then change it
 di = dict(di_list[0])
 di['vals'] = vals
+di['qv'] = qv
+di['lut'] = lut
 if dataname == 'Shell_Spectra':
     di['lpower'] = lpower
 
