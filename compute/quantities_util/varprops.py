@@ -264,6 +264,11 @@ def get_quantity_group(groupname, magnetism):
         totsig = np.zeros(len(qvals))
         totsig[-2] = totsig[-1] = 1
 
+    if groupname == 'indraltdiff': # induction, r, old diffusion
+        qvals = [802, 1606, 1607, 1608, 1609, 2911]
+        totsig = np.zeros(len(qvals))
+        totsig[-2] = totsig[-1] = 1
+
     if groupname == 'indrmean': # induction, r, mean
         qvals = [1616, 1617, 1618, 1619, 1620]
         totsig = np.zeros(len(qvals))
@@ -271,6 +276,11 @@ def get_quantity_group(groupname, magnetism):
 
     if groupname == 'indt': # induction, theta
         qvals = [802, 1606, 1607, 1608, 1609, 1610]
+        totsig = np.zeros(len(qvals))
+        totsig[-2] = totsig[-1] = 1
+
+    if groupname == 'indtaltdiff': # induction, theta, old diffusion
+        qvals = [802, 1606, 1607, 1608, 1609, 2912]
         totsig = np.zeros(len(qvals))
         totsig[-2] = totsig[-1] = 1
 
@@ -283,7 +293,12 @@ def get_quantity_group(groupname, magnetism):
         qvals = [803, 1611, 1612, 1613, 1614, 1615]
         totsig = np.zeros(len(qvals))
         totsig[-2] = totsig[-1] = 1
-    
+
+    if groupname == 'indtaltdiff': # induction, phi, old diffusion
+        qvals = [802, 1606, 1607, 1608, 1609, 2913]
+        totsig = np.zeros(len(qvals))
+        totsig[-2] = totsig[-1] = 1
+   
     if groupname == 'indpmean': # energy fluxes, phi, mean
         qvals = [1626, 1627, 1628, 1629, 1630]
         totsig = np.zeros(len(qvals))
