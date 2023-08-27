@@ -97,6 +97,22 @@ samplevals_avail = di['samplevals']
 iter1, iter2 = get_iters_from_file(kw.the_file)
 times /= time_unit
 
+# set xminmax if not set by user
+if kw.xminmax is None:
+    # set xmin possibly
+    if kw.xmin is None:
+        kw.xmin = np.min(times)
+    # set xmax possibly
+    if kw.xmax is None:
+        kw.xmax = np.max(times)
+    kw.xminmax = kw.xmin, kw.xmax
+
+ixmin = np.argmin(np.abs(times - kw.xminmax[0]))
+ixmax = np.argmin(np.abs(times - kw.xminmax[1]))
+times = times[ixmin:ixmax+1]
+iters = iters[ixmin:ixmax+1]
+vals = vals[ixmin:ixmax+1, :]
+
 # maybe thin data
 if not kw.ntot == 'full':
     print ("ntot = %i" %kw.ntot)
@@ -149,6 +165,7 @@ if not kw.samplevals is None: # isamplevals being set indirectly
             kw.isamplevals[i] = np.argmin(np.abs(samplevals_avail - kw.samplevals[i]))
 
 # Loop over the desired levels and save plots
+kw.isamplevals = make_array(kw.isamplevals) # needs to be array
 for isampleval in kw.isamplevals:
     sampleval = samplevals_avail[isampleval]
 

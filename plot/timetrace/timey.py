@@ -144,6 +144,7 @@ if kw.titles is None:
             kw.titles[iplot] += ' (sub. temp. mean)'
 
 # Loop over the desired levels and save plots
+kw.isamplevals = make_array(kw.isamplevals) # needs to be array
 for isampleval in kw.isamplevals:
     sampleval = samplevals_avail[isampleval]
 
