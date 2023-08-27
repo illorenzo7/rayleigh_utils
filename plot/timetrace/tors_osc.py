@@ -23,7 +23,7 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = clas0['magnetism']
 
 # defaults
-kwargs_default = dict({'the_file': None, 'ntot': 500, 'clat': 10, 'dlat': 0, 'om': None, 'rad': False, 'lon': False, 'isamplevals': np.array([0]), 'samplevals': None, 'rvals': None, 'groupname': 'v', 'nosub': False, 'prepend': False})
+kwargs_default = dict({'the_file': None, 'ntot': 500, 'clat': 10, 'dlat': 0, 'om': None, 'rad': False, 'lon': False, 'isamplevals': np.array([0]), 'samplevals': None, 'rvals': None, 'groupname': 'v', 'sub': False, 'prepend': False})
 
 # also need make figure kwargs
 timey_fig_dimensions['margin_top_inches'] = 1.0
@@ -140,7 +140,7 @@ Om0 = 2*np.pi/eq.prot
 # differential rotation in the rotating frame. 
 Om = vp/xx
 
-if kw.nosub: # full Omega (no subtraction)
+if not kw.sub: # full Omega (no subtraction)
     subplottitle = 'full rotation: ' + r'$(\Omega - \Omega_0)/\Omega_0$'
 else:
     dummy, n1, n2 = np.shape(Om)
