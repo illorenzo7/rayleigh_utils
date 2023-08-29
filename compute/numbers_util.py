@@ -27,7 +27,7 @@ numbers_input_def = dotdict({
     })
 
 
-def get_numbers_input(dirname, r1='rmin', r2='rmax', verbose=False, diman=False):
+def get_numbers_input(dirname, r1='rmin', r2='rmax', verbose=False, diman=False, use2=True):
     di = dotdict()
     rotation = get_parameter(dirname, 'rotation')
     magnetism = get_parameter(dirname, 'magnetism')
@@ -92,7 +92,10 @@ def get_numbers_input(dirname, r1='rmin', r2='rmax', verbose=False, diman=False)
 
         if rotation:
             # Ekman and Taylor
-            di.ek = nu_volav/(2*eq.om0*shell_depth**2)
+            if use2:
+                di.ek = nu_volav/(2*eq.om0*shell_depth**2)
+            else:
+                di.ek = nu_volav/(eq.om0*shell_depth**2)
             di.ta = 1.0/di.ek**2
 
             # modified Rayleigh
