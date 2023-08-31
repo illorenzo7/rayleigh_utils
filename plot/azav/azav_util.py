@@ -373,7 +373,7 @@ def plot_azav_grid(terms, rr, cost, **kwargs):
         if kw.shav:
             av_term = np.sum(terms[iplot]*tw_2d, axis=0)
             av_ax = av_axs[irow, icol]
-            lineplot(rr, [av_term], av_ax, xlabel=xlabel, title=title_loc, xcut=kw.rcut, xvals=kw.rvals, minmax=kw.minmax, minmax2=kw.minmax2, plotleg=False)
+            lineplot(rr, [av_term], av_ax, xlabel=xlabel, title=title_loc, xcut=kw.rcut,  minmax=kw.minmax, minmax2=kw.minmax2, plotleg=False)
 
     # Put the main title in upper left
     fig.text(fpar['margin_left'] + fpar['sub_margin_left'], 1.0 - fpar['margin_top'], kw.maintitle, ha='left', va='bottom', fontsize=default_titlesize)
