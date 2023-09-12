@@ -714,9 +714,18 @@ def get_iters_from_file(filename):
 # Start with basic input parameters
 ###################################
 
-def strip_dirname(dirname, wrap=False):
+def strip_dirname(dirname, dirdepth=None, wrap=False):
     full_dirname = os.path.abspath(dirname)
-    dirname_stripped = full_dirname.split('/')[-1]
+    splits = full_dirname.split('/')
+    nsplit = len(splits)
+    dirname_stripped = ''
+    if dirdepth is None: # default dirdepth 1
+        dirdepth = 1
+    loopmax = min(dirdepth, nsplit)
+    print(loopmax, "loopmax")
+    for i in range(loopmax):
+        dirname_stripped = '/' + splits[nsplit-i-1] + dirname_stripped
+    dirname_stripped = dirname_stripped[1:] # remove prepended /
 
     ncut = 20
     if wrap and len(dirname_stripped) > ncut:

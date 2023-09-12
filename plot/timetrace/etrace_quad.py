@@ -15,13 +15,12 @@ from rayleigh_diagnostics import GridInfo
 args = sys.argv
 clas0, clas = read_clas(args)
 dirname = clas0['dirname']
-dirname_stripped = strip_dirname(dirname)
 
 # See if magnetism is "on"
 magnetism = get_parameter(dirname, 'magnetism')
 
 # SPECIFIC ARGS for etrace:
-kwargs_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'growth': False, 'growthfrac': 0.5, 'xvals': np.array([]), 'inte': False, 'nquadr': None, 'nquadlat': None, 'etype': 'tot', 'legfrac': None, 'nomag': False, 'noke': False, 'prepend': False})
+kwargs_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'growth': False, 'growthfrac': 0.5, 'xvals': np.array([]), 'inte': False, 'nquadr': None, 'nquadlat': None, 'etype': 'tot', 'legfrac': None, 'nomag': False, 'noke': False, 'prepend': False, 'dirdepth': None})
 
 # make figure kwargs
 lineplot_fig_dimensions['margin_top_inches'] = 3/4
@@ -34,6 +33,9 @@ kwargs_default.update(make_figure_kwargs_default)
 # update these defaults from command-line
 kw = update_dict(kwargs_default, clas)
 kw_make_figure = update_dict(make_figure_kwargs_default, clas)
+
+# make longer directory tree labels possible
+dirname_stripped = strip_dirname(dirname, dirdepth=kw.dirdepth)
 
 fontsize = default_titlesize
 the_file = kw.the_file
