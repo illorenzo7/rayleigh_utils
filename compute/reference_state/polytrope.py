@@ -9,7 +9,7 @@ from common import g_univ, sun
 from cla_util import *
 
 
-compute_polytrope2_kwargs_default = dict({'Nrho': 3, 'r0': rbcz, 'r1': None, 'rho0': rhobcz, 'T0': tempbcz, 'poly_mass': msun, 'poly_n': 1.5, 'gas_constant_star': thermo_R})
+compute_polytrope2_kwargs_default = dict({'Nrho': 3, 'r0': sun.rbcz, 'r1': None, 'rho0': sun.rho_bcz, 'T0': sun.tmp_bcz, 'poly_mass': msun, 'poly_n': 1.5, 'gas_constant_star': sun.gas_constant})
 
 def compute_polytrope2(**kwargs):
     # overwrite defaults
@@ -17,8 +17,8 @@ def compute_polytrope2(**kwargs):
     # check for bad keys
     find_bad_keys(compute_polytrope2_kwargs_default, kwargs, 'compute_polytrope2()')
 
-    poly_a = G*kw.poly_mass/((kw.poly_n + 1)*kw.gas_constant_star*kw.T0*kw.r0)
-    nr = 100000 # make this grid super fine
+    poly_a = g_univ*kw.poly_mass/((kw.poly_n + 1)*kw.gas_constant_star*kw.T0*kw.r0)
+    nr = 10000 # make this grid super fine
     if kw.r1 is None:
         rmax = kw.r0*poly_a/(poly_a - 1) # at rmax, rho = 0
         rtmp = np.linspace(kw.r0, rmax, nr)
@@ -40,7 +40,7 @@ def compute_polytrope2(**kwargs):
     d2lnrho = -kw.poly_n/factor**2 * dfactor**2*d2factor
     
     P = rho*kw.gas_constant_star*T
-    cv_star = kw.gas_constant_star/(thermo_gamma - 1)
+    cv_star = kw.gas_constant_star/(gamma_ideal - 1)
 
     # S and its derivative will be zero most of the time...
     dSdr = cv_star*(kw.poly_n/1.5 - 1)/(r + (1 - poly_a)*r**2/(poly_a*kw.r0))
