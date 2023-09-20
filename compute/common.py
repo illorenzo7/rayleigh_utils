@@ -722,7 +722,6 @@ def strip_dirname(dirname, dirdepth=None, wrap=False):
     if dirdepth is None: # default dirdepth 1
         dirdepth = 1
     loopmax = min(dirdepth, nsplit)
-    print(loopmax, "loopmax")
     for i in range(loopmax):
         dirname_stripped = '/' + splits[nsplit-i-1] + dirname_stripped
     dirname_stripped = dirname_stripped[1:] # remove prepended /
@@ -1198,6 +1197,50 @@ def get_eq(dirname, fname=None, verbose=False):
 
     return eq_hr
 
+def get_units(dirname, rvals=['rmin', 'rmax']):
+    eq = get_eq(dirname)
+    gi = get_grid_info(dirname)
+    nsq = eq.dsdr*eq.grav
+
+    # get background volavgs
+    r1, r2 = interpret_rvals(dirname, rvals)
+    nu_volav = volav_in_radius(dirname, eq.nu, r1, r2)
+    rho_volav = volav_in_radius(dirname, eq.rho, r1, r2)
+    tmp_volav = volav_in_radius(dirname, eq.tmp, r1, r2)
+    grav_volav = volav_in_radius(dirname, eq.grav, r1, r2)
+    kappa_volav  = volav_in_radius(dirname, eq.kappa, r1, r2)
+
+    # output units
+    di = dotdict()
+
+    # basic parameters (length, time, rho, S)
+    H = r2 - r1
+    di.l = H
+    di.t = 1/(2*eq.om0)
+    vol = get_vol(dirname) # make sure to use the full volume
+                # to calculate the non-radiative heat flux vs radius
+    lstar = vol*np.sum(eq.heat*gi.rw)
+    flux_rad = vol/(4*np.pi*eq.rr**2)*np.cumsum(eq.heat*gi.rw)
+    flux_nonrad = lstar/(4*np.pi*eq.rr**2) - flux_rad
+    flux_volav = volav_in_radius(dirname, flux_nonrad, 'rmid', 'rmax')
+    di.s = flux_volav*H/(kappa_volav*rho_volav*tmp_volav)
+
+    # derivative parameters (velocity, b field, etc.)
+    di.rho = rho_volav
+    di.v = di.l/di.t
+    di.b = np.sqrt(4*np.pi*di.rho)*di.v
+    di.e = di.rho*di.v**2
+
+    # other background volav
+    di.tmp = tmp_volav
+    di.grav = grav_volav
+    di.kappa = kappa_volav
+    di.nu = nu_volav
+    di.fluxnr = flux_volav
+    di.lum = lstar
+    di.vol = vol
+
+    return di
 
 ############################################
 # ROUTINES FOR TIME PARAMETERS OF SIMULATION
