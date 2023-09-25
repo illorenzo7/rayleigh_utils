@@ -384,7 +384,7 @@ def sliding_average_inds(vals, nsmooth):
     return slider
 
 # Nonlinear Fourier transforms
-def my_nfft(times, arr, axis=0):
+def my_nfft(times, arr, axis=0, window=False):
     # shift the times to lie in range -1/2, 1/2
     total_time = times[-1] - times[0]
     times_shift = (times - times[0])/total_time - 1/2
@@ -392,6 +392,13 @@ def my_nfft(times, arr, axis=0):
     times_eq = np.linspace(-1/2, 1/2, len(times))
     interpolant = interp1d(times_shift, arr, axis=axis)
     arr_interp = interpolant(times_eq)
+    # apply a Hann window possibly
+    if window:
+        the_window = np.hanning(len(times))
+        the_shape = np.ones(arr_interp.ndim, dtype='int')
+        the_shape[axis] = len(times)
+        the_window = the_window.reshape(the_shape)
+        arr_interp *= the_window
     arr_fft = np.fft.fft(arr_interp, axis=axis)
     arr_fft = np.fft.fftshift(arr_fft, axes=axis)
 
