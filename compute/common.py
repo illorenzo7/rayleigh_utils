@@ -392,15 +392,25 @@ def my_nfft(times, arr, axis=0, window=False):
     times_eq = np.linspace(-1/2, 1/2, len(times))
     interpolant = interp1d(times_shift, arr, axis=axis)
     arr_interp = interpolant(times_eq)
+    arr_fft = np.fft.fft(arr_interp, axis=axis)
+    arr_fft = np.fft.fftshift(arr_fft, axes=axis)
+
     # apply a Hann window possibly
     if window:
         the_window = np.hanning(len(times))
         the_shape = np.ones(arr_interp.ndim, dtype='int')
         the_shape[axis] = len(times)
         the_window = the_window.reshape(the_shape)
-        arr_interp *= the_window
-    arr_fft = np.fft.fft(arr_interp, axis=axis)
-    arr_fft = np.fft.fftshift(arr_fft, axes=axis)
+        arr_fft_window = np.fft.fft(arr_interp*the_window, axis=axis)
+        arr_fft_window = np.fft.fftshift(arr_fft_window, axes=axis)
+
+        # normalize the windowed FFT to match the regular FFT
+        ratio = np.sqrt(np.sum(np.abs(arr_fft)**2, axis=axis)/\
+                np.sum(np.abs(arr_fft_window)**2, axis=axis) )
+        the_shape = list(ratio.shape)
+        the_shape.insert(axis, 1)
+        ratio = ratio.reshape(the_shape)
+        arr_fft = arr_fft_window*ratio
 
     # may as well get frequencies here too
     delta_t = np.mean(np.diff(times))
