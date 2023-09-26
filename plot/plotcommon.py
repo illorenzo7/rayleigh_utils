@@ -877,7 +877,7 @@ def my_pcolormesh(field, fig, ax, **kwargs):
 
     # get default bounds if not specified
     if kw.minmax is None:
-        kw.minmax = kw_add_cbar.minmax = contourf_minmax(field, **kw_contourf_minmax)
+        kw.minmax = contourf_minmax(field, **kw_contourf_minmax)
 
     # Factor out the exponent on the field and put it on the color bar
     # can turn this behavior off with "nosci=True"
@@ -886,7 +886,7 @@ def my_pcolormesh(field, fig, ax, **kwargs):
         kw_add_cbar.exp = get_exp(maxabs)
         divisor = 10**kw_add_cbar.exp
         field /= divisor
-        kw.minmax = kw_add_cbar.minmax = kw.minmax[0]/divisor, kw.minmax[1]/divisor
+        kw.minmax = kw.minmax[0]/divisor, kw.minmax[1]/divisor
     else:
         divisor = 1.0
 
