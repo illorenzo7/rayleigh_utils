@@ -384,7 +384,7 @@ def sliding_average_inds(vals, nsmooth):
     return slider
 
 # Nonlinear Fourier transforms
-def my_nfft(times, arr, axis=0, window=False):
+def my_nfft(times, arr, axis=0, window=False, renorm=False):
     # shift the times to lie in range -1/2, 1/2
     total_time = times[-1] - times[0]
     times_shift = (times - times[0])/total_time - 1/2
@@ -405,11 +405,14 @@ def my_nfft(times, arr, axis=0, window=False):
         arr_fft_window = np.fft.fftshift(arr_fft_window, axes=axis)
 
         # normalize the windowed FFT to match the regular FFT
-        ratio = np.sqrt(np.sum(np.abs(arr_fft)**2, axis=axis)/\
-                np.sum(np.abs(arr_fft_window)**2, axis=axis) )
-        the_shape = list(ratio.shape)
-        the_shape.insert(axis, 1)
-        ratio = ratio.reshape(the_shape)
+        if renorm:
+            ratio = np.sqrt(np.sum(np.abs(arr_fft)**2, axis=axis)/\
+                    np.sum(np.abs(arr_fft_window)**2, axis=axis) )
+            the_shape = list(ratio.shape)
+            the_shape.insert(axis, 1)
+            ratio = ratio.reshape(the_shape)
+        else:
+            ratio = 1.
         arr_fft = arr_fft_window*ratio
 
     # may as well get frequencies here too
