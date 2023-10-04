@@ -506,7 +506,7 @@ def lineplot(xx, profiles, ax, **kwargs):
     if kw.plotleg:
         ax.legend(loc='lower left', ncol=kw.ncolleg, fontsize=0.8*default_labelsize)
 
-add_cbar_kwargs_default = dict({'cbar_thick': 1/8, 'cbar_aspect': 1/20, 'cbar_prec': 2, 'cbar_no': 1, 'cbar_offset': None, 'cbar_pos': 'bottom', 'cbar_total_width': 1/2, 'units': '', 'nosci': False, 'cbar_fs': default_labelsize, 'tickvals': None, 'ticklabels': None, 'exp': 0, 'logscale': False, 'posdef': False, 'fullrange2': False, 'symlog': False, 'sgnlog': False, 'tol': 0.75, 'no0': False})
+add_cbar_kwargs_default = dict({'cbar_thick': 1/8, 'cbar_aspect': 1/20, 'cbar_prec': 2, 'cbar_no': 1, 'cbar_offset': None, 'cbar_pos': 'bottom', 'cbar_total_width': 1/2, 'units': '', 'nosci': False, 'cbar_fs': default_labelsize, 'tickvals': None, 'ticklabels': None, 'exp': 0, 'logscale': False, 'posdef': False, 'fullrange2': False, 'symlog': False, 'sgnlog': False, 'tol': 0.75, 'no0': False, 'cbar_label': None})
 def add_cbar(fig, ax, im, **kwargs):
     # deal with kwargs
     kw = update_dict(add_cbar_kwargs_default, kwargs)
@@ -555,10 +555,11 @@ def add_cbar(fig, ax, im, **kwargs):
     cbar = plt.colorbar(im, cax=cax, orientation=orientation)
 
     # deal with labels
-    if kw.nosci or kw.logscale or kw.symlog:
-        cbar_label = kw.units
-    else:
-        cbar_label = (r'$\times10^{%i}\ $' %kw.exp) + kw.units
+    if kw.cbar_label is None:
+        if kw.nosci or kw.logscale or kw.symlog:
+            kw.cbar_label = kw.units
+        else:
+            kw.cbar_label = (r'$\times10^{%i}\ $' %kw.exp) + kw.units
 
     # font size for the tick labels
     cax.tick_params(labelsize=kw.cbar_fs)
@@ -630,13 +631,13 @@ def add_cbar(fig, ax, im, **kwargs):
 
     if kw.cbar_pos == 'bottom':
         fig.text(cbar_left + cbar_width + 1/16/fig_width_inches,\
-                cbar_bottom + 0.5*cbar_height, cbar_label,\
+                cbar_bottom + 0.5*cbar_height, kw.cbar_label,\
                 ha='left', va='center', fontsize=kw.cbar_fs) 
     elif kw.cbar_pos == 'right':
         #fig.text(cbar_left + cbar_width + lilbit/fig_aspect,\
-        #        cbar_bottom + 0.5*cbar_height, cbar_label,\
+        #        cbar_bottom + 0.5*cbar_height, kw.cbar_label,\
         #        ha='left', va='center', fontsize=kw.fontsize) 
-        cax.set_title(cbar_label, ha='left', fontsize=kw.cbar_fs)
+        cax.set_title(kw.cbar_label, ha='left', fontsize=kw.cbar_fs)
 
 contourf_minmax_kwargs_default = dict({'posdef': False, 'logscale': False, 'symlog': False, 'sgnlog': False, 'fullrange': False, 'fullrange2': False, 'buff_ignore1': buff_frac, 'buff_ignore2': buff_frac}) 
 
