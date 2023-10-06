@@ -15,15 +15,18 @@ from rayleigh_diagnostics import GridInfo
 args = sys.argv
 clas0, clas = read_clas(args)
 dirname = clas0['dirname']
+dirname_stripped = strip_dirname(dirname)
 
 # See if magnetism is "on"
 magnetism = get_parameter(dirname, 'magnetism')
 
 # SPECIFIC ARGS for etrace:
-kwargs_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'growth': False, 'growthfrac': 0.5, 'xvals': np.array([]), 'inte': False, 'nquadr': None, 'nquadlat': None, 'etype': 'tot', 'legfrac': None, 'nomag': False, 'noke': False, 'prepend': False, 'dirdepth': None})
+kwargs_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'growth': False, 'growthfrac': 0.5, 'xvals': np.array([]), 'inte': False, 'nquadr': None, 'nquadlat': None, 'etype': 'tot', 'legfrac': None, 'nomag': False, 'noke': False})
 
 # make figure kwargs
-lineplot_fig_dimensions['margin_top_inches'] = 3/4
+nlines = get_num_lines(clas0.dirname_label)
+print("nlines = ", nlines)
+lineplot_fig_dimensions['margin_top_inches'] = (nlines+2)*default_line_height
 make_figure_kwargs_default.update(lineplot_fig_dimensions)
 make_figure_kwargs_default['margin_top_inches'] += 2*default_line_height
 
@@ -34,8 +37,6 @@ kwargs_default.update(make_figure_kwargs_default)
 kw = update_dict(kwargs_default, clas)
 kw_make_figure = update_dict(make_figure_kwargs_default, clas)
 
-# make longer directory tree labels possible
-dirname_stripped = strip_dirname(dirname, dirdepth=kw.dirdepth)
 
 fontsize = default_titlesize
 the_file = kw.the_file
@@ -295,7 +296,7 @@ for it in range(nquadlat):
 # overall title 
 iter1, iter2 = get_iters_from_file(the_file)
 time_string = get_time_string(dirname, iter1, iter2) 
-the_title = dirname_stripped + '\n' +  'energy trace (' + etype + ')' + '\n' + time_string
+the_title = clas0.dirname_label + '\n' +  'energy trace (' + etype + ')' + '\n' + time_string
 margin_x = fpar['margin_left'] + fpar['sub_margin_left']
 margin_y = default_margin/fpar['height_inches']
 fig.text(margin_x, 1 - margin_y, the_title,\
@@ -322,7 +323,7 @@ if xiter and tag == '':
 plotdir = my_mkdir(clas0['plotdir']) 
 basename = dataname.replace('G_Avgs_trace', 'etrace' + '_' + etype)
 savename = basename + tag + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
-if kw.prepend:
+if clas0.prepend:
     savename = dirname_stripped + '_' + savename
 
 if clas0['saveplot']:

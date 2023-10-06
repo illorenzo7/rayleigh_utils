@@ -72,11 +72,16 @@ def read_clas(args):
     clas0['routinename'] = args[0].split('/')[-1][:-3]
     dirname = args[1]
     clas0['dirname'] = dirname
+    clas0['dirname_stripped'] = strip_dirname(dirname) 
     clas0['datadir'] = dirname + '/data/'
     clas0['plotdir'] = dirname + '/plots/'
     clas0['saveplot'] = True
     clas0['showplot'] = True
+    clas0['prepend'] = False # prepends directory name to plot name
     clas0['tag'] = ''
+    wrap = False
+    dirdepth = None
+    ncut = None
 
     # see if magnetism/rotation are on
     clas0['magnetism'] = get_parameter(dirname, 'magnetism')
@@ -101,6 +106,14 @@ def read_clas(args):
             clas0['plotdir'] = args[i+1] + '/'
         elif arg == '--tag':
             clas0['tag'] = '_' + args[i+1]
+        elif arg == '--prepend':
+            clas0['prepend'] = True
+        elif arg == '--ncut':
+            ncut = int(args[i+1])
+        elif arg == '--dirdepth':
+            dirdepth = int(args[i+1])
+        elif arg == '--wrap':
+            wrap = True
 
         # then the rest of the args
         elif arg == '--width':
@@ -171,5 +184,8 @@ def read_clas(args):
         elif '--' in arg:
             key = arg[2:]
             clas[key] = read_cla_vals(args, i)
+
+    # this clas0 one must be set at the end
+    clas0['dirname_label'] = strip_dirname(dirname, dirdepth=dirdepth, wrap=wrap, ncut=ncut)
 
     return clas0, clas

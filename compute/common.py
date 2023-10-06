@@ -734,7 +734,7 @@ def get_iters_from_file(filename):
 # Start with basic input parameters
 ###################################
 
-def strip_dirname(dirname, dirdepth=None, wrap=False):
+def strip_dirname(dirname, dirdepth=None, wrap=False, ncut=None):
     full_dirname = os.path.abspath(dirname)
     splits = full_dirname.split('/')
     nsplit = len(splits)
@@ -746,12 +746,26 @@ def strip_dirname(dirname, dirdepth=None, wrap=False):
         dirname_stripped = '/' + splits[nsplit-i-1] + dirname_stripped
     dirname_stripped = dirname_stripped[1:] # remove prepended /
 
-    ncut = 20
+    if ncut is None:
+        ncut = 20
     if wrap and len(dirname_stripped) > ncut:
-        # Split dirname_stripped into two lines if it is very long
-        dirname_stripped = dirname_stripped[:ncut] + '\n' +\
-                dirname_stripped[ncut:]
+        # Split dirname_stripped into multiple lines if it is very long
+        tmp = ''
+        nlines = int(np.ceil(len(dirname_stripped)/ncut))
+        for iline in range(nlines):
+            tmp += dirname_stripped[iline*ncut:(iline+1)*ncut] 
+            if iline < nlines - 1:
+                tmp += '\n'
+        dirname_stripped = tmp
     return dirname_stripped
+
+def get_num_lines(st):
+    # count number of lines in a string
+    nlines = 1
+    for char in st:
+        if char == '\n':
+            nlines += 1
+    return nlines
 
 def get_parameter(dirname, parameter):
     # read a parameter from main_input
