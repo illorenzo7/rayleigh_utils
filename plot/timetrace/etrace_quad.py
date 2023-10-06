@@ -25,7 +25,6 @@ kwargs_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': 
 
 # make figure kwargs
 nlines = get_num_lines(clas0.dirname_label)
-print("nlines = ", nlines)
 lineplot_fig_dimensions['margin_top_inches'] = (nlines+2)*default_line_height
 make_figure_kwargs_default.update(lineplot_fig_dimensions)
 make_figure_kwargs_default['margin_top_inches'] += 2*default_line_height

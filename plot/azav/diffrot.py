@@ -32,7 +32,10 @@ kwargs_default = dict({'the_file': None, 'verbose': False})
 
 # also need make figure kwargs
 azav_fig_dimensions['margin_top_inches'] += 0.5*nshells
+nlines = get_num_lines(clas0.dirname_label)
+azav_fig_dimensions['margin_top_inches'] += (nlines-1)*default_line_height
 make_figure_kwargs_default.update(azav_fig_dimensions)
+
 kwargs_default.update(make_figure_kwargs_default)
 
 # and of course need plot_azav kwargs
@@ -83,7 +86,7 @@ plot_azav (Om/Om0, rr, cost, fig, ax, **kw_plot_azav)
 # make title 
 iter1, iter2 = get_iters_from_file(kw.the_file)
 time_string = get_time_string(dirname, iter1, iter2, threelines=True) 
-maintitle = dirname_stripped + '\n' +  r'$\Omega/\Omega_0 - 1$' + '\n' + time_string 
+maintitle = clas0.dirname_label + '\n' +  r'$\Omega/\Omega_0 - 1$' + '\n' + time_string 
 
 # get DR numbers in spherical shells
 # loop over shells and add line of text
@@ -109,7 +112,11 @@ fig.text(margin_x, 1 - margin_y, maintitle,\
 
 # save the figure
 plotdir = my_mkdir(clas0['plotdir'])
-savefile = plotdir + clas0['routinename'] + clas0['tag'] + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
+pretag = ''
+if clas0.prepend:
+    pretag = dirname_stripped + '_'
+
+savefile = plotdir + pretag + clas0['routinename'] + clas0['tag'] + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
 
 if clas0['saveplot']:
     print ('saving figure at ' + savefile)
