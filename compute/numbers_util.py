@@ -178,7 +178,8 @@ numbers_output_def = dotdict({
     "rovortmean": ("Ro_vort,mean", "<om>/(2*Om_0)"),
     "rovortfluc": ("Ro_vort,fluc", "om'/(2*Om_0)"),
 
-    "diffrot": ("DR", "<|Om_eq - Om_60|^2>^(1/2)"),
+    #"diffrot": ("DR", "<|Om_eq - Om_60|^2>^(1/2)"),
+    "diffrot": ("DR", "<Om_eq - Om_60>"),
 
     "rem": ("Re_m", "v*H/eta"),
     "remmean": ("Re_m,mean", "<v>*H/eta"),
@@ -190,7 +191,7 @@ numbers_output_def = dotdict({
 
     "me": ("ME", "(B^2/(8*pi)) / (rho*v^2/2)") })
 
-def get_dr_contrast(dirname, r1='rmin', r2='rmax', lat1=0., lat2=60., the_file=None, verbose=False, alt=False):
+def get_dr_contrast(dirname, r1='rmin', r2='rmax', lat1=0., lat2=60., the_file=None, verbose=False, alt=False, norms=False):
     # rotation contrast
     if the_file is None:
         datadir = dirname + '/data/'
@@ -221,7 +222,10 @@ def get_dr_contrast(dirname, r1='rmin', r2='rmax', lat1=0., lat2=60., the_file=N
         ilat1, ilat2 = inds_from_vals(tt_lat_sym, [lat1, lat2])
         dr_contrast = rotrate_sym[ilat1, :] - rotrate_sym[ilat2, :]
 
-    out = volav_in_radius(dirname, dr_contrast**2, r1, r2)**0.5/eq.om0
+    if norms: # don't do RMS of contrast, just average
+        out = volav_in_radius(dirname, dr_contrast, r1, r2)/eq.om0
+    else:
+        out = volav_in_radius(dirname, dr_contrast**2, r1, r2)**0.5/eq.om0
     return out
 
 def get_numbers_output(dirname, r1='rmin', r2='rmax', the_file=None, the_file_az=None, verbose=False):
@@ -325,7 +329,7 @@ def get_numbers_output(dirname, r1='rmin', r2='rmax', the_file=None, the_file_az
         di.rovortmean = di_amp.ommean/(2.0*om0)
         di.rovortfluc = di_amp.omfluc/(2.0*om0)
 
-        di.diffrot = get_dr_contrast(dirname, r1=r1, r2=r2, the_file=the_file_az, verbose=verbose)
+        di.diffrot = get_dr_contrast(dirname, r1=r1, r2=r2, the_file=the_file_az, verbose=verbose, norms=True)
 
     # magnetic numbers
     if magnetism:
