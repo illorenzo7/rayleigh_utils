@@ -1,7 +1,7 @@
 # Routine to join Rayleigh time traces
 # Created by: Loren Matilsky
 # On: 07/18/2019
-# Revised: 04/08/2021
+# Revised: 11/15/2023
 ############################################################################
 # This routine joins multiple traces (hopefully at 
 # contiguous intervals, e.g.,
@@ -49,7 +49,6 @@ print(make_bold('starting joined %s with' %dataname))
 print(files[0])
 di0 = get_dict(files[0])
 
-if 'G_Avgs_trace' in dataname:
 # figure out the overlap of the values that are output in each dictionary
 qv0 = di0['qv']
 qv = np.copy(qv0)
@@ -62,16 +61,16 @@ lut = np.zeros_like(di0['lut']) + 4000
 lut[qv] = np.arange(nq)
 
 # rearrange first axis in vals to correspond to qv
-vals = np.zeros_like(di0['vals'])
+vals = di0['vals'] # start with arrays from first dictionary and then 
+    # append corresponding arrays from all the data files
 q_inds0 = np.zeros(nq, dtype=int)
 for iq in range(nq):
     q_inds0[iq] = np.argmin(np.abs(qv0 - qv[iq]))
-vals = vals[..., q_inds0]
+vals = vals[:, q_inds0, ...]
 
-vals = di0['vals'] # start with arrays from first dictionary and then 
-    # append corresponding arrays from all the data files
 if 'nquad' in dataname:
     vals_full = di0['vals_full'] 
+    vals_full = vals_full[:, q_inds0, ...]
 
 times = di0['times']
 iters = di0['iters']
@@ -90,11 +89,22 @@ for i in range(nfiles - 1):
     di2_iters = di2['iters']
     niters2 = len(np.where(di2_iters > di1_iter2)[0]) # this is the number
             # of NON-OVERLAPPING values in di2_iters
+    vals_loc = di2['vals'][-niters2:]
+
+    # build array of (sorted) qv indices the dictionary to average
+    q_inds2 = np.zeros(nq, dtype='int')
+    for iq in range(nq):
+        q_inds2[iq] = np.argmin(np.abs(di2['qv'] - qv[iq]))
+    vals_loc = vals_loc[:,q_inds2,...]
 
     # Now join the dictionary to append
-    vals = np.vstack((vals, di2['vals'][-niters2:]))
+    vals = np.vstack((vals, vals_loc))
+
     if 'nquad' in dataname:
-        vals_full = np.vstack((vals_full, di2['vals_full'][-niters2:]))
+        vals_full_loc = di2['vals_full'][-niters2:]
+        vals_full_loc = vals_full_loc[:, q_inds2,...]
+        vals_full = np.vstack((vals_full, vals_full_loc))
+
     times = np.hstack((times, di2['times'][-niters2:]))
     iters = np.hstack((iters, di2['iters'][-niters2:]))
     if i == nfiles - 2:
@@ -105,6 +115,8 @@ if 'nquad' in dataname:
     di_all['vals_full'] = vals_full
 
 di_all['times'] = times
+di_all['lut'] = lut
+di_all['qv'] = qv
 di_all['iters'] = iters
 di_all['iter1'] = iter1
 di_all['iter2'] = iter2
