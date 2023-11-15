@@ -10,6 +10,7 @@ rank = comm.Get_rank()
 # import common
 import sys, os
 sys.path.append(os.environ['raco'])
+sys.path.append(os.environ['rapl'] + '/slice')
 from common import *
 
 # start the clock
@@ -364,6 +365,15 @@ for ifigure in range(my_nfigures):
         field = vals[isampleval, :, :]
     else: # equatorial slices
         field = vals
+
+    # rescale field to make nonD
+    units = get_dict(os.environ['rau'] + '/zz_legacy/units.pkl')
+    if 'v' == varname[:1]:
+        field /= units['v']
+    elif 'om' == varname[:2]:
+        field /= (1./units['t'])
+    elif 'b' == varname[:1]:
+        field /= units['b']
 
     # make plot
     fig, axs, fpar = make_figure(**kw_make_figure)
