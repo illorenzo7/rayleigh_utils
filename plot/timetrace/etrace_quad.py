@@ -160,6 +160,7 @@ for ilat in range(nquadlat):
         ax = axs[ilat, ir]
 
         all_e = []
+        all_e_nocut = [] # always need this for max val
         # choose etype: tot, fluc, or mean of energies
 
         # KINETIC ENERGY
@@ -223,6 +224,7 @@ for ilat in range(nquadlat):
 
         if not noke:
             all_e += [rke[itcut:], tke[itcut:], pke[itcut:], ke[itcut:]]
+            all_e_nocut += [rke, tke, pke, ke]
             
             ax.plot(xaxis, ke, color_order[0],\
                     linewidth=lw_ke, label=r'$\rm{KE_{tot}}$')
@@ -236,6 +238,7 @@ for ilat in range(nquadlat):
         # INTERNAL
         if plot_inte:
             all_e += [inte[itcut:]]
+            all_e_nocut += [inte]
             ax.plot(xaxis, inte, color_order[4], linewidth=lw_ke,\
                     label='INTE')
 
@@ -243,6 +246,7 @@ for ilat in range(nquadlat):
         if not nomag:
             if magnetism:
                 all_e += [rme[itcut:], tme[itcut:], pme[itcut:], me[itcut:]]
+                all_e_nocut += [rme, tme, pme, me]
 
                 ax.plot(xaxis, me, color=color_order[0], linestyle='--',\
                         linewidth=lw, label=r'$\rm{ME_{tot}}$')
@@ -267,6 +271,8 @@ for ilat in range(nquadlat):
                 minmax_loc = None
         if minmax_loc is None:
             minmax_loc = lineplot_minmax(xaxis, all_e, logscale=logscale, legfrac=legfrac, plotleg=plotleg)
+            minmax_loc_nocut = lineplot_minmax(xaxis, all_e_nocut, logscale=logscale, legfrac=legfrac, plotleg=plotleg)
+            minmax_loc = minmax_loc[0], minmax_loc_nocut[1]
         if not ymin is None:
             minmax_loc = ymin, minmax_loc[1]
         if not ymax is None:
