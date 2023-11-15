@@ -86,7 +86,7 @@ plot_azav (Om/Om0, rr, cost, fig, ax, **kw_plot_azav)
 # make title 
 iter1, iter2 = get_iters_from_file(kw.the_file)
 time_string = get_time_string(dirname, iter1, iter2, threelines=True) 
-maintitle = clas0.dirname_label + '\n' +  r'$\Omega/\Omega_0 - 1$' + '\n' + time_string 
+maintitle = clas0.dirname_label + '\n' +  r'$\Omega$' + ' (rotation rate)\n' + time_string 
 
 # get DR numbers in spherical shells
 # loop over shells and add line of text
@@ -99,7 +99,7 @@ for ishell in range(nshells):
     diffrot = get_dr_contrast(dirname, r1, r2, the_file=kw.the_file, verbose=kw.verbose)
     maintitle += '\n' +\
         ( '(' + flt_fmt + ', ' + flt_fmt + '):') %(r1, r2) +\
-        '\n' + (r'$\Delta\Omega/\Omega_0\ =\ $' + flt_fmt) %diffrot
+        '\n' + (r'$\Delta\Omega\ =\ $' + flt_fmt) %diffrot
         #('(r_1, r_2) = (' + flt_fmt + ', ' + flt_fmt + '):') %(r1, r2)# +\
 
 if not kw.rcut is None:
