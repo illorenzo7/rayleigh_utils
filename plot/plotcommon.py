@@ -242,7 +242,7 @@ def make_figure(**kwargs):
 
     return fig, axs, fpar
 
-lineplot_minmax_kwargs_default = dict({'logscale': False, 'buff_ignore': None, 'plotleg': False, 'legfrac': None, 'symmetrize': False, 'domain_bounds': None})
+lineplot_minmax_kwargs_default = dict({'logscale': False, 'buff_ignore': None, 'plotleg': False, 'legfrac': None, 'symmetrize': False, 'domain_bounds': None, 'ixcut': 0})
 def lineplot_minmax(xx, profiles, **kwargs):
     kw = update_dict(lineplot_minmax_kwargs_default, kwargs)
     find_bad_keys(lineplot_minmax_kwargs_default, kwargs, 'lineplot_minmax')
@@ -271,7 +271,7 @@ def lineplot_minmax(xx, profiles, **kwargs):
     mmin = np.infty
     mmax = -np.infty
     for profile in profiles:
-        mmin = min(np.min(profile), mmin)
+        mmin = min(np.min(profile[kw.ixcut:]), mmin)
         mmax = max(np.max(profile), mmax)
     if kw.plotleg:
         if kw.legfrac is None: # legfrac is how much of plot (y dimensions)
