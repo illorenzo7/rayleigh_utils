@@ -114,7 +114,7 @@ fig.text(margin_x, 1 - margin_y, maintitle,\
 
 # save the figure
 plotdir = my_mkdir(clas0['plotdir'])
-savefile = plotdir + clas0['routinename'] + clas0['tag'] + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
+savefile = plotdir + 'mercirc' + clas0['tag'] + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
 
 if clas0['saveplot']:
     print ('saving figure at ' + savefile)
