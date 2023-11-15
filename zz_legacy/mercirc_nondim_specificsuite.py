@@ -103,7 +103,7 @@ iter1, iter2 = get_iters_from_file(kw.the_file)
 time_string = get_time_string(dirname, iter1, iter2, threelines=True)
 margin_x = fpar['margin_left'] + fpar['sub_margin_left']
 margin_y = default_margin/fpar['height_inches']
-maintitle = dirname_stripped + '\n' + r'$|\overline{\rho}\mathbf{v}_{\rm pol}|$' + '\n' + time_string
+maintitle = dirname_stripped + '\n' + r'$|\overline{\rho}\mathbf{v}_{\rm pol}|$' + ' (circulation)\n' + time_string
 if not kw.rcut is None:
     maintitle += '\nrcut = %1.3e' %kw.rcut
 
