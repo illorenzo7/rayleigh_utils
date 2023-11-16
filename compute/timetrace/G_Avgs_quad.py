@@ -94,6 +94,7 @@ if rank == 0:
     kwargs_default['irvals'] = None # can specify radial domain boundaries directly (radial index, e.g., 32 64 96
     kwargs_default['latvals'] = None
     kwargs_default['ilatvals'] = None
+    kwargs_default['thinby'] = None # by default don't thin end series
 
     # update these possibly
     kw = update_dict(kwargs_default, clas)
@@ -313,6 +314,13 @@ if rank == 0:
         for ir in range(nquadr):
             vals_full += volumes[ilat, ir]*vals[:, :, ilat, ir]
     vals_full /= np.sum(volumes)
+
+    # possibly thin data
+    if not kw.thinby is None:
+        times = times[::kw.thinby]
+        iters = iters[::kw.thinby]
+        vals = vals[::kw.thinby]
+        vals_full = vals_full[::kw.thinby]
 
     # save the data
     # Get first and last iters of files
