@@ -51,9 +51,100 @@
 # --nr
 # Default number of radial (evenly spaced) grid points. Default 10,000 (very fine)
 
+def integrate_from_r0(integrand, rr, r0):
+    # basic grid info
+    nr = len(rr)
+    ir0 = np.argmin(np.abs(rr - r0))
+   
+    # compute indefinite integral
+    integral = np.zeros(nr)
+    for ir in range(nr):
+        integral[ir] = simps(integrand[ir:ir0 + 1], rr[ir:ir0 + 1])
+        if ir <= ir0:
+            integral[ir] *= -1
+    return integral
+
+def rho_and_t(nr=5000, alpha=0.25, beta=0.9, gam=5./3., delta=0.1, nrho=3.):
+
+    # compute radial locations and grid
+    rin = beta/(1.-beta)
+    r0 = 1./(1.-beta)
+    rout = r0 + alpha
+    rr = np.linspace(rin, rout, nr)
+
+    # compute gravity
+    grav = (1.-beta**3)/(3*(1.-beta)**3) / rr**2
+
+    # compute masking function
+    psi_WL = np.zeros(nr)
+    for ir in range(nr):
+        rr_loc = rr[ir]
+        if rr_loc >= r0 + delta:
+            psi_WL[ir] = 1.
+        elif rr_loc > r0:
+            psi_WL[ir] = 1. - (1. - ((rr_loc-r0)/delta)**2 )**2
+
+    # get entropy gradient (in this case, just masking function)
+    dsdr = psi_WL
+
+    # compute shape of N^2(r)
+    nsq = grav*dsdr
+
+    # rescale so that N^2 has volume-average over WL of 1
+    fourpi = 4.*np.pi
+    vol_WL = (fourpi/3.)*(rout**3 - r0**3)
+    nsq_volav = simps(nsq*fourpi*rr**2, rr)/vol_WL
+    nsq /= nsq_volav
+
+    # get entropy 
+    s = integrate_from_r0(dsdr, rr, r0)
+
+    # get dissipation number
+    npoly = 1./(1.-gamma)
+    expp = np.exp(nrho/npoly)
+    expm = np.exp(-nrho/npoly)
+
+    numer = 3.*beta*(1.-beta)**2*(1.-expm)
+    denom = (3.*beta/2.)*(1.-beta**2)*(1.-expm) -\
+            (1-beta**3)*(beta - expm)
+    diss = numer/denom
+
+    # get temp. at r0
+    numer = (1.-beta**3)*(1.-beta)
+    denom = (3.*beta/2.)*(1.-beta**2)*(expp-1.) -\
+            (1-beta**3)*(beta*expp - 1.)
+    tmp0 = numer/denom
+
+    # now get temperature
+    integrand = grav*np.exp(-s)
+    integral = integrate_from_r0(integrand, rr, r0)
+    tmp = np.exp(s)*(tmp0 - diss*integral)
+
+    # and finally get density, normalize to unity over CZ
+    rho = np.exp(-(gamma/(gamma-1.))*s)*tmp**npoly
+    vol_CZ = (fourpi/3.)*(r0**3 - rin**3)
+    rho_volav = simps((rho*fourpi*rr**2)[:ir0+1], rr[:ir0+1])/vol_CZ
+    rho /= rho_volav
+
+    # and finally get derivatives
+
+    # first derivatives
+    dtdr = dsdr*tmp - diss*grav
+    dlnt = dtdr/tmp
+    dlnrho = (1.0/(gamma - 1.0))*(dlnT - gamma*dsdr)
+
+    # second derivatives
+    d2sdr2 = np.gradient(dsdr, rr)
+    dgdr = -2.*grav/rr
+    
+    d2lnT = d2sdr2 + (diss/tmp)*(grav*dlnt - dgdr)
+    d2lnrho = (1.0/(gamma - 1.0))*(d2lnT - gamma*d2sdr2)
+    
+    return rho, tmp, grav, nsq, dlnt, dlnrho, d2lnrho
+
 import numpy as np
 import sys, os
-from arbitrary_atmosphere import arbitrary_atmosphere
+from arbitrary_atmosphere import arbitrary_atmosphere_nd
 
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
@@ -173,3 +264,6 @@ the_file = dirname + '/' + kw.fname
 print("Writing the atmosphere to %s" %the_file)
 print("---------------------------------")
 eq.write(the_file)
+
+
+
