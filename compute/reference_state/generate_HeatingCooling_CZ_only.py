@@ -20,7 +20,7 @@ sys.path.append(os.environ['raco'] + '/reference_state')
 from reference_tools import equation_coefficients
 from common import *
 from cla_util import *
-from Jupiter_Heating_CZ_WL import *
+from HeatingCooling_util import *
 
 # Get CLAs
 args = sys.argv
