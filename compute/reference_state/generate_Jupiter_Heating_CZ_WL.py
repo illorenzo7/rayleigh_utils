@@ -39,12 +39,8 @@ find_bad_keys(kw_default, clas, clas0['routinename'], justwarn=True)
 # overwrite defaults
 kw = update_dict(kw_default, clas)
 
-# get version of args for function
-kw_func = dict(kw)
-del kw_func['fname']
-
 # compute heating function
-rin, rout, r0, rr, heating = generate_heating_CZ_WL(**kw_func)
+rin, rout, r0, rr, heating = generate_heating_CZ_WL(**kw)
 
 # print what we computed
 print(buff_line)
