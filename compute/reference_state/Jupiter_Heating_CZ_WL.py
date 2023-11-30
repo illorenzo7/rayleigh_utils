@@ -14,6 +14,7 @@
 # fluxratio: ratio of stable flux to unstable flux
 
 import numpy as np
+from scipy.integrate import simps
 import sys, os
 
 sys.path.append(os.environ['rapp'])
@@ -26,8 +27,10 @@ from cla_util import *
 nr_default = 5000
 alpha_default = 0.25
 beta_default = 0.9
-delta1_default = 0.1
-delta2_default = 0.1
+deltain_default = 0.1
+deltaout_default = 0.1
+deltac_default = 0.1
+deltah_default = 0.1
 fluxratio_default = 10.
 
 def integrate_from_r0(integrand, rr, r0):
@@ -43,23 +46,37 @@ def integrate_from_r0(integrand, rr, r0):
             integral[ir] *= -1
     return integral
 
-def generate_heating_CZ_WL(nr=nr_default,  alpha=alpha_default, beta=beta_default, delta1=delta1_default, delta2=delta2_default, fluxratio=fluxratio_default):
+# define quartic functions, each use heating layers
+def psi_plus(rr, rc, delta):
+    nr = len(rr)
+    shape = np.zeros(nr)
+    for ir in range(nr):
+        rloc = rr[ir]
+        if rloc <= rc:
+            shape[ir] = 0.
+        elif rloc < rc + delta:
+            shape[ir] = (1. - ((rloc-rc)/delta)**2)**2
+        else:
+            shape[ir] = 0.
+    return shape
+
+def psi_minus(rr, rc, delta):
+    return psi_plus(-(rr-2*rc), rc, delta)
+
+def compute_heating_CZ_only(nr=nr_default, beta=beta_default, deltah=deltah_default, deltac=deltac_default):
 
     # compute radial locations and grid
     rin = beta/(1.-beta)
     rout = 1./(1.-beta)
-    r0 = rout - alpha/(alpha+1.)
     rr = np.linspace(rout, rin, nr)
 
-    # make heating shape for CZ
-    ir0 = np.argmin(np.abs(rr-r0))
-    heating_cz = np.exp(-(rr-rin)/delta1) - np.exp((r0-rr)/delta2)
-    heating_cz[:ir0+1] = 0.
+    shape1 = psi_plus(rr, rin, deltah)
+    shape2 = psi_minus(rr, rout, deltac)
 
-    # then heating shape for WL
-    nr_wl = ir0 + 1
-    heating_wl = np.zeros(nr)
-    heating_wl[:ir0+1] = np.linspace(fluxratio, -fluxratio, nr_wl)
+    fourpi = 4*np.pi
+    A1 = -1. / simps(fourpi*rr**2*shape1, rr) # remember rr is in decreasing order
+    A2 = -1. / simps(fourpi*rr**2*shape2, rr)
 
-    heating = heating_cz + heating_wl
-    return rin, rout, r0, rr, heating
+    heating = A1*shape1 - A2*shape2
+
+    return rin, rout, rr, heating
