@@ -31,7 +31,7 @@ deltain_default = 0.1
 deltaout_default = 0.1
 deltac_default = 0.1
 deltah_default = 0.1
-fluxratio_default = 10.
+fluxratio_default = 1.
 
 def integrate_from_r0(integrand, rr, r0):
     # basic grid info
