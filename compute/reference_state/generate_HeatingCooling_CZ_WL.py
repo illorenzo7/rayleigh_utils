@@ -28,7 +28,7 @@ clas0, clas = read_clas_raw(args)
 dirname = clas0['dirname']
 
 # Set default kwargs
-kw_default = dotdict(dict({'nr': nr_default, 'beta': beta_default, 'deltah': deltah_default, 'deltac': deltac_default}))
+kw_default = dotdict(dict({'nr': nr_default, 'alpha': alpha_default, 'beta': beta_default, 'deltah1': deltah_default, 'deltac': deltac_default, 'deltah2': deltah_default, 'fluxratio': fluxratio_default}))
 
 # check for bad keys
 find_bad_keys(kw_default, clas, clas0['routinename'], justwarn=True)
@@ -37,18 +37,22 @@ find_bad_keys(kw_default, clas, clas0['routinename'], justwarn=True)
 kw = update_dict(kw_default, clas)
 
 # compute heating function
-rin, rout, rr, heating = compute_heating_CZ_only(**kw)
+rin, r0, rout, rr, heating = compute_heating_CZ_WL(**kw)
 
 # print what we computed
 print(buff_line)
 print("Computed heating/cooling function for CZ")
 print("nr         : %i" %kw.nr) 
 print("rin        : %.3f" %rin)
+print("r0         : %.3f" %r0)
 print("rout       : %.3f" %rout)
 print(buff_line)
+print("alpha      : %.3f" %kw.alpha) 
 print("beta       : %.3f" %kw.beta) 
-print("deltah     : %.3f" %kw.deltah)
+print("deltah1    : %.3f" %kw.deltah1)
 print("deltac     : %.3f" %kw.deltac)
+print("deltah2    : %.3f" %kw.deltah2)
+print("fluxratio  : %.3f" %kw.fluxratio)
 print(buff_line)
 
 # Now write to file using the equation_coefficients framework
@@ -62,7 +66,7 @@ eq.set_constant(c10, 10)
 print("c_10       : %1.3e" %c10)
 print(buff_line)
 
-fname = "HeatingCoolingCZ_beta%.3f_deltah%.3f_deltac%.3f" %(kw.beta, kw.deltah, kw.deltac)
+fname = "HeatingCoolingCZWL_alpha%.3f_beta%.3f_deltah1%.3f_deltac%.3f_deltah1%.3f_fluxratio%.3f" %(kw.alpha, kw.beta, kw.deltah1, kw.deltac, kw.deltah2, kw.fluxratio)
 
 the_file = dirname + '/' + fname
 

@@ -81,7 +81,7 @@ def compute_heating_CZ_only(nr=nr_default, beta=beta_default, deltah=deltah_defa
 
     return rin, rout, rr, heating
 
-def compute_heating_CZWL(nr=nr_default, alpha=alpha_default, beta=beta_default, deltah1=deltah_default, deltac=deltac_default, deltah2=deltah_default, fluxratio=fluxratio_default):
+def compute_heating_CZ_WL(nr=nr_default, alpha=alpha_default, beta=beta_default, deltah1=deltah_default, deltac=deltac_default, deltah2=deltah_default, fluxratio=fluxratio_default):
 
     # compute radial locations and grid
     rin = beta/(1.-beta)
@@ -89,9 +89,9 @@ def compute_heating_CZWL(nr=nr_default, alpha=alpha_default, beta=beta_default, 
     rout = r0 + alpha
     rr = np.linspace(rout, rin, nr)
 
-    shape1 = psi_plus(rr, rin, deltah)
+    shape1 = psi_plus(rr, rin, deltah1)
     shape2 = psi_minus(rr, r0, deltac) + psi_plus(rr, r0, deltac)
-    shape3 = psi_minus(rr, rout, delta_out)
+    shape3 = psi_minus(rr, rout, deltah2)
 
     fourpi = 4*np.pi
     A1 = -1. / simps(fourpi*rr**2*shape1, rr) # remember rr is in decreasing order
@@ -101,4 +101,3 @@ def compute_heating_CZWL(nr=nr_default, alpha=alpha_default, beta=beta_default, 
     heating = A1*shape1 - A2*shape2 + A3*shape3
 
     return rin, r0, rout, rr, heating
-
