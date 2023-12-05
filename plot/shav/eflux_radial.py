@@ -161,8 +161,8 @@ if reftype == 5:
 tflux = hflux + eflux + cflux + kflux + vflux # compute the total flux
 
 
-profiles = [eflux, eflux_mean, eflux_fluc, hflux, cflux, vflux]
-kw_lineplot.labels = ['eflux', 'eflux (mm)', 'eflux (pp)', 'hflux', 'cflux', 'vflux']
+profiles = [hflux, cflux, eflux, eflux_mean, eflux_fluc, kflux, vflux]
+kw_lineplot.labels = ['hflux', 'cflux', 'eflux', 'eflux (mm)', 'eflux (pp)', 'kflux', 'vflux']
 
 if clas0['magnetism']:
     # A Space Oddysey is actually (-4*pi) TIMES the correct Poynting flux
