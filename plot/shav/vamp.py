@@ -46,34 +46,34 @@ nr = di_grid['nr']
 
 # get rho
 eq = get_eq(dirname)
-rho = eq.density
 
 # Convective velocity amplitudes, get these from KE
 frke = vals[:, 0, lut[410]]
 ftke = vals[:, 0, lut[411]]
 fpke = vals[:, 0, lut[412]]
 
-vsq_r = frke/rho
-vsq_t = ftke/rho
-vsq_p = fpke/rho
+vsq_r = frke/eq.rho
+vsq_t = ftke/eq.rho
+vsq_p = fpke/eq.rho
 vsq = vsq_r + vsq_t + vsq_p
 
-amp_v = np.sqrt(vsq)/100.
-amp_vr = np.sqrt(vsq_r)/100.
-amp_vt = np.sqrt(vsq_t)/100.
-amp_vp = np.sqrt(vsq_p)/100.
+amp_v = np.sqrt(vsq)
+amp_vr = np.sqrt(vsq_r)
+amp_vt = np.sqrt(vsq_t)
+amp_vp = np.sqrt(vsq_p)
 
 profiles = [amp_vr, amp_vt, amp_vp, amp_v]
-kw_lineplot.labels = ['r', r'$\theta$', r'$\phi$', 'tot']
+kw_lineplot.labels = [r'$u_r$', r'$u_\theta$', r'$u_\phi$', r'$\mathbf{u}$']
 
 # Create the plot; start with plotting all the energy fluxes
 fig, axs, fpar = make_figure(**kw_make_figure)
 ax = axs[0,0]
 
 # x and y labels
-kw_lineplot.xlabel = r'$r/R_\odot$'
-kw_lineplot.ylabel = 'velocity (m/s)'
-lineplot(rr/rsun, profiles, ax, **kw_lineplot)
+kw_lineplot.xlabel = 'radius'
+kw_lineplot.ylabel = 'rms velocity'
+kw_lineplot.plotleg = True
+lineplot(rr, profiles, ax, **kw_lineplot)
 
 # make title 
 iter1, iter2 = get_iters_from_file(kw.the_file)
