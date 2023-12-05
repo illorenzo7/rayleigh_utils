@@ -19,6 +19,15 @@ dirname_stripped = strip_dirname(dirname)
 
 # equation coefficients
 eq = get_eq(dirname)
+# need some other things if ref_type = 5.
+reftype = eq.reference_type
+if reftype == 5:
+    pr_num = 1./eq.constants[5] # 1/c_6
+    ra_num = eq.constants[1]*pr_num # c_2 * Pr
+    di_num = eq.constants[7]*ra_num # Ra * c_8
+    if clas0['magnetism']:
+        di_prm = 1./eq.constants[6] # 1/c_7
+    factor = ra_num/(di_num*pr_num)
 
 # allowed args + defaults
 lineplot_kwargs_default['legfrac'] = 0.3
@@ -53,7 +62,64 @@ di_grid = get_grid_info(dirname)
 rr = di_grid['rr']
 nr = di_grid['nr']
 
-eflux = vals[:, 0, lut[1455]]
+print (buff_line)
+# deal with enthalpy flux first (hard one)
+if reftype == 5: # do some special stuff here
+    print ("reference_type = 5")
+    print ("computing enthalpy flux from separate pressure and entropy fluxes,")
+    print("scaled appropriately")
+
+    # total enthalpy flux
+    prsflux = -vals[:, 0, lut[1944]]
+    entflux = vals[:, 0, lut[1440]]*factor
+    eflux = prsflux + entflux
+
+    prsflux_fluc = -vals[:, 0, lut[1947]]
+    entflux_fluc = vals[:, 0, lut[1441]]*factor
+    eflux_fluc = prsflux_fluc + entflux_fluc
+    
+    eflux_mean = eflux - eflux_fluc
+else:
+    eflux = vals[:, 0, lut[1455]]
+    if 1458 in qv:
+        print ("getting enthalpy flux (pp) from qval = 1458")
+        eflux_fluc = vals[:, 0, lut[1458]]
+        eflux_mean = eflux - eflux_fluc
+    else: # do the decomposition "by hand"
+        print ("getting enthalpy flux (pp) indirectly from AZ_Avgs")
+
+        # more grid info
+        nt = di_grid['nt']
+        tt, tw = di_grid['tt'], di_grid['tw'] 
+        tw_2d = tw.reshape((nt, 1))
+
+        # reference state
+        rho_ref = (eq.rho).reshape((1, nr))
+        prs_ref = (eq.prs).reshape((1, nr))
+        tmp_ref = (eq.tmp).reshape((1, nr))
+
+        # read AZ_Avgs data
+        if kw.the_file_az is None:
+            kw.the_file_az = get_widest_range_file(clas0['datadir'], 'AZ_Avgs')
+        print ('reading ' + kw.the_file_az)
+        di_az = get_dict(kw.the_file_az)
+        vals_az = di_az['vals']
+        lut_az = di_az['lut']
+
+        vr_av = vals_az[:, :, lut_az[1]]
+        s_av = vals_az[:, :, lut_az[501]]
+        prs_av = vals_az[:, :, lut_az[502]]
+
+        # calculate mean tmp from EOS
+        tmp_av = tmp_ref*( (1.-1./gamma_ideal)*(prs_av/prs_ref) +\
+                s_av/eq.c_p )
+
+        # and, finally, the enthalpy flux from mean/fluc flows
+        eflux_mean_az = rho_ref*eq.c_p*vr_av*tmp_av
+        eflux_mean = np.sum(eflux_mean_az*tw_2d, axis=0)
+        eflux_fluc = eflux - eflux_mean
+
+# heat flux also requires some special care, sometimes has Nans
 hflux = vals[:, 0, lut[1433]]
 if True in np.isnan(hflux):
     print (buff_line)
@@ -69,50 +135,31 @@ if True in np.isnan(hflux):
         hflux[ir] = hflux[ir+1] + mean_heat*fpr2dr
     hflux = (hflux[0] - hflux)/(4.*np.pi*rr2)
 
+# other fluxes are pretty easy
 cflux = vals[:, 0, lut[1470]]
 kflux = vals[:, 0, lut[1923]]
 vflux = -vals[:, 0, lut[1935]] # remember the minus sign in vflux
+
+# some fluxes need multiplication if ref_type = 5
+if reftype == 5:
+    hflux *= factor
+    cflux *= factor
+
+    # deal with possible "flux ratio" parameter
+    the_heating_file = None
+    for fname in os.listdir(dirname):
+        if 'HeatingCooling' in fname:
+            the_heating_file = fname
+    if not the_heating_file is None:
+        # first, shift the heating by the bottom flux
+        shift = np.abs(np.min(hflux))*rr[-1]**2/rr**2
+        if 'fluxratio' in the_heating_file: # there is a top flux too,
+        # shift the heating by that
+            shift += np.max(hflux)*rr[0]**2/rr**2
+        hflux += shift
+
 tflux = hflux + eflux + cflux + kflux + vflux # compute the total flux
 
-# break the enthalpy flux into mean and fluctuating
-print (buff_line)
-if 1458 in qv:
-    print ("getting enthalpy flux (pp) from qval = 1458")
-    eflux_fluc = vals[:, 0, lut[1458]]
-    eflux_mean = eflux - eflux_fluc
-else: # do the decomposition "by hand"
-    print ("getting enthalpy flux (pp) indirectly from AZ_Avgs")
-
-    # more grid info
-    nt = di_grid['nt']
-    tt, tw = di_grid['tt'], di_grid['tw'] 
-    tw_2d = tw.reshape((nt, 1))
-
-    # reference state
-    rho_ref = (eq.rho).reshape((1, nr))
-    prs_ref = (eq.prs).reshape((1, nr))
-    tmp_ref = (eq.tmp).reshape((1, nr))
-
-    # read AZ_Avgs data
-    if kw.the_file_az is None:
-        kw.the_file_az = get_widest_range_file(clas0['datadir'], 'AZ_Avgs')
-    print ('reading ' + kw.the_file_az)
-    di_az = get_dict(kw.the_file_az)
-    vals_az = di_az['vals']
-    lut_az = di_az['lut']
-
-    vr_av = vals_az[:, :, lut_az[1]]
-    s_av = vals_az[:, :, lut_az[501]]
-    prs_av = vals_az[:, :, lut_az[502]]
-
-    # calculate mean tmp from EOS
-    tmp_av = tmp_ref*( (1.-1./gamma_ideal)*(prs_av/prs_ref) +\
-            s_av/eq.c_p )
-
-    # and, finally, the enthalpy flux from mean/fluc flows
-    eflux_mean_az = rho_ref*eq.c_p*vr_av*tmp_av
-    eflux_mean = np.sum(eflux_mean_az*tw_2d, axis=0)
-    eflux_fluc = eflux - eflux_mean
 
 profiles = [eflux, eflux_mean, eflux_fluc, hflux, cflux, vflux]
 kw_lineplot.labels = ['eflux', 'eflux (mm)', 'eflux (pp)', 'hflux', 'cflux', 'vflux']
@@ -127,8 +174,9 @@ profiles.append(tflux)
 kw_lineplot.labels.append('total')
 
 # integrate and normalize
-lstar = eq.lum
+#lstar = eq.lum
 fpr = 4*np.pi*rr**2
+lstar = 0.5*((fpr*hflux)[0] + (fpr*hflux)[-1])
 profiles_int = []
 for profile in profiles:
     profiles_int.append(fpr*profile/lstar)
