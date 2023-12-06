@@ -44,7 +44,7 @@ print ("The equation_coefficients constants are: ")
 if save:
     savename = dirname + '/eq_constants.txt'
     f = open(savename, 'w')
-for i in range(len(eq.constants)): # should always be 10?
+for i in range(len(eq.constants)):
     cnum = fill_str('c_%i' %(i+1), 4, ' ')
     cname = fill_str(c_dict[i+1], 15, ' ')
     print ('%s = %s = %1.3e' %(cnum, cname, eq.constants[i]))
