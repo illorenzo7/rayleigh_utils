@@ -143,13 +143,9 @@ if rank == 0:
     # can control samplevals with rvals for time-latitude traces
     if not kw.rvals is None:
         kw.samplevals = kw.rvals
-    print (kw.isamplevals)
-    print (kw.samplevals)
-    print (kw.rvals)
 
     # get the samplevals we want
     if not kw.samplevals is None: # samplevals have been set directly
-        print ("got here...")
         # need the available sampling locations
         if isall(kw.samplevals):
             kw.isamplevals = np.arange(sliceinfo.nsamplevals)
@@ -162,9 +158,6 @@ if rank == 0:
         kw.samplevals = np.array([0.0])
     else:
         kw.samplevals = make_array(sliceinfo.samplevals[kw.isamplevals])
-        print("got here")
-        print (kw.isamplevals)
-        print (kw.samplevals)
     nsamplevals = len(kw.samplevals)
 
     # say what we are plotting
