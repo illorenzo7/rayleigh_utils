@@ -693,7 +693,7 @@ my_contourf_kwargs_default = dict({
         # only need this for time-lat plots or such, since need ticks there
         'allticksoff': True,\
         # symlog stuff (again)
-        'minmax': None, 'linthresh': None, 'linscale': None})
+        'minmax': None, 'linthresh': None, 'linscale': None, 'scaleby': 1.0})
 
 # color map stuff: symlog, logscale, posdef, are here:
 my_contourf_kwargs_default.update(contourf_minmax_kwargs_default)
@@ -706,7 +706,7 @@ def my_contourf(xx, yy, field, fig, ax, **kwargs):
     find_bad_keys(my_contourf_kwargs_default, kwargs, 'my_contourf')
 
     # make sure Python does not modify any of the arrays it was passed
-    field = np.copy(field)
+    field = np.copy(field)/kw.scaleby
 
     if kw.sgnlog: # sgnlog is a special subcase of symlog
         kw.symlog = True
@@ -816,7 +816,7 @@ def my_contourf(xx, yy, field, fig, ax, **kwargs):
 # my_pcolormesh: pixellated my_contourf
 my_pcolormesh_kwargs_default = dict({'x': None, 'y': None, 'xvals': [], 'yvals': [], 'linewidth': default_lw, 'minmax': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'yminmax': None, 'ymin': None, 'ymax': None, 'xymin': None, 'xymax': None, 'xyminmax': None,\
     # more cbar stuff
-    'plotcbar': True, 'cmap': None, 'norm': None, 'units': '', 'fontsize': default_labelsize})
+    'plotcbar': True, 'cmap': None, 'norm': None, 'units': '', 'scaleby': 1., 'fontsize': default_labelsize})
 
 my_pcolormesh_kwargs_default.update(contourf_minmax_kwargs_default)
 my_pcolormesh_kwargs_default.update(add_cbar_kwargs_default)
@@ -827,7 +827,7 @@ def my_pcolormesh(field, fig, ax, **kwargs):
     find_bad_keys(my_pcolormesh_kwargs_default, kwargs, 'my_pcolormesh')
 
     # make sure Python does not modify any of the arrays it was passed
-    field = np.copy(field)
+    field = np.copy(field)/kw.scaleby
 
     # use full integer grid if no specific axis was specified
     nx, ny = np.shape(field)
