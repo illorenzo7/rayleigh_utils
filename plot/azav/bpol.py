@@ -34,6 +34,8 @@ kwargs_default.update(plot_azav_kwargs_default)
 kw = update_dict(kwargs_default, clas)
 kw_plot_azav = update_dict(plot_azav_kwargs_default, clas)
 kw_make_figure = update_dict(make_figure_kwargs_default, clas)
+kw_make_figure.ncol = 3 # room for <B_r> and <B_theta>
+kw_make_figure.margin_top_inches += 1/4 # room for letter labels
 
 # check for bad keys
 find_bad_keys(kwargs_default, clas, clas0['routinename'], justwarn=True)
@@ -71,22 +73,35 @@ psi = streamfunction(br_av, bt_av, rr, cost)
 bpol *= np.sign(psi)
 
 # make plot
-
+# field strength
 fig, axs, fpar = make_figure(**kw_make_figure)
 ax = axs[0, 0]
-
-# Plot mass flux
+ax.set_title('(a) field lines + strength', fontsize=kw.fontsize, loc='left')
+kw_orig = dotdict(kw_plot_azav)
 kw_plot_azav.plotcontours = False
 plot_azav (bpol, rr, cost, fig, ax, **kw_plot_azav)
 
-# Plot streamfunction contours
-lilbit = 0.01
-maxabs = np.max(np.abs(psi))
+# plot field-lines
+#lilbit = 0.01
+#maxabs = np.max(np.abs(psi))
 #contourlevels = (-maxabs/2., -maxabs/4., -lilbit*maxabs, 0.,\
 kw_plot_azav.plotcontours = kw.plotcontours
 kw_plot_azav.plotfield = False
 #kw_plot_azav.contourlevels = contourlevels
 plot_azav (psi, rr, cost, fig, ax, **kw_plot_azav)
+
+# plot <B_r> and <B_theta>
+kw_plot_azav = kw_orig
+kw_plot_azav.plotcontours = False
+ax = axs[0, 1]
+ax.set_title('(b) ' + r'$\langle B_r\rangle$',\
+        fontsize=kw.fontsize, loc='left')
+plot_azav (br_av, rr, cost, fig, ax, **kw_plot_azav)
+
+ax = axs[0, 2]
+ax.set_title('(c) ' + r'$\langle B_\theta\rangle$',\
+        fontsize=kw.fontsize, loc='left')
+plot_azav (bt_av, rr, cost, fig, ax, **kw_plot_azav)
 
 # make title 
 iter1, iter2 = get_iters_from_file(kw.the_file) 
