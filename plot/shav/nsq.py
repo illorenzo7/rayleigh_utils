@@ -67,7 +67,7 @@ ax = axs[0,0]
 
 # x and y labels
 kw_lineplot.xlabel = 'radius'
-kw_lineplot.ylabel = 'N^2/\Omega_0^2'
+kw_lineplot.ylabel = r'$N^2/4\Omega_0^2$'
 kw_lineplot.plotleg = True
 lineplot(rr, profiles, ax, **kw_lineplot)
 
