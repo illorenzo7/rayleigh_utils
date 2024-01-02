@@ -4,6 +4,7 @@
 
 import numpy as np
 from scipy.interpolate import interp1d
+from scipy.integrate import simps
 import sys, os, pickle
 from string_to_num import string_to_number_or_array
 sys.path.append(os.environ['rapp'])
@@ -320,6 +321,33 @@ def curlphi(arr_r, arr_t, rr, tt):
     nt, nr = np.shape(arr_r)
     rr_2d = rr.reshape((1, nr))
     return ( drad(rr_2d*arr_t, rr) - dth(arr_r, tt) )/rr_2d
+
+def indefinite_integral(integrand, x, x0):
+    # check on the order of x
+    # if x is descending, reverse both arrays for the integration,
+    # then reverse them back at the end
+    integrand, x = np.copy(integrand), np.copy(x)
+    reverse = False
+    if x[-1] < x[0]:
+        reverse = True
+        x = x[::-1]
+        integrand = integrand[::-1]
+
+    # basic grid info
+    nx = len(x)
+    ix0 = np.argmin(np.abs(x - x0))
+   
+    # compute indefinite integral
+    integral = np.zeros(nx)
+    for ix in range(nx):
+        if ix >= ix0:
+            integral[ix] = simps(integrand[ix0:ix+1], x[ix0:ix+1])
+        else:
+            integral[ix] = -simps(integrand[ix:ix0+1], x[ix:ix0+1])
+    if reverse:
+        integral = integral[::-1]
+
+    return integral
 
 def opt_workload(n, nproc):
     # optimally distributes workload (n tasks) over processes (n workers)
