@@ -195,9 +195,11 @@ def get_quantity_group(groupname, magnetism):
 
     if groupname == 'torque':
         qvals = [1819, 1801, 1802, 1803, 1804]
+        titles = ['L_z', 'tau_rs', 'tau_mcdr', 'tau_mc0', 'tau_v']
 
         if magnetism:
             qvals += [1805, 1806]
+            titles += ['tau_mm', 'tau_ms']
         totsig = np.ones(len(qvals))
         totsig[0] = 0; totsig[1] = totsig[2] = -1
 
@@ -343,7 +345,7 @@ def get_quantity_group(groupname, magnetism):
         totsig[0] = totsig[1] = -1
 
     # default just use the Rayleigh quantity abbreviations (if qvals has been defined by now)
-    if not qvals is None:
+    if titles is None and not qvals is None:
         titles = parse_quantities(qvals)[1]
 
     if 'meprod' in [groupname[:-3], groupname[:-4]]: # this is the exact stuff
