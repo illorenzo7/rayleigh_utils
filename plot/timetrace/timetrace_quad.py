@@ -25,7 +25,7 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = get_parameter(dirname, 'magnetism')
 
 # SPECIFIC ARGS for etrace:
-kw_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'xvals': np.array([]), 'nquadr': None, 'nquadlat': None, 'qvals': None, 'groupname': 'b', 'totsig': None, 'titles': None, 'justtot': False, 'notot': False, 'printerr': False, 'dpi': 300, 'vol': False})
+kw_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'xvals': np.array([]), 'nquadr': None, 'nquadlat': None, 'qvals': None, 'groupname': 'b', 'totsig': None, 'titles': None, 'justtot': False, 'notot': False, 'printerr': False, 'dpi': 300, 'vol': False, 'tint': False})
 
 # make figure kwargs
 lineplot_fig_dimensions['margin_top_inches'] = 1.
@@ -94,7 +94,7 @@ print ('Getting data from ' + the_file)
 di = get_dict(the_file)
 vals = di['vals']
 if kw.vol:
-    vols = -di['volumes']
+    vols = di['volumes']
     shapevols = list(np.shape(vols))
     newshape = [1,1] + shapevols
     vals = vals*vols.reshape(newshape)
@@ -186,9 +186,15 @@ for ilat in range(nquadlat):
 
         equation_sets = ['torque', 'teq', 'forcer', 'forcet', 'forcep', 'indr', 'indt', 'indp', 'meprodtotr', 'meprodtott', 'meprodtotp']
         if kw.groupname in equation_sets :
-            # replace term with its time derivative
-            terms[0] = drad(terms[0], times)
-            kw_lineplot.labels[0] = '(d/dt)' + kw_lineplot.labels[0]
+            if not kw.tint:
+                # replace term with its time derivative
+                terms[0] = drad(terms[0], times)
+                kw_lineplot.labels[0] = '(d/dt)' + kw_lineplot.labels[0]
+
+        if kw.tint: # integrate each term from the beginning
+            for iterm in range(1,nterms):
+                t0 = times[0]
+                terms[iterm] = indefinite_integral(terms[iterm], times, t0)
 
         # name these in case we quantify their rms later
         ddt = terms[0]
@@ -265,9 +271,12 @@ for it in range(nquadlat):
 # main title
 maintitle = dirname_stripped + '\nQuadrant traces'
 if kw.vol:
-    maintitle += ' (integrated)'
+    maintitle += ' (volume-integrated'
 else:
-    maintitle += ' (averaged)'
+    maintitle += ' (volume-averaged'
+if kw.tint:
+    maintitle += ', time-integrated'
+maintitle += ')'
 if not kw.groupname is None:
     maintitle += '\n' + 'groupname = %s' %kw.groupname
 maintitle += '\n' + 'qvals = ' +(arr_to_str(kw.qvals, '%i'))
@@ -284,6 +293,8 @@ if len(clas0['tag']) > 0 or not kw.groupname is None:
         basename += '_justtot'
     elif kw.notot:
         basename += '_notot'
+    if kw.tint:
+        basename += '_tint'
     basename += clas0['tag']
     iter1, iter2 = get_iters_from_file(the_file)
     savename = basename + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
