@@ -278,7 +278,7 @@ if len(clas0['tag']) > 0 or not kw.groupname is None:
 
     iter1, iter2 = get_iters_from_file(the_file)
     savefile = plotdir + basename + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
-    if not kw.groupname == 'nosave':
+    if clas0['saveplot']:
         print ('saving figure at ' + savefile)
         fig.savefig(savefile, dpi=kw.dpi)
 

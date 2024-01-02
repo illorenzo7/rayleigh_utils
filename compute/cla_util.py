@@ -163,11 +163,9 @@ def read_clas(args):
             rmin, rmax = get_rminmax(clas0.dirname)
             nquadr = read_cla_vals(args, i)
             clas['rvals'] = np.linspace(rmin, rmax, nquadr + 1)
-
-            # also want to save nquadr in this case
+            # should also save nquadr
             key = arg[2:]
             clas[key] = read_cla_vals(args, i)
-
         elif arg == '--latrange':
             latmin, latmax, nlatvals = read_cla_vals(args, i)
             nlatvals = int(nlatvals)
@@ -176,6 +174,9 @@ def read_clas(args):
             latmin, latmax = get_latminmax(clas0.dirname)
             nquadlat = read_cla_vals(args, i)
             clas['latvals'] = np.linspace(latmin, latmax, nquadlat + 1)
+            # should also save nquadlat
+            key = arg[2:]
+            clas[key] = read_cla_vals(args, i)
 
         elif arg == '--v':
             clas.verbose = True
