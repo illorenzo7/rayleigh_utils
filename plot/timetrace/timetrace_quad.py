@@ -25,7 +25,7 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = get_parameter(dirname, 'magnetism')
 
 # SPECIFIC ARGS for etrace:
-kw_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'xvals': np.array([]), 'nquadr': None, 'nquadlat': None, 'qvals': None, 'groupname': 'b', 'totsig': None, 'titles': None, 'justtot': False, 'dpi': 300, 'vol': False})
+kw_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'xvals': np.array([]), 'nquadr': None, 'nquadlat': None, 'qvals': None, 'groupname': 'b', 'totsig': None, 'titles': None, 'justtot': False, 'printerr': False, 'dpi': 300, 'vol': False})
 
 # make figure kwargs
 lineplot_fig_dimensions['margin_top_inches'] = 3/4
@@ -181,7 +181,7 @@ for ilat in range(nquadlat):
             kw_lineplot.labels.append('sum')
 
         equation_sets = ['torque', 'teq', 'forcer', 'forcet', 'forcep', 'indr', 'indt', 'indp', 'meprodtotr', 'meprodtott', 'meprodtotp']
-        if kw.groupname in equation_sets:
+        if kw.groupname in equation_sets and kw.printerr:
             # replace term with its time derivative
             terms[0] = drad(terms[0], times)
             kw_lineplot.labels[0] = 'd/dt'
@@ -222,7 +222,7 @@ for ilat in range(nquadlat):
             kw_lineplot.plotleg = True
         lineplot(xaxis, terms, ax, **kw_lineplot)
 
-        if kw.groupname in equation_sets:
+        if kw.groupname in equation_sets and kw.printerr:
             # label the derivative ampltitude and sum amplitude
             quant = 'rms(d/dt) = %1.3e' %rms(ddt)
             quant += '\n' + 'rms(sum) = %1.3e' %rms(tot)
