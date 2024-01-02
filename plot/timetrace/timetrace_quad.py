@@ -25,10 +25,10 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = get_parameter(dirname, 'magnetism')
 
 # SPECIFIC ARGS for etrace:
-kw_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'xvals': np.array([]), 'nquadr': None, 'nquadlat': None, 'qvals': None, 'groupname': 'b', 'totsig': None, 'titles': None, 'justtot': False, 'printerr': False, 'dpi': 300, 'vol': False})
+kw_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'xvals': np.array([]), 'nquadr': None, 'nquadlat': None, 'qvals': None, 'groupname': 'b', 'totsig': None, 'titles': None, 'justtot': False, 'notot': False, 'printerr': False, 'dpi': 300, 'vol': False})
 
 # make figure kwargs
-lineplot_fig_dimensions['margin_top_inches'] = 3/4
+lineplot_fig_dimensions['margin_top_inches'] = 1.
 make_figure_kwargs_default.update(lineplot_fig_dimensions)
 kw_default.update(make_figure_kwargs_default)
 
@@ -213,8 +213,11 @@ for ilat in range(nquadlat):
             kw_lineplot.linestyles = ['-', '--', ':']
             kw_lineplot.colors = ['k', 'r', 'g']
             nterms = len(terms)
-            
-        # now thin the data on the terms #and times
+        elif kw.notot:
+            terms = terms[1:-1]
+            kw_lineplot.labels = kw_lineplot.labels[1:-1]
+            nterms = len(terms)
+        # now thin the data on the terms and times
         #times = thin_data(times[ixmin:ixmax+1], ntot)
         for iterm in range(nterms):
             terms[iterm] = thin_data(terms[iterm][ixmin:ixmax+1], ntot)
@@ -237,7 +240,6 @@ for ilat in range(nquadlat):
             ymin, ymax = ax.get_ylim()
             dy = ymax - ymin
             ax.text(xmin + 0.1*dx, ymin + 0.3*dy, quant, va='bottom', ha='left')
-        
 
 # Set some parameters defining all subplots
 # x limits and label
@@ -261,7 +263,11 @@ for it in range(nquadlat):
     axs[it, 0].set_ylabel('lat. range = [%.1f, %.1f]' %(lat1, lat2), fontsize=fontsize)
 
 # main title
-maintitle = dirname_stripped
+maintitle = dirname_stripped + '\nQuadrant traces'
+if kw.vol:
+    maintitle += ' (integrated)'
+else:
+    maintitle += ' (averaged)'
 if not kw.groupname is None:
     maintitle += '\n' + 'groupname = %s' %kw.groupname
 maintitle += '\n' + 'qvals = ' +(arr_to_str(kw.qvals, '%i'))
@@ -274,6 +280,10 @@ if len(clas0['tag']) > 0 or not kw.groupname is None:
 
     if not kw.groupname is None:
         basename += '_' + kw.groupname
+    if kw.justtot:
+        basename += '_justtot'
+    elif kw.notot:
+        basename += '_notot'
     basename += clas0['tag']
     iter1, iter2 = get_iters_from_file(the_file)
     savename = basename + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
