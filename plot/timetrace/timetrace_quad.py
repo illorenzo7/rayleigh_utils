@@ -98,10 +98,10 @@ if kw.vol:
     shapevols = list(np.shape(vols))
     newshape = [1,1] + shapevols
     vals = vals*vols.reshape(newshape)
-rbounds = di['rbounds']
-nquadr = len(rbounds) - 1
-latbounds = di['latbounds']
-nquadlat = len(latbounds) - 1
+rvals = di['rvals']
+nquadr = len(rvals) - 1
+latvals = di['latvals']
+nquadlat = len(latvals) - 1
 lut = di['lut']
 times = di['times']
 iters = di['iters']
@@ -245,15 +245,15 @@ else:
 
 # x titles
 for ir in range(nquadr):
-    r1 = rbounds[ir]
-    r2 = rbounds[ir+1]
+    r1 = rvals[ir]
+    r2 = rvals[ir+1]
     title = 'rad. range = [%.3f, %.3f]' %(r1, r2)
     axs[0, ir].set_title(title, fontsize=fontsize)
 
 # y labels
 for it in range(nquadlat):
-    lat1 = latbounds[it]
-    lat2 = latbounds[it+1]
+    lat1 = latvals[it]
+    lat2 = latvals[it+1]
     axs[it, 0].set_ylabel('lat. range = [%.1f, %.1f]' %(lat1, lat2), fontsize=fontsize)
 
 # main title
