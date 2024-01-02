@@ -176,17 +176,19 @@ for ilat in range(nquadlat):
             tot_term = np.zeros_like(terms[0])
             for iterm in range(nterms):
                 tot_term += terms[iterm]*kw.totsig[iterm]
+                # if totsig != 0,
+                # also update the term itself with the proper sign
+                if kw.totsig[iterm] != 0:
+                    terms[iterm] *= kw.totsig[iterm]
             terms.append(tot_term)
             nterms += 1
             kw_lineplot.labels.append('sum')
 
         equation_sets = ['torque', 'teq', 'forcer', 'forcet', 'forcep', 'indr', 'indt', 'indp', 'meprodtotr', 'meprodtott', 'meprodtotp']
-        if kw.groupname in equation_sets and kw.printerr:
+        if kw.groupname in equation_sets :
             # replace term with its time derivative
             terms[0] = drad(terms[0], times)
-            kw_lineplot.labels[0] = 'd/dt'
-            
-            kw_lineplot.legfrac = 0.6
+            kw_lineplot.labels[0] = '(d/dt)' + kw_lineplot.labels[0]
 
         # name these in case we quantify their rms later
         ddt = terms[0]
@@ -223,6 +225,8 @@ for ilat in range(nquadlat):
         lineplot(xaxis, terms, ax, **kw_lineplot)
 
         if kw.groupname in equation_sets and kw.printerr:
+            kw_lineplot.legfrac = 0.6
+
             # label the derivative ampltitude and sum amplitude
             quant = 'rms(d/dt) = %1.3e' %rms(ddt)
             quant += '\n' + 'rms(sum) = %1.3e' %rms(tot)
