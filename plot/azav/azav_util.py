@@ -318,6 +318,11 @@ def plot_azav_grid(terms, rr, cost, **kwargs):
             tot_term = np.zeros_like(terms[0])
             for icol in range(kw.ncol):
                 tot_term += terms[iterm]*kw.totsig[count]
+                # if totsig != 0,
+                # also update the term itself with the proper sign
+                if kw.totsig[count] != 0:
+                    terms[iterm] *= kw.totsig[count]
+
                 iterm += 1
                 count += 1
 
