@@ -66,7 +66,7 @@ eq.set_constant(c10, 10)
 print("c_10       : %1.3e" %c10)
 print(buff_line)
 
-fname = "HeatingCoolingCZWL_alpha%.3f_beta%.3f_deltah1%.3f_deltac%.3f_deltah1%.3f_fluxratio%.3f" %(kw.alpha, kw.beta, kw.deltah1, kw.deltac, kw.deltah2, kw.fluxratio)
+fname = "HeatingCoolingCZWL_alpha%.3f_beta%.3f_deltah%.3f_deltac%.3f_deltah%.3f_frat%1.2e" %(kw.alpha, kw.beta, kw.deltah1, kw.deltac, kw.deltah2, kw.fluxratio)
 
 the_file = dirname + '/' + fname
 
