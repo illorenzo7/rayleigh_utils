@@ -37,7 +37,7 @@ echo "#PBS -l select=$select:ncpus=$ncpus:model=$modeltype" >> lscript
 echo "#PBS -q long" >> lscript
 echo "#PBS -l walltime=120:00:00" >> lscript
 echo "#PBS -j oe" >> lscript
-echo "#PBS -W group_list=s2051" >> lscript
+echo "#PBS -W group_list=s2328" >> lscript
 echo "#PBS -m e" >> lscript
 echo "#PBS -l site=needed=/home1+/nobackupp17" >> lscript
 
