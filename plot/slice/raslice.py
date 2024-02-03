@@ -47,7 +47,7 @@ dirname = clas0.dirname
 dirname_stripped = strip_dirname(dirname)
 
 # SPECIFIC ARGS
-kwargs_default = dotdict(dict({'type': None, 'isamplevals': 0, 'samplevals': None, 'rvals': None, 'varnames': 'vr', 'clons': None, 'clats': None, 'clonrange': None, 'clatrange': None, 't0': False, 'movie': False, 'moviesampleval': False, 'movieclon': False, 'movieclat': False, 'shrink': False, 'prepend': False}))
+kwargs_default = dotdict(dict({'type': None, 'isamplevals': 0, 'samplevals': None, 'rvals': None, 'varnames': 'vr', 'clons': None, 'clats': None, 'clonrange': None, 'clatrange': None, 't0': False, 'movie': False, 'moviesampleval': False, 'movieclon': False, 'movieclat': False, 'shrink': False, 'prepend': False, 'dpi': 300}))
 
 # this guy need to update right away to choose fig dimensions
 if clas.type is None:
@@ -402,11 +402,11 @@ for ifigure in range(my_nfigures):
 
     # save by default
     if clas0['saveplot']:
-        plt.savefig(savefile, dpi=300)
+        plt.savefig(savefile, dpi=kw.dpi)
     if rank == 0:
         pcnt_done = (ifigure+1)/my_nfigures*100.
         # print what we saved and how far along we are
-        print(fill_str("saved " + savefile) + '\n' +\
+        print(fill_str("saved " + savefile + " (dpi=%i)" %kw.dpi) + '\n' +\
                 ('rank 0 %5.1f%% done' %pcnt_done), end='\r')
         # always show if nfigures is 1
         if nfigures == 1 and clas0['showplot']:
