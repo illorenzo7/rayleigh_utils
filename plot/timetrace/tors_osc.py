@@ -23,7 +23,7 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = clas0['magnetism']
 
 # defaults
-kwargs_default = dict({'the_file': None, 'ntot': 500, 'clat': 10, 'dlat': 0, 'om': None, 'rad': False, 'lon': False, 'isamplevals': np.array([0]), 'samplevals': None, 'rvals': None, 'groupname': 'v', 'sub': False, 'prepend': False})
+kwargs_default = dict({'the_file': None, 'ntot': 500, 'clat': 10, 'dlat': 0, 'om': None, 'rad': False, 'lon': False, 'isamplevals': np.array([0]), 'samplevals': None, 'rvals': None, 'groupname': 'v', 'sub': False, 'prepend': False, 'ntheta': None})
 
 # also need make figure kwargs
 timey_fig_dimensions['margin_top_inches'] = 1.0
@@ -56,7 +56,7 @@ kw = update_dict(kw, clas)
 time_unit, time_label, rotation, simple_label = get_time_unit(dirname)
 
 # get grid info
-di_grid = get_grid_info(dirname)
+di_grid = get_grid_info(dirname, ntheta=kw.ntheta)
 sint = di_grid['sint']
 rr = di_grid['rr']
 nr = di_grid['nr']

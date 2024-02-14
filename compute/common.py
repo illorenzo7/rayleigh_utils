@@ -12,7 +12,7 @@ sys.path.append(os.environ['rapp'])
 from reference_tools import equation_coefficients
 from rayleigh_diagnostics import G_Avgs, AZ_Avgs, Shell_Avgs, Shell_Slices, Shell_Spectra, Meridional_Slices, Equatorial_Slices, GridInfo
 from rayleigh_diagnostics_alt import sliceinfo
-from grid_util import compute_grid_info
+from grid_util import compute_grid_info, compute_theta_grid
 
 # handy class for making dictionaries "dot-accessible" "key-accessible" and vice versa
 class dotdict(dict):
@@ -902,7 +902,7 @@ def get_latminmax(dirname):
 ####################################
 # Routines associated with grid info
 ####################################
-def get_grid_info(dirname, verbose=False, fname=None):
+def get_grid_info(dirname, verbose=False, fname=None, ntheta=None):
     # get basic grid info; try to read from grid_info file
     # or directly from main_input if grid_info doesn't exist
     di = dotdict()
@@ -914,12 +914,18 @@ def get_grid_info(dirname, verbose=False, fname=None):
     if os.path.exists(dirname + '/' + fname):
         if verbose:
             print ("get_grid_info(): reading grid from grid_info")
+            if not ntheta is None:
+                print ("except setting nt = %i manually" %ntheta)
         gi = GridInfo(dirname + '/' + fname, '')
         # 1D arrays
         di.rr = rr = gi.radius
         di.rw = rr = gi.rweights
-        di.tt = tt = gi.theta
-        di.tw = tw = gi.tweights
+        if ntheta is None:
+            di.tt = tt = gi.theta
+            di.tw = tw = gi.tweights
+        else:
+            tt, tw = compute_theta_grid(ntheta)
+            di.tt, di.tw = tt, tw
     else:
         if verbose:
             print ("get_grid_info(): inferring grid from main_input")
