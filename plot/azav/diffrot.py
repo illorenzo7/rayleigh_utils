@@ -64,7 +64,8 @@ lut = di['lut']
 vp_av = vals[:, :, lut[3]]
 
 # get necessary grid info
-di_grid = get_grid_info(dirname)
+ntheta = np.shape(vals)[0]
+di_grid = get_grid_info(dirname, ntheta=ntheta)
 rr = di_grid['rr']
 cost = di_grid['cost']
 tt_lat = di_grid['tt_lat']
@@ -96,7 +97,7 @@ for ishell in range(nshells):
     r2 = rvals[ishell+1]
 
     # then non-D numbers in shell
-    diffrot = get_dr_contrast(dirname, r1, r2, the_file=kw.the_file, verbose=kw.verbose)
+    diffrot = get_dr_contrast(dirname, r1, r2, the_file=kw.the_file, verbose=kw.verbose, ntheta=ntheta)
     maintitle += '\n' +\
         ( '(' + flt_fmt + ', ' + flt_fmt + '):') %(r1, r2) +\
         '\n' + (r'$\Delta\Omega\ =\ $' + flt_fmt) %diffrot

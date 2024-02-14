@@ -191,7 +191,7 @@ numbers_output_def = dotdict({
 
     "me": ("ME", "(B^2/(8*pi)) / (rho*v^2/2)") })
 
-def get_dr_contrast(dirname, r1='rmin', r2='rmax', lat1=0., lat2=60., the_file=None, verbose=False, alt=False, norms=False):
+def get_dr_contrast(dirname, r1='rmin', r2='rmax', lat1=0., lat2=60., the_file=None, verbose=False, alt=False, norms=False, ntheta=None):
     # rotation contrast
     if the_file is None:
         datadir = dirname + '/data/'
@@ -204,7 +204,7 @@ def get_dr_contrast(dirname, r1='rmin', r2='rmax', lat1=0., lat2=60., the_file=N
     vp_av = vals[:, :, lut[3]]
 
     # get grid info
-    gi = get_grid_info(dirname)
+    gi = get_grid_info(dirname, ntheta=ntheta)
 
     # get background stuff
     eq = get_eq(dirname)

@@ -906,7 +906,6 @@ def get_grid_info(dirname, verbose=False, fname=None, ntheta=None):
     # get basic grid info; try to read from grid_info file
     # or directly from main_input if grid_info doesn't exist
     di = dotdict()
-
     if fname is None: # default
         fname = 'grid_info'
 
