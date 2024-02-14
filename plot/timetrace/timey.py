@@ -23,7 +23,7 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = clas0['magnetism']
 
 # defaults
-kwargs_default = dict({'rad': False, 'groupname': 'b', 'sampletag': '', 'the_file': None, 'isamplevals': np.array([0]), 'samplevals': None, 'rvals': None, 'qvals': 'all', 'ntot': 500, 'prepend': False, 'sub': False, 'xminmax': None, 'xmin': None, 'xmax': None})
+kwargs_default = dict({'rad': False, 'groupname': 'b', 'sampletag': '', 'the_file': None, 'isamplevals': np.array([0]), 'samplevals': None, 'rvals': None, 'qvals': 'all', 'ntot': 500, 'prepend': False, 'sub': False, 'xminmax': None, 'xmin': None, 'xmax': None, 'ntheta': None})
 
 # also need make figure kwargs
 make_figure_kwargs_default.update(timey_fig_dimensions)
@@ -49,7 +49,7 @@ if not kw.ycut is None:  # need room for two colorbars
 time_unit, time_label, rotation, simple_label = get_time_unit(dirname)
 
 # get grid info
-di_grid = get_grid_info(dirname)
+di_grid = get_grid_info(dirname, ntheta=kw.ntheta)
 
 if kw.rad:
     datatype = 'timerad'
