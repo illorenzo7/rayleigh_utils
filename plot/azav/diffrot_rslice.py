@@ -50,7 +50,8 @@ lut = di['lut']
 vp_av = vals[:, :, lut[3]]
 
 # get necessary grid info
-di_grid = get_grid_info(dirname)
+ntheta = np.shape(vals)[0]
+di_grid = get_grid_info(dirname, ntheta=ntheta)
 rr = di_grid['rr']
 tt_lat = di_grid['tt_lat']
 xx = di_grid['xx']

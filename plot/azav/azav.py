@@ -85,7 +85,8 @@ if kw_plot_azav_grid.maintitle is None:
     kw_plot_azav_grid.maintitle = dirname_stripped + '\n' + 'qvals = ' + qlabel + '\n' + time_string
 
 # Generate the figure using standard routine
-di_grid = get_grid_info(dirname)
+ntheta = np.shape(vals)[0]
+di_grid = get_grid_info(dirname, ntheta=ntheta)
 if kw.shav:
     kw_plot_azav_grid.tw = di_grid['tw']
 figs = plot_azav_grid (terms, di_grid['rr'], di_grid['cost'], **kw_plot_azav_grid)

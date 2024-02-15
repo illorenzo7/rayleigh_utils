@@ -56,7 +56,8 @@ vals = di['vals']
 lut = di['lut']
 
 # Get necessary grid info
-di_grid = get_grid_info(dirname)
+ntheta = np.shape(vals)[0]
+di_grid = get_grid_info(dirname, ntheta=ntheta)
 rr = di_grid['rr']
 cost = di_grid['cost']
 
