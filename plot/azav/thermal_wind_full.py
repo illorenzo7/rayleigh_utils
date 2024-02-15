@@ -53,7 +53,8 @@ vals = di['vals']
 lut = di['lut']
 
 # Get necessary grid info
-di_grid = get_grid_info(dirname)
+ntheta = np.shape(vals)[0]
+di_grid = get_grid_info(dirname, ntheta=ntheta)
 rr = di_grid['rr']
 rr_2d = di_grid['rr_2d']
 nr = di_grid['nr']
@@ -64,7 +65,8 @@ tt = di_grid['tt']
 xx = di_grid['xx']
 
 # Coriolis term:
-Om0 = get_parameter(dirname, 'angular_velocity')
+eq = get_eq(dirname)
+Om0 = 2*np.pi/eq.prot
 vp = vals[:, :, lut[3]]
 Om = Om0 + vp/xx
 
@@ -91,7 +93,6 @@ if clas0['magnetism']:
     force_t_mag_mm = force_t_mag - force_t_mag_ms
 
 # take the curl (divide by rho first)
-eq = get_eq(dirname)
 rho_2d = eq.rho.reshape((1, nr))
 
 svort_adv_rs = curlphi(force_r_adv_rs/rho_2d, force_t_adv_rs/rho_2d, rr, tt)
