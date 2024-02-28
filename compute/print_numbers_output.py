@@ -21,8 +21,15 @@ lendef2 = 35
 buff_line_loc = (lendef1 + lendef2 + 9)*'='
 
 # allowed args + defaults
-kwargs_default = dict({'save': False, 'savename': None, 'savedir': None, 'verbose': False})
+kwargs_default = dict({'save': False, 'savename': None, 'savedir': None, 'verbose': False,\
+        'the_file': None, 'the_file_az': None})
 kw = update_dict(kwargs_default, clas)
+
+if kw.the_file is None:
+    kw.the_file = get_widest_range_file(dirname + '/data/', 'Shell_Avgs')
+#if kw.the_file_az is None:
+#    kw.the_file_az = get_widest_range_file(datadir, 'AZ_Avgs')
+
 
 # figure out where to potentially save the output
 print_funcs = [print]
@@ -70,7 +77,7 @@ for print_func in print_funcs:
         print_func (buff_line_loc)
 
         # then non-D numbers in shell
-        di = get_numbers_output(dirname, r1, r2, verbose=kw.verbose)
+        di = get_numbers_output(dirname, r1, r2, verbose=kw.verbose, the_file=kw.the_file)
         count = 0
         for key in di.keys():
             print_func (fill_str(numbers_output_def[key][0], lendef1, ' ') +\
