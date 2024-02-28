@@ -22,7 +22,7 @@ buff_line_loc = (lendef1 + lendef2 + 9)*'='
 
 # allowed args + defaults
 kwargs_default = dict({'save': False, 'savename': None, 'savedir': None, 'verbose': False,\
-        'the_file': None, 'the_file_az': None})
+        'the_file': None, 'the_file_az': None, 'shelldepth': None})
 kw = update_dict(kwargs_default, clas)
 
 if kw.the_file is None:
@@ -73,11 +73,14 @@ for print_func in print_funcs:
         print_func ("Shell %i of %i:" %(ishell + 1, nshells))
         print_func ('r_1           = ' + flt_fmt %r1)
         print_func ('r_2           = ' + flt_fmt %r2)
-        print_func ('H = r_2 - r_1 = '+ flt_fmt %(r2-r1))
+        if kw.shelldepth is None:
+            print_func ('H = r_2 - r_1 = '+ flt_fmt %(r2-r1))
+        else:
+            print_func ('H = user set  = '+ flt_fmt %kw.shelldepth)
         print_func (buff_line_loc)
 
         # then non-D numbers in shell
-        di = get_numbers_output(dirname, r1, r2, verbose=kw.verbose, the_file=kw.the_file)
+        di = get_numbers_output(dirname, r1, r2, verbose=kw.verbose, the_file=kw.the_file, shell_depth=kw.shelldepth)
         count = 0
         for key in di.keys():
             print_func (fill_str(numbers_output_def[key][0], lendef1, ' ') +\

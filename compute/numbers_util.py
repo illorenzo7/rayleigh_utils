@@ -228,13 +228,14 @@ def get_dr_contrast(dirname, r1='rmin', r2='rmax', lat1=0., lat2=60., the_file=N
         out = volav_in_radius(dirname, dr_contrast**2, r1, r2)**0.5/eq.om0
     return out
 
-def get_numbers_output(dirname, r1='rmin', r2='rmax', the_file=None, the_file_az=None, verbose=False):
+def get_numbers_output(dirname, r1='rmin', r2='rmax', the_file=None, the_file_az=None, verbose=False, shell_depth=None):
     # get diagnostic numbers (e.g., Re and Ro), quantities vol. avg.'d 
     # between r1 and r2
    
     # desired shell
     r1, r2 = interpret_rvals(dirname, np.array([r1, r2]))
-    shell_depth = r2 - r1
+    if shell_depth is None:
+        shell_depth = r2 - r1
 
     # dictionary for output, rotation, magnetism
     di = dotdict()
