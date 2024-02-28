@@ -180,8 +180,14 @@ for ilat in range(nquadlat):
             label_pre = '<'
             label_app = '>'
 
-        # make line plots
+        # normalize angular momentum by the total angular momentum of the shell
+        eq = get_eq(dirname)
+        Lz /= eq.amom
+        if plotall:
+            Lx /= eq.amom
+            Ly /= eq.amom
 
+        # make line plots
         ax.plot(xaxis, Lz, color_order[0], linewidth=lw, label=label_pre+r'$\rm{\mathcal{L}_{z}}$'+label_app)
         # collect all the momenta for min/max values
         all_L = [Lz]
@@ -232,7 +238,7 @@ for it in range(nquadlat):
 # overall title 
 iter1, iter2 = get_iters_from_file(the_file)
 time_string = get_time_string(dirname, iter1, iter2) 
-the_title = clas0.dirname_label + '\n' +  'amom trace (' + ltype + ')' + '\n' + time_string
+the_title = clas0.dirname_label + '\n' +  'amom trace (' + ltype + ')' + ' normalized by L_shell\n' + time_string
 margin_x = fpar['margin_left'] + fpar['sub_margin_left']
 margin_y = default_margin/fpar['height_inches']
 fig.text(margin_x, 1 - margin_y, the_title,\
@@ -258,7 +264,10 @@ tag = clas0['tag']
 if xiter and tag == '':
     tag = '_xiter'
 plotdir = my_mkdir(clas0['plotdir']) 
-savename = 'Ltrace_quad' + tag + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
+basename = dataname.replace('G_Avgs_trace', 'amomtrace' + '_' + ltype)
+savename = basename + tag + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
+if clas0.prepend:
+    savename = dirname_stripped + '_' + savename
 
 if clas0['saveplot']:
     print ('Saving the etrace plot at ' + plotdir + savename)

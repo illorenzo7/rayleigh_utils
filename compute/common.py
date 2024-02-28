@@ -1174,6 +1174,11 @@ def get_eq(dirname, fname=None, verbose=False):
         #eq_hr.nsq = (eq_hr.grav/eq_hr.c_p)*eq_hr.dsdr
         eq_hr.om0 = eq.constants[0]/2
         eq_hr.prot = 2*np.pi/eq_hr.om0
+        # angular momentum of shell
+        gi = get_grid_info(dirname)
+        amom_dens = eq_hr.rho*eq_hr.om0*gi.xx**2
+        amom_av = np.sum(amom_dens*gi.tw_2d,axis=0)
+        eq_hr.amom = np.sum(amom_av*gi.rw)
         kappa_volav = volav_in_radius(dirname, eq_hr.kappa)
         eq_hr.tdt = (eq_hr.rr[0] - eq_hr.rr[-1])**2/kappa_volav
 
