@@ -21,7 +21,7 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = get_parameter(dirname, 'magnetism')
 
 # SPECIFIC ARGS for etrace:
-kwargs_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'growth': False, 'growthfrac': 0.5, 'xvals': np.array([]), 'inte': False, 'nquadr': None, 'nquadlat': None, 'etype': 'tot', 'legfrac': None, 'nomag': False, 'noke': False})
+kwargs_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'growth': False, 'growthfrac': 0.5, 'xvals': np.array([]), 'inte': False, 'nquadr': None, 'nquadlat': None, 'type': 'tot', 'legfrac': None, 'nomag': False, 'noke': False})
 
 # make figure kwargs
 nlines = get_num_lines(clas0.dirname_label)
@@ -55,7 +55,7 @@ xvals = make_array(kw.xvals)
 plot_inte = kw.inte
 nquadlat = kw.nquadlat
 nquadr = kw.nquadr
-etype = kw.etype
+etype = kw.type
 legfrac = kw.legfrac
 noke = kw.noke
 nomag = kw.nomag
@@ -300,7 +300,6 @@ margin_x = fpar['margin_left'] + fpar['sub_margin_left']
 margin_y = default_margin/fpar['height_inches']
 fig.text(margin_x, 1 - margin_y, the_title,\
          ha='left', va='top', fontsize=default_titlesize)
-
 
 # mark times if desired
 for ax in axs.flatten():

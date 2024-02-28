@@ -21,13 +21,16 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = get_parameter(dirname, 'magnetism')
 
 # SPECIFIC ARGS for etrace:
-kwargs_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'xvals': np.array([]), 'plotall': False, 'vol': False, 'nquadr': None, 'nquadlat': None, 'ltype': 'tot'})
+kwargs_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'xvals': np.array([]), 'plotall': False, 'vol': False, 'nquadr': None, 'nquadlat': None, 'type': 'tot'})
 # plots two more columns with energies in CZ and RZ separately 
 # update these defaults from command-line
 
 # make figure kwargs
-lineplot_fig_dimensions['margin_top_inches'] = 3/4
+nlines = get_num_lines(clas0.dirname_label)
+lineplot_fig_dimensions['margin_top_inches'] = (nlines+2)*default_line_height
 make_figure_kwargs_default.update(lineplot_fig_dimensions)
+make_figure_kwargs_default['margin_top_inches'] += 2*default_line_height
+
 kwargs_default.update(make_figure_kwargs_default)
 
 # plots two more columns with energies in CZ and RZ separately 
@@ -52,7 +55,7 @@ plotall = kwargs.plotall
 vol = kwargs.vol
 nquadlat = kwargs.nquadlat
 nquadr = kwargs.nquadr
-ltype = kwargs.ltype
+ltype = kwargs.type
 
 # deal with coords (if user wants minmax to only apply to certain subplots)
 if not coords is None:
@@ -75,7 +78,7 @@ print ('Getting data from ' + the_file)
 di = get_dict(the_file)
 vals = di['vals']
 rvals = di['rvals']
-latbounds = di['latbounds']
+latvals = di['latvals']
 lut = di['lut']
 times = di['times']
 iters = di['iters']
@@ -218,15 +221,22 @@ for ir in range(nquadr):
     r1 = rvals[ir]
     r2 = rvals[ir+1]
     title = 'rad. range = [%.3f, %.3f]' %(r1, r2) + '\n'
-    if ir == 0:
-        title = dirname_stripped + '\n' + title
     axs[0, ir].set_title(title, fontsize=fontsize)
 
 # y labels
 for it in range(nquadlat):
-    lat1 = latbounds[it]
-    lat2 = latbounds[it+1]
+    lat1 = latvals[it]
+    lat2 = latvals[it+1]
     axs[it, 0].set_ylabel('lat. range = [%.1f, %.1f]' %(lat1, lat2), fontsize=fontsize)
+
+# overall title 
+iter1, iter2 = get_iters_from_file(the_file)
+time_string = get_time_string(dirname, iter1, iter2) 
+the_title = clas0.dirname_label + '\n' +  'amom trace (' + ltype + ')' + '\n' + time_string
+margin_x = fpar['margin_left'] + fpar['sub_margin_left']
+margin_y = default_margin/fpar['height_inches']
+fig.text(margin_x, 1 - margin_y, the_title,\
+         ha='left', va='top', fontsize=default_titlesize)
 
 # mark times if desired
 for ax in axs.flatten():
