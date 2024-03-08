@@ -2,12 +2,12 @@ import numpy as np
 
 def opt_workload(n, nproc):
     # optimally distributes workload (n tasks) over processes (n workers)
-    n_per_proc_min = np.int(np.floor(n/nproc)) # min workload
-    n_per_proc_max = np.int(np.ceil(n/nproc)) # max workload
+    n_per_proc_min = int(np.floor(n/nproc)) # min workload
+    n_per_proc_max = int(np.ceil(n/nproc)) # max workload
     # min/max workloads differ by 1
     r = n/nproc - n_per_proc_min # remainder: r sets optimal number of processes
     # to perform max workload
-    nproc_max = np.int(np.floor(nproc*r))
+    nproc_max = int(np.floor(nproc*r))
     nproc_min = nproc - nproc_max # there are total nproc processes
 
     # "optimal choice" assumes partial processes; but processes are whole
