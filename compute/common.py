@@ -242,7 +242,7 @@ def inds_from_vals(arr, arrvals):
 
 def is_an_int(string):
     # obviously, first check if it's actually an int
-    if isinstance(string, int) or isinstance(string, int64):
+    if isinstance(string, int):# or isinstance(string, int64):
         return True
     len_str = len(string)
     bool_val = True
