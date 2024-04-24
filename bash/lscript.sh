@@ -18,6 +18,10 @@ elif [ $modeltype == 'san' ]
 then
     ncpus=16
     execext='.avx'
+elif [ $modeltype == 'sky_ele' ] || [ $modeltype == 'cas_ait' ] 
+then
+    ncpus=40
+    execext='.avx512'
 else
     echo "unknown model type $modeltype"
 fi
