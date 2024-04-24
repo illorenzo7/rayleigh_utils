@@ -28,3 +28,24 @@ def arbitrary_atmosphere(r, s, dsdr, d2sdr2, g, dgdr, r0, T0, p0, cp, gamma):
     d2lnrho = (1.0/(gamma - 1.0))*(d2lnT - d2sdr2/cv)
     
     return T, rho, p, dlnT, dlnrho, dlnp, d2lnrho
+
+def arbitrary_atmosphere_nd(rr, dsdr, g, rr0, rho0, tmp0, Di, gamma):
+    # compute entropy(r) and higher derivatives
+    entr = indefinite_integral(dsdr, rr, rr0)
+    d2sdr2 = np.gradient(dsdr, rr) 
+    dgdr = np.gradient(g, rr)
+
+    # compute rho(r) and T(r)
+    tmp = np.exp(entr)*(tmp0 - Di*indefinite_integral(g*np.exp(-entr), rr, rr0))
+    rho = rho0*np.exp(-gamma*entr/(gamma-1.))*(tmp/tmp0)**(1./(gamma-1.))
+
+    # compute higher derivatives of rho and T
+    dtdr = dsdr*tmp - Di*g
+    dlnt = dtdr/tmp
+    d2tdr2 = d2sdr2*tmp + dsdr*dtdr - Di*dgdr
+    d2lnt = d2tdr2/tmp - dlnt**2
+
+    dlnrho = -gamma*dsdr/(gamma-1.) + dlnt/(gamma-1.)
+    d2lnrho = -gamma*d2sdr2/(gamma-1.) + d2lnt/(gamma-1.)
+    
+    return rho, tmp, dlnrho, d2lnrho, dlnt
