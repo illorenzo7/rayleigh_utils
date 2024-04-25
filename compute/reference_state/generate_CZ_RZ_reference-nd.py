@@ -17,48 +17,20 @@
 # --delta : transition width between CZ and RZ via quartic matching of dS/dr
 # --jup : if "jup" is specified, RZ lies above CZ
 # 
-# Inner, outer, and transition radii (default rmin = 0.1*rstar
-# (i.e. very deep shell; don't need to use all of it)
-# rt = 5e10 (solar convection zone in mind)
-# rmax = 0.99*rsun (as close to surface as my simple
-# hydro model allows)
+# --gamma : ratio of specific heats
+# --nrho : number of density scale heights across CZ
+# --amp : amplitude of 1/cp (dS/dr) -- yes it's another independent parameter
 
-# --mstar
-# central mass, default mstar = msun
-# 
-# --rstar 
-# stellar radius, default rstar = rsun
-#
-# --rhot
-# Density at transition boundary, default sun.rho_bcz ~ 0.18
-#
-# --tmpt
-# Temperature at transition boundary default sun.tmp_bcz ~ 2.1e6
-#
-# --k
-# Stiffness k, default 2.0 (define in units of dsdr in RZ / (cp/rstar) for consistency
-# 
-# --delta
-# Transition width delta, default 0.05*rsun
-#
-# --gamma
-# specific heat ratio gamma, default gamma_ideal = 5/3
-#
-# --cp
-# pressure specific heat cp, default sun.c_p = 3.5e8
-#
-# --mag
-# Whether magnetism is True or False, default False (hydro)
-#
 # --fname
 # File to save reference state in (default custom_reference_binary)
 #
 # --nr
-# Default number of radial (evenly spaced) grid points. Default 10,000 (very fine)
+# Default number of radial (evenly spaced) grid points. 
+# Default 10,000 (very fine)
 
 import numpy as np
 import sys, os
-from arbitrary_atmosphere import arbitrary_atmosphere
+from arbitrary_atmosphere import arbitrary_atmosphere_nd
 
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
@@ -73,7 +45,8 @@ clas0, clas = read_clas_raw(args)
 dirname = clas0['dirname']
 
 # Set default kwargs
-kw_default = dotdict(dict({'rmin': 0.1*sun.r, 'rmax': 0.99*sun.r, 'rt': sun.r_bcz, 'mstar': msun, 'rstar': rsun, 'rhot': sun.rho_bcz, 'tmpt': sun.tmp_bcz, 'k': 2.0, 'delta': 0.05*sun.r, 'gamma': gamma_ideal, 'cp': sun.c_p, 'mag': False, 'fname': 'custom_reference_binary', 'nr': 10000}))
+kw_default = dotdict(dict({'alpha': 1., 'beta': 0.759, 'gamma': 1.67, 'delta': 0.219, 'nrho': 3., 'fname': 'custom_reference_binary', 'nr': 10000, 'jup': False, 'amp': 0.453}))
+# creates profiles from tachocline cases, Matilsky et al. (2022, 2024)
 
 # overwrite defaults
 kw = update_dict(kw_default, clas)
@@ -81,62 +54,74 @@ kw = update_dict(kw_default, clas)
 # check for bad keys
 find_bad_keys(kw_default, clas, clas0['routinename'], justwarn=True)
 
-# compute gas constant R
-gas_constant = kw.cp*(kw.gamma-1)/kw.gamma
-prst = kw.rhot*gas_constant*kw.tmpt
+# compute geometry of grid
+rbcz = kw.beta/(1.-kw.beta)
+rtcz = 1./(1.-kw.beta)
+if kw.jup: # RZ above CZ
+    rt = rbrz = rtcz
+    rtrz = rbrz + kw.alpha
+    rmin, rmax = rbcz, rtrz
+else: # CZ above RZ
+    rt = rtrz = rbcz
+    rbrz = rtrz - kw.alpha
+    rmin, rmax = rbrz, rtcz
 
 # compute reference state on super-fine grid to interpolate onto later    
-rr = np.linspace(kw.rmax, kw.rmin, kw.nr) # keep radius in decreasing order for consistency with Rayleigh convention
+r = np.linspace(rmax, rmin, kw.nr) # keep radius in decreasing order for consistency with Rayleigh convention
 
 # Define an entropy profile that is +1 for r < rt - delta, 0 for r > rt,
 # and continuously differentiable (a quartic) in between
 
-s = np.zeros(kw.nr)
 dsdr = np.zeros(kw.nr)
-d2sdr2 = np.zeros(kw.nr)
 
 for i in range(kw.nr):
     rloc = rr[i]
-    if rloc <= kw.rt - kw.delta:
-        s[i] = (8.0/15.0)*(kw.k*kw.cp)*(kw.delta/kw.rstar) +\
-                kw.k*kw.cp*(rloc/kw.rstar - kw.rt/kw.rstar)
-        dsdr[i] = kw.k*kw.cp/kw.rstar
-        d2sdr2[i] = 0.0
-    elif rloc > kw.rt - kw.delta and rloc < kw.rt:
-        x = (rloc - kw.rt)/kw.delta
-        s[i] = (kw.k*kw.cp)*(kw.delta/kw.rstar)*((2.0/3.0)*x**3.0 - (1.0/5.0)*x**5.0)
-        dsdr[i] = (kw.k*kw.cp/kw.rstar)*(1.0 - (1.0 - x**2.0)**2.0)
-        d2sdr2[i] = (4.0/kw.delta)*(kw.k*kw.cp/kw.rstar)*(1.0 - x**2.0)*x
-    else:
-        s[i] = 0.0
-        dsdr[i] = 0.0
-        d2sdr2[i] = 0.0
+    if kw.jup: # RZ is above
+        if rloc <= kw.rt:
+            dsdr[i] = 0.
+        elif rloc < kw.rt + kw.delta and rloc > kw.rt:
+            x = (rloc - kw.rt)/kw.delta
+            dsdr[i] = 1.0 - (1.0 - x**2.0)**2.0
+        else:
+            dsdr[i] = 1.0
+    else: # CZ is above
+        if rloc <= kw.rt - kw.delta:
+            dsdr[i] = 1.
+        elif rloc > kw.rt - kw.delta and rloc < kw.rt:
+            x = (rloc - kw.rt)/kw.delta
+            dsdr[i] = 1.0 - (1.0 - x**2.0)**2.0
+        else:
+            dsdr[i] = 0.0
+dsdr *= kw.amp # scale by the non-dimensional amplitude
 
-# Make gravity due to a point mass at the origin
-g = g_univ*kw.mstar/rr**2.0
-dgdr = -2.0*g/rr
-
-T, rho, p, dlnT, dlnrho, dlnp, d2lnrho =\
-    arbitrary_atmosphere(rr, s, dsdr, d2sdr2, g,\
-                         dgdr, kw.rt, kw.tmpt, prst, kw.cp, kw.gamma)
+# compute the atmosphere
+rho, tmp, dlnrho, d2lnrho, dlnt, g =\
+        arbitrary_atmosphere_nd(r, dsdr, rbcz, rtcz, kw.gamma, kw.nrho)
 
 print(buff_line)
 print("Computed atmosphere for RZ-CZ, ds/dr joined with a quartic")
+if kw.jup:
+    print ("geometry : Jovian (RZ atop CZ)")
+else:
+    print ("geometry : solar (CZ atop RZ)")
 print("nr         : %i" %kw.nr) 
-print("rstar      : %1.8e cm" %kw.rstar) 
-print("mstar      : %1.8e  g" %kw.mstar) 
-print("rmin/rstar : %.8f    " %(kw.rmin/kw.rstar))
-print("rt/rstar   : %.8f    " %(kw.rt/kw.rstar))
-print("rmax/rstar : %.8f    " %(kw.rmax/kw.rstar))
-print("delta/rstar: %.8f"  %(kw.delta/kw.rstar))
-print("stiffness k: %1.8e"  %kw.k)
-print("stiffness  : %1.8e"  %(kw.k*kw.cp/kw.rstar))
-print("...where stiffness := (dsdr in RZ)")
-print("and k = (stiffness)/(cp/rstar)")
+print("alpha      : %1.3f" %kw.alpha)
+print("beta       : %1.3f" %kw.beta)
+if kw.jup:
+    print("   (rbcz, rtcz=rbrz, rtrz): (%1.3f, %1.3f, %1.3f)"\
+            %(rbcz,rtcz,rtrz))
+else:
+    print("   (rbrz, rtrz=rbcz, rtrz): (%1.3f, %1.3f, %1.3f)"\
+            %(rbrz,rtrz,rtcz))
+print("delta      : %1.3f" %kw.delta)
+print("gamma      : %1.3f" %kw.gamma)
+print("   n=1/(gamma-1)      : %1.3f" %(1./(kw.gamma-1.)))
+print("Nrho       : %1.3f" %kw.nrho)
+print("amp        : %1.3f" %kw.amp)
 print(buff_line)
 
 # Now write to file using the equation_coefficients framework
-eq = equation_coefficients(rr)
+eq = equation_coefficients(r)
 
 # Set only the thermodynamic functions/constants in this routine
 # In other routines, we can set the heating and transport coefficients

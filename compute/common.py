@@ -349,6 +349,25 @@ def indefinite_integral(integrand, x, x0):
 
     return integral
 
+def definite_integral(integrand, x, x1, x2):
+    # check on the order of x
+    # if x is descending, reverse both arrays for the integration,
+    # then reverse them back at the end
+    integrand, x = np.copy(integrand), np.copy(x)
+    reverse = False
+    if x[-1] < x[0]:
+        reverse = True
+        x = x[::-1]
+        integrand = integrand[::-1]
+
+    # basic grid info
+    nx = len(x)
+    ix1 = np.argmin(np.abs(x - x1))
+    ix2 = np.argmin(np.abs(x - x2))
+   
+    # compute definite integral
+    return simps(integrand[ix1:ix2+1], x[ix1:ix2+1])
+
 def opt_workload(n, nproc):
     # optimally distributes workload (n tasks) over processes (n workers)
     n_per_proc_min = int(np.floor(n/nproc)) # min workload
