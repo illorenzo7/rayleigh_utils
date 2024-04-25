@@ -94,7 +94,13 @@ for i in range(kw.nr):
             dsdr[i] = 0.0
 dsdr *= kw.amp # scale by the non-dimensional amplitude
 
-# compute the atmosphere
+# compute the normalized buoyancy frequency
+nsq = g*dsdr
+nsq_norm = definite_integral(nsq*r**2, r, rbrz, rtrz)
+nsq_norm *= 1./3.*(rtrz**3. - rbrz**3.)
+nsq /= nsq_norm
+
+# compute the atmosphere (this depends on dsdr, not nsq)
 rho, tmp, dlnrho, d2lnrho, dlnt, g =\
         arbitrary_atmosphere_nd(r, dsdr, rbcz, rtcz, kw.gamma, kw.nrho)
 
@@ -129,35 +135,17 @@ eq = equation_coefficients(r)
 
 print("Setting f_1, f_2, f_4, f_8, f_9, f_10, and f_14")
 eq.set_function(rho, 1)
-buoy = rho*g/kw.cp
-eq.set_function(buoy, 2)
-eq.set_function(T, 4)
+eq.set_function(rho*g, 2)
+eq.set_function(tmp, 4)
 eq.set_function(dlnrho, 8)
 eq.set_function(d2lnrho, 9)
-eq.set_function(dlnT, 10)
-eq.set_function(dsdr, 14)
+eq.set_function(dlnt, 10)
+eq.set_function(nsq/g, 14)
 
-print("Setting c_2, c_3, c_7, and c_8")
-eq.set_constant(1.0, 2) # multiplies buoyancy
-eq.set_constant(1.0, 3) # multiplies pressure grad.
-eq.set_constant(1.0, 8) # multiplies viscous heating
-
-if kw.mag:
-    print("magnetism = True, so setting c_4 = c_9 =  1/(4*pi), c_7 = 1")
-    eq.set_constant(1.0/4.0/np.pi, 4) # multiplies Lorentz force
-    eq.set_constant(1.0, 7) # multiplies eta in induction-diffusion term
-    eq.set_constant(1.0/4.0/np.pi, 9) # multiplies Joule heating
-else:
-    print("magnetism = False, so setting c_4, c_7, c_9 = 0.0")
-    eq.set_constant(0.0, 4) # multiplies Lorentz force
-    eq.set_constant(0.0, 7) # multiplies eta in induction-diffusion term
-    eq.set_constant(0.0, 9) # multiplies Ohmic heating
-
-# c_10 will be set in the "generate_heating" scripts
-
-# The "generate_transport" scripts will set the transport
-# "radial shapes", and the constants c_5, c_6, c_7
-
+print("Setting all constants to 1.0")
+# set all the constants to 1. (no harm I can see for now)
+for i in range(eq.nconst):
+    eq.set_constant(1.0, i)
 the_file = dirname + '/' + kw.fname
 
 print("Writing the atmosphere to %s" %the_file)
