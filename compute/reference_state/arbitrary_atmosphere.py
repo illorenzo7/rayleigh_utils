@@ -1,5 +1,8 @@
 import numpy as np
 from scipy.integrate import simps
+import sys, os
+sys.path.append(os.environ['raco'])
+from common import indefinite_integral, definite_integral
 
 def compute_Di_v(gamma, beta, nrho): # compute the dissipation number
     # based on volume averages of profiles in the CZ (dS/dr=0)
@@ -52,6 +55,9 @@ def arbitrary_atmosphere_nd(r, dsdr, rbcz, rtcz, gamma, nrho):
     # compute "polytropic index of CZ"
     n = 1./(gamma-1.)
 
+    # aspect ratio of CZ
+    beta = rbcz/rtcz
+
     # define normalized gravity profile
     g = (1.-beta**3)/3./(1.-beta)**3./r**2.
     dgdr = -2.*g/r
@@ -70,7 +76,7 @@ def arbitrary_atmosphere_nd(r, dsdr, rbcz, rtcz, gamma, nrho):
     rho = np.exp(-gamma*entr/(gamma-1.))*(tmp/tmp0)**(1./(gamma-1.))
 
     # normalize rho to have unity volume integral over CZ
-    rho_norm = indefinite_integral(rho*r**2., r, rbcz, rtcz)
+    rho_norm = definite_integral(rho*r**2., r, rbcz, rtcz)
     rho_norm *= 1./3.*(rtcz**3. - rbcz**3.)
     rho /= rho_norm
 

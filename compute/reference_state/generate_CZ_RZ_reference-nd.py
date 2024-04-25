@@ -45,7 +45,7 @@ clas0, clas = read_clas_raw(args)
 dirname = clas0['dirname']
 
 # Set default kwargs
-kw_default = dotdict(dict({'alpha': 1., 'beta': 0.759, 'gamma': 1.67, 'delta': 0.219, 'nrho': 3., 'fname': 'custom_reference_binary', 'nr': 10000, 'jup': False, 'amp': 0.453}))
+kw_default = dotdict(dict({'alpha': 1., 'beta': 0.7592, 'gamma': 1.667, 'delta': 0.2193, 'nrho': 3.000, 'fname': 'custom_reference_binary', 'nr': 10000, 'jup': False, 'amp': 0.4531}))
 # creates profiles from tachocline cases, Matilsky et al. (2022, 2024)
 
 # overwrite defaults
@@ -75,34 +75,34 @@ r = np.linspace(rmax, rmin, kw.nr) # keep radius in decreasing order for consist
 dsdr = np.zeros(kw.nr)
 
 for i in range(kw.nr):
-    rloc = rr[i]
+    rloc = r[i]
     if kw.jup: # RZ is above
-        if rloc <= kw.rt:
+        if rloc <= rt:
             dsdr[i] = 0.
-        elif rloc < kw.rt + kw.delta and rloc > kw.rt:
-            x = (rloc - kw.rt)/kw.delta
+        elif rloc < rt + kw.delta and rloc > rt:
+            x = (rloc - rt)/kw.delta
             dsdr[i] = 1.0 - (1.0 - x**2.0)**2.0
         else:
             dsdr[i] = 1.0
     else: # CZ is above
-        if rloc <= kw.rt - kw.delta:
+        if rloc <= rt - kw.delta:
             dsdr[i] = 1.
-        elif rloc > kw.rt - kw.delta and rloc < kw.rt:
-            x = (rloc - kw.rt)/kw.delta
+        elif rloc > rt - kw.delta and rloc < rt:
+            x = (rloc - rt)/kw.delta
             dsdr[i] = 1.0 - (1.0 - x**2.0)**2.0
         else:
             dsdr[i] = 0.0
 dsdr *= kw.amp # scale by the non-dimensional amplitude
+
+# compute the atmosphere (this depends on dsdr, not nsq)
+rho, tmp, dlnrho, d2lnrho, dlnt, g =\
+        arbitrary_atmosphere_nd(r, dsdr, rbcz, rtcz, kw.gamma, kw.nrho)
 
 # compute the normalized buoyancy frequency
 nsq = g*dsdr
 nsq_norm = definite_integral(nsq*r**2, r, rbrz, rtrz)
 nsq_norm *= 1./3.*(rtrz**3. - rbrz**3.)
 nsq /= nsq_norm
-
-# compute the atmosphere (this depends on dsdr, not nsq)
-rho, tmp, dlnrho, d2lnrho, dlnt, g =\
-        arbitrary_atmosphere_nd(r, dsdr, rbcz, rtcz, kw.gamma, kw.nrho)
 
 print(buff_line)
 print("Computed atmosphere for RZ-CZ, ds/dr joined with a quartic")
@@ -111,19 +111,19 @@ if kw.jup:
 else:
     print ("geometry : solar (CZ atop RZ)")
 print("nr         : %i" %kw.nr) 
-print("alpha      : %1.3f" %kw.alpha)
-print("beta       : %1.3f" %kw.beta)
+print("alpha      : %1.4f" %kw.alpha)
+print("beta       : %1.4f" %kw.beta)
 if kw.jup:
     print("   (rbcz, rtcz=rbrz, rtrz): (%1.3f, %1.3f, %1.3f)"\
             %(rbcz,rtcz,rtrz))
 else:
     print("   (rbrz, rtrz=rbcz, rtrz): (%1.3f, %1.3f, %1.3f)"\
             %(rbrz,rtrz,rtcz))
-print("delta      : %1.3f" %kw.delta)
+print("delta      : %1.4f" %kw.delta)
 print("gamma      : %1.3f" %kw.gamma)
 print("   n=1/(gamma-1)      : %1.3f" %(1./(kw.gamma-1.)))
 print("Nrho       : %1.3f" %kw.nrho)
-print("amp        : %1.3f" %kw.amp)
+print("amp        : %1.4f" %kw.amp)
 print(buff_line)
 
 # Now write to file using the equation_coefficients framework
