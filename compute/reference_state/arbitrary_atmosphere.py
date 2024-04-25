@@ -16,8 +16,8 @@ def compute_tmp_bcz(gamma, beta, nrho): # compute the non-D temperature
     # at the base of the CZ (assuming volume average non-dim over CZ)
     n = 1./(gamma-1.)
     numer = (1.-beta**3.)*(1.-beta)
-    denom = 3.*beta/2.*(1.-beta**2)*(np.exp(nrho/n)-1.) -\
-            (1.-beta**3.)*(beta*np.exp(nrho/n)-1.)
+    denom = 3.*beta/2.*(1.-beta**2)*(1. - np.exp(-nrho/n)) -\
+            (1.-beta**3.)*(beta - np.exp(-nrho/n))
     return numer/denom
 
 def arbitrary_atmosphere(r, s, dsdr, d2sdr2, g, dgdr, r0, T0, p0, cp, gamma):
