@@ -77,7 +77,7 @@ def arbitrary_atmosphere_nd(r, dsdr, rbcz, rtcz, gamma, nrho):
 
     # normalize rho to have unity volume integral over CZ
     rho_norm = definite_integral(rho*r**2., r, rbcz, rtcz)
-    rho_norm *= 1./3.*(rtcz**3. - rbcz**3.)
+    rho_norm /= 1./3.*(rtcz**3. - rbcz**3.)
     rho /= rho_norm
 
     # compute higher derivatives of rho and T

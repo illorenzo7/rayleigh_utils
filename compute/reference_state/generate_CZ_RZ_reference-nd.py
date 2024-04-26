@@ -101,7 +101,7 @@ rho, tmp, dlnrho, d2lnrho, dlnt, g =\
 # compute the normalized buoyancy frequency
 nsq = g*dsdr
 nsq_norm = definite_integral(nsq*r**2, r, rbrz, rtrz)
-nsq_norm *= 1./3.*(rtrz**3. - rbrz**3.)
+nsq_norm /= 1./3.*(rtrz**3. - rbrz**3.)
 nsq /= nsq_norm
 
 print(buff_line)
