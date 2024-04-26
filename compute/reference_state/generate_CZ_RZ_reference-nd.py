@@ -19,7 +19,8 @@
 # 
 # --gamma : ratio of specific heats
 # --nrho : number of density scale heights across CZ
-# --amp : amplitude of 1/cp (dS/dr) -- yes it's another independent parameter
+# --amp : amplitude of 1/cp (dS/dr) 
+    # -- yes it's another independent parameter, Loren realized on 04/24
 
 # --fname
 # File to save reference state in (default customfile)
