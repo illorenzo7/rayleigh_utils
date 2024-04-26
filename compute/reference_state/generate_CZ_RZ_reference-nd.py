@@ -45,7 +45,7 @@ clas0, clas = read_clas_raw(args)
 dirname = clas0['dirname']
 
 # Set default kwargs
-kw_default = dotdict(dict({'alpha': 1., 'beta': 0.7592, 'gamma': 1.667, 'delta': 0.2193, 'nrho': 3.000, 'fname': 'custom_reference_binary', 'nr': 10000, 'jup': False, 'amp': 0.4531}))
+kw_default = dotdict(dict({'alpha': 1., 'beta': 0.7592, 'gamma': 1.667, 'delta': 0.2193, 'nrho': 3.000, 'fname': 'custom_reference_binary', 'nr': 10000, 'jup': False, 'amp': 0.4559}))
 # creates profiles from tachocline cases, Matilsky et al. (2022, 2024)
 
 # overwrite defaults
