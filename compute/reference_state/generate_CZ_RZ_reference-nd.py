@@ -22,7 +22,7 @@
 # --amp : amplitude of 1/cp (dS/dr) -- yes it's another independent parameter
 
 # --fname
-# File to save reference state in (default custom_reference_binary)
+# File to save reference state in (default customfile)
 #
 # --nr
 # Default number of radial (evenly spaced) grid points. 
@@ -45,7 +45,7 @@ clas0, clas = read_clas_raw(args)
 dirname = clas0['dirname']
 
 # Set default kwargs
-kw_default = dotdict(dict({'alpha': 1., 'beta': 0.7592, 'gamma': 1.667, 'delta': 0.2193, 'nrho': 3.000, 'fname': 'custom_reference_binary', 'nr': 10000, 'jup': False, 'amp': 0.4559}))
+kw_default = dotdict(dict({'alpha': 1., 'beta': 0.7592, 'gamma': 1.667, 'delta': 0.2193, 'nrho': 3.000, 'fname': 'customfile', 'nr': 10000, 'jup': False, 'amp': 0.4559}))
 # creates profiles from tachocline cases, Matilsky et al. (2022, 2024)
 
 # overwrite defaults
@@ -149,5 +149,32 @@ for i in range(eq.nconst):
 the_file = dirname + '/' + kw.fname
 
 print("Writing the atmosphere to %s" %the_file)
-print("---------------------------------")
 eq.write(the_file)
+
+# write metadata to separate file
+metafile = the_file + '_meta.txt'
+f = open(dirname + '/' + metafile, 'w')
+
+f.write(buff_line + '\n')
+if kw.jup:
+     f.write("geometry : Jovian (RZ atop CZ)\n")
+else:
+     f.write("geometry : solar (CZ atop RZ)\n")
+f.write("nr         : %i\n" %kw.nr) 
+f.write("alpha      : %1.4f\n" %kw.alpha)
+f.write("beta       : %1.4f\n" %kw.beta)
+if kw.jup:
+    f.write("   (rbcz, rtcz=rbrz, rtrz): (%1.3f, %1.3f, %1.3f)\n"\
+            %(rbcz,rtcz,rtrz))
+else:
+    f.write("   (rbrz, rtrz=rbcz, rtrz): (%1.3f, %1.3f, %1.3f)\n"\
+            %(rbrz,rtrz,rtcz))
+f.write("delta      : %1.4f\n" %kw.delta)
+f.write("gamma      : %1.3f\n" %kw.gamma)
+f.write("   n=1/(gamma-1)      : %1.3f\n" %(1./(kw.gamma-1.)))
+f.write("Nrho       : %1.3f\n" %kw.nrho)
+f.write("amp        : %1.4f\n" %kw.amp)
+f.write(buff_line)
+f.close()
+print("Writing the metadata   to %s" %metafile)
+print(buff_line)
