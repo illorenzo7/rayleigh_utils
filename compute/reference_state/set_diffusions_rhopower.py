@@ -134,4 +134,4 @@ else:
 f.write(buff_line)
 f.close()
 print("Writing the diffusion metadata to %s" %metafile)
-print(buff_line)
+print(buff_line + '\n')
