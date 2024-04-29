@@ -92,7 +92,7 @@ else:
 # set I choose by default...right now its Ro_c, Ra, Pr for rotating cases,
 # etc.
 if kw.tau == 'rot':
-    print ("timescale chosen: %s, tau = 1/(2Om0)" %kw.tau)
+    print ("timescale chosen: %s, tau = 1/(2 Om0)" %kw.tau)
     tau_over_taunu = ek
 elif kw.tau == 'visc':
     print ("timescale chosen: %s, tau = H^2/nu" %kw.tau)
@@ -155,10 +155,12 @@ eq.set_constant(pr*bu/raf, 11)
 
 # write the file
 print("Writing the constants to %s" %the_file)
-print(buff_line)
 eq.write(the_file)
 
 # record what we did in the meta file
+print("and saying I did so in the metadata file %s" %metafile)
+print(buff_line)
+
 f = open(dirname + '/' + metafile, 'a')
 
 f.write("Also set constants c1 thru c11 using\n")
@@ -166,4 +168,3 @@ f.write("%s ---> %s\n" %(parfile, the_file))
 f.write("with the interpret_constants routine\n")
 f.write(buff_line + '\n')
 f.close()
-print(buff_line)
