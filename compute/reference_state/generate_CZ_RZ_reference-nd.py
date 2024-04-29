@@ -46,7 +46,9 @@ clas0, clas = read_clas_raw(args)
 dirname = clas0['dirname']
 
 # Set default kwargs
-kw_default = dotdict(dict({'alpha': 1., 'beta': 0.7592, 'gamma': 1.667, 'delta': 0.2193, 'nrho': 3.000, 'fname': 'customfile', 'nr': 10000, 'jup': False, 'amp': 0.4559}))
+# use double prec for gamma
+# 3 sig figs otherwise
+kw_default = dotdict(dict({'alpha': 1., 'beta': 0.759, 'gamma': 1.6666666666666667, 'delta': 0.219, 'nrho': 3., 'fname': 'customfile', 'nr': 10000, 'jup': False, 'amp': 0.456}))
 # creates profiles from tachocline cases, Matilsky et al. (2022, 2024)
 
 # overwrite defaults
@@ -66,6 +68,21 @@ else: # CZ above RZ
     rt = rtrz = rbcz
     rbrz = rtrz - kw.alpha
     rmin, rmax = rbrz, rtcz
+
+# note that whatever we get in the end should be rounded to match
+# what is manually entered in the main_input file
+# for convenience, round radii to two decimal places
+rt = round(rt, 2)
+rmin = round(rmin, 2)
+rmax = round(rmax, 2)
+rbcz = round(rbcz, 2)
+rtcz = round(rtcz, 2)
+rbrz = round(rbrz, 2)
+rtrz = round(rtrz, 2)
+
+# recompute alpha and beta in light of rounding
+kw.beta = rbcz/rtcz
+kw.alpha = (rtrz - rbrz)/(rtcz - rbcz)
 
 # compute reference state on super-fine grid to interpolate onto later    
 r = np.linspace(rmax, rmin, kw.nr) # keep radius in decreasing order for consistency with Rayleigh convention
@@ -112,19 +129,19 @@ if kw.jup:
 else:
     print ("geometry : solar (CZ atop RZ)")
 print("nr         : %i" %kw.nr) 
-print("alpha      : %1.4f" %kw.alpha)
-print("beta       : %1.4f" %kw.beta)
+print("alpha      : %1.5f" %kw.alpha)
+print("beta       : %1.5f" %kw.beta)
 if kw.jup:
-    print("   (rbcz, rtcz=rbrz, rtrz): (%1.3f, %1.3f, %1.3f)"\
+    print("   (rbcz, rtcz=rbrz, rtrz): (%1.2f, %1.2f, %1.2f)"\
             %(rbcz,rtcz,rtrz))
 else:
-    print("   (rbrz, rtrz=rbcz, rtrz): (%1.3f, %1.3f, %1.3f)"\
+    print("   (rbrz, rtrz=rbcz, rtrz): (%1.2f, %1.2f, %1.2f)"\
             %(rbrz,rtrz,rtcz))
-print("delta      : %1.4f" %kw.delta)
-print("gamma      : %1.3f" %kw.gamma)
-print("   n=1/(gamma-1)      : %1.3f" %(1./(kw.gamma-1.)))
-print("Nrho       : %1.3f" %kw.nrho)
-print("amp        : %1.4f" %kw.amp)
+print("delta      : %1.5f" %kw.delta)
+print("gamma      : %1.5f" %kw.gamma)
+print("   n=1/(gamma-1)      : %1.5f" %(1./(kw.gamma-1.)))
+print("Nrho       : %1.5f" %kw.nrho)
+print("amp        : %1.5f" %kw.amp)
 print(buff_line)
 
 # Now write to file using the equation_coefficients framework
@@ -162,19 +179,19 @@ if kw.jup:
 else:
      f.write("geometry : solar (CZ atop RZ)\n")
 f.write("nr         : %i\n" %kw.nr) 
-f.write("alpha      : %1.4f\n" %kw.alpha)
-f.write("beta       : %1.4f\n" %kw.beta)
+f.write("alpha      : %1.5f\n" %kw.alpha)
+f.write("beta       : %1.5f\n" %kw.beta)
 if kw.jup:
-    f.write("   (rbcz, rtcz=rbrz, rtrz): (%1.3f, %1.3f, %1.3f)\n"\
+    f.write("   (rbcz, rtcz=rbrz, rtrz): (%1.2f, %1.2f, %1.2f)\n"\
             %(rbcz,rtcz,rtrz))
 else:
-    f.write("   (rbrz, rtrz=rbcz, rtrz): (%1.3f, %1.3f, %1.3f)\n"\
+    f.write("   (rbrz, rtrz=rbcz, rtrz): (%1.2f, %1.2f, %1.2f)\n"\
             %(rbrz,rtrz,rtcz))
-f.write("delta      : %1.4f\n" %kw.delta)
-f.write("gamma      : %1.3f\n" %kw.gamma)
-f.write("   n=1/(gamma-1)      : %1.3f\n" %(1./(kw.gamma-1.)))
-f.write("Nrho       : %1.3f\n" %kw.nrho)
-f.write("amp        : %1.4f\n" %kw.amp)
+f.write("delta      : %1.5f\n" %kw.delta)
+f.write("gamma      : %1.5f\n" %kw.gamma)
+f.write("   n=1/(gamma-1)      : %1.5f\n" %(1./(kw.gamma-1.)))
+f.write("Nrho       : %1.5f\n" %kw.nrho)
+f.write("amp        : %1.5f\n" %kw.amp)
 f.write(buff_line + '\n')
 f.close()
 print("Writing the metadata   to %s" %metafile)
