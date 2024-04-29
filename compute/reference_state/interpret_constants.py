@@ -161,9 +161,9 @@ eq.write(the_file)
 # record what we did in the meta file
 f = open(dirname + '/' + metafile, 'a')
 
-f.write(buff_line + '\n')
 f.write("Also set constants c1 thru c11 using\n")
-f.write("%s ---> %s" %(parfile, the_file))
+f.write("%s ---> %s\n" %(parfile, the_file))
 f.write("with the interpret_constants routine\n")
+f.write(buff_line + '\n')
 f.close()
-print(buff_line + '\n')
+print(buff_line)

@@ -116,7 +116,9 @@ eq.write(the_file)
 # record what we did in the meta file
 f = open(dirname + '/' + metafile, 'a')
 
-f.write("Also added custom diffusion profiles with the folowing attributes\n")
+f.write("Also added custom diffusion profiles using the\n")
+f.write("set_diffusions_rhopower routine.\n")
+f.write("diffusions have the folowing attributes:\n")
 f.write("diffusion ~ rho^%0.3f\n" %kw.power)
 f.write("normalized by CZ volume integral")
 if kw.jup:
@@ -131,7 +133,7 @@ if kw.jup:
 else:
     f.write("   (rbrz, rtrz=rbcz, rtrz): (%1.3f, %1.3f, %1.3f)\n"\
             %(rbrz,rtrz,rtcz))
-f.write(buff_line)
+f.write(buff_line + '\n')
 f.close()
 print("Writing the diffusion metadata to %s" %metafile)
-print(buff_line + '\n')
+print(buff_line)

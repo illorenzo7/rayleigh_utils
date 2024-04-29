@@ -128,7 +128,9 @@ eq.write(the_file)
 # record what we did in the meta file
 f = open(dirname + '/' + metafile, 'a')
 
-f.write("Also added a heating profile with the folowing attributes\n")
+f.write("Also added custom heating profile using the\n")
+f.write("generate_CZ_RZ_heating-nd routine.\n")
+f.write("heating has the folowing attributes\n")
 if kw.jup:
      f.write("geometry : Jovian (RZ atop CZ)\n")
 else:
@@ -142,7 +144,7 @@ else:
     f.write("   (rbrz, rtrz=rbcz, rtrz): (%1.3f, %1.3f, %1.3f)\n"\
             %(rbrz,rtrz,rtcz))
 f.write("delta_heat : %1.4f\n" %kw.delta)
-f.write(buff_line)
+f.write(buff_line + '\n')
 f.close()
 print("Writing the heating metadata to %s" %metafile)
-print(buff_line + '\n')
+print(buff_line)
