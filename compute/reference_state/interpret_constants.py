@@ -136,7 +136,7 @@ eq.read(the_file)
 
 # c1
 if rotation:
-    eq.set_constant(ek, 1)
+    eq.set_constant(tau_over_taunu/ek, 1)
 else:
     eq.set_constant(0., 1)
 
@@ -169,7 +169,7 @@ eq.set_constant(pr*di/raf/tau_over_taunu**2., 8)
 
 # c9
 if magnetism:
-    eq.set_constant(pr*di/prm/tau_over_taunu**2., 9)
+    eq.set_constant(pr*di/raf/prm/tau_over_taunu**2., 9)
 else:
     eq.set_constant(0., 9)
 
