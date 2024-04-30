@@ -8,19 +8,17 @@
 
 # Command-line options:
 #
-# --fname
-# File to read reference and save heating in (default customfile)
+# --fname: file to read reference and save heating in (default "customfile")
 # --power  : power of rho (defualt -0.5)
 # 
 # the following will have defaults set by [fname]_meta.txt
-# --alpha : ratio of RZ width to CZ width 
-# --beta : ratio of bottom of CZ to top of CZ 
+# --rmin : bottom of shell
+# --rmax : top of shell
+# --rt : radius of transition layer
 # --jup : if "jup" is specified, RZ lies above CZ
-
 
 import numpy as np
 import sys, os
-from scipy.integrate import simps
 
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
@@ -36,22 +34,31 @@ dirname = clas0['dirname']
 
 # Set default kwargs
 # start with filename, which may change
-kw_default = dotdict(dict({'fname': 'customfile', 'jup': False}))
+kw_default = dotdict(dict({'fname': 'customfile'}))
 kw_default = update_dict(kw_default, clas)
 # read in metadata (regarding radial structure) to put into keywords
 metafile = dirname + '/' + kw_default.fname + '_meta.txt'
 f = open(metafile, 'r')
 lines = f.readlines()
 for line in lines:
-    if 'alpha' in line:
-        kw_default.alpha = float(line.split(':')[1][:-2])
-    elif 'beta' in line:
-        kw_default.beta = float(line.split(':')[1][:-2])
+    # find the line containing rbrz, etc.
+    alltrue = True
+    for keyword in ['rbrz', 'rtrz', 'rbcz', 'rtcz']:
+        alltrue *= keyword in line
+    if alltrue:
+        st = line.split(':')[1]
+        for char in [',', '(', ')']:
+            st = st.replace(char, '')
+        rmin, rt, rmax = st2 = st.split()
+
+        kw_default.rmin = float(rmin)
+        kw_default.rt = float(rt)
+        kw_default.rmax = float(rmax)
     elif 'Jovian' in line:
         kw_default.jup = True
 f.close()
 
-# add in other default values
+# add in other default value
 kw_default.power = -0.5
 
 # overwrite defaults
@@ -61,16 +68,12 @@ kw = update_dict(kw_default, clas)
 find_bad_keys(kw_default, clas, clas0['routinename'], justwarn=True)
 
 # compute geometry of grid
-rbcz = kw.beta/(1.-kw.beta)
-rtcz = 1./(1.-kw.beta)
 if kw.jup: # RZ above CZ
-    rt = rbrz = rtcz
-    rtrz = rbrz + kw.alpha
-    rmin, rmax = rbcz, rtrz
+    rbcz, rtrz = kw.rmin, kw.rmax
+    rbrz = rtcz = kw.rt
 else: # CZ above RZ
-    rt = rtrz = rbcz
-    rbrz = rtrz - kw.alpha
-    the_sign = +1.
+    rbrz, rtcz = kw.rmin, kw.rmax
+    rtrz = rbcz = kw.rt
 
 # Open and read the hopefully already existing reference file!
 eq = equation_coefficients()
@@ -87,21 +90,15 @@ diffusion_norm /= 1./3.*(rtcz**3. - rbcz**3.)
 diffusion /= diffusion_norm
 
 print(buff_line)
-print("Computed diffusions (nu, kappa, and etea) for RZ-CZ system,")
+print("Computed diffusions (nu, kappa, and etea) for RZ-CZ system.")
 print("diffusion ~ rho^%0.3f" %kw.power)
-print("normalized by CZ volume integral")
+print("diffusion normalized by its CZ volume integral")
 if kw.jup:
     print ("geometry : Jovian (RZ atop CZ)")
 else:
     print ("geometry : solar (CZ atop RZ)")
-print("alpha      : %1.4f" %kw.alpha)
-print("beta       : %1.4f" %kw.beta)
-if kw.jup:
-    print("   (rbcz, rtcz=rbrz, rtrz): (%1.3f, %1.3f, %1.3f)"\
-            %(rbcz,rtcz,rtrz))
-else:
-    print("   (rbrz, rtrz=rbcz, rtrz): (%1.3f, %1.3f, %1.3f)"\
-            %(rbrz,rtrz,rtcz))
+print("(rmin, rt, rmax): (%1.2f, %1.2f, %1.2f)" %(kw.rmin, kw.rt, kw.rmax))
+print("power : %1.5f" %kw.power)
 print(buff_line)
 
 # Now write to file using the equation_coefficients framework
@@ -119,20 +116,15 @@ f = open(dirname + '/' + metafile, 'a')
 f.write("Also added custom diffusion profiles using the\n")
 f.write("set_diffusions_rhopower routine.\n")
 f.write("diffusions have the folowing attributes:\n")
-f.write("diffusion ~ rho^%0.3f\n" %kw.power)
+f.write("diffusion ~ rho^%1.5f\n" %kw.power)
 f.write("normalized by CZ volume integral")
 if kw.jup:
      f.write("geometry : Jovian (RZ atop CZ)\n")
 else:
      f.write("geometry : solar (CZ atop RZ)\n")
-f.write("alpha      : %1.4f\n" %kw.alpha)
-f.write("beta       : %1.4f\n" %kw.beta)
-if kw.jup:
-    f.write("   (rbcz, rtcz=rbrz, rtrz): (%1.3f, %1.3f, %1.3f)\n"\
-            %(rbcz,rtcz,rtrz))
-else:
-    f.write("   (rbrz, rtrz=rbcz, rtrz): (%1.3f, %1.3f, %1.3f)\n"\
-            %(rbrz,rtrz,rtcz))
+f.write("(rmin, rt, rmax): (%1.2f, %1.2f, %1.2f)\n" %(kw.rmin, kw.rt, kw.rmax))
+f.write("power : %1.5f\n" %kw.power)
+
 f.write(buff_line + '\n')
 f.close()
 print("Writing the diffusion metadata to %s" %metafile)

@@ -12,18 +12,18 @@
 
 # Command-line options:
 #
+# --fname: file to read reference and save heating in (default "customfile")
+# --delta : transition width between CZ and RZ via tanh matching
+
+# the following will have defaults set by [fname]_meta.txt
 # --rmin : bottom of shell
 # --rmax : top of shell
 # --rt : radius of transition layer
-# --delta : transition width between CZ and RZ via tanh matching
 # --jup : if "jup" is specified, RZ lies above CZ
 
-# --fname
-# File to read reference and save heating in (default customfile)
 
 import numpy as np
 import sys, os
-from scipy.integrate import simps
 
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
@@ -39,7 +39,7 @@ dirname = clas0['dirname']
 
 # Set default kwargs
 # start with filename, which may change
-kw_default = dotdict(dict({'fname': 'customfile', 'jup': False}))
+kw_default = dotdict(dict({'fname': 'customfile'}))
 kw_default = update_dict(kw_default, clas)
 # read in metadata (regarding radial structure) to put into keywords
 metafile = dirname + '/' + kw_default.fname + '_meta.txt'
