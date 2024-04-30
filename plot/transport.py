@@ -37,7 +37,8 @@ kw_lineplot = update_dict(lineplot_kwargs_default, clas)
 find_bad_keys(kwargs_default, clas, clas0['routinename'], justwarn=True)
 
 # read reference state
-eq = get_eq(dirname, kw.fname)
+eq = get_eq(dirname, kw.fname, verbose=True)
+print ("plotting transport-coefficient profiles")
 
 # things to plot and ylabels
 nplots = 4

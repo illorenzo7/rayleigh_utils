@@ -82,9 +82,13 @@ eq.read(the_file)
 r = eq.radius
 nr = eq.nr
 rho = eq.functions[0]
+dlnrho = eq.functions[7]
+
+# compute diffusion (unnormalized) and its derivative
 diffusion = rho**(kw.power)
+dlndiffusion = kw.power*dlnrho
 
-
+# normalize the diffusion
 diffusion_norm = definite_integral(diffusion*r**2, r, rbcz, rtcz)
 diffusion_norm /= 1./3.*(rtcz**3. - rbcz**3.)
 diffusion /= diffusion_norm
@@ -105,6 +109,9 @@ print(buff_line)
 print("Setting f_3, f_5, and f_7")
 for i in [3, 5, 7]:
     eq.set_function(diffusion, i)
+print("Setting derivatives f_11, f_12, and f_13")
+for i in [11, 12, 13]:
+    eq.set_function(dlndiffusion, i)
 
 print("Writing the diffusions to %s" %the_file)
 print(buff_line)

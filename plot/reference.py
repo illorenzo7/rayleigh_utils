@@ -36,10 +36,10 @@ kw_lineplot = update_dict(lineplot_kwargs_default, clas)
 find_bad_keys(kwargs_default, clas, clas0['routinename'], justwarn=True)
 
 # read reference state
-eq = get_eq(dirname, kw.fname)
+eq = get_eq(dirname, kw.fname, verbose=True)
+print ("plotting reference-state profiles")
 
 # things to plot and ylabels
-print("GOT HERE")
 profiles = [eq.grav, eq.dsdr, eq.heat,\
         eq.rho, eq.tmp, eq.dlnrho,\
         eq.d2lnrho, eq.dlntmp, eq.prs]
@@ -57,7 +57,6 @@ if not close_to_zero(eq.dlnrho):
 
 # create the plot; start with plotting all the energy fluxes
 nplots = len(profiles)
-print("nplots = ", nplots)
 ncol = 4
 kw_make_figure.nplots = nplots
 kw_make_figure.ncol = ncol
@@ -68,10 +67,8 @@ kw_lineplot.xlabel = 'radius'
 
 #for iplot in [0]:
 for iplot in range(nplots):
-    print("iplot = ", iplot)
     ax = axs.flatten()[iplot]
     kw_lineplot.ylabel = ylabels[iplot]
-    print("profile=", profiles[iplot])
     lineplot(eq.rr, profiles[iplot], ax, **kw_lineplot)
 
 # make title 
