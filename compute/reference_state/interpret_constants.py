@@ -117,14 +117,15 @@ else:
 # set I choose by default...right now its Ro_c, Ra, Pr for rotating cases,
 # etc.
 if kw.tau == 'rot':
-    print ("timescale chosen: %s, tau = 1/(2 Om0)" %kw.tau)
+    timescale_msg = "timescale chosen: %s, tau = 1/(2 Om0)" %kw.tau
     tau_over_taunu = ek
 elif kw.tau == 'visc':
-    print ("timescale chosen: %s, tau = H^2/nu" %kw.tau)
+    timescale_msg ="timescale chosen: %s, tau = H^2/nu" %kw.tau
     tau_over_taunu = 1.
 elif kw.tau == 'kappa':
-    print ("timescale chosen: %s, tau = H^2/kappa" %kw.tau)
+    timescale_msg = "timescale chosen: %s, tau = H^2/kappa" %kw.tau
     tau_over_taunu = pr
+print(timescale_msg)
 
 # read the existing equation coefficients file
 eq = equation_coefficients()
@@ -191,6 +192,7 @@ f = open(dirname + '/' + metafile, 'a')
 f.write("Also set constants c1 thru c11 using\n")
 f.write("%s ---> %s\n" %(parfile, the_file))
 f.write("with the interpret_constants routine.\n")
+f.write(timescale_msg + '\n')
 f.write("Di: %1.5f\n" %di)
 f.write(buff_line + '\n')
 f.close()
