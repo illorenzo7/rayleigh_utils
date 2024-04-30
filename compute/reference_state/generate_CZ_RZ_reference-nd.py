@@ -191,8 +191,9 @@ if kw.jup:
 else:
     f.write("   (rbrz, rtrz=rbcz, rtcz): (%1.2f, %1.2f, %1.2f)\n"\
             %(rbrz,rtrz,rtcz))
+# somehow these precisions are confusing me...anyway forget it for now
 f.write("delta      : %1.5f\n" %kw.delta)
-f.write("gamma      : %1.5f\n" %kw.gamma)
+f.write("gamma      : %1.16f\n" %kw.gamma)
 f.write("   n=1/(gamma-1)      : %1.5f\n" %(1./(kw.gamma-1.)))
 f.write("Nrho       : %1.5f\n" %kw.nrho)
 f.write("amp        : %1.5f\n" %kw.amp)

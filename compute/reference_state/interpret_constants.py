@@ -42,14 +42,37 @@ metafile = dirname + '/' + kw.fname + '_meta.txt'
 # get paremeters necessary for dissipation number
 f = open(metafile, 'r')
 lines = f.readlines()
+
+jup = False
 for line in lines:
-    if 'beta' in line:
-        beta = float(line.split(':')[1][:-1])
-    elif 'gamma' in line:
+    # find the line containing rbrz, etc.
+    alltrue = True
+    for keyword in ['rbrz', 'rtrz', 'rbcz', 'rtcz']:
+        alltrue *= keyword in line
+    if alltrue:
+        st = line.split(':')[1]
+        for char in [',', '(', ')']:
+            st = st.replace(char, '')
+        rmin, rt, rmax = st2 = st.split()
+
+        rmin = float(rmin)
+        rt = float(rt)
+        rmax = float(rmax)
+    elif 'Jovian' in line:
+        jup = True
+    elif 'gamma' in line and not 'n' in line: # gamma appears twice...
         gamma = float(line.split(':')[1][:-1])
     elif 'Nrho' in line:
         nrho = float(line.split(':')[1][:-1])
+f.close()
 
+# recompute beta in light of rounding
+if jup: # RZ above CZ
+    beta = rmin/rt
+else: # CZ above RZ
+    beta = rt/rmax
+
+# now get dissipation number
 di = compute_Di_v(gamma, beta, nrho)
 
 # read in parameters from main_parameters
@@ -66,6 +89,9 @@ for line in lines:
     val = float(val[:-1])
     di_par[key] = val
     print (key, "=", val)
+
+print ("(gamma, beta, Nrho) = (%1.16f, %1.5f, %1.5f)" %(gamma, beta, nrho))
+print ("   ----> Di = %1.5f" %di)
 
 # "unpack" pr and ra
 pr = di_par.pr
@@ -165,6 +191,6 @@ f = open(dirname + '/' + metafile, 'a')
 f.write("Also set constants c1 thru c11 using\n")
 f.write("%s ---> %s\n" %(parfile, the_file))
 f.write("with the interpret_constants routine.\n")
-f.write("Di = %1.5f\n" %di)
+f.write("Di: %1.5f\n" %di)
 f.write(buff_line + '\n')
 f.close()
