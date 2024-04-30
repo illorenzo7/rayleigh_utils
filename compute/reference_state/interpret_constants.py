@@ -67,7 +67,6 @@ for line in lines:
     di_par[key] = val
     print (key, "=", val)
 
-print("dipar = ", di_par)
 # "unpack" pr and ra
 pr = di_par.pr
 raf = di_par.raf
@@ -165,6 +164,7 @@ f = open(dirname + '/' + metafile, 'a')
 
 f.write("Also set constants c1 thru c11 using\n")
 f.write("%s ---> %s\n" %(parfile, the_file))
-f.write("with the interpret_constants routine\n")
+f.write("with the interpret_constants routine.\n")
+f.write("Di = %1.5f\n" %di)
 f.write(buff_line + '\n')
 f.close()
