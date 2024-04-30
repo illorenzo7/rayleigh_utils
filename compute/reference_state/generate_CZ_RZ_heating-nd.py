@@ -12,8 +12,9 @@
 
 # Command-line options:
 #
-# --alpha : ratio of RZ width to CZ width
-# --beta : ratio of bottom of CZ to top of CZ 
+# --rmin : bottom of shell
+# --rmax : top of shell
+# --rt : radius of transition layer
 # --delta : transition width between CZ and RZ via tanh matching
 # --jup : if "jup" is specified, RZ lies above CZ
 
@@ -45,16 +46,25 @@ metafile = dirname + '/' + kw_default.fname + '_meta.txt'
 f = open(metafile, 'r')
 lines = f.readlines()
 for line in lines:
-    if 'alpha' in line:
-        kw_default.alpha = float(line.split(':')[1][:-2])
-    elif 'beta' in line:
-        kw_default.beta = float(line.split(':')[1][:-2])
+    # find the line containing rbrz, etc.
+    alltrue = True
+    for keyword in ['rbrz', 'rtrz', 'rbcz', 'rtcz']:
+        alltrue *= keyword in line
+    if alltrue:
+        st = line.split(':')[1]
+        for char in [',', '(', ')']:
+            st = st.replace(char, '')
+        rmin, rt, rmax = st2 = st.split()
+
+        kw_default.rmin = float(rmin)
+        kw_default.rt = float(rt)
+        kw_default.rmax = float(rmax)
     elif 'Jovian' in line:
         kw_default.jup = True
 f.close()
 
-# add in other default values
-kw_default.delta = 0.1316
+# add in other default value, the transition width
+kw_default.delta = 0.132
 
 # overwrite defaults
 kw = update_dict(kw_default, clas)
@@ -63,17 +73,13 @@ kw = update_dict(kw_default, clas)
 find_bad_keys(kw_default, clas, clas0['routinename'], justwarn=True)
 
 # compute geometry of grid
-rbcz = kw.beta/(1.-kw.beta)
-rtcz = 1./(1.-kw.beta)
 if kw.jup: # RZ above CZ
-    rt = rbrz = rtcz
-    rtrz = rbrz + kw.alpha
-    rmin, rmax = rbcz, rtrz
+    rbcz, rtrz = kw.rmin, kw.rmax
+    rbrz = rtcz = kw.rt
     the_sign = -1.
 else: # CZ above RZ
-    rt = rtrz = rbcz
-    rbrz = rtrz - kw.alpha
-    rmin, rmax = rbrz, rtcz
+    rbrz, rtcz = kw.rmin, kw.rmax
+    rtrz = rbcz = kw.rt
     the_sign = +1.
 
 # Open and read the hopefully already existing reference file!
@@ -84,7 +90,7 @@ r = eq.radius
 nr = eq.nr
 rho = eq.functions[0]
 tmp = eq.functions[3]
-smooth = 0.5*(1.0 + the_sign*np.tanh((r - rt)/kw.delta)) # "detects" CZ
+smooth = 0.5*(1.0 + the_sign*np.tanh((r - kw.rt)/kw.delta)) # "detects" CZ
 
 heat = rho*tmp*smooth # used to subtract off "top" value in dimensional
     # version. But now realize that top value was at 6.887 x 10^10 cm,
@@ -103,23 +109,15 @@ if kw.jup:
     print ("geometry : Jovian (RZ atop CZ)")
 else:
     print ("geometry : solar (CZ atop RZ)")
-print("alpha      : %1.4f" %kw.alpha)
-print("beta       : %1.4f" %kw.beta)
-if kw.jup:
-    print("   (rbcz, rtcz=rbrz, rtrz): (%1.3f, %1.3f, %1.3f)"\
-            %(rbcz,rtcz,rtrz))
-else:
-    print("   (rbrz, rtrz=rbcz, rtrz): (%1.3f, %1.3f, %1.3f)"\
-            %(rbrz,rtrz,rtcz))
-print("delta_heat : %1.4f" %kw.delta)
+print("(rmin, rt, rmax): (%1.2f, %1.2f, %1.2f)" %(kw.rmin, kw.rt, kw.rmax))
+print("delta_heat : %1.5f" %kw.delta)
 print(buff_line)
 
 # Now write to file using the equation_coefficients framework
-print("Setting f_6 and c_10")
+print("Setting f_6")
 # make an executive decision here (since normally f_6 integrates to 1)
 # leave f_6 "properly" normalized and later, set c_10 to Ek / Pr. 
 eq.set_function(heat, 6)
-eq.set_constant(1., 10) 
 
 print("Writing the heating to %s" %the_file)
 print(buff_line)
@@ -130,20 +128,13 @@ f = open(dirname + '/' + metafile, 'a')
 
 f.write("Also added custom heating profile using the\n")
 f.write("generate_CZ_RZ_heating-nd routine.\n")
-f.write("heating has the folowing attributes\n")
+f.write("heating has the folowing attributes:\n")
 if kw.jup:
      f.write("geometry : Jovian (RZ atop CZ)\n")
 else:
      f.write("geometry : solar (CZ atop RZ)\n")
-f.write("alpha      : %1.4f\n" %kw.alpha)
-f.write("beta       : %1.4f\n" %kw.beta)
-if kw.jup:
-    f.write("   (rbcz, rtcz=rbrz, rtrz): (%1.3f, %1.3f, %1.3f)\n"\
-            %(rbcz,rtcz,rtrz))
-else:
-    f.write("   (rbrz, rtrz=rbcz, rtrz): (%1.3f, %1.3f, %1.3f)\n"\
-            %(rbrz,rtrz,rtcz))
-f.write("delta_heat : %1.4f\n" %kw.delta)
+f.write("(rmin, rt, rmax): (%1.2f, %1.2f, %1.2f)\n" %(kw.rmin, kw.rt, kw.rmax))
+f.write("delta_heat : %1.5f\n" %kw.delta)
 f.write(buff_line + '\n')
 f.close()
 print("Writing the heating metadata to %s" %metafile)

@@ -135,7 +135,7 @@ if kw.jup:
     print("   (rbcz, rtcz=rbrz, rtrz): (%1.2f, %1.2f, %1.2f)"\
             %(rbcz,rtcz,rtrz))
 else:
-    print("   (rbrz, rtrz=rbcz, rtrz): (%1.2f, %1.2f, %1.2f)"\
+    print("   (rbrz, rtrz=rbcz, rtcz): (%1.2f, %1.2f, %1.2f)"\
             %(rbrz,rtrz,rtcz))
 print("delta      : %1.5f" %kw.delta)
 print("gamma      : %1.5f" %kw.gamma)
@@ -174,6 +174,10 @@ metafile = the_file + '_meta.txt'
 f = open(dirname + '/' + metafile, 'w')
 
 f.write(buff_line + '\n')
+f.write("Created custom reference state using the\n")
+f.write("generate_CZ_RZ_reference-nd routine.\n")
+f.write("The CZ/RZ system has the folowing attributes:\n")
+
 if kw.jup:
      f.write("geometry : Jovian (RZ atop CZ)\n")
 else:
@@ -185,7 +189,7 @@ if kw.jup:
     f.write("   (rbcz, rtcz=rbrz, rtrz): (%1.2f, %1.2f, %1.2f)\n"\
             %(rbcz,rtcz,rtrz))
 else:
-    f.write("   (rbrz, rtrz=rbcz, rtrz): (%1.2f, %1.2f, %1.2f)\n"\
+    f.write("   (rbrz, rtrz=rbcz, rtcz): (%1.2f, %1.2f, %1.2f)\n"\
             %(rbrz,rtrz,rtcz))
 f.write("delta      : %1.5f\n" %kw.delta)
 f.write("gamma      : %1.5f\n" %kw.gamma)
