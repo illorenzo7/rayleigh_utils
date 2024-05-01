@@ -1189,15 +1189,22 @@ def get_eq(dirname, fname=None, verbose=False):
             eq_hr.dlneta = eq.functions[12] # equation_coefficients as "zero"
 
         # some derivative quantities 
-        eq_hr.prs = eq_hr.rho*eq_hr.tmp
+        # rotation rate and period (in appropriate units based on chosen timescale)
+
+        eq_hr.om0 = eq.constants[0]/2.
+        eq_hr.prot = 2.*np.pi/eq_hr.om0
+
+        # deprecated
+        #eq_hr.prs = eq_hr.rho*eq_hr.tmp
         #eq_hr.nsq = (eq_hr.grav/eq_hr.c_p)*eq_hr.dsdr
-        eq_hr.om0 = eq.constants[0]/2
-        eq_hr.prot = 2*np.pi/eq_hr.om0
-        # angular momentum of shell
+
+        # angular momentum of shell (in appropriate units based on chosen timescale)
         gi = get_grid_info(dirname)
         amom_dens = eq_hr.rho*eq_hr.om0*gi.xx**2
         amom_av = np.sum(amom_dens*gi.tw_2d,axis=0)
         eq_hr.amom = np.sum(amom_av*gi.rw)
+
+        # thermal diffusion time (in appropriate units based on chosen timescale)
         kappa_volav = volav_in_radius(dirname, eq_hr.kappa)
         eq_hr.tdt = (eq_hr.rr[0] - eq_hr.rr[-1])**2/kappa_volav
 
