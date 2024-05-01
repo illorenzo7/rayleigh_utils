@@ -1166,37 +1166,30 @@ def get_eq(dirname, fname=None, verbose=False):
         # radius
         eq_hr.rr = eq.radius
 
-        # thermal variables
+        # do "universal" thermal variables (reference_type independent) first
         eq_hr.rho = eq.functions[0]
         eq_hr.dlnrho = eq.functions[7]
         eq_hr.d2lnrho = eq.functions[8]
         eq_hr.tmp = eq.functions[3]
         eq_hr.dlntmp = eq.functions[9]
-        eq_hr.grav = eq.functions[1]*eq.constants[1]/eq_hr.rho
-        eq_hr.dsdr = eq.functions[13]
 
-        # heating
-        eq_hr.heat = eq.constants[9]*eq.functions[5]
-        eq_hr.lum = eq.constants[9]
-
-        # transport coefficients
-        eq_hr.nu = eq.constants[4]*eq.functions[2]
+        # N^2, gravity, pressure, and transport coefficients are semi-universal
+        # (the transport coefficients should be fully, but the documentation is wrong)
+        eq_hr.grav = eq.functions[1]/eq_hr.rho 
+        eq_hr.nsq = eq_hr.grav*eq.functions[13] # actually this definition is universal 
+                # for dim. anelastic, grav now = g/c_p and f_13 = dS/dr
+        eq_hr.prs = eq_hr.rho*eq_hr.tmp
+        eq_hr.nu = eq.functions[2]
         eq_hr.dlnu = eq.functions[10]
-        eq_hr.kappa = eq.constants[5]*eq.functions[4]
+        eq_hr.kappa = eq.functions[4]
         eq_hr.dlnkappa = eq.functions[11]
         if eq_hr.magnetism:
-            eq_hr.eta = eq.constants[6]*eq.functions[6] # these are built-in to
+            eq_hr.eta = eq.functions[6] # these are built-in to
             eq_hr.dlneta = eq.functions[12] # equation_coefficients as "zero"
 
-        # some derivative quantities 
         # rotation rate and period (in appropriate units based on chosen timescale)
-
         eq_hr.om0 = eq.constants[0]/2.
         eq_hr.prot = 2.*np.pi/eq_hr.om0
-
-        # deprecated
-        #eq_hr.prs = eq_hr.rho*eq_hr.tmp
-        #eq_hr.nsq = (eq_hr.grav/eq_hr.c_p)*eq_hr.dsdr
 
         # angular momentum of shell (in appropriate units based on chosen timescale)
         gi = get_grid_info(dirname)
@@ -1204,15 +1197,38 @@ def get_eq(dirname, fname=None, verbose=False):
         amom_av = np.sum(amom_dens*gi.tw_2d,axis=0)
         eq_hr.amom = np.sum(amom_av*gi.rw)
 
-        # thermal diffusion time (in appropriate units based on chosen timescale)
-        kappa_volav = volav_in_radius(dirname, eq_hr.kappa)
-        eq_hr.tdt = (eq_hr.rr[0] - eq_hr.rr[-1])**2/kappa_volav
-
+        # some quantities interpretation depends on the reference_type
+        # deal with that here
         if eq_hr.reference_type == 2:
-            # assume gas is ideal and scale pressure
+            # assume gas is ideal and scale pressure and gravity
             eq_hr.c_p = get_parameter(dirname, 'pressure_specific_heat')
             eq_hr.gas_constant = (gamma_ideal-1)*eq_hr.c_p/gamma_ideal
             eq_hr.prs *= eq_hr.gas_constant
+            eq_hr.grav *= eq_hr.c_p
+
+            # scale transport coefficients
+            eq_hr.nu *= eq.constants[4]
+            eq_hr.kappa *= eq.constants[5]
+            if eq_hr.magnetism:
+                eq_hr.eta *= eq.constants[6]
+            
+            # heating
+            eq_hr.heat = eq.constants[9]*eq.functions[5] 
+            eq_hr.lum = eq.constants[9]
+
+            # this quantity only exists for reference_type = 2 (along with c_p and gas_const
+            eq_hr.dsdr = eq.constants[10]*eq.functions[13] 
+
+        else:
+            eq_hr.heat = eq.functions[5]
+            # can do this, but need Rayleigh number, Dissipation number, etc...
+            #volshell = 4.*np.pi/3.*(eq_hr.rr[0]**3. - eq_hr.rr[-1]**3.)
+            #eq_hr.lum = volshell * np.sum(eq_hr.heat*gi.rw) * 
+
+        # thermal diffusion time (in appropriate units based on chosen timescale)
+        # this is universal now that kappa has been adequately defined
+        kappa_volav = volav_in_radius(dirname, eq_hr.kappa)
+        eq_hr.tdt = (eq_hr.rr[0] - eq_hr.rr[-1])**2/kappa_volav
 
     else: # no binary file; get everything from main_input
         # currently only have figured this out for dimensional anelastic
