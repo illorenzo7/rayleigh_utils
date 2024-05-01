@@ -40,10 +40,10 @@ eq = get_eq(dirname, kw.fname, verbose=True)
 print ("plotting reference-state profiles")
 
 # things to plot and ylabels
-profiles = [eq.grav, eq.dsdr, eq.heat,\
+profiles = [eq.grav, eq.nsq, eq.heat,\
         eq.rho, eq.tmp, eq.dlnrho,\
         eq.d2lnrho, eq.dlntmp, eq.prs]
-ylabels = ['gravity (g)', r'$d\overline{S}/dr$',  'heating (Q)',\
+ylabels = ['gravity (g)', r'$\overline{N^2}$',  'heating (Q)',\
         'density (' + r'$\overline{\rho}$' + ')', 'temperature (' + r'$\overline{T}$' + ')', r'$dln\overline{\rho}/dr$', \
         r'$d^2ln\rho/dr^2$', r'$dln\overline{T}/dr$', 'pressure (' + r'$\overline{P}=\overline{\rho}\mathcal{R}\overline{T}$' + ')']
 count = 0
