@@ -21,7 +21,7 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = get_parameter(dirname, 'magnetism')
 
 # SPECIFIC ARGS for etrace:
-kwargs_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'growth': False, 'growthfrac': 0.5, 'xvals': np.array([]), 'inte': False, 'nquadr': None, 'nquadlat': None, 'type': 'tot', 'legfrac': None, 'nomag': False, 'noke': False})
+kwargs_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'growth': False, 'growthfrac': 0.5, 'xvals': np.array([]), 'inte': False, 'nquadr': None, 'nquadlat': None, 'type': 'tot', 'legfrac': None, 'nomag': False, 'noke': False, 'tdt': False})
 
 # make figure kwargs
 nlines = get_num_lines(clas0.dirname_label)
@@ -87,7 +87,7 @@ times = di['times']
 iters = di['iters']
 
 # get the x axis
-time_unit, time_label, rotation, simple_label = get_time_unit(dirname)
+time_unit, time_label, rotation, simple_label = get_time_unit(dirname, tdt=kw.tdt)
 if not xiter:
     xaxis = times/time_unit
 else:

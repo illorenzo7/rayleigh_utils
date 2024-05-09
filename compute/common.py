@@ -1369,11 +1369,11 @@ def compute_tdt(dirname):
     eq = get_eq(dirname)
     return eq.tdt
 
-def get_time_unit(dirname):
+def get_time_unit(dirname, tdt=False):
     # get basic time unit of simulation (rotation period or diffusion time)
     rotation = get_parameter(dirname, 'rotation')
     eq = get_eq(dirname)
-    if rotation:
+    if rotation and not tdt:
         time_unit = eq.prot
         time_label = r'${\rm{P_{rot}}}$'
         simple_label = 'rotations'
