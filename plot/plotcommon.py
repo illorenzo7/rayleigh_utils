@@ -571,6 +571,7 @@ def add_cbar(fig, ax, im, **kwargs):
         cbar.set_ticks(locator)
     else: # set tickvals and ticklabels separately, depending on norm
         levelsfield = np.array(im.get_array())
+        print("levelsfield = ", levelsfield)
         nlevelsfield = len(levelsfield) - 1
         # first, tickvals
         if kw.tickvals is None:
@@ -726,7 +727,9 @@ def my_contourf(xx, yy, field, fig, ax, **kwargs):
         kw.minmax = kw.minmax[0]/divisor, kw.minmax[1]/divisor
 
     # Saturate the array (otherwise contourf will show white areas)
+    print ("kw.minmax = ", kw.minmax)
     saturate_array(field, kw.minmax[0], kw.minmax[1])
+    print("minmax(field) =", get_minmax(field))
 
     # deal with norm
     if kw.norm is None and kw.logscale:

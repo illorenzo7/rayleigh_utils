@@ -906,6 +906,10 @@ def get_domain_bounds(dirname):
         ncheby = np.array([nr])
     return ncheby, domain_bounds
 
+def get_minmax(arr):
+    newarr = make_array(arr)
+    return (np.min(newarr), np.max(newarr))
+
 def get_rminmax(dirname):
     ncheby, domain_bounds = get_domain_bounds(dirname)
     return domain_bounds[0], domain_bounds[-1]
