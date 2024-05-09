@@ -571,7 +571,14 @@ def add_cbar(fig, ax, im, **kwargs):
         locator = ticker.LogLocator(subs='all')
         cbar.set_ticks(locator)
     else: # set tickvals and ticklabels separately, depending on norm
-        levelsfield = np.array(im.get_array())
+        arr = im.get_array()
+        spacing = np.mean(np.diff(arr))
+        # almost positive this behavior changed recently...
+        # not sure what to do for symlog
+        minn, maxx = get_minmax(arr)
+        minn, maxx = minn - spacing/2., maxx + spacing/2.
+        nneeded = len(arr) + 1
+        levelsfield = np.linspace(minn, maxx, nneeded)
         nlevelsfield = len(levelsfield) - 1
         # first, tickvals
         if kw.tickvals is None:
