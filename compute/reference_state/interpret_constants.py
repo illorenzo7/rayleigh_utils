@@ -102,7 +102,9 @@ raf = di_par.raf
 if 'roc' in di_par.keys():
     rotation = True
     ek = di_par.roc * np.sqrt(pr/raf)
-    bu = di_par.sigma**2./ek**2./pr
+    rafmod = di_par.roc**2.
+    bumod = di_par.sigma**2./pr
+    bu = bumod*pr/ek**2.
 else:
     rotation = False
     bu = di_par.bu
@@ -114,7 +116,8 @@ else:
     magnetism = False
 
 # compute tau over taunu [will have to update if I change which parameter
-# set I choose by default...right now its Ro_c, Ra, Pr for rotating cases,
+# set I choose by default...
+# right now its Ro_c, sigma, Ra, Pr, Pr_m for rotating cases,
 # etc.
 if kw.tau == 'rot':
     timescale_msg = "timescale chosen: %s, tau = 1/(2 Om0)" %kw.tau
@@ -169,7 +172,7 @@ eq.set_constant(pr*di/raf/tau_over_taunu**2., 8)
 
 # c9
 if magnetism:
-    eq.set_constant(pr*di/raf/prm/tau_over_taunu**2., 9)
+    eq.set_constant(pr*di/raf/tau_over_taunu**2., 9)
 else:
     eq.set_constant(0., 9)
 
@@ -177,7 +180,7 @@ else:
 eq.set_constant(tau_over_taunu/pr, 10)
 
 # c11
-eq.set_constant(pr*bu/raf, 11)
+eq.set_constant(bu/raf, 11)
 
 # write the file
 print("Writing the constants to %s" %the_file)
