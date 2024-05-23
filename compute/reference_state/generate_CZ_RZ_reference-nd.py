@@ -48,7 +48,8 @@ dirname = clas0['dirname']
 # Set default kwargs
 # use double prec for gamma
 # 3 sig figs otherwise
-kw_default = dotdict(dict({'alpha': 1., 'beta': 0.759, 'gamma': 1.6666666666666667, 'delta': 0.219, 'nrho': 3., 'fname': 'customfile', 'nr': 10000, 'jup': False, 'amp': 0.456}))
+# does Sigma = 0.456? I wrote it here for some reason...
+kw_default = dotdict(dict({'alpha': 1., 'beta': 0.759, 'gamma': 1.6666666666666667, 'delta': 0.219, 'nrho': 3., 'fname': 'customfile', 'nr': 10000, 'jup': False, 'amp': 0.453}))
 # creates profiles from tachocline cases, Matilsky et al. (2022, 2024)
 
 # overwrite defaults
@@ -92,25 +93,23 @@ r = np.linspace(rmax, rmin, kw.nr) # keep radius in decreasing order for consist
 
 dsdr = np.zeros(kw.nr)
 
-for i in range(kw.nr):
-    rloc = r[i]
-    if kw.jup: # RZ is above
-        if rloc <= rt:
-            dsdr[i] = 0.
-        elif rloc < rt + kw.delta and rloc > rt:
-            x = (rloc - rt)/kw.delta
-            dsdr[i] = 1.0 - (1.0 - x**2.0)**2.0
+def psifunc(r, r0, delta):
+    arr = np.zeros_like(r)
+    for i in range(len(r)):
+        rloc = r[i]
+        if rloc <= r0:
+            arr[i] = 0.
+        elif rloc < r0 + delta and rloc > r0:
+            x = (rloc - r0)/delta
+            arr[i] = 1.0 - (1.0 - x**2.0)**2.0
         else:
-            dsdr[i] = 1.0
-    else: # CZ is above
-        if rloc <= rt - kw.delta:
-            dsdr[i] = 1.
-        elif rloc > rt - kw.delta and rloc < rt:
-            x = (rloc - rt)/kw.delta
-            dsdr[i] = 1.0 - (1.0 - x**2.0)**2.0
-        else:
-            dsdr[i] = 0.0
-dsdr *= kw.amp # scale by the non-dimensional amplitude
+            arr[i] = 1.0
+    return arr
+
+if kw.jup: # RZ is above
+    dsdr = kw.amp*psifunc(r, rtcz, kw.delta)
+else: # CZ is above
+    dsdr = kw.amp*(1. - psifunc(r, rbcz-kw.delta, kw.delta))
 
 # compute the atmosphere (this depends on dsdr, not nsq)
 rho, tmp, dlnrho, d2lnrho, dlnt, g =\
