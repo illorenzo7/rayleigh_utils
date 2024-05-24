@@ -64,7 +64,9 @@ for line in lines:
 f.close()
 
 # add in other default value, the transition width
-kw_default.delta = 0.132
+#kw_default.delta = 0.132
+kw_default.delta = 0.005 # make it effectively very sharp, maybe 25 points
+# across transition
 
 # overwrite defaults
 kw = update_dict(kw_default, clas)
