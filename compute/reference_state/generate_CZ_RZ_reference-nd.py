@@ -48,8 +48,7 @@ dirname = clas0['dirname']
 # Set default kwargs
 # use double prec for gamma
 # 3 sig figs otherwise
-# does Sigma = 0.456? I wrote it here for some reason...
-kw_default = dotdict(dict({'alpha': 1., 'beta': 0.759, 'gamma': 1.6666666666666667, 'delta': 0.219, 'nrho': 3., 'fname': 'customfile', 'nr': 10000, 'jup': False, 'amp': 0.453}))
+kw_default = dotdict(dict({'alpha': 1., 'beta': 0.759, 'gamma': 1.6666666666666667, 'delta': 0.219, 'nrho': 3., 'fname': 'customfile', 'nr': 10000, 'jup': False, 'amp': 0.456}))
 # creates profiles from tachocline cases, Matilsky et al. (2022, 2024)
 
 # overwrite defaults
