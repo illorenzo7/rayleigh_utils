@@ -100,7 +100,7 @@ heat = rho*tmp*smooth # used to subtract off "top" value in dimensional
     # paper reported it right. 
 
 # compute nonradiative flux
-Fnr = 1./r**2.*indefinite_integral(heat*r**2., r, rbcz)
+Fnr = -1./r**2.*indefinite_integral(heat*r**2., r, rtcz)
 heat_norm = definite_integral(Fnr*r**2, r, rbcz, rtcz)
 heat_norm /= 1./3.*(rtcz**3. - rbcz**3.)
 heat /= heat_norm
