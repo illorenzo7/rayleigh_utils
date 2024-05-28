@@ -19,13 +19,8 @@ dirname_stripped = strip_dirname(dirname)
 
 # equation coefficients
 eq = get_eq(dirname)
-# need some other things if ref_type = 5.
-reftype = eq.reference_type
-if reftype == 5:
-    pr_num = 1./eq.constants[5] # 1/c_6
-    ra_num = eq.constants[1]*pr_num # c_2 * Pr
-    di_num = eq.constants[7]*ra_num # Ra * c_8
-    factor = ra_num/(di_num*pr_num)
+c4 = eq.constants[3]
+c8 = eq.constants[7]
 
 # allowed args + defaults
 lineplot_kwargs_default['legfrac'] = 0.3
@@ -62,22 +57,26 @@ nr = di_grid['nr']
 
 print (buff_line)
 # deal with enthalpy flux first (hard one)
-if reftype == 5: # do some special stuff here
-    print ("reference_type = 5")
+print ("reference_type = %i" %eq.reference_type)
+if all(ele in qv for ele in [1944,1440,1947,1441]): 
+    # compute enthalpy flux "manually"
+    # due to nondimensionalization issue
     print ("computing enthalpy flux from separate pressure and entropy fluxes,")
     print("scaled appropriately")
 
     # total enthalpy flux
     prsflux = -vals[:, 0, lut[1944]]
-    entflux = vals[:, 0, lut[1440]]*factor
-    eflux = prsflux + entflux
+    entrflux = vals[:, 0, lut[1440]]/c8
+    eflux = prsflux + entrflux
 
+    # fluc enthalpy flux
     prsflux_fluc = -vals[:, 0, lut[1947]]
-    entflux_fluc = vals[:, 0, lut[1441]]*factor
+    entflux_fluc = vals[:, 0, lut[1441]]/c8
     eflux_fluc = prsflux_fluc + entflux_fluc
     
     eflux_mean = eflux - eflux_fluc
 else:
+    print ("reading Rayleigh's built-in enthalpy flux (1455)")
     eflux = vals[:, 0, lut[1455]]
     if 1458 in qv:
         print ("getting enthalpy flux (pp) from qval = 1458")
@@ -118,7 +117,7 @@ else:
         eflux_fluc = eflux - eflux_mean
 
 # heat flux also requires some special care, sometimes has Nans
-hflux = vals[:, 0, lut[1433]]
+hflux = vals[:, 0, lut[1433]]/c8
 if True in np.isnan(hflux):
     print (buff_line)
     print ("OUTPUT HEAT FLUX (1433, vol_heat_flux) HAS NANs!!!!")
@@ -131,40 +130,21 @@ if True in np.isnan(hflux):
         mean_dr = rr[ir] - rr[ir+1]
         fpr2dr = 4.*np.pi*mean_rr2*mean_dr
         hflux[ir] = hflux[ir+1] + mean_heat*fpr2dr
-    hflux = (hflux[0] - hflux)/(4.*np.pi*rr2)
+    hflux = (hflux[0] - hflux)/(4.*np.pi*rr2)/c8
 
 # other fluxes are pretty easy
-cflux = vals[:, 0, lut[1470]]
+cflux = vals[:, 0, lut[1470]]/c8
 kflux = vals[:, 0, lut[1923]]
 vflux = -vals[:, 0, lut[1935]] # remember the minus sign in vflux
 
-# some fluxes need multiplication if ref_type = 5
-if reftype == 5:
-    hflux *= factor
-    cflux *= factor
-
-    # deal with possible "flux ratio" parameter
-    the_heating_file = None
-    for fname in os.listdir(dirname):
-        if 'HeatingCooling' in fname:
-            the_heating_file = fname
-    if not the_heating_file is None:
-        # first, shift the heating by the bottom flux
-        shift = np.abs(np.min(hflux))*rr[-1]**2/rr**2
-        if 'fluxratio' in the_heating_file: # there is a top flux too,
-        # shift the heating by that
-            shift += np.max(hflux)*rr[0]**2/rr**2
-        hflux += shift
-
 tflux = hflux + eflux + cflux + kflux + vflux # compute the total flux
-
 
 profiles = [hflux, cflux, eflux, eflux_mean, eflux_fluc, kflux, vflux]
 kw_lineplot.labels = ['hflux', 'cflux', 'eflux', 'eflux (mm)', 'eflux (pp)', 'kflux', 'vflux']
 
 if clas0['magnetism']:
-    # A Space Oddysey is actually (-4*pi) TIMES the correct Poynting flux
-    mflux = -vals[:, 0, lut[2001]]/(4*np.pi)
+    # A Space Oddysey is actually (-c_4) TIMES the correct Poynting flux
+    mflux = -vals[:, 0, lut[2001]]*c4
     profiles.append(mflux)
     kw_lineplot.labels.append('mflux')
     tflux += mflux
@@ -186,7 +166,7 @@ ax = axs[0,0]
 
 # x and y labels
 kw_lineplot.xlabel = 'radius'
-kw_lineplot.ylabel = r'$4\pi r^2$' + '(flux)/' + r'$L_*$'
+kw_lineplot.ylabel = r'$4\pi r^2$' + '(flux)/L'
 
 # Try to find the BCZ from where enthalpy flux goes negative, if desired
 # avoid the outer boundary
