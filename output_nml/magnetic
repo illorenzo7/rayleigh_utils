@@ -67,9 +67,13 @@ azavg_values =
     1433, 
     ! POYNTING FLUX (must be /(-4*pi))(tot; ppp; mmm; ppm; pmp; mpp)
     2001,2002,2003, 2004,2005,2006, 2007,2008,2009, 2010,2011,2012, 2013,2014,2015, 2016,2017,2018,
+    ! VELOCITY u times ENTROPY S (r, t, p): tot, pp
+    1440,1445,1450,        1441,1446,1451,
+    ! VELOCITY u times PRESSURE P (r, t, p): tot, pp
+    1944,1945,1946,    1947,1948,1949,
     ! KE FLUX (r,t,p: total, mke_mflux; pke_mflux; pke_pflux)
     1923,1924,1925, 1926,1927,1928, 1929,1930,1931, 1932,1933,1934,
-    ! VISCOUS FLUX
+    ! VISCOUS FLUX (must x (-1))
     1935,1936,1937, 1938,1939,1940, 
     ! TORQUE (AMOM PRODUCTION TERMS): minus RS, minus advec., Coriolis, viscous, Maxwell: mm, pp
 	1801,1802, 1803, 1804, 1805,1806,
@@ -127,6 +131,10 @@ shellavg_values =
     1433, 
     ! POYNTING FLUX (must be /(-4*pi))(tot; ppp; mmm; ppm; pmp; mpp)
     2001,2002,2003, 2004,2005,2006, 2007,2008,2009, 2010,2011,2012, 2013,2014,2015, 2016,2017,2018,
+    ! VELOCITY u times ENTROPY S (r, t, p): tot, pp
+    1440,1445,1450,        1441,1446,1451,
+    ! VELOCITY u times PRESSURE P (r, t, p): tot, pp
+    1944,1945,1946,    1947,1948,1949,
     ! KE FLUX (r,t,p: total, mke_mflux; pke_mflux; pke_pflux)
     1923,1924,1925, 1926,1927,1928, 1929,1930,1931, 1932,1933,1934,
     ! VISCOUS FLUX
@@ -187,6 +195,10 @@ globalavg_values =
     1433, 
     ! POYNTING FLUX (must be /(-4*pi))(tot; ppp; mmm; ppm; pmp; mpp)
     2001,2002,2003, 2004,2005,2006, 2007,2008,2009, 2010,2011,2012, 2013,2014,2015, 2016,2017,2018,
+    ! VELOCITY u times ENTROPY S (r, t, p): tot, pp
+    1440,1445,1450,        1441,1446,1451,
+    ! VELOCITY u times PRESSURE P (r, t, p): tot, pp
+    1944,1945,1946,    1947,1948,1949,
     ! KE FLUX (r,t,p: total, mke_mflux; pke_mflux; pke_pflux)
     1923,1924,1925, 1926,1927,1928, 1929,1930,1931, 1932,1933,1934,
     ! VISCOUS FLUX

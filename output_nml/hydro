@@ -57,6 +57,10 @@ azavg_values =
     1433, 
     ! ENTHALPY FLUX r,t,p: tot, pp
 	1455,1456,1457, 1458,1459,1460, 
+    ! VELOCITY u times ENTROPY S (r, t, p): tot, pp
+    1440,1445,1450,        1441,1446,1451,
+    ! VELOCITY u times PRESSURE P (r, t, p): tot, pp
+    1944,1945,1946,    1947,1948,1949,
     ! KE FLUX (r,t,p: total, mke_mflux; pke_mflux; pke_pflux)
     1923,1924,1925, 1926,1927,1928, 1929,1930,1931, 1932,1933,1934,
     ! VISCOUS FLUX (must x (-1))
@@ -100,6 +104,10 @@ shellavg_values =
     1433, 
     ! ENTHALPY FLUX r,t,p: tot, pp
 	1455,1456,1457, 1458,1459,1460, 
+    ! VELOCITY u times ENTROPY S (r, t, p): tot, pp
+    1440,1445,1450,        1441,1446,1451,
+    ! VELOCITY u times PRESSURE P (r, t, p): tot, pp
+    1944,1945,1946,    1947,1948,1949,
     ! KE FLUX (r,t,p: total, mke_mflux; pke_mflux; pke_pflux)
     1923,1924,1925, 1926,1927,1928, 1929,1930,1931, 1932,1933,1934,
     ! VISCOUS FLUX (must x (-1))
@@ -143,6 +151,10 @@ globalavg_values =
     1433, 
     ! ENTHALPY FLUX r,t,p: tot, pp
 	1455,1456,1457, 1458,1459,1460, 
+    ! VELOCITY u times ENTROPY S (r, t, p): tot, pp
+    1440,1445,1450,        1441,1446,1451,
+    ! VELOCITY u times PRESSURE P (r, t, p): tot, pp
+    1944,1945,1946,    1947,1948,1949,
     ! KE FLUX (r,t,p: total, mke_mflux; pke_mflux; pke_pflux)
     1923,1924,1925, 1926,1927,1928, 1929,1930,1931, 1932,1933,1934,
     ! VISCOUS FLUX (must x (-1))
