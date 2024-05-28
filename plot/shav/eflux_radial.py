@@ -25,8 +25,6 @@ if reftype == 5:
     pr_num = 1./eq.constants[5] # 1/c_6
     ra_num = eq.constants[1]*pr_num # c_2 * Pr
     di_num = eq.constants[7]*ra_num # Ra * c_8
-    if clas0['magnetism']:
-        di_prm = 1./eq.constants[6] # 1/c_7
     factor = ra_num/(di_num*pr_num)
 
 # allowed args + defaults
@@ -176,10 +174,11 @@ kw_lineplot.labels.append('total')
 # integrate and normalize
 #lstar = eq.lum
 fpr = 4*np.pi*rr**2
-lstar = 0.5*((fpr*hflux)[0] + (fpr*hflux)[-1])
+lum = 0.5*((fpr*tflux)[0] + (fpr*tflux)[-1]) # seems like a universal
+    # definition of "luminosity"
 profiles_int = []
 for profile in profiles:
-    profiles_int.append(fpr*profile/lstar)
+    profiles_int.append(fpr*profile/lum)
 
 # Create the plot; start with plotting all the energy fluxes
 fig, axs, fpar = make_figure(**kw_make_figure)
