@@ -1,4 +1,4 @@
-#/ Author: Loren Matilsky
+# Author: Loren Matilsky
 # Created: 04/26/2024
 #
 # Purpose: modify a binary file (default name customfile) 

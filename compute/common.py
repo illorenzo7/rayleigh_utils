@@ -1178,7 +1178,8 @@ def get_eq(dirname, fname=None, verbose=False):
         eq_hr.dlntmp = eq.functions[9]
 
         # N^2, gravity, pressure, and transport coefficients are semi-universal
-        # (the transport coefficients should be fully, but the documentation is wrong)
+        # the transport coefficients should be fully, but the documentation is not totally transparent with the diffusivities being scaled by val_top
+        # this should change post-05/30/2024
         eq_hr.grav = eq.functions[1]/eq_hr.rho 
         eq_hr.nsq = eq_hr.grav*eq.functions[13] # actually this definition is universal 
                 # for dim. anelastic, grav now = g/c_p and f_13 = dS/dr
@@ -1191,11 +1192,14 @@ def get_eq(dirname, fname=None, verbose=False):
             eq_hr.eta = eq.functions[6] # these are built-in to
             eq_hr.dlneta = eq.functions[12] # equation_coefficients as "zero"
 
-        # rotation rate and period (in appropriate units based on chosen timescale)
+        # rotation rate and period 
+        # (in appropriate units based on chosen timescale)
+        # this definition is universal
         eq_hr.om0 = eq.constants[0]/2.
         eq_hr.prot = 2.*np.pi/eq_hr.om0
 
-        # angular momentum of shell (in appropriate units based on chosen timescale)
+        # volume-averaged angular momentum of shell 
+        # (in appropriate units based on chosen timescale)
         gi = get_grid_info(dirname)
         amom_dens = eq_hr.rho*eq_hr.om0*gi.xx**2
         amom_av = np.sum(amom_dens*gi.tw_2d,axis=0)
@@ -1223,16 +1227,26 @@ def get_eq(dirname, fname=None, verbose=False):
             # this quantity only exists for reference_type = 2 (along with c_p and gas_const
             eq_hr.dsdr = eq.constants[10]*eq.functions[13] 
 
-        else:
-            eq_hr.heat = eq.functions[5]
-            # can do this, but need Rayleigh number, Dissipation number, etc...
-            #volshell = 4.*np.pi/3.*(eq_hr.rr[0]**3. - eq_hr.rr[-1]**3.)
-            #eq_hr.lum = volshell * np.sum(eq_hr.heat*gi.rw) * 
+            # thermal and viscous diffusion time 
+            kappa_volav = volav_in_radius(dirname, eq_hr.kappa)
+            eq_hr.tdt = (eq_hr.rr[0] - eq_hr.rr[-1])**2/kappa_volav
 
-        # thermal diffusion time (in appropriate units based on chosen timescale)
-        # this is universal now that kappa has been adequately defined
-        kappa_volav = volav_in_radius(dirname, eq_hr.kappa)
-        eq_hr.tdt = (eq_hr.rr[0] - eq_hr.rr[-1])**2/kappa_volav
+            nu_volav = volav_in_radius(dirname, eq_hr.nu)
+            eq_hr.vdt = (eq_hr.rr[0] - eq_hr.rr[-1])**2/nu_volav
+
+        else: # this assumes a general nondimensionalization
+            # for ref type = 1, 3, 4, 5
+            eq_hr.heat = eq.functions[5]
+            volshell = 4.*np.pi/3.*(eq_hr.rr[0]**3. - eq_hr.rr[-1]**3.)
+            eq_hr.lum = volshell * np.sum(eq_hr.heat*gi.rw)*eq_hr.constants[9]/eq_hr.constants[7]
+
+            # thermal diffusion time 
+            eq_hr.tdt = 1./eq_hr.constants[5]
+
+            # viscous diffusion time 
+            eq_hr.vdt = 1./eq_hr.constants[4]
+
+            # not sure about dsdr yet
 
     else: # no binary file; get everything from main_input
         # currently only have figured this out for dimensional anelastic
