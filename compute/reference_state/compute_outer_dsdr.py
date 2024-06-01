@@ -82,13 +82,8 @@ kappa = eq.functions[4]
 heat = eq.functions[5]
 print(heat)
 
-if kw.jup: # CZ below RZ
-    lum = definite_integral(heat, r, kw.rmin, kw.rt)
-    vcz = 4.*np.pi/3.*(kw.rt**3. - kw.rmin**3.)
-else: # CZ atop RZ
-    lum = definite_integral(heat, r, kw.rt, kw.rmax)
-    vcz = 4.*np.pi/3.*(kw.rmax**3. - kw.rt**3.)
-lum *= vcz
+
+lum = 4.*np.pi*definite_integral(heat*r**2., r, kw.rmin, kw.rmax)
 dtdr_out = -lum/4./np.pi/kw.rmax**2/(rho*tmp*kappa)[0]
 
 print ("for lum = int_CZ f_6 dv =  %1.6e" %lum)
