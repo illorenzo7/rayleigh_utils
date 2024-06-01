@@ -48,7 +48,7 @@ lines = f.readlines()
 for line in lines:
     # find the line containing rbrz, etc.
     alltrue = True
-    for keyword in ['rbrz', 'rtrz', 'rbcz', 'rtcz']:
+    for keyword in ['rmin', 'rt', 'rmax']:
         alltrue *= keyword in line
     if alltrue:
         st = line.split(':')[1]
@@ -59,7 +59,7 @@ for line in lines:
         kw_default.rmin = float(rmin)
         kw_default.rt = float(rt)
         kw_default.rmax = float(rmax)
-    elif 'Jovian' in line:
+    if 'Jovian' in line:
         kw_default.jup = True
 f.close()
 
@@ -80,10 +80,22 @@ rho = eq.functions[0]
 tmp = eq.functions[3]
 kappa = eq.functions[4]
 heat = eq.functions[5]
+print(heat)
 
-lum = definite_integral(heat, r, kw.rbcz, kw.rtcz)
-dtdr_out = -lum/4./np.pi/rmax**2/(rho*tmp*kappa)[0]
+if kw.jup: # CZ below RZ
+    lum = definite_integral(heat, r, kw.rmin, kw.rt)
+    vcz = 4.*np.pi/3.*(kw.rt**3. - kw.rmin**3.)
+else: # CZ atop RZ
+    lum = definite_integral(heat, r, kw.rt, kw.rmax)
+    vcz = 4.*np.pi/3.*(kw.rmax**3. - kw.rt**3.)
+lum *= vcz
+dtdr_out = -lum/4./np.pi/kw.rmax**2/(rho*tmp*kappa)[0]
 
-print ("for lum = %1.6e" %lum)
+print ("for lum = int_CZ f_6 dv =  %1.6e" %lum)
+print ("where (rmin, rt, rmax) =", kw.rmin, kw.rt, kw.rmax)
+if kw.jup:
+    print ("and the CZ is the bottom layer (rmin, rt)")
+else:
+    print ("and the CZ is the top layer (rt, rmax)")
 print ("set dtdr_top to")
 print ("%1.16e" %dtdr_out)
