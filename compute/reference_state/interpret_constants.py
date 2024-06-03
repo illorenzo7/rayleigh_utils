@@ -122,6 +122,7 @@ else:
 if kw.tau == 'rot':
     timescale_msg = "timescale chosen: %s, tau = 1/(2 Om0)" %kw.tau
     tau_over_taunu = ek
+    print ("Ekman number = %1.5e" %ek)
 elif kw.tau == 'visc':
     timescale_msg ="timescale chosen: %s, tau = H^2/nu" %kw.tau
     tau_over_taunu = 1.
@@ -197,5 +198,8 @@ f.write("%s ---> %s\n" %(parfile, the_file))
 f.write("with the interpret_constants routine.\n")
 f.write(timescale_msg + '\n')
 f.write("Di: %1.5f\n" %di)
+if kw.tau == 'rot':
+    f.write("Ekman number: %1.5e\n" %ek)
+
 f.write(buff_line + '\n')
 f.close()
