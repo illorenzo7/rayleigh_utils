@@ -21,6 +21,7 @@ dirname_stripped = strip_dirname(dirname)
 eq = get_eq(dirname)
 c4 = eq.constants[3]
 c8 = eq.constants[7]
+c10 = eq.constants[9]
 
 # allowed args + defaults
 lineplot_kwargs_default['legfrac'] = 0.3
@@ -126,7 +127,7 @@ if True in np.isnan(hflux):
     rr2 = rr**2.
     for ir in range(nr - 2, -1, -1):
         mean_rr2 = 0.5*(rr2[ir] + rr2[ir+1])
-        mean_heat = 0.5*(eq.heat[ir] + eq.heat[ir+1])
+        mean_heat = 0.5*(eq.heat[ir] + eq.heat[ir+1])*c10
         mean_dr = rr[ir] - rr[ir+1]
         fpr2dr = 4.*np.pi*mean_rr2*mean_dr
         hflux[ir] = hflux[ir+1] + mean_heat*fpr2dr
