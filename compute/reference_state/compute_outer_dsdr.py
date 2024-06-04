@@ -78,10 +78,11 @@ r = eq.radius
 nr = eq.nr
 rho = eq.functions[0]
 tmp = eq.functions[3]
-kappa = eq.functions[4]
+if eq.fset[4] == 1: # user set kappa via custom ref
+    kappa = eq.functions[4]
+else: # probably kappa is constant (=1)
+    kappa = np.ones_like(rho)
 heat = eq.functions[5]
-print(heat)
-
 
 lum = 4.*np.pi*definite_integral(heat*r**2., r, kw.rmin, kw.rmax)
 dtdr_out = -lum/4./np.pi/kw.rmax**2/(rho*tmp*kappa)[0]
