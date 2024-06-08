@@ -1072,6 +1072,32 @@ def volav_in_radius(dirname, arr, r1='rmin', r2='rmax'):
     ir1, ir2 = np.argmin(np.abs(rr - r1)), np.argmin(np.abs(rr - r2))
     return np.sum((arr*rw)[ir2:ir1+1])/np.sum(rw[ir2:ir1+1])
 
+def indefinite_radial_integral(dirname, arr, r0='rmin'):
+    gi = get_grid_info(dirname)
+    rr, rw = gi.rr, gi.rw
+    
+    r0 = interpret_rvals(dirname, r0)[0]
+    ir0 = inds_from_vals(gi.rr, r0)[0]
+
+    rmin, rmax = get_rminmax(dirname)
+    prefactor = (rmax**3. - rmin**3.)/3.
+    
+    integral = np.zeros_like(rr)
+    for ir in range(len(rr)):
+        rval = rr[ir]
+        if rval >= r0:
+            ir1 = ir
+            ir2 = ir0
+            the_sign = 1.
+        else:
+            ir1 = ir0
+            ir2 = ir
+            the_sign = -1.
+        integral[ir] = the_sign*prefactor*np.sum((arr*rw/rr**2.)[ir1:ir2+1])
+        print("ir=", ir)
+        print("val = ", integral[ir])
+    return integral
+
 ##########################################
 # Routines associated with reference state
 ##########################################
