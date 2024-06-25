@@ -4,26 +4,71 @@ import subprocess
 st=subprocess.run('node_stats.sh',stdout=subprocess.PIPE)
 st=st.stdout.decode("utf-8")
 
-i0 = st.find('hardware type')
+i1 = st.find('hardware type')
+i2 = st.find('GPUs used')
+st = st[i1:i2]
 
-keys =\
-    ['SandyBridge',\
-    'IvyBridge',\
+#keys =\
+   ['Broadwell in Pleiades',\
+    'Broadwell in Electra',\
+    'Cascadelake in Aitken',\
+    'Cascadelake in Pleiades',\
     'Haswell',\
-    'Broadwell',\
-    'Broadwell (Electra)',\
-    'Skylake',\
-    'Cascadelake',\
-    'ROME']
+    'Ivybridge',\
+    'Milan in Cabeus',\
+    'Milan in Aitken',\
+    'Rome in Aitken',\
+    'Rome in Pleiades',\
+    'Sandybridge',\
+    'Skylake in Electra',\
+    'Skylake in Pleiades']
 
-total = dict({})
+headings = \
+    ['Cores',\
+    'Total',\
+    'Down',\
+    'Reserved',\
+    'Used',\
+    'Free',\
+    'Running jobs',\
+    'Queued jobs want']
+
+headings_alt = \
+    ['cores per node',\
+    'nodes total',\
+    'nodes down',\
+    'nodes reserved',\
+    'nodes used',\
+    'nodes free',\
+    'running jobs',\
+    'nodes requested']
+
+node_info = dict({})
 for key in keys:
-    st2 = st[i0:]
-    ikey = st2.find(key)
-    st3 = st2[ikey:]
-    itot = st3.find('Total')
-    st4 = st3[itot:].split()
-    total[key] = int(st4[1][:-1]) # get rid of the trailing comma
+    di_loc
+    ikey = st.find(key)
+    st2 = st[ikey:]
+    li = []
+    ihead = 0
+    for heading in headings:
+        i0 = st2.find(heading)
+        i0 += len(heading)
+        st3 = st2[i0:].split()
+        if ihead == 0:
+            i0 -= len(heading) # get back to number
+            st3 = st2[:i0].split() # get string BEFORE "Cores"
+            li.append(int(st3[-1]) )
+        elif ihead < 7:
+            li.append(int(st3[1][:-1]) )
+            # get rid of the trailing comma and convert to int
+        else:
+            #print("st3=", st3)
+            li.append(int(st3[0]) )
+        ihead += 1
+    print("li = ", li)
+        #print('total[key]=', total[key])
+        #i0 = st2.find('Down:')
+        #print(int(st3[1][:-1]))
 
 req = dict({})
 st2 = st[st.find('requesting'):st.find('using')].split()
