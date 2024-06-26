@@ -1,4 +1,6 @@
-import subprocess
+import subprocess, sys, os
+sys.path.append(os.environ['raco'])
+from common import fill_str
 
 # first get the output of node_stats.sh as a string
 st=subprocess.run('node_stats.sh',stdout=subprocess.PIPE)
@@ -38,7 +40,7 @@ keys_alt =\
     'sky_ele',\
     'sky_gpu']
 
-headings = \
+headers = \
     ['Cores',\
     'Total',\
     'Down',\
@@ -48,15 +50,15 @@ headings = \
     'Running jobs',\
     'Queued jobs want']
 
-headings_alt = \
+headers_alt = \
     ['cores per node',\
-    'nodes total',\
+    'nodes tot.',\
     'nodes down',\
-    'nodes reserved',\
+    'nodes res.',\
     'nodes used',\
     'nodes free',\
     'running jobs',\
-    'nodes requested']
+    'nodes req.']
 
 node_info = dict({})
 for key in keys_alt:
@@ -64,7 +66,7 @@ for key in keys_alt:
     ikey = st.find(key)
     st2 = st[ikey:]
     ihead = 0
-    for heading in headings:
+    for heading in headers:
         i0 = st2.find(heading)
         i0 += len(heading)
         st3 = st2[i0:].split()
@@ -77,69 +79,42 @@ for key in keys_alt:
             # get rid of the trailing comma and convert to int
         else:
             num = int(st3[0])
-        head_alt_loc = headings_alt[ihead]
+        head_alt_loc = headers_alt[ihead]
         ihead += 1
         di_loc[head_alt_loc] = num
     node_info[key] = di_loc
 
-for key in keys_alt:
-    print(key, node_info[key])
-req = dict({})
-st2 = st[st.find('requesting'):st.find('using')].split()
+#for key in keys_alt:
+#    print(key, node_info[key])
 
-count = 0
-for subst in st2:
-    if subst[:-1] in keys: # remove trailing comma
-        req[subst[:-1]] = int(st2[count - 1])
-    elif subst == 'Electra':
-        nextone = st2[count + 1]
-        if nextone == '(B),':
-            req['Broadwell (Electra)'] = int(st2[count - 1])
-        elif nextone == '(S),':
-            req['Skylake'] = int(st2[count - 1])
-    elif subst == 'Aitken':
-        nextone = st2[count + 1]
-        if nextone == '(C),':
-            req['Cascadelake'] = int(st2[count - 1])
-        elif nextone == '(R)':
-            req['ROME'] = int(st2[count - 1])
-    count +=1
+# combine the broadwells 
+node_info['bro_tot'] = dict({})
+keys.insert(2, 'Broadwell (Total)')
+keys_alt.insert(2, 'bro_tot')
 
-# get the "using" numbers as well
-use = dict({})
-st2 = st[st.find('using'):].split()
-
-count = 0
-for subst in st2:
-    if subst[:-1] in keys: # remove trailing comma
-        use[subst[:-1]] = int(st2[count - 1])
-    elif subst == 'Electra':
-        nextone = st2[count + 1]
-        if nextone == '(B),':
-            use['Broadwell (Electra)'] = int(st2[count - 1])
-        elif nextone == '(S),':
-            use['Skylake'] = int(st2[count - 1])
-    elif subst == 'Aitken':
-        nextone = st2[count + 1]
-        if nextone == '(C),':
-            use['Cascadelake'] = int(st2[count - 1])
-        elif nextone == '(R)':
-            use['ROME'] = int(st2[count - 1])
-    count +=1
+for key in node_info['bro'].keys():
+    node_info['bro_tot'][key] = \
+            node_info['bro'][key] + node_info['bro_ele'][key]
 
 # now print the ratios in a table
-def fill_str(stri, lent, char):
-    len_loc = len(stri)
-    nfill = lent - len_loc
-    return stri + char*nfill
-
 char = ' '
 
-headers_care = ['node type', 'requesting', 'using', 'free', 'req. ratio', 'use ratio', 'cores free']
+headers_care = \
+    ['node type',
+    'req. ratio',\
+    'use ratio',\
+    'down ratio',\
+    'nodes tot.',\
+    'nodes down',\
+    'nodes res.',\
+    'nodes used',\
+    'nodes free',\
+    'nodes req.']
+
 col_buffer = 5
 whole_header = ''
 column_widths = []
-for header in headers:
+for header in headers_care:
     if header == headers[-1]:
         column_width = len(header)
     elif header == headers[0]:
@@ -151,24 +126,27 @@ for header in headers:
 
 print (whole_header)
 
-# combine both the broadwell types, since they are interchanged freely
-# in #PBS requests
-rmkey = 'Broadwell (Electra)'
-keys.remove(rmkey)
-req['Broadwell'] += req[rmkey]
-del req[rmkey]
-use['Broadwell'] += use[rmkey]
-del use[rmkey]
-total['Broadwell'] += total[rmkey]
-del total[rmkey]
+for key in keys_alt:
+    di_loc = node_info[key]
+    ncores = di_loc['cores per node']
+    ntot = di_loc['nodes tot.']
+    nuse = di_loc['nodes used']
+    ndown = di_loc['nodes down']
+    nreq = di_loc['nodes req.']
 
-# set number of cores per node
-di_ncores = dict({'SandyBridge': 16, 'IvyBridge': 20, 'Haswell': 24, 'Broadwell': 28, 'Skylake': 40, 'Cascadelake': 40, 'ROME':128})
-
-for key in keys:
-    nfree = total[key] - use[key]
-    ncores = di_ncores[key]
-    rowdata = [key, '%i' %req[key], '%i' %use[key], '%i' %(nfree), '%.3f' %(req[key]/total[key]), '%.3f' %(use[key]/total[key]), '%i' %(nfree*ncores)]
+    rowdata = []
+    for header in headers_care:
+        if header == 'node type':
+            rowdata += [key]
+        elif header == 'req. ratio':
+            rowdata += ['%.3f' %(nreq/ntot)]
+        elif header == 'use ratio':
+            rowdata += ['%.3f' %(nuse/ntot)]
+        elif header == 'down ratio':
+            rowdata += ['%.3f' %(ndown/ntot)]
+        else:
+            rowdata += ['%i' %di_loc[header]]
+    #rowdata = [key, '%i' %req[key], '%i' %use[key], '%i' %(nfree), '%.3f' %(req[key]/total[key]), '%.3f' %(use[key]/total[key]), '%i' %(nfree*ncores)]
     row = ''
     count = 0
     for datum in rowdata:
