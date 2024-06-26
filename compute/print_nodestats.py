@@ -8,7 +8,7 @@ i1 = st.find('hardware type')
 i2 = st.find('GPUs used')
 st = st[i1:i2]
 
-#keys =\
+keys =\
    ['Broadwell in Pleiades',\
     'Broadwell in Electra',\
     'Cascadelake in Aitken',\
@@ -22,6 +22,21 @@ st = st[i1:i2]
     'Sandybridge',\
     'Skylake in Electra',\
     'Skylake in Pleiades']
+
+keys_alt =\
+   ['bro',\
+    'bro_ele',\
+    'cas_ait',\
+    'cas_gpu',\
+    'has',\
+    'ivy',\
+    'mil_a100',\
+    'mil_ait',\
+    'rom_ait',\
+    'rom_gpu',\
+    'san',\
+    'sky_ele',\
+    'sky_gpu']
 
 headings = \
     ['Cores',\
@@ -44,11 +59,10 @@ headings_alt = \
     'nodes requested']
 
 node_info = dict({})
-for key in keys:
-    di_loc
+for key in keys_alt:
+    di_loc = dict({})
     ikey = st.find(key)
     st2 = st[ikey:]
-    li = []
     ihead = 0
     for heading in headings:
         i0 = st2.find(heading)
@@ -57,19 +71,19 @@ for key in keys:
         if ihead == 0:
             i0 -= len(heading) # get back to number
             st3 = st2[:i0].split() # get string BEFORE "Cores"
-            li.append(int(st3[-1]) )
+            num = int(st3[-1]) # convert to int
         elif ihead < 7:
-            li.append(int(st3[1][:-1]) )
+            num = int(st3[1][:-1])
             # get rid of the trailing comma and convert to int
         else:
-            #print("st3=", st3)
-            li.append(int(st3[0]) )
+            num = int(st3[0])
+        head_alt_loc = headings_alt[ihead]
         ihead += 1
-    print("li = ", li)
-        #print('total[key]=', total[key])
-        #i0 = st2.find('Down:')
-        #print(int(st3[1][:-1]))
+        di_loc[head_alt_loc] = num
+    node_info[key] = di_loc
 
+for key in keys_alt:
+    print(key, node_info[key])
 req = dict({})
 st2 = st[st.find('requesting'):st.find('using')].split()
 
@@ -121,7 +135,7 @@ def fill_str(stri, lent, char):
 
 char = ' '
 
-headers = ['node type', 'requesting', 'using', 'free', 'req. ratio', 'use ratio', 'cores free']
+headers_care = ['node type', 'requesting', 'using', 'free', 'req. ratio', 'use ratio', 'cores free']
 col_buffer = 5
 whole_header = ''
 column_widths = []
