@@ -135,15 +135,16 @@ if True in np.isnan(hflux):
 
 # do things a different way for heating and cooling
 customfile = dirname + '/' + kw.fname + '_meta.txt'
+print("customfile=", customfile)
 if os.path.isfile(customfile):
     f = open(customfile, 'r')
     text = f.read()
     f.close()
     if 'HeatingCooling' in text: # integrate from the middle
-        "print: Heating/Cooling layer detected: computing heat flux as"
-        "1/r^2 int_r^(Rmin + H/2) Q(x)x^2dx"
+        print("Heating/Cooling layer detected: computing heat flux as")
+        print("1/r^2 int_r^(Rmin + H/2) Q(x)x^2dx")
         hflux = -indefinite_radial_integral(dirname, eq.heat*rr**2, r0='rmid')
-        hflux /= (c8*rr**2)
+        hflux *= c10/(c8*rr**2)
 
 # other fluxes are pretty easy
 cflux = vals[:, 0, lut[1470]]/c8
@@ -168,7 +169,8 @@ kw_lineplot.labels.append('total')
 #lstar = eq.lum
 fpr = 4*np.pi*rr**2
 lum = 0.5*((fpr*tflux)[0] + (fpr*tflux)[-1]) # seems like a universal
-    # definition of "luminosity"
+# definition of "luminosity"
+
 profiles_int = []
 for profile in profiles:
     profiles_int.append(fpr*profile/lum)
