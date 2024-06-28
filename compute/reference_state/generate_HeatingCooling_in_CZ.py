@@ -63,6 +63,12 @@ if os.path.isfile(the_file):
     f = open(meta_file, 'r')
     lines = f.readlines()
     for line in lines:
+        # see if geometry might be solar-like
+        if 'solar' in line:
+            kw_default.sun = True
+        elif 'Jovian' in line:
+            kw_default.jup = True
+
         # find the line containing rbrz, etc.
         alltrue = True
         for keyword in ['rbrz', 'rtrz', 'rbcz', 'rtcz']:
@@ -76,12 +82,10 @@ if os.path.isfile(the_file):
             rmin = float(rmin)
             rt = float(rt)
             rmax = float(rmax)
-        elif 'solar' in line:
-            kw_default.sun = True
-            kw_default.rbcz, kw_default.rtcz = rt, rmax
-        elif 'Jovian' in line:
-            kw_default.jup = True
-            kw_default.rbcz, kw_default.rtcz = rmin, rt
+            if kw_default.sun:
+                kw_default.rbcz, kw_default.rtcz = rt, rmax
+            if kw_default.jup:
+                kw_default.rbcz, kw_default.rtcz = rmin, rt
     f.close()
 
 # overwrite defaults
@@ -110,11 +114,11 @@ elif kw.sun: # there is RZ below CZ
     rt = kw.rbcz
     the_sign = +1.
 if kw.jup or kw.sun:
-    smooth = 0.5*(1.0 + the_sign*np.tanh((r - kw.rt)/kw.delta)) # "detects" CZ only
+    smooth = 0.5*(1.0 + the_sign*np.tanh((r - rt)/kw.delta)) # "detects" CZ only
 
 # add a heating layer at the bottom and a cooling layer at the top
-shape1 = psi_plus(r, rbcz, kw.width)
-shape2 = psi_minus(r, rtcz, kw.width)
+shape1 = psi_plus(r, kw.rbcz, kw.width)
+shape2 = psi_minus(r, kw.rtcz, kw.width)
 
 if kw.jup or kw.sun: # smooth both profiles although it will only matter
     # for the one close to RZ
@@ -130,9 +134,9 @@ heat = A1*shape1 - A2*shape2 # this is overall (and smoothed) shape
 # now normalize the overall self-cancelling profile
 
 # compute nonradiative flux
-Fnr = 1./r**2.*indefinite_integral(heat*r**2., r, rbcz)
-heat_norm = definite_integral(Fnr*r**2, r, rbcz, rtcz)
-heat_norm /= 1./3.*(rtcz**3. - rbcz**3.)
+Fnr = 1./r**2.*indefinite_integral(heat*r**2., r, kw.rbcz)
+heat_norm = definite_integral(Fnr*r**2, r, kw.rbcz, kw.rtcz)
+heat_norm /= 1./3.*(kw.rtcz**3. - kw.rbcz**3.)
 heat /= heat_norm
 
 print(buff_line)
@@ -152,7 +156,7 @@ print("heating/cooling layer width_heat : %1.5f" %kw.width)
 print(buff_line)
 
 # Now write to file using the equation_coefficients framework
-print("Setting f_6 in %s" %fname)
+print("Setting f_6 in %s" %kw.fname)
 # make an executive decision here (since normally f_6 integrates to 1)
 # leave f_6 "properly" normalized and later, set c_10 to Ek / Pr or 
 # similar
@@ -170,7 +174,7 @@ print(buff_line)
 firstline = "Also added custom heating profile using the\n"
 lines_new = [firstline]
 lines_new.append("generate_HeatingCooling_in_CZ routine.\n")
-"heating has the folowing attributes:\n")
+lines_new.append("heating has the folowing attributes:\n")
 if kw.jup:
      lines_new.append("geometry : Jovian (RZ atop CZ)\n")
 elif kw.sun:
@@ -205,7 +209,8 @@ count = 0
 if already_file:
     skip = False
     for line in lines_orig:
-        if line == firstline: # we're at the heating block, overwrite
+        if line == firstline: # we're at the heating block, 
+            # start overwriting
             skip = True
 
         if skip: # write new heating block line
