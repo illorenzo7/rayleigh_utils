@@ -58,9 +58,9 @@ kw_default.nr = 10000
 # if there is already a binary file,
 # read in its metadata (regarding radial structure) to put into defaults
 the_file = dirname + '/' + kw_default.fname
-metafile = the_file + '_meta.txt'
+meta_file = the_file + '_meta.txt'
 if os.path.isfile(the_file):
-    f = open(metafile, 'r')
+    f = open(meta_file, 'r')
     lines = f.readlines()
     for line in lines:
         # find the line containing rbrz, etc.
@@ -163,43 +163,60 @@ print(buff_line)
 eq.write(the_file)
 
 # record what we did in the meta file
-print("Writing the heating metadata to %s" %metafile)
+print("Writing the heating metadata to %s" %meta_file)
 print(buff_line)
 
-# get the old text
-f = open(dirname + '/' + metafile)
-lines_orig = f.readlines()
-f.close()
-
-# delete the old custom heating line block
+# we will need the individual lines we want to write
 firstline = "Also added custom heating profile using the\n"
-skip = False
-for line in lines_orig:
-    if line == firstline:
-        skip = True
+lines_new = [firstline]
+lines_new.append("generate_HeatingCooling_in_CZ routine.\n")
+"heating has the folowing attributes:\n")
+if kw.jup:
+     lines_new.append("geometry : Jovian (RZ atop CZ)\n")
+elif kw.sun:
+     lines_new.append("geometry : solar (CZ atop RZ)\n")
+else:
+     lines_new.append("geometry : CZ only\n")
+if kw.jup or kw.sun:
+    lines_new.append("(rmin, rt, rmax): (%1.2f, %1.2f, %1.2f)\n" %(rmin, rt, rmax))
+else:
+    lines_new.append("(rmin, rmax): (%1.2f, %1.2f)\n" %(rmin, rmax))
+lines_new.append("delta_heat : %1.5f\n" %kw.delta)
+lines_new.append("width : %1.5f\n" %kw.width)
+lastline = buff_line + '\n'
+lines_new.append(lastline)
+nnew = len(lines_new)
 
-    if not skip:
-        lines_new.append(line)
-
-    if skip:
-        if line == buff_line + '\n':
-            skip = False
-
-# re-write the unchanged parts of the meta file
-f = open(dirname + '/' + metafile, 'a')
-
-print('lines_new', lines_new)
-if False:
-
-    f.write(firstline)
-    f.write("generate_HeatingCooling_CZ_only routine.\n")
-    f.write("heating has the folowing attributes:\n")
-    if kw.jup:
-         f.write("geometry : Jovian (RZ atop CZ)\n")
-    else:
-         f.write("geometry : solar (CZ atop RZ)\n")
-    f.write("(rmin, rt, rmax): (%1.2f, %1.2f, %1.2f)\n" %(kw.rmin, kw.rt, kw.rmax))
-    f.write("delta_heat : %1.5f\n" %kw.delta)
-    f.write("width : %1.5f\n" %kw.width)
-    f.write(buff_line + '\n')
+# get the old text
+if os.path.isfile(meta_file):
+    already_file = True
+    f = open(meta_file)
+    lines_orig = np.array(f.readlines())
     f.close()
+    norig = len(lines_orig)
+else:
+    already_file = False
+
+# open f again, possibly overwriting heating block (if it exists)
+# if not, add the block at the end
+f = open(meta_file, 'w')
+
+count = 0
+if already_file:
+    skip = False
+    for line in lines_orig:
+        if line == firstline: # we're at the heating block, overwrite
+            skip = True
+
+        if skip: # write new heating block line
+            f.write(lines_new[count])
+            count += 1
+            if line == lastline:
+                skip = False
+        else:
+            f.write(line)
+
+if not already_file or count == 0: # there was no prior heating block
+    for line in lines_new:
+        f.write(line)
+f.close()
