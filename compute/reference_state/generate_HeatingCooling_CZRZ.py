@@ -1,25 +1,30 @@
 # Author: Loren Matilsky
 # Created: 06/27/2024
 #
-# Purpose: modify a binary file (default name customfile) 
+# Purpose: create a binary file
+# (or modify one if it already exists)
+# (default name customfile) 
 # to contain heating and cooling profiles 
-# that is confined to CZ, transitioning to no heating of the RZ 
-# -- by default at the stable/unstable layer transition
-# Must be run AFTER reference state (which includes the grid info)
-# is generated
+# that are confined to CZ, transitioning to no heating of the RZ 
 
 # Parameters: output_dir (first argument), 
 
 # Command-line options:
 #
-# --fname: file to read reference and save heating in (default "customfile")
-# --delta : transition width between CZ and RZ via tanh matching
+# --fname: file to (maybe) read reference and save heating
+#    (default "customfile")
+# --delta : possible transition width between CZ and RZ via tanh matching
+#   (default quite sharp: 0.005)
+# --width : width of each the heating and cooling layers:
+#   (default 0.05)
 
-# the following will have defaults set by [fname]_meta.txt
-# --rmin : bottom of shell
-# --rmax : top of shell
-# --rt : radius of transition layer
-# --jup : if "jup" is specified, RZ lies above CZ
+# the following will have defaults set by [fname]_meta.txt, if it exists
+# --rbcz : bottom of CZ
+# --rtcz : top of CZ
+# --jup : (default False or what's in customfile) 
+#        if "jup" is True, there is RZ above CZ, use smoothing
+# --sun : (default False or what's in customfile) 
+#        if "sun" is True, there is RZ below CZ, use smoothing
 
 import numpy as np
 import sys, os
@@ -40,33 +45,40 @@ dirname = clas0['dirname']
 
 # Set default kwargs
 # start with filename, which may change
-kw_default = dotdict(dict({'fname': 'customfile'}))
-kw_default = update_dict(kw_default, clas)
-# read in metadata (regarding radial structure) to put into keywords
-metafile = dirname + '/' + kw_default.fname + '_meta.txt'
-f = open(metafile, 'r')
-lines = f.readlines()
-for line in lines:
-    # find the line containing rbrz, etc.
-    alltrue = True
-    for keyword in ['rbrz', 'rtrz', 'rbcz', 'rtcz']:
-        alltrue *= keyword in line
-    if alltrue:
-        st = line.split(':')[1]
-        for char in [',', '(', ')']:
-            st = st.replace(char, '')
-        rmin, rt, rmax = st2 = st.split()
-
-        kw_default.rmin = float(rmin)
-        kw_default.rt = float(rt)
-        kw_default.rmax = float(rmax)
-    elif 'Jovian' in line:
-        kw_default.jup = True
-f.close()
+kw_default = dotdict(dict({'fname': 'customfile', 'jup': False, 'sun': False, 'rbcz': None, 'rtcz': None}))
 
 # add in other default value, the transition width from CZ to RZ
 kw_default.delta = 0.005 # make it effectively very sharp, maybe 25 points
 kw_default.width = 0.05 # this is each heating/cooling layer width
+
+# if there is already a binary file,
+# read in its metadata (regarding radial structure) to put into defaults
+the_file = dirname + '/' + kw_default.fname
+metafile = the_file + '_meta.txt'
+if os.path.isfile(the_file):
+    f = open(metafile, 'r')
+    lines = f.readlines()
+    for line in lines:
+        # find the line containing rbrz, etc.
+        alltrue = True
+        for keyword in ['rbrz', 'rtrz', 'rbcz', 'rtcz']:
+            alltrue *= keyword in line
+        if alltrue:
+            st = line.split(':')[1]
+            for char in [',', '(', ')']:
+                st = st.replace(char, '')
+            rmin, rt, rmax = st2 = st.split()
+
+            rmin = float(rmin)
+            rt = float(rt)
+            rmax = float(rmax)
+        elif 'solar' in line:
+            kw_default.sun = True
+            kw_default.rbcz, kw_default.rtcz = rt, rmax
+        elif 'Jovian' in line:
+            kw_default.jup = True
+            kw_default.rbcz, kw_default.rtcz = rmin, rt
+    f.close()
 
 # overwrite defaults
 kw = update_dict(kw_default, clas)
@@ -84,17 +96,16 @@ else: # CZ above RZ
     rtrz = rbcz = kw.rt
     the_sign = +1.
 
-# Open and read the hopefully already existing reference file!
+# Open and read the possibly already existing reference file
 eq = equation_coefficients()
-the_file = dirname + '/' + kw.fname
 eq.read(the_file)
 r = eq.radius
 nr = eq.nr
 smooth = 0.5*(1.0 + the_sign*np.tanh((r - kw.rt)/kw.delta)) # "detects" CZ
 
 # add a heating layer at the bottom and a cooling layer at the top
-shape1 = psi_plus(rr, rbcz, kw.width)
-shape2 = psi_minus(rr, rout, kw.width)
+shape1 = psi_plus(r, rbcz, kw.width)
+shape2 = psi_minus(r, rtcz, kw.width)
 
 if kw.jup:
     shape2 *= smooth # smooth the cooling
@@ -104,7 +115,7 @@ else:
 A1 = -1. / simps(r**2*shape1, r) # remember rr is in decreasing order
 A2 = -1. / simps(r**2*shape2, r)
 
-heating = A1*shape1 - A2*shape2 # this is overall (and smoothed) shape
+heat = A1*shape1 - A2*shape2 # this is overall (and smoothed) shape
 
 # now normalize
 
@@ -140,17 +151,41 @@ eq.write(the_file)
 print("Writing the heating metadata to %s" %metafile)
 print(buff_line)
 
+
+# get the old text
+f = open(dirname + '/' + metafile)
+lines_orig = f.readlines()
+f.close()
+
+# delete the old custom heating line block
+firstline = "Also added custom heating profile using the\n"
+skip = False
+for line in lines_orig:
+    if line == firstline:
+        skip = True
+
+    if not skip:
+        lines_new.append(line)
+
+    if skip:
+        if line == buff_line + '\n':
+            skip = False
+
+# re-write the unchanged parts of the meta file
 f = open(dirname + '/' + metafile, 'a')
 
-f.write("Also added custom heating profile using the\n")
-f.write("generate_HeatingCooling_CZ_only routine.\n")
-f.write("heating has the folowing attributes:\n")
-if kw.jup:
-     f.write("geometry : Jovian (RZ atop CZ)\n")
-else:
-     f.write("geometry : solar (CZ atop RZ)\n")
-f.write("(rmin, rt, rmax): (%1.2f, %1.2f, %1.2f)\n" %(kw.rmin, kw.rt, kw.rmax))
-f.write("delta_heat : %1.5f\n" %kw.delta)
-f.write("width : %1.5f\n" %kw.width)
-f.write(buff_line + '\n')
-f.close()
+print('lines_new', lines_new)
+if False:
+
+    f.write(firstline)
+    f.write("generate_HeatingCooling_CZ_only routine.\n")
+    f.write("heating has the folowing attributes:\n")
+    if kw.jup:
+         f.write("geometry : Jovian (RZ atop CZ)\n")
+    else:
+         f.write("geometry : solar (CZ atop RZ)\n")
+    f.write("(rmin, rt, rmax): (%1.2f, %1.2f, %1.2f)\n" %(kw.rmin, kw.rt, kw.rmax))
+    f.write("delta_heat : %1.5f\n" %kw.delta)
+    f.write("width : %1.5f\n" %kw.width)
+    f.write(buff_line + '\n')
+    f.close()
