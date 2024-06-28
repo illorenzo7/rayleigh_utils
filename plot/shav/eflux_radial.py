@@ -28,7 +28,7 @@ lineplot_kwargs_default['legfrac'] = 0.3
 lineplot_kwargs_default['plotleg'] = True
 make_figure_kwargs_default.update(lineplot_fig_dimensions)
 
-kwargs_default = dict({'the_file': None, 'the_file_az': None, 'mark_bcz': False})
+kwargs_default = dict({'the_file': None, 'the_file_az': None, 'mark_bcz': False, 'fname': 'customfile'})
 kwargs_default.update(make_figure_kwargs_default)
 
 kw = update_dict(kwargs_default, clas)
@@ -132,6 +132,18 @@ if True in np.isnan(hflux):
         fpr2dr = 4.*np.pi*mean_rr2*mean_dr
         hflux[ir] = hflux[ir+1] + mean_heat*fpr2dr
     hflux = (hflux[0] - hflux)/(4.*np.pi*rr2)/c8
+
+# do things a different way for heating and cooling
+customfile = dirname + '/' + kw.fname + '_meta.txt'
+if os.path.isfile(customfile):
+    f = open(customfile, 'r')
+    text = f.read()
+    f.close()
+    if 'HeatingCooling' in text: # integrate from the middle
+        "print: Heating/Cooling layer detected: computing heat flux as"
+        "1/r^2 int_r^(Rmin + H/2) Q(x)x^2dx"
+        hflux = -indefinite_radial_integral(dirname, eq.heat*rr**2, r0='rmid')
+        hflux /= (c8*rr**2)
 
 # other fluxes are pretty easy
 cflux = vals[:, 0, lut[1470]]/c8

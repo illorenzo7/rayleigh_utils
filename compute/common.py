@@ -1094,8 +1094,6 @@ def indefinite_radial_integral(dirname, arr, r0='rmin'):
             ir2 = ir
             the_sign = -1.
         integral[ir] = the_sign*prefactor*np.sum((arr*rw/rr**2.)[ir1:ir2+1])
-        print("ir=", ir)
-        print("val = ", integral[ir])
     return integral
 
 ##########################################
