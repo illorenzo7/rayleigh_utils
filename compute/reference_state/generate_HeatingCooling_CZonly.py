@@ -17,6 +17,9 @@
 #   (default quite sharp: 0.005)
 # --width : width of each the heating and cooling layers:
 #   (default 0.05)
+# --nr
+# Default number of radial (evenly spaced) grid points. 
+# Default 10,000 (very fine)
 
 # the following will have defaults set by [fname]_meta.txt, if it exists
 # --rbcz : bottom of CZ
@@ -50,6 +53,7 @@ kw_default = dotdict(dict({'fname': 'customfile', 'jup': False, 'sun': False, 'r
 # add in other default value, the transition width from CZ to RZ
 kw_default.delta = 0.005 # make it effectively very sharp, maybe 25 points
 kw_default.width = 0.05 # this is each heating/cooling layer width
+kw_default.nr = 10000
 
 # if there is already a binary file,
 # read in its metadata (regarding radial structure) to put into defaults
@@ -86,38 +90,44 @@ kw = update_dict(kw_default, clas)
 # check for bad keys
 find_bad_keys(kw_default, clas, clas0['routinename'], justwarn=True)
 
-# compute geometry of grid
-if kw.jup: # RZ above CZ
-    rbcz, rtrz = kw.rmin, kw.rmax
-    rbrz = rtcz = kw.rt
-    the_sign = -1.
-else: # CZ above RZ
-    rbrz, rtcz = kw.rmin, kw.rmax
-    rtrz = rbcz = kw.rt
-    the_sign = +1.
-
 # Open and read the possibly already existing reference file
-eq = equation_coefficients()
-eq.read(the_file)
-r = eq.radius
-nr = eq.nr
-smooth = 0.5*(1.0 + the_sign*np.tanh((r - kw.rt)/kw.delta)) # "detects" CZ
+if os.path.isfile(the_file):
+    eq = equation_coefficients()
+    eq.read(the_file)
+    r = eq.radius
+else:
+    # compute reference state on super-fine grid to interpolate onto later
+    r = np.linspace(kw.rtcz, kw.rtrz, kw.nr) # keep radius in decreasing order for consistency with Rayleigh convention
+    # also, this logic assumes that no prior file means "CZ only"
+    eq = equation_coefficients(r)
+nr = len(r)
+
+# if there is an RZ, compute a smoothing profile
+if kw.jup: # there is RZ above CZ
+    rt = kw.rtcz
+    the_sign = -1.
+elif kw.sun: # there is RZ below CZ
+    rt = kw.rbcz
+    the_sign = +1.
+if kw.jup or kw.sun:
+    smooth = 0.5*(1.0 + the_sign*np.tanh((r - kw.rt)/kw.delta)) # "detects" CZ only
 
 # add a heating layer at the bottom and a cooling layer at the top
 shape1 = psi_plus(r, rbcz, kw.width)
 shape2 = psi_minus(r, rtcz, kw.width)
 
-if kw.jup:
-    shape2 *= smooth # smooth the cooling
-else:
-    shape1 *= smooth # smooth the heating
+if kw.jup or kw.sun: # smooth both profiles although it will only matter
+    # for the one close to RZ
+    shape1 *= smooth
+    shape2 *= smooth
 
+# normalize each profile to cancel each other out
 A1 = -1. / simps(r**2*shape1, r) # remember rr is in decreasing order
 A2 = -1. / simps(r**2*shape2, r)
 
 heat = A1*shape1 - A2*shape2 # this is overall (and smoothed) shape
 
-# now normalize
+# now normalize the overall self-cancelling profile
 
 # compute nonradiative flux
 Fnr = 1./r**2.*indefinite_integral(heat*r**2., r, rbcz)
@@ -126,18 +136,23 @@ heat_norm /= 1./3.*(rtcz**3. - rbcz**3.)
 heat /= heat_norm
 
 print(buff_line)
-print("Computed heating/cooling layer for CZ only, made with quartics")
+print("Computed heating/cooling layers in CZ, made with quartics")
 if kw.jup:
     print ("geometry : Jovian (RZ atop CZ)")
-else:
+elif kw.sun:
     print ("geometry : solar (CZ atop RZ)")
-print("(rmin, rt, rmax): (%1.2f, %1.2f, %1.2f)" %(kw.rmin, kw.rt, kw.rmax))
+else:
+    print ("geometry : CZ only")
+if kw.jup or kw.sun:
+    print("(rmin, rt, rmax): (%1.2f, %1.2f, %1.2f)" %(rmin, rt, rmax))
+else:
+    print("(rmin, rmax): (%1.2f, %1.2f)" %(kw.rbcz, kw.rtcz))
 print("delta_heat : %1.5f" %kw.delta)
-print("heating/cooling layer width : %1.5f" %kw.width)
+print("heating/cooling layer width_heat : %1.5f" %kw.width)
 print(buff_line)
 
 # Now write to file using the equation_coefficients framework
-print("Setting f_6")
+print("Setting f_6 in %s" %fname)
 # make an executive decision here (since normally f_6 integrates to 1)
 # leave f_6 "properly" normalized and later, set c_10 to Ek / Pr or 
 # similar
@@ -150,7 +165,6 @@ eq.write(the_file)
 # record what we did in the meta file
 print("Writing the heating metadata to %s" %metafile)
 print(buff_line)
-
 
 # get the old text
 f = open(dirname + '/' + metafile)
