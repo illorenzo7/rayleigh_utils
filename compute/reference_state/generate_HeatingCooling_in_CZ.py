@@ -16,7 +16,7 @@
 # --delta : possible transition width between CZ and RZ via tanh matching
 #   (default quite sharp: 0.005)
 # --width : width of each the heating and cooling layers:
-#   (default 0.05)
+#   (default 0.10)
 # --nr
 # Default number of radial (evenly spaced) grid points. 
 # Default 10,000 (very fine)
@@ -52,7 +52,7 @@ kw_default = dotdict(dict({'fname': 'customfile', 'jup': False, 'sun': False, 'r
 
 # add in other default value, the transition width from CZ to RZ
 kw_default.delta = 0.005 # make it effectively very sharp, maybe 25 points
-kw_default.width = 0.05 # this is each heating/cooling layer width
+kw_default.width = 0.1 # this is each heating/cooling layer width
 kw_default.nr = 10000
 
 # if there is already a binary file,
