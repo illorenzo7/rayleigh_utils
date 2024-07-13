@@ -117,8 +117,11 @@ else:
         eflux_mean = np.sum(eflux_mean_az*tw_2d, axis=0)
         eflux_fluc = eflux - eflux_mean
 
-# heat flux also requires some special care, sometimes has Nans
+# heat flux: first try the system produced version (1433)
 hflux = vals[:, 0, lut[1433]]/c8
+
+# now deal with case when heat flux has NaNs (should appear less and less
+# after bug fix)
 if True in np.isnan(hflux):
     print (buff_line)
     print ("OUTPUT HEAT FLUX (1433, vol_heat_flux) HAS NANs!!!!")
@@ -134,17 +137,52 @@ if True in np.isnan(hflux):
     hflux = (hflux[0] - hflux)/(4.*np.pi*rr2)/c8
 
 # do things a different way for heating and cooling
-customfile = dirname + '/' + kw.fname + '_meta.txt'
-print("customfile=", customfile)
-if os.path.isfile(customfile):
-    f = open(customfile, 'r')
+# integrate from middle of domain
+meta_file = dirname + '/' + kw.fname + '_meta.txt'
+if os.path.isfile(meta_file):
+    print("custom meta file=", meta_file)
+    f = open(meta_file, 'r')
     text = f.read()
     f.close()
     if 'HeatingCooling' in text: # integrate from the middle
         print("Heating/Cooling layer detected: computing heat flux as")
-        print("1/r^2 int_r^(Rmin + H/2) Q(x)x^2dx")
-        hflux = -indefinite_radial_integral(dirname, eq.heat*rr**2, r0='rmid')
-        hflux *= c10/(c8*rr**2)
+        print("1/r^2 int_r^(Rbcz + H/2) Q(x)x^2dx")
+        f = open(meta_file, 'r')
+        lines = f.readlines()
+        for line in lines:
+            # see if geometry might be solar-like
+            if 'solar' in line:
+                sun = True
+            elif 'Jovian' in line:
+                jup = True
+
+            # find the line containing rbrz, etc.
+            alltrue = True
+            for keyword in ['rbrz', 'rtrz', 'rbcz', 'rtcz']:
+                alltrue *= keyword in line
+            if alltrue:
+                st = line.split(':')[1]
+                for char in [',', '(', ')']:
+                    st = st.replace(char, '')
+                rmin, rt, rmax = st2 = st.split()
+
+                rmin = float(rmin)
+                rt = float(rt)
+                rmax = float(rmax)
+                if sun:
+                    rbcz, rtcz = rt, rmax
+                if jup:
+                    rbcz, rtcz = rmin, rt
+        f.close() # now we have the critical radii...must be better way tho
+        rmidcz = rbcz + (rtcz - rbcz)/2.
+        print("Rbcz + H/2 =", rmidcz)
+        irmidcz = inds_from_vals(rr, rmidcz)[0]
+
+        hflux *= rr**2
+        hflux = hflux - hflux[irmidcz]
+        hflux /= rr**2
+        #hflux = -indefinite_radial_integral(dirname, eq.heat*rr**2, r0='rmid')
+        #hflux *= c10/(c8*rr**2)
 
 # other fluxes are pretty easy
 cflux = vals[:, 0, lut[1470]]/c8
