@@ -4,12 +4,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sys, os
 sys.path.append(os.environ['raco'])
+sys.path.append(os.environ['raco'] + '/quantities_util')
 sys.path.append(os.environ['rapl'])
 sys.path.append(os.environ['rapl'] + '/timetrace')
 from common import *
 from cla_util import *
 from plotcommon import *
 from timey_util import *
+from varprops import get_quantity_group
 
 # Set fontsize
 fontsize = default_titlesize
@@ -143,6 +145,33 @@ if kw.titles is None:
         for iplot in range(len(kw.titles)):
             kw.titles[iplot] += ' (sub. temp. mean)'
 
+# maybe add some more quantities, dependent on qgroup
+qgroup = get_quantity_group(kw.groupname, magnetism)
+totsig = qgroup.totsig
+
+if kw.groupname in ['torque']: # add two more terms at the top
+    # time derivative of "field term"
+    # and sum of force terms --- they should basically match up
+    # but may not depending on sampling frequency
+    d_dt = np.gradient(terms[0], times, axis=0)/time_unit
+    # remember "times" is now normalized by time_unit
+    the_sum = np.zeros_like(terms[1])
+    nterms = len(terms)
+    for iterm in range(1,nterms):
+        the_sum += terms[iterm]*totsig[iterm]
+    if kw.sub:
+        titletag = ' (sub. temp. mean)'
+    else:
+        titletag = ''
+    title1 = 'd' + kw.titles[0] + '/dt' + titletag
+    title2 = 'sum of force terms' + titletag
+
+    # now insert these terms (and two titles)
+    terms.insert(1, the_sum) # the_sum is now the second term
+    terms.insert(1, d_dt) # d_dt is now the second term; the_sum is the third
+    kw.titles.insert(1, title2)
+    kw.titles.insert(1, title1)
+
 # Loop over the desired levels and save plots
 kw.isamplevals = make_array(kw.isamplevals) # needs to be array
 for isampleval in kw.isamplevals:
@@ -155,13 +184,14 @@ for isampleval in kw.isamplevals:
     else:
         position_tag = '_' + samplename + (samplefmt %sampleval)
 
-
+    # say we are about to plot
     print('plotting ' + samplelabel + ' (i = %02i)' %isampleval)
    
     # make plot
     nplots = kw_make_figure.nplots = len(terms)
     kw_make_figure.ncol = 1
     fig, axs, fpar = make_figure(**kw_make_figure)
+
 
     for iplot in range(nplots):
         ax = axs[iplot, 0]

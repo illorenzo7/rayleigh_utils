@@ -56,7 +56,7 @@ def plot_timey(field, times, yy, fig, ax, **kwargs):
         for i in range(kw.navg):
             field_timeavg += field_full[i:ntimes - kw.navg + 1 + i]
         field_full = field_timeavg/kw.navg
-        times = times[over2:ntimes - over2]
+        times = times[over2:ntimes - over2+1]
 
     # set yminmax if not set by user
     if kw.yminmax is None:

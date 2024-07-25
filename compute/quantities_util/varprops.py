@@ -8,7 +8,7 @@
 # of other fluid variables
 import numpy as np
 import sys
-from common import array_of_strings, is_an_int
+from common import array_of_strings, is_an_int, dotdict
 from lut import *
 
 # basic variable indices
@@ -180,7 +180,7 @@ def get_label(varname):
 
 # groups of quantities
 def get_quantity_group(groupname, magnetism):
-    di_out = dict({'groupname': groupname})
+    di_out = dotdict({'groupname': groupname})
     ncol = None
     totsig = None
     qvals = None
