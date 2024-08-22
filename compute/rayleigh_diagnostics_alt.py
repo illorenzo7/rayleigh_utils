@@ -26,6 +26,58 @@ from collections import OrderedDict
 
 maxq = 30000
 
+# need these routines but can't import common 
+# (because common uses this module via get_sliceinfo)
+def make_array(arr, tolist=False, length=None): 
+    # arr is scalar, list, or array
+    # convert everything to a list
+    if arr is None:
+        return None
+    elif np.isscalar(arr):
+        out = [arr]
+    else:
+        out = list(arr)
+
+    # if length was specified (only good if OG length was 1
+    # make the list that length
+    if not length is None and len(out) == 1:
+        out = out*length
+
+    if tolist:
+        return out
+    else:
+        return np.array(out)
+
+def inds_from_vals(arr, arrvals):
+    arrvals = make_array(arrvals)
+    nind = len(arrvals)
+    indarr = np.zeros(nind, 'int')
+    for i in range(nind):
+        indarr[i] = np.argmin(np.abs(arr - arrvals[i]))
+    return indarr
+
+# this is already defined in common but need it for Shell_Slices routine
+def make_array(arr, tolist=False, length=None): 
+    # arr is scalar, list, or array
+    # convert everything to a list
+    if arr is None:
+        return None
+    elif np.isscalar(arr):
+        out = [arr]
+    else:
+        out = list(arr)
+
+    # if length was specified (only good if OG length was 1
+    # make the list that length
+    if not length is None and len(out) == 1:
+        out = out*length
+
+    if tolist:
+        return out
+    else:
+        return np.array(out)
+
+
 def get_lut(quantities):
     """return the lookup table based on the quantity codes"""
     nq = len(quantities)
@@ -2206,32 +2258,29 @@ class Shell_Slices:
         # iitervals, qvals, irvals specified directly trumps slice_spec and rec0
         if iitervals is None: # read all records
             iitervals = np.arange(nrec)
-        else:
-            if np.isscalar(iitervals):
-                iitervals = np.array([iitervals])
 
         if irvals is None: # read all levels
             irvals = np.arange(nr)
-        else:
-            if np.isscalar(irvals):
-                irvals = np.array([irvals])
 
         if qvals is None: # read all levels
             iqvals = np.arange(nq)
         else:
-            if np.isscalar(qvals):
-                qvals = np.array([qvals])
-            iqvals = np.zeros(len(qvals), 'int')
-            for j in range(len(qvals)):
-                qval = qvals[j]
-                iqvals[j] = np.argmin(np.abs(qv - qval))
+            qvals = make_array(qvals)
+            iqvals = inds_from_vals(qv, qvals)
+
+        # make everything an array, and make sure they're sorted
+        iqvals = np.sort(iqvals)
+        iitervals = np.sort(make_array(iitervals))
+        irvals = np.sort(make_array(irvals))
 
         # now read only the records/slices we want
-        self.iters = np.zeros(nrec,dtype='int32')
-        self.time  = np.zeros(nrec,dtype='float64')
+        self.iters = np.zeros(len(iitervals),dtype='int32')
+        self.time  = np.zeros(len(iitervals),dtype='float64')
         self.vals  = np.zeros((nphi, ntheta, len(irvals), len(iqvals), len(iitervals)),dtype='float64')
 
         # loop over everything, in Fortran/Rayleigh order
+        # indices must all be in order
+        # skip over the slices (size nphi*ntheta at least) we don't care about
         offset = 0
         for iiter in range(len(iitervals)):
             tmp = []
