@@ -346,7 +346,13 @@ for ifigure in range(my_nfigures):
 
     # get the slice
     if plottype in ['moll', 'ortho']:
-        a = reading_func(radatadir + fname, '', irvals=isampleval)
+        varname_root, deriv, primevar, sphvar = get_varprops(varname)
+        qvals = None # by default, but update
+        if varname_root in var_indices:
+            qvals = var_indices[varname_root]
+        elif varname_root == 'omz':
+            qvals = [301, 302]
+        a = reading_func(radatadir + fname, '', irvals=isampleval, qvals=qvals)
     else:
         a = reading_func(radatadir + fname, '')
 
