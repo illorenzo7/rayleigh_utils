@@ -22,8 +22,9 @@ from __future__ import print_function
 import numpy as np
 import os
 import glob
+from collections import OrderedDict
 
-maxq = 4000
+maxq = 30000
 
 def get_lut(quantities):
     """return the lookup table based on the quantity codes"""
@@ -33,6 +34,237 @@ def get_lut(quantities):
         if ((0 <= q) and ( q <= maxq-1)): # quantity must be in [0, maxq-1]
             lut[q] = i
     return lut.astype('int32')
+
+class main_input:
+    """ 
+    Class for working with main_input files.
+    
+    Attributes:
+        vals : Dictionary that reflects the main_input file structure.
+                   
+    Initializiation syntax:
+        a = main_input(file)  , where
+        file = 'main_input', 'jobinfo.txt' or any similar file containing Fortran namelists.
+        
+    """
+    def __init__(self,file):
+        """ 
+        Initialization routine.
+        
+        Input parameters:
+            file : A main_input or jobinfo.txt file from which the namelist structure
+                   and values may be read.
+        """
+        self.vals = OrderedDict()
+        self.namelists = []
+        self.read(file)
+        self.namelists = list(self.vals.keys())
+                    
+    def __repr__(self, verbose = False):
+        """
+        Provides 'print()' functionality for the main_input class.
+        """
+        self.write(verbose = verbose)
+        return ""
+
+    def unset(self):
+        """
+        Resets all keys in self.vals to the null string "".
+        """
+        for nml in self.namelists:
+            for var in self.vals[nml].keys():
+                self.vals[nml][var] =""  
+
+                
+    def set(self,nml="",var="",val="", force = False):
+        """
+            Sets the value of a key in vals and checks for valid key names.
+            
+            Parameters:
+                nml : the namelist to be modified
+                var : the variable within nml to modify
+                val : the value to which vals[nml][var] will be set
+                
+                force (optional) : When set to True, nml and/or var will
+                                   be created on the fly if they do not exist.
+                                   
+            Calling syntax:
+                mi.set(nml = 'problemsize', var ='n_r', val = 128)
+        
+        """
+        nml_lower = nml.strip().lower()
+        var_lower = var.strip().lower()
+        
+        if (force):
+            if (not (nml_lower in self.namelists)):
+                self.vals[nml_lower] = OrderedDict()
+                self.namelists = list(self.vals.keys())
+                
+            var_names = list(self.vals[nml_lower].keys())
+            
+            if (not (var_lower in var_names)):
+                self.vals[nml_lower][var_lower]=""
+        
+        if nml_lower in self.namelists:
+            var_names = list(self.vals[nml_lower].keys())
+            if var_lower in var_names:
+                self.vals[nml_lower][var_lower]=val
+            else:
+                print('\nError:  variable '+var+' is not present in '+nml_lower+' namelist\n')
+        else:
+            print('\nError: '+nml_lower+' is not a valid namelist name.\n')
+        
+        
+    def write(self, verbose = False, file=None, ndecimal=6, namelist=None):
+        """
+        Displays the contents of the vals dictionary and generates
+        a new main_input file if desired.  Floats are expressed in
+        scientific notation.
+        
+        Input parameters:
+            verbose (optional)  : When set to True, all values, including null strings
+                                  are displayed.  When set to False (default), only
+                                  non-empty dictionary entries are displayed.
+                                 
+            file (optional)     : If a value for file is provided, the contents of
+                                  the vals dictionary will be written to file in
+                                  Fortran-readable namelist format.
+                                 
+            ndecimal (optional) : Number of digits to the right of decimal place
+                                  to maintain when expressing floats in sci-not.
+        
+        """
+
+        if (type(ndecimal) != type(6)):
+            ndecimal = 6
+        dstr = str(ndecimal)
+        
+        lprint = print
+        endl=""
+        if (file != None):
+            fd = open(file, "w")
+            lprint = fd.write
+            endl="\n"
+        
+        if (namelist in list(self.vals.keys())):
+            namelists = [namelist]
+        else:
+            namelists = self.namelists
+        
+        
+        for nml in namelists:
+            
+            nml_line="&"+nml+"_namelist"+endl
+            lprint(nml_line)             
+
+            for var in self.vals[nml].keys():
+                val = self.vals[nml][var]          
+                if (type(val) == type(3.14)):
+                    fstring = "{:."+dstr+"e}"
+                    val = fstring.format(val)
+                if (type(val) != type('astring')):
+                    val = str(val)
+                if ((val != "") or verbose):
+                    val_line = var+' = '+val+endl
+                    lprint(val_line)
+
+            lprint("/"+endl)
+            
+        if (file != None):
+            fd.close()
+
+    def read_file_lines(self,filename):
+        """
+        
+           Helper routine.  Reads a file and returns it as a list of
+           strings with one file line per list element.
+           
+           Input parameters:
+               filename :  The file to be read
+           
+        """
+        fd = open(filename, "r")
+        flines = []
+        while True:                            
+            oneline = fd.readline()   
+            if len(oneline) == 0:              
+                break                         
+            else:
+                flines.append(oneline)        
+        fd.close()
+        return flines
+    
+    def read(self, infile):
+        """
+        
+           Populates the vals dictionary using values obtained from a main_input file. 
+        
+           Input parameters:
+               infile     :  A main_input or jobinfo.txt file from which to extract 
+                             namelist information.
+                             
+           Calling Syntax:
+               mi.read('main_input')
+               
+           Note:
+               Only namelist variables specified within infile are assigned
+               an associated key/value combination.  If a variable is not defined in
+               infile, it's corresponding key in the vals dictionary will remain 
+               undefined.  If a value for the main_input variable already exists in 
+               vals, it will be overwritten using the associated value from infile. 
+        
+        """
+        
+        
+        flines = self.read_file_lines(infile)
+
+        #####################################
+        # Iterate over the main_input file and 
+        # extract namelist and associated 
+        # variable names 
+        
+        nlines = len(flines)
+        nread = 0
+        
+        while (nread < nlines):
+            
+            nextline = flines[nread].strip().lower() #strip white-space and force lower case
+            nread+=1
+ 
+            if (len(nextline) != 0):
+                
+                # Test for beginning of new namelist
+                # (first character of line is &)
+                tchar = nextline[0]
+                if (tchar == '&'):  
+                    
+                    # Extract namelist name. 
+                    # Update the namelist list as we go.
+                    
+                    nml_name = nextline[1:].split('namelist')[0][:-1]
+                    if (not nml_name in self.namelists):
+                        self.vals[nml_name] = OrderedDict()
+                        self.namelists = list(self.vals.keys())
+                        
+                    # Read all variable names until we reach the end of the namelist
+                    reading_nml = True
+                    while (reading_nml):
+                        nextline = flines[nread].strip()
+                        nread +=1
+                        if(len(nextline) != 0):
+                            if (nextline[0]=='/'):  # A forward slash marks the end of a namelist
+                                reading_nml = False
+
+                            # Extract the variable names and values. Strip out comments.
+                            # Some lines in jobinfo.txt are split across multiple lines.
+                            # Only those with the '=' sign contain variable names
+                            lsep = nextline.split('=')                        
+                            if (len(lsep) > 1 and reading_nml and (lsep[0][0] != '!')):
+                                var_name = lsep[0].strip().lower()
+                                var_val = lsep[1].strip().split('!')[0]
+                                self.vals[nml_name][var_name] = var_val
+
+    
 
 class Spherical_3D:
     """Rayleigh Spherical_3D Structure
@@ -149,7 +381,12 @@ class RayleighTiming:
                       'Sin(theta) Division', 'CFL Calculation', 'NULL', 
                       'Linear Coefficients/Implicit Matrix Computation',
                       'Run Initialization', 'Checkpointing (Read)', 'Checkpointing (Write)',
-                      'Total Runtime'] 
+                      'Total Runtime',
+                      'Transpose 1a2a pre', 'Transpose 1a2a all-to-all', 'Transpose 1a2a post',
+                      'Transpose 2a3a pre', 'Transpose 2a3a all-to-all', 'Transpose 2a3a post',
+                      'Transpose 3b2b pre', 'Transpose 3b2b all-to-all', 'Transpose 3b2b post',
+                      'Transpose 2b1b pre', 'Transpose 2b1b all-to-all', 'Transpose 2b1b post',
+                     ]
 
 class RayleighProfile:
     """Rayleigh Profile Structure
@@ -520,8 +757,10 @@ class GridInfo:
 
         fd.close()
         
+
+
 class G_Avgs:
-    """Rayleigh GlobalAverage Structure
+    """Rayleigh GlobalAverage Data Structure
     ----------------------------------
     self.niter                  : number of time steps
     self.nq                     : number of diagnostic quantities output
@@ -531,132 +770,695 @@ class G_Avgs:
     self.time[0:niter-1]        : The simulation time corresponding to each time step
     self.version                : The version code for this particular output (internal use)
     self.lut                    : Lookup table for the different diagnostics output
+
+    Initialization Examples:
+        (1):  Read in a single G_Avgs file
+              a = G_Avgs('00000001',path='./G_Avgs/')
+              
+        (2):  Concatenate time-series data from multiple G_Avgs files:
+              a = G_Avgs(['00000001','00000002'])
+
+        (3):  Concatenate time-series data from multiple G_Avgs files + save data to new G_Avgs file:
+              a = G_Avgs(['00000001','00000002'],ofile='my_save_file.dat')
+              
+        (4):  Concatenate time-series data from multiple G_Avgs files.
+              Extract only quantity codes 401 and 402:
+              a = G_Avgs(['00000001','00000002'], qcodes = [401,402])
+
+    Additional Notes:
+        For concatenated data:
+        
+            - Output files are written in identical format to a standard G_Avgs file. They may be
+              read in using the same syntax described above.
+              
     """
 
-    def __init__(self,filename='none',path='G_Avgs/'):
-        """filename  : The reference state file to read.
-           path      : The directory where the file is located (if full path not in filename)
+    def __init__(self,filename='none',path='G_Avgs/', ofile='none', qcodes=[], nfiles=-1):
+
         """
-        if (filename == 'none'):
-            the_file = path+'00000001'
+           Initializer for the G_Avgs class.
+           
+           Input parameters:
+               filename  : (a) {string} The G_Avgs file to read.
+                         : (b) {list of strings} The G_Avgs files whose time-series
+                               data you wish to concatenate.
+               path      : The directory where the file is located (if full path not in filename)
+               qcodes    : {optional; list of ints} Quantity codes you wish to extract (if not all)
+               ofile     : {optional; string} Filename to save time-averaged data to, if desired.
+        """
+        # Check to see if we are compiling data from multiple files
+        # This is true if (a) ofile is set or (b) filename is a list of files, rather than a single string
+        # if (a) is false, but (b) is true, no output is written, but compiled output is returned        
+        
+        #(a)
+        multiple_files = False
+        mainfile=filename
+        if (ofile != 'none'):
+            multiple_files = True
+            
+        #(b)
+        ltype = type([])        
+        ftype=type(filename)
+        if (ltype == ftype):
+            multiple_files = True
         else:
-            the_file = path+filename
-        fd = open(the_file,'rb')
-        # We read an integer to assess which endian the file was written in...
-        bs = check_endian(fd,314,'int32')
-        version = swapread(fd,dtype='int32',count=1,swap=bs)
-        nrec = swapread(fd,dtype='int32',count=1,swap=bs)
-        nq = swapread(fd,dtype='int32',count=1,swap=bs)
-        self.niter = nrec
-        self.nq = nq
-        self.qv = np.reshape(swapread(fd,dtype='int32',count=nq,swap=bs),(nq), order = 'F')
-        self.vals  = np.zeros((nrec,nq),dtype='float64')
-        self.iters = np.zeros(nrec,dtype='int32')
-        self.time  = np.zeros(nrec,dtype='float64')
-        self.version = version
-        for i in range(nrec):
-            tmp = np.reshape(swapread(fd,dtype='float64',count=nq,swap=bs),(nq), order = 'F')
-            self.vals[i,:] = tmp
-            self.time[i] = swapread(fd,dtype='float64',count=1,swap=bs)
-            self.iters[i] = swapread(fd,dtype='int32',count=1,swap=bs)
+            if (mainfile == 'none'):
+                mainfile = path+'00000001'
+            else:
+                mainfile = path+mainfile             
+        
+        if (multiple_files):
+            mainfile = filename[0]
+        
+        # Read the main file no matter what    
+        self.read_dimensions(mainfile)   
+        self.read_data(qcodes=qcodes)
+        
+        if (multiple_files):
+            self.compile_multiple_files(filename, qcodes = qcodes,path=path)
 
-        self.lut = get_lut(self.qv)
+        if (ofile != 'none'):
+            self.write(ofile)
+            
+            
+    def write(self,outfile):
+        """
+            Writing routine for G_Avgs class.
+            
+            Input parameters:
+               outfile  : (a) {string} The G_Avgs file to be written.
+
+            Calling Syntax:
+                my_gavgs.write("my_file.dat")
+                (writes all data contained in my_gavgs to my_file.dat, in standard G_Avgs format)
+
+        """
+        one_rec = np.dtype([ ('vals', np.float64, [self.nq,]), ('times',np.float64), ('iters', np.int32) ])
+        fstruct = np.dtype([ ('fdims', np.int32, 4), ('qvals', np.int32, [self.nq,]), ('fdata', one_rec, [self.niter,]) ])
+        
+        odata = np.zeros((1,),dtype=fstruct)
+        odata['fdims'][0,0]=314
+        odata[0]['fdims'][1]=self.version
+        odata[0]['fdims'][2]=self.niter
+        odata[0]['fdims'][3]=self.nq
+        odata[0]['qvals'][:]=self.qv[:]
+        odata[0]['fdata']['times'][:]=self.time
+        odata[0]['fdata']['iters'][:]=self.iters
+        odata[0]['fdata']['vals'][:,:]=self.vals
+        fd = open(outfile,'wb')
+        odata.tofile(fd)
         fd.close()
+        
 
+    def compile_multiple_files(self,filelist,qcodes=[],path=''):
+        """
+           Time-series concatenation routine for the G_Avgs class.
+           
+           Input parameters:
+               filelist  : {list of strings} The G_Avgs files to be concatenated.
+               path      : The directory where the files are located (if full path not in filename)
+               qcodes    : {optional; list of ints} Quantity codes you wish to extract (if not all)
+        """
+        nfiles = len(filelist)
+        new_nrec = self.niter*nfiles
+        self.niter = new_nrec
+        self.vals = np.zeros((self.niter,self.nq),dtype='float64')
+        self.iters = np.zeros(self.niter          ,dtype='int32')
+        self.time  = np.zeros(self.niter          ,dtype='float64')        
+        
+        k = 0
+        for i in range(nfiles):
+            a = G_Avgs(filelist[i],qcodes=qcodes,path=path)
+
+            #If the iteration count isn't constant throughout a run,
+            #we may need to resize the arrays
+            if (k+a.niter > self.niter):
+                self.niter = k+a.niter
+                self.vals.resize((self.niter,self.nq))
+                self.time.resize((self.niter))
+                self.iters.resize( (self.niter))
+
+            self.time[k:k+a.niter]   = a.time[:]
+            self.iters[k:k+a.niter]  = a.iters[:]
+            self.vals[k:k+a.niter,:] = a.vals[:]
+            k+=a.niter
+            
+        # Trim off any excess zeros 
+        # (in case last final was incomplete)
+        self.niter = k
+        self.time = self.time[0:self.niter]
+        self.iters = self.iters[0:self.niter]
+        self.vals = self.vals[0:self.niter,:]
+        
+        
+    def read_data(self,qcodes = []):
+        """
+           Data-reading routine for the G_Avgs class.
+           
+           Input parameters:
+               qcodes    : {optional; list of ints} Quantity codes you wish to extract (if not all)
+           
+           Notes:
+                - This routine does not read header information.  Read_dimensions must be called first
+                  so that dimentions and the file descriptor are initialized. 
+        """
+    
+        self.qv    = np.zeros(self.nq             ,dtype='int32')
+        self.vals  = np.zeros((self.niter,self.nq),dtype='float64')
+        self.iters = np.zeros(self.niter          ,dtype='int32')
+        self.time  = np.zeros(self.niter          ,dtype='float64')
+
+        
+        one_rec = np.dtype([ ('vals', np.float64, [self.nq,]), ('times', np.float64), ('iters', np.int32)  ])
+        fstruct = np.dtype([ ('qvals', np.int32, [self.nq,]), ('fdata', one_rec, [self.niter,]) ])
+        
+        if (self.byteswap):
+                fdata = np.fromfile(self.fd,dtype=fstruct,count=1).byteswap()
+        else:
+                fdata = np.fromfile(self.fd,dtype=fstruct)
+                
+        self.time[:] = fdata['fdata']['times'][0,:]
+        self.iters[:] = fdata['fdata']['iters'][0,:]
+        self.qv[:] = fdata['qvals'][0,:]
+   
+        self.fd.close()
+        
+        self.lut = get_lut(self.qv)  # Lookup table
+        
+        ########################################################
+        # We may want to extract a subset of the quantity codes
+        if (len(qcodes) == 0):
+            self.vals[:,:] = fdata['fdata']['vals'][0,:,:]
+        else:
+            nqfile = self.nq        # number of quantity codes in the file
+            qget = np.array(qcodes,dtype='int32')
+            self.qv = qget  # Don't update the lookup table yet
+            self.nq = len(self.qv)  # number of quantity codes we will extract
+            self.vals  = np.zeros((self.niter,self.nq),dtype='float64')
+            for q in range(self.nq):
+                qcheck = self.lut[qget[q]]
+                if (qcheck < maxq):
+                    self.vals[:,q] = fdata['fdata']['vals'][0,:,qcheck]
+            self.lut = get_lut(self.qv)  # Rebuild the lookup table since qv has changed
+
+            
+    def read_dimensions(self,the_file,closefile=False):
+        """
+        
+            Header-reading routine for the G_Avgs class.
+            
+            This routine initialized the file descriptor and reads the dimensions 
+            and Endian information of a G_Avgs file only. It does not read the G_Avgs data itself.
+
+           
+            Input parameters:
+               the_file    : {string} G_Avgs file whose header is to be read.
+               closefile   : (Boolean; optional; default=False) Set to True to close the file 
+                             after reading the header information. 
+                   
+
+        """
+        self.fd = open(the_file,'rb')        
+        specs = np.fromfile(self.fd,dtype='int32',count=1)
+        bcheck = specs[0]       # If not 314, we need to swap the bytes
+        self.byteswap = False
+        if (bcheck != 314):
+            specs.byteswap()
+            self.byteswap = True
+            
+        self.version = swapread(self.fd,dtype='int32',count=1,swap=self.byteswap)
+        self.niter = swapread(self.fd,dtype='int32',count=1,swap=self.byteswap)
+        self.nq = swapread(self.fd,dtype='int32',count=1,swap=self.byteswap)
+        if (closefile):
+            self.fd.close()
+   
 class Shell_Avgs:
-    """Rayleigh Shell Average Structure
+    """Rayleigh Shell-Averaged Data Structure
     ----------------------------------
+
     self.niter                         : number of time steps
     self.nq                            : number of diagnostic quantities output
     self.nr                            : number of radial points
     self.qv[0:nq-1]                    : quantity codes for the diagnostics output
     self.radius[0:nr-1]                : radial grid
 
-    For version 1:
-    self.vals[0:nr-1,0:nq-1,0:niter-1] : The spherically averaged diagnostics
-                                             
-
-    For version 2:
     self.vals[0:n-1,0:3,0:nq-1,0:niter-1] : The spherically averaged diagnostics
-                                             0-3 refers to moments (index 0 is mean, index 3 is kurtosis)    
+                                            0-3 refers to moments taken over spherical shells
+                                            (index 0 is mean, index 3 is kurtosis)   
+                                            Note - only the mean was output in version 1 outputs. 
+                                            
     self.iters[0:niter-1]              : The time step numbers stored in this output file
     self.time[0:niter-1]               : The simulation time corresponding to each time step
     self.version                       : The version code for this particular output (internal use)
-    self.lut                           : Lookup table for the different diagnostics output
+    self.lut     
+
+    self.time_averaged                 : If True, data has been time averaged.
+                                         In this case, iters and time have dimension 2, and contain the
+                                         initial and final times and iterations of the averaged data.
+
+    Initialization Examples:
+        (1):  Read in a single Shell_Avgs file
+              a = Shell_Avgs('00000001',path='./Shell_Avgs/')
+              
+        (2):  Time-average data from multiple Shell_Avgs files:
+              a = Shell_Avgs(['00000001','00000002'])
+              
+        (2):  Concatenate time-series data from multiple Shell_Avgs files:
+              a = Shell_Avgs(['00000001','00000002'],time_average=False)
+
+        (3):  Time-averaged data from multiple Shell_Avgs files + save data to new Shell_Avgs file:
+              a = Shell_Avgs(['00000001','00000002'],ofile='my_save_file.dat')
+              
+        (4):  Concatenate time-series data from multiple Shell_Avgs files.
+              Extract only quantity codes 401 and 402:
+              a = Shell_Avgs(['00000001','00000002'], qcodes = [401,402], time_average = False)
+
+    Additional Notes:
+        For concatenated or averaged data:
+        
+            - Output files are written in identical format to a standard Shell_Avgs file. They may be
+              read in using the same syntax described above.
+              
+            - To save concatenated or averaged data to a new file after initialization:
+              a.write('filename')  [ where 'a' is the Shell_Avgs object name]
+              
     """
-    def __init__(self,filename='none',path='Shell_Avgs/',ntheta=0):
-        """filename  : The reference state file to read.
-           path      : The directory where the file is located (if full path not in filename)
+
+    def __init__(self,filename='none',path='Shell_Avgs/', ofile=None, qcodes=[],time_average=True, ntheta=0, nfiles = -1, dt = -1):
+
         """
-        if (filename == 'none'):
-            the_file = path+'00000001'
+           Initializer for the Shell_Avgs class.
+           
+           Input parameters:
+               filename     : (a) {string} The Shell_Avgs file to read.
+                            : (b) {list of strings} The Shell_Avgs files whose time-series
+                               data you wish to concatenate or time-average.
+               path         : The directory where the file is located (if full path not in filename)
+               qcodes       : {optional; list of ints} Quantity codes you wish to extract (default is to extract all)
+               ofile        : {optional; string}; default = None Filename to save time-averaged data to, if desired.
+               time_average : {optional; Boolean; default = True} Time-average data from multiple files if a list is provided.
+                              If a list of files is provided and this flag is set to False, data will be concatenated instead. 
+               ntheta       : {optional; int; default = 0} Set this value to correct the variance in 
+                              version=2 Shell_Avgs (only mean is preserved otherwise for that version).
+               nfiles    : optional -- number of files to read relative to last file 
+                                       in the list (time-averaging mode only; default is all files)
+               dt        : optional -- maximum time to average over, relative to
+                                       final iteration of last file in the list
+                                       (time-averaging mode only; default is all time)                              
+        """
+        # Check to see if we are compiling data from multiple files
+        # This is true if (a) ofile is set or (b) filename is a list of files, rather than a single string
+        # if (a) is false, but (b) is true, no output is written, but compiled output is returned        
+        
+        #(a)
+        multiple_files = False
+        mainfile=filename
+        if (ofile != None):
+            multiple_files = True
+            
+        #(b)
+        ltype = type([])        
+        ftype=type(filename)
+        if (ltype == ftype):
+            multiple_files = True
         else:
-            the_file = path+filename
-        fd = open(the_file,'rb')
-        # We read an integer to assess which endian the file was written in...
-        bs = check_endian(fd,314,'int32')
-        version = swapread(fd,dtype='int32',count=1,swap=bs)
-        nrec = swapread(fd,dtype='int32',count=1,swap=bs)
-        nr = swapread(fd,dtype='int32',count=1,swap=bs)
-        nq = swapread(fd,dtype='int32',count=1,swap=bs)
-
-        if (version >= 6):
-            npcol = swapread(fd,dtype='int32',count=1,swap=bs)
-
-        self.version = version
-        self.niter = nrec
-        self.nq = nq
-        self.nr = nr
-        self.qv = np.reshape(swapread(fd,dtype='int32',count=nq,swap=bs),(nq), order = 'F')
-        self.radius = np.reshape(swapread(fd,dtype='float64',count=nr,swap=bs),(nr), order = 'F')
-        if (self.version == 1):
-            self.vals  = np.zeros((nr,nq,nrec),dtype='float64')
-        if (self.version > 1):
-            self.vals  = np.zeros((nr,4,nq,nrec),dtype='float64')
-        self.iters = np.zeros(nrec,dtype='int32')
-        self.time  = np.zeros(nrec,dtype='float64')
-
-        for i in range(nrec):
-            if (self.version == 1):
-                tmp = np.reshape(swapread(fd,dtype='float64',count=nq*nr,swap=bs),(nr,nq), order = 'F')
-                self.vals[:,:,i] = tmp
-            elif (self.version < 6):
-                tmp = np.reshape(swapread(fd,dtype='float64',count=nq*nr*4,swap=bs),(nr,4,nq), order = 'F')
-                self.vals[:,:,:,i] = tmp
+            if (mainfile == 'none'):
+                mainfile = path+'00000001'
             else:
+                mainfile = path+mainfile             
+        
+        if (multiple_files):
+            mainfile = filename[0]
+        
+        # Read the main file no matter what    
+        self.read_dimensions(mainfile)   
+        self.read_data(qcodes=qcodes, ntheta=ntheta)
+        
+        if (multiple_files):
+            if (not time_average):
+                self.compile_multiple_files(filename, qcodes = qcodes,path=path,ntheta=ntheta)
+            else:
+                self.time_average_files(filename, qcodes = qcodes,path=path, ntheta=ntheta, nfiles = nfiles, dt = dt)
+                
+        if (ofile != None):
+            self.write(ofile)
+            
+            
+    def write(self,outfile):
+        """
+            Writing routine for Shell_Avgs class.
+            
+            Input parameters:
+               outfile  : (a) {string} The Shell_Avgs file to be written.
+
+            Calling Syntax:
+                my_shellavgs.write("my_file.dat")
+                (writes all data contained in my_shellavgs to my_file.dat, in standard Shell_Avgs format)
+
+        """
+
+        numdim = 5
+        if (self.version > 5):
+            numdim = 6
+        
+        if (self.version ==1):
+            one_rec = np.dtype([('vals', np.float64, [self.nq,self.nr]), ('times',np.float64), ('iters', np.int32)  ])
+        else:
+            one_rec = np.dtype([('vals', np.float64, [self.nq, 4, self.nr]), ('times',np.float64), ('iters', np.int32)  ])   
+
+        fstruct = np.dtype([('fdims', np.int32, numdim), ('qvals', np.int32,(self.nq)), ('radius',np.float64,(self.nr)), ('fdata', one_rec, [self.niter,])  ])
+        
+                        
+        odata = np.zeros((1,),dtype=fstruct)
+        odata['fdims'][0,0]=314
+        odata[0]['fdims'][1]=self.version
+        odata[0]['fdims'][2]=self.niter
+        odata[0]['fdims'][3]=self.nr
+        odata[0]['fdims'][4]=self.nq
+        if (self.version > 5):
+            odata[0]['fdims'][5]=1 #Data has been collated now.  Set npcol to 1.
+	                
+        odata[0]['qvals'][:]=self.qv[:]
+        odata[0]['radius'][:]=self.radius[:]
+        odata[0]['fdata']['times'][:]=self.time[0:self.niter]
+        odata[0]['fdata']['iters'][:]=self.iters[0:self.niter]
+        if (self.version != 1):
+            odata[0]['fdata']['vals'][:,:,:,:]=np.transpose(self.vals[:,:,:,:])
+        else:
+            odata[0]['fdata']['vals'][:,:,:]=np.transpose(self.vals[:,0,:,:])	
+            
+        fd = open(outfile,'wb')
+        odata.tofile(fd)
+        if (self.time_averaged):
+            self.time[1].tofile(fd)
+            self.iters[1].tofile(fd)
+        fd.close()
+        
+
+    def compile_multiple_files(self,filelist,qcodes=[],path='', ntheta=0):
+        """
+           Time-series concatenation routine for the Shell_Avgs class.
+           
+           Input parameters:
+               filelist  : {list of strings} The Shell_Avgs files to be concatenated.
+               path      : The directory where the files are located (if full path not in filename)
+               qcodes    : {optional; list of ints} Quantity codes you wish to extract (if not all)
+               ntheta    : {optional; int; default = 0} Set this value to correct the variance in 
+                           version=2 Shell_Avgs (only mean is preserved otherwise for that version).
+           Notes:
+                  
+                - This routine assumes radial resolution does not change across files in filelist.
+
+        """
+            
+        nfiles = len(filelist)
+        new_nrec = self.niter*nfiles
+        self.niter = new_nrec
+        self.vals = np.zeros((self.nr,4,self.nq,self.niter),dtype='float64')
+        self.iters = np.zeros(self.niter          ,dtype='int32')
+        self.time  = np.zeros(self.niter          ,dtype='float64')        
+        
+        k = 0
+        for i in range(nfiles):
+
+            a = Shell_Avgs(filelist[i],qcodes=qcodes,path=path, ntheta=ntheta)
+
+            #If the iteration count isn't constant throughout a run,
+            #we may need to resize the arrays
+            if (k+a.niter > self.niter):
+                self.niter = k+a.niter
+                self.time.resize((self.niter))
+                self.iters.resize( (self.niter))
+                # Note that using numpy's resize routine gets a little tricky here
+                # due to the striping of the vals array.  Handle this 'manually'
+                # for now
+                vals = np.zeros((self.nr,4,self.nq,self.niter),dtype='float64')
+                vals[:,:,:,0:k] = self.vals[:,:,:,0:k]
+                self.vals = vals
+
+            self.time[k:k+a.niter]   = a.time[:]
+            self.iters[k:k+a.niter]  = a.iters[:]
+            self.vals[:,:,:,k:k+a.niter] = a.vals[:,:,:,:]
+            k+=a.niter
+            
+        # Trim off any excess zeros 
+        # (in case last file was incomplete)
+        self.niter = k
+        self.time = self.time[0:self.niter]
+        self.iters = self.iters[0:self.niter]
+        self.vals = self.vals[:,:,:,0:self.niter]
+
+
+    def time_average_files(self,filelist,qcodes=[],path='',ntheta=0, dt=-1,nfiles=-1):
+        """
+           Time-series concatenation routine for the Shell_Avgs class.
+           
+           Input parameters:
+               filelist  : {list of strings} The Shell_Avgs files to be time-averaged.
+               path      : The directory where the files are located (if full path not in filename)
+               qcodes    : {optional; list of ints} Quantity codes you wish to extract (if not all)
+               ntheta    : {optional; int; default = 0} Set this value to correct the variance in 
+                           version=2 Shell_Avgs (only mean is preserved otherwise for that version).               
+               nfiles    : optional -- number of files to read relative to last file 
+                                       in the list (default is all files)
+               dt        : optional -- maximum time to average over, relative to
+                                       final iteration of last file in the list
+                                       (default is all time)
+           Notes:
+                  
+                - This routine assumes radial resolution does not change across files in filelist.
+                - This routine assumes that each file contains AT LEAST 2 timesteps.
+        """
+        
+        numfiles = len(filelist)
+        flast = -1
+        if (nfiles > 0):
+            flast = numfiles-nfiles
+        if (flast < 0):
+            flast = 0
+            
+
+        self.niter = 1
+        self.vals = np.zeros((self.nr,4,self.nq,1),dtype='float64')
+        self.iters = np.zeros(2          ,dtype='int32')
+        self.time  = np.zeros(2          ,dtype='float64')        
+        
+        #Integrate in time using a midpoint method.
+        last_dt = 0.0
+        total_time = 0.0
+
+        # Read the initial file (last in the list). 
+        # Go ahead and store the last time and iteration in that file.
+        a = Shell_Avgs(filelist[numfiles-1],qcodes=qcodes,path=path,ntheta=ntheta)
+        self.iters[1] = a.iters[a.niter-1]
+        self.time[1] = a.time[a.niter-1]
+
+        for i in range(numfiles-1,flast-1,-1):
+
+            weights = np.zeros(a.niter,dtype='float64')
+            
+            if (i != 0):
+                #Read in the next file for time-step information
+                b = Shell_Avgs(filelist[i-1],qcodes=qcodes,path=path,ntheta=ntheta)
+            
+            weights[a.niter-1] = 0.5*(last_dt+a.time[a.niter-1]-a.time[a.niter-2])
+            for j in range(a.niter-2,0,-1):
+                weights[j] = 0.5*(a.time[j+1] -a.time[j-1])
+                
+            if (i != 0):
+                last_dt = a.time[0]-b.time[b.niter-1]
+                weights[0] = 0.5*(a.time[1]-b.time[b.niter-1])
+            else:
+                weights[0] = 0.5*(a.time[1]-a.time[0])
+
+            
+            for j in range(a.niter):
+                time_check = True
+                if (dt > 0):
+                    dt0 = self.time[1]-a.time[j]
+                    if (dt0 > dt):
+                        time_check = False
+                if (time_check):
+                    self.vals[:,:,:,0]+=a.vals[:,:,:,j]*weights[j]
+                    total_time += weights[j]
+                    self.iters[0] = a.iters[j]
+                    self.time[0] = a.time[j]
+
+            if (i != flast):
+                a = b
+
+        self.vals = self.vals/total_time
+        self.version=-self.version # negative version numbers indicate time-averaging
+        self.time_averaged = True
+        
+    def read_data(self,qcodes = [],ntheta=0):
+        """
+           Data-reading routine for the Shell_Avgs class.
+           
+           Input parameters:
+               qcodes    : {optional; list of ints} Quantity codes you wish to extract (if not all)
+               ntheta    : {optional; int; default = 0} Set this value to correct the variance in 
+                           version=2 Shell_Avgs (only mean is preserved otherwise for that version).
+           
+           Notes:
+                - This routine does not read header information.  Read_dimensions must be called first
+                  so that dimentions and the file descriptor are initialized. 
+        """
+    
+        self.qv    = np.zeros(self.nq             ,dtype='int32')
+        self.vals  = np.zeros((self.nr, 4, self.nq, self.niter),dtype='float64')
+        self.iters = np.zeros(self.niter+self.time_averaged          ,dtype='int32')
+        self.time  = np.zeros(self.niter+self.time_averaged          ,dtype='float64')
+   
+            
+        self.radius = np.zeros(self.nr, dtype='float64')
+
+        # Set up the record structure
+        if (self.version < 6):
+
+            if (self.version ==1):
+                one_rec = np.dtype([('vals', np.float64, [self.nq,self.nr]), ('times',np.float64), ('iters', np.int32)  ])
+            else:
+                one_rec = np.dtype([('vals', np.float64, [self.nq, 4, self.nr]), ('times',np.float64), ('iters', np.int32)  ])   
+            
+        else:
+            # Things are a little more complicated following the parallel I/O redo.
+            # Store all data values in a 1-D array and rerrange each record at the end
+            one_rec = np.dtype([('vals', np.float64, [self.nr*4*self.nq]), ('times',np.float64), ('iters', np.int32)  ])
+
+        fstruct = np.dtype([ ('qvals', np.int32,(self.nq)), ('radius',np.float64,(self.nr)), ('fdata', one_rec, [self.niter,])  ])
+
+        
+        if (self.byteswap):
+                fdata = np.fromfile(self.fd,dtype=fstruct,count=1).byteswap()
+                if (self.time_averaged):
+                    self.time[1] = np.fromfile(self.fd,dtype='float64',count=1).byteswap() 
+                    self.iters[1] = np.fromfile(self.fd,dtype='int32',count=1).byteswap()    
+        else:
+                fdata = np.fromfile(self.fd,dtype=fstruct)
+                if (self.time_averaged):
+                    self.time[1] = np.fromfile(self.fd,dtype='float64',count=1) 
+                    self.iters[1] = np.fromfile(self.fd,dtype='int32',count=1)                  
+
+        self.fd.close()
+        
+        self.time[0:self.niter] = fdata['fdata']['times'][0,:self.niter]
+        self.iters[0:self.niter] = fdata['fdata']['iters'][0,:self.niter]
+        self.qv[:] = fdata['qvals'][0,:]
+        self.radius[:] = fdata['radius'][0,:]
+        
+        ####################################################3
+        # Reading in the values is a little more complicated since the Shell_Avgs
+        # data structure has undergone a few different iterations.
+        if (self.version >= 6):
+            vals = np.zeros((self.nr,4,self.nq,self.niter),dtype='float64')
+            for i in range(self.niter):
                 rind=0
-                nr_base = nr//npcol
-                nr_mod = nr % npcol
-                for j in range(npcol):
+                kone = 0
+                nr_base = self.nr//self.npcol
+                nr_mod = self.nr % self.npcol
+                for j in range(self.npcol):
                     nrout= nr_base
                     if (j < nr_mod) :
                         nrout=nrout+1
-                    tmp = np.reshape(swapread(fd,dtype='float64',count=nq*nrout*4,swap=bs),(nrout,4,nq), order = 'F')
-                    self.vals[rind:rind+nrout,:,:,i] = tmp[:,:,:]
-                    rind=rind+nrout
-            self.time[i] = swapread(fd,dtype='float64',count=1,swap=bs)
-            self.iters[i] = swapread(fd,dtype='int32',count=1,swap=bs)
+                    ktwo = kone+nrout*4*self.nq
+                    tmp = np.reshape(fdata['fdata']['vals'][0,i,kone:ktwo], (nrout,4,self.nq), order = 'F'   )
+                    vals[rind:rind+nrout,:,:,i] = tmp[:,:,:]
+                    rind=rind+nrout            
+                    kone = ktwo
+        elif (self.version == 1):
+            #vals = numpy.zeros((self.nr,self.nq,self.niter)
+            vals0 = np.transpose(fdata['fdata']['vals'][0,:,:,:])
+            vals = np.zeros((self.nr,4,self.nq,self.niter),dtype='float64')
+            vals[:,0,:,:] = vals0[:,:,:]
+        else:
+            #vals = numpy.zeros((self.niter,self.nq,4,self.nr))
+            vals = np.transpose(fdata['fdata']['vals'][0,:,:,:,:])
 
+        self.lut = get_lut(self.qv)  # Lookup table
         
-        if ((self.version > 1) and (self.version <=3) ):
-            nphi = 2*ntheta
-            self.vals[:,2:4,:,:] = 0.0
-            if (nphi > 0):
-                cfactor = -1.0-1.0/nphi**2+2.0/nphi
-                print('This ShellAverage file is version 2, but ntheta was provided.')
-                print('The 2nd moment has been corrected.  3rd and 4th moments are set to zero')
-                for i in range(nr):
-                    self.vals[i,1,:,:] = self.vals[i,1,:,:]+cfactor*self.vals[i,0,:,:]**2
-            else:
-                print('This ShellAverage file is version 2, and ntheta was not provided.')
-                print('The 2nd, 3rd and 4th moments are set to zero')   
-                self.vals[:,1,:,:] = 0.0            
+        ########################################################
+        # We may want to extract a subset of the quantity codes
+        if (len(qcodes) == 0):
+            self.vals = vals
+        else:
+            nqfile = self.nq        # number of quantity codes in the file
+            qget = np.array(qcodes,dtype='int32')
+            self.qv = qget  # Don't update the lookup table yet
+            self.nq = len(self.qv)  # number of quantity codes we will extract
+            
 
-        self.lut = get_lut(self.qv)
-        fd.close()
+            self.vals  = np.zeros((self.nr,4, self.nq, self.niter),dtype='float64')            
+                
+            for q in range(self.nq):
+                qcheck = self.lut[qget[q]]
+                if (qcheck < maxq):
+                    self.vals[:,:,q,:] = vals[:,:,qcheck,:]
+            self.lut = get_lut(self.qv)  # Rebuild the lookup table since qv has changed
+
+
+            # Version 2 had an error with the 2nd through 4th moments.  The mean was correct.
+            # The variance can be corrected after the fact if the value of ntheta is provided.
+            if (self.version==2):
+                nphi = 2*ntheta
+                self.vals[:,2:4,:,:] = 0.0
+                if (nphi > 0):
+                    cfactor = -1.0-1.0/nphi**2+2.0/nphi
+                    print('This ShellAverage file is version 2, but ntheta was provided.')
+                    print('The 2nd moment has been corrected.  3rd and 4th moments are set to zero')
+                    for i in range(nr):
+                        self.vals[i,1,:,:] = self.vals[i,1,:,:]+cfactor*self.vals[i,0,:,:]**2
+                else:
+                    print('This ShellAverage file is version 2, and ntheta was not provided.')
+                    print('The 2nd, 3rd and 4th moments are set to zero')   
+                    self.vals[:,1,:,:] = 0.0     
+
+            
+    def read_dimensions(self,the_file,closefile=False):
+        """
+        
+            Header-reading routine for the Shell_Avgs class.
+            
+            This routine initialized the file descriptor and reads the dimensions 
+            and Endian information of a Shell_Avgs file only. It does not read the Shell_Avgs data itself.
+
+           
+            Input parameters:
+               the_file    : {string} Shell_Avgs file whose header is to be read.
+               closefile   : (Boolean; optional; default=False) Set to True to close the file 
+                             after reading the header information. 
+                   
+
+        """
+
+        self.fd = open(the_file,'rb')        
+        specs = np.fromfile(self.fd,dtype='int32',count=6)
+        bcheck = specs[0]       # If not 314, we need to swap the bytes
+        self.byteswap = False
+        if (bcheck != 314):
+            specs.byteswap()
+            self.byteswap = True
+            
+        self.version = specs[1]
+        self.niter   = specs[2]
+        self.nr      = specs[3]
+        self.nq      = specs[4]
+        if (self.version >= 6):
+            self.npcol = specs[5]
+        else:
+            #versions < 6 do not have npcol stored.
+            #rewind by 4 bytes
+            self.fd.seek(-4,1)
+        
+        self.time_averaged = (self.version < 0)
+        if (closefile):
+            self.fd.close()
+   
+
+
 
 class AZ_Avgs:
-    """Rayleigh AZ_Avgs Structure
+    """Rayleigh Azimuthally-Averaged Data Structure
     ----------------------------------
     self.niter                                    : number of time steps
     self.nq                                       : number of diagnostic quantities output
@@ -671,38 +1473,317 @@ class AZ_Avgs:
     self.time[0:niter-1]                          : The simulation time corresponding to each time step
     self.version                                  : The version code for this particular output (internal use)
     self.lut                                      : Lookup table for the different diagnostics output
+
+    self.time_averaged                 : If True, data has been time averaged.
+                                         In this case, iters and time have dimension 2, and contain the
+                                         initial and final times and iterations of the averaged data.
+
+    Initialization Examples:
+        (1):  Read in a single AZ_Avgs file
+              a = AZ_Avgs('00000001',path='./AZ_Avgs/')
+              
+        (2):  Time-average data from multiple AZ_Avgs files:
+              a = AZ_Avgs(['00000001','00000002'])
+              
+        (2):  Concatenate time-series data from multiple AZ_Avgs files:
+              a = AZ_Avgs(['00000001','00000002'],time_average=False)
+
+        (3):  Time-averaged data from multiple AZ_Avgs files + save data to new AZ_Avgs file:
+              a = AZ_Avgs(['00000001','00000002'],ofile='my_save_file.dat')
+              
+        (4):  Concatenate time-series data from multiple AZ_Avgs files.
+              Extract only quantity codes 401 and 402:
+              a = AZ_Avgs(['00000001','00000002'], qcodes = [401,402], time_average = False)
+
+    Additional Notes:
+        For concatenated or averaged data:
+        
+            - Output files are written in identical format to a standard AZ_Avgs file. They may be
+              read in using the same syntax described above.
+              
+            - To save concatenated or averaged data to a new file after initialization:
+              a.write('filename')  [ where 'a' is the AZ_Avgs object name]
+              
     """
 
-    def __init__(self,filename='none',path='AZ_Avgs/'):
-        """filename  : The reference state file to read.
-           path      : The directory where the file is located (if full path not in filename)
-        """
-        if (filename == 'none'):
-            the_file = path+'00000001'
-        else:
-            the_file = path+filename
-        fd = open(the_file,'rb')
-        # We read an integer to assess which endian the file was written in...
-        bs = check_endian(fd,314,'int32')
-        version = swapread(fd,dtype='int32',count=1,swap=bs)
-        nrec = swapread(fd,dtype='int32',count=1,swap=bs)
-        nr = swapread(fd,dtype='int32',count=1,swap=bs)
-        ntheta = swapread(fd,dtype='int32',count=1,swap=bs)
-        nq = swapread(fd,dtype='int32',count=1,swap=bs)
+    def __init__(self,filename='none',path='AZ_Avgs/', ofile=None, qcodes=[],time_average=True, dt = -1, nfiles=-1):
 
-        self.version = version
-        self.niter = nrec
-        self.nq = nq
-        self.nr = nr
-        self.ntheta = ntheta
+        """
+           Initializer for the AZ_Avgs class.
+           
+           Input parameters:
+               filename     : (a) {string} The AZ_Avgs file to read.
+                            : (b) {list of strings} The AZ_Avgs files whose time-series
+                               data you wish to concatenate or time-average.
+               path         : The directory where the file is located (if full path not in filename)
+               qcodes       : {optional; list of ints} Quantity codes you wish to extract (default is to extract all)
+               ofile        : {optional; string}; default = None Filename to save time-averaged data to, if desired.
+               time_average : {optional; Boolean; default = True} Time-average data from multiple files if a list is provided.
+                              If a list of files is provided and this flag is set to False, data will be concatenated instead. 
+               nfiles    : optional -- number of files to read relative to last file 
+                                       in the list (time-averaging mode only; default is all files)
+               dt        : optional -- maximum time to average over, relative to
+                                       final iteration of last file in the list
+                                       (time-averaging mode only; default is all time)                                  
+        """
+        # Check to see if we are compiling data from multiple files
+        # This is true if (a) ofile is set or (b) filename is a list of files, rather than a single string
+        # if (a) is false, but (b) is true, no output is written, but compiled output is returned        
+        
+        #(a)
+        multiple_files = False
+        mainfile=filename
+        if (ofile != None):
+            multiple_files = True
+            
+        #(b)
+        ltype = type([])        
+        ftype=type(filename)
+        if (ltype == ftype):
+            multiple_files = True
+        else:
+            if (mainfile == 'none'):
+                mainfile = path+'00000001'
+            else:
+                mainfile = path+mainfile             
+        
+        if (multiple_files):
+            mainfile = filename[0]
+        
+        # Read the main file no matter what    
+        self.read_dimensions(mainfile)   
+        self.read_data(qcodes=qcodes)
+        
+        if (multiple_files):
+            if (not time_average):
+                self.compile_multiple_files(filename, qcodes = qcodes,path=path)
+            else:
+                self.time_average_files(filename, qcodes = qcodes,path=path, dt = dt, nfiles = nfiles)
+                
+        if (ofile != None):
+            self.write(ofile)
+            
+            
+    def write(self,outfile):
+        """
+            Writing routine for AZ_Avgs class.
+            
+            Input parameters:
+               outfile  : (a) {string} The AZ_Avgs file to be written.
+
+            Calling Syntax:
+                my_shellavgs.write("my_file.dat")
+                (writes all data contained in my_shellavgs to my_file.dat, in standard AZ_Avgs format)
+
+        """
+
+        numdim = 6
+
+        one_rec = np.dtype([('vals', np.float64, [self.nq, self.nr, self.ntheta]), ('times',np.float64), ('iters', np.int32)  ])   
+
+        fstruct = np.dtype([ ('fdims', np.int32, numdim), ('qvals', np.int32,(self.nq)), ('radius',np.float64,(self.nr)), 
+                             ('costheta',np.float64,(self.ntheta)), ('fdata', one_rec, [self.niter,])  ])
+        
+                        
+        odata = np.zeros((1,),dtype=fstruct)
+        odata['fdims'][0,0]=314
+        odata[0]['fdims'][1]=self.version
+        odata[0]['fdims'][2]=self.niter
+        odata[0]['fdims'][3]=self.nr
+        odata[0]['fdims'][4]=self.ntheta
+        odata[0]['fdims'][5]=self.nq
+
+	                
+        odata[0]['qvals'][:]=self.qv[:]
+        odata[0]['radius'][:]=self.radius[:]
+        odata[0]['costheta'][:]=self.costheta[:]
+        odata[0]['fdata']['times'][:]=self.time[0:self.niter]
+        odata[0]['fdata']['iters'][:]=self.iters[0:self.niter]
+        
+        odata[0]['fdata']['vals'][:,:,:,:]=np.transpose(self.vals[:,:,:,:])
+            
+        fd = open(outfile,'wb')
+        odata.tofile(fd)
+        if (self.time_averaged):
+            self.time[1].tofile(fd)
+            self.iters[1].tofile(fd)
+        fd.close()
+        
+
+    def compile_multiple_files(self,filelist,qcodes=[],path=''):
+        """
+           Time-series concatenation routine for the AZ_Avgs class.
+           
+           Input parameters:
+               filelist  : {list of strings} The AZ_Avgs files to be concatenated.
+               path      : The directory where the files are located (if full path not in filename)
+               qcodes    : {optional; list of ints} Quantity codes you wish to extract (if not all)
+
+           Notes:
+                - This routine is incompatibile with version=1 AZ_Avgs due to lack of 
+                  moments output in that original version.  All other versions are compatible.
+                  
+                - This routine assumes radial resolution does not change across files in filelist.
+
+        """
+
+            
+        nfiles = len(filelist)
+        new_nrec = self.niter*nfiles
+        self.niter = new_nrec
+        self.vals = np.zeros((self.nr,4,self.nq,self.niter),dtype='float64')
+        self.iters = np.zeros(self.niter          ,dtype='int32')
+        self.time  = np.zeros(self.niter          ,dtype='float64')        
+        
+        k = 0
+        for i in range(nfiles):
+
+            a = AZ_Avgs(filelist[i],qcodes=qcodes,path=path)
+
+            #If the iteration count isn't constant throughout a run,
+            #we may need to resize the arrays
+            if (k+a.niter > self.niter):
+                self.niter = k+a.niter
+                self.time.resize((self.niter))
+                self.iters.resize( (self.niter))
+                # Note that using numpy's resize routine gets a little tricky here
+                # due to the striping of the vals array.  Handle this 'manually'
+                # for now
+                vals = np.zeros((self.ntheta,self.nr, self.nq,self.niter),dtype='float64')
+                vals[:,:,:,0:k] = self.vals[:,:,:,0:k]
+                self.vals = vals
+
+            self.time[k:k+a.niter]   = a.time[:]
+            self.iters[k:k+a.niter]  = a.iters[:]
+            self.vals[:,:,:,k:k+a.niter] = a.vals[:,:,:,:]
+            k+=a.niter
+            
+        # Trim off any excess zeros 
+        # (in case last file was incomplete)
+        self.niter = k
+        self.time = self.time[0:self.niter]
+        self.iters = self.iters[0:self.niter]
+        self.vals = self.vals[:,:,:,0:self.niter]
+
+
+    def time_average_files(self,filelist,qcodes=[],path='', dt=-1,nfiles=-1):
+        """
+           Time-series concatenation routine for the Shell_Avgs class.
+           
+           Input parameters:
+               filelist  : {list of strings} The Shell_Avgs files to be time-averaged.
+               path      : The directory where the files are located (if full path not in filename)
+               qcodes    : {optional; list of ints} Quantity codes you wish to extract (if not all)             
+               nfiles    : optional -- number of files to read relative to last file 
+                                       in the list (default is all files)
+               dt        : optional -- maximum time to average over, relative to
+                                       final iteration of last file in the list
+                                       (default is all time)
+           Notes:
+                  
+                - This routine assumes radial resolution does not change across files in filelist.
+                - This routine assumes that each file contains AT LEAST 2 timesteps.
+        """
+        
+        numfiles = len(filelist)
+        flast = -1
+        if (nfiles > 0):
+            flast = numfiles-nfiles
+        if (flast < 0):
+            flast = 0
+            
+
+        self.niter = 1
+        self.vals = np.zeros((self.ntheta, self.nr,self.nq,1),dtype='float64')
+        self.iters = np.zeros(2          ,dtype='int32')
+        self.time  = np.zeros(2          ,dtype='float64')        
+        
+        #Integrate in time using a midpoint method.
+        last_dt = 0.0
+        total_time = 0.0
+
+        # Read the initial file (last in the list). 
+        # Go ahead and store the last time and iteration in that file.
+        a = AZ_Avgs(filelist[numfiles-1],qcodes=qcodes,path=path)
+        self.iters[1] = a.iters[a.niter-1]
+        self.time[1] = a.time[a.niter-1]
+
+        for i in range(numfiles-1,flast-1,-1):
+
+            weights = np.zeros(a.niter,dtype='float64')
+            
+            if (i != 0):
+                #Read in the next file for time-step information
+                b = AZ_Avgs(filelist[i-1],qcodes=qcodes,path=path)
+            
+            weights[a.niter-1] = 0.5*(last_dt+a.time[a.niter-1]-a.time[a.niter-2])
+            for j in range(a.niter-2,0,-1):
+                weights[j] = 0.5*(a.time[j+1] -a.time[j-1])
+                
+            if (i != 0):
+                last_dt = a.time[0]-b.time[b.niter-1]
+                if (a.niter > 1):
+                    weights[0] = 0.5*(a.time[1]-b.time[b.niter-1])
+                else:
+                   weights[0] = (a.time[0]-b.time[b.niter-1])
+            else:
+                weights[0] = 0.5*(a.time[1]-a.time[0])
+
+            
+            for j in range(a.niter):
+                time_check = True
+                if (dt > 0):
+                    dt0 = self.time[1]-a.time[j]
+                    if (dt0 > dt):
+                        time_check = False
+                if (time_check):
+                    self.vals[:,:,:,0]+=a.vals[:,:,:,j]*weights[j]
+                    total_time += weights[j]
+                    self.iters[0] = a.iters[j]
+                    self.time[0] = a.time[j]
+
+            if (i != flast):
+                a = b
+
+        self.vals = self.vals/total_time
+        self.version=-self.version # negative version numbers indicate time-averaging
+        self.time_averaged = True
+
+        
+        
+    def read_data(self,qcodes = []):
+        """
+           Data-reading routine for the AZ_Avgs class.
+           
+           Input parameters:
+               qcodes    : {optional; list of ints} Quantity codes you wish to extract (if not all)
+               ntheta    : {optional; int; default = 0} Set this value to correct the variance in 
+                           version=2 AZ_Avgs (only mean is preserved otherwise for that version).
+           
+           Notes:
+                - This routine does not read header information.  Read_dimensions must be called first
+                  so that dimentions and the file descriptor are initialized. 
+        """
+    
+        self.vals  = np.zeros((self.ntheta, self.nr, self.nq, self.niter),dtype='float64')
+        self.iters = np.zeros(self.niter+self.time_averaged          ,dtype='int32')
+        self.time  = np.zeros(self.niter+self.time_averaged          ,dtype='float64')
+
+        #############################################
+        # Revision:
+        nq = self.nq
+        ntheta=self.ntheta
+        niter=self.niter
+        nr = self.nr
+        bs = self.byteswap
+        fd = self.fd
+        nrec = niter
 
         self.qv = np.reshape(swapread(fd,dtype='int32',count=nq,swap=bs),(nq), order = 'F')
         self.radius = np.reshape(swapread(fd,dtype='float64',count=nr,swap=bs),(nr), order = 'F')
         self.costheta = np.reshape(swapread(fd,dtype='float64',count=ntheta,swap=bs),(ntheta), order = 'F')
         self.sintheta = (1.0-self.costheta**2)**0.5
-        self.vals  = np.zeros((ntheta,nr,nq,nrec),dtype='float64')
-        self.iters = np.zeros(nrec,dtype='int32')
-        self.time  = np.zeros(nrec,dtype='float64')
+
 
         for i in range(nrec):
             tmp = np.reshape(swapread(fd,dtype='float64',count=nq*nr*ntheta,swap=bs),(ntheta,nr,nq), order = 'F')
@@ -710,8 +1791,51 @@ class AZ_Avgs:
             self.time[i] = swapread(fd,dtype='float64',count=1,swap=bs)
             self.iters[i] = swapread(fd,dtype='int32',count=1,swap=bs)
 
-        self.lut = get_lut(self.qv)
-        fd.close()
+        if (self.time_averaged):
+            self.time[1] = swapread(fd,dtype='float64',count=1,swap=bs)
+            self.iters[1] = swapread(fd,dtype='int32',count=1,swap=bs) 
+            
+        self.fd.close()
+
+        self.lut = get_lut(self.qv)  # Lookup table        
+            
+    def read_dimensions(self,the_file,closefile=False):
+        """
+        
+            Header-reading routine for the AZ_Avgs class.
+            
+            This routine initialized the file descriptor and reads the dimensions 
+            and Endian information of a AZ_Avgs file only. It does not read the AZ_Avgs data itself.
+
+           
+            Input parameters:
+               the_file    : {string} AZ_Avgs file whose header is to be read.
+               closefile   : (Boolean; optional; default=False) Set to True to close the file 
+                             after reading the header information. 
+                   
+
+        """
+        self.fd = open(the_file,'rb')        
+        specs = np.fromfile(self.fd,dtype='int32',count=6)
+        bcheck = specs[0]       # If not 314, we need to swap the bytes
+        self.byteswap = False
+        if (bcheck != 314):
+            specs.byteswap()
+            self.byteswap = True
+            
+        self.version = specs[1]
+        self.niter   = specs[2]
+        self.nr      = specs[3]
+        self.ntheta  = specs[4]
+        self.nq      = specs[5]
+
+        if (self.niter > 7):
+            self.niter = 7
+        
+        self.time_averaged = (self.version < 0)
+        if (closefile):
+            self.fd.close()
+
 
 class Point_Probes:
     """Rayleigh Point Probes Structure
@@ -726,12 +1850,21 @@ class Point_Probes:
     self.costheta[0:ntheta-1]                     : cos(theta grid)
     self.sintheta[0:ntheta-1]                     : sin(theta grid)
     self.phi[0:nphi-1]                            : phi values (radians)
-    self.phi_indices[0:nphi-1]                    : phi indices (from 1 to nphi)
+    self.rad_inds[0:self.nr-1]                    : radial indices (from the full simulation radial grid) 
+                                                  : corresponding to each point in self.radius
+    self.theta_inds[0:self.ntheta-1]              : theta indices (from the full simulation theta grid) 
+                                                  : corresponding to each point in self.costheta
+    self.phi_inds[0:self.nphi-1]                  : phi indices (from the full simulation phi grid) 
+                                                  : corresponding to each point in self.phi
     self.vals[0:nphi-1,0:ntheta-1,0:nr-1,0:nq-1,0:niter-1] : The meridional slices 
     self.iters[0:niter-1]                         : The time step numbers stored in this output file
     self.time[0:niter-1]                          : The simulation time corresponding to each time step
     self.version                                  : The version code for this particular output (internal use)
     self.lut                                      : Lookup table for the different diagnostics output
+    
+    --Note that the indices (phi_inds,rad_inds, theta_inds) use Python's 0-based array indexing.
+    --This means that if rad_inds are 1,2,5, say, then in Rayleigh they correspond to points 2,3,6 
+    --on the global grid that runs from 1 through N_R.
     """
 
     def __init__(self,filename='none',path='Point_Probes/'):
@@ -805,12 +1938,17 @@ class Meridional_Slices:
     self.costheta[0:ntheta-1]                     : cos(theta grid)
     self.sintheta[0:ntheta-1]                     : sin(theta grid)
     self.phi[0:nphi-1]                            : phi values (radians)
-    self.phi_indices[0:nphi-1]                    : phi indices (from 1 to nphi)
+    self.phi_inds[0:nphi-1]                       : phi indices (from the full simulation phi grid) 
+
     self.vals[0:nphi-1,0:ntheta-1,0:nr-1,0:nq-1,0:niter-1] : The meridional slices 
     self.iters[0:niter-1]                         : The time step numbers stored in this output file
     self.time[0:niter-1]                          : The simulation time corresponding to each time step
     self.version                                  : The version code for this particular output (internal use)
     self.lut                                      : Lookup table for the different diagnostics output
+
+    --Note that the indices (phi_inds) use Python's 0-based array indexing.
+    --This means that if phi_inds are 1,2,5, say, then in Rayleigh they correspond to points 2,3,6 
+    --on the global grid that runs from 1 through n_phi.
     """
 
     def __init__(self,filename='none',path='Meridional_Slices/'):
@@ -974,7 +2112,9 @@ class Shell_Slices:
     self.nphi                                     : number of phi points
     self.qv[0:nq-1]                               : quantity codes for the diagnostics output
     self.radius[0:nr-1]                           : radii of the shell slices output
-    self.inds[0:nr-1]                             : radial indices of the shell slices output
+    self.rad_inds[0:nr-1]                         : radial indices of the shell slices output (from the full simulation radial grid) 
+                                                  : corresponding to each point in self.radius
+    self.inds                                     : same as self.rad_inds (for backwards compatibility)
     self.costheta[0:ntheta-1]                     : cos(theta grid)
     self.sintheta[0:ntheta-1]                     : sin(theta grid)
     self.vals[0:nphi-1,0:ntheta-1,0:nr-1,0:nq-1,0:niter-1] 
@@ -983,6 +2123,10 @@ class Shell_Slices:
     self.time[0:niter-1]                          : The simulation time corresponding to each time step
     self.version                                  : The version code for this particular output (internal use)
     self.lut                                      : Lookup table for the different diagnostics output
+
+    --Note that the indices (rad_inds = inds) use Python's 0-based array indexing.
+    --This means that if rad_inds are 1,2,5, say, then in Rayleigh they correspond to points 2,3,6 
+    --on the global grid that runs from 1 through N_R.
     """
 
     def print_info(self, print_costheta = False):
@@ -996,7 +2140,7 @@ class Shell_Slices:
         print( '.......................')
         print( 'radius   : ', self.radius)
         print( '.......................')
-        print( 'inds     : ', self.inds)
+        print( 'rad_inds : ', self.rad_inds)
         print( '.......................')
         print( 'iters    : ', self.iters)
         print( '.......................')
@@ -1036,6 +2180,7 @@ class Shell_Slices:
         bs = check_endian(fd,314,'int32')
         version = swapread(fd,dtype='int32',count=1,swap=bs)
         nrec = swapread(fd,dtype='int32',count=1,swap=bs)
+
         ntheta = swapread(fd,dtype='int32',count=1,swap=bs)
         nphi = 2*ntheta
         nr = swapread(fd,dtype='int32',count=1,swap=bs)
@@ -1132,7 +2277,9 @@ class SPH_Modes:
     self.nell                                     : number of ell values
     self.qv[0:nq-1]                               : quantity codes for the diagnostics output
     self.radius[0:nr-1]                           : radii of the shell slices output
-    self.inds[0:nr-1]                             : radial indices of the shell slices output
+    self.rad_inds[0:nr-1]                         : radial indices of the shell slices output (from the full simulation radial grid) 
+                                                  : corresponding to each point in self.radius
+    self.inds                                     : same as self.rad_inds (for backwards compatibility)
     self.lvals[0:nell-1]                          : ell-values output
     self.vals[0:lmax,0:nell-1,0:nr-1,0:nq-1,0:niter-1] 
                                                   : The complex spectra of the SPH modes output
@@ -1141,6 +2288,10 @@ class SPH_Modes:
     self.time[0:niter-1]                          : The simulation time corresponding to each time step
     self.version                                  : The version code for this particular output (internal use)
     self.lut                                      : Lookup table for the different diagnostics output
+
+    --Note that the indices (rad_inds = inds) use Python's 0-based array indexing.
+    --This means that if rad_inds are 1,2,5, say, then in Rayleigh they correspond to points 2,3,6 
+    --on the global grid that runs from 1 through N_R.
     """
 
     def __init__(self,filename='none',path='SPH_Modes/'):
@@ -1169,13 +2320,14 @@ class SPH_Modes:
 
         self.qv = np.reshape(swapread(fd,dtype='int32',count=nq,swap=bs),(nq), order = 'F')
         self.radius = np.reshape(swapread(fd,dtype='float64',count=nr,swap=bs),(nr), order = 'F')
-        self.inds = np.reshape(swapread(fd,dtype='int32',count=nr,swap=bs),(nr), order = 'F')
+        self.rad_inds = np.reshape(swapread(fd,dtype='int32',count=nr,swap=bs),(nr), order = 'F')
         self.lvals = np.reshape(swapread(fd,dtype='int32',count=nell,swap=bs),(nell), order = 'F')
         lmax = np.max(self.lvals)
         nm = lmax+1
 
         # convert from Fortran 1-based to Python 0-based indexing
-        self.inds = self.inds - 1
+        self.rad_inds = self.rad_inds - 1
+        self.inds = self.rad_inds
 
         self.vals  = np.zeros((nm,nell,nr,nq,nrec),dtype='complex128')
         
@@ -1219,7 +2371,9 @@ class Shell_Spectra:
     self.mmax                                     : maximum spherical harmonic degree m
     self.qv[0:nq-1]                               : quantity codes for the diagnostics output
     self.radius[0:nr-1]                           : radii of the shell slices output
-    self.inds[0:nr-1]                             : radial indices of the shell slices output
+    self.rad_inds[0:nr-1]                         : radial indices of the shell slices output (from the full simulation radial grid) 
+                                                  : corresponding to each point in self.radius
+    self.inds                                     : same as self.rad_inds (for backwards compatibility)
     self.vals[0:lmax,0:mmax,0:nr-1,0:nq-1,0:niter-1] 
                                                   : The complex spectra of the shells output 
     self.lpower[0:lmax,0:nr-1,0:nq-1,0:niter-1,3]    : The power as a function of ell, integrated over m
@@ -1228,6 +2382,10 @@ class Shell_Spectra:
     self.time[0:niter-1]                          : The simulation time corresponding to each time step
     self.version                                  : The version code for this particular output (internal use)
     self.lut                                      : Lookup table for the different diagnostics output
+
+    --Note that the indices (rad_inds = inds) use Python's 0-based array indexing.
+    --This means that if rad_inds are 1,2,5, say, then in Rayleigh they correspond to points 2,3,6 
+    --on the global grid that runs from 1 through N_R.
     """
 
     def print_info(self):
@@ -1243,7 +2401,7 @@ class Shell_Spectra:
         print( '.......................')
         print( 'radius   : ', self.radius)
         print( '.......................')
-        print( 'inds     : ', self.inds)
+        print( 'rad_inds : ', self.rad_inds)
         print( '.......................')
         print( 'iters    : ', self.iters)
         print( '.......................')
@@ -1252,15 +2410,10 @@ class Shell_Spectra:
         print( 'qv       : ', self.qv)
 
 
-    def __init__(self,filename='none',path='Shell_Spectra/', irvals=None, qvals=None, iitervals=None):
+    def __init__(self,filename='none',path='Shell_Spectra/'):
         """
            filename  : The reference state file to read.
            path      : The directory where the file is located (if full path not in filename)
-           irvals     : read only radial levels denoted by irvals (0-based indexing)
-           qvals      : read only quantity codes denoted by qvals
-           iitervals  : read only records denoted by iitervals (0-based indexing)
-           NOTE: irvals, qvals, iitervals can be non-contiguous; scalars are interpreted as rank-1 arrays
-
         """
         if (filename == 'none'):
             the_file = path+'00000001'
@@ -1278,82 +2431,37 @@ class Shell_Spectra:
         nr = swapread(fd,dtype='int32',count=1,swap=bs)
         nq = swapread(fd,dtype='int32',count=1,swap=bs)
 
-        qv = np.reshape(swapread(fd,dtype='int32',count=nq,swap=bs),(nq), order = 'F')
-        radius = np.reshape(swapread(fd,dtype='float64',count=nr,swap=bs),(nr), order = 'F')
-        inds = np.reshape(swapread(fd,dtype='int32',count=nr,swap=bs),(nr), order = 'F')
-        # convert from Fortran 1-based to Python 0-based indexing
-        inds -= 1
-
-        if iitervals is None: # read all records
-            iitervals = np.arange(nrec)
-        else:
-            if np.isscalar(iitervals):
-                iitervals = np.array([iitervals])
-
-        if irvals is None: # read all levels
-            irvals = np.arange(nr)
-        else:
-            if np.isscalar(irvals):
-                irvals = np.array([irvals])
-
-        if qvals is None: # read all levels
-            iqvals = np.arange(nq)
-        else:
-            if np.isscalar(qvals):
-                qvals = np.array([qvals])
-            iqvals = np.zeros(len(qvals), 'int')
-            for j in range(len(qvals)):
-                qval = qvals[j]
-                iqvals[j] = np.argmin(np.abs(qv - qval))
-
-        # now read only the records/slices we want
-        # we'll read each iter and time value at first, then keep 
-        # only the ones for slices we read
-        self.iters = np.zeros(nrec,dtype='int32')
-        self.time  = np.zeros(nrec,dtype='float64')
-        self.vals  = np.zeros((nell, nm, len(irvals), len(iqvals), len(iitervals)),dtype='complex128')
-
-        # loop over everything, in Fortran/Rayleigh order
-        offset = 0
-        for iiter in range(len(iitervals)):
-            tmp_real = []
-            tmp_imag = []
-            for icomplex in range(2):
-                for iqval in range(nq):
-                    for irval in range(nr):
-                        readit = iiter in iitervals and iqval in iqvals and irval in irvals
-                        if readit:
-                            if icomplex == 0:
-                                tmp_real += swapread(fd,dtype='float64',count=nell*nm,swap=bs,offset=offset).tolist()
-                            elif icomplex == 1:
-                                tmp_imag += swapread(fd,dtype='float64',count=nell*nm,swap=bs,offset=offset).tolist()
-                            offset = 0 # always reset offset after reading
-                        else: # don't read this part of file; increase offset
-                            offset += 8*nell*nm
-
-            self.time[iiter] = swapread(fd,dtype='float64',count=1,swap=bs, offset=offset)
-            self.iters[iiter] = swapread(fd,dtype='int32',count=1,swap=bs)
-            offset = 0 # always reset offset after reading
-
-            self.vals[..., iiter].real = np.reshape(tmp_real, (nell, nm, len(irvals), len(iqvals)), order='F')
-            self.vals[..., iiter].imag = np.reshape(tmp_imag, (nell, nm, len(irvals), len(iqvals)), order='F')
-
-        # now assign metadata depending on what we read
-        self.time = self.time[iitervals]
-        self.iters = self.iters[iitervals]
-        self.qv = qv[iqvals]
-        self.radius = radius[irvals]
-        self.inds = irvals
-
-        self.niter = len(iitervals)
-        self.nq = len(iqvals)
-        self.nr = len(irvals)
-
+        self.niter = nrec
+        self.nq = nq
+        self.nr = nr
         self.nell = nell
         self.nm   = nm
         self.lmax = lmax
         self.mmax = mmax
+
+        self.qv = np.reshape(swapread(fd,dtype='int32',count=nq,swap=bs),(nq), order = 'F')
+        self.radius = np.reshape(swapread(fd,dtype='float64',count=nr,swap=bs),(nr), order = 'F')
+        self.rad_inds = np.reshape(swapread(fd,dtype='int32',count=nr,swap=bs),(nr), order = 'F')
+        self.vals  = np.zeros((nell,nm,nr,nq,nrec),dtype='complex128')
+        
+        self.iters = np.zeros(nrec,dtype='int32')
+        self.time  = np.zeros(nrec,dtype='float64')
         self.version = version
+
+        # convert from Fortran 1-based to Python 0-based indexing
+        self.rad_inds = self.rad_inds - 1
+        self.inds = self.rad_inds
+
+        for i in range(nrec):
+
+            tmp = np.reshape(swapread(fd,dtype='float64',count=nq*nr*nell*nm,swap=bs),(nm,nell,nr,nq), order = 'F')
+            self.vals[:,:,:,:,i].real = tmp
+
+            tmp2 = np.reshape(swapread(fd,dtype='float64',count=nq*nr*nell*nm,swap=bs),(nm,nell,nr,nq), order = 'F')
+            self.vals[:,:,:,:,i].imag = tmp2
+
+            self.time[i] = swapread(fd,dtype='float64',count=1,swap=bs)
+            self.iters[i] = swapread(fd,dtype='int32',count=1,swap=bs)
 
         if (self.version != 4):
             # The m>0 --power-- is too high by a factor of 2
@@ -1363,11 +2471,11 @@ class Shell_Spectra:
         self.lut = get_lut(self.qv)
         fd.close()
 
-        self.lpower  = np.zeros((nell,self.nr,self.nq,self.niter,3),dtype='float64')
+        self.lpower  = np.zeros((nell,nr,nq,nrec,3),dtype='float64')
         #!Finally, we create the power
-        for k in range(self.niter):
-            for q in range(self.nq):
-                for j in range(self.nr):
+        for k in range(nrec):
+            for q in range(nq):
+                for j in range(nr):
                     # Load the m=0 power
                     self.lpower[:,j,q,k,1] = self.lpower[:,j,q,k,1]+np.real(self.vals[:,0,j,q,k])**2 +np.imag(self.vals[:,0,j,q,k])**2
 
@@ -1386,13 +2494,19 @@ class Power_Spectrum():
     self.nr                                       : number of radii at which power spectra are available
     self.lmax                                     : maximum spherical harmonic degree l
     self.radius[0:nr-1]                           : radii of the shell slices output
-    self.inds[0:nr-1]                             : radial indices of the shell slices output
+    self.rad_inds[0:nr-1]                         : radial indices of the shell slices output (from the full simulation radial grid) 
+                                                  : corresponding to each point in self.radius
+    self.inds                                     : same as self.rad_inds (for backwards compatibility)
     self.power[0:lmax,0:nr-1,0:niter-1,0:2]       : the velocity power spectrum.  The third
                                                   : index indicates (0:total,1:m=0, 2:total-m=0 power)
     self.mpower[0:lmax,0:nr-1,0:niter-1,0:2]      : the magnetic power spectrum
     self.iters[0:niter-1]                         : The time step numbers stored in this output file
     self.time[0:niter-1]                          : The simulation time corresponding to each time step
     self.magnetic                                 : True if mpower exists
+
+    --Note that the indices (rad_inds = inds) use Python's 0-based array indexing.
+    --This means that if rad_inds are 1,2,5, say, then in Rayleigh they correspond to points 2,3,6 
+    --on the global grid that runs from 1 through N_R.
     """
     #Power Spectrum Class - generated using shell spectra files
     def __init__(self,infile, dims=[],power_file = False, magnetic = False, path="Shell_Spectra"):
@@ -1420,6 +2534,7 @@ class Power_Spectrum():
         self.iters[:]  = iters[:]
         self.time[:]   = time[:]
         self.inds[:]   = inds[:]
+        self.rad_inds = self.inds
         self.radius[:] = radius[:]
     def power_file_init(self,pfile):
         fd = open(pfile,'rb')  
@@ -1435,6 +2550,7 @@ class Power_Spectrum():
         self.iters = np.reshape(swapread(fd,dtype='int32',count=niter,swap=bs),(niter), order = 'F')
         self.time = np.reshape(swapread(fd,dtype='float64',count=niter,swap=bs),(niter), order = 'F')
         self.inds = np.reshape(swapread(fd,dtype='int32',count=nr,swap=bs),(nr), order = 'F')
+        self.rad_inds = self.inds
         self.radius = np.reshape(swapread(fd,dtype='float64',count=nr,swap=bs),(nr), order = 'F')
         pcount = (lmax+1)*nr*niter*3
         pdim = (lmax+1,nr,niter,3)
@@ -1482,6 +2598,7 @@ class Power_Spectrum():
         self.niter = nt
         self.radius = a.radius
         self.inds = a.inds
+        self.rad_inds = self.inds
         self.iters = a.iters
         self.time = a.time
 
@@ -2048,9 +3165,9 @@ def plot_azav(fig,ax,field,radius,costheta,sintheta,r_bcz=0.71,mini=-1,maxi=-1,m
 
     #plt.hold(True)
     if (len(underlay) == 1):
-        img = ax.pcolormesh(yr,xr,field,cmap=mycmap)
+        img = ax.pcolormesh(yr,xr,field,cmap=mycmap,shading='auto')
     else:
-        img = ax.pcolormesh(yr,xr,underlay,cmap=mycmap)
+        img = ax.pcolormesh(yr,xr,underlay,cmap=mycmap,shading='auto')
     #ax.plot(r_bcz*sintheta,r_bcz*costheta,'k--',[0,1],[0,0],'k--')
     ax.axis('equal')
     ax.axis('off')
@@ -2079,6 +3196,8 @@ def plot_azav(fig,ax,field,radius,costheta,sintheta,r_bcz=0.71,mini=-1,maxi=-1,m
 
     levs=mini+np.linspace(1,nlevs,nlevs)/float(nlevs)*(maxi-mini)
     ax.contour(yr,xr,field,colors='w',levels=levs)
+
+    return img
 
 def streamfunction(vr,vt,r,cost,order=0):
     """------------------------------------------------------------
@@ -2162,3 +3281,19 @@ def streamfunction(vr,vt,r,cost,order=0):
             
     return psi
 
+###### Function for reading in the checkpoint files (i.e. P,PAB,T,TAB,W,WAB,Z,ZAB)
+def checkpoint_read(chk_file_string, nr, ntheta):
+    nell = (2*ntheta)//3
+    shape = (nell,nell)
+    i,j = np.indices(shape)
+    m = i <= j
+    target_all = np.zeros((nell,nell,nr),dtype="complex")
+    length_half = len(np.fromfile(chk_file_string,"f8"))//2
+    chunk_length = length_half//nr
+    chk_file = np.fromfile(chk_file_string,"f8")
+    for i in range(nr):
+        target = np.zeros_like((m),dtype="complex")
+        target.real[m] = chk_file[:length_half][i*chunk_length:(i+1)*chunk_length] 
+        target.imag[m] = chk_file[length_half:][i*chunk_length:(i+1)*chunk_length]
+        target_all[:,:,i] = target
+    return target_all
