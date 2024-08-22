@@ -344,15 +344,18 @@ for ifigure in range(my_nfigures):
     if not plottype in ['mer', 'eq']:
         kw_plotting_func.clat = clat
 
-    # get the time slice
-    a = reading_func(radatadir + fname, '')
+    # get the slice
+    if plottype in ['moll', 'ortho']:
+        a = reading_func(radatadir + fname, '', irvals=isampleval)
+    else:
+        a = reading_func(radatadir + fname, '')
 
     # get the variable
     vals = get_slice(a, varname, dirname=dirname)
 
     # get sample location
     if dataname == 'Shell_Slices':
-        field = vals[:, :, isampleval]
+        field = vals[:, :, 0] # only read in one sample val
     elif dataname == 'Meridional_Slices':
         field = vals[isampleval, :, :]
     else: # equatorial slices
