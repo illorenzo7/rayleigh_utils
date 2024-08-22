@@ -2283,12 +2283,16 @@ class Shell_Slices:
         # skip over the slices (size nphi*ntheta at least) we don't care about
         offset = 0
         for iiter in range(len(iitervals)):
-            tmp = []
             for iqval in range(nq):
                 for irval in range(nr):
                     readit = iiter in iitervals and iqval in iqvals and irval in irvals
                     if readit:
-                        tmp += swapread(fd,dtype='float64',count=nphi*ntheta,swap=bs,offset=offset).tolist()
+                        # figure out where we are in the new array
+                        irval_new = np.argmin(np.abs(irvals - irval))                            
+                        iqval_new = np.argmin(np.abs(iqvals - iqval))                            
+                        self.vals[:, :, irval_new, iqval_new, iiter] =\
+                            np.reshape(swapread(fd,dtype='float64',count=nphi*ntheta,swap=bs,offset=offset),
+                                (nphi, ntheta), order='F')
                         offset = 0 # always reset offset after reading
                     else: # don't read this part of file; increase offset
                         offset += 8*nphi*ntheta
@@ -2296,8 +2300,6 @@ class Shell_Slices:
             self.time[iiter] = swapread(fd,dtype='float64',count=1,swap=bs, offset=offset)
             self.iters[iiter] = swapread(fd,dtype='int32',count=1,swap=bs)
             offset = 0 # always reset offset after reading
-
-            self.vals[..., iiter] = np.reshape(tmp, (nphi, ntheta, len(irvals), len(iqvals)), order='F')
 
         # now assign metadata depending on what we read
         self.niter = len(iitervals)
