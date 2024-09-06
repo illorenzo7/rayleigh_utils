@@ -159,6 +159,10 @@ if kw.groupname in ['torque']: # add two more terms at the top
     nterms = len(terms)
     for iterm in range(1,nterms):
         the_sum += terms[iterm]*totsig[iterm]
+        if totsig[iterm] < 0:
+            terms[iterm] *= -1 # might as well also just plot the negative
+            kw.titles[iterm] = '-' + kw.titles[iterm]
+        
     if kw.sub:
         titletag = ' (sub. temp. mean)'
     else:
