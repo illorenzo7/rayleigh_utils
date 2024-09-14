@@ -21,7 +21,7 @@ keys =\
     'Milan in Aitken',\
     'Rome in Aitken',\
     'Rome in Pleiades',\
-    'Sandybridge',\
+    #'Sandybridge',\
     'Skylake in Electra',\
     'Skylake in Pleiades']
 
@@ -36,7 +36,7 @@ keys_alt =\
     'mil_ait',\
     'rom_ait',\
     'rom_gpu',\
-    'san',\
+    #'san',\
     'sky_ele',\
     'sky_gpu']
 
@@ -66,6 +66,7 @@ for key in keys_alt:
     ikey = st.find(key)
     st2 = st[ikey:]
     ihead = 0
+    print("key=", key)
     for heading in headers:
         i0 = st2.find(heading)
         i0 += len(heading)
