@@ -26,7 +26,7 @@ if rvals is None:
     # by default plot three radial levels: near bottom, middle, and top
     rmin, rmid, rmax = interpret_rvals(dirname, ['rmin', 'rmid', 'rmax'])
     H = rmax - rmin
-    rvals = np.array([rmin + 0.05*H, rmid, rmax - 0.05*H])
+    rvals = np.array([rmin + 0.1*H, rmid, rmax - 0.1*H])
 
 # allowed args + defaults
 # key unique to this script
@@ -41,6 +41,7 @@ kwargs_default.update(make_figure_kwargs_default)
 
 # and of course need plot_azav kwargs
 plot_azav_kwargs_default['plotlatlines'] = False
+plot_azav_kwargs_default['rvals'] = rvals
 kwargs_default.update(plot_azav_kwargs_default)
 
 # overwrite defaults, first main kwargs
@@ -71,13 +72,14 @@ rr = di_grid['rr']
 cost = di_grid['cost']
 tt_lat = di_grid['tt_lat']
 
-# make plot
-# another plot to the right of azav
-# do this by making a really large right margin, then adding another axis
-kw_make_figure.sub_margin_right_inches = 4.
+# make meridional plane plot
+kw_make_figure.sub_margin_right_inches = 5.
 fig, axs, fpar = make_figure(**kw_make_figure)
 ax = axs[0, 0]
+plot_azav (vp_av, rr, cost, fig, ax, **kw_plot_azav)
 
+# make another axis to right of azav plot
+# do this by making a really large right margin, then adding another axis
 # get fig dimensions
 fig_width_inches, fig_height_inches = fig.get_size_inches()
 fig_aspect = fig_height_inches/fig_width_inches
@@ -86,13 +88,31 @@ ax_left, ax_right, ax_bottom, ax_top = axis_range(ax)
 ax_width = ax_right - ax_left
 ax_height = ax_top - ax_bottom
 
-ax_line_left = ax_right + 1/2/fig_width_inches
+ax_line_left = ax_right + 1/fig_width_inches
 ax_line_bottom = ax_bottom
 ax_line_width = 1 - 1/8/fig_width_inches - ax_line_left
 ax_line_height = ax_height
 ax_line = fig.add_axes([ax_line_left, ax_line_bottom, ax_line_width, ax_line_height])
 
-plot_azav (vp_av, rr, cost, fig, ax, **kw_plot_azav)
+# make line plot
+for rval in rvals:
+    irval = np.argmin(np.abs(rr-rval))
+    label = 'r=%.3f' %rr[irval]
+    ax_line.plot(vp_av[:, irval], tt_lat, label=label)
+ax_line.legend()
+
+# mark zero lines
+mark_axis_vals(ax_line, 'x')
+mark_axis_vals(ax_line, 'y')
+
+# Get ticks everywhere
+plt.sca(ax_line)
+plt.minorticks_on()
+plt.tick_params(top=True, right=True, direction='in', which='both')
+
+# label the axes
+ax_line.set_xlabel(r'$\langle v_\phi\rangle$')
+ax_line.set_ylabel('latitude (degrees)')
 
 # make title 
 iter1, iter2 = get_iters_from_file(kw.the_file)

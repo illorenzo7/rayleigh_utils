@@ -947,3 +947,19 @@ def my_pcolormesh(field, fig, ax, **kwargs):
             ax.plot(xline, yline, 'k--')
         count += 1
     return kw.minmax[0]*divisor, kw.minmax[1]*divisor
+
+def mark_axis_vals(ax, which='x', vals=[0.], style='k-', lw=0.5):
+    n = 100
+    zero = np.zeros(n)
+    if which == 'x':
+        ymin, ymax = ax.get_ylim()
+        ax.set_ylim(ymin, ymax)
+        yrange = np.linspace(ymin, ymax, n)
+        for val in vals:
+            ax.plot(val + zero, yrange, style, linewidth=lw)
+    elif which == 'y':
+        xmin, xmax = ax.get_xlim()
+        ax.set_xlim(xmin, xmax)
+        xrange = np.linspace(xmin, xmax, n) # is this a built-in?
+        for val in vals:
+            ax.plot(xrange, val + zero, style, linewidth=lw)
