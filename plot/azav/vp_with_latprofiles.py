@@ -72,8 +72,25 @@ cost = di_grid['cost']
 tt_lat = di_grid['tt_lat']
 
 # make plot
+# another plot to the right of azav
+# do this by making a really large right margin, then adding another axis
+kw_make_figure.sub_margin_right_inches = 4.
 fig, axs, fpar = make_figure(**kw_make_figure)
 ax = axs[0, 0]
+
+# get fig dimensions
+fig_width_inches, fig_height_inches = fig.get_size_inches()
+fig_aspect = fig_height_inches/fig_width_inches
+# get ax dimensions
+ax_left, ax_right, ax_bottom, ax_top = axis_range(ax)
+ax_width = ax_right - ax_left
+ax_height = ax_top - ax_bottom
+
+ax_line_left = ax_right + 1/2/fig_width_inches
+ax_line_bottom = ax_bottom
+ax_line_width = 1 - 1/8/fig_width_inches - ax_line_left
+ax_line_height = ax_height
+ax_line = fig.add_axes([ax_line_left, ax_line_bottom, ax_line_width, ax_line_height])
 
 plot_azav (vp_av, rr, cost, fig, ax, **kw_plot_azav)
 
