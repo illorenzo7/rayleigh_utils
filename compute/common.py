@@ -1000,11 +1000,15 @@ def get_grid_info(dirname, verbose=False, fname=None, ntheta=None):
 
     return di
 
-def compute_axial_H(rr, sint):
+def compute_axial_H(rr, sint, rmin=None, rmax=None):
     # compute the axial distance H between the spheres r_min and r_max
     # assumes rr and sint are two arrays of compatible shape
     xx = rr*sint
-    rmin, rmax = np.min(rr), np.max(rr)
+    if rmin is None:
+        rmin = np.min(rr)
+    if rmax is None:
+        rmax = np.max(rr)
+
     d = rmax - rmin
     xx_flat = xx.flatten()
     H_flat = np.zeros_like(xx_flat)
@@ -1015,6 +1019,7 @@ def compute_axial_H(rr, sint):
         else:
             H_flat[ix] = np.sqrt(rmax**2 - xx_loc**2) - np.sqrt(rmin**2 - xx_loc**2)
     H = H_flat.reshape(np.shape(xx))
+    print("H=", H)
     return H
 
 def interpret_rvals(dirname, rvals):

@@ -98,7 +98,11 @@ def get_slice(a, varname, dirname=None, j=0):
             # contribution
 
         if 'pv' in varname: # need to divide by H
-            the_slice /= compute_axial_H(rr, sint)
+            print("rr = ", rr)
+            print("sint = ", sint)
+            # get rmin and rmax from the directory
+            rmin, rmax = get_rminmax(dirname)
+            the_slice /= compute_axial_H(rr, sint, rmin, rmax)
 
         if primevar:
             the_slice = prime(the_slice)
