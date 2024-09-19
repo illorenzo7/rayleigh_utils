@@ -1,7 +1,8 @@
 # Author: Loren Matilsky
 # Created: 09/16/2024
 #
-# Description: Script to plot potential vorticity in meridional plane
+# Description: Script to plot potential vorticity in meridional plane,
+# with latitude profiles beside it
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -20,18 +21,19 @@ clas0, clas = read_clas(args)
 dirname = clas0['dirname']
 dirname_stripped = strip_dirname(dirname, wrap=True)
 
-# get desired shells to average over for DR numbers
+# get desired radial levels for latitude profiles
 rvals = clas.rvals
 if rvals is None:
-    rvals = interpret_rvals(dirname, ['rmin', 'rmax'])
-nshells = len(rvals) - 1
+    # by default plot three radial levels: near bottom, middle, and top
+    rmin, rmid, rmax = interpret_rvals(dirname, ['rmin', 'rmid', 'rmax'])
+    H = rmax - rmin
+    rvals = np.array([rmin + 0.1*H, rmid, rmax - 0.1*H])
 
 # allowed args + defaults
 # key unique to this script
-kwargs_default = dict({'the_file': None, 'verbose': False, 'type': 'full'})
+kwargs_default = dict({'the_file': None, 'verbose': False})
 
 # also need make figure kwargs
-azav_fig_dimensions['margin_top_inches'] += 0.5*nshells
 nlines = get_num_lines(clas0.dirname_label)
 azav_fig_dimensions['margin_top_inches'] += (nlines-1)*default_line_height
 make_figure_kwargs_default.update(azav_fig_dimensions)
@@ -40,6 +42,8 @@ kwargs_default.update(make_figure_kwargs_default)
 
 # and of course need plot_azav kwargs
 plot_azav_kwargs_default['plotlatlines'] = False
+plot_azav_kwargs_default['rvals'] = rvals
+plot_azav_kwargs_default['no0'] = True
 kwargs_default.update(plot_azav_kwargs_default)
 
 # overwrite defaults, first main kwargs
@@ -69,40 +73,64 @@ ntheta = np.shape(vals)[0]
 di_grid = get_grid_info(dirname, ntheta=ntheta)
 rr = di_grid['rr']
 cost = di_grid['cost']
+rr_2d = di_grid['rr_2d']
+cost_2d = di_grid['cost_2d']
+sint_2d = di_grid['sint_2d']
 tt_lat = di_grid['tt_lat']
-xx = di_grid['xx']
 
-# frame rate
+# compute PV based on axial distance between shells
+# omz
 eq = get_eq(dirname)
-Om0 = 2*np.pi/eq.prot
+omz_av = omr_av*cost_2d - omt_av*sint_2d
+Q = (omz_av + 2*eq.om0)/compute_axial_H(rr_2d, sint_2d)
 
-# differential rotation in the rotating frame. 
-Om = vp_av/xx
-
-# make plot
+# make meridional plane plot
+kw_make_figure.sub_margin_right_inches = 5.
 fig, axs, fpar = make_figure(**kw_make_figure)
 ax = axs[0, 0]
+plot_azav (Q, rr, cost, fig, ax, **kw_plot_azav)
 
-plot_azav (Om/Om0, rr, cost, fig, ax, **kw_plot_azav)
+# make another axis to right of azav plot
+# do this by making a really large right margin, then adding another axis
+# get fig dimensions
+fig_width_inches, fig_height_inches = fig.get_size_inches()
+fig_aspect = fig_height_inches/fig_width_inches
+# get ax dimensions
+ax_left, ax_right, ax_bottom, ax_top = axis_range(ax)
+ax_width = ax_right - ax_left
+ax_height = ax_top - ax_bottom
+
+ax_line_left = ax_right + 1/fig_width_inches
+ax_line_bottom = ax_bottom
+ax_line_width = 1 - 1/8/fig_width_inches - ax_line_left
+ax_line_height = ax_height
+ax_line = fig.add_axes([ax_line_left, ax_line_bottom, ax_line_width, ax_line_height])
+
+# make line plot
+for rval in rvals:
+    irval = np.argmin(np.abs(rr-rval))
+    label = 'r=%.3f' %rr[irval]
+    ax_line.plot(Q[:, irval], tt_lat, label=label)
+ax_line.legend()
+
+# mark zero lines
+mark_axis_vals(ax_line, 'x')
+mark_axis_vals(ax_line, 'y')
+
+# Get ticks everywhere
+plt.sca(ax_line)
+plt.minorticks_on()
+plt.tick_params(top=True, right=True, direction='in', which='both')
+
+# label the axes
+ax_line.set_xlabel(label)
+ax_line.set_ylabel('latitude (degrees)')
 
 # make title 
 iter1, iter2 = get_iters_from_file(kw.the_file)
 time_string = get_time_string(dirname, iter1, iter2, threelines=True) 
-maintitle = clas0.dirname_label + '\n' +  r'$\Omega$' + ' (rotation rate)\n' + time_string 
-
-# get DR numbers in spherical shells
-# loop over shells and add line of text
-for ishell in range(nshells):
-    # print shell info first
-    r1 = rvals[ishell]
-    r2 = rvals[ishell+1]
-
-    # then non-D numbers in shell
-    diffrot = get_dr_contrast(dirname, r1, r2, the_file=kw.the_file, verbose=kw.verbose, ntheta=ntheta)
-    maintitle += '\n' +\
-        ( '(' + flt_fmt + ', ' + flt_fmt + '):') %(r1, r2) +\
-        '\n' + (r'$\Delta\Omega\ =\ $' + flt_fmt) %diffrot
-        #('(r_1, r_2) = (' + flt_fmt + ', ' + flt_fmt + '):') %(r1, r2)# +\
+label = r'$(\langle \omega_z\rangle +2\Omega_0)/H$' 
+maintitle = clas0.dirname_label + '\n' + label + '\n' + time_string 
 
 if not kw.rcut is None:
     maintitle += '\nrcut = %1.3e' %kw.rcut
@@ -118,7 +146,7 @@ pretag = ''
 if clas0.prepend:
     pretag = dirname_stripped + '_'
 
-savefile = plotdir + pretag + clas0['routinename'] + clas0['tag'] + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
+savefile = plotdir + pretag + 'PVlat' + clas0['tag'] + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
 
 if clas0['saveplot']:
     print ('saving figure at ' + savefile)
