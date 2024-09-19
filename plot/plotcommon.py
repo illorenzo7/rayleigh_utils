@@ -647,7 +647,7 @@ def add_cbar(fig, ax, im, **kwargs):
         #        ha='left', va='center', fontsize=kw.fontsize) 
         cax.set_title(kw.cbar_label, ha='left', fontsize=kw.cbar_fs)
 
-contourf_minmax_kwargs_default = dict({'posdef': False, 'logscale': False, 'symlog': False, 'sgnlog': False, 'fullrange': False, 'fullrange2': False, 'buff_ignore1': buff_frac, 'buff_ignore2': buff_frac}) 
+contourf_minmax_kwargs_default = dict({'posdef': False, 'no0': False, 'logscale': False, 'symlog': False, 'sgnlog': False, 'fullrange': False, 'fullrange2': False, 'buff_ignore1': buff_frac, 'buff_ignore2': buff_frac}) 
 
 def contourf_minmax(field, **kwargs):
     # Get good boundaries to saturate array [field], assuming either
@@ -684,6 +684,10 @@ def contourf_minmax(field, **kwargs):
     elif kw.posdef:
         sig = rms(field)
         minmax = 0., 3.*sig        
+    elif kw.no0:
+        mean = np.mean(field)
+        sig = np.std(field)
+        minmax = mean - 3*sig, mean + 3*sig
     else:
         sig = np.std(field)
         minmax = -3.*sig, 3.*sig

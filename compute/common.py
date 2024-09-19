@@ -1019,7 +1019,6 @@ def compute_axial_H(rr, sint, rmin=None, rmax=None):
         else:
             H_flat[ix] = np.sqrt(rmax**2 - xx_loc**2) - np.sqrt(rmin**2 - xx_loc**2)
     H = H_flat.reshape(np.shape(xx))
-    print("H=", H)
     return H
 
 def interpret_rvals(dirname, rvals):
