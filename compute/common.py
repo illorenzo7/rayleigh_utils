@@ -997,6 +997,25 @@ def get_grid_info(dirname, verbose=False, fname=None, ntheta=None):
     di['rw_3d'] = di['rw'].reshape((1, 1, di['nr']))
     di['xx_3d'] = di['rr_3d']*di['sint_3d']
     di['zz_3d'] = di['rr_3d']*di['cost_3d']
+
+    # compute the topographic beta parameter and the H between the spheres
+    rr = di.rr
+    xx = di.xx
+    rmin, rmax = np.min(rr), np.max(rr)
+    d = rmax - rmin
+    theta_c = np.arccos((rmin)/rmax)
+    sint_c = np.sin(theta_c)
+    di.tt_c = theta_c
+    di.tt_lat_c = 90 - theta_c/np.pi*180
+    sint = di.sint
+    di.H = np.zeros_like(xx)
+    for it in range(di.nt):
+        for ir in range(di.nr):
+            xx_loc = xx[it,ir]
+            if xx_loc > rmin: # outside tangent cylinder
+                di.H[it,ir] = 2*np.sqrt(rmax**2 - xx_loc**2)
+            else:
+                di.H[it,ir] = np.sqrt(rmax**2 - xx_loc**2) - np.sqrt(rmin**2 - xx_loc**2)
     return di
 
 
