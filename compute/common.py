@@ -1006,14 +1006,15 @@ def compute_axial_H(rr, sint):
     xx = rr*sint
     rmin, rmax = np.min(rr), np.max(rr)
     d = rmax - rmin
-    H_flat = np.zeros_like(xx.flatten())
-    for ix in range(len(xx.flatten())):
-        xx_loc = xx[ix]
+    xx_flat = xx.flatten()
+    H_flat = np.zeros_like(xx_flat)
+    for ix in range(len(xx_flat)):
+        xx_loc = xx_flat[ix]
         if xx_loc > rmin: # outside tangent cylinder
             H_flat[ix] = 2*np.sqrt(rmax**2 - xx_loc**2)
         else:
             H_flat[ix] = np.sqrt(rmax**2 - xx_loc**2) - np.sqrt(rmin**2 - xx_loc**2)
-    H = Hflat.reshape(np.shape(xx))
+    H = H_flat.reshape(np.shape(xx))
     return H
 
 def interpret_rvals(dirname, rvals):

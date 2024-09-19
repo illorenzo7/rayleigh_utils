@@ -108,7 +108,6 @@ def get_slice(a, varname, dirname=None, j=0):
             the_slice = prime_sph(the_slice, tw)
         del vals # free up memory
 
-
         return the_slice
     else:
         if '+' in varname or '=' in varname:

@@ -81,7 +81,7 @@ var_indices = {\
     'jp'    :       1007
 }
 
-var_cyl = ['vl', 'vz', 'oml', 'omz', 'bl', 'bz', 'jl', 'jz']
+var_cyl = ['vl', 'vz', 'oml', 'omz', 'absoml', 'absomz', 'pvl', 'pvz', 'bl', 'bz', 'jl', 'jz']
 
 rootlabels = {'v': r'$v$', 'b': r'$B$', 'om': r'$\omega$', 'absom': r'$(\mathbf{\omega} + 2\mathbf{\Omega_0})$', 'pv': r'$Q$', 'j': r'$\mathcal{J}$'}
 direclabels = {'r': r'$r$', 't': r'$\theta$', 'p': r'$\phi$', 'l': r'$\lambda$', 'z': r'$z$', 'T': r'$\Theta$', 'P': r'$\Phi$'}
