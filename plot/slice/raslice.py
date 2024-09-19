@@ -144,14 +144,15 @@ if rank == 0:
     if not kw.rvals is None:
         kw.samplevals = kw.rvals
 
-    # get the samplevals we want
-    if not kw.samplevals is None: # samplevals have been set directly
-        # need the available sampling locations
-        if isall(kw.samplevals):
-            kw.isamplevals = np.arange(sliceinfo.nsamplevals)
-        else:
-            kw.samplevals = make_array(kw.samplevals)
-            kw.isamplevals = inds_from_vals(sliceinfo.samplevals, kw.samplevals)
+    # get the samplevals we want (not needed for equatorial slices)
+    if not plottype == 'eq':
+        if not kw.samplevals is None: # samplevals have been set directly
+            # need the available sampling locations
+            if isall(kw.samplevals):
+                kw.isamplevals = np.arange(sliceinfo.nsamplevals)
+            else:
+                kw.samplevals = make_array(kw.samplevals)
+                kw.isamplevals = inds_from_vals(sliceinfo.samplevals, kw.samplevals)
 
     # these are the sample vals we end up with
     if plottype == 'eq':
