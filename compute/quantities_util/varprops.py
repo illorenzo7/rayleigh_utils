@@ -41,6 +41,14 @@ var_indices = {\
     'omt'   :       302,
     'omp'   :       303,
 
+    'absomr'   :       301,
+    'absomt'   :       302,
+    'absomp'   :       303,
+
+    'pvr'   :       301,
+    'pvt'   :       302,
+    'pvp'   :       303,
+
     's'     :       501,
     'p'     :       502,
 
@@ -70,11 +78,12 @@ var_indices = {\
 
     'jr'    :       1001,
     'jt'    :       1004,
-    'jp'    :       1007}
+    'jp'    :       1007
+}
 
 var_cyl = ['vl', 'vz', 'oml', 'omz', 'bl', 'bz', 'jl', 'jz']
 
-rootlabels = {'v': r'$v$', 'b': r'$B$', 'om': r'$\omega$', 'j': r'$\mathcal{J}$'}
+rootlabels = {'v': r'$v$', 'b': r'$B$', 'om': r'$\omega$', 'absom': r'$(\mathbf{\omega} + 2\mathbf{\Omega_0})$', 'pv': r'$Q$', 'j': r'$\mathcal{J}$'}
 direclabels = {'r': r'$r$', 't': r'$\theta$', 'p': r'$\phi$', 'l': r'$\lambda$', 'z': r'$z$', 'T': r'$\Theta$', 'P': r'$\Phi$'}
 
 def is_basic(varname_full):

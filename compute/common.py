@@ -998,26 +998,23 @@ def get_grid_info(dirname, verbose=False, fname=None, ntheta=None):
     di['xx_3d'] = di['rr_3d']*di['sint_3d']
     di['zz_3d'] = di['rr_3d']*di['cost_3d']
 
-    # compute the topographic beta parameter and the H between the spheres
-    rr = di.rr
-    xx = di.xx
-    rmin, rmax = np.min(rr), np.max(rr)
-    d = rmax - rmin
-    theta_c = np.arccos((rmin)/rmax)
-    sint_c = np.sin(theta_c)
-    di.tt_c = theta_c
-    di.tt_lat_c = 90 - theta_c/np.pi*180
-    sint = di.sint
-    di.H = np.zeros_like(xx)
-    for it in range(di.nt):
-        for ir in range(di.nr):
-            xx_loc = xx[it,ir]
-            if xx_loc > rmin: # outside tangent cylinder
-                di.H[it,ir] = 2*np.sqrt(rmax**2 - xx_loc**2)
-            else:
-                di.H[it,ir] = np.sqrt(rmax**2 - xx_loc**2) - np.sqrt(rmin**2 - xx_loc**2)
     return di
 
+def compute_axial_H(rr, sint):
+    # compute the axial distance H between the spheres r_min and r_max
+    # assumes rr and sint are two arrays of compatible shape
+    xx = rr*sint
+    rmin, rmax = np.min(rr), np.max(rr)
+    d = rmax - rmin
+    H_flat = np.zeros_like(xx.flatten())
+    for ix in range(len(xx.flatten())):
+        xx_loc = xx[ix]
+        if xx_loc > rmin: # outside tangent cylinder
+            H_flat[ix] = 2*np.sqrt(rmax**2 - xx_loc**2)
+        else:
+            H_flat[ix] = np.sqrt(rmax**2 - xx_loc**2) - np.sqrt(rmin**2 - xx_loc**2)
+    H = Hflat.reshape(np.shape(xx))
+    return H
 
 def interpret_rvals(dirname, rvals):
     # interpret array of rvals (array of strings), some could have the special keywords, rmin, rmid, rmax

@@ -52,7 +52,7 @@ def get_slice(a, varname, dirname=None, j=0):
             cost = a.costheta
             nt = len(cost)
             cost = cost.reshape((1, nt, 1))
-        else:
+        else: #an Equatorial_Slices or Shell_Spectra
             # note...don't do cylindrical projections for Shell_Spectra!
             # they don't multiply well
             cost = 0.
@@ -83,6 +83,23 @@ def get_slice(a, varname, dirname=None, j=0):
                 the_slice = cost*the_slice_r - sint*the_slice_t
         elif is_an_int(varname):
             the_slice = vals[..., lut[int(varname)]]
+
+        # for abs om and pv, right now this is just the vorticity
+        if 'absom' in varname or 'pv' in varname: 
+            # get the planetary vorticity
+            eq = get_eq(dirname)
+            if varname[-1] == 'z': # easiest
+                the_slice += 2*eq.om0
+            elif varname[-1] == 'r': 
+                the_slice += 2*eq.om0*cost
+            elif varname[-1] == 't':
+                the_slice -= 2*eq.om0*sint
+            # for lambda and phi, there is no planetary vorticity 
+            # contribution
+
+        if 'pv' in varname: # need to divide by H
+            the_slice /= compute_axial_H(rr, sint)
+
         if primevar:
             the_slice = prime(the_slice)
         elif sphvar:
@@ -90,6 +107,8 @@ def get_slice(a, varname, dirname=None, j=0):
             tw = gi.tweights
             the_slice = prime_sph(the_slice, tw)
         del vals # free up memory
+
+
         return the_slice
     else:
         if '+' in varname or '=' in varname:
