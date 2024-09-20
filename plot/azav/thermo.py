@@ -74,14 +74,15 @@ prs_2d = (eq.prs).reshape((1, nr))
 tmp_2d = (eq.tmp).reshape((1, nr))
 
 # Compute the NOND zonally averaged thermo. vars
-ent_az = vals[:, :, lut[501]]/eq.c_p
+ent_az = vals[:, :, lut[501]]#/eq.c_p
 prs_az = vals[:, :, lut[502]]/prs_2d
 
 # Calculate temp from EOS
+eq.gamma=5/3
 tmp_az = (eq.gamma - 1)/eq.gamma*prs_az + ent_az 
 
 # Compute the spherically averaged thermo. vars
-ent_sph = (vals_sph[:, 0, lut_sph[501]]/eq.c_p).reshape((1, nr))
+ent_sph = (vals_sph[:, 0, lut_sph[501]]).reshape((1, nr))
 prs_sph = (vals_sph[:, 0, lut_sph[502]]/eq.prs).reshape((1, nr))
 tmp_sph = (eq.gamma - 1)/eq.gamma*prs_sph + ent_sph
 
@@ -98,7 +99,7 @@ if kw.nond:
     basename += '_nond'
     titletag = '(nondimensional)'
 else:
-    terms = [ent*eq.c_p, prs*prs_2d, tmp*tmp_2d]
+    terms = [ent, prs*prs_2d, tmp*tmp_2d]
     titles = ['S', 'P', 'T']
     basename += '_dim'
     titletag = '(dimensional)'
