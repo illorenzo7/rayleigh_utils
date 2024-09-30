@@ -31,7 +31,7 @@ if rvals is None:
 
 # allowed args + defaults
 # key unique to this script
-kwargs_default = dict({'the_file': None, 'verbose': False})
+kwargs_default = dict({'the_file': None, 'verbose': False, 'absom': False})
 
 # also need make figure kwargs
 nlines = get_num_lines(clas0.dirname_label)
@@ -82,7 +82,14 @@ tt_lat = di_grid['tt_lat']
 # omz
 eq = get_eq(dirname)
 omz_av = omr_av*cost_2d - omt_av*sint_2d
-Q = (omz_av + 2*eq.om0)/compute_axial_H(rr_2d, sint_2d)
+if kw.absom:
+    Q = omz_av + 2*eq.om0
+    main_savename = 'absom_lat'
+    xlabel = r'$\langle \omega_z\rangle +2\Omega_0)$'
+else:
+    Q = (omz_av + 2*eq.om0)/compute_axial_H(rr_2d, sint_2d)
+    main_savename = 'PVH_lat'
+    xlabel = r'$(\langle \omega_z\rangle +2\Omega_0)/H$' 
 
 # make meridional plane plot
 kw_make_figure.sub_margin_right_inches = 5.
@@ -123,14 +130,13 @@ plt.minorticks_on()
 plt.tick_params(top=True, right=True, direction='in', which='both')
 
 # label the axes
-ax_line.set_xlabel(label)
+ax_line.set_xlabel(xlabel)
 ax_line.set_ylabel('latitude (degrees)')
 
 # make title 
 iter1, iter2 = get_iters_from_file(kw.the_file)
 time_string = get_time_string(dirname, iter1, iter2, threelines=True) 
-label = r'$(\langle \omega_z\rangle +2\Omega_0)/H$' 
-maintitle = clas0.dirname_label + '\n' + label + '\n' + time_string 
+maintitle = clas0.dirname_label + '\n' + xlabel + '\n' + time_string 
 
 if not kw.rcut is None:
     maintitle += '\nrcut = %1.3e' %kw.rcut
@@ -146,7 +152,7 @@ pretag = ''
 if clas0.prepend:
     pretag = dirname_stripped + '_'
 
-savefile = plotdir + pretag + 'PVlat' + clas0['tag'] + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
+savefile = plotdir + pretag + main_savename + clas0['tag'] + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
 
 if clas0['saveplot']:
     print ('saving figure at ' + savefile)
