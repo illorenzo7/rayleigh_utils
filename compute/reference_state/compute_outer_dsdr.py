@@ -17,7 +17,7 @@
 # the following will have defaults set by [fname]_meta.txt
 # --rmin : bottom of shell
 # --rmax : top of shell
-# --rt : radius of transition layer
+# --rt : radius of transition layer, if one exists
 # --jup : if "jup" is specified, RZ lies above CZ
 
 
@@ -82,10 +82,12 @@ if eq.fset[4] == 1: # user set kappa via custom ref
     kappa = eq.functions[4]
 else: # probably kappa is constant (=1)
     kappa = np.ones_like(rho)
-heat = eq.functions[5]
+heat = eq.constants[9]*eq.functions[5] # c10*f6
+kappa *= eq.constants[5] # kappa is c6*f5
 
 lum = 4.*np.pi*definite_integral(heat*r**2., r, kw.rmin, kw.rmax)
-dtdr_out = -lum/4./np.pi/kw.rmax**2/(rho*tmp*kappa)[0]
+irmax = np.argmin(np.abs(r - kw.rmax))
+dtdr_out = -lum/4./np.pi/kw.rmax**2/(rho*tmp*kappa)[irmax]
 
 print ("for lum = int_CZ f_6 dv =  %1.6e" %lum)
 print ("where (rmin, rt, rmax) =", kw.rmin, kw.rt, kw.rmax)
