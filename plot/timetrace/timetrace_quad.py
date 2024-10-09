@@ -6,6 +6,7 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy import integrate 
 import sys, os
 sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
@@ -14,6 +15,7 @@ from common import *
 from plotcommon import *
 from cla_util import *
 from rayleigh_diagnostics import GridInfo
+cumtrap = integrate.cumulative_trapezoid
 
 # Get the run directory on which to perform the analysis
 args = sys.argv
@@ -194,7 +196,9 @@ for ilat in range(nquadlat):
         if kw.tint: # integrate each term from the beginning
             for iterm in range(1,nterms):
                 t0 = times[0]
-                terms[iterm] = indefinite_integral(terms[iterm], times, t0)
+                #terms[iterm] = indefinite_integral(terms[iterm], times, t0)
+                terms[iterm] = cumtrap(terms[iterm], times, initial=0)
+
 
         # name these in case we quantify their rms later
         ddt = terms[0]
