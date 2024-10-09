@@ -67,7 +67,7 @@ if rank == 0:
     clas0, clas = read_clas(args)
     dirname = clas0['dirname']
     magnetism = clas0['magnetism']
-    kwargs_default = dict({'rad': False, 'samplevals': None, 'rvals': None, 'qvals': None, 'groupname': 'b', 'mvals': np.array([1])})
+    kwargs_default = dict({'rad': False, 'samplevals': None, 'rvals': None, 'qvals': None, 'groupname': 'v', 'mvals': np.array([1])})
     kw = update_dict(kwargs_default, clas)
 
     # can control samplevals with rvals directly:
