@@ -194,16 +194,19 @@ for ilat in range(nquadlat):
                 kw_lineplot.labels[0] = '(d/dt)' + kw_lineplot.labels[0]
 
         if kw.tint: # integrate each term from the beginning
-            for iterm in range(1,nterms):
-                t0 = times[0]
+            terms[0] -= terms[0][0] # subtract off the initial value
+            # so everything starts at 0
+            for iterm in range(1,nterms): # now integrate the source terms in time
+                #t0 = times[0]
                 #terms[iterm] = indefinite_integral(terms[iterm], times, t0)
                 terms[iterm] = cumtrap(terms[iterm], times, initial=0)
+                kw_lineplot.labels[iterm] = r'$\int$' + kw_lineplot.labels[iterm]
 
 
         # name these in case we quantify their rms later
         ddt = terms[0]
         tot = terms[-1]
-        difference = tot - ddt
+        difference = ddt - tot
 
         if kw.justtot:
             if 'meprod' in kw.groupname: # add induction + diffusion
@@ -218,15 +221,20 @@ for ilat in range(nquadlat):
                 terms = [ddt, induct, diffusion]
                 kw_lineplot.labels = ['d/dt (LHS)', 'induction', 'diffusion']
             else:
-                terms = [difference, tot, ddt]
-                kw_lineplot.labels = ['RHS - LHS', 'sum (RHS)', 'd/dt (LHS)']
+                terms = [ddt, tot, difference]
+                #kw_lineplot.labels = ['RHS - LHS', 'sum (RHS)', 'd/dt (LHS)']
+                kw_lineplot.labels = [kw_lineplot.labels[0], kw_lineplot.labels[-1], kw_lineplot.labels[0] + ' - ' + kw_lineplot.labels[-1]]
             kw_lineplot.linestyles = ['-', '--', ':']
             kw_lineplot.colors = ['k', 'r', 'g']
-            nterms = len(terms)
+            nterms = len(terms) # we reduced nterms
         elif kw.notot:
             terms = terms[1:-1]
             kw_lineplot.labels = kw_lineplot.labels[1:-1]
-            nterms = len(terms)
+            nterms = len(terms) # we reduced nterms
+        else: # make sure first and last plots are 'k-' and 'r--'
+            kw_lineplot.colors = ['k'] + color_order[1:nterms-1] + ['r']
+            kw_lineplot.linestyles = ['-'] + style_order[1:nterms-1] + ['--']
+
         # now thin the data on the terms and times
         #times = thin_data(times[ixmin:ixmax+1], ntot)
         for iterm in range(nterms):
