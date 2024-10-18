@@ -47,44 +47,69 @@ nr = di_grid['nr']
 eq = get_eq(dirname)
 
 # Convective velocity amplitudes, get these from KE
-frke = vals[:, 0, lut[410]]
-ftke = vals[:, 0, lut[411]]
-fpke = vals[:, 0, lut[412]]
+rke_fluc = vals[:, 0, lut[410]]
+tke_fluc = vals[:, 0, lut[411]]
+pke_fluc = vals[:, 0, lut[412]]
 
 # Total velocity amplitudes, get these from KE
 rke = vals[:, 0, lut[402]]
 tke = vals[:, 0, lut[403]]
 pke = vals[:, 0, lut[404]]
 
+# mean velocity amplitudes from tot - fluc
+rke_mean = rke - rke_fluc
+tke_mean = tke - tke_fluc
+pke_mean = pke - pke_fluc
+
 if kw.type == 'fluc':
-    rke_use = frke
-    tke_use = ftke
-    pke_use = fpke
+    rke_use = rke_fluc
+    tke_use = tke_fluc
+    pke_use = pke_fluc
 elif kw.type == 'tot':
     rke_use = rke
     tke_use = tke
     pke_use = pke
 elif kw.type == 'mean':
-    rke_use = rke - frke
-    tke_use = tke - ftke
-    pke_use = pke - fpke
+    rke_use = rke_mean
+    tke_use = tke_mean
+    pke_use = pke_mean
+elif kw.type == 'rat': # compute a bunch of ratios
+    vsq = (rke + tke + pke)/eq.rho # total
+    vsq_fluc = (rke_fluc + tke_fluc + pke_fluc)/eq.rho # convect.
+    vsq_fluc_r = rke_fluc/eq.rho # vertical convect.
+    vsq_fluc_h = (tke_fluc + pke_fluc)/eq.rho # horizontal convect.
+    vsq_dr = (pke_mean)/eq.rho # diff. rot.
+    vsq_mc = (rke_mean + tke_mean)/eq.rho # mer. circ.
+
+    amp_v = np.sqrt(vsq)
+    amp_fluc = np.sqrt(vsq_fluc)
+    amp_fluc_r = np.sqrt(vsq_fluc_r)
+    amp_fluc_h = np.sqrt(vsq_fluc_h)
+    amp_dr = np.sqrt(vsq_dr)
+    amp_mc = np.sqrt(vsq_mc)
+
 else:
-    print("type must be fluc, mean, or tot")
+    print("type must be fluc, mean, tot, or rat")
     print("exiting now")
     sys.exit()
 
-vsq_r = rke_use/eq.rho
-vsq_t = tke_use/eq.rho
-vsq_p = pke_use/eq.rho
-vsq = vsq_r + vsq_t + vsq_p
+# compute desired profiles
+if kw.type == 'rat':
+    profiles = [amp_fluc/amp_v, amp_dr/amp_v, amp_mc/amp_v, amp_fluc_r/amp_fluc_h]
+    kw_lineplot.labels = [r'$|\mathbf{u}^\prime|/|\mathbf{u}|$', r'$|\mathbf{u}_{DR}|/|\mathbf{u}|$', r'$|\mathbf{u}_{MC}|/|\mathbf{u}|$', r'$|u_r^\prime|/|\mathbf{u}_h^\prime|$']
+else:
+    vsq_r = rke_use/eq.rho
+    vsq_t = tke_use/eq.rho
+    vsq_p = pke_use/eq.rho
+    vsq = vsq_r + vsq_t + vsq_p
 
-amp_v = np.sqrt(vsq)
-amp_vr = np.sqrt(vsq_r)
-amp_vt = np.sqrt(vsq_t)
-amp_vp = np.sqrt(vsq_p)
+    amp_v = np.sqrt(vsq)
+    amp_vr = np.sqrt(vsq_r)
+    amp_vt = np.sqrt(vsq_t)
+    amp_vp = np.sqrt(vsq_p)
 
-profiles = [amp_vr, amp_vt, amp_vp, amp_v]
-kw_lineplot.labels = [r'$u_r$', r'$u_\theta$', r'$u_\phi$', r'$\mathbf{u}$']
+    profiles = [amp_vr, amp_vt, amp_vp, amp_v]
+    kw_lineplot.labels = [r'$u_r$', r'$u_\theta$', r'$u_\phi$', r'$\mathbf{u}$']
 
 # Create the plot; start with plotting all the energy fluxes
 fig, axs, fpar = make_figure(**kw_make_figure)
