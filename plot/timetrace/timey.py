@@ -241,7 +241,7 @@ for isampleval in kw.isamplevals:
         if not kw.ntot == 'full':
             field = thin_data(field, kw.ntot)
 
-        print ("plotting panel %02i of %02i" %(iplot, nplots))
+        print ("plotting panel %i of %i" %(iplot+1, nplots))
         plot_timey(field, times_thin, yaxis, fig, ax, **kw_plot_timey)
                 
         #  title the plot
