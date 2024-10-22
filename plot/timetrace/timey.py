@@ -25,7 +25,7 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = clas0['magnetism']
 
 # defaults
-kwargs_default = dict({'rad': False, 'groupname': 'v', 'sampletag': '', 'the_file': None, 'isamplevals': np.array([0]), 'samplevals': None, 'rvals': None, 'qvals': 'all', 'ntot': 500, 'navg': None, 'prepend': False, 'sub': False, 'xminmax': None, 'xmin': None, 'xmax': None, 'ntheta': None, 'tdt': False})
+kwargs_default = dict({'rad': False, 'groupname': 'v', 'sampletag': '', 'the_file': None, 'isamplevals': np.array([0]), 'samplevals': None, 'rvals': None, 'qvals': 'all', 'ntot': 500, 'tavg': None, 'prepend': False, 'sub': False, 'xminmax': None, 'xmin': None, 'xmax': None, 'ntheta': None, 'tdt': False})
 
 # also need make figure kwargs
 make_figure_kwargs_default.update(timey_fig_dimensions)
@@ -107,45 +107,6 @@ times = times[ixmin:ixmax + 1]
 iters = iters[ixmin:ixmax + 1]
 vals = vals[ixmin:ixmax + 1]
 
-# maybe time avg data
-if kw.navg is None:
-    print ("No time average: navg = none")
-else:
-    over2 = kw.navg//2
-    kw.navg = 2*over2 + 1 # only do symmetric averages
-    # i.e., kw.navg is odd. For any array of length L, there are thus
-    # L - navg + 1 symmetric averages
-    ntimes, ny, nsamplevals, nq  = np.shape(vals)
-    vals_timeavg = np.zeros((ntimes - kw.navg + 1, ny, nsamplevals, nq))
-    for i in range(kw.navg):
-        vals_timeavg += vals[i:i + ntimes - kw.navg + 1]
-    intervals_timeavg = times[kw.navg-1:] - times[:ntimes - kw.navg + 1]
-    vals = vals_timeavg/kw.navg # over write the vals with the timeav
-    times = times[over2:ntimes - over2]
-    iters = iters[over2:ntimes - over2]
-
-    # compute averaging time and output it
-    #averaging_time = (times[-1] - times[0])/ntimes*kw.navg
-    averaging_time = np.mean(intervals_timeavg)
-    averaging_std = np.std(intervals_timeavg)
-    print(buff_line)
-    print ("Averaging data in time: navg = %i" %kw.navg)
-    print ("t_avg = %.2f Prot" %averaging_time)
-    print ("sigma (t_avg) = %.3f Prot" %averaging_std)
-
-# maybe thin data
-if kw.ntot == 'full':
-    print(buff_line)
-    print ("ntot = %i (full time series)" %kw.ntot)
-else:
-    print(buff_line)
-    print ("ntot = %i" %kw.ntot)
-    print ("before thin_data: len(times) = %i" %len(times))
-    times = thin_data(times, kw.ntot)
-    iters = thin_data(iters, kw.ntot)
-    vals = thin_data(vals, kw.ntot)
-    print ("after thin_data: len(times) = %i" %len(times))
-
 # determine desired levels to plot
 
 # can control samplevals with rvals for time-latitude traces
@@ -206,8 +167,26 @@ if kw.groupname in ['torque']: # add two more terms at the top
     kw.titles.insert(1, title2)
     kw.titles.insert(1, title1)
 
+# Will probably thin data --- if we do, need to keep track of 
+# "thinned" times and iters
+if kw.ntot == 'full':
+    print(buff_line)
+    print ("ntot = %i (full time series)" %kw.ntot)
+    times_thin = times
+    iters_thin = iters
+else:
+    print(buff_line)
+    print ("ntot = %i" %kw.ntot)
+    print ("before thin_data: len(times) = %i" %len(times))
+    times_thin = thin_data(times, kw.ntot)
+    iters_thin = thin_data(iters, kw.ntot)
+    print ("after thin_data: len(times) = %i" %len(times))
+
+
 # Loop over the desired levels and save plots
 kw.isamplevals = make_array(kw.isamplevals) # needs to be array
+firsttime = True # keep track if we've plotted any panels yet
+# for printing purposes
 for isampleval in kw.isamplevals:
     sampleval = samplevals_avail[isampleval]
 
@@ -235,13 +214,35 @@ for isampleval in kw.isamplevals:
         else:
             field = terms[iplot][:, :, isampleval]
 
+        # possibly time average data
+        if kw.tavg is None:
+            if firsttime:
+                print (buff_line)
+                print("No time average: tavg = None")
+        else:
+            field, intervals = sliding_average(field, times, kw.tavg)
+            if firsttime:
+                print (buff_line)
+                print ("Performing time average, tavg = %.2f Prot" %np.mean(intervals))
+                print ("sigma(tavg) = %.3f Prot" %np.std(intervals))
+
         # possibly subtract temporal mean
         if kw.sub: # full Omega (no subtraction)
             nx, ny = np.shape(field)
             tempmean = np.mean(field, axis=0).reshape((1, ny))
             field -= tempmean
+            if firsttime:
+                print ("Subtracting temporal mean from data")
+        else:
+            if firsttime:
+                print ("Full data: no subtraction of temporal mean")
 
-        plot_timey(field, times, yaxis, fig, ax, **kw_plot_timey)
+        # probably thin data
+        if not kw.ntot == 'full':
+            field = thin_data(field, kw.ntot)
+
+        print ("plotting panel %02i of %02i" %(iplot, nplots))
+        plot_timey(field, times_thin, yaxis, fig, ax, **kw_plot_timey)
                 
         #  title the plot
         ax.set_title(kw.titles[iplot], fontsize=fontsize)
@@ -255,6 +256,9 @@ for isampleval in kw.isamplevals:
         # Put ylabel on middle strip
         if iplot == nplots//2:
             ax.set_ylabel(axislabel, fontsize=fontsize)
+
+        # Only do the print messages once
+        firsttime = False
 
     # Put some useful information on the title
     maintitle = dirname_stripped + '\n' +\

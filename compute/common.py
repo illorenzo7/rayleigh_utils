@@ -407,14 +407,17 @@ def thin_data(vals, ntot=None):
 def sliding_average(vals, times, delta_t):
     # simple sliding average
     nt = len(vals)
-    slider = np.zeros(nt)
+    slider = np.zeros_like(vals)
+    intervals = np.zeros(nt)
     for it in range(nt):
         t0 = times[it]
-        t1 = t0 - delta_t/2
-        t2 = t0 + delta_t/2
+        t1 = t0 - delta_t/2.
+        t2 = t0 + delta_t/2.
         it1, it2 = inds_from_vals(times, [t1, t2])
-        slider[it] = np.mean(vals[it1:it2])
-    return slider
+
+        slider[it] = np.mean(vals[it1:it2+1], axis=0)
+        intervals[it] = times[it2] - times[it1]
+    return slider, intervals
 
 def sliding_average_inds(vals, nsmooth):
     # simple sliding average
