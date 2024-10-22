@@ -14,7 +14,7 @@ from plotcommon import *
 timey_fig_dimensions = dict({'sub_width_inches': 7.5, 'sub_height_inches': 2.0, 'margin_top_inches': 1.25, 'sub_margin_left_inches': 5/8, 'sub_margin_right_inches': 7/8})
 
 # plot_timey needs my_contourf/my_pcolormesh args, then some
-plot_timey_kwargs_default = dict({'ycut': None, 'yminmax': None, 'ymin': None, 'ymax': None,'minmax2': None, 'xvals': np.array([]), 'yvals': np.array([]), 'navg': None, 'plotboundary': True, 'linestyles1': np.array(['-']), 'linewidths1': np.array([default_lw]), 'linecolors1': np.array(['k']),\
+plot_timey_kwargs_default = dict({'ycut': None, 'yminmax': None, 'ymin': None, 'ymax': None,'minmax2': None, 'xvals': np.array([]), 'yvals': np.array([]), 'plotboundary': True, 'linestyles1': np.array(['-']), 'linewidths1': np.array([default_lw]), 'linecolors1': np.array(['k']),\
        'linestyles2': np.array(['-']), 'linewidths2': np.array([default_lw]), 'linecolors2': np.array(['k']),\
        'pcolormesh': False})
 
@@ -48,15 +48,6 @@ def plot_timey(field, times, yy, fig, ax, **kwargs):
     # Get dimensions of field
     ntimes = len(times)
     ny = len(yy)
-
-    # First, average field in time possibly
-    if not kw.navg is None:
-        over2 = kw.navg//2
-        field_timeavg = np.zeros((ntimes - kw.navg + 1, ny))
-        for i in range(kw.navg):
-            field_timeavg += field_full[i:ntimes - kw.navg + 1 + i]
-        field_full = field_timeavg/kw.navg
-        times = times[over2:ntimes - over2+1]
 
     # set yminmax if not set by user
     if kw.yminmax is None:

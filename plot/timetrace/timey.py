@@ -25,7 +25,7 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = clas0['magnetism']
 
 # defaults
-kwargs_default = dict({'rad': False, 'groupname': 'v', 'sampletag': '', 'the_file': None, 'isamplevals': np.array([0]), 'samplevals': None, 'rvals': None, 'qvals': 'all', 'ntot': 500, 'prepend': False, 'sub': False, 'xminmax': None, 'xmin': None, 'xmax': None, 'ntheta': None, 'tdt': False})
+kwargs_default = dict({'rad': False, 'groupname': 'v', 'sampletag': '', 'the_file': None, 'isamplevals': np.array([0]), 'samplevals': None, 'rvals': None, 'qvals': 'all', 'ntot': 500, 'navg': None, 'prepend': False, 'sub': False, 'xminmax': None, 'xmin': None, 'xmax': None, 'ntheta': None, 'tdt': False})
 
 # also need make figure kwargs
 make_figure_kwargs_default.update(timey_fig_dimensions)
@@ -107,8 +107,38 @@ times = times[ixmin:ixmax + 1]
 iters = iters[ixmin:ixmax + 1]
 vals = vals[ixmin:ixmax + 1]
 
+# maybe time avg data
+if kw.navg is None:
+    print ("No time average: navg = none")
+else:
+    over2 = kw.navg//2
+    kw.navg = 2*over2 + 1 # only do symmetric averages
+    # i.e., kw.navg is odd. For any array of length L, there are thus
+    # L - navg + 1 symmetric averages
+    ntimes, ny, nsamplevals, nq  = np.shape(vals)
+    vals_timeavg = np.zeros((ntimes - kw.navg + 1, ny, nsamplevals, nq))
+    for i in range(kw.navg):
+        vals_timeavg += vals[i:i + ntimes - kw.navg + 1]
+    intervals_timeavg = times[kw.navg-1:] - times[:ntimes - kw.navg + 1]
+    vals = vals_timeavg/kw.navg # over write the vals with the timeav
+    times = times[over2:ntimes - over2]
+    iters = iters[over2:ntimes - over2]
+
+    # compute averaging time and output it
+    #averaging_time = (times[-1] - times[0])/ntimes*kw.navg
+    averaging_time = np.mean(intervals_timeavg)
+    averaging_std = np.std(intervals_timeavg)
+    print(buff_line)
+    print ("Averaging data in time: navg = %i" %kw.navg)
+    print ("t_avg = %.2f Prot" %averaging_time)
+    print ("sigma (t_avg) = %.3f Prot" %averaging_std)
+
 # maybe thin data
-if not kw.ntot == 'full':
+if kw.ntot == 'full':
+    print(buff_line)
+    print ("ntot = %i (full time series)" %kw.ntot)
+else:
+    print(buff_line)
     print ("ntot = %i" %kw.ntot)
     print ("before thin_data: len(times) = %i" %len(times))
     times = thin_data(times, kw.ntot)
@@ -189,6 +219,7 @@ for isampleval in kw.isamplevals:
         position_tag = '_' + samplename + (samplefmt %sampleval)
 
     # say we are about to plot
+    print(buff_line)
     print('plotting ' + samplelabel + ' (i = %02i)' %isampleval)
    
     # make plot
