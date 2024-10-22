@@ -409,6 +409,37 @@ def sliding_average(vals, times, delta_t):
     nt = len(vals)
     slider = np.zeros_like(vals)
     intervals = np.zeros(nt)
+    total_time = times[-1] - times[0]
+    navg = int(nt*delta_t/total_time)
+    over2 = navg//2
+    navg = over2*2 + 1
+
+    slider[0,...] = np.mean(vals[:over2, ...], axis=0)
+    for it in range(1, nt):
+        # begin with prior time's average
+        slider[it,...] = slider[it-1,...]
+
+        # calculate times to average over
+        it1 = it - over2
+        it2 = it + over2
+
+        if it1 >= 0: # subtract out the part of the mean we already have
+            slider[it, ...] -= vals[it1, ...]/navg
+        else:
+            it1 = 0 # need this to calculate interval
+        if it2 < nt: # add in the part of the mean we don't have
+            slider[it, ...] += vals[it2, ...]/navg
+        else:
+            it2 = nt - 1 # need this to calculate interval
+
+        intervals[it] = times[it2] - times[it1]
+    return slider, intervals
+
+def sliding_average_bak(vals, times, delta_t):
+    # simple sliding average
+    nt = len(vals)
+    slider = np.zeros_like(vals)
+    intervals = np.zeros(nt)
     for it in range(nt):
         t0 = times[it]
         t1 = t0 - delta_t/2.
