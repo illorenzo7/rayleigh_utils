@@ -49,14 +49,21 @@ dirname_stripped = strip_dirname(dirname)
 # SPECIFIC ARGS
 kwargs_default = dotdict(dict({'type': None, 'isamplevals': 0, 'samplevals': None, 'rvals': None, 'varnames': 'vr', 'clons': None, 'clats': None, 'clonrange': None, 'clatrange': None, 't0': False, 'movie': False, 'moviesampleval': False, 'movieclon': False, 'movieclat': False, 'shrink': False, 'prepend': False, 'dpi': 300}))
 
-# this guy need to update right away to choose fig dimensions
+# these guys need to update right away to choose fig dimensions
 if clas.type is None:
     plottype = 'moll'
 else:
     plottype = clas.type
+if clas.lonav is None:
+    lonav = False
+else:
+    lonav = True
 
 if plottype == 'moll':
-    fig_dimensions = moll_fig_dimensions
+    if lonav:
+        fig_dimensions = molllonav_fig_dimensions
+    else:
+        fig_dimensions = moll_fig_dimensions
 if plottype == 'ortho':
     fig_dimensions = ortho_fig_dimensions
 if plottype in ['moll', 'ortho']:
@@ -271,7 +278,10 @@ if rank == 0:
                             savename = 'img%04i.png' %count
                         else:
                             plotdir = clas0['plotdir'] + plottype + clas0['tag']
-                            savename = plottype + '_' + fname + '_' + simple_label 
+                            if lonav:
+                                savename = plottype + 'lonav_' + fname + '_' + simple_label 
+                            else:
+                                savename = plottype + '_' + fname + '_' + simple_label 
                             if kw.prepend:
                                 savename = dirname_stripped + '_' + savename
                             if not plottype == 'mer':

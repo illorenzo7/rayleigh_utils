@@ -15,9 +15,14 @@ from rayleigh_diagnostics import GridInfo # for doing averages
 generic_slice_fig_dimensions = dict({'sub_height_inches': 3., 'sub_margin_left_inches': 1/4, 'sub_margin_right_inches': 1/4, 'sub_margin_top_inches': 1, 'sub_margin_bottom_inches': 1/2, 'margin_top_inches': default_margin})
 
 moll_fig_dimensions = dict({'sub_aspect': 1/2})
+molllonav_fig_dimensions = dict({'sub_aspect': 1/2, 'sub_margin_right_inches': 2.})
 ortho_fig_dimensions = dict({'sub_aspect': 1})
 
 moll_fig_dimensions.update(generic_slice_fig_dimensions)
+# these guys need to be joined not updated
+molllonav_fig_dimensions =\
+        dict(     list(generic_slice_fig_dimensions.items()) +\
+                  list(molllonav_fig_dimensions.items())    )
 ortho_fig_dimensions.update(generic_slice_fig_dimensions)
 
 eq_fig_dimensions = ortho_fig_dimensions
