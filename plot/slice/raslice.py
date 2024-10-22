@@ -427,7 +427,7 @@ for ifigure in range(my_nfigures):
         plt.tick_params(top=True, right=True, direction='in', which='both')
 
         # label the axes
-        ax_line.set_xlabel('lon avg.')
+        ax_line.set_title('lon. avg.')
         ax_line.set_ylabel('latitude (degrees)')
 
 
