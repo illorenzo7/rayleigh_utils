@@ -44,6 +44,8 @@ echo "module load mpi-hpe" >> $lscript
 echo "module load comp-intel" >> $lscript
 
 echo >> $lscript
+echo "cat \$PBS_NODEFILE > /nobackup/lmatilsk/nodefile_\$PBS_JOBID" >> $lscript
+echo >> $lscript
 
 echo "sleep 432000" >> $lscript
 
