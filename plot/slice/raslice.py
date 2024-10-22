@@ -390,6 +390,47 @@ for ifigure in range(my_nfigures):
 
     plotting_func(*plotting_args, **kw_plotting_func)
 
+    # possibly add lon avg.
+    if lonav:
+        fig_width_inches, fig_height_inches = fig.get_size_inches()
+        fig_aspect = fig_height_inches/fig_width_inches
+        # get ax dimensions
+        ax_left, ax_right, ax_bottom, ax_top = axis_range(ax)
+        ax_width = ax_right - ax_left
+        ax_height = ax_top - ax_bottom
+
+        ax_line_left = ax_right + 1/8/fig_width_inches
+        ax_line_bottom = ax_bottom
+        ax_line_width = 1 - 5/8/fig_width_inches - ax_line_left
+        ax_line_height = ax_height
+        ax_line = fig.add_axes([ax_line_left, ax_line_bottom, ax_line_width, ax_line_height])
+
+        # make line plot
+        field_lonav = np.mean(field, axis=0)
+        tt_lat = (np.pi/2. - np.arccos(a.costheta))*180./np.pi
+        ax_line.plot(field_lonav, tt_lat)
+
+        # set ylim
+        ax_line.set_ylim(-90., 90.)
+
+        # mark zero lines
+        mark_axis_vals(ax_line, 'x')
+        mark_axis_vals(ax_line, 'y')
+
+        # move ticks to right
+        ax_line.yaxis.tick_right()
+        ax_line.yaxis.set_label_position("right")
+
+        # Get ticks everywhere
+        plt.sca(ax_line)
+        plt.minorticks_on()
+        plt.tick_params(top=True, right=True, direction='in', which='both')
+
+        # label the axes
+        ax_line.set_xlabel('lon avg.')
+        ax_line.set_ylabel('latitude (degrees)')
+
+
     # make title
     if kw.t0:
         iter0 = int(fname)
