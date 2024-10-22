@@ -265,11 +265,11 @@ for isampleval in kw.isamplevals:
             plotlabel + '\n' +\
             'groupname = ' + kw.groupname + '\n' +\
             samplelabel
-    if kw.navg is None:
-        maintitle += '\nt_avg = none'
+    if kw.tavg is None:
+        maintitle += '\ntavg = none'
     else:
-        averaging_time = (times[-1] - times[0])/len(times)*kw.navg
-        maintitle += '\n' + ('t_avg = %.1f Prot' %averaging_time)
+        maintitle += '\n' + ("tavg = %.2f Prot, sigma(tavg) = %.3f Prot"\
+                %(np.mean(intervals), np.std(intervals)))
 
     maintitle += '\nm=0 (lon. avg.)'
     if not kw.ycut is None:
