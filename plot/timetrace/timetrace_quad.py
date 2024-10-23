@@ -231,9 +231,10 @@ for ilat in range(nquadlat):
             terms = terms[1:-1]
             kw_lineplot.labels = kw_lineplot.labels[1:-1]
             nterms = len(terms) # we reduced nterms
-        else: # make sure first and last plots are 'k-' and 'r--'
-            kw_lineplot.colors = ['k'] + color_order[1:nterms-1] + ['r']
-            kw_lineplot.linestyles = ['-'] + style_order[1:nterms-1] + ['--']
+        else: # make sure the last curve is dashed 
+            #kw_lineplot.colors = ['k'] + color_order[1:nterms-1] + ['r']
+            #kw_lineplot.linestyles = ['-'] + style_order[1:nterms-1] + ['--']
+            kw_lineplot.linestyles = style_order[:nterms-1] + ['--']
 
         # now thin the data on the terms and times
         #times = thin_data(times[ixmin:ixmax+1], ntot)
