@@ -381,6 +381,9 @@ def plot_azav_grid(terms, rr, cost, **kwargs):
             lineplot(rr, [av_term], av_ax, xlabel=xlabel, title=title_loc, xcut=kw.rcut,  minmax=kw.minmax, minmax2=kw.minmax2, plotleg=False)
 
     # Put the main title in upper left
+    # check if there is an rcut
+    if not kw.rcut is None:
+        kw.maintitle += ('\nrcut = %1.3e' %kw.rcut)
     fig.text(fpar['margin_left'] + fpar['sub_margin_left'], 1.0 - fpar['margin_top'], kw.maintitle, ha='left', va='bottom', fontsize=default_titlesize)
 
     if kw.shav:

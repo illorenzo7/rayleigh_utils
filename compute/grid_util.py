@@ -53,6 +53,26 @@ def compute_r_grid(nr, r1, r2, rmin=None, rmax=None):
     rw[-1] *= 0.5 # Guass-Lobatto (use_extrema = True)
     return rr, rw
 
+def get_ncheby_from_rr(rr):
+    # look for repeated indices and infer ncheby
+    tol = 1e-8
+    dr = np.abs(np.diff(rr))
+    ir_repeat = np.where(dr < tol)[0]
+    domain_bounds = [np.max(rr)] + rr[ir_repeat].tolist() + [np.min(rr)]
+    domain_bounds = np.array(domain_bounds)[::-1] # remember domain_bounds
+    # should be in increasing order, not decreasing
+
+    ndom = len(domain_bounds)
+
+    # the indices of ir_repeat correspond the first place (from top)
+    # the boundary value is repeated (i.e., they are the BOTTOMS of 
+    # the top ndom - 1 domains
+    # note that only the inner boundary values are repeated
+    ir_bounds = np.array([0] + (ir_repeat + 1).tolist() + [len(rr)])
+    ncheby = np.diff(ir_bounds)[::-1]
+
+    return ncheby, domain_bounds
+
 def compute_grid_info(ncheby, domain_bounds, nt):
     ndomains = len(ncheby)
     nr = np.sum(ncheby)

@@ -8,8 +8,8 @@
 # By default the "quadrant" is the entire plane and 
 # G_Avgs are used
 #
-# if --nquadr or --rvals or --irvals is specified (but not --nquadlat or --latvals or --ilatvals)
-# meridional plane is divided into spherical shells and 
+# if --nquadr or --rvals or is specified (but not --nquadlat or --latvals)
+# the meridional plane is divided into spherical shells and 
 # Shell_Avgs are used
 #
 # if --nquadlat or --latvals is specified, meridional plane is divided 
@@ -55,6 +55,8 @@ import sys, os
 sys.path.append(os.environ['raco'])
 sys.path.append(os.environ['rapp'])
 from rayleigh_diagnostics import G_Avgs, Shell_Avgs, AZ_Avgs
+from common import inds_from_vals
+from grid_util import *
 
 if rank == 0:
     # modules needed only by proc 0 
@@ -76,76 +78,51 @@ if rank == 0:
     dirname = clas0['dirname']
     tag = clas0['tag']
 
-    # get grid information
-    di_grid = get_grid_info(dirname)
-    nt = di_grid['nt']
-    nr = di_grid['nr']
-    rw = di_grid['rw']
-    tw = di_grid['tw']
-    rr = di_grid['rr']
-    rmin, rmax = np.min(rr), np.max(rr)
-    cost = di_grid['cost']
-    tt_lat = di_grid['tt_lat']
-    latmin, latmax = np.min(tt_lat), np.max(tt_lat)
-
     # get grid info + default kwargs
     kwargs_default = dict({})
     kwargs_default['rvals'] = None # can specify radial domain boundaries directly 
-    kwargs_default['irvals'] = None # can specify radial domain boundaries directly (radial index, e.g., 32 64 96
     kwargs_default['latvals'] = None
-    kwargs_default['ilatvals'] = None
     kwargs_default['thinby'] = None # by default don't thin end series
 
     # update these possibly
     kw = update_dict(kwargs_default, clas)
 
-    # deal w/ radial boundaries
-    
-    # want to end up with kw.irvals 
-    # if --irvals wasn't specified directly, get it from kw.rvals
-    if kw.irvals is None: # this is the default
-        if kw.rvals is None: # this is the default
-            irvals = [nr - 1, 0] # as rvals increases, irvals decrease
-            dataname = 'G_Avgs'
-        else:
-            kw.rvals = np.sort(kw.rvals)
-            irvals = inds_from_vals(rr, kw.rvals)
-            dataname = 'Shell_Avgs'
-    else: # irvals was specified directly
-        irvals = np.sort(kw.irvals)[::-1] # irvals should always decrease
-        # (corresponding rvals increase)
+    # get desired quadrant boundaries
+
+    # radial boundaries
+    if kw.rvals is None: 
+        # this is the default, most easily overwritten
+        # with --nquadr
+        rmin, rmax = get_rminmax(clas0.dirname)
+        rvals = np.array([rmin, rmax])
+        dataname = 'G_Avgs'
+    else:
+        rvals = np.sort(kw.rvals)
         dataname = 'Shell_Avgs'
 
-    # deal w/ latitudinal boundaries
-    if kw.ilatvals is None: # this is the default
-        if kw.latvals is None: # this is the default
-            ilatvals = [0, nt - 1]
-        else:
-            ilatvals = np.sort(inds_from_vals(tt_lat, kw.latvals))
-            dataname = 'AZ_Avgs'
+    # latitudinal boundaries
+    if kw.latvals is None:
+        # this is the default, most easily overwritten
+        # with --nquadlat
+        latmin, latmax = get_latminmax(clas0.dirname)
+        latvals = np.array([latmin, latmax])
     else:
-        ilatvals = np.sort(kw.ilatvals)
+        latvals = np.sort(kw.latvals)
         dataname = 'AZ_Avgs'
 
     # update the number of quadrants
-    nquadlat = len(ilatvals) - 1
-    nquadr = len(irvals) - 1
+    nquadlat = len(latvals) - 1
+    nquadr = len(rvals) - 1
     nquad = nquadlat*nquadr
-
-    # update the actual boundary vals
-    latvals = tt_lat[ilatvals]
-    rvals = rr[irvals]
 
     # compute the volumes of each quadrant
     volumes = np.zeros((nquadlat, nquadr))
     for ilat in range(nquadlat):
-        it1 = ilatvals[ilat]
-        it2 = ilatvals[ilat + 1]
-
+        cost1 = np.cos(np.pi/2. - latvals[ilat]*np.pi/180.)
+        cost2 = np.cos(np.pi/2. - latvals[ilat+1]*np.pi/180.)
         for ir in range(nquadr):
-            ir1 = irvals[ir]
-            ir2 = irvals[ir + 1]
-            volumes[ilat, ir] = 2.*np.pi/3.*(rr[ir2]**3. - rr[ir1]**3.)*(cost[it2] - cost[it1])
+            r1, r2 = rvals[ir], rvals[ir+1]
+            volumes[ilat, ir] = 2.*np.pi/3.*(r2**3. - r1**3.)*(cost2 - cost1)
 
     # Get the Rayleigh data directory
     radatadir = dirname + '/' + dataname + '/'
@@ -181,10 +158,10 @@ else: # recieve my_files, my_nfiles
 # Broadcast dirname, radatadir, etc.
 if rank == 0:
     meta = [\
-dirname, dataname, radatadir, ilatvals, irvals, tw, rw]
+dirname, dataname, radatadir, latvals, rvals]
 else:
     meta = None
-dirname, dataname, radatadir, ilatvals, irvals, tw, rw = comm.bcast(meta, root=0)
+dirname, dataname, radatadir, latvals, rvals = comm.bcast(meta, root=0)
 
 # figure out which reading_func to use
 if dataname == 'G_Avgs':
@@ -208,14 +185,40 @@ if rank == 0:
     t1 = time.time()
 
 # Now analyze the data (some processes may not have nquadlat, nquadr, etc.)
-nquadlat = len(ilatvals) - 1
-nquadr = len(irvals) - 1
+nquadlat = len(latvals) - 1
+nquadr = len(rvals) - 1
 my_times = []
 my_iters = []
 my_vals = []
 
 for i in range(my_nfiles):
     a = reading_func(radatadir + str(my_files[i]).zfill(8), '')
+
+    # want to deal here with the possibility of a changing grid
+    # (changing n_theta, ncheby)
+    # thus need to compute ilatvals, irvals, tw, rw using current 
+    # data slice, instead of above
+
+    # get the grid from the current data slice
+    # only needed if not a global average
+    if dataname == 'G_Avgs': 
+        # ntheta and nr don't matter (they'll be averaged over to 1),
+        # just pick something
+        nt = 64
+        ncheby, domain_bounds = np.array([64]), np.array([4, 5])
+    elif dataname == 'Shell_Avgs': # ditto for making up ntheta
+        nt = 64
+        ncheby, domain_bounds = get_ncheby_from_rr(a.radius)
+    else:
+        nt = a.ntheta
+        ncheby, domain_bounds = get_ncheby_from_rr(a.radius)
+    rr, rw, tt, tw = compute_grid_info(ncheby, domain_bounds, nt)
+    tt_lat = 180./np.pi*(np.pi/2. - tt)
+    
+    irvals = inds_from_vals(rr, rvals)
+    ilatvals = np.sort(inds_from_vals(tt_lat, latvals))
+
+
     for j in range(a.niter):
         if dataname == 'Shell_Avgs':
             vals_loc = a.vals[:, 0, :, :]
