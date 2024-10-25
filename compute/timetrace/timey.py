@@ -14,6 +14,10 @@ from mpi4py import MPI
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 
+import sys,os
+sys.path.append(os.environ['raco'])
+from common import inds_from_vals
+
 # Start timing immediately
 comm.Barrier()
 if rank == 0:
@@ -21,7 +25,6 @@ if rank == 0:
     import time
     # info for print messages
     import sys, os
-    sys.path.append(os.environ['raco'])
     #sys.path.append(os.environ['raco'] + '/quantities_util')
     # import common here
     from common import *
@@ -71,16 +74,6 @@ if rank == 0:
     if not kw.rad and not kw.rvals is None:
         kw.samplevals = kw.rvals
 
-    # get default sampling locations (samplevals)
-    di_grid = get_grid_info(dirname)
-    rr = di_grid['rr']
-    tt_lat = di_grid['tt_lat']
-
-    if kw.rad:
-        sampleaxis = tt_lat
-    else:
-        sampleaxis = rr
-
     if kw.samplevals is None:
         if kw.rad:
             samplevals = np.array([-85.] + np.linspace(-75., 75., 11).tolist() + [85.])
@@ -117,15 +110,6 @@ if rank == 0:
     nproc_min, nproc_max, n_per_proc_min, n_per_proc_max =\
             opt_workload(nfiles, nproc)
 
-
-    isamplevals = []
-    for sampleval in samplevals:
-        isamplevals.append(np.argmin(np.abs(sampleaxis - sampleval)))
-    isamplevals = np.array(isamplevals)
-    # recompute the actual sample values we get
-    samplevals = sampleaxis[isamplevals]
-    nsamplevals = len(samplevals)
-
     # Distribute file_list to each process
     for k in range(nproc - 1, -1, -1):
         # distribute the partial file list to other procs 
@@ -149,12 +133,12 @@ else: # recieve appropriate file info if rank > 1
 
 # broadcast meta data
 if rank == 0:
-    meta = [dirname, radatadir, qvals, kw.rad, isamplevals, nsamplevals]
+    meta = [dirname, radatadir, qvals, kw.rad, samplevals]
 else:
     meta = None
 
 the_bcast = comm.bcast(meta, root=0)
-dirname, radatadir, qvals, rad, isamplevals, nsamplevals = the_bcast
+dirname, radatadir, qvals, rad, samplevals = the_bcast
 
 # Checkpoint and time
 comm.Barrier()
@@ -186,6 +170,21 @@ reading_func = AZ_Avgs
 
 for i in range(my_nfiles):
     a = reading_func(radatadir + str(my_files[i]).zfill(8), '')
+
+    # get sampling locations (repeat for each data object, to 
+    # deal with a possibly changing grid)
+    if rad:
+        tt = np.arccos(a.costheta)
+        tt_lat = 180./np.pi*(np.pi/2. - tt)
+        sampleaxis = tt_lat
+    else:
+        sampleaxis = a.radius
+
+    isamplevals = inds_from_vals(sampleaxis, samplevals)
+    # recompute the actual sample values we get
+    samplevals = sampleaxis[isamplevals]
+    nsamplevals = len(samplevals)
+
     for j in range(a.niter):
         if rad:
             my_vals.append(a.vals[:, :, :, j][isamplevals, :,  :][:, :, a.lut[qvals]])
