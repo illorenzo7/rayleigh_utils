@@ -133,8 +133,8 @@ def get_varprops(varname):
 
     return varname, deriv, primevar, sphvar
 
-fancy_op_labels = dict({'+': r'$+$', '=': r'$-$', '*': r'$\times$', '+': r'$\div$'})
-simple_op_labels = dict({'+': 'plus', '=': 'minus', '*': 'times', '+': 'div' })
+fancy_op_labels = dict({'+': r'$+$', '=': r'$-$', '*': r'$\times$', '/': r'$\div$'})
+simple_op_labels = dict({'+': 'plus', '=': 'minus', '*': 'times', '/': 'div' })
 
 def get_label(varname):
     # first test if varname is valid and if it's a basic variable
