@@ -23,7 +23,7 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = clas0['magnetism']
 
 # defaults
-kwargs_default = dict({'the_file': None, 'ntot': 500, 'clat': 10, 'dlat': 0, 'om': None, 'rad': False, 'lon': False, 'isamplevals': np.array([0]), 'samplevals': None, 'rvals': None, 'groupname': 'v', 'sub': False, 'prepend': False, 'ntheta': None, 'tdt': False})
+kwargs_default = dict({'the_file': None, 'ntot': 500, 'tavg': None, 'clat': 10, 'dlat': 0, 'om': None, 'rad': False, 'lon': False, 'isamplevals': np.array([0]), 'samplevals': None, 'rvals': None, 'groupname': 'v', 'sub': False, 'prepend': False, 'ntheta': None, 'tdt': False})
 
 # also need make figure kwargs
 timey_fig_dimensions['margin_top_inches'] = 1.0
@@ -164,7 +164,10 @@ if not kw.samplevals is None: # isamplevals being set indirectly
         for i in range(len(kw.samplevals)):
             kw.isamplevals[i] = np.argmin(np.abs(samplevals_avail - kw.samplevals[i]))
 
+
 # Loop over the desired levels and save plots
+firsttime = True # keep track if we've plotted any panels yet
+# for printing purposes
 kw.isamplevals = make_array(kw.isamplevals) # needs to be array
 for isampleval in kw.isamplevals:
     sampleval = samplevals_avail[isampleval]
@@ -180,12 +183,29 @@ for isampleval in kw.isamplevals:
     print('plotting ' + samplelabel + ' (i = %02i)' %isampleval)
    
     # make plot
+
+    # set up figure
     fig, axs, fpar = make_figure(**kw_make_figure)
     ax = axs[0, 0]
+
+    # get desired "field" to plot
     if kw.rad:
         field = Om[:, isampleval, :]/Om0
     else:
         field = Om[:, :, isampleval]/Om0
+
+    # possibly time average data
+    if kw.tavg is None:
+        if firsttime:
+            print (buff_line)
+            print("No time average: tavg = None")
+    else:
+        field, intervals = sliding_average(field, times, kw.tavg)
+        if firsttime:
+            print (buff_line)
+            print ("Performing time average, tavg = %.2f Prot" %np.mean(intervals))
+            print ("sigma(tavg) = %.3f Prot" %np.std(intervals))
+
     plot_timey(field, times, yaxis, fig, ax, **kw_plot_timey)
             
     #  title the plot
@@ -200,11 +220,12 @@ for isampleval in kw.isamplevals:
     maintitle = dirname_stripped + '\n' +\
             plotlabel + '\n' +\
             samplelabel
-    if kw.navg is None:
-        maintitle += '\nt_avg = none'
+
+    if kw.tavg is None:
+        maintitle += '\ntavg = none'
     else:
-        averaging_time = (times[-1] - times[0])/len(times)*kw.navg
-        maintitle += '\n' + ('t_avg = %.1f Prot' %averaging_time)
+        maintitle += '\n' + ("tavg = %.2f Prot, sigma(tavg) = %.3f Prot"\
+                %(np.mean(intervals), np.std(intervals)))
 
     maintitle += '\nm=0 (lon. avg.)'
     if not kw.ycut is None:
