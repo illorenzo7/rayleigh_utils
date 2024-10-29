@@ -207,6 +207,7 @@ for isampleval in kw.isamplevals:
     fig, axs, fpar = make_figure(**kw_make_figure)
 
 
+    count = 0 # for minmaxs, if specified
     for iplot in range(nplots):
         ax = axs[iplot, 0]
         if kw.rad:
@@ -243,7 +244,6 @@ for isampleval in kw.isamplevals:
 
         # possibly overwrite minmax here
         kw_plot_timey.minmax = kw.minmax # this is the default
-        count = 0
         if not kw.iplots is None:
             if iplot in make_array(kw.iplots): # these are the exceptions to default
                 kw_plot_timey.minmax = kw.minmaxs[2*count:2*(count+1)]
