@@ -25,7 +25,7 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = clas0['magnetism']
 
 # defaults
-kwargs_default = dict({'rad': False, 'groupname': 'v', 'sampletag': '', 'the_file': None, 'isamplevals': np.array([0]), 'samplevals': None, 'rvals': None, 'qvals': 'all', 'ntot': 500, 'tavg': None, 'prepend': False, 'sub': False, 'xminmax': None, 'xmin': None, 'xmax': None, 'ntheta': None, 'tdt': False})
+kwargs_default = dict({'rad': False, 'groupname': 'v', 'sampletag': '', 'the_file': None, 'isamplevals': np.array([0]), 'samplevals': None, 'rvals': None, 'qvals': 'all', 'ntot': 500, 'tavg': None, 'prepend': False, 'sub': False, 'xminmax': None, 'xmin': None, 'xmax': None, 'ntheta': None, 'tdt': False, 'minmaxs': None, 'iplots': None})
 
 # also need make figure kwargs
 make_figure_kwargs_default.update(timey_fig_dimensions)
@@ -240,6 +240,14 @@ for isampleval in kw.isamplevals:
         # probably thin data
         if not kw.ntot == 'full':
             field = thin_data(field, kw.ntot)
+
+        # possibly overwrite minmax here
+        kw_plot_timey.minmax = kw.minmax # this is the default
+        count = 0
+        if not kw.iplots is None:
+            if iplot in make_array(kw.iplots): # these are the exceptions to default
+                kw_plot_timey.minmax = kw.minmaxs[2*count:2*(count+1)]
+                count += 1
 
         print ("plotting panel %i of %i" %(iplot+1, nplots))
         plot_timey(field, times_thin, yaxis, fig, ax, **kw_plot_timey)
