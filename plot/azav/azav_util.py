@@ -264,7 +264,7 @@ def streamfunction(vr,vt,r,cost,order=0):
             
     return psi
 
-plot_azav_grid_kwargs_default = dict({'maintitle': None, 'titles': None, 'shav': False, 'tw': None, 'totsig': None})
+plot_azav_grid_kwargs_default = dict({'maintitle': None, 'titles': None, 'shav': False, 'sub': False, 'tw': None, 'totsig': None})
 plot_azav_grid_kwargs_default.update(plot_azav_kwargs_default)
 make_figure_kw_az = make_figure_kwargs_default.copy()
 make_figure_kw_az.update(azav_fig_dimensions)
@@ -342,6 +342,13 @@ def plot_azav_grid(terms, rr, cost, **kwargs):
         kw_make_figure.sub_margin_bottom_inches *= 2
     fig, axs, fpar = make_figure(**kw_make_figure)
 
+    # may need these theta weights
+    nt = len(cost)
+    nr = len(rr)
+    if kw.tw is None: # just average everything unweighted
+        kw.tw = 1.0/nt + np.zeros(nt)
+    tw_2d = kw.tw.reshape((nt, 1))
+
     # possibly latitudinal average figure as well
     if kw.shav:
         kw_make_figure_shav.nplots = nplots
@@ -356,16 +363,19 @@ def plot_azav_grid(terms, rr, cost, **kwargs):
 
         av_fig, av_axs, av_fpar = make_figure(**kw_make_figure_shav)
         xlabel = r'$r/R_\odot$' 
-        nt = len(cost)
-        if kw.tw is None: # just average everything unweighted
-            kw.tw = 1.0/nt + np.zeros(nt)
-        tw_2d = kw.tw.reshape((nt, 1))
 
     # plot all the terms
     for iplot in range(nplots):
         icol = iplot%fpar['ncol']
         irow = iplot//fpar['ncol']
         ax = axs[irow, icol]
+
+        # maybe need spherical avg
+        if kw.shav or kw.sub:
+            av_term = np.sum(terms[iplot]*tw_2d, axis=0)
+            if kw.sub:
+                terms[iplot] -= av_term.reshape((1, nr))
+
         plot_azav(terms[iplot], rr, cost, fig, ax, **kw_plot_azav)
 
         if not kw.titles is None:
@@ -376,7 +386,6 @@ def plot_azav_grid(terms, rr, cost, **kwargs):
 
         # possibly plot the lat. average
         if kw.shav:
-            av_term = np.sum(terms[iplot]*tw_2d, axis=0)
             av_ax = av_axs[irow, icol]
             lineplot(rr, [av_term], av_ax, xlabel=xlabel, title=title_loc, xcut=kw.rcut,  minmax=kw.minmax, minmax2=kw.minmax2, plotleg=False)
 
