@@ -202,6 +202,9 @@ def get_quantity_group(groupname, magnetism):
         if magnetism:
             qvals += [801, 802, 803, 1001, 1004, 1007]
 
+    if groupname == 'thermal':
+        qvals = [501,502, 507,508, 513,514]
+
     if groupname == 'torque':
         qvals = [1819, 1801, 1802, 1803, 1804]
         titles = ['L_z', 'tau_rs', 'tau_mcdr', 'tau_mc0', 'tau_v']
@@ -343,8 +346,8 @@ def get_quantity_group(groupname, magnetism):
 
     if groupname == 'teq': # thermal equation
         ncol = 5
-        qvals = [1401, lookup('advref'), 1421, 1434, 1435]
-        titles = ['(-) adv (pert)', '(-) adv (ref)', 'cond', 'Q(r)', 'visc']
+        qvals = [701, 1401, 1479, 1421, 1434, 1435]
+        titles = ['rho*T*S', '(-) adv (pert)', '(-) adv (ref)', 'cond', 'Q(r)', 'visc']
         if magnetism:
             ncol +=1
             qvals.append(1436)
