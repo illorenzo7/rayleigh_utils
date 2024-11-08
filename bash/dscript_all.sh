@@ -41,7 +41,7 @@ do
     npcol=`python $rau/bash/npcol.py $nprocs`
 
     echo "#PBS -l select=$select:ncpus=$ncpus:model=$modeltype" >> $fname
-    echo "#PBS -q long" >> $fname
+    echo "#PBS -q devel" >> $fname
     echo "#PBS -l walltime=2:00:00" >> $fname
     echo "#PBS -j oe" >> $fname
     echo "#PBS -W group_list=s2328" >> $fname
