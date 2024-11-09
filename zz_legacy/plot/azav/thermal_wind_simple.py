@@ -64,7 +64,7 @@ tt = di_grid['tt']
 xx = di_grid['xx']
 
 # Coriolis term:
-Om0 = get_parameter(dirname, 'angular_velocity')
+Om0 = get_eq(dirname).om0
 vp = vals[:, :, lut[3]]
 Om = Om0 + vp/xx
 

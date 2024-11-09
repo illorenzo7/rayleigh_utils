@@ -25,7 +25,7 @@ dirname_stripped = strip_dirname(dirname, wrap=True)
 
 # allowed args + defaults
 # key unique to this script
-kwargs_default = dict({'the_file': None})
+kwargs_default = dict({'the_file': None, 'simple': False})
 
 # also need make figure kwargs
 #azav_fig_dimensions['margin_top_inches'] += 1.5 
@@ -106,14 +106,20 @@ if clas0['magnetism']:
 # make the main title
 iter1, iter2 = get_iters_from_file(kw.the_file)
 time_string = get_time_string(dirname, iter1, iter2)
-kw_plot_azav_grid.maintitle = dirname_stripped + '\n' +\
-        'full thermal wind balance' + '\n' +\
-        time_string
+if kw.simple:
+    simple_or_full = 'simple'
+else:
+    simple_or_full = 'full'
+
+kw_plot_azav_grid.maintitle = dirname_stripped + ('\n%s thermal wind balance\n' %simple_or_full) + time_string
 
 # terms to plot and sub-titles
 terms = [svort_buoy, svort_adv_mm, svort_adv_rs, svort_visc]
 titles = ['svort_buoy', 'svort_adv_mm', 'svort_adv_rs', 'svort_visc']
-if clas0['magnetism']:
+if kw.simple:
+    terms = terms[:2]
+    titles = titles[:2]
+if clas0['magnetism'] and not kw.simple:
     terms.append(svort_mag_mm)
     terms.append(svort_mag_ms)
     titles.append('svort_mag_mm')
