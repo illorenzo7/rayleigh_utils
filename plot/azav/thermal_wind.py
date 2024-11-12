@@ -70,6 +70,11 @@ Om0 = 2*np.pi/eq.prot
 vp = vals[:, :, lut[3]]
 Om = Om0 + vp/xx
 
+# get the zonal vorticity (ish, don't forget about the rho)
+vort_phi = vals[:, :, lut[303]]
+u_theta = vals[:, :, lut[2]]
+lhs = eq.rho*(eq.dlnrho*u_theta + vort_phi)
+
 # Compute the finite difference curls of the r/theta forces
 force_r_adv = -vals[:, :, lut[1201]]
 force_r_adv_rs = -vals[:, :, lut[1210]]
@@ -114,11 +119,11 @@ else:
 kw_plot_azav_grid.maintitle = dirname_stripped + ('\n%s thermal wind balance\n' %simple_or_full) + time_string
 
 # terms to plot and sub-titles
-terms = [svort_buoy, svort_adv_mm, svort_adv_rs, svort_visc]
-titles = ['svort_buoy', 'svort_adv_mm', 'svort_adv_rs', 'svort_visc']
+terms = [lhs, svort_buoy, svort_adv_mm, svort_adv_rs, svort_visc]
+titles = ['curl(rho u)_phi', 'svort_buoy', 'svort_adv_mm', 'svort_adv_rs', 'svort_visc']
 if kw.simple:
-    terms = terms[:2]
-    titles = titles[:2]
+    terms = terms[:3]
+    titles = titles[:3]
 if clas0['magnetism'] and not kw.simple:
     terms.append(svort_mag_mm)
     terms.append(svort_mag_ms)
@@ -126,6 +131,7 @@ if clas0['magnetism'] and not kw.simple:
     titles.append('svort_mag_ms')
 kw_plot_azav_grid.titles = np.array(titles)
 kw_plot_azav_grid.totsig = np.ones(len(terms))
+kw_plot_azav_grid.totsig[0] = 0
 
 # make figure using usual routine
 fig = plot_azav_grid (terms, rr, cost, **kw_plot_azav_grid)
