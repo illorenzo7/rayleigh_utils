@@ -264,7 +264,7 @@ def streamfunction(vr,vt,r,cost,order=0):
             
     return psi
 
-plot_azav_grid_kwargs_default = dict({'maintitle': None, 'titles': None, 'shav': False, 'sub': False, 'tw': None, 'totsig': None})
+plot_azav_grid_kwargs_default = dict({'maintitle': None, 'titles': None, 'shav': False, 'sub': False, 'tw': None, 'totsig': None, 'minmaxs': None, 'iplots': None})
 plot_azav_grid_kwargs_default.update(plot_azav_kwargs_default)
 make_figure_kw_az = make_figure_kwargs_default.copy()
 make_figure_kw_az.update(azav_fig_dimensions)
@@ -365,6 +365,7 @@ def plot_azav_grid(terms, rr, cost, **kwargs):
         xlabel = r'$r/R_\odot$' 
 
     # plot all the terms
+    count = 0 # for minmaxs, if specified
     for iplot in range(nplots):
         icol = iplot%fpar['ncol']
         irow = iplot//fpar['ncol']
@@ -375,6 +376,14 @@ def plot_azav_grid(terms, rr, cost, **kwargs):
             av_term = np.sum(terms[iplot]*tw_2d, axis=0)
             if kw.sub:
                 terms[iplot] -= av_term.reshape((1, nr))
+
+        # check if we need minmax from minmaxs
+        if not kw.iplots is None:
+            if iplot in make_array(kw.iplots): # these are the exceptions to default
+                kw_plot_azav.minmax = kw.minmaxs[2*count:2*(count+1)]
+                count += 1
+            else: # this is default
+                kw_plot_azav.minmax = kw.minmax
 
         plot_azav(terms[iplot], rr, cost, fig, ax, **kw_plot_azav)
 
