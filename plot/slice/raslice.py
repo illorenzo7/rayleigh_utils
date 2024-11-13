@@ -98,6 +98,8 @@ radatadir = dirname + '/' + dataname + '/'
 kwargs_default.update(plotting_func_kwargs_default)
 make_figure_kwargs_default.update(fig_dimensions)
 kwargs_default.update(make_figure_kwargs_default)
+for key in range_options: # add the range options key
+    kwargs_default.key = None
 if rank == 0:
     print (buff_line)
     print ("plottype = " + plottype)
@@ -172,8 +174,11 @@ if rank == 0:
     print (buff_line)
 
     # print file list
-    print ('plotting %i %s files:\n%s through %s'\
-        %(nfiles, dataname, file_list[0], file_list[-1]))
+    if 'iters' in clas.keys():
+        print ('plotting the following files:', arr_to_str(file_list, '%s'))
+    else:
+        print ('plotting %i %s files:\n%s through %s'\
+            %(nfiles, dataname, file_list[0], file_list[-1]))
 
     # print varnames
     print (buff_line)
