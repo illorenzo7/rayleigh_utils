@@ -98,9 +98,9 @@ radatadir = dirname + '/' + dataname + '/'
 kwargs_default.update(plotting_func_kwargs_default)
 make_figure_kwargs_default.update(fig_dimensions)
 kwargs_default.update(make_figure_kwargs_default)
-for key in range_options: # add the range options key
-    kwargs_default.key = None
 if rank == 0:
+    for key in range_options: # add the range options key
+        kwargs_default[key] = None
     print (buff_line)
     print ("plottype = " + plottype)
     find_bad_keys(kwargs_default, clas, 'plot/slice/raslice', justwarn=True)
