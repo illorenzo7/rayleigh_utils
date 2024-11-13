@@ -47,17 +47,16 @@ dirname = clas0.dirname
 dirname_stripped = strip_dirname(dirname)
 
 # SPECIFIC ARGS
-kwargs_default = dotdict(dict({'type': None, 'isamplevals': 0, 'samplevals': None, 'rvals': None, 'varnames': 'vr', 'clons': None, 'clats': None, 'clonrange': None, 'clatrange': None, 't0': False, 'movie': False, 'moviesampleval': False, 'movieclon': False, 'movieclat': False, 'shrink': False, 'prepend': False, 'dpi': 300}))
+kwargs_default = dotdict(dict({'type': None, 'isamplevals': 0, 'samplevals': None, 'rvals': None, 'varnames': 'vr', 'clons': None, 'clats': None, 'clonrange': None, 'clatrange': None, 't0': False, 'movie': False, 'moviesampleval': False, 'movieclon': False, 'movieclat': False, 'shrink': False, 'prepend': False, 'dpi': 300, 'lonav': False}))
 
 # these guys need to update right away to choose fig dimensions
 if clas.type is None:
     plottype = 'moll'
 else:
     plottype = clas.type
-if clas.lonav is None:
-    lonav = False
-else:
-    lonav = True
+if 'lonav'in clas:
+    kwargs_default.lonav = True
+lonav = kwargs_default.lonav
 
 if plottype == 'moll':
     if lonav:
