@@ -264,7 +264,7 @@ def streamfunction(vr,vt,r,cost,order=0):
             
     return psi
 
-plot_azav_grid_kwargs_default = dict({'maintitle': None, 'titles': None, 'shav': False, 'sub': False, 'tw': None, 'totsig': None, 'minmaxs': None, 'iplots': None})
+plot_azav_grid_kwargs_default = dict({'maintitle': None, 'titles': None, 'shav': False, 'sub': False, 'tw': None, 'totsig': None, 'minmaxs': None, 'iplots': None, 'groupname': 'v'})
 plot_azav_grid_kwargs_default.update(plot_azav_kwargs_default)
 make_figure_kw_az = make_figure_kwargs_default.copy()
 make_figure_kw_az.update(azav_fig_dimensions)
@@ -384,6 +384,13 @@ def plot_azav_grid(terms, rr, cost, **kwargs):
                 count += 1
             else: # this is default
                 kw_plot_azav.minmax = kw.minmax
+
+        # check if groupname is 'v':
+        if kw.groupname == 'v' and kw.plotcontours: # still eliminate contours on v_r and v_theta
+            if iplot in [0, 1]:
+                kw_plot_azav.plotcontours = False
+            else:
+                kw_plot_azav.plotcontours = True
 
         plot_azav(terms[iplot], rr, cost, fig, ax, **kw_plot_azav)
 
