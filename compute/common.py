@@ -160,11 +160,14 @@ def array_of_strings(arr):
         li.append(str(ele))
     return np.array(li)
 
-def arr_to_str(a, fmt):
+def arr_to_str(a, fmt, nobra=False):
     st = ''
     for ele in a:
         st += (fmt + ' ') %ele
-    return '[' + st[:-1] + ']'
+    if nobra:
+        return st[:-1]
+    else:
+        return '[' + st[:-1] + ']'
 
 # basic array utilities
 def make_array(arr, tolist=False, length=None): 

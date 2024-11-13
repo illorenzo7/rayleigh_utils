@@ -17,15 +17,29 @@ rotation = clas0.rotation
 
 rotation = clas0.rotation
 
-# only need one clas here (iter, prot, tdt, sec)
+# only need one cla here (iter, prot, or tdt)
 for key, val in clas.items():
+    tvals = make_array(val) # make this an array
+    ntvals = len(tvals)
     translate_from = key
-    tval = val
 
-di = translate_times(tval, dirname, translate_from=translate_from)
-for key, val in di.items():
-    if key == 'val_iter':
-        fmt = "%8s = %i" 
-    else:
-        fmt = "%8s = %1.3e" 
-    print (fmt %(key,val))
+    val_iter = np.zeros(ntvals, dtype='int')
+    val_simt = np.zeros(ntvals, dtype='float')
+    val_tdt = np.zeros(ntvals, dtype='float')
+    if clas0.rotation:
+        val_prot = np.zeros(ntvals, dtype='float')
+
+    for i in range(ntvals):
+        tval = tvals[i] # we have multiple tvals
+        di = translate_times(tval, dirname, translate_from=translate_from)
+        val_iter[i] = di.val_iter
+        val_simt[i] = di.val_simt
+        val_tdt[i] = di.val_tdt
+        if clas0.rotation:
+            val_prot[i] = di.val_prot
+
+    print ("val_iter =", arr_to_str(val_iter, '%08i', nobra=True))
+    print ("val_simt =", arr_to_str(val_simt, '%.2f', nobra=True))
+    print ("val_tdt =", arr_to_str(val_tdt, '%.3f', nobra=True))
+    if clas0.rotation:
+        print ("val_prot =", arr_to_str(val_prot, '%.2f', nobra=True))
