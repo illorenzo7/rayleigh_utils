@@ -534,7 +534,7 @@ def my_infft(times, arr_fft, axis=0):
 #############################################################
 
 # options for selecting a range of files (to average over, trace over, etc.)
-range_options = ['--range', '--centerrange', '--leftrange', '--rightrange', '--iter', '--n', '--f', '--all']
+range_options = ['range', 'centerrange', 'leftrange', 'rightrange', 'iters', 'n', 'f', 'all']
 
 def my_mkdir(dirname):
     if not os.path.isdir(dirname):
@@ -578,7 +578,7 @@ def get_desired_range(int_file_list, clas):
     for key, val in clas.items():
         val = make_array(val)
         if key in ['range', 'centerrange', 'leftrange',\
-                'rightrange', 'iter']: # first arg will be iter no.
+                'rightrange']: # first arg will be iter no.
             # 'first' means first available file.
             # 'last' means last available file.
             desired_iter = val[0]
@@ -587,7 +587,7 @@ def get_desired_range(int_file_list, clas):
             elif desired_iter == 'last':
                 desired_iter = int_file_list[-1]
             else:
-                desired_iter = int(desired_iter)
+                desired_iter = int(float(desired_iter))
             index = np.argmin(np.abs(int_file_list - desired_iter))
         if key in ['centerrange', 'rightrange', 'leftrange']:
             # many options include an "ndatafiles" argument
@@ -603,7 +603,7 @@ def get_desired_range(int_file_list, clas):
             elif desired_iter == 'last':
                 desired_iter = int_file_list[-1]
             else:
-                desired_iter = int(desired_iter)
+                desired_iter = int(float(desired_iter))
             index_last = np.argmin(np.abs(int_file_list - desired_iter))
         if key == 'centerrange': #range centered around specific file
             if ndatafiles % 2 == 0: #ndatafiles is even
@@ -629,8 +629,7 @@ def get_desired_range(int_file_list, clas):
         if key == 'all': # all files
             index_first = 0
             index_last = nfiles - 1
-        if key == 'iter': # just get 1 iter
-            index_first = index_last = index
+
     # Check to see if either of the indices fall "out of bounds"
     # and if they do replace them with the first or last index
     if index_first < 0: 
@@ -648,12 +647,39 @@ def get_file_lists(radatadir, clas):
 
     # get all files
     file_list, int_file_list, nfiles = get_file_lists_all(radatadir)
-    # get the desired range
-    index_first, index_last = get_desired_range(int_file_list, clas)
-    # Remove parts of file lists we don't need
-    file_list = file_list[index_first:index_last + 1]
-    int_file_list = int_file_list[index_first:index_last + 1]
-    nfiles = index_last - index_first + 1
+
+    # see if the last key is "iters" (specific iters)
+    # if so, we need to do things slightly differently
+    range_key = None
+    for key, val in clas.items():
+        val = make_array(val)
+        if key in range_options:
+            range_key = key
+            range_val = val
+
+    if range_key == 'iters':
+        # first convert the range_val to all ints (they are strings rn)
+        tmp = np.ones_like(range_val, dtype='int')
+        for i in range(len(range_val)):
+            if range_val[i] == 'first':
+                tmp[i] = int_file_list[0]
+            elif range_val[i] == 'last':
+                tmp[i] = int_file_list[-1]
+            else:
+                tmp[i] = int(float(range_val[i]))
+        range_val = tmp
+
+        inds = inds_from_vals(int_file_list, range_val)
+        file_list = file_list[inds]
+        int_file_list = int_file_list[inds]
+    else:
+        # get the desired range from the range indices
+        index_first, index_last = get_desired_range(int_file_list, clas)
+        # Remove parts of file lists we don't need
+        file_list = file_list[index_first:index_last + 1]
+        int_file_list = int_file_list[index_first:index_last + 1]
+    # in all cases, check the number of files we end up with 
+    nfiles = len(file_list)
 
     # see if user wants to skip any files or get specific number 
     # (nfiles) in the range
