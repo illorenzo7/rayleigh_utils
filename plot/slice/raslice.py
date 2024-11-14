@@ -113,7 +113,7 @@ kw_make_figure = update_dict(make_figure_kwargs_default, clas)
 if rank == 0:
     # get desired file names in datadir and their integer counterparts
     # by default, read in last available file
-    clas_mod = dict({'iter': 'last'})
+    clas_mod = dict({'iters': 'last'})
     clas_mod.update(clas)
     file_list, int_file_list, nfiles = get_file_lists(radatadir, clas_mod)
 
@@ -173,7 +173,12 @@ if rank == 0:
     print (buff_line)
 
     # print file list
-    if 'iters' in clas.keys():
+    # see if user specified a range or if it was default
+    its_default = True
+    for key in clas.keys():
+        if key in range_options:
+            its_default = False
+    if 'iters' in clas.keys() or its_default:
         print ('plotting the following files:', arr_to_str(file_list, '%s'))
     else:
         print ('plotting %i %s files:\n%s through %s'\
@@ -471,8 +476,9 @@ for ifigure in range(my_nfigures):
     if rank == 0:
         pcnt_done = (ifigure+1)/my_nfigures*100.
         # print what we saved and how far along we are
-        print(fill_str("saved " + savefile + " (dpi=%i)" %kw.dpi) + '\n' +\
-                ('rank 0 %5.1f%% done' %pcnt_done), end='\r')
+        if clas0['saveplot']:
+            print(fill_str("saved " + savefile + " (dpi=%i)" %kw.dpi) + '\n' +\
+                    ('rank 0 %5.1f%% done' %pcnt_done), end='\r')
         # always show if nfigures is 1
         if nfigures == 1 and clas0['showplot']:
             plt.show()   
