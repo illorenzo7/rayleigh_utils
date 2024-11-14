@@ -50,6 +50,9 @@ def get_slice(a, varname, dirname=None, j=0):
     lut = a.lut 
     rr = a.radius
 
+    # shape to make geometric fields
+    zero = np.zeros(np.array(np.shape(vals[..., 0])))
+
     if basic:
         # gets a basic field associated with Rayleigh object a
         if vals.ndim == 4 and not hasattr(a, 'lpower'): 
@@ -60,7 +63,7 @@ def get_slice(a, varname, dirname=None, j=0):
         else: #an Equatorial_Slices or Shell_Spectra
             # note...don't do cylindrical projections for Shell_Spectra!
             # they don't multiply well
-            cost = 0.
+            cost = zero
 
         # first get root variable name and store any modifiers
         varname, deriv, primevar, sphvar = get_varprops(varname)
@@ -69,9 +72,6 @@ def get_slice(a, varname, dirname=None, j=0):
         sint = np.sin(np.arccos(cost))
         cott = cost/sint
        
-        # shape to make geometric fields
-        zero = np.zeros(np.array(np.shape(vals[..., 0])))
-
         # return the basic field based on the variable name
         if varname in var_indices: 
             # this is really only option for Shell_Spectra...
