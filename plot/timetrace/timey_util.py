@@ -136,3 +136,10 @@ def plot_timey(field, times, yy, fig, ax, **kwargs):
     plt.tick_params(top=True, right=True, direction='in', which='both')
     plt.xticks(fontsize=kw.fontsize)
     plt.yticks(fontsize=kw.fontsize)
+
+    # maybe turn off the axis lines
+    if not kw.plotboundary: # Thanks Google Gemini!
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['bottom'].set_visible(False)
+        ax.spines['left'].set_visible(False)
