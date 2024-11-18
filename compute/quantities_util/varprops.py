@@ -345,16 +345,17 @@ def get_quantity_group(groupname, magnetism):
         totsig = 'sumrow'
 
     if groupname == 'teq': # thermal equation
-        ncol = 5
-        qvals = [701, 1401, 1479, 1421, 1434, 1435]
-        titles = ['rho*T*S', '(-) adv (pert)', '(-) adv (ref)', 'cond', 'Q(r)', 'visc']
+        ncol = 6
+        qvals = [701, 1401, 1402, 1421, 1434, 1435]
+        titles = ['rho*T*S', 'adv (tot)', 'adv (fluc)', 'cond', 'Q(r)', 'visc']
         if magnetism:
             ncol +=1
             qvals.append(1436)
             titles.append('joule')
 
         totsig = np.ones(ncol)
-        totsig[0] = totsig[1] = -1
+        totsig[0] = totsig[2] = 0.
+        totsig[1] = -1
 
     # default just use the Rayleigh quantity abbreviations (if qvals has been defined by now)
     if titles is None and not qvals is None:
