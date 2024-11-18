@@ -345,9 +345,11 @@ def get_quantity_group(groupname, magnetism):
         totsig = 'sumrow'
 
     if groupname == 'teq': # thermal equation
-        ncol = 6
-        qvals = [701, 1401, 1402, 1421, 1434, 1435]
-        titles = ['rho*T*S', 'adv (tot)', 'adv (fluc)', 'cond', 'Q(r)', 'visc']
+        ncol = 5
+        #qvals = [701, 1401, 1402, 1421, 1434, 1435]
+        qvals = [701, 1401, 1402, 1421, 1435]
+        titles = ['rho*T*S', 'adv (tot)', '-adv (fluc)', 'cond', 'visc']
+        #titles = ['rho*T*S', 'adv (tot)', '-adv (fluc)', 'cond', 'Q(r)', 'visc']
         if magnetism:
             ncol +=1
             qvals.append(1436)
