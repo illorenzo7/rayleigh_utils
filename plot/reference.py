@@ -24,6 +24,7 @@ dirname_stripped = strip_dirname(dirname)
 # allowed args + defaults
 kwargs_default = dotdict()
 kwargs_default.fname = None
+kwargs_default.sigma = None
 kwargs_default.update(make_figure_kwargs_default)
 kwargs_default.update(lineplot_kwargs_default)
 
@@ -54,6 +55,12 @@ count = 0
 if not close_to_zero(eq.dlnrho):
     profiles.insert(6 + count, -1.0/eq.dlnrho)
     ylabels.insert(6 + count, r'$H_\rho=-(dln\overline{\rho}/dr)^{-1}$')
+
+if not kw.sigma is None:
+    sigma_sq = kw.sigma*eq.nsq
+    sigma_vsr = np.sqrt(np.abs(sigma_sq))
+    profiles.insert(2, sigma_vsr)
+    ylabels.insert(2, 'sigma(r)')
 
 # create the plot; start with plotting all the energy fluxes
 nplots = len(profiles)
