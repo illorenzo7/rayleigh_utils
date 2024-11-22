@@ -340,7 +340,7 @@ def sci_format(num, ndec=1, compact=False, nomant=False):
         return ((r'$%1.' + (r'%i' %ndec) + r'f\times10^{%i}$')\
                 %(mantissa, exponent))
 
-lineplot_kwargs_default = dict({'xlabel': None, 'ylabel': None, 'title': None, 'xvals': np.array([]), 'yvals': np.array([]), 'labels': None, 'xlogscale': False, 'xminmax': None, 'minmax': None, 'xcut': None, 'minmax2': None, 'scatter': False, 'colors': color_order, 'linestyles': style_order[0], 'markers': marker_order[0], 'lw': default_lw, 's': default_s, 'ncolleg': 3, 'fontsize': default_labelsize, 'nosci': False, 'noscix': False, 'nosciy': False})
+lineplot_kwargs_default = dict({'xlabel': None, 'ylabel': None, 'title': None, 'xvals': np.array([]), 'yvals': np.array([]), 'labels': None, 'xlogscale': False, 'xminmax': None, 'minmax': None, 'xcut': None, 'minmax2': None, 'scatter': False, 'colors': color_order, 'linestyles': style_order[0], 'markers': marker_order[0], 'lw': default_lw, 's': default_s, 'ncolleg': 3, 'fontsize': default_labelsize, 'nosci': False, 'noscix': False, 'nosciy': False, 'legloc': 'lower left'})
 lineplot_kwargs_default.update(lineplot_minmax_kwargs_default)
 
 def lineplot(xx, profiles, ax, **kwargs):
@@ -504,7 +504,7 @@ def lineplot(xx, profiles, ax, **kwargs):
 
     # make the legend
     if kw.plotleg:
-        ax.legend(loc='lower left', ncol=kw.ncolleg, fontsize=0.8*default_labelsize)
+        ax.legend(loc=kw.legloc, ncol=kw.ncolleg, fontsize=0.8*default_labelsize)
 
 add_cbar_kwargs_default = dict({'cbar_thick': 1/8, 'cbar_aspect': 1/20, 'cbar_prec': 2, 'cbar_no': 1, 'cbar_offset': None, 'cbar_pos': 'bottom', 'cbar_total_width': 1/2, 'units': '', 'nosci': False, 'cbar_fs': default_labelsize, 'tickvals': None, 'ticklabels': None, 'exp': 0, 'logscale': False, 'posdef': False, 'fullrange2': False, 'symlog': False, 'sgnlog': False, 'tol': 0.75, 'no0': False, 'cbar_label': None})
 def add_cbar(fig, ax, im, **kwargs):

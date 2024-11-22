@@ -21,7 +21,7 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = get_parameter(dirname, 'magnetism')
 
 # SPECIFIC ARGS for etrace:
-kwargs_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'growth': False, 'growthfrac': 0.5, 'xvals': np.array([]), 'inte': False, 'nquadr': None, 'nquadlat': None, 'type': 'tot', 'legfrac': None, 'nomag': False, 'noke': False, 'tdt': False})
+kwargs_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'growth': False, 'growthfrac': 0.5, 'xvals': np.array([]), 'inte': False, 'nquadr': None, 'nquadlat': None, 'type': 'tot', 'legfrac': None, 'nomag': False, 'noke': False, 'tdt': False, 'legloc': 'lower left'})
 
 # make figure kwargs
 nlines = get_num_lines(clas0.dirname_label)
@@ -255,7 +255,7 @@ for ilat in range(nquadlat):
 
         if ilat == 0 and ir == 0: # put a legend on the upper left axis
             plotleg = True
-            ax.legend(loc='lower left', ncol=3, fontsize=0.7*fontsize, columnspacing=1)
+            ax.legend(loc=kw.legloc, ncol=3, fontsize=0.7*fontsize, columnspacing=1)
         else:
             plotleg = False
 
