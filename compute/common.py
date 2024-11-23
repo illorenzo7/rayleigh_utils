@@ -69,6 +69,11 @@ sun.r_bcz = sun.rbcz = 5.0e10
 sun.rbcz_nond = sun.rbcz/sun.r
 # radius for the third density scale height (according to model S)
 sun.r_nrho3 = 6.5860209e10 
+sun.om_rz = 2.70e-6
+
+# might as well get model S
+dir_modelS = os.environ['notes'] + '/Model_S/'
+di_modelS = dotdict(get_dict(dir_modelS + 'Model_S.pkl'))
 
 #######################################
 # RANDOM CONSTANTS FOR COMPUTE ROUTINES
