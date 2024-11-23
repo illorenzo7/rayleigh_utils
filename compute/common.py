@@ -71,10 +71,6 @@ sun.rbcz_nond = sun.rbcz/sun.r
 sun.r_nrho3 = 6.5860209e10 
 sun.om_rz = 2.70e-6
 
-# might as well get model S
-dir_modelS = os.environ['notes'] + '/Model_S/'
-di_modelS = dotdict(get_dict(dir_modelS + 'Model_S.pkl'))
-
 #######################################
 # RANDOM CONSTANTS FOR COMPUTE ROUTINES
 #######################################
@@ -92,6 +88,22 @@ letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l',\
     'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
 
 buff_line = buffer_line = "=============================================="
+
+# get a dictionary routine
+def get_dict(fname):
+    # basic routine for reading post-processed data (either .pkl or .npy format)
+    # update 10/07/22: maybe I don't need the "npy" format anymore?
+    if fname[-3:] == 'npy':
+        di = np.load(fname, encoding='latin1', allow_pickle=True).item()
+    elif fname[-3:] == 'pkl':
+        f = open(fname, 'rb')
+        di = pickle.load(f)
+        f.close()
+    return di
+
+# might as well get model S now
+dir_modelS = os.environ['notes'] + '/Model_S/'
+di_modelS = dotdict(get_dict(dir_modelS + 'Model_S.pkl'))
 
 ######################################
 # FORMATTING ROUTINES FOR PRINT OUTPUT
@@ -751,17 +763,6 @@ def get_widest_range_file(datadir, dataname, stringent=True):
             return datadir + specific_files[ind]
     # if we reached this point, no file can be found
     return None
-
-def get_dict(fname):
-    # basic routine for reading post-processed data (either .pkl or .npy format)
-    # update 10/07/22: maybe I don't need the "npy" format anymore?
-    if fname[-3:] == 'npy':
-        di = np.load(fname, encoding='latin1', allow_pickle=True).item()
-    elif fname[-3:] == 'pkl':
-        f = open(fname, 'rb')
-        di = pickle.load(f)
-        f.close()
-    return di
 
 def read_log(fname):
     # routine for reading Rayleigh logfiles (the files I redirect Rayleigh output to)
