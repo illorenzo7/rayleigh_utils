@@ -25,6 +25,7 @@ dirname_stripped = strip_dirname(dirname)
 kwargs_default = dotdict()
 kwargs_default.fname = None
 kwargs_default.sigma = None
+kwargs_default.nonsolar = False
 kwargs_default.update(make_figure_kwargs_default)
 kwargs_default.update(lineplot_kwargs_default)
 
@@ -56,17 +57,11 @@ if not close_to_zero(eq.dlnrho):
     profiles.insert(6 + count, -1.0/eq.dlnrho)
     ylabels.insert(6 + count, r'$H_\rho=-(dln\overline{\rho}/dr)^{-1}$')
 
-if not kw.sigma is None:
+if not kw.sigma is None: # plot sigma
     sigma_sq = kw.sigma**2*eq.nsq
     sigma_vsr = np.sqrt(np.abs(sigma_sq))
     profiles.insert(2, sigma_vsr)
     ylabels.insert(2, 'sigma(r)')
-
-    # plot solar sigma for reference
-    if not kw.nonsolar:
-        # non
-        di_modelS.
-
 
 # create the plot; start with plotting all the energy fluxes
 nplots = len(profiles)
@@ -83,6 +78,21 @@ for iplot in range(nplots):
     ax = axs.flatten()[iplot]
     kw_lineplot.ylabel = ylabels[iplot]
     lineplot(eq.rr, profiles[iplot], ax, **kw_lineplot)
+
+if not kw.sigma is None and not kw.nonsolar:
+    # plot solar sigma for reference
+    # compute the nondimensional rr
+    H = sun.r_nrho3 - sun.r_bcz
+    rr_S = di_modelS.rr/H
+    ir2, ir1 = inds_from_vals(rr_S, [np.min(eq.rr), np.max(eq.rr)])
+    ax = axs[0,2]
+    ax.plot(rr_S[ir1:ir2+1], di_modelS.sigma[ir1:ir2+1], label='solar')
+    # change the limits
+    sigmax = max(1., np.max(sigma_vsr))
+    ax.set_ylim(-0.2,sigmax)
+    ax.legend()
+
+
 
 # make title 
 the_title = dirname_stripped + '\nbackground reference state' +\
