@@ -39,7 +39,7 @@ dirname = clas0['dirname']
 
 # Set default kwargs
 # start with filename, which may change
-kw_default = dotdict(dict({'fname': 'customfile', 'delta': 0.02, 'sigma': 0.2, 'buoy': 9.}))
+kw_default = dotdict(dict({'fname': 'customfile', 'delta': 0.219, 'sigma': 0.2, 'buoy': 9.}))
 kw_default = update_dict(kw_default, clas)
 # read in metadata (regarding radial structure) to put into keywords
 metafile = dirname + '/' + kw_default.fname + '_meta.txt'
