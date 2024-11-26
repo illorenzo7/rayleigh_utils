@@ -134,39 +134,25 @@ print("Setting f_5 and derivative f_12")
 eq.set_function(kappa, 5)
 eq.set_function(dlnkappa, 12)
 
-if False:
-    print("Writing the diffusions to %s" %the_file)
-    print(buff_line)
-    eq.write(the_file)
+print("Writing the diffusions to %s" %the_file)
+print(buff_line)
+eq.write(the_file)
 
-    # record what we did in the meta file
-    f = open(dirname + '/' + metafile, 'a')
-    print("Also computed a custom diffusion kappa for the RZ-CZ system.")
-    print("to ensure arbitrary sigma AND buoyancy via altering Pr(r)")
-    if kw.jup:
-        print ("geometry : Jovian (RZ atop CZ)")
-    else:
-        print ("geometry : solar (CZ atop RZ)")
-    print("(rmin, rt, rmax): (%1.2f, %1.2f, %1.2f)" %(kw.rmin, kw.rt, kw.rmax))
-    print("sigma : %1.3f" %kw.sigma)
-    print("buoy : %1.3f" %kw.buoy)
-    print("delta_kappa : %1.5f" %kw.delta)
-    print(buff_line)
+# record what we did in the meta file
+f = open(dirname + '/' + metafile, 'a')
+f.write("Also computed a custom diffusion kappa for the RZ-CZ system.")
+f.write("to ensure arbitrary sigma AND buoyancy via altering Pr(r)")
+if kw.jup:
+    f.write ("geometry : Jovian (RZ atop CZ)")
+else:
+    f.write ("geometry : solar (CZ atop RZ)")
+f.write("(rmin, rt, rmax): (%1.2f, %1.2f, %1.2f)" %(kw.rmin, kw.rt, kw.rmax))
+f.write("sigma : %1.3f" %kw.sigma)
+f.write("buoy : %1.3f" %kw.buoy)
+f.write("delta_kappa : %1.5f" %kw.delta)
+f.write(buff_line)
+f.write(buff_line + '\n')
+f.close()
 
-
-    f.write("Also added custom diffusion profiles using the\n")
-    f.write("set_diffusions_rhopower routine.\n")
-    f.write("diffusions have the folowing attributes:\n")
-    f.write("diffusion ~ rho^%1.5f\n" %kw.power)
-    f.write("normalized by CZ volume integral")
-    if kw.jup:
-         f.write("geometry : Jovian (RZ atop CZ)\n")
-    else:
-         f.write("geometry : solar (CZ atop RZ)\n")
-    f.write("(rmin, rt, rmax): (%1.2f, %1.2f, %1.2f)\n" %(kw.rmin, kw.rt, kw.rmax))
-    f.write("power : %1.5f\n" %kw.power)
-
-    f.write(buff_line + '\n')
-    f.close()
-    print("Writing the diffusion metadata to %s" %metafile)
-    print(buff_line)
+print("Wrote the diffusion metadata to %s" %metafile)
+print(buff_line)
