@@ -24,7 +24,6 @@
 
 import numpy as np
 import sys, os
-from generate_CZRZ_reference import psifunc, dpsifunc
 
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
@@ -80,102 +79,94 @@ else: # CZ above RZ
     rbrz, rtcz = kw.rmin, kw.rmax
     rtrz = rbcz = kw.rt
 
-print (rbrz, rtrz, rbcz, rtcz)
+# Open and read the hopefully already existing reference file!
+eq = equation_coefficients()
+the_file = dirname + '/' + kw.fname
+eq.read(the_file)
+r = eq.radius
+nr = eq.nr
+rho = eq.functions[0]
+dlnrho = eq.functions[7]
+grav = eq.functions[1]/rho
+nsq = grav*eq.functions[13] # make sure I stick with this normalization
+nu = eq.functions[2]
+dlnu = eq.functions[10]
+dnudr = nu*dlnu
+
+# get the Prandtl number from main_parameters
+parfile = dirname + '/main_parameters'
+print (buff_line)
+print ("reading Pr from", parfile)
+f = open(parfile, 'r')
+lines = f.readlines()
+f.close()
+di_par = dotdict({})
+for line in lines:
+    key, val = line.split('=')
+    key = key.strip()
+    val = float(val[:-1])
+    di_par[key] = val
+
+# compute kappa and its derivative to match "sigma" at the lower boundary
+kmax = (nsq*nu)[-1]*kw.buoy*di_par.pr/kw.sigma**2.
+kappa = nu + (kmax - nu[-1])*(1. - psifunc(r, kw.rt - kw.delta, kw.delta))
+numer = dnudr - (kmax - nu[-1])*dpsifunc(r, kw.rt-kw.delta, kw.delta)
+denom = nu + (kmax - nu[-1])*(1. - psifunc(r, kw.rt - kw.delta, kw.delta))
+dlnkappa = numer/denom
+
+# Ok we're done!
+
+print(buff_line)
+print("Computed diffusion kappa for an RZ-CZ system.")
+print("to ensure arbitrary sigma AND buoyancy via altering Pr(r)")
+if kw.jup:
+    print ("geometry : Jovian (RZ atop CZ)")
+else:
+    print ("geometry : solar (CZ atop RZ)")
+print("(rmin, rt, rmax): (%1.2f, %1.2f, %1.2f)" %(kw.rmin, kw.rt, kw.rmax))
+print("sigma : %1.3f" %kw.sigma)
+print("buoy : %1.3f" %kw.buoy)
+print("delta_kappa : %1.5f" %kw.delta)
+print(buff_line)
+
+# Now write to file using the equation_coefficients framework
+print("Setting f_5 and derivative f_12")
+eq.set_function(kappa, 5)
+eq.set_function(dlnkappa, 12)
+
 if False:
-    # Open and read the hopefully already existing reference file!
-    eq = equation_coefficients()
-    the_file = dirname + '/' + kw.fname
-    eq.read(the_file)
-    r = eq.radius
-    nr = eq.nr
-    rho = eq.functions[0]
-    dlnrho = eq.functions[7]
-    grav = eq.functions[1]/rho
-    nsq = grav*eq.functions[13] # make sure I stick with this normalization
-    nu = eq.functions[2]
-    dlnu = eq.functions[10]
-    dnudr = nu*dlnu
+    print("Writing the diffusions to %s" %the_file)
+    print(buff_line)
+    eq.write(the_file)
 
-    print("nu=", nu)
-
-    if False:
-        # get the Prandtl number from main_parameters
-        parfile = dirname + '/main_parameters'
-        print (buff_line)
-        print ("reading Pr from", parfile)
-        f = open(parfile, 'r')
-        lines = f.readlines()
-        f.close()
-        di_par = dotdict({})
-        for line in lines:
-            key, val = line.split('=')
-            key = key.strip()
-            val = float(val[:-1])
-            di_par[key] = val
-            print(key, val)
-        print("nu=", nu)
-
-        # compute kappa and its derivative to match "sigma" at the lower boundary
-        kmax = (nsq*nu)[-1]*kw.buoy*di_par.pr/kw.sigma**2.
-        kappa = nu + (kmax - nu[-1])*(1. - psifunc(r, kw.rt - kw.delta, kw.delta))
-        numer = dnudr - (kmax - nu[-1])*dpsifunc(r, kw.rt-kw.delta, kw.delta)
-        denom = nu + (kmax - nu[-1])*(1. - psifunc(r, kw.rt - kw.delta, kw.delta))
-        dlnkappa = numer/denom
-        print("nu=", nu)
-
-        # Ok we're done!
-
-        print(buff_line)
-        print("Computed diffusion kappa for an RZ-CZ system.")
-        print("to ensure arbitrary sigma AND buoyancy via altering Pr(r)")
-        if kw.jup:
-            print ("geometry : Jovian (RZ atop CZ)")
-        else:
-            print ("geometry : solar (CZ atop RZ)")
-        print("(rmin, rt, rmax): (%1.2f, %1.2f, %1.2f)" %(kw.rmin, kw.rt, kw.rmax))
-        print("sigma : %1.3f" %kw.sigma)
-        print("buoy : %1.3f" %kw.buoy)
-        print("delta_kappa : %1.5f" %kw.delta)
-        print(buff_line)
-
-        # Now write to file using the equation_coefficients framework
-        print("Setting f_5 and derivative f_12")
-        eq.set_function(5, kappa)
-        eq.set_function(12, dlnkappa)
-
-        if False:
-            print("Writing the diffusions to %s" %the_file)
-            print(buff_line)
-            eq.write(the_file)
-
-            # record what we did in the meta file
-            f = open(dirname + '/' + metafile, 'a')
-            print("Also computed a custom diffusion kappa for the RZ-CZ system.")
-            print("to ensure arbitrary sigma AND buoyancy via altering Pr(r)")
-            if kw.jup:
-                print ("geometry : Jovian (RZ atop CZ)")
-            else:
-                print ("geometry : solar (CZ atop RZ)")
-            print("(rmin, rt, rmax): (%1.2f, %1.2f, %1.2f)" %(kw.rmin, kw.rt, kw.rmax))
-            print("sigma : %1.3f" %kw.sigma)
-            print("buoy : %1.3f" %kw.buoy)
-            print("delta_kappa : %1.5f" %kw.delta)
-            print(buff_line)
+    # record what we did in the meta file
+    f = open(dirname + '/' + metafile, 'a')
+    print("Also computed a custom diffusion kappa for the RZ-CZ system.")
+    print("to ensure arbitrary sigma AND buoyancy via altering Pr(r)")
+    if kw.jup:
+        print ("geometry : Jovian (RZ atop CZ)")
+    else:
+        print ("geometry : solar (CZ atop RZ)")
+    print("(rmin, rt, rmax): (%1.2f, %1.2f, %1.2f)" %(kw.rmin, kw.rt, kw.rmax))
+    print("sigma : %1.3f" %kw.sigma)
+    print("buoy : %1.3f" %kw.buoy)
+    print("delta_kappa : %1.5f" %kw.delta)
+    print(buff_line)
 
 
-            f.write("Also added custom diffusion profiles using the\n")
-            f.write("set_diffusions_rhopower routine.\n")
-            f.write("diffusions have the folowing attributes:\n")
-            f.write("diffusion ~ rho^%1.5f\n" %kw.power)
-            f.write("normalized by CZ volume integral")
-            if kw.jup:
-                 f.write("geometry : Jovian (RZ atop CZ)\n")
-            else:
-                 f.write("geometry : solar (CZ atop RZ)\n")
-            f.write("(rmin, rt, rmax): (%1.2f, %1.2f, %1.2f)\n" %(kw.rmin, kw.rt, kw.rmax))
-            f.write("power : %1.5f\n" %kw.power)
+    f.write("Also added custom diffusion profiles using the\n")
+    f.write("set_diffusions_rhopower routine.\n")
+    f.write("diffusions have the folowing attributes:\n")
+    f.write("diffusion ~ rho^%1.5f\n" %kw.power)
+    f.write("normalized by CZ volume integral")
+    if kw.jup:
+         f.write("geometry : Jovian (RZ atop CZ)\n")
+    else:
+         f.write("geometry : solar (CZ atop RZ)\n")
+    f.write("(rmin, rt, rmax): (%1.2f, %1.2f, %1.2f)\n" %(kw.rmin, kw.rt, kw.rmax))
+    f.write("power : %1.5f\n" %kw.power)
 
-            f.write(buff_line + '\n')
-            f.close()
-            print("Writing the diffusion metadata to %s" %metafile)
-            print(buff_line)
+    f.write(buff_line + '\n')
+    f.close()
+    print("Writing the diffusion metadata to %s" %metafile)
+    print(buff_line)

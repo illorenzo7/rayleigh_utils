@@ -92,32 +92,6 @@ r = np.linspace(rmax, rmin, kw.nr) # keep radius in decreasing order for consist
 
 dsdr = np.zeros(kw.nr)
 
-def psifunc(r, r0, delta):
-    arr = np.zeros_like(r)
-    for i in range(len(r)):
-        rloc = r[i]
-        if rloc <= r0:
-            arr[i] = 0.
-        elif rloc < r0 + delta and rloc > r0:
-            x = (rloc - r0)/delta
-            arr[i] = 1.0 - (1.0 - x**2.0)**2.0
-        else:
-            arr[i] = 1.0
-    return arr
-
-def dpsifunc(r, r0, delta): # might need the derivative
-    arr = np.zeros_like(r)
-    for i in range(len(r)):
-        rloc = r[i]
-        if rloc <= r0:
-            arr[i] = 0.
-        elif rloc < r0 + delta and rloc > r0:
-            x = (rloc - r0)/delta
-            arr[i] = 4.*(1. - x**2.)*x
-        else:
-            arr[i] = 1.0
-    return arr
-
 
 if kw.jup: # RZ is above
     dsdr = kw.amp*psifunc(r, rtcz, kw.delta)
