@@ -1342,9 +1342,13 @@ def get_eq(dirname, fname=None, verbose=False):
         # volume-averaged angular momentum of shell 
         # (in appropriate units based on chosen timescale)
         gi = get_grid_info(dirname)
-        amom_dens = eq_hr.rho*eq_hr.om0*gi.xx**2
-        amom_av = np.sum(amom_dens*gi.tw_2d,axis=0)
-        eq_hr.amom = np.sum(amom_av*gi.rw)
+        amom_dens = (8*np.pi*eq_hr.om0/3)*eq_hr.rho*eq_hr.rr**4 # do the latitudinal integral analytically
+        if not fname == 'equation_coefficients': # no proper weights to work with, just do simpson
+            rmin, rmax = get_rminmax(dirname)
+            vol = 4*np.pi/3*(rmax**3 - rmin**3)
+            eq_hr.amom = definite_integral(amom_dens, eq_hr.rr, rmin, rmax)/vol
+        else:
+            eq_hr.amom = np.sum(amom_dens/eq_hr.rr**2*gi.rw)
 
         # some quantities interpretation depends on the reference_type
         # deal with that here
@@ -1377,9 +1381,14 @@ def get_eq(dirname, fname=None, verbose=False):
 
         else: # this assumes a general nondimensionalization
             # for ref type = 1, 3, 4, 5
+            rmin, rmax = get_rminmax(dirname)
+            vol = 4*np.pi/3*(rmax**3 - rmin**3)
             eq_hr.heat = eq.functions[5]
-            volshell = 4.*np.pi/3.*(eq_hr.rr[0]**3. - eq_hr.rr[-1]**3.)
-            eq_hr.lum = volshell * np.sum(eq_hr.heat*gi.rw)*eq_hr.constants[9]/eq_hr.constants[7]
+            integrand = eq_hr.heat*eq_hr.constants[9]/eq_hr.constants[7]
+            if not fname == 'equation_coefficients': # no proper weights to work with, just do simpson
+                eq_hr.lum = definite_integral(integrand, eq_hr.rr, rmin, rmax)
+            else:
+                eq_hr.lum = vol * np.sum(integrand/eq_hr.rr**2*gi.rw)
 
             # thermal diffusion time 
             eq_hr.tdt = 1./eq_hr.constants[5]

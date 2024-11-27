@@ -58,7 +58,7 @@ if not close_to_zero(eq.dlnrho):
     ylabels.insert(6 + count, r'$H_\rho=-(dln\overline{\rho}/dr)^{-1}$')
 
 if not kw.sigma is None: # plot sigma
-    sigma_sq = kw.sigma**2*eq.nsq
+    sigma_sq = kw.sigma**2*eq.nsq*eq.nu/eq.kappa
     sigma_vsr = np.sqrt(np.abs(sigma_sq))
     profiles.insert(2, sigma_vsr)
     ylabels.insert(2, 'sigma(r)')
