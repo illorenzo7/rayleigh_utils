@@ -14,7 +14,6 @@
 
 # Import relevant modules
 import numpy as np
-from scipy.interpolate import interp1d
 import pickle
 import sys, os
 sys.path.append(os.environ['rapp'])
@@ -123,21 +122,7 @@ for i in range(nfiles):
         if nt_loc > nt_min:
             print('interpolating nt = %i onto the coarser grid nt=%i' %(nt_loc, nt_min))
             tt_loc, tw_loc = compute_theta_grid(nt_loc)
-
-            new_shape = np.shape(vals_loc)
-            rest_of_shape = new_shape[1:]
-            new_shape = (nt_min,) + rest_of_shape
-            nrest = np.prod(rest_of_shape)
-            vals_loc_flat = np.zeros((nt_loc, nrest))
-            vals_interp_flat = np.zeros((nt_min, nrest))
-            for it in range(nt_loc):
-                vals_loc_flat[it, :] = vals_loc[it].flatten()
-            for it in range(nt_min):
-                vals_interp_flat[it, :] = vals_loc[it].flatten()
-            for irest in range(nrest):
-                f = interp1d(tt_loc, vals_loc_flat[:, irest])
-                vals_interp_flat[:, irest] = f(tt_min)
-            vals_loc = np.reshape(vals_interp_flat, new_shape)
+            vals_loc = interp_nd(vals_loc, tt_loc, tt_min)
 
     # build array of (sorted) qv indices the dictionary to average
     q_inds2 = np.zeros(nq, dtype='int')

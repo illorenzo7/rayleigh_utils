@@ -550,6 +550,31 @@ def my_nfft(times, arr, axis=0, window=False, renorm=False):
     # return everything
     return arr_fft, freq
 
+def interp_nd(arr, x_old, x_new, axis=0):
+    '''interpolates ND-array arr (of abitrary number of dimensions)
+    along axis from old grid (x_old) to new grid (x_new). To ensure
+    this works optimally, ensure the values in x_new lie in the range 
+    of the values of x_old. Don't speculate!'''
+
+    nx_old, nx_new = len(x_old), len(x_new)
+    old_shape = np.shape(arr)
+    new_shapeish = (nx_new,) + old_shape[:axis] + old_shape[axis+1:] 
+    rest_of_shape = old_shape[:axis] + old_shape[axis+1:] 
+    nrest = np.prod(rest_of_shape)
+    arr_flattish = np.zeros((nx_old, nrest))
+    arr_interp_flattish = np.zeros((nx_new, nrest))
+    for ix in range(nx_old):
+        arr_flattish[ix, :] = np.take(arr, indices=ix, axis=axis).flatten()
+    for irest in range(nrest):
+        f = interp1d(x_old, arr_flattish[:, irest])
+        arr_interp_flattish[:, irest] = f(x_new)
+    arr_interp = np.reshape(arr_interp_flattish, new_shapeish)
+
+    # finally transpose the zeroth axis if necessary
+    if axis > 0:
+        arr_interp = np.transpose(arr_interp, axes=(0,axis))
+    return arr_interp
+
 def my_infft(times, arr_fft, axis=0):
     # undo all the good work of the FFT
 
