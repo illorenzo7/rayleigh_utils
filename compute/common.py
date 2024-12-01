@@ -572,7 +572,7 @@ def interp_nd(arr, x_old, x_new, axis=0):
 
     # finally transpose the zeroth axis if necessary
     if axis > 0:
-        arr_interp = np.transpose(arr_interp, axes=(0,axis))
+        arr_interp = np.swapaxes(arr_interp, 0, axis)
     return arr_interp
 
 def my_infft(times, arr_fft, axis=0):

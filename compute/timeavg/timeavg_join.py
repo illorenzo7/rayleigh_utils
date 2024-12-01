@@ -99,8 +99,6 @@ if dataname == 'Shell_Spectra':
 actually_interp = False
 if interp:
     nts = np.zeros(nfiles, dtype='int')
-    nt_min = np.infty
-    nt_max = -np.infty
     for i in range(nfiles):
         nt_loc = np.shape(di_list[i]['vals'])[0]
         nts[i] = nt_loc
