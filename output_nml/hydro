@@ -49,7 +49,7 @@ azavg_values =
     ! Pressure work, buoyancy work, viscous work on KE,\
     ! minus advec. work, Lorentz work
     ! THERMAL ENERGY EQUATION
-	1401,1402,1406, ! (minus) Advection (tot., fluc., vr_dsdr piece)
+	1401,1402,1406,1479, ! (minus) Advection (tot., fluc., vr_dsdr piece, background)
     1421,1434,1435, ! vol. heating: conductive, internal, viscous/(rho*T)
     ! CONDUCTIVE FLUX (r,theta,phi=0: tot; fluc=0)
     1470,1471,
@@ -96,7 +96,7 @@ shellavg_values =
     ! Pressure work, buoyancy work, viscous work on KE,\
     ! minus advec. work, Lorentz work
     ! THERMAL ENERGY EQUATION
-	1401,1402,1406, ! (minus) Advection (tot., fluc., vr_dsdr piece)
+	1401,1402,1406,1479, ! (minus) Advection (tot., fluc., vr_dsdr piece, background)
     1421,1434,1435, ! vol. heating: conductive, internal, viscous/(rho*T)
     ! CONDUCTIVE FLUX (r,theta,phi=0: tot; fluc=0)
     1470,1471,
@@ -143,7 +143,7 @@ globalavg_values =
     ! Pressure work, buoyancy work, viscous work on KE,\
     ! minus advec. work, Lorentz work
     ! THERMAL ENERGY EQUATION
-	1401,1402,1406, ! (minus) Advection (tot., fluc., vr_dsdr piece)
+	1401,1402,1406,1479, ! (minus) Advection (tot., fluc., vr_dsdr piece, background)
     1421,1434,1435, ! vol. heating: conductive, internal, viscous/(rho*T)
     ! CONDUCTIVE FLUX (r,theta,phi=0: tot; fluc=0)
     1470,1471,
