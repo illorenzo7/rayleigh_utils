@@ -186,6 +186,46 @@ def arr_to_str(a, fmt, nobra=False):
     else:
         return '[' + st[:-1] + ']'
 
+def arr_to_str_tab(a, nmant=3, fmt=None, header='Row'): # ideal for latex tables
+    starr = []
+    buffst = '     &     '
+    st = header + buffst
+
+    for ele in a:
+        if fmt is None:
+            fmtloc=('%1.') + ('%i' %(nmant-1)) + 'e'
+
+            elest = fmtloc %ele
+            mant, exp = elest.split('e')
+            # mantissa is ok. Compactify the exponent
+            if exp[0] == '+':
+                exp = exp[1:]
+
+            # then remove leading zeros
+            while exp[0] == '0':
+                exp = exp[1:]
+            # I feel like I might be left with a "-" for things close to zero. If so, remove the exponent completely
+            if exp == '-':
+                exp = ''
+
+            # now rebuild the element
+            if exp == '':
+                elest = mant
+            else:
+                elest = mant + 'e' + exp
+        else:
+            elest = fmt %ele
+
+        # add the element to the string 
+        st += elest + buffst
+
+    # now remove the final buffst
+    st = st[:-len(buffst)]
+
+    # and replace it with \\
+    st = st + '\\\\'
+    return st
+
 # basic array utilities
 def make_array(arr, tolist=False, length=None): 
     # arr is scalar, list, or array
