@@ -186,9 +186,12 @@ def arr_to_str(a, fmt, nobra=False):
     else:
         return '[' + st[:-1] + ']'
 
+def float_or_sci(num):
+    # determine the format (float or sci) for minimal spacing of a number
+    # in scientific notation
 def arr_to_str_tab(a, nmant=3, fmt=None, header='Row'): # ideal for latex tables
     starr = []
-    buffst = '     &     '
+    buffst = ' & '
     st = header + buffst
 
     for ele in a:
