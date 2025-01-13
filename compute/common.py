@@ -215,14 +215,18 @@ def compactify_float(num, fmt_type, SF=3):
         print ("error, must choose 'float' or 'sci' for fmt_type")
         return 1
 
-    st_e = '%e' %num
-    mant, exp = st_e.split('e')
-    E = int(exp)
-    # also round the number here
+    # round the number first
+    fmt_e = ('%1.') + ('%i' %(SF-1)) + 'e'
+    st_e = fmt_e %num
     num = float(st_e)
+    st_e = fmt_e %num
+
+    # get mantissa, exp (as strings)
+    mant, exp = st_e.split('e')
+    # exponent (as int)
+    E = int(exp)
 
     if fmt_type == 'sci':
-        fmt_e = ('%1.') + ('%i' %(SF-1)) + 'e'
         st = fmt_e %num
         # mantissa is ok. Compactify the exponent
         if exp[0] == '+':
