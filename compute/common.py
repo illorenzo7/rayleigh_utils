@@ -186,36 +186,81 @@ def arr_to_str(a, fmt, nobra=False):
     else:
         return '[' + st[:-1] + ']'
 
-def float_or_sci(num):
+def float_or_sci(num, SF=3):
     # determine the format (float or sci) for minimal spacing of a number
     # in scientific notation
-def arr_to_str_tab(a, nmant=3, fmt=None, header='Row'): # ideal for latex tables
+    
+    # get the exponent in scientific notation
+    st_e = '%e' %num
+    E = int(st_e.split('e')[1])
+    if E >= 0 and not num == 0.: # number is >= 1
+        w_E = SF + 3 # width for scientific notation 
+        if SF < E + 2:
+            w_F = E + 1
+        else:
+            w_F = SF + 1
+    else:
+        w_E = SF + 4
+        w_F = SF + np.abs(E) + 1
+
+    if w_F <= w_E:
+        return 'float'
+    else:
+        return 'sci'
+
+def compactify_float(num, fmt_type, SF=3):
+    ''' returns a string with minimal width of the chosen type
+    fmt_type in ['float', 'sci'] and number of sig. figs (SF)'''
+    if not fmt_type in ['float', 'sci']:
+        print ("error, must choose 'float' or 'sci' for fmt_type")
+        return 1
+
+    st_e = '%e' %num
+    mant, exp = st_e.split('e')
+    E = int(exp)
+    # also round the number here
+    num = float(st_e)
+
+    if fmt_type == 'sci':
+        fmt_e = ('%1.') + ('%i' %(SF-1)) + 'e'
+        st = fmt_e %num
+        # mantissa is ok. Compactify the exponent
+        if exp[0] == '+':
+            exp = exp[1:]
+
+        # then remove leading zeros
+        while exp[0] == '0':
+            exp = exp[1:]
+        # I feel like I might be left with a "-" for things close to zero. If so, remove the exponent completely
+        if exp == '-':
+            exp = ''
+
+        # now rebuild the element
+        if exp == '':
+            st = mant + 'e0'
+        else:
+            st = mant + 'e' + exp
+
+    if fmt_type == 'float':
+        if E >= 0 and not num == 0.: # number is >= 1
+            if SF >= E+2: # there is a floating point
+                fmt_f = '%.' + ('%i' %(SF-E-1)) + 'f'
+            else: # there is no floating point
+                fmt_f = '%.0f'
+        else: # number is < 1
+            fmt_f = '%.' + ('%i' %(np.abs(E) + SF - 1)) + 'f'
+        st = fmt_f %num
+
+    return st
+   
+def arr_to_str_tab(a, SF=3, fmt=None, header='Row'): # ideal for latex tables
     starr = []
     buffst = ' & '
     st = header + buffst
 
     for ele in a:
         if fmt is None:
-            fmtloc=('%1.') + ('%i' %(nmant-1)) + 'e'
-
-            elest = fmtloc %ele
-            mant, exp = elest.split('e')
-            # mantissa is ok. Compactify the exponent
-            if exp[0] == '+':
-                exp = exp[1:]
-
-            # then remove leading zeros
-            while exp[0] == '0':
-                exp = exp[1:]
-            # I feel like I might be left with a "-" for things close to zero. If so, remove the exponent completely
-            if exp == '-':
-                exp = ''
-
-            # now rebuild the element
-            if exp == '':
-                elest = mant
-            else:
-                elest = mant + 'e' + exp
+            elest = compactify_float(ele, float_or_sci(ele, SF=SF), SF=SF)
         else:
             elest = fmt %ele
 
