@@ -203,7 +203,7 @@ def float_or_sci(num, SF=3):
         w_E = SF + 4
         w_F = SF + np.abs(E) + 1
 
-    if w_F <= w_E:
+    if w_F < w_E: # 'sci' wins in border cases
         return 'float'
     else:
         return 'sci'
