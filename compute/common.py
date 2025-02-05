@@ -381,14 +381,16 @@ def inds_from_vals(arr, arrvals):
 
 def is_an_int(string):
     # obviously, first check if it's actually an int
-    if isinstance(string, int):# or isinstance(string, int64):
+    if isinstance(string, np.int32) or isinstance(string, np.int64):
         return True
-    len_str = len(string)
-    bool_val = True
-    for i in range(len_str):
-        char = string[i]
-        bool_val *= (char >= '0' and char <= '9')
-    return(bool(bool_val))
+    # otherwise see if it's an int in disguise
+    else:
+        len_str = len(string)
+        bool_val = True
+        for i in range(len_str):
+            char = string[i]
+            bool_val *= (char >= '0' and char <= '9')
+        return(bool(bool_val))
 
 def frac_nonzero(arr):
     num_nonzero = len(np.where(arr != 0)[0])
@@ -2069,3 +2071,22 @@ def length_scales(dirname, the_file=None, verbose=False):
 
     # Return the dictionary 
     return di_out
+
+def get_term(dirname, vals, lut, quantity, verbose=False):
+    if is_an_int(quantity):
+        quantity = int(float(quantity))
+        if lut[quantity] < 4000: # it's easy
+            return vals[..., lut[quantity]]
+        # for some quantities, we can do contingencies
+        elif quantity == 1404:
+            adv_tot = vals[..., lut[1401]]
+            adv_fluc = vals[..., lut[1402]]
+            if verbose:
+                print ("get_term(): getting 1404 from 1401 - 1402")
+            return adv_tot - adv_fluc
+        elif quantity == 1479:
+            vr = vals[..., lut[1]]
+            eq = get_eq(dirname)
+            if verbose:
+                print ("get_term(): getting 1479 from rho * T * dsdr * vr")
+            return eq.rho*eq.tmp*eq.dsdr*vr

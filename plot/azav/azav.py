@@ -69,8 +69,8 @@ print ("qvals = ", kw.qvals)
 
 terms = []
 for qval in kw.qvals:
-    qval = int(qval)
-    terms.append(vals[:, :, lut[qval]])
+    the_term = get_term(dirname, vals, lut, qval, verbose=True)
+    terms.append(the_term)
 
 # make the main title
 iter1, iter2 = get_iters_from_file(kw.the_file)
