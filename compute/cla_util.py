@@ -86,6 +86,7 @@ def read_clas(args):
     # see if magnetism/rotation are on
     clas0['magnetism'] = get_parameter(dirname, 'magnetism')
     clas0['rotation'] = get_parameter(dirname, 'rotation')
+    clas0['advect_reference_state'] = get_parameter(dirname, 'advect_reference_state')
 
     # get the other arguments
     clas = dotdict()

@@ -1083,7 +1083,7 @@ def get_parameter(dirname, parameter):
 
         # these parameters still have a value
         # if they weren't specified
-        if parameter in ['magnetism', 'rotation']:
+        if parameter in ['magnetism', 'rotation', 'advect_reference_state']:
             return False # if these weren't specified, they are false
         elif parameter in ['nu_type', 'kappa_type', 'eta_type']:
             return 1
@@ -2087,6 +2087,8 @@ def get_term(dirname, vals, lut, quantity, verbose=False):
         elif quantity == 1479:
             vr = vals[..., lut[1]]
             eq = get_eq(dirname)
+            c11 = eq.constants[10]
+            f14 = eq.functions[13]
             if verbose:
                 print ("get_term(): getting 1479 from rho * T * dsdr * vr")
-            return eq.rho*eq.tmp*eq.dsdr*vr
+            return eq.rho*eq.tmp*c11*f14*vr

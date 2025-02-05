@@ -21,6 +21,7 @@ dirname = clas0['dirname']
 dirname_stripped = strip_dirname(dirname)
 # See if magnetism is "on"
 magnetism = clas0['magnetism']
+advect_reference_state = clas0['advect_reference_state']
 
 # defaults
 kwargs_default = dict({'the_file': None, 'qvals': None, 'groupname': 'v'})
@@ -42,7 +43,7 @@ kw_plot_azav_grid.sub_margin_top_inches += 1/4
 
 # deal with desired quantities
 if kw.qvals is None: # it's a quantity group
-    qgroup = get_quantity_group(kw.groupname, magnetism)
+    qgroup = get_quantity_group(kw.groupname, magnetism, advect_reference_state)
     kw.qvals = qgroup['qvals']
     kw_plot_azav_grid.titles = qgroup['titles']
     kw_plot_azav_grid.totsig = qgroup['totsig']
