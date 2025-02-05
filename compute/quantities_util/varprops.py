@@ -188,7 +188,7 @@ def get_label(varname):
         return label, simple_label
 
 # groups of quantities
-def get_quantity_group(groupname, magnetism):
+def get_quantity_group(groupname, magnetism, advect_reference_state=False):
     di_out = dotdict({'groupname': groupname})
     ncol = None
     totsig = None
@@ -345,19 +345,25 @@ def get_quantity_group(groupname, magnetism):
         totsig = 'sumrow'
 
     if groupname == 'teq': # thermal equation
-        ncol = 5
+        ncol = 6
         #qvals = [701, 1401, 1402, 1421, 1434, 1435]
-        qvals = [701, 1401, 1402, 1421, 1435]
-        titles = ['rho*T*S', 'adv (tot)', '-adv (fluc)', 'cond', 'visc']
+        qvals = [701, 1402, 1404, 1421, 1434, 1435]
+        titles = ['rho*T*S', 'adv (fluc)', 'adv (mean)', 'cond', 'Q', 'visc']
         #titles = ['rho*T*S', 'adv (tot)', '-adv (fluc)', 'cond', 'Q(r)', 'visc']
+
         if magnetism:
             ncol +=1
             qvals.append(1436)
             titles.append('joule')
 
+        if advect_reference_state:
+            ncol +=1
+            qvals.append(1479)
+            titles.append('ref')
+
         totsig = np.ones(ncol)
-        totsig[0] = totsig[2] = 0.
-        totsig[1] = -1
+        totsig[0] = 0
+        totsig[1:] = totsig[2] = -1
 
     # default just use the Rayleigh quantity abbreviations (if qvals has been defined by now)
     if titles is None and not qvals is None:

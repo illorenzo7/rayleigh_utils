@@ -52,7 +52,7 @@ azavg_values =
     ! Pressure work, buoyancy work, viscous work on KE,\
     ! minus advec. work, Lorentz work
     ! THERMAL ENERGY EQUATION
-	1401,1402,1406, ! (minus) Advection (tot., fluc., vr_dsdr piece)
+	1402,1404,1479, ! (minus) Advection (fluc., mean, background) 
     1421,1434,1435,1436, ! vol. heating: conductive, internal, viscous/(rho*T), Ohmic/(rho*T)
     ! MAGNETIC ENERGY EQUATION (all terms must be / (4*pi))
     2019,2020,2024, !induct_work (tot, ppp, mmm)
@@ -116,7 +116,7 @@ shellavg_values =
     ! Pressure work, buoyancy work, viscous work on KE,\
     ! minus advec. work, Lorentz work
     ! THERMAL ENERGY EQUATION
-	1401,1402,1406, ! (minus) Advection (tot., fluc., vr_dsdr piece)
+	1402,1404,1479, ! (minus) Advection (fluc., mean, background) 
     1421,1434,1435,1436, ! vol. heating: conductive, internal, viscous/(rho*T), Ohmic/(rho*T)
     ! MAGNETIC ENERGY EQUATION (all terms must be / (4*pi))
     2019,2020,2024, !induct_work (tot, ppp, mmm)
@@ -180,7 +180,7 @@ globalavg_values =
     ! Pressure work, buoyancy work, viscous work on KE,\
     ! minus advec. work, Lorentz work
     ! THERMAL ENERGY EQUATION
-	1401,1402,1406, ! (minus) Advection (tot., fluc., vr_dsdr piece)
+	1402,1404,1479, ! (minus) Advection (fluc., mean, background) 
     1421,1434,1435,1436, ! vol. heating: conductive, internal, viscous/(rho*T), Ohmic/(rho*T)
     ! MAGNETIC ENERGY EQUATION (all terms must be / (4*pi))
     2019,2020,2024, !induct_work (tot, ppp, mmm)
