@@ -119,19 +119,20 @@ else:
 kw_plot_azav_grid.maintitle = dirname_stripped + ('\n%s thermal wind balance\n' %simple_or_full) + time_string
 
 # terms to plot and sub-titles
-terms = [lhs, svort_buoy, svort_adv_mm, svort_adv_rs, svort_visc]
-titles = ['curl(rho u)_phi', 'svort_buoy', 'svort_adv_mm', 'svort_adv_rs', 'svort_visc']
+terms = [lhs, svort_buoy, svort_adv_mm, svort_buoy + svort_adv_mm, svort_adv_rs, svort_visc]
+titles = ['curl(rho u)_phi', 'dS/dtheta', 'dOm/dz', 'sum of (b) and (c)', 'RS term', 'visc term']
 if kw.simple:
-    terms = terms[:3]
-    titles = titles[:3]
+    terms = terms[:4]
+    titles = titles[:4]
 if clas0['magnetism'] and not kw.simple:
     terms.append(svort_mag_mm)
     terms.append(svort_mag_ms)
-    titles.append('svort_mag_mm')
-    titles.append('svort_mag_ms')
+    titles.append('mean mag.')
+    titles.append('MS')
 kw_plot_azav_grid.titles = np.array(titles)
-kw_plot_azav_grid.totsig = np.ones(len(terms))
-kw_plot_azav_grid.totsig[0] = 0
+totsig = np.ones(len(terms))
+totsig[0] = totsig[3] = 0
+kw_plot_azav_grid.totsig = totsig
 
 # make figure using usual routine
 fig = plot_azav_grid (terms, rr, cost, **kw_plot_azav_grid)
