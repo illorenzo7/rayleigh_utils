@@ -363,7 +363,9 @@ def get_quantity_group(groupname, magnetism, advect_reference_state=False):
 
         totsig = np.ones(ncol)
         totsig[0] = 0
-        totsig[1:] = totsig[2] = -1
+        totsig[1] = totsig[2] = -1
+        if advect_reference_state:
+            totsig[-1] = -1
 
     # default just use the Rayleigh quantity abbreviations (if qvals has been defined by now)
     if titles is None and not qvals is None:
