@@ -120,7 +120,7 @@ kw_plot_azav_grid.maintitle = dirname_stripped + ('\n%s thermal wind balance\n' 
 
 # terms to plot and sub-titles
 terms = [lhs, svort_buoy, svort_adv_mm, svort_buoy + svort_adv_mm, svort_adv_rs, svort_visc]
-titles = ['curl(rho u)_phi', 'dS/dtheta', 'dOm/dz', 'sum of (b) and (c)', 'RS term', 'visc term']
+titles = ['curl(rho u)_phi', 'dS/dtheta', 'dOm/dz', '(b) + (c)', 'RS term', 'visc term']
 if kw.simple:
     terms = terms[:4]
     titles = titles[:4]
