@@ -264,7 +264,7 @@ def streamfunction(vr,vt,r,cost,order=0):
             
     return psi
 
-plot_azav_grid_kwargs_default = dict({'maintitle': None, 'titles': None, 'shav': False, 'sub': False, 'tw': None, 'totsig': None, 'minmaxs': None, 'iplots': None, 'groupname': 'v'})
+plot_azav_grid_kwargs_default = dict({'maintitle': None, 'titles': None, 'shav': False, 'sub': False, 'tw': None, 'totsig': None, 'minmaxs': None, 'iplots': None, 'groupname': None})
 plot_azav_grid_kwargs_default.update(plot_azav_kwargs_default)
 make_figure_kw_az = make_figure_kwargs_default.copy()
 make_figure_kw_az.update(azav_fig_dimensions)
