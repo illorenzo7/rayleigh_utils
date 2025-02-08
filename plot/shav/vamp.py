@@ -79,13 +79,18 @@ elif kw.type == 'rat': # compute a bunch of ratios
     vsq_fluc_r = rke_fluc/eq.rho # vertical convect.
     vsq_fluc_h = (tke_fluc + pke_fluc)/eq.rho # horizontal convect.
     vsq_dr = (pke_mean)/eq.rho # diff. rot.
-    vsq_mc = (rke_mean + tke_mean)/eq.rho # mer. circ.
+    vsq_mean_r = rke_mean/eq.rho # <v_r>
+    vsq_mean_t = tke_mean/eq.rho # <v_theta>
+    vsq_mc = vsq_mean_r + vsq_mean_t # mer. circ.
 
     amp_v = np.sqrt(vsq)
     amp_fluc = np.sqrt(vsq_fluc)
     amp_fluc_r = np.sqrt(vsq_fluc_r)
     amp_fluc_h = np.sqrt(vsq_fluc_h)
     amp_dr = np.sqrt(vsq_dr)
+
+    amp_mean_r = np.sqrt(vsq_mean_r)
+    amp_mean_t = np.sqrt(vsq_mean_t)
     amp_mc = np.sqrt(vsq_mc)
 
 else:
@@ -95,8 +100,8 @@ else:
 
 # compute desired profiles
 if kw.type == 'rat':
-    profiles = [amp_fluc/amp_v, amp_dr/amp_v, amp_mc/amp_v, amp_fluc_r/amp_fluc_h]
-    kw_lineplot.labels = [r'$|\mathbf{u}^\prime|/|\mathbf{u}|$', r'$|\mathbf{u}_{DR}|/|\mathbf{u}|$', r'$|\mathbf{u}_{MC}|/|\mathbf{u}|$', r'$|u_r^\prime|/|\mathbf{u}_h^\prime|$']
+    profiles = [amp_fluc/amp_v, amp_dr/amp_v, amp_mc/amp_v, amp_fluc_r/amp_fluc_h, amp_mean_r/amp_mean_t]
+    kw_lineplot.labels = [r'$|\mathbf{u}^\prime|/|\mathbf{u}|$', r'$|\mathbf{u}_{DR}|/|\mathbf{u}|$', r'$|\mathbf{u}_{MC}|/|\mathbf{u}|$', r'$|u_r^\prime|/|\mathbf{u}_h^\prime|$', r'$\langle u_r\rangle/\langle u_\theta\rangle$']
 else:
     vsq_r = rke_use/eq.rho
     vsq_t = tke_use/eq.rho
