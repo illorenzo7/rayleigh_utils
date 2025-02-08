@@ -23,7 +23,7 @@ dirname_stripped = strip_dirname(dirname)
 
 # allowed args + defaults
 # key unique to this script
-kwargs_default = dict({'the_file': None, 'the_file2': None, 'nond': False})
+kwargs_default = dict({'the_file': None, 'the_file2': None, 'nond': False, 'sub': False})
 
 # also need make figure kwargs
 #azav_fig_dimensions['margin_top_inches'] = 1.
@@ -86,23 +86,30 @@ ent_sph = (vals_sph[:, 0, lut_sph[501]]).reshape((1, nr))
 prs_sph = (vals_sph[:, 0, lut_sph[502]]/eq.prs).reshape((1, nr))
 tmp_sph = (eq.gamma - 1)/eq.gamma*prs_sph + ent_sph
 
-# Now subtract the spherical mean from the zonal mean
-ent = ent_az - ent_sph
-prs = prs_az - prs_sph
-tmp = tmp_az - tmp_sph
+if kw.sub:
+    # Now subtract the spherical mean from the zonal mean
+    ent_az -= ent_sph
+    prs_az -= prs_sph
+    tmp_az -= tmp_sph
 
 # set the plot name (base of it) here
 basename = 'thermo'
 if kw.nond:
-    terms = [ent, prs, tmp]
+    terms = [ent_az, prs_az, tmp_az]
     titles = [r'$S/c_P$', r'$P/\overline{P}$', r'$T/\overline{T}$']
     basename += '_nond'
-    titletag = '(nondimensional)'
+    if kw.sub:
+        titletag = '(nondimensional, sub. sph.)'
+    else:
+        titletag = '(nondimensional, full field)'
 else:
-    terms = [ent, prs*prs_2d, tmp*tmp_2d]
+    terms = [ent_az, prs_az*prs_2d, tmp_az*tmp_2d]
     titles = ['S', 'P', 'T']
     basename += '_dim'
-    titletag = '(dimensional)'
+    if kw.sub:
+        titletag = '(dimensional, sub. sph.)'
+    else:
+        titletag = '(dimensional, full field)'
 
 # make the main title
 iter1, iter2 = get_iters_from_file(kw.the_file)
