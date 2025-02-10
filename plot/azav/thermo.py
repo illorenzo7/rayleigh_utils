@@ -5,7 +5,11 @@
 # Description: Script to plot thermal <P>, <S>, and <T>
 #
 # to normalize thermal variables by the background state, run with
-#      --nond
+#      --rel
+# to normalize using non-default dissipation number, run with:
+#      --nrho
+#      --beta
+#      --gamma
 # To subtract the spherical mean from the thermal variables, run with
 #      --sub
 
@@ -14,6 +18,8 @@ import matplotlib.pyplot as plt
 import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
+sys.path.append(os.environ['raco'] + '/reference_state')
+from arbitrary_atmosphere import compute_Di_v
 from azav_util import *
 from common import *
 from plotcommon import *
@@ -23,11 +29,12 @@ from cla_util import *
 args = sys.argv
 clas0, clas = read_clas(args)
 dirname = clas0['dirname']
+rotation = clas0['rotation']
 dirname_stripped = strip_dirname(dirname)
 
 # allowed args + defaults
 # key unique to this script
-kwargs_default = dict({'the_file': None, 'nond': False, 'sub': False})
+kwargs_default = dict({'the_file': None, 'rel': False, 'sub': False, 'nrho': 3, 'beta': 0.759, 'gamma': gamma_ideal})
 
 # also need make figure kwargs
 
@@ -54,61 +61,73 @@ di = get_dict(kw.the_file)
 vals = di['vals']
 lut = di['lut']
 
-if kw.the_file2 is None:
-    kw.the_file2 = get_widest_range_file(clas0['datadir'], 'Shell_Avgs')
-    
-print ('reading ' + kw.the_file2)
-di_sph = get_dict(kw.the_file2)
-vals_sph = di_sph['vals']
-lut_sph = di_sph['lut']
-
 # Get necessary grid info
-di_grid = get_grid_info(dirname)
-rr = di_grid['rr']
-nr = di_grid['nr']
-cost = di_grid['cost']
+gi = get_grid_info(dirname)
+
+# Compute the zonally averaged thermo. vars
+entr = vals[:, :, lut[501]]
+prs = vals[:, :, lut[502]]
 
 # reference state variables
 eq = get_eq(dirname)
-rho_2d = (eq.rho).reshape((1, nr))
-prs_2d = (eq.prs).reshape((1, nr))
-tmp_2d = (eq.tmp).reshape((1, nr))
+reftype = eq.reference_type
+rho_2d = (eq.rho).reshape((1, gi.nr))
+prs_2d = (eq.prs).reshape((1, gi.nr))
+tmp_2d = (eq.tmp).reshape((1, gi.nr))
 
-# Compute the NOND zonally averaged thermo. vars
-ent_az = vals[:, :, lut[501]]#/eq.c_p
-prs_az = vals[:, :, lut[502]]/prs_2d
+# to get relative thermal perturbations (and thus temp.)
+# need to do some special stuff here
+# get the conversion constants, k_s and k_p
+if reftype == 2:
+    c_p = get_parameter(dirname, 'pressure_specific_heat')
+    k_s = 1./c_p
+    k_p = k_T = 1.
+elif reftype in [4, 5]: 
+    c2 = eq.constants[1] # Ra/Pr or Ro_c^2
+    diss = compute_Di_v(kw.gamma, kw.beta, kw.nrho)
+    if rotation and reftype == 4: 
+        # assume my custom states are nondimensionalized by rotational time
+        k = 1.19e-5
+    else: # assume nondimensionalized by viscous time
+        k = 6.38e-12
+    k_s = k_T = c2*k
+    k_p = kw.gamma/(kw.gamma-1.)*diss*k
 
-# Calculate temp from EOS
-eq.gamma=5/3
-tmp_az = (eq.gamma - 1)/eq.gamma*prs_az + ent_az 
+# calculate relative thermal perturbations
+entr_rel = k_s*entr
+prs_rel = k_p*prs/prs_2d
 
-# Compute the spherically averaged thermo. vars
-ent_sph = (vals_sph[:, 0, lut_sph[501]]).reshape((1, nr))
-prs_sph = (vals_sph[:, 0, lut_sph[502]]/eq.prs).reshape((1, nr))
-tmp_sph = (eq.gamma - 1)/eq.gamma*prs_sph + ent_sph
+# Calculate temperature from EOS
+tmp_rel = (kw.gamma - 1)/kw.gamma * prs_rel + entr_rel
+tmp = tmp_rel/k_T # this is kind of a cluge and unphysical,
+# but clearly k_S is the logical conversion factor for T as well
 
 if kw.sub:
-    # Now subtract the spherical mean from the zonal mean
-    ent_az -= ent_sph
-    prs_az -= prs_sph
-    tmp_az -= tmp_sph
+    # compute the spherically averaged thermo. vars
+    entr_sph = np.sum(entr*gi.tw_2d, axis=0)
+    prs_sph = np.sum(prs*gi.tw_2d, axis=0)
+    tmp_sph = np.sum(tmp*gi.tw_2d, axis=0)
+    # subtract the spherical mean from the zonal mean
+    entr -= entr_sph.reshape((1, gi.nr))
+    prs -= prs_sph.reshape((1, gi.nr))
+    tmp -= tmp_sph.reshape((1, gi.nr))
 
 # set the plot name (base of it) here
 basename = 'thermo'
-if kw.nond:
-    terms = [ent_az, prs_az, tmp_az]
-    titles = [r'$S/c_P$', r'$P/\overline{P}$', r'$T/\overline{T}$']
-    basename += '_nond'
+if kw.rel:
+    terms = [entr_rel, prs_rel, tmp_rel]
+    titles = [r'$\hat{s}/c_p$', r'$\hat{p}/\tilde{p}$', r'$\hat{T}/\tilde{T}$']
+    basename += '_rel'
     if kw.sub:
-        titletag = '(nondimensional, sub. sph.)'
+        titletag = '(relative, sub. sph. mean)'
     else:
-        titletag = '(nondimensional, full field)'
+        titletag = '(relative, full field)'
 else:
-    terms = [ent_az, prs_az*prs_2d, tmp_az*tmp_2d]
-    titles = ['S', 'P', 'T']
+    terms = [entr, prs, tmp]
+    titles = [r'$\hat{s}$', r'$\hat{p}$', r'$\hat{T}$']
     basename += '_dim'
     if kw.sub:
-        titletag = '(dimensional, sub. sph.)'
+        titletag = '(dimensional, sub. sph. mean)'
     else:
         titletag = '(dimensional, full field)'
 
@@ -116,7 +135,7 @@ else:
 iter1, iter2 = get_iters_from_file(kw.the_file)
 time_string = get_time_string(dirname, iter1, iter2)
 maintitle = dirname_stripped + '\n' +\
-        'thermal variables: AZ_Avgs - Shell_Avgs' + '\n' + titletag +\
+        'thermal variables' + '\n' + titletag +\
         '\n' + time_string
 if not kw.rcut is None:
     maintitle += '\nrcut = %1.3e' %kw.rcut
@@ -124,7 +143,7 @@ kw_plot_azav_grid.maintitle = maintitle
 kw_plot_azav_grid.titles = titles
 
 # make figure using usual routine
-fig = plot_azav_grid (terms, rr, cost, **kw_plot_azav_grid)
+fig = plot_azav_grid (terms, gi.rr, gi.cost, **kw_plot_azav_grid)
 
 # save the figure
 plotdir = my_mkdir(clas0['plotdir'] + 'azav/')
