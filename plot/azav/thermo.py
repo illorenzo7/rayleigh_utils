@@ -1,9 +1,13 @@
 # Author: Loren Matilsky
 # Created: 12/19/2022
+# Updated: 02/10/2025
 #
-# Description: Script to plot <P>, <S> (spherical average subtracted) 
-# To normalize by the background reference state, select
-# --nond
+# Description: Script to plot thermal <P>, <S>, and <T>
+#
+# to normalize thermal variables by the background state, run with
+#      --nond
+# To subtract the spherical mean from the thermal variables, run with
+#      --sub
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -23,12 +27,9 @@ dirname_stripped = strip_dirname(dirname)
 
 # allowed args + defaults
 # key unique to this script
-kwargs_default = dict({'the_file': None, 'the_file2': None, 'nond': False, 'sub': False})
+kwargs_default = dict({'the_file': None, 'nond': False, 'sub': False})
 
 # also need make figure kwargs
-#azav_fig_dimensions['margin_top_inches'] = 1.
-#make_figure_kwargs_default.update(azav_fig_dimensions)
-#kwargs_default.update(make_figure_kwargs_default)
 
 # of course, plot_azav_grid kwargs
 plot_azav_grid_kwargs_default['margin_top_inches'] = 1

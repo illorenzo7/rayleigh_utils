@@ -62,6 +62,11 @@ sun.c_p = 3.5e8
 gamma_ideal = 5./3.
 sun.gas_constant = sun.c_p*(1. - 1./gamma_ideal)
 
+# nondimensional constants that extract the relative pressure and entropy
+# perturbations from nondimensional simulations (in the solar context)
+K_nonrot = 6.38e-12 # nu = 10^12
+K_rot = 1.19e-5
+
 # solar base of the convection zone stuff
 sun.rho_bcz = 0.18053428
 sun.tmp_bcz = 2111256.4
