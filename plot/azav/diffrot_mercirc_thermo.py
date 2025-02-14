@@ -1,15 +1,7 @@
 # Author: Loren Matilsky
-# Created: 02/10/2025
+# Created: 12/19/2022
 #
-# Description: Script to plot diff rot, mc, and <S> simultaneously, 
-# like Nick's old routine
-
-# to print more info about the differential rotation, run with
-#      --diffrot
-# to normalize thermal variables by the background state, run with
-#      --nond
-# To subtract the spherical mean from the thermal variables, run with
-#      --sub
+# Description: Script to plot rotation-rate contours in meridional plane
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -20,12 +12,13 @@ from azav_util import *
 from common import *
 from plotcommon import *
 from cla_util import *
+from numbers_util import get_dr_contrast
 
 # Get CLAs
 args = sys.argv
 clas0, clas = read_clas(args)
 dirname = clas0['dirname']
-dirname_stripped = strip_dirname(dirname)
+dirname_stripped = strip_dirname(dirname, wrap=True)
 
 # get desired shells to average over for DR numbers
 rvals = clas.rvals
@@ -35,109 +28,102 @@ nshells = len(rvals) - 1
 
 # allowed args + defaults
 # key unique to this script
-kwargs_default = dict({'the_file': None, 'the_file2': None, 'nond': False, 'sub': False, 'verbose': False})
+kwargs_default = dict({'the_file': None, 'verbose': False})
 
 # also need make figure kwargs
-plot_azav_grid_kwargs_default['margin_top_inches'] = 1
 azav_fig_dimensions['margin_top_inches'] += 0.5*nshells
 nlines = get_num_lines(clas0.dirname_label)
 azav_fig_dimensions['margin_top_inches'] += (nlines-1)*default_line_height
 make_figure_kwargs_default.update(azav_fig_dimensions)
 
+# make sure there is enough space for three plots
+make_figure_kwargs_default['ncol'] = 3
 
-# of course, plot_azav_grid kwargs
-kwargs_default.update(plot_azav_grid_kwargs_default)
+kwargs_default.update(make_figure_kwargs_default)
 
-# overwrite defaults
+# and of course need plot_azav kwargs
+plot_azav_kwargs_default['plotlatlines'] = False
+kwargs_default.update(plot_azav_kwargs_default)
+
+# overwrite defaults, first main kwargs
 kw = update_dict(kwargs_default, clas)
-kw_plot_azav_grid = update_dict(plot_azav_grid_kwargs_default, clas)
+kw_plot_azav = update_dict(plot_azav_kwargs_default, clas)
+kw_make_figure = update_dict(make_figure_kwargs_default, clas)
 
 # check for bad keys
 find_bad_keys(kwargs_default, clas, clas0['routinename'], justwarn=True)
 if not kw.rcut is None:  
     # need room for two colorbars and line up top stating rcut 
-    kw_plot_azav_grid.margin_top_inches += 1/4
-    kw_plot_azav_grid.sub_margin_bottom_inches *= 2
+    kw_make_figure.margin_top_inches += 1/4
+    kw_make_figure.sub_margin_bottom_inches *= 2
 
 # get data
 if kw.the_file is None:
     kw.the_file = get_widest_range_file(clas0['datadir'], 'AZ_Avgs')
-print ('reading ' + kw.the_file)
+print ('Getting data from ' + kw.the_file)
 di = get_dict(kw.the_file)
 vals = di['vals']
 lut = di['lut']
+vp_av = vals[:, :, lut[3]]
 
-# Get necessary grid info
-gi = get_grid_info(dirname)
-rr = gi.rr
-nr = gi.nr
-cost = gi.cost
+# get necessary grid info
+ntheta = np.shape(vals)[0]
+di_grid = get_grid_info(dirname, ntheta=ntheta)
+rr = di_grid['rr']
+cost = di_grid['cost']
+tt_lat = di_grid['tt_lat']
+xx = di_grid['xx']
 
-# reference state variables
+# frame rate
 eq = get_eq(dirname)
-rho_2d = (eq.rho).reshape((1, nr))
-prs_2d = (eq.prs).reshape((1, nr))
-tmp_2d = (eq.tmp).reshape((1, nr))
+Om0 = 2*np.pi/eq.prot
 
-# Compute the NOND zonally averaged thermo. vars
-ent_az = vals[:, :, lut[501]]
+# differential rotation in the rotating frame. 
+Om = vp_av/xx
 
-# need some more info, if it's nonD
+# make plot
+fig, axs, fpar = make_figure(**kw_make_figure)
+axs = axs.flatten()
 
-# Calculate temp from EOS
-eq.gamma=5/3
-tmp_az = (eq.gamma - 1)/eq.gamma*prs_az + ent_az 
+# make diff. rot.
+ax = axs[0]
 
-# Compute the spherically averaged thermo. vars
-ent_sph = (vals_sph[:, 0, lut_sph[501]]).reshape((1, nr))
-prs_sph = (vals_sph[:, 0, lut_sph[502]]/eq.prs).reshape((1, nr))
-tmp_sph = (eq.gamma - 1)/eq.gamma*prs_sph + ent_sph
+plot_azav (Om/Om0, rr, cost, fig, ax, **kw_plot_azav)
 
-if kw.sub:
-    # Now subtract the spherical mean from the zonal mean
-    ent_az -= ent_sph
-    prs_az -= prs_sph
-    tmp_az -= tmp_sph
-
-# set the plot name (base of it) here
-basename = 'thermo'
-if kw.nond:
-    terms = [ent_az, prs_az, tmp_az]
-    titles = [r'$S/c_P$', r'$P/\overline{P}$', r'$T/\overline{T}$']
-    basename += '_nond'
-    if kw.sub:
-        titletag = '(nondimensional, sub. sph.)'
-    else:
-        titletag = '(nondimensional, full field)'
-else:
-    terms = [ent_az, prs_az*prs_2d, tmp_az*tmp_2d]
-    titles = ['S', 'P', 'T']
-    basename += '_dim'
-    if kw.sub:
-        titletag = '(dimensional, sub. sph.)'
-    else:
-        titletag = '(dimensional, full field)'
-
-# make the main title
+# make title 
 iter1, iter2 = get_iters_from_file(kw.the_file)
-time_string = get_time_string(dirname, iter1, iter2)
-maintitle = dirname_stripped + '\n' +\
-        'thermal variables: AZ_Avgs - Shell_Avgs' + '\n' + titletag +\
-        '\n' + time_string
+time_string = get_time_string(dirname, iter1, iter2, threelines=True) 
+maintitle = clas0.dirname_label + '\n' +  r'$\Omega$' + ' (rotation rate)\n' + time_string 
+
+# get DR numbers in spherical shells
+# loop over shells and add line of text
+for ishell in range(nshells):
+    # print shell info first
+    r1 = rvals[ishell]
+    r2 = rvals[ishell+1]
+
+    # then non-D numbers in shell
+    diffrot = get_dr_contrast(dirname, r1, r2, the_file=kw.the_file, verbose=kw.verbose, ntheta=ntheta)
+    maintitle += '\n' +\
+        ( '(' + flt_fmt + ', ' + flt_fmt + '):') %(r1, r2) +\
+        '\n' + (r'$\Delta\Omega\ =\ $' + flt_fmt) %diffrot
+        #('(r_1, r_2) = (' + flt_fmt + ', ' + flt_fmt + '):') %(r1, r2)# +\
+
 if not kw.rcut is None:
     maintitle += '\nrcut = %1.3e' %kw.rcut
-kw_plot_azav_grid.maintitle = maintitle
-kw_plot_azav_grid.titles = titles
-
-# make figure using usual routine
-
-# for diff rot.
-#plot_azav_kwargs_default['plotlatlines'] = False
-fig = plot_azav_grid (terms, rr, cost, **kw_plot_azav_grid)
+    
+margin_x = fpar['margin_left'] + fpar['sub_margin_left']
+margin_y = default_margin/fpar['height_inches']
+fig.text(margin_x, 1 - margin_y, maintitle,\
+         ha='left', va='top', fontsize=default_titlesize)
 
 # save the figure
-plotdir = my_mkdir(clas0['plotdir'] + 'azav/')
-savefile = plotdir + basename + clas0['tag'] + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
+plotdir = my_mkdir(clas0['plotdir'])
+pretag = ''
+if clas0.prepend:
+    pretag = dirname_stripped + '_'
+
+savefile = plotdir + pretag + clas0['routinename'] + clas0['tag'] + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
 
 if clas0['saveplot']:
     print ('saving figure at ' + savefile)
