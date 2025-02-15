@@ -42,7 +42,6 @@ make_figure_kwargs_default['ncol'] = 3
 kwargs_default.update(make_figure_kwargs_default)
 
 # and of course need plot_azav kwargs
-plot_azav_kwargs_default['plotlatlines'] = False
 kwargs_default.update(plot_azav_kwargs_default)
 
 # overwrite defaults, first main kwargs
@@ -88,6 +87,7 @@ axs = axs.flatten()
 # make diff. rot.
 ax = axs[0]
 
+kw_plot_azav.plotlatlines = False 
 plot_azav (Om/Om0, rr, cost, fig, ax, **kw_plot_azav)
 
 # make title 
@@ -116,6 +116,59 @@ margin_x = fpar['margin_left'] + fpar['sub_margin_left']
 margin_y = default_margin/fpar['height_inches']
 fig.text(margin_x, 1 - margin_y, maintitle,\
          ha='left', va='top', fontsize=default_titlesize)
+
+# make the meridional circulation plot
+
+# get density
+rho = eq.rho
+
+# Directory with data and plots, make the plotting directory if it doesn't
+# already exist    
+
+# get the meridional circulation flows
+vr_av, vt_av = vals[:, :, lut[1]], vals[:, :, lut[2]]
+
+# compute the mass flux
+rhovm = rho*np.sqrt(vr_av**2 + vt_av**2)
+
+# compute the streamfunction
+psi = streamfunction(rho*vr_av, rho*vt_av, rr, cost)
+
+# make CCW negative and CW positive
+rhovm *= np.sign(psi)
+
+# make plot
+ax = axs[1]
+
+# plot mass flux
+kw_plot_azav.plotcontours = False
+plot_azav (rhovm, rr, cost, fig, ax, **kw_plot_azav)
+
+# Plot streamfunction contours
+lilbit = 0.01
+maxabs = np.max(np.abs(psi))
+contourlevels = (-maxabs/2., -maxabs/4., -lilbit*maxabs, 0.,\
+        lilbit*maxabs, maxabs/4., maxabs/2.)
+kw_plot_azav.plotcontours = kw.plotcontours
+kw_plot_azav.plotfield = False
+kw_plot_azav.contourlevels = contourlevels
+plot_azav (psi, rr, cost, fig, ax, **kw_plot_azav)
+
+# make title 
+iter1, iter2 = get_iters_from_file(kw.the_file) 
+time_string = get_time_string(dirname, iter1, iter2, threelines=True)
+margin_x = fpar['margin_left'] + fpar['sub_margin_left']
+margin_y = default_margin/fpar['height_inches']
+maintitle = dirname_stripped + '\n' + 'mass flux (circulation)\n' + time_string
+if not kw.rcut is None:
+    maintitle += '\nrcut = %1.3e' %kw.rcut
+
+margin_x = fpar['margin_left'] + fpar['sub_margin_left']
+width_skip = fpar['sub_width'] + fpar['sub_margin_left'] + fpar['sub_margin_right']
+margin_y = default_margin/fpar['height_inches']
+fig.text(margin_x + width_skip, 1 - margin_y, maintitle,\
+         ha='left', va='top', fontsize=default_titlesize)
+
 
 # save the figure
 plotdir = my_mkdir(clas0['plotdir'])
