@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 import sys, os
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['raco'])
+sys.path.append(os.environ['raco'] + '/reference_state')
+from arbitrary_atmosphere import compute_Di_v
 from azav_util import *
 from common import *
 from plotcommon import *
@@ -19,6 +21,7 @@ args = sys.argv
 clas0, clas = read_clas(args)
 dirname = clas0['dirname']
 dirname_stripped = strip_dirname(dirname, wrap=True)
+rotation = clas0['rotation']
 
 # get desired shells to average over for DR numbers
 rvals = clas.rvals
@@ -28,7 +31,7 @@ nshells = len(rvals) - 1
 
 # allowed args + defaults
 # key unique to this script
-kwargs_default = dict({'the_file': None, 'verbose': False})
+kwargs_default = dict({'the_file': None, 'rel': True, 'sub': True, 'nrho': 3, 'beta': 0.759, 'gamma': gamma_ideal, 'verbose': False, 'verbose': False})
 
 # also need make figure kwargs
 azav_fig_dimensions['margin_top_inches'] += 0.5*nshells
@@ -67,11 +70,11 @@ vp_av = vals[:, :, lut[3]]
 
 # get necessary grid info
 ntheta = np.shape(vals)[0]
-di_grid = get_grid_info(dirname, ntheta=ntheta)
-rr = di_grid['rr']
-cost = di_grid['cost']
-tt_lat = di_grid['tt_lat']
-xx = di_grid['xx']
+gi = get_grid_info(dirname, ntheta=ntheta)
+rr = gi['rr']
+cost = gi['cost']
+tt_lat = gi['tt_lat']
+xx = gi['xx']
 
 # frame rate
 eq = get_eq(dirname)
@@ -169,6 +172,64 @@ margin_y = default_margin/fpar['height_inches']
 fig.text(margin_x + width_skip, 1 - margin_y, maintitle,\
          ha='left', va='top', fontsize=default_titlesize)
 
+# plot entropy perturbation
+
+# get enetropy deviation (harder than it seems)
+entr = vals[:, :, lut[501]]
+
+reftype = eq.reference_type
+
+if reftype == 2:
+    c_p = get_parameter(dirname, 'pressure_specific_heat')
+    k_s = 1./c_p
+elif reftype in [4, 5]: 
+    c2 = eq.constants[1] # Ra/Pr or Ro_c^2
+    diss = compute_Di_v(kw.gamma, kw.beta, kw.nrho)
+    if rotation and reftype == 4: 
+        # assume my custom states are nondimensionalized by rotational time
+        k = 1.19e-5
+    else: # assume nondimensionalized by viscous time
+        k = 6.38e-12
+    k_s = k_T = c2*k
+
+# calculate relative thermal perturbation
+entr_rel = k_s*entr
+
+if kw.sub:
+    # compute the spherically averaged thermo. vars
+    entr_sph = np.sum(entr*gi.tw_2d, axis=0)
+    # subtract the spherical mean from the zonal mean
+    entr -= entr_sph.reshape((1, gi.nr))
+
+# plot the entropy
+ax = axs[2]
+#kw_plot_azav.plotfield = True
+kw_plot_azav = update_dict(plot_azav_kwargs_default, clas)
+plot_azav (entr, rr, cost, fig, ax, **kw_plot_azav)
+
+# make title 
+if kw.rel:
+    label = r'$\hat{s}/c_p$'
+    if kw.sub:
+        titletag = '(relative, sub. sph. mean)'
+    else:
+        titletag = '(relative, full field)'
+else:
+    label = r'$\hat{s}$'
+    if kw.sub:
+        titletag = '(dimensional, sub. sph. mean)'
+    else:
+        titletag = '(dimensional, full field)'
+
+maintitle = dirname_stripped + '\n' +\
+        label + '\n' + titletag +\
+        '\n' + time_string
+
+if not kw.rcut is None:
+    maintitle += '\nrcut = %1.3e' %kw.rcut
+
+fig.text(margin_x + 2*width_skip, 1 - margin_y, maintitle,\
+         ha='left', va='top', fontsize=default_titlesize)
 
 # save the figure
 plotdir = my_mkdir(clas0['plotdir'])
