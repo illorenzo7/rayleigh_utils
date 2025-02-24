@@ -313,7 +313,8 @@ def plot_azav_grid(terms, rr, cost, **kwargs):
 
         count = 0
         iterm = 0
-        #kw.titles = kw.titles.tolist()
+        if not isinstance(kw.titles, list):
+            kw.titles = kw.titles.tolist()
         for irow in range(nrow):
             tot_term = np.zeros_like(terms[0])
             for icol in range(kw.ncol):
