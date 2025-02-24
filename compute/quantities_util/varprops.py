@@ -347,8 +347,8 @@ def get_quantity_group(groupname, magnetism, advect_reference_state=False):
     if groupname == 'teq': # thermal equation
         ncol = 6
         #qvals = [701, 1401, 1402, 1421, 1434, 1435]
-        qvals = [701, 1402, 1404, 1421, 1434, 1435]
-        titles = ['rho*T*S', 'adv (fluc)', 'adv (mean)', 'cond', 'Q', 'visc']
+        qvals = [701, 1421, 1402, 1404, 1434, 1435]
+        titles = ['rho*T*S', 'cond', 'adv (fluc)', 'adv (mean)', 'Q', 'visc']
         #titles = ['rho*T*S', 'adv (tot)', '-adv (fluc)', 'cond', 'Q(r)', 'visc']
 
         if magnetism:
@@ -358,14 +358,14 @@ def get_quantity_group(groupname, magnetism, advect_reference_state=False):
 
         if advect_reference_state:
             ncol +=1
-            qvals.append(1479)
-            titles.append('ref')
+            qvals.insert(2, 1479)
+            titles.insert(2, 'ref')
 
         totsig = np.ones(ncol)
         totsig[0] = 0
-        totsig[1] = totsig[2] = -1
+        totsig[2] = totsig[3] = -1
         if advect_reference_state:
-            totsig[-1] = -1
+            totsig[4] = -1
 
     # default just use the Rayleigh quantity abbreviations (if qvals has been defined by now)
     if titles is None and not qvals is None:

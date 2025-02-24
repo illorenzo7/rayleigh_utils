@@ -47,8 +47,8 @@ if kw.qvals is None: # it's a quantity group
         kw_plot_azav_grid.groupname = kw.groupname = 'v'
     qgroup = get_quantity_group(kw.groupname, magnetism, advect_reference_state)
     kw.qvals = qgroup['qvals']
-    kw_plot_azav_grid.titles = qgroup['titles']
-    kw_plot_azav_grid.totsig = qgroup['totsig']
+    kw_plot_azav_grid.titles = list(qgroup['titles'])
+    kw_plot_azav_grid.totsig = list(qgroup['totsig'])
     kw_plot_azav_grid.ncol = qgroup['ncol']
 else:
     kw_plot_azav_grid.titles = parse_quantities(kw.qvals)[1]
@@ -74,6 +74,14 @@ terms = []
 for qval in kw.qvals:
     the_term = get_term(dirname, vals, lut, qval, verbose=True)
     terms.append(the_term)
+
+# for teq, make some modifications to the terms
+if kw.groupname == 'teq':
+    if advect_reference_state:
+        terms.insert(3, terms[1]-terms[2]) # sum of cond + ref
+        kw_plot_azav_grid.titles.insert(3, 'cond + ref')
+        kw_plot_azav_grid.totsig.insert(3, 0)
+        kw_plot_azav_grid.ncol += 1
 
 # make the main title
 iter1, iter2 = get_iters_from_file(kw.the_file)
