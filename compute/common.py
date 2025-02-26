@@ -120,6 +120,15 @@ def get_exp(num):
     else:
         return 1
 
+def get_mant(num):
+    return num/10.**get_exp(num)
+    
+def sci_not(num, SF=3):
+    fmt = '%' + ('1.%if' %(SF-1))
+    mant = get_mant(num)
+    exp = get_exp(num)
+    return r'$' + (fmt %mant) + (r'\times10^{%i}$' %exp)
+
 def make_bold(st):
     return bold_char_begin + st + bold_char_end
 
