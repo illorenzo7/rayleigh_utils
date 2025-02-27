@@ -56,16 +56,13 @@ rr = di_grid['rr']
 tt_lat = di_grid['tt_lat']
 xx = di_grid['xx']
 
-# frame rate
+# rotation rate in inertial frame
 eq = get_eq(dirname)
-Om0 = 2*np.pi/eq.prot
-
-# differential rotation in the rotating frame. 
-Om = vp_av/xx
+omega = eq.omega0 + vp_av/xx
 
 # DR contrast between 0 and 60 degrees
 it0, it60_N, it60_S = np.argmin(np.abs(tt_lat)), np.argmin(np.abs(tt_lat - 60)), np.argmin(np.abs(tt_lat + 60))
-Delta_Om = Om[it0, 0] - (Om[it60_N, 0] + Om[it60_S, 0])/2
+delta_omega = omega[it0, 0] - (omega[it60_N, 0] + omega[it60_S, 0])/2
 
 fig, axs, fpar = make_figure(**kw_make_figure)
 ax = axs[0, 0]
@@ -78,13 +75,13 @@ for latval in kw.latvals:
     ilat_S = np.argmin(np.abs(tt_lat + latval))
     latitude = (tt_lat[ilat_N] - tt_lat[ilat_S])/2 
     # (this is the actual value we get)
-    Om_vs_r = (Om[ilat_N, :] + Om[ilat_S, :])/2
-    profiles.append(Om_vs_r/Om0)
+    omega_vsr = (omega[ilat_N, :] + omega[ilat_S, :])/2
+    profiles.append(omega_vsr/eq.omega0)
     kw_lineplot.labels.append(r'$\rm{%2.1f}$' %latitude + r'$^\circ$')
 
 # x and y labels
 kw_lineplot.xlabel = 'radius'
-kw_lineplot.ylabel = 'normalized rotation rate'
+kw_lineplot.ylabel = 'rotation rate'
 
 # show the frame rotation rate
 #kw_lineplot.yvals = make_array(kw_lineplot.yvals, tolist=True)
@@ -95,7 +92,7 @@ lineplot(rr, profiles, ax, **kw_lineplot)
 iter1, iter2 = get_iters_from_file(kw.the_file)
 time_string = get_time_string(dirname, iter1, iter2) 
 
-maintitle = dirname_stripped + '\n' +  r'$\Omega/\Omega_0 - 1$' + ', radial slices\n' + time_string + '\n' + r'$\Delta\Omega_{\rm{60}}/\Omega_0$' + (' = %1.2e' %(Delta_Om/Om0))
+maintitle = dirname_stripped + '\n' +  r'$\Omega^*/\Omega_0 - 1$' + ', radial slices\n' + time_string + '\n' + r'$\Delta\Omega_{\rm{60}}/\Omega_0$' + (' = %1.2e' %(delta_omega/eq.omega0))
 
 margin_x = fpar['margin_left'] + fpar['sub_margin_left']
 margin_y = default_margin/fpar['height_inches']

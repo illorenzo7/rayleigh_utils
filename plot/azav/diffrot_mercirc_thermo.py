@@ -40,9 +40,11 @@ azav_fig_dimensions['margin_top_inches'] += (nlines-1)*default_line_height
 make_figure_kwargs_default.update(azav_fig_dimensions)
 
 # make sure there is enough space for three plots
-make_figure_kwargs_default['ncol'] = 3
+kw_make_figure = make_figure_kwargs_default.copy()
+kw_make_figure['nrow'] = 1 # change the default
+kw_make_figure['ncol'] = 3 # change the default
 
-kwargs_default.update(make_figure_kwargs_default)
+kwargs_default.update(kw_make_figure)
 
 # and of course need plot_azav kwargs
 kwargs_default.update(plot_azav_kwargs_default)
@@ -50,7 +52,7 @@ kwargs_default.update(plot_azav_kwargs_default)
 # overwrite defaults, first main kwargs
 kw = update_dict(kwargs_default, clas)
 kw_plot_azav = update_dict(plot_azav_kwargs_default, clas)
-kw_make_figure = update_dict(make_figure_kwargs_default, clas)
+kw_make_figure = update_dict(kw_make_figure, clas)
 
 # check for bad keys
 find_bad_keys(kwargs_default, clas, clas0['routinename'], justwarn=True)
@@ -76,22 +78,20 @@ cost = gi['cost']
 tt_lat = gi['tt_lat']
 xx = gi['xx']
 
-# frame rate
+# rotation rate in inertial frame
 eq = get_eq(dirname)
-Om0 = 2*np.pi/eq.prot
-
-# differential rotation in the rotating frame. 
-Om = vp_av/xx
+omega = eq.omega0 + vp_av/xx
 
 # make plot
 fig, axs, fpar = make_figure(**kw_make_figure)
+print("ax =", axs)
 axs = axs.flatten()
-
-# make diff. rot.
 ax = axs[0]
 
+# make diff. rot.
+
 kw_plot_azav.plotlatlines = False 
-plot_azav (Om/Om0, rr, cost, fig, ax, **kw_plot_azav)
+plot_azav ((omega - eq.omega0)/eq.omega0, rr, cost, fig, ax, **kw_plot_azav)
 
 # make title 
 iter1, iter2 = get_iters_from_file(kw.the_file)

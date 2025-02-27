@@ -94,11 +94,11 @@ def get_slice(a, varname, dirname=None, j=0):
             # get the planetary vorticity
             eq = get_eq(dirname)
             if varname[-1] == 'z': # easiest
-                the_slice += 2*eq.om0
+                the_slice += 2*eq.omega0
             elif varname[-1] == 'r': 
-                the_slice += 2*eq.om0*cost
+                the_slice += 2*eq.omega0*cost
             elif varname[-1] == 't':
-                the_slice -= 2*eq.om0*sint
+                the_slice -= 2*eq.omega0*sint
             # for lambda and phi, there is no planetary vorticity 
             # contribution
 

@@ -83,11 +83,11 @@ tt_lat = di_grid['tt_lat']
 eq = get_eq(dirname)
 omz_av = omr_av*cost_2d - omt_av*sint_2d
 if kw.absom:
-    Q = omz_av + 2*eq.om0
+    Q = omz_av + 2*eq.omega0
     main_savename = 'absom_lat'
     xlabel = r'$\langle \omega_z\rangle +2\Omega_0)$'
 else:
-    Q = (omz_av + 2*eq.om0)/compute_axial_H(rr_2d, sint_2d)
+    Q = (omz_av + 2*eq.omega0)/compute_axial_H(rr_2d, sint_2d)
     main_savename = 'PVH_lat'
     xlabel = r'$(\langle \omega_z\rangle +2\Omega_0)/H$' 
 

@@ -120,7 +120,7 @@ else:
 # right now its Ro_c, sigma, Ra, Pr, Pr_m for rotating cases,
 # etc.
 if kw.tau == 'rot':
-    timescale_msg = "timescale chosen: %s, tau = 1/(2 Om0)" %kw.tau
+    timescale_msg = "timescale chosen: %s, tau = 1/(2 omega_0)" %kw.tau
     tau_over_taunu = ek
     print ("Ekman number = %1.5e" %ek)
 elif kw.tau == 'visc':

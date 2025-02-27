@@ -23,7 +23,7 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = clas0['magnetism']
 
 # defaults
-kwargs_default = dict({'the_file': None, 'ntot': 500, 'tavg': None, 'clat': 10, 'dlat': 0, 'om': None, 'rad': False, 'lon': False, 'isamplevals': np.array([0]), 'samplevals': None, 'rvals': None, 'groupname': 'v', 'sub': False, 'prepend': False, 'ntheta': None, 'tkappa': False})
+kwargs_default = dict({'the_file': None, 'ntot': 500, 'tavg': None, 'clat': 10, 'dlat': 0, 'omega': None, 'rad': False, 'isamplevals': np.array([0]), 'samplevals': None, 'rvals': None, 'groupname': 'v', 'sub': False, 'prepend': False, 'ntheta': None, 'tkappa': False})
 
 # also need make figure kwargs
 timey_fig_dimensions['margin_top_inches'] = 1.0
@@ -133,20 +133,19 @@ else:
     xx = samplevals_avail.reshape((1, 1, len(samplevals_avail)))*\
             sint.reshape((1, nt, 1))
 
-# frame rate
+# equation coefficients
 eq = get_eq(dirname)
-Om0 = 2*np.pi/eq.trot
 
 # differential rotation in the rotating frame. 
-Om = vp/xx
+omega = vp/xx
 
 if not kw.sub: # full Omega (no subtraction)
-    subplottitle = 'full rotation: ' + r'$(\Omega - \Omega_0)/\Omega_0$'
+    subplottitle = 'full rotation: ' + r'$(\Omega^* - \Omega_0)/\Omega_0$'
 else:
-    dummy, n1, n2 = np.shape(Om)
-    tempmean = np.mean(Om, axis=0).reshape((1, n1, n2))
-    Om -= tempmean
-    subplottitle = 'residual rotation: ' + r'$(\Omega - \langle\Omega\rangle_t)/\Omega_0$'
+    dummy, n1, n2 = np.shape(omega)
+    tempmean = np.mean(omega, axis=0).reshape((1, n1, n2))
+    omega -= tempmean
+    subplottitle = 'residual rotation: ' + r'$(\Omega^* - \langle\Omega^*\rangle_t)/\Omega_0$'
 
 # determine desired levels to plot
 
@@ -190,9 +189,9 @@ for isampleval in kw.isamplevals:
 
     # get desired "field" to plot
     if kw.rad:
-        field = Om[:, isampleval, :]/Om0
+        field = omega[:, isampleval, :]/eq.omega0
     else:
-        field = Om[:, :, isampleval]/Om0
+        field = omega[:, :, isampleval]/eq.omega0
 
     # possibly time average data
     if kw.tavg is None:
@@ -243,8 +242,6 @@ for isampleval in kw.isamplevals:
         # save the figure
         basename = datatype + '_torsosc-%08i_%08i' %(iter1, iter2)
         plotdir = my_mkdir(clas0['plotdir'] + '/' + datatype + clas0['tag'])
-        if kw.lon and not om is None:
-            basename += '_om%.0f' %om
         savename = basename + position_tag + '.png'
         if kw.prepend:
             savename = dirname_stripped + '_' + savename
