@@ -18,7 +18,7 @@ from grid_util import compute_theta_grid
 azav_fig_dimensions = dict({'sub_aspect': 2, 'sub_width_inches': 2, 'sub_margin_left_inches': 3/4,  'sub_margin_right_inches': 1/2, 'sub_margin_top_inches': 1/4, 'sub_margin_bottom_inches': 1, 'margin_top_inches': 1})
 
 # plot_azav needs my_contourf args, then some
-plot_azav_kwargs_default = dict(
+kw_plot_azav_default = dict(
         {'rcut': None, 'minmax2': None, 'cmap2': None, 'rvals': None, 'plotlatlines': True, 'latvals': np.arange(-60., 90., 30.), 'plotboundary': True,
         'linestyles1': np.array(['-']), 'linewidths1': np.array([default_lw]), 'linecolors1': np.array(['k']),
        'linestyles2': np.array(['-']), 'linewidths2': np.array([default_lw]), 'linecolors2': np.array(['k']),
@@ -27,12 +27,12 @@ plot_azav_kwargs_default = dict(
        })
 
 # add in my_contourf stuff
-plot_azav_kwargs_default.update(my_contourf_kwargs_default)
+kw_plot_azav_default.update(kw_my_contourf_default)
 
-def plot_azav(field, rr, cost, fig, ax,  **kwargs):
-    find_bad_keys(plot_azav_kwargs_default, kwargs, 'plot_azav')
-    kw = update_dict(plot_azav_kwargs_default, kwargs)
-    kw_my_contourf = update_dict(my_contourf_kwargs_default, kwargs)
+def plot_azav(field, rr, cost, fig, ax,  **kw_in):
+    find_bad_keys(kw_plot_azav_default, kw_in, 'plot_azav')
+    kw = update_dict(kw_plot_azav_default, kw_in)
+    kw_my_contourf = update_dict(kw_my_contourf_default, kw_in)
 
     # make copies of field and costheta
     # (effectively stop Python from passing arrays by reference)
@@ -264,25 +264,25 @@ def streamfunction(vr,vt,r,cost,order=0):
             
     return psi
 
-plot_azav_grid_kwargs_default = dict({'maintitle': None, 'titles': None, 'shav': False, 'sub': False, 'tw': None, 'totsig': None, 'minmaxs': None, 'iplots': None, 'groupname': None})
-plot_azav_grid_kwargs_default.update(plot_azav_kwargs_default)
-make_figure_kw_az = make_figure_kwargs_default.copy()
-make_figure_kw_az.update(azav_fig_dimensions)
-plot_azav_grid_kwargs_default.update(make_figure_kw_az)
+kw_plot_azav_grid_default = dict({'maintitle': None, 'titles': None, 'shav': False, 'sub': False, 'tw': None, 'totsig': None, 'minmaxs': None, 'iplots': None, 'groupname': None})
+kw_plot_azav_grid_default.update(kw_plot_azav_default)
+kw_make_figure_az = kw_make_figure_default.copy()
+kw_make_figure_az.update(azav_fig_dimensions)
+kw_plot_azav_grid_default.update(kw_make_figure_az)
 # need another make_figure_kwargs for the shav plot (possibly)
-make_figure_kw_shav = make_figure_kw_az.copy()
-make_figure_kw_shav.update(lineplot_fig_dimensions)
-for key, val in make_figure_kw_shav.items():
-    plot_azav_grid_kwargs_default[key + '_shav'] = val
+kw_make_figure_shav = kw_make_figure_az.copy()
+kw_make_figure_shav.update(lineplot_fig_dimensions)
+for key, val in kw_make_figure_shav.items():
+    kw_plot_azav_grid_default[key + '_shav'] = val
 
-def plot_azav_grid(terms, rr, cost, **kwargs):
-    find_bad_keys(plot_azav_grid_kwargs_default, kwargs, 'plot_azav')
+def plot_azav_grid(terms, rr, cost, **kw_in):
+    find_bad_keys(kw_plot_azav_grid_default, kw_in, 'plot_azav')
 
-    kw = update_dict(plot_azav_grid_kwargs_default, kwargs)
-    kw_plot_azav = update_dict(plot_azav_kwargs_default, kwargs)
-    kw_make_figure = update_dict(make_figure_kw_az, kwargs)
+    kw = update_dict(kw_plot_azav_grid_default, kw_in)
+    kw_plot_azav = update_dict(kw_plot_azav_default, kw_in)
+    kw_make_figure = update_dict(kw_make_figure_az, kw_in)
     kw_make_figure_shav = dict({})
-    for key in make_figure_kw_shav:
+    for key in kw_make_figure_shav:
         kw_make_figure_shav[key] = kw[key + '_shav']
     kw_make_figure_shav = dotdict(kw_make_figure_shav)
 
@@ -339,9 +339,11 @@ def plot_azav_grid(terms, rr, cost, **kwargs):
     # make plot
     kw_make_figure.nplots = nplots
     kw_make_figure.ncol = kw.ncol
+    print("kw mf = ", kw_make_figure)
     if not kw.rcut is None:
         kw_make_figure.sub_margin_bottom_inches *= 2
     fig, axs, fpar = make_figure(**kw_make_figure)
+    print("axs =", axs)
 
     # may need these theta weights
     nt = len(cost)

@@ -69,7 +69,7 @@ def testtex(label):
     plt.title(label)
     plt.show()
 
-make_figure_kwargs_default =\
+kw_make_figure_default =\
 dict({'nplots': None, 'nrow': None, 'ncol': None,\
 
     'sub_width_inches': None,\
@@ -90,9 +90,9 @@ dict({'nplots': None, 'nrow': None, 'ncol': None,\
     'height_inches': None,\
     'aspect': None})
 
-def make_figure(**kwargs):
-    kw = update_dict(make_figure_kwargs_default, kwargs)
-    find_bad_keys(make_figure_kwargs_default, kwargs, 'make_figure')
+def make_figure(**kw):
+    kw = update_dict(kw_make_figure_default, kw)
+    find_bad_keys(kw_make_figure_default, kw, 'make_figure')
 
     # unpack everything (annoying)
     nplots = kw.nplots; nrow = kw.nrow; ncol = kw.ncol
@@ -122,7 +122,18 @@ def make_figure(**kwargs):
     nspec = 0
     for val in [nplots, nrow, ncol]:
         nspec += not val is None
-    if nspec == 2: 
+    if nspec == 1: # user specified ncol, nrow, or nplots
+        # treat either nrow or ncol as 1
+        if not nplots is None:
+            nrow = 1
+            ncol = nplots
+        if not ncol is None:
+            nrow = 1
+            nplots = ncol
+        if not nrow is None:
+            ncol = 1
+            nplots = nrow
+    elif nspec == 2: 
         if nplots is None:
             nplots = nrow*ncol
         elif ncol is None:
@@ -236,10 +247,10 @@ def make_figure(**kwargs):
 
     return fig, axs, fpar
 
-lineplot_minmax_kwargs_default = dict({'logscale': False, 'buff_ignore': None, 'plotleg': False, 'legfrac': None, 'symmetrize': False, 'domain_bounds': None, 'ixcut': 0})
-def lineplot_minmax(xx, profiles, **kwargs):
-    kw = update_dict(lineplot_minmax_kwargs_default, kwargs)
-    find_bad_keys(lineplot_minmax_kwargs_default, kwargs, 'lineplot_minmax')
+kw_lineplot_minmax_default = dict({'logscale': False, 'buff_ignore': None, 'plotleg': False, 'legfrac': None, 'symmetrize': False, 'domain_bounds': None, 'ixcut': 0})
+def lineplot_minmax(xx, profiles, **kw):
+    kw = update_dict(kw_lineplot_minmax_default, kw)
+    find_bad_keys(kw_lineplot_minmax_default, kw, 'lineplot_minmax')
 
     # possibly ignore nastiness around domain bounds
     if not kw.buff_ignore is None:
@@ -334,13 +345,13 @@ def sci_format(num, ndec=1, compact=False, nomant=False):
         return ((r'$%1.' + (r'%i' %ndec) + r'f\times10^{%i}$')\
                 %(mantissa, exponent))
 
-lineplot_kwargs_default = dict({'xlabel': None, 'ylabel': None, 'title': None, 'xvals': np.array([]), 'yvals': np.array([]), 'labels': None, 'xlogscale': False, 'xminmax': None, 'minmax': None, 'xcut': None, 'minmax2': None, 'scatter': False, 'colors': color_order, 'linestyles': style_order[0], 'markers': marker_order[0], 'lw': default_lw, 's': default_s, 'ncolleg': 3, 'fontsize': default_labelsize, 'nosci': False, 'noscix': False, 'nosciy': False, 'legloc': 'lower left'})
-lineplot_kwargs_default.update(lineplot_minmax_kwargs_default)
+kw_lineplot_default = dict({'xlabel': None, 'ylabel': None, 'title': None, 'xvals': np.array([]), 'yvals': np.array([]), 'labels': None, 'xlogscale': False, 'xminmax': None, 'minmax': None, 'xcut': None, 'minmax2': None, 'scatter': False, 'colors': color_order, 'linestyles': style_order[0], 'markers': marker_order[0], 'lw': default_lw, 's': default_s, 'ncolleg': 3, 'fontsize': default_labelsize, 'nosci': False, 'noscix': False, 'nosciy': False, 'legloc': 'lower left'})
+kw_lineplot_default.update(kw_lineplot_minmax_default)
 
-def lineplot(xx, profiles, ax, **kwargs):
-    kw = update_dict(lineplot_kwargs_default, kwargs)
-    kw_lineplot_minmax = update_dict(lineplot_minmax_kwargs_default, kwargs)
-    find_bad_keys(lineplot_kwargs_default, kwargs, 'lineplot')
+def lineplot(xx, profiles, ax, **kw_in):
+    kw = update_dict(kw_lineplot_default, kw_in)
+    kw_lineplot_minmax = update_dict(kw_lineplot_minmax_default, kw_in)
+    find_bad_keys(kw_lineplot_default, kw_in, 'lineplot')
 
     # need to have a list of axes
     axs = [ax]
@@ -500,11 +511,11 @@ def lineplot(xx, profiles, ax, **kwargs):
     if kw.plotleg:
         ax.legend(loc=kw.legloc, ncol=kw.ncolleg, fontsize=0.8*default_labelsize)
 
-add_cbar_kwargs_default = dict({'cbar_thick': 1/8, 'cbar_aspect': 1/20, 'cbar_prec': 2, 'cbar_no': 1, 'cbar_offset': None, 'cbar_pos': 'bottom', 'cbar_total_width': 1/2, 'units': '', 'nosci': False, 'cbar_fs': default_labelsize, 'tickvals': None, 'ticklabels': None, 'exp': 0, 'logscale': False, 'posdef': False, 'fullrange2': False, 'symlog': False, 'sgnlog': False, 'tol': 0.75, 'no0': False, 'cbar_label': None})
-def add_cbar(fig, ax, im, **kwargs):
+kw_add_cbar_default = dict({'cbar_thick': 1/8, 'cbar_aspect': 1/20, 'cbar_prec': 2, 'cbar_no': 1, 'cbar_offset': None, 'cbar_pos': 'bottom', 'cbar_total_width': 1/2, 'units': '', 'nosci': False, 'cbar_fs': default_labelsize, 'tickvals': None, 'ticklabels': None, 'exp': 0, 'logscale': False, 'posdef': False, 'fullrange2': False, 'symlog': False, 'sgnlog': False, 'tol': 0.75, 'no0': False, 'cbar_label': None})
+def add_cbar(fig, ax, im, **kw_in):
     # deal with kwargs
-    kw = update_dict(add_cbar_kwargs_default, kwargs)
-    find_bad_keys(add_cbar_kwargs_default, kwargs, 'add_cbar')
+    kw = update_dict(kw_add_cbar_default, kw_in)
+    find_bad_keys(kw_add_cbar_default, kw_in, 'add_cbar')
 
     # get fig dimensions
     fig_width_inches, fig_height_inches = fig.get_size_inches()
@@ -641,14 +652,14 @@ def add_cbar(fig, ax, im, **kwargs):
         #        ha='left', va='center', fontsize=kw.fontsize) 
         cax.set_title(kw.cbar_label, ha='left', fontsize=kw.cbar_fs)
 
-contourf_minmax_kwargs_default = dict({'posdef': False, 'no0': False, 'logscale': False, 'symlog': False, 'sgnlog': False, 'fullrange': False, 'fullrange2': False, 'buff_ignore1': buff_frac, 'buff_ignore2': buff_frac}) 
+kw_contourf_minmax_default = dict({'posdef': False, 'no0': False, 'logscale': False, 'symlog': False, 'sgnlog': False, 'fullrange': False, 'fullrange2': False, 'buff_ignore1': buff_frac, 'buff_ignore2': buff_frac}) 
 
-def contourf_minmax(field, **kwargs):
+def contourf_minmax(field, **kw_in):
     # Get good boundaries to saturate array [field], assuming either
     # posdef (True or False) and/or logscale (True or False)
     # first, possibly cut the array (ignore boundary vals)
-    kw = update_dict(contourf_minmax_kwargs_default, kwargs)
-    find_bad_keys(contourf_minmax_kwargs_default, kwargs, 'contourf_minmax')
+    kw = update_dict(kw_contourf_minmax_default, kw_in)
+    find_bad_keys(kw_contourf_minmax_default, kw_in, 'contourf_minmax')
 
     if not kw.buff_ignore1 is None:
         n1, dummy = np.shape(field)
@@ -690,7 +701,7 @@ def contourf_minmax(field, **kwargs):
     minmax = minmax[0] - tinybit, minmax[1] + tinybit
     return minmax
 
-my_contourf_kwargs_default = dict({
+kw_my_contourf_default = dict({
         # basic flags:
          'plotfield': True,
          'plotcontours': True, 'ncontours': 8, 'contourlevels': None, 'contourstyles': '--', 'contourcolors': 'k', 'contourwidths': default_lw, 
@@ -702,14 +713,14 @@ my_contourf_kwargs_default = dict({
         'minmax': None, 'linthresh': None, 'linscale': None, 'scaleby': 1.0})
 
 # color map stuff: symlog, logscale, posdef, are here:
-my_contourf_kwargs_default.update(contourf_minmax_kwargs_default)
-my_contourf_kwargs_default.update(add_cbar_kwargs_default)
+kw_my_contourf_default.update(kw_contourf_minmax_default)
+kw_my_contourf_default.update(kw_add_cbar_default)
 
-def my_contourf(xx, yy, field, fig, ax, **kwargs):
-    kw = update_dict(my_contourf_kwargs_default, kwargs)
-    kw_contourf_minmax = update_dict(contourf_minmax_kwargs_default, kwargs)
-    kw_add_cbar = update_dict(add_cbar_kwargs_default, kwargs)
-    find_bad_keys(my_contourf_kwargs_default, kwargs, 'my_contourf')
+def my_contourf(xx, yy, field, fig, ax, **kw_in):
+    kw = update_dict(kw_my_contourf_default, kw_in)
+    kw_contourf_minmax = update_dict(kw_contourf_minmax_default, kw_in)
+    kw_add_cbar = update_dict(kw_add_cbar_default, kw_in)
+    find_bad_keys(kw_my_contourf_default, kw_in, 'my_contourf')
 
     # make sure Python does not modify any of the arrays it was passed
     field = np.copy(field)/kw.scaleby
@@ -820,17 +831,17 @@ def my_contourf(xx, yy, field, fig, ax, **kwargs):
     return  fig, ax
 
 # my_pcolormesh: pixellated my_contourf
-my_pcolormesh_kwargs_default = dict({'x': None, 'y': None, 'xvals': [], 'yvals': [], 'linewidth': default_lw, 'minmax': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'yminmax': None, 'ymin': None, 'ymax': None, 'xymin': None, 'xymax': None, 'xyminmax': None,\
+kw_my_pcolormesh_default = dict({'x': None, 'y': None, 'xvals': [], 'yvals': [], 'linewidth': default_lw, 'minmax': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'yminmax': None, 'ymin': None, 'ymax': None, 'xymin': None, 'xymax': None, 'xyminmax': None,\
     # more cbar stuff
     'plotcbar': True, 'cmap': None, 'norm': None, 'units': '', 'scaleby': 1., 'fontsize': default_labelsize})
 
-my_pcolormesh_kwargs_default.update(contourf_minmax_kwargs_default)
-my_pcolormesh_kwargs_default.update(add_cbar_kwargs_default)
-def my_pcolormesh(field, fig, ax, **kwargs):
-    kw = update_dict(my_pcolormesh_kwargs_default, kwargs)
-    kw_add_cbar = update_dict(add_cbar_kwargs_default, kwargs)
-    kw_contourf_minmax = update_dict(contourf_minmax_kwargs_default, kwargs)
-    find_bad_keys(my_pcolormesh_kwargs_default, kwargs, 'my_pcolormesh')
+kw_my_pcolormesh_default.update(kw_contourf_minmax_default)
+kw_my_pcolormesh_default.update(kw_add_cbar_default)
+def my_pcolormesh(field, fig, ax, **kw_in):
+    kw = update_dict(kw_my_pcolormesh_default, kw_in)
+    kw_add_cbar = update_dict(kw_add_cbar_default, kw_in)
+    kw_contourf_minmax = update_dict(kw_contourf_minmax_default, kw_in)
+    find_bad_keys(kw_my_pcolormesh_default, kw_in, 'my_pcolormesh')
 
     # make sure Python does not modify any of the arrays it was passed
     field = np.copy(field)/kw.scaleby

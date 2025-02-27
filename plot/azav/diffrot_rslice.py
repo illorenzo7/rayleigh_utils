@@ -21,24 +21,24 @@ dirname = clas0['dirname']
 dirname_stripped = strip_dirname(dirname)
 
 # allowed args + defaults
-kwargs_default = dict({'the_file': None, 'latvals': np.array([0., 15., 30., 45., 60., 75.])})
+kw_default = dict({'the_file': None, 'latvals': np.array([0., 15., 30., 45., 60., 75.])})
 
-make_figure_kwargs_default['margin_top_inches'] += 0.25
-kwargs_default.update(make_figure_kwargs_default)
+kw_make_figure_default['margin_top_inches'] += 0.25
+kw_default.update(kw_make_figure_default)
 
-lineplot_kwargs_default['legfrac'] = 1/5
-lineplot_kwargs_default['plotleg'] = True
-kwargs_default.update(lineplot_kwargs_default)
+kw_lineplot_default['legfrac'] = 1/5
+kw_lineplot_default['plotleg'] = True
+kw_default.update(kw_lineplot_default)
 
-kw = update_dict(kwargs_default, clas)
-kw_make_figure = update_dict(make_figure_kwargs_default, clas)
-kw_lineplot = update_dict(lineplot_kwargs_default, clas)
+kw = update_dict(kw_default, clas)
+kw_make_figure = update_dict(kw_make_figure_default, clas)
+kw_lineplot = update_dict(kw_lineplot_default, clas)
 
 if not kw.xcut is None: # make room for label on right
     kw_make_figure.sub_margin_right_inches = default_margin_xlabel
 kw_make_figure.margin_top_inches += default_line_height 
 # room for diffrot label
-find_bad_keys(kwargs_default, clas, clas0['routinename'], justwarn=True)
+find_bad_keys(kw_default, clas, clas0['routinename'], justwarn=True)
 
 # get data
 if kw.the_file is None:

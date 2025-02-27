@@ -34,20 +34,20 @@ dirname_stripped = strip_dirname(dirname)
 
 # allowed args + defaults
 # key unique to this script
-kwargs_default = dict({'the_file': None, 'rel': False, 'sub': False, 'nrho': 3, 'beta': 0.759, 'gamma': gamma_ideal})
+kw_default = dict({'the_file': None, 'rel': False, 'sub': False, 'nrho': 3, 'beta': 0.759, 'gamma': gamma_ideal})
 
 # also need make figure kwargs
 
 # of course, plot_azav_grid kwargs
-plot_azav_grid_kwargs_default['margin_top_inches'] = 1
-kwargs_default.update(plot_azav_grid_kwargs_default)
+kw_plot_azav_grid_default['margin_top_inches'] = 1
+kw_default.update(kw_plot_azav_grid_default)
 
 # overwrite defaults
-kw = update_dict(kwargs_default, clas)
-kw_plot_azav_grid = update_dict(plot_azav_grid_kwargs_default, clas)
+kw = update_dict(kw_default, clas)
+kw_plot_azav_grid = update_dict(kw_plot_azav_grid_default, clas)
 
 # check for bad keys
-find_bad_keys(kwargs_default, clas, clas0['routinename'], justwarn=True)
+find_bad_keys(kw_default, clas, clas0['routinename'], justwarn=True)
 if not kw.rcut is None:  
     # need room for two colorbars and line up top stating rcut 
     kw_plot_azav_grid.margin_top_inches += 1/4

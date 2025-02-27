@@ -21,8 +21,8 @@ magnetism = clas0.magnetism
 rotation = clas0.rotation
 
 # allowed args + defaults
-kwargs_default = dict({'save': False, 'savename': None, 'savedir': None, 'verbose': False})
-kw = update_dict(kwargs_default, clas)
+kw_default = dict({'save': False, 'savename': None, 'savedir': None, 'verbose': False})
+kw = update_dict(kw_default, clas)
 
 # figure out where to potentially save the output
 print_funcs = [print]

@@ -21,9 +21,9 @@ lendef2 = 35
 buff_line_loc = (lendef1 + lendef2 + 9)*'='
 
 # allowed args + defaults
-kwargs_default = dict({'save': False, 'savename': None, 'savedir': None, 'verbose': False,\
+kw_default = dict({'save': False, 'savename': None, 'savedir': None, 'verbose': False,\
         'the_file': None, 'the_file_az': None, 'shelldepth': None})
-kw = update_dict(kwargs_default, clas)
+kw = update_dict(kw_default, clas)
 
 if kw.the_file is None:
     kw.the_file = get_widest_range_file(dirname + '/data/', 'Shell_Avgs')

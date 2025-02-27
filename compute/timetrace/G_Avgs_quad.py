@@ -79,13 +79,13 @@ if rank == 0:
     tag = clas0['tag']
 
     # get grid info + default kwargs
-    kwargs_default = dict({})
-    kwargs_default['rvals'] = None # can specify radial domain boundaries directly 
-    kwargs_default['latvals'] = None
-    kwargs_default['thinby'] = None # by default don't thin end series
+    kw_default = dict({})
+    kw_default['rvals'] = None # can specify radial domain boundaries directly 
+    kw_default['latvals'] = None
+    kw_default['thinby'] = None # by default don't thin end series
 
     # update these possibly
-    kw = update_dict(kwargs_default, clas)
+    kw = update_dict(kw_default, clas)
 
     # get desired quadrant boundaries
 

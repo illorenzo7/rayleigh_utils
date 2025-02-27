@@ -11,8 +11,8 @@ dirname = clas0.dirname
 dirname_stripped = strip_dirname(dirname)
 
 # overwrite defaults
-kwargs_default = dotdict({'radtype': 'sslice'})
-kw = update_dict(kwargs_default, clas)
+kw_default = dotdict({'radtype': 'sslice'})
+kw = update_dict(kw_default, clas)
 radtype = kw.radtype
 
 # get the data directory

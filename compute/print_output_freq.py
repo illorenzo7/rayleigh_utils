@@ -13,8 +13,8 @@ dirname = clas0['dirname']
 rotation = clas0['rotation']
 
 # overwrite defaults
-kwargs_default = dict({'radtype': 'azav'})
-kw = update_dict(kwargs_default, clas)
+kw_default = dict({'radtype': 'azav'})
+kw = update_dict(kw_default, clas)
 radtype = kw.radtype
 
 # get the data directory

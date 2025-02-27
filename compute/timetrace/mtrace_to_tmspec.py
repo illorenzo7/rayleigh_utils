@@ -27,10 +27,10 @@ file_list, int_file_list, nfiles = get_file_lists(radatadir, clas)
 a0 = Shell_Slices(radatadir + file_list[0], '')
 
 # set default values for qval and irval
-kwargs_default = dict({'rad': False, 'groupname': 'b', 'mvals': 1, 'nonlin': None, 'files': None})
+kw_default = dict({'rad': False, 'groupname': 'b', 'mvals': 1, 'nonlin': None, 'files': None})
 
 # overwrite defaults
-kw = update_dict(kwargs_default, clas)
+kw = update_dict(kw_default, clas)
 
 # get data directory
 if kw.rad:

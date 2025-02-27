@@ -28,10 +28,10 @@ clas0, clas = read_clas(args)
 dirname = clas0['dirname']
 
 # set default values for qval and irval
-kwargs_default = dict({'radtype': 'azav', 'irvals': None, 'qvals': None})
+kw_default = dict({'radtype': 'azav', 'irvals': None, 'qvals': None})
 
 # overwrite defaults
-kw = update_dict(kwargs_default, clas)
+kw = update_dict(kw_default, clas)
 radtype = kw.radtype
 
 kw.irvals = make_array(kw.irvals)

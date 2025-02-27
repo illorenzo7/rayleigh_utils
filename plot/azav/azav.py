@@ -24,12 +24,12 @@ magnetism = clas0['magnetism']
 advect_reference_state = clas0['advect_reference_state']
 
 # defaults
-kwargs_default = dict({'the_file': None, 'qvals': None, 'groupname': None})
-kwargs_default.update(plot_azav_grid_kwargs_default)
+kw_default = dict({'the_file': None, 'qvals': None, 'groupname': None})
+kw_default.update(kw_plot_azav_grid_default)
 
 # overwrite defaults
-kw = update_dict(kwargs_default, clas)
-kw_plot_azav_grid = update_dict(plot_azav_grid_kwargs_default, clas)
+kw = update_dict(kw_default, clas)
+kw_plot_azav_grid = update_dict(kw_plot_azav_grid_default, clas)
 
 # deal with possibly different aspect ratios
 if kw.halfplane:
@@ -55,7 +55,7 @@ else:
     kw.groupname = input("choose a groupname to save your plot\n to not save it, enter 'nosave': ")
 
 # check for bad keys
-find_bad_keys(kwargs_default, clas, clas0['routinename'], justwarn=True)
+find_bad_keys(kw_default, clas, clas0['routinename'], justwarn=True)
 
 # get data
 if kw.the_file is None:

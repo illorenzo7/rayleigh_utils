@@ -25,23 +25,23 @@ dirname_stripped = strip_dirname(dirname, wrap=True)
 
 # allowed args + defaults
 # key unique to this script
-kwargs_default = dict({'the_file': None})
+kw_default = dict({'the_file': None})
 
 # also need make figure kwargs
 #azav_fig_dimensions['margin_top_inches'] += 1.5 
 # make room for subplot labels
 #plot_azav_grid_kwargs_default.update(azav_fig_dimensions)
-kwargs_default.update(plot_azav_grid_kwargs_default)
+kw_default.update(kw_plot_azav_grid_default)
 
 # overwrite defaults, first main kwargs
-kw = update_dict(kwargs_default, clas)
-kw_plot_azav_grid = update_dict(plot_azav_grid_kwargs_default, clas)
+kw = update_dict(kw_default, clas)
+kw_plot_azav_grid = update_dict(kw_plot_azav_grid_default, clas)
 
 # need a bit extra room for subplot labels
 kw_plot_azav_grid.sub_margin_top_inches += 1/4
 
 # check for bad keys
-find_bad_keys(kwargs_default, clas, clas0['routinename'], justwarn=True)
+find_bad_keys(kw_default, clas, clas0['routinename'], justwarn=True)
 
 # get data
 if kw.the_file is None:

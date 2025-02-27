@@ -22,17 +22,17 @@ dirname_stripped = strip_dirname(dirname)
 eq = get_eq(dirname)
 
 # allowed args + defaults
-lineplot_kwargs_default['noscix'] = True
-make_figure_kwargs_default.update(lineplot_fig_dimensions)
+kw_lineplot_default['noscix'] = True
+kw_make_figure_default.update(lineplot_fig_dimensions)
 
-kwargs_default = dict({'the_file': None, 'rvals': None})
-kwargs_default.update(make_figure_kwargs_default)
+kw_default = dict({'the_file': None, 'rvals': None})
+kw_default.update(kw_make_figure_default)
 
-kw = update_dict(kwargs_default, clas)
-kw_lineplot = update_dict(lineplot_kwargs_default, clas)
-kw_make_figure = update_dict(make_figure_kwargs_default, clas)
+kw = update_dict(kw_default, clas)
+kw_lineplot = update_dict(kw_lineplot_default, clas)
+kw_make_figure = update_dict(kw_make_figure_default, clas)
 
-find_bad_keys(kwargs_default, clas, clas0['routinename'], justwarn=True)
+find_bad_keys(kw_default, clas, clas0['routinename'], justwarn=True)
 
 # get grid_info
 di_grid = get_grid_info(dirname)

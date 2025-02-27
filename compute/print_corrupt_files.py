@@ -49,8 +49,8 @@ if rank == 0:
     clas0, clas = read_clas(args)
 
     # overwrite defaults
-    kwargs_default = dict({'radtype': 'azav'})
-    kw = update_dict(kwargs_default, clas)
+    kw_default = dict({'radtype': 'azav'})
+    kw = update_dict(kw_default, clas)
     radtype = kw.radtype
 
     # get reading function and dataname from the di_radtypes container

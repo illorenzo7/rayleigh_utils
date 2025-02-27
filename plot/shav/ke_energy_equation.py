@@ -21,22 +21,22 @@ dirname_stripped = strip_dirname(dirname)
 eq = get_eq(dirname)
 
 # allowed args + defaults
-lineplot_kwargs_default['legfrac'] = 0.3
-lineplot_kwargs_default['plotleg'] = True
-make_figure_kwargs_default.update(lineplot_fig_dimensions)
+kw_lineplot_default['legfrac'] = 0.3
+kw_lineplot_default['plotleg'] = True
+kw_make_figure_default.update(lineplot_fig_dimensions)
 
-kwargs_default = dict({'the_file': None,  'entropy': False})
-kwargs_default.update(make_figure_kwargs_default)
+kw_default = dict({'the_file': None,  'entropy': False})
+kw_default.update(kw_make_figure_default)
 
-kw = update_dict(kwargs_default, clas)
-kw_lineplot = update_dict(lineplot_kwargs_default, clas)
-kw_make_figure = update_dict(make_figure_kwargs_default, clas)
+kw = update_dict(kw_default, clas)
+kw_lineplot = update_dict(kw_lineplot_default, clas)
+kw_make_figure = update_dict(kw_make_figure_default, clas)
 
 if not kw.xcut is None: # make room for label on right
     kw_make_figure.sub_margin_right_inches = default_margin_xlabel
 if kw.mark_bcz: # make room for the bcz label
     kw_make_figure.margin_top_inches += default_line_height
-find_bad_keys(kwargs_default, clas, clas0['routinename'], justwarn=True)
+find_bad_keys(kw_default, clas, clas0['routinename'], justwarn=True)
 
 # get data
 if kw.the_file is None:
