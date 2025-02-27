@@ -339,11 +339,9 @@ def plot_azav_grid(terms, rr, cost, **kw_in):
     # make plot
     kw_make_figure.nplots = nplots
     kw_make_figure.ncol = kw.ncol
-    print("kw mf = ", kw_make_figure)
     if not kw.rcut is None:
         kw_make_figure.sub_margin_bottom_inches *= 2
     fig, axs, fpar = make_figure(**kw_make_figure)
-    print("axs =", axs)
 
     # may need these theta weights
     nt = len(cost)

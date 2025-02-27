@@ -90,9 +90,9 @@ dict({'nplots': None, 'nrow': None, 'ncol': None,\
     'height_inches': None,\
     'aspect': None})
 
-def make_figure(**kw):
-    kw = update_dict(kw_make_figure_default, kw)
-    find_bad_keys(kw_make_figure_default, kw, 'make_figure')
+def make_figure(**kw_in):
+    kw = update_dict(kw_make_figure_default, kw_in)
+    find_bad_keys(kw_make_figure_default, kw_in, 'make_figure')
 
     # unpack everything (annoying)
     nplots = kw.nplots; nrow = kw.nrow; ncol = kw.ncol
@@ -122,15 +122,16 @@ def make_figure(**kw):
     nspec = 0
     for val in [nplots, nrow, ncol]:
         nspec += not val is None
+
     if nspec == 1: # user specified ncol, nrow, or nplots
         # treat either nrow or ncol as 1
         if not nplots is None:
             nrow = 1
             ncol = nplots
-        if not ncol is None:
+        elif not ncol is None:
             nrow = 1
             nplots = ncol
-        if not nrow is None:
+        elif not nrow is None:
             ncol = 1
             nplots = nrow
     elif nspec == 2: 
