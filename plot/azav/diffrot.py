@@ -73,21 +73,20 @@ xx = di_grid['xx']
 
 # frame rate
 eq = get_eq(dirname)
-Om0 = 2*np.pi/eq.prot
 
 # differential rotation in the rotating frame. 
-Om = vp_av/xx
+omega = vp_av/xx
 
 # make plot
 fig, axs, fpar = make_figure(**kw_make_figure)
 ax = axs[0, 0]
 
-plot_azav (Om/Om0, rr, cost, fig, ax, **kw_plot_azav)
+plot_azav (omega/eq.omega0, rr, cost, fig, ax, **kw_plot_azav)
 
 # make title 
 iter1, iter2 = get_iters_from_file(kw.the_file)
 time_string = get_time_string(dirname, iter1, iter2, threelines=True) 
-maintitle = clas0.dirname_label + '\n' +  r'$\Omega$' + ' (rotation rate)\n' + time_string 
+maintitle = clas0.dirname_label + '\n' +  r'$\Omega^*/\Omega_0$' + ' (rotation rate)\n' + time_string 
 
 # get DR numbers in spherical shells
 # loop over shells and add line of text

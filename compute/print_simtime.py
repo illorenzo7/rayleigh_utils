@@ -18,7 +18,7 @@ clas0, clas = read_clas(args)
 dirname = clas0.dirname
 rotation = clas0.rotation
 
-# get equation coefficients (for trot and tkappa)
+# get equation coefficients (for t_omega and t_kappa)
 eq = get_eq(dirname)
 
 # Primary ways to get the simulation time
@@ -100,7 +100,7 @@ print (("Delta_t = " + fmt + " t_kappa") %(simtime/eq.tkappa))
 # Run time, P_rot (if available)
 if rotation:
     print (buff_line)
-    print (("Delta_t = " + fmt + " rotations") %(simtime/eq.trot))
+    print (("Delta_t = " + fmt + " rotations") %(simtime/eq.tomega))
 
 # more stuff in verbose mode
 if kw.verbose:
@@ -112,13 +112,13 @@ if kw.verbose:
     print (("t2 = " + fmt + " t_kappa") %(t2/eq.tkappa))
 
     if rotation:
-        print (("t1 = " + fmt + " rotations") %(t1/eq.trot))
-        print (("t2 = " + fmt + " rotations") %(t2/eq.trot))
+        print (("t1 = " + fmt + " rotations") %(t1/eq.tomega))
+        print (("t2 = " + fmt + " rotations") %(t2/eq.tomega))
 
 # Print the various time scales
 print (buff_line)
 print (("1 t_kappa      = " + fmt + " simulation units") %eq.tkappa)
 if rotation:
-    print (("1 rotation = " + fmt + " simulation units") %eq.trot)
-    print(("1 t_kappa      = " + fmt + " rotations") %(eq.tkappa/eq.trot))
+    print (("1 rotation = " + fmt + " simulation units") %eq.tomega)
+    print(("1 t_kappa      = " + fmt + " rotations") %(eq.tkappa/eq.tomega))
 print (buff_line)

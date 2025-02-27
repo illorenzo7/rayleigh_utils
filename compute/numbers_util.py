@@ -93,9 +93,9 @@ def get_numbers_input(dirname, r1='rmin', r2='rmax', verbose=False, diman=False,
         if rotation:
             # Ekman and Taylor
             if use2:
-                di.ek = nu_volav/(2*eq.om0*shell_depth**2)
+                di.ek = nu_volav/(2*eq.omega0*shell_depth**2)
             else:
-                di.ek = nu_volav/(eq.om0*shell_depth**2)
+                di.ek = nu_volav/(eq.omega0*shell_depth**2)
             di.ta = 1.0/di.ek**2
 
             # modified Rayleigh
@@ -113,7 +113,7 @@ def get_numbers_input(dirname, r1='rmin', r2='rmax', verbose=False, diman=False,
 
             if rotation:
                 # "magnetic Ekman number"
-                di.ekm = eta_volav/(eq.om0*shell_depth**2)
+                di.ekm = eta_volav/(eq.omega0*shell_depth**2)
 
     elif eq.reference_type == 1: # Boussinesq, get nonD from c's
         di.pr = 1./eq.constants[5]
@@ -223,9 +223,9 @@ def get_dr_contrast(dirname, r1='rmin', r2='rmax', lat1=0., lat2=60., the_file=N
         dr_contrast = rotrate_sym[ilat1, :] - rotrate_sym[ilat2, :]
 
     if norms: # don't do RMS of contrast, just average
-        out = volav_in_radius(dirname, dr_contrast, r1, r2)/eq.om0
+        out = volav_in_radius(dirname, dr_contrast, r1, r2)/eq.omega0
     else:
-        out = volav_in_radius(dirname, dr_contrast**2, r1, r2)**0.5/eq.om0
+        out = volav_in_radius(dirname, dr_contrast**2, r1, r2)**0.5/eq.omega0
     return out
 
 def get_numbers_output(dirname, r1='rmin', r2='rmax', the_file=None, the_file_az=None, verbose=False, shell_depth=None):
@@ -318,17 +318,17 @@ def get_numbers_output(dirname, r1='rmin', r2='rmax', the_file=None, the_file_az
 
     # rotational numbers
     if rotation:
-        om0 = eq.om0
+        omega0 = eq.omega0
         
         # get the system Rossby numbers
-        di.ro = di_amp.v/(2.0*om0*shell_depth)
-        di.romean = di_amp.vmean/(2.0*om0*shell_depth)
-        di.rofluc = di_amp.vfluc/(2.0*om0*shell_depth)
+        di.ro = di_amp.v/(2.0*omega0*shell_depth)
+        di.romean = di_amp.vmean/(2.0*omega0*shell_depth)
+        di.rofluc = di_amp.vfluc/(2.0*omega0*shell_depth)
 
         # get the vorticity ("real") Rossby numbers
-        di.rovort = di_amp.om/(2.0*om0)
-        di.rovortmean = di_amp.ommean/(2.0*om0)
-        di.rovortfluc = di_amp.omfluc/(2.0*om0)
+        di.rovort = di_amp.om/(2.0*omega0)
+        di.rovortmean = di_amp.ommean/(2.0*omega0)
+        di.rovortfluc = di_amp.omfluc/(2.0*omega0)
 
         di.diffrot = get_dr_contrast(dirname, r1=r1, r2=r2, the_file=the_file_az, verbose=verbose, norms=True)
 

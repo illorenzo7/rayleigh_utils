@@ -26,8 +26,8 @@ print ("In %s:" %radatadir)
 # Get the baseline time unit
 eq = get_eq(dirname)
 if rotation:
-    time_unit = eq.trot
-    time_label = 'rotations'
+    time_unit = eq.tomega
+    time_label = 't_omega'
 else:
     time_unit = eq.tkappa
     time_label = 't_kappa'

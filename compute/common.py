@@ -1469,14 +1469,14 @@ def get_eq(dirname, fname=None, verbose=False):
         # rotation rate and period 
         # (in appropriate units based on chosen timescale)
         # this definition is universal
-        eq_hr.om0 = eq.constants[0]/2.
-        eq_hr.tom = 1./(2.*eq_hr.om0)
-        eq_hr.trot = 2.*np.pi/eq_hr.om0
+        eq_hr.omega0 = eq.constants[0]/2.
+        eq_hr.tomega = 1./(2.*eq_hr.omega0)
+        eq_hr.trot = 2.*np.pi/eq_hr.omega0 # for posterity's sake
 
         # volume-averaged angular momentum of shell 
         # (in appropriate units based on chosen timescale)
         gi = get_grid_info(dirname)
-        amom_dens = (8*np.pi*eq_hr.om0/3)*eq_hr.rho*eq_hr.rr**4 # do the latitudinal integral analytically
+        amom_dens = (8*np.pi*eq_hr.omega0/3)*eq_hr.rho*eq_hr.rr**4 # do the latitudinal integral analytically
         if not fname == 'equation_coefficients': # no proper weights to work with, just do simpson
             rmin, rmax = get_rminmax(dirname)
             vol = 4*np.pi/3*(rmax**3 - rmin**3)
@@ -1608,8 +1608,8 @@ def get_eq(dirname, fname=None, verbose=False):
                     eq_hr.dlneta = eta_power*eq_hr.dlnrho
 
             # finally, get the rotation rate
-            eq_hr.om0 = get_parameter(dirname, 'angular_velocity')
-            eq_hr.trot = 2*np.pi/eq_hr.om0
+            eq_hr.omega0 = get_parameter(dirname, 'angular_velocity')
+            eq_hr.trot = 2*np.pi/eq_hr.omega0
 
     return eq_hr
 
@@ -1632,7 +1632,7 @@ def get_units(dirname, rvals=['rmin', 'rmax']):
     # basic parameters (length, time, rho, S)
     H = r2 - r1
     di.l = H
-    di.t = 1/(2*eq.om0)
+    di.t = 1/(2*eq.omega0)
     vol = get_vol(dirname) # make sure to use the full volume
                 # to calculate the non-radiative heat flux vs radius
     lstar = vol*np.sum(eq.heat*gi.rw)
@@ -1676,9 +1676,9 @@ def get_time_unit(dirname, tkappa=False):
     rotation = get_parameter(dirname, 'rotation')
     eq = get_eq(dirname)
     if rotation and not tkappa:
-        time_unit = eq.trot
-        time_label = r'${\rm{P_{rot}}}$'
-        simple_label = 'rotations'
+        time_unit = eq.tomega
+        time_label = r'$t_\Omega$'
+        simple_label = 't_omega'
     else:
         time_unit = eq.tkappa
         time_label = simple_label = 't_kappa'
@@ -1721,8 +1721,8 @@ def translate_times(time, dirname, translate_from='iter', verbose=False):
         ind = np.argmin(np.abs(iters - time))
     elif translate_from == 'simt':
         ind = np.argmin(np.abs(times - time))
-    elif translate_from == 'trot':
-        ind = np.argmin(np.abs(times/eq.trot - time))
+    elif translate_from == 'tomega':
+        ind = np.argmin(np.abs(times/eq.tomega - time))
     elif translate_from == 'tkappa':
         ind = np.argmin(np.abs(times/eq.tkappa - time))
 
@@ -1733,7 +1733,7 @@ def translate_times(time, dirname, translate_from='iter', verbose=False):
     di.val_tkappa = times[ind]/eq.tkappa
     rotation = get_parameter(dirname, 'rotation')
     if rotation:
-        di.val_trot = times[ind]/eq.trot
+        di.val_tomega = times[ind]/eq.tomega
     return di
 
 def get_time_string(dirname, iter1, iter2=None, oneline=False, threelines=False, iter0=None, floatwidth=None, floatprec=None):

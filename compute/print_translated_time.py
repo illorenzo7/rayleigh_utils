@@ -17,7 +17,7 @@ rotation = clas0.rotation
 
 rotation = clas0.rotation
 
-# only need one cla here (iter, trot, or t_kappa)
+# only need one cla here (iter, t_omega, or t_kappa)
 for key, val in clas.items():
     tvals = make_array(val) # make this an array
     ntvals = len(tvals)
@@ -27,7 +27,7 @@ for key, val in clas.items():
     val_simt = np.zeros(ntvals, dtype='float')
     val_tkappa = np.zeros(ntvals, dtype='float')
     if clas0.rotation:
-        val_trot = np.zeros(ntvals, dtype='float')
+        val_tomega = np.zeros(ntvals, dtype='float')
 
     for i in range(ntvals):
         tval = tvals[i] # we have multiple tvals
@@ -36,10 +36,10 @@ for key, val in clas.items():
         val_simt[i] = di.val_simt
         val_tkappa[i] = di.val_tkappa
         if clas0.rotation:
-            val_trot[i] = di.val_trot
+            val_tomega[i] = di.val_tomega
 
     print ("val_iter =", arr_to_str(val_iter, '%08i', nobra=True))
     print ("val_simt =", arr_to_str(val_simt, '%.2f', nobra=True))
     print ("val_tkappa =", arr_to_str(val_tkappa, '%.3f', nobra=True))
     if clas0.rotation:
-        print ("val_trot =", arr_to_str(val_trot, '%.2f', nobra=True))
+        print ("val_tomega =", arr_to_str(val_tomega, '%.2f', nobra=True))
