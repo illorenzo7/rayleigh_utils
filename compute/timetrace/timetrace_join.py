@@ -46,15 +46,18 @@ datadir = dirname + '/' + datadir_rel
 if not os.path.isdir(datadir):
     os.makedirs(datadir)
 
+# get all the files to join
+di_list = []
+for i in range(nfiles):
+    di_list.append(get_dict(files[i]))
+
 # for timelat or mtimelat, see if we need to interpolate
 if 'timelat' in dataname:
     # for now this will only work if I don't change the radial resolution
     interp = False # only interpolate if at least one axis
     # is a different size than the rest
     nts = np.zeros(nfiles, dtype='int')
-    di_list = []
     for i in range(nfiles):
-        di_list.append(get_dict(files[i]))
         nt_loc = np.shape(di_list[i]['vals'])[1]
         nts[i] = nt_loc
     nt_min, nt_max = np.min(nts), np.max(nts)
