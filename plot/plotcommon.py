@@ -216,6 +216,10 @@ def make_figure(**kwargs):
     fpar['sub_margin_bottom'] = sub_margin_bottom_inches/height_inches
     fpar['sub_margin_top'] = sub_margin_top_inches/height_inches
 
+    fpar['margin_x'] = default_margin/width_inches
+    fpar['margin_y'] = default_margin/height_inches
+    fpar['line_height'] = default_line_height/height_inches
+
     # Generate the figure + axes
     fig = plt.figure(figsize=(width_inches, height_inches))
     #axs = np.zeros((nrow, ncol), dtype=object)
@@ -224,7 +228,7 @@ def make_figure(**kwargs):
         icol = iplot%fpar['ncol']
         irow = iplot//fpar['ncol']
         ax_left = fpar['margin_left'] + fpar['sub_margin_left'] + icol*(fpar['sub_width'] + fpar['sub_margin_left'] + fpar['sub_margin_right'])
-        ax_bottom = 1.0 - fpar['margin_top'] - fpar['sub_height'] - fpar['sub_margin_top'] - irow*(fpar['sub_height'] + fpar['sub_margin_top'] + fpar['sub_margin_bottom'])
+        ax_bottom = 1.0 - fpar['margin_top'] - fpar['sub_margin_top'] - fpar['sub_height'] - irow*(fpar['sub_height'] + fpar['sub_margin_top'] + fpar['sub_margin_bottom'])
         axs.append(fig.add_axes((ax_left, ax_bottom, fpar['sub_width'], fpar['sub_height'])))
 
         #axs[irow,icol] = fig.add_axes((ax_left, ax_bottom, fpar['sub_width'], fpar['sub_height']))
