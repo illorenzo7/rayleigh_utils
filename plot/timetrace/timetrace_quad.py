@@ -27,7 +27,7 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = get_parameter(dirname, 'magnetism')
 
 # SPECIFIC ARGS for etrace:
-kw_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'xvals': np.array([]), 'nquadr': None, 'nquadlat': None, 'qvals': None, 'groupname': 'v', 'totsig': None, 'titles': None, 'justtot': False, 'notot': False, 'printerr': False, 'dpi': 300, 'vol': False, 'tint': False, 'tdt': False})
+kw_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'xvals': np.array([]), 'nquadr': None, 'nquadlat': None, 'qvals': None, 'groupname': 'v', 'totsig': None, 'titles': None, 'justtot': False, 'notot': False, 'printerr': False, 'dpi': 300, 'vol': False, 'tint': False, 'tkappa': False})
 
 # make figure kwargs
 lineplot_fig_dimensions['margin_top_inches'] = 1.
@@ -109,7 +109,7 @@ times = di['times']
 iters = di['iters']
 
 # get the x axis
-time_unit, time_label, rotation, simple_label = get_time_unit(dirname, tdt=kw.tdt)
+time_unit, time_label, rotation, simple_label = get_time_unit(dirname, tkappa=kw.tkappa)
 if not xiter:
     xaxis = times/time_unit
 else:

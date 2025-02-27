@@ -18,7 +18,7 @@ clas0, clas = read_clas(args)
 dirname = clas0.dirname
 rotation = clas0.rotation
 
-# get equation coefficients (for trot and tdt)
+# get equation coefficients (for trot and tkappa)
 eq = get_eq(dirname)
 
 # Primary ways to get the simulation time
@@ -95,7 +95,7 @@ print ('Delta_t = %7.3f M iter' %((iter2 - iter1)/1.0e6))
 # run time in thermal diffusion times
 fmt = "%1.3e"
 print (buff_line)
-print (("Delta_t = " + fmt + " TDTs") %(simtime/eq.tdt))
+print (("Delta_t = " + fmt + " t_kappa") %(simtime/eq.tkappa))
 
 # Run time, P_rot (if available)
 if rotation:
@@ -108,8 +108,8 @@ if kw.verbose:
     print ('iter1 = %08i' %iter1)
     print ('iter2 = %08i' %iter2)
 
-    print (("t1 = " + fmt + " TDTs") %(t1/eq.tdt))
-    print (("t2 = " + fmt + " TDTs") %(t2/eq.tdt))
+    print (("t1 = " + fmt + " t_kappa") %(t1/eq.tkappa))
+    print (("t2 = " + fmt + " t_kappa") %(t2/eq.tkappa))
 
     if rotation:
         print (("t1 = " + fmt + " rotations") %(t1/eq.trot))
@@ -117,8 +117,8 @@ if kw.verbose:
 
 # Print the various time scales
 print (buff_line)
-print (("1 TDT      = " + fmt + " simulation units") %eq.tdt)
+print (("1 t_kappa      = " + fmt + " simulation units") %eq.tkappa)
 if rotation:
     print (("1 rotation = " + fmt + " simulation units") %eq.trot)
-    print(("1 TDT      = " + fmt + " rotations") %(eq.tdt/eq.trot))
+    print(("1 t_kappa      = " + fmt + " rotations") %(eq.tkappa/eq.trot))
 print (buff_line)

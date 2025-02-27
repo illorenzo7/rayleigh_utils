@@ -108,9 +108,9 @@ if clas.verbose:
     # print rates in thermal diffusion times
     simtime_per_hour = dt_av*(iters_per_sec_av*3600.)
     eq = get_eq(dirname)
-    print ("Simulation rate = %1.2e TDT/hour" %(simtime_per_hour/eq.tdt))
-    print ("Simulation rate = %1.2e TDT/day" %(simtime_per_hour*12./eq.tdt))
-    print ("Simulation rate = %1.2e TDT/(5 days)" %(simtime_per_hour*12.*5./eq.tdt))
+    print ("Simulation rate = %1.2e t_kappa/hour" %(simtime_per_hour/eq.tkappa))
+    print ("Simulation rate = %1.2e t_kappa/day" %(simtime_per_hour*12./eq.tkappa))
+    print ("Simulation rate = %1.2e t_kappa/(5 days)" %(simtime_per_hour*12.*5./eq.tkappa))
     if rotation:
         print ("===============================")
         print ("Simulation rate = %1.2e rotations/hour" %(simtime_per_hour/eq.trot))

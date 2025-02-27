@@ -1508,7 +1508,7 @@ def get_eq(dirname, fname=None, verbose=False):
 
             # thermal and viscous diffusion time 
             kappa_volav = volav_in_radius(dirname, eq_hr.kappa)
-            eq_hr.tdt = (eq_hr.rr[0] - eq_hr.rr[-1])**2/kappa_volav
+            eq_hr.tkappa = (eq_hr.rr[0] - eq_hr.rr[-1])**2/kappa_volav
 
             nu_volav = volav_in_radius(dirname, eq_hr.nu)
             eq_hr.vdt = (eq_hr.rr[0] - eq_hr.rr[-1])**2/nu_volav
@@ -1525,7 +1525,7 @@ def get_eq(dirname, fname=None, verbose=False):
                 eq_hr.lum = vol * np.sum(integrand/eq_hr.rr**2*gi.rw)
 
             # thermal diffusion time 
-            eq_hr.tdt = 1./eq_hr.constants[5]
+            eq_hr.tkappa = 1./eq_hr.constants[5]
 
             # viscous diffusion time 
             eq_hr.vdt = 1./eq_hr.constants[4]
@@ -1669,24 +1669,24 @@ def compute_Prot(dirname):
 
 def compute_tdt(dirname):
     eq = get_eq(dirname)
-    return eq.tdt
+    return eq.tkappa
 
-def get_time_unit(dirname, tdt=False):
+def get_time_unit(dirname, tkappa=False):
     # get basic time unit of simulation (rotation period or diffusion time)
     rotation = get_parameter(dirname, 'rotation')
     eq = get_eq(dirname)
-    if rotation and not tdt:
+    if rotation and not tkappa:
         time_unit = eq.trot
         time_label = r'${\rm{P_{rot}}}$'
         simple_label = 'rotations'
     else:
-        time_unit = eq.tdt
-        time_label = simple_label = 'TDT'
+        time_unit = eq.tkappa
+        time_label = simple_label = 't_kappa'
     return time_unit, time_label, rotation, simple_label
 
 def translate_times(time, dirname, translate_from='iter', verbose=False):
     # change between different time units (can translate from: 
-    # iter, sim time (or measure sim time in TDT or P_rot)
+    # iter, sim time (or measure sim time in t_kappa or t_rot)
     # TO USE MUST HAVE G_Avgs_trace file or equivalent 
     # (time-lat, time-rad, etc.)
 
@@ -1723,14 +1723,14 @@ def translate_times(time, dirname, translate_from='iter', verbose=False):
         ind = np.argmin(np.abs(times - time))
     elif translate_from == 'trot':
         ind = np.argmin(np.abs(times/eq.trot - time))
-    elif translate_from == 'tdt':
-        ind = np.argmin(np.abs(times/eq.tdt - time))
+    elif translate_from == 'tkappa':
+        ind = np.argmin(np.abs(times/eq.tkappa - time))
 
     # prepare the dictionary to return
     di = dotdict()
     di.val_simt = times[ind]
     di.val_iter = iters[ind]
-    di.val_tdt = times[ind]/eq.tdt
+    di.val_tkappa = times[ind]/eq.tkappa
     rotation = get_parameter(dirname, 'rotation')
     if rotation:
         di.val_trot = times[ind]/eq.trot

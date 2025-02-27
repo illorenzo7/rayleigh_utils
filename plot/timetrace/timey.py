@@ -25,7 +25,7 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = clas0['magnetism']
 
 # defaults
-kwargs_default = dict({'rad': False, 'groupname': 'v', 'sampletag': '', 'the_file': None, 'isamplevals': np.array([0]), 'samplevals': None, 'rvals': None, 'qvals': 'all', 'ntot': 500, 'tavg': None, 'prepend': False, 'sub': False, 'xminmax': None, 'xmin': None, 'xmax': None, 'ntheta': None, 'tdt': False, 'minmaxs': None, 'iplots': None})
+kwargs_default = dict({'rad': False, 'groupname': 'v', 'sampletag': '', 'the_file': None, 'isamplevals': np.array([0]), 'samplevals': None, 'rvals': None, 'qvals': 'all', 'ntot': 500, 'tavg': None, 'prepend': False, 'sub': False, 'xminmax': None, 'xmin': None, 'xmax': None, 'ntheta': None, 'tkappa': False, 'minmaxs': None, 'iplots': None})
 
 # also need make figure kwargs
 make_figure_kwargs_default.update(timey_fig_dimensions)
@@ -48,7 +48,7 @@ if not kw.ycut is None:  # need room for two colorbars
     kw_make_figure.margin_top_inches += 1/4
 
 # baseline time unit
-time_unit, time_label, rotation, simple_label = get_time_unit(dirname, tdt=kw.tdt)
+time_unit, time_label, rotation, simple_label = get_time_unit(dirname, tkappa=kw.tkappa)
 
 # get grid info
 di_grid = get_grid_info(dirname, ntheta=kw.ntheta)

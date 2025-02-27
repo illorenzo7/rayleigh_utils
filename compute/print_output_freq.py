@@ -29,8 +29,8 @@ if rotation:
     time_unit = eq.trot
     time_label = 'rotations'
 else:
-    time_unit = eq.tdt
-    time_label = 'TDTs'
+    time_unit = eq.tkappa
+    time_label = 't_kappa'
 
 the_file = get_widest_range_file(datadir, 'G_Avgs_trace')
 if the_file is None:
