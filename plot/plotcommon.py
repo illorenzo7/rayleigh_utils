@@ -124,8 +124,9 @@ def make_figure(**kwargs):
     # if two are specified, the other follows
     # 
     # if all three are specified, user overdetermined the problem
-    # and the combination (nplots, ncol) determines nrow
+    # and the combination (nrow, ncol) determines nplots
 
+    # number of 3 params specified...
     nspec = 0
     for val in [nplots, nrow, ncol]:
         nspec += not val is None
@@ -150,6 +151,75 @@ def make_figure(**kwargs):
             nrow = int(np.ceil(nplots/ncol))
     # in the end need nplots = nrow * ncol
     nplots = nrow*ncol
+
+    # OK, now the number of subplots are specified
+
+    # next we need two parameters to get the overall figure size
+    # (or equivalently, the subplot size)
+
+    # One of the "sub_[distance]" parameters determines the corresponding "figure" parameters
+    # and vice versa
+    # first, take care of this overdetermination problem. "figure" parameters take precedence
+   
+    if not width_inches is None:
+        sub_width_inches = (width_inches - margin_left_inches - margin_right_inches -\
+                ncol*(sub_margin_left_inches + sub_margin_right_inches))/ncol
+    elif not sub_width_inches is None:
+        width_inches = margin_left_inches + margin_right_inches +\
+                ncol*(sub_margin_left_inches + sub_width_inches + sub_margin_right_inches)
+
+    if not height_inches is None:
+        sub_height_inches = (height_inches - margin_bottom_inches - margin_top_inches -\
+                nrow*(sub_margin_bottom_inches + sub_margin_top_inches))/nrow
+    elif not sub_height_inches is None:
+        height_inches = margin_bottom_inches + margin_top_inches +\
+                nrow*(sub_margin_bottom_inches + sub_height_inches + sub_margin_top_inches)
+
+    # now we need ONE of the width or height parameters, and then ONE other (not width or height) parameter
+
+    # if none are specified, need to pick defaults for both
+    if width_inches is None and height_inches is None: 
+        sub_width_inches = sub_width_inches_default 
+        sub_height_inches = sub_height_inches_default 
+        width_inches = margin_left_inches + margin_right_inches +\
+                ncol*(sub_margin_left_inches + sub_width_inches + sub_margin_right_inches)
+        height_inches = margin_bottom_inches + margin_top_inches +\
+                nrow*(sub_margin_bottom_inches + sub_height_inches + sub_margin_top_inches)
+
+    # if one is specified, need to pick default for the other one
+    nspec = (not width_inches is None) + (not height_inches is None)
+    if nspec == 1:
+        # see if we need height_inches
+        if height_inches is None: # (sub_)width_inches specified
+            if aspect is None: # need to specify default
+                sub_height_inches = sub_height_inches_default 
+                height_inches = margin_bottom_inches + margin_top_inches +\
+                        nrow*(sub_margin_bottom_inches + sub_height_inches + sub_margin_top_inches)
+                aspect = height_inches/width_inches
+        if aspect is None:
+        if height_inches is None:
+            if aspect is None:
+
+    if not width_inches is None:
+        if aspect is None and height_inches is None: # need to choose a default
+            width_inches = sub_width_inches_default + margin_left_inches + sub_margin_left_inches +\
+                    margin_right_inches + sub_margin_right_inches
+            height_inches = sub_height_inches_default + margin_bottom_inches + sub_margin_bottom_inches +\
+                    margin_top_inches + sub_margin_top_inches
+            aspect = height_inches/width_inches
+            
+    # now we need to see which parameters can be determined if an "aspect" is specified
+    if not aspect is None:
+        if width_inches is None:
+            width_inches = height_inches/aspect
+        elif height_inches is None:
+            height_inches = width_inches*aspect
+
+    if not sub_aspect is None:
+        if sub_width_inches is None:
+            sub_width_inches = sub_height_inches/sub_aspect
+        elif sub_height_inches is None:
+            sub_height_inches = sub_width_inches*sub_aspect
 
     sub_nspec = 0
     for val in [sub_width_inches, sub_height_inches, sub_aspect]:
