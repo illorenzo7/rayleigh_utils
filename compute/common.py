@@ -1470,6 +1470,7 @@ def get_eq(dirname, fname=None, verbose=False):
         # (in appropriate units based on chosen timescale)
         # this definition is universal
         eq_hr.om0 = eq.constants[0]/2.
+        eq_hr.tom = 1./(2.*eq_hr.om0)
         eq_hr.trot = 2.*np.pi/eq_hr.om0
 
         # volume-averaged angular momentum of shell 
