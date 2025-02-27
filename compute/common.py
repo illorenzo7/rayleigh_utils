@@ -1470,7 +1470,7 @@ def get_eq(dirname, fname=None, verbose=False):
         # (in appropriate units based on chosen timescale)
         # this definition is universal
         eq_hr.om0 = eq.constants[0]/2.
-        eq_hr.prot = 2.*np.pi/eq_hr.om0
+        eq_hr.trot = 2.*np.pi/eq_hr.om0
 
         # volume-averaged angular momentum of shell 
         # (in appropriate units based on chosen timescale)
@@ -1608,7 +1608,7 @@ def get_eq(dirname, fname=None, verbose=False):
 
             # finally, get the rotation rate
             eq_hr.om0 = get_parameter(dirname, 'angular_velocity')
-            eq_hr.prot = 2*np.pi/eq_hr.om0
+            eq_hr.trot = 2*np.pi/eq_hr.om0
 
     return eq_hr
 
@@ -1664,7 +1664,7 @@ def get_units(dirname, rvals=['rmin', 'rmax']):
 # for backwards compatibility (remove references as I see them)
 def compute_Prot(dirname):
     eq = get_eq(dirname)
-    return eq.prot
+    return eq.trot
 
 def compute_tdt(dirname):
     eq = get_eq(dirname)
@@ -1675,7 +1675,7 @@ def get_time_unit(dirname, tdt=False):
     rotation = get_parameter(dirname, 'rotation')
     eq = get_eq(dirname)
     if rotation and not tdt:
-        time_unit = eq.prot
+        time_unit = eq.trot
         time_label = r'${\rm{P_{rot}}}$'
         simple_label = 'rotations'
     else:
@@ -1720,8 +1720,8 @@ def translate_times(time, dirname, translate_from='iter', verbose=False):
         ind = np.argmin(np.abs(iters - time))
     elif translate_from == 'simt':
         ind = np.argmin(np.abs(times - time))
-    elif translate_from == 'prot':
-        ind = np.argmin(np.abs(times/eq.prot - time))
+    elif translate_from == 'trot':
+        ind = np.argmin(np.abs(times/eq.trot - time))
     elif translate_from == 'tdt':
         ind = np.argmin(np.abs(times/eq.tdt - time))
 
@@ -1732,7 +1732,7 @@ def translate_times(time, dirname, translate_from='iter', verbose=False):
     di.val_tdt = times[ind]/eq.tdt
     rotation = get_parameter(dirname, 'rotation')
     if rotation:
-        di.val_prot = times[ind]/eq.prot
+        di.val_trot = times[ind]/eq.trot
     return di
 
 def get_time_string(dirname, iter1, iter2=None, oneline=False, threelines=False, iter0=None, floatwidth=None, floatprec=None):

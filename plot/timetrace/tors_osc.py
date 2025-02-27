@@ -135,7 +135,7 @@ else:
 
 # frame rate
 eq = get_eq(dirname)
-Om0 = 2*np.pi/eq.prot
+Om0 = 2*np.pi/eq.trot
 
 # differential rotation in the rotating frame. 
 Om = vp/xx
@@ -203,8 +203,8 @@ for isampleval in kw.isamplevals:
         field, intervals = sliding_average(field, times, kw.tavg)
         if firsttime:
             print (buff_line)
-            print ("Performing time average, tavg = %.2f Prot" %np.mean(intervals))
-            print ("sigma(tavg) = %.3f Prot" %np.std(intervals))
+            print ("Performing time average, tavg = %.2f t_rot" %np.mean(intervals))
+            print ("sigma(tavg) = %.3f t_rot" %np.std(intervals))
 
     plot_timey(field, times, yaxis, fig, ax, **kw_plot_timey)
             
@@ -224,7 +224,7 @@ for isampleval in kw.isamplevals:
     if kw.tavg is None:
         maintitle += '\ntavg = none'
     else:
-        maintitle += '\n' + ("tavg = %.2f Prot, sigma(tavg) = %.3f Prot"\
+        maintitle += '\n' + ("tavg = %.2f t_rot, sigma(tavg) = %.3f t_rot"\
                 %(np.mean(intervals), np.std(intervals)))
 
     maintitle += '\nm=0 (lon. avg.)'

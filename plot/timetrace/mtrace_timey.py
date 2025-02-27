@@ -188,7 +188,7 @@ for isampleval in kw.isamplevals:
         maintitle += '\nt_avg = none'
     else:
         averaging_time = (times[-1] - times[0])/len(times)*kw.navg
-        maintitle += '\n' + ('t_avg = %.1f Prot' %averaging_time)
+        maintitle += '\n' + ('t_avg = %.1f t_rot' %averaging_time)
 
     maintitle += '\nm=%i' %kw.mval
     if not kw.ycut is None:

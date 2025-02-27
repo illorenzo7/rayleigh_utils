@@ -18,7 +18,7 @@ clas0, clas = read_clas(args)
 dirname = clas0.dirname
 rotation = clas0.rotation
 
-# get equation coefficients (for prot and tdt)
+# get equation coefficients (for trot and tdt)
 eq = get_eq(dirname)
 
 # Primary ways to get the simulation time
@@ -100,7 +100,7 @@ print (("Delta_t = " + fmt + " TDTs") %(simtime/eq.tdt))
 # Run time, P_rot (if available)
 if rotation:
     print (buff_line)
-    print (("Delta_t = " + fmt + " rotations") %(simtime/eq.prot))
+    print (("Delta_t = " + fmt + " rotations") %(simtime/eq.trot))
 
 # more stuff in verbose mode
 if kw.verbose:
@@ -112,13 +112,13 @@ if kw.verbose:
     print (("t2 = " + fmt + " TDTs") %(t2/eq.tdt))
 
     if rotation:
-        print (("t1 = " + fmt + " rotations") %(t1/eq.prot))
-        print (("t2 = " + fmt + " rotations") %(t2/eq.prot))
+        print (("t1 = " + fmt + " rotations") %(t1/eq.trot))
+        print (("t2 = " + fmt + " rotations") %(t2/eq.trot))
 
 # Print the various time scales
 print (buff_line)
 print (("1 TDT      = " + fmt + " simulation units") %eq.tdt)
 if rotation:
-    print (("1 rotation = " + fmt + " simulation units") %eq.prot)
-    print(("1 TDT      = " + fmt + " rotations") %(eq.tdt/eq.prot))
+    print (("1 rotation = " + fmt + " simulation units") %eq.trot)
+    print(("1 TDT      = " + fmt + " rotations") %(eq.tdt/eq.trot))
 print (buff_line)

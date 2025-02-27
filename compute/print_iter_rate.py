@@ -113,9 +113,9 @@ if clas.verbose:
     print ("Simulation rate = %1.2e TDT/(5 days)" %(simtime_per_hour*12.*5./eq.tdt))
     if rotation:
         print ("===============================")
-        print ("Simulation rate = %1.2e rotations/hour" %(simtime_per_hour/eq.prot))
-        print ("Simulation rate = %1.2e rotations/day" %(simtime_per_hour*12./eq.prot))
-        print ("Simulation rate = %1.2e rotations/(5 days)" %(simtime_per_hour*12.*5./eq.prot))
+        print ("Simulation rate = %1.2e rotations/hour" %(simtime_per_hour/eq.trot))
+        print ("Simulation rate = %1.2e rotations/day" %(simtime_per_hour*12./eq.trot))
+        print ("Simulation rate = %1.2e rotations/(5 days)" %(simtime_per_hour*12.*5./eq.trot))
     print ("===============================")
     print ("Simulation rate = %1.2e iters/hour" %(iters_per_sec_av*3600.))
     print ("Simulation rate = %1.2e iters/day"\
