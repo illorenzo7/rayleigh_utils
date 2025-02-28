@@ -270,7 +270,10 @@ def compactify_float(num, fmt_type, SF=3):
         st = fmt_f %num
 
     return st
-   
+
+def optimal_float_string(num, SF=3):
+    return compactify_float(num, float_or_sci(num, SF=SF), SF=SF)
+
 def arr_to_str_tab(a, SF=3, fmt=None, header='Row'): # ideal for latex tables
     starr = []
     buffst = ' & '
@@ -278,7 +281,7 @@ def arr_to_str_tab(a, SF=3, fmt=None, header='Row'): # ideal for latex tables
 
     for ele in a:
         if fmt is None:
-            elest = compactify_float(ele, float_or_sci(ele, SF=SF), SF=SF)
+            elest = optimal_float_string(ele, SF=SF)
         else:
             elest = fmt %ele
 
@@ -1720,7 +1723,7 @@ def translate_times(time, dirname, translate_from='iter', verbose=False):
     # translate the time
     if translate_from == 'iter':
         ind = np.argmin(np.abs(iters - time))
-    elif translate_from == 'simt':
+    elif translate_from == 'time':
         ind = np.argmin(np.abs(times - time))
     elif translate_from == 'tomega':
         ind = np.argmin(np.abs(times/eq.tomega - time))
@@ -1729,58 +1732,52 @@ def translate_times(time, dirname, translate_from='iter', verbose=False):
 
     # prepare the dictionary to return
     di = dotdict()
-    di.val_simt = times[ind]
-    di.val_iter = iters[ind]
-    di.val_tkappa = times[ind]/eq.tkappa
+    di.time = times[ind]
+    di.iter = iters[ind]
+    di.tkappa = times[ind]/eq.tkappa
     rotation = get_parameter(dirname, 'rotation')
     if rotation:
-        di.val_tomega = times[ind]/eq.tomega
+        di.tomega = times[ind]/eq.tomega
     return di
 
-def get_time_string(dirname, iter1, iter2=None, oneline=False, threelines=False, iter0=None, floatwidth=None, floatprec=None):
+def get_time_string(dirname, iter1, iter2=None, oneline=False, threelines=False, iter0=None, SF=3):
     # see if user wants to subtract off base time
     if not iter0 is None:
-        t0 = translate_times(iter0, dirname, translate_from='iter')['val_simt']
+        t0 = translate_times(iter0, dirname, translate_from='iter')['time']
     else:
         t0 = None
 
     # Get the time range in sec
-    t1 = translate_times(iter1, dirname, translate_from='iter')['val_simt']
+    t1 = translate_times(iter1, dirname, translate_from='iter')['time']
     if not t0 is None:
         t1 -= t0
     if not iter2 == None:
-        t2 = translate_times(iter2, dirname, translate_from='iter')['val_simt']
+        t2 = translate_times(iter2, dirname, translate_from='iter')['time']
         if not t0 is None:
             t2 -= t0
 
     # Get the baseline time unit
     time_unit, time_label, rotation, simple_label = get_time_unit(dirname)
 
-    # set the averaging-interval label
-    if floatprec is None:
-        if rotation:
-            floatprec = 2
-        else:
-            floatprec = 4
+    # get individual float strings for critical times
+    t1_string = optimal_float_string(t1/time_unit, SF=SF)
+    if not iter2 is None:
+        t2_string = optimal_float_string(t2/time_unit, SF=SF)
+        dt_string = optimal_float_string((t2-t1)/time_unit, SF=SF)
 
-    if floatwidth is None:
-        fmt = '%.' + str(floatprec) + 'f' # measure rotational time-scale
-    else:
-        fmt = '%0' + str(floatwidth) + '.' + str(floatprec) + 'f'
-
+    # make the label
     if not iter2 is None:
         if oneline:
-            time_string = (('t = ' + fmt + ' to ' + fmt) %(t1/time_unit, t2/time_unit)) + ' ' + time_label + ' ' + r'$(\Delta t$' + ' = ' + (fmt %((t2 - t1)/time_unit)) + ' ' + time_label + ')'
+            time_string = 't = ' + t1_string + ' ' + time_label + ' to t = ' + t2_string + ' ' + time_label + ' ' + r'$(\Delta t$' + ' = ' + dt_string  + ' ' + time_label + ')'
         elif threelines:
-            time_string =\
-        't = ' + (fmt %(t1/time_unit)) + ' ' + time_label + ' to\n' + \
-        't = ' + (fmt %(t2/time_unit)) + ' ' + time_label  + '\n' +\
-        r'$(\Delta t$' + ' = ' + (fmt %((t2 - t1)/time_unit)) + ' ' + time_label + ')'
-        else:
-            time_string = (('t = ' + fmt + ' to ' + fmt) %(t1/time_unit, t2/time_unit)) + ' ' + time_label +\
-                    '\n' + r'$\Delta t$' + ' = ' + (fmt %((t2 - t1)/time_unit)) + ' ' + time_label
-    else:
-        time_string = (('t = ' + fmt + ' ') %(t1/time_unit)) + time_label
+            time_string = 't = ' + t1_string + ' ' + time_label + ' to\n' +\
+                't = ' + t2_string + ' ' + time_label + '\n' +\
+                r'$(\Delta t$' + ' = ' + dt_string  + ' ' + time_label + ')'
+        else: # two lines
+            time_string = 't = ' + t1_string + ' ' + time_label + ' to t = ' + t2_string + ' ' + time_label + '\n' +\
+                r'$(\Delta t$' + ' = ' + dt_string  + ' ' + time_label + ')'
+    else: # only one time to label
+        time_string = 't = ' + t1_string + ' ' + time_label
 
     return time_string
 
