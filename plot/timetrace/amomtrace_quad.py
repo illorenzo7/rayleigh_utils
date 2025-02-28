@@ -21,41 +21,41 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = get_parameter(dirname, 'magnetism')
 
 # SPECIFIC ARGS for etrace:
-kwargs_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'xvals': np.array([]), 'plotall': False, 'vol': False, 'nquadr': None, 'nquadlat': None, 'type': 'tot'})
+kw_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'xvals': np.array([]), 'plotall': False, 'vol': False, 'nquadr': None, 'nquadlat': None, 'type': 'tot'})
 # plots two more columns with energies in CZ and RZ separately 
 # update these defaults from command-line
 
 # make figure kwargs
 nlines = get_num_lines(clas0.dirname_label)
 lineplot_fig_dimensions['margin_top_inches'] = (nlines+2)*default_line_height
-make_figure_kwargs_default.update(lineplot_fig_dimensions)
-make_figure_kwargs_default['margin_top_inches'] += 2*default_line_height
+kw_make_figure_default.update(lineplot_fig_dimensions)
+kw_make_figure_default['margin_top_inches'] += 2*default_line_height
 
-kwargs_default.update(make_figure_kwargs_default)
+kw_default.update(kw_make_figure_default)
 
 # plots two more columns with energies in CZ and RZ separately 
 # update these defaults from command-line
-kwargs = update_dict(kwargs_default, clas)
-kw_make_figure = update_dict(make_figure_kwargs_default, clas)
+kw = update_dict(kw_default, clas)
+kw_make_figure = update_dict(kw_make_figure_default, clas)
 
 fontsize = default_titlesize
-the_file = kwargs.the_file
-xminmax = kwargs.xminmax
-xmin = kwargs.xmin
-xmax = kwargs.xmax
-minmax = kwargs.minmax
-ymin = kwargs.min
-ymax = kwargs.max
-coords = kwargs.coords
-ntot = kwargs.ntot
-xiter = kwargs.xiter
-logscale = kwargs.log
-xvals = make_array(kwargs.xvals)
-plotall = kwargs.plotall
-vol = kwargs.vol
-nquadlat = kwargs.nquadlat
-nquadr = kwargs.nquadr
-ltype = kwargs.type
+the_file = kw.the_file
+xminmax = kw.xminmax
+xmin = kw.xmin
+xmax = kw.xmax
+minmax = kw.minmax
+ymin = kw.min
+ymax = kw.max
+coords = kw.coords
+ntot = kw.ntot
+xiter = kw.xiter
+logscale = kw.log
+xvals = make_array(kw.xvals)
+plotall = kw.plotall
+vol = kw.vol
+nquadlat = kw.nquadlat
+nquadr = kw.nquadr
+ltype = kw.type
 
 # deal with coords (if user wants minmax to only apply to certain subplots)
 if not coords is None:

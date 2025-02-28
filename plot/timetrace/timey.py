@@ -25,22 +25,22 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = clas0['magnetism']
 
 # defaults
-kwargs_default = dict({'rad': False, 'groupname': 'v', 'sampletag': '', 'the_file': None, 'isamplevals': np.array([0]), 'samplevals': None, 'rvals': None, 'qvals': 'all', 'ntot': 500, 'tavg': None, 'prepend': False, 'sub': False, 'xminmax': None, 'xmin': None, 'xmax': None, 'ntheta': None, 'tkappa': False, 'minmaxs': None, 'iplots': None})
+kw_default = dict({'rad': False, 'groupname': 'v', 'sampletag': '', 'the_file': None, 'isamplevals': np.array([0]), 'samplevals': None, 'rvals': None, 'qvals': 'all', 'ntot': 500, 'tavg': None, 'prepend': False, 'sub': False, 'xminmax': None, 'xmin': None, 'xmax': None, 'ntheta': None, 'tkappa': False, 'minmaxs': None, 'iplots': None})
 
-# also need make figure kwargs
-make_figure_kwargs_default.update(timey_fig_dimensions)
-kwargs_default.update(make_figure_kwargs_default)
+# also need make figure kw
+kw_make_figure_default.update(timey_fig_dimensions)
+kw_default.update(kw_make_figure_default)
 
-# of course, also need plot_timey kwargs
-kwargs_default.update(plot_timey_kwargs_default)
+# of course, also need plot_timey kw
+kw_default.update(kw_plot_timey_default)
 
 # check for bad keys
-find_bad_keys(kwargs_default, clas, clas0['routinename'], justwarn=True)
+find_bad_keys(kw_default, clas, clas0['routinename'], justwarn=True)
 
 # overwrite defaults
-kw = update_dict(kwargs_default, clas)
-kw_plot_timey = update_dict(plot_timey_kwargs_default, clas)
-kw_make_figure = update_dict(make_figure_kwargs_default, clas)
+kw = update_dict(kw_default, clas)
+kw_plot_timey = update_dict(kw_plot_timey_default, clas)
+kw_make_figure = update_dict(kw_make_figure_default, clas)
 
 # might need two colorbars
 if not kw.ycut is None:  # need room for two colorbars

@@ -14,32 +14,32 @@ from plotcommon import *
 timey_fig_dimensions = dict({'sub_width_inches': 7.5, 'sub_height_inches': 2.0, 'margin_top_inches': 1.25, 'sub_margin_left_inches': 5/8, 'sub_margin_right_inches': 7/8})
 
 # plot_timey needs my_contourf/my_pcolormesh args, then some
-plot_timey_kwargs_default = dict({'ycut': None, 'yminmax': None, 'ymin': None, 'ymax': None,'minmax2': None, 'xvals': np.array([]), 'yvals': np.array([]), 'plotboundary': True, 'linestyles1': np.array(['-']), 'linewidths1': np.array([default_lw]), 'linecolors1': np.array(['k']),\
+kw_plot_timey_default = dict({'ycut': None, 'yminmax': None, 'ymin': None, 'ymax': None,'minmax2': None, 'xvals': np.array([]), 'yvals': np.array([]), 'plotboundary': True, 'linestyles1': np.array(['-']), 'linewidths1': np.array([default_lw]), 'linecolors1': np.array(['k']),\
        'linestyles2': np.array(['-']), 'linewidths2': np.array([default_lw]), 'linecolors2': np.array(['k']),\
        'pcolormesh': False})
 
 # need to change a few default my_contourf settings,
-# but don't change default kwargs dictionary directly
-tmp1 = my_contourf_kwargs_default.copy()
-tmp2 = my_pcolormesh_kwargs_default.copy()
+# but don't change default kw dictionary directly
+tmp1 = my_contourf_kw_default.copy()
+tmp2 = my_pcolormesh_kw_default.copy()
 tochange = {'plotcontours': False, 'cbar_pos': 'right', 'allticksoff': False}
 tmp1.update(tochange)
 tmp2.update(tochange)
-plot_timey_kwargs_default.update(tmp1)
-plot_timey_kwargs_default.update(tmp2)
+kw_plot_timey_default.update(tmp1)
+kw_plot_timey_default.update(tmp2)
 
 # plot time "lat or rad"
-def plot_timey(field, times, yy, fig, ax, **kwargs):
+def plot_timey(field, times, yy, fig, ax, **kw):
 
-    find_bad_keys(plot_timey_kwargs_default, kwargs, 'plot_timey')
-    kw = update_dict(plot_timey_kwargs_default, kwargs)
+    find_bad_keys(kw_plot_timey_default, kw, 'plot_timey')
+    kw = update_dict(kw_plot_timey_default, kw)
 
     if kw.pcolormesh:
         plotting_func = my_pcolormesh
-        kw_plotting_func = update_dict(tmp2, kwargs)
+        kw_plotting_func = update_dict(tmp2, kw)
     else:        
         plotting_func = my_contourf
-        kw_plotting_func = update_dict(tmp1, kwargs)
+        kw_plotting_func = update_dict(tmp1, kw)
 
     # Work with copy of field (not actual field)
     field_full = np.copy(field)

@@ -31,16 +31,16 @@ kw_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None
 
 # make figure kwargs
 lineplot_fig_dimensions['margin_top_inches'] = 1.
-make_figure_kwargs_default.update(lineplot_fig_dimensions)
-kw_default.update(make_figure_kwargs_default)
+kw_make_figure_default.update(lineplot_fig_dimensions)
+kw_default.update(kw_make_figure_default)
 
 # lineplot kwargs
-kw_default.update(lineplot_kwargs_default)
+kw_default.update(kw_lineplot_default)
 
 # then override defaults
 kw = update_dict(kw_default, clas)
-kw_make_figure = update_dict(make_figure_kwargs_default, clas)
-kw_lineplot = update_dict(lineplot_kwargs_default, clas)
+kw_make_figure = update_dict(kw_make_figure_default, clas)
+kw_lineplot = update_dict(kw_lineplot_default, clas)
 
 # deal with desired quantities
 if kw.qvals is None: # it's a quantity group

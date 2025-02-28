@@ -1466,7 +1466,7 @@ def get_eq(dirname, fname=None, verbose=False):
             eq_hr.eta = eq.functions[6] # these are built-in to
             eq_hr.dlneta = eq.functions[12] # equation_coefficients as "zero"
 
-        # rotation rate and period 
+        # rotation rate, time-scale and period 
         # (in appropriate units based on chosen timescale)
         # this definition is universal
         eq_hr.omega0 = eq.constants[0]/2.
@@ -1607,8 +1607,9 @@ def get_eq(dirname, fname=None, verbose=False):
                     eq_hr.eta = eta_top*(eq_hr.rho/eq_hr.rho[0])**eta_power
                     eq_hr.dlneta = eta_power*eq_hr.dlnrho
 
-            # finally, get the rotation rate
+            # finally, get the rotation rate, time-scale, and period
             eq_hr.omega0 = get_parameter(dirname, 'angular_velocity')
+            eq_hr.tomega = 1./(2.*eq_hr.omega0)
             eq_hr.trot = 2*np.pi/eq_hr.omega0
 
     return eq_hr
@@ -1763,7 +1764,7 @@ def get_time_string(dirname, iter1, iter2=None, oneline=False, threelines=False,
             floatprec = 4
 
     if floatwidth is None:
-        fmt = '%.' + str(floatprec) + 'f' # measure rotations
+        fmt = '%.' + str(floatprec) + 'f' # measure rotational time-scale
     else:
         fmt = '%0' + str(floatwidth) + '.' + str(floatprec) + 'f'
 

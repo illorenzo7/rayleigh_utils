@@ -30,27 +30,27 @@ if rvals is None:
 
 # allowed args + defaults
 # key unique to this script
-kwargs_default = dict({'the_file': None, 'verbose': False})
+kw_default = dict({'the_file': None, 'verbose': False})
 
 # also need make figure kwargs
 nlines = get_num_lines(clas0.dirname_label)
 azav_fig_dimensions['margin_top_inches'] += (nlines-1)*default_line_height
-make_figure_kwargs_default.update(azav_fig_dimensions)
+kw_make_figure_default.update(azav_fig_dimensions)
 
-kwargs_default.update(make_figure_kwargs_default)
+kw_default.update(kw_make_figure_default)
 
 # and of course need plot_azav kwargs
-plot_azav_kwargs_default['plotlatlines'] = False
-plot_azav_kwargs_default['rvals'] = rvals
-kwargs_default.update(plot_azav_kwargs_default)
+kw_plot_azav_default['plotlatlines'] = False
+kw_plot_azav_default['rvals'] = rvals
+kw_default.update(kw_plot_azav_default)
 
 # overwrite defaults, first main kwargs
-kw = update_dict(kwargs_default, clas)
-kw_plot_azav = update_dict(plot_azav_kwargs_default, clas)
-kw_make_figure = update_dict(make_figure_kwargs_default, clas)
+kw = update_dict(kw_default, clas)
+kw_plot_azav = update_dict(kw_plot_azav_default, clas)
+kw_make_figure = update_dict(kw_make_figure_default, clas)
 
 # check for bad keys
-find_bad_keys(kwargs_default, clas, clas0['routinename'], justwarn=True)
+find_bad_keys(kw_default, clas, clas0['routinename'], justwarn=True)
 if not kw.rcut is None:  
     # need room for two colorbars and line up top stating rcut 
     kw_make_figure.margin_top_inches += 1/4

@@ -21,20 +21,20 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = get_parameter(dirname, 'magnetism')
 
 # SPECIFIC ARGS for etrace:
-kwargs_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'growth': False, 'growthfrac': 0.5, 'xvals': np.array([]), 'inte': False, 'nquadr': None, 'nquadlat': None, 'type': 'tot', 'legfrac': None, 'nomag': False, 'noke': False, 'tkappa': False, 'legloc': 'lower left'})
+kw_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'growth': False, 'growthfrac': 0.5, 'xvals': np.array([]), 'inte': False, 'nquadr': None, 'nquadlat': None, 'type': 'tot', 'legfrac': None, 'nomag': False, 'noke': False, 'tkappa': False, 'legloc': 'lower left'})
 
-# make figure kwargs
+# make figure kw
 nlines = get_num_lines(clas0.dirname_label)
 lineplot_fig_dimensions['margin_top_inches'] = (nlines+2)*default_line_height
-make_figure_kwargs_default.update(lineplot_fig_dimensions)
-make_figure_kwargs_default['margin_top_inches'] += 2*default_line_height
+kw_make_figure_default.update(lineplot_fig_dimensions)
+kw_make_figure_default['margin_top_inches'] += 2*default_line_height
 
-kwargs_default.update(make_figure_kwargs_default)
+kw_default.update(kw_make_figure_default)
 
 # plots two more columns with energies in CZ and RZ separately 
 # update these defaults from command-line
-kw = update_dict(kwargs_default, clas)
-kw_make_figure = update_dict(make_figure_kwargs_default, clas)
+kw = update_dict(kw_default, clas)
+kw_make_figure = update_dict(kw_make_figure_default, clas)
 
 
 fontsize = default_titlesize

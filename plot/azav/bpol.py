@@ -21,24 +21,24 @@ dirname_stripped = strip_dirname(dirname, wrap=True)
 
 # allowed args + defaults
 # key unique to this script
-kwargs_default = dict({'the_file': None})
+kw_default = dict({'the_file': None})
 
 # also need make figure kwargs
-make_figure_kwargs_default.update(azav_fig_dimensions)
-kwargs_default.update(make_figure_kwargs_default)
+kw_make_figure_default.update(azav_fig_dimensions)
+kw_default.update(kw_make_figure_default)
 
 # of course, plot_azav kwargs, but need to change a few
-kwargs_default.update(plot_azav_kwargs_default)
+kw_default.update(kw_plot_azav_default)
 
 # overwrite defaults
-kw = update_dict(kwargs_default, clas)
-kw_plot_azav = update_dict(plot_azav_kwargs_default, clas)
-kw_make_figure = update_dict(make_figure_kwargs_default, clas)
+kw = update_dict(kw_default, clas)
+kw_plot_azav = update_dict(kw_plot_azav_default, clas)
+kw_make_figure = update_dict(kw_make_figure_default, clas)
 kw_make_figure.ncol = 3 # room for <B_r> and <B_theta>
 kw_make_figure.margin_top_inches += 1/4 # room for letter labels
 
 # check for bad keys
-find_bad_keys(kwargs_default, clas, clas0['routinename'], justwarn=True)
+find_bad_keys(kw_default, clas, clas0['routinename'], justwarn=True)
 if not kw.rcut is None:  
     # need room for two colorbars and line up top stating rcut 
     kw_make_figure.margin_top_inches += 1/4
