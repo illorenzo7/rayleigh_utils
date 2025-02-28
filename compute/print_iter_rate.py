@@ -109,19 +109,23 @@ if clas.verbose:
     simtime_per_hour = dt_av*(iters_per_sec_av*3600.)
     eq = get_eq(dirname)
     print ("Simulation rate = %1.2e t_kappa/hour" %(simtime_per_hour/eq.tkappa))
-    print ("Simulation rate = %1.2e t_kappa/day" %(simtime_per_hour*12./eq.tkappa))
-    print ("Simulation rate = %1.2e t_kappa/(5 days)" %(simtime_per_hour*12.*5./eq.tkappa))
+    print ("Simulation rate = %1.2e t_kappa/day" %(simtime_per_hour*24./eq.tkappa))
+    print ("Simulation rate = %1.2e t_kappa/(5 days)" %(simtime_per_hour*24.*5./eq.tkappa))
+    print ("Simulation rate = %1.2e t_kappa/(16 days)" %(simtime_per_hour*24.*16./eq.tkappa))
     if rotation:
         print ("===============================")
         print ("Simulation rate = %1.2e t_omega/hour" %(simtime_per_hour/eq.tomega))
-        print ("Simulation rate = %1.2e t_omega/day" %(simtime_per_hour*12./eq.omega))
-        print ("Simulation rate = %1.2e t_omega/(5 days)" %(simtime_per_hour*12.*5./eq.tomega))
+        print ("Simulation rate = %1.2e t_omega/day" %(simtime_per_hour*24./eq.tomega))
+        print ("Simulation rate = %1.2e t_omega/(5 days)" %(simtime_per_hour*24.*5./eq.tomega))
+        print ("Simulation rate = %1.2e t_omega/(16 days)" %(simtime_per_hour*24.*16./eq.tomega))
     print ("===============================")
     print ("Simulation rate = %1.2e iters/hour" %(iters_per_sec_av*3600.))
     print ("Simulation rate = %1.2e iters/day"\
             %(iters_per_sec_av*3600.*24.))
     print ("Simulation rate = %1.2e iters/(5 days)"\
             %(iters_per_sec_av*3600.*24.*5.))
+    print ("Simulation rate = %1.2e iters/(16 days)"\
+            %(iters_per_sec_av*3600.*24.*16.))
     print ("===============================")
     print ("Min. time step = %1.2e s" %np.min(di['delta_t']))
     print ("Max. time step = %1.2e s" %np.max(di['delta_t']))
