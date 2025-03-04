@@ -21,7 +21,7 @@ dirname = clas0.dirname
 dirname_stripped = strip_dirname(dirname)
 
 # SPECIFIC ARGS
-kwargs_default = dotdict(dict({'the_file': None, 'av': False, 'val_iter': int(1e9), 'irvals': np.array([0]), 'rvals': None, 'varnames': np.array(['vr']), 'labelbyindex': False, 'skip': None, 'nframes': None}))
+kw_default = dotdict(dict({'the_file': None, 'av': False, 'val_iter': int(1e9), 'irvals': np.array([0]), 'rvals': None, 'varnames': np.array(['vr']), 'labelbyindex': False, 'skip': None, 'nframes': None}))
 # this guy need to update right away to choose fig dimensions
 if 'type' in clas:
     plottype = clas.type
@@ -38,32 +38,32 @@ if plottype == 'ortho':
     fig_dimensions = ortho_fig_dimensions
 if plottype in ['moll', 'ortho']:
     plotting_func = plot_moll_or_ortho
-    plotting_func_kwargs_default = plot_moll_or_ortho_kwargs_default
+    kw_plotting_func_default = kw_plot_moll_or_ortho_default
     if plottype == 'ortho':
-        plotting_func_kwargs_default['ortho'] = True
+        kw_plotting_func_default['ortho'] = True
     dataname = 'Shell_Slices'
     reading_func = Shell_Slices
 if plottype == 'speclm':
     fig_dimensions = spec_2D_fig_dimensions
     plotting_func = my_pcolormesh
-    plotting_func_kwargs_default = my_pcolormesh_kwargs_default
+    kw_plotting_func_default = kw_my_pcolormesh_default
     # need to change some things for speclm
-    plotting_func_kwargs_default['logscale'] = True
-    plotting_func_kwargs_default['posdef'] = True
-    #contourf_minmax_kwargs_default['buff_ignore1'] = None
-    #contourf_minmax_kwargs_default['buff_ignore2'] = None
+    kw_plotting_func_default['logscale'] = True
+    kw_plotting_func_default['posdef'] = True
+    #contourf_minmax_kw_default['buff_ignore1'] = None
+    #contourf_minmax_kw_default['buff_ignore2'] = None
     dataname = 'Shell_Spectra'
     reading_func = Shell_Spectra
 
-kwargs_default.update(plotting_func_kwargs_default)
-make_figure_kwargs_default.update(fig_dimensions)
-kwargs_default.update(make_figure_kwargs_default)
+kw_default.update(kw_plotting_func_default)
+kw_make_figure_default.update(fig_dimensions)
+kw_default.update(kw_make_figure_default)
 
-find_bad_keys(kwargs_default, clas, 'plot/slice/generic', justwarn=True)
+find_bad_keys(kw_default, clas, 'plot/slice/generic', justwarn=True)
 
-kw = update_dict(kwargs_default, clas)
-kw_plotting_func = update_dict(plotting_func_kwargs_default, clas)
-kw_make_figure = update_dict(make_figure_kwargs_default, clas)
+kw = update_dict(kw_default, clas)
+kw_plotting_func = update_dict(kw_plotting_func_default, clas)
+kw_make_figure = update_dict(kw_make_figure_default, clas)
 
 # needs to be arrays
 kw.irvals = make_array(kw.irvals)

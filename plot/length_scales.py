@@ -19,16 +19,16 @@ dirname = clas0['dirname']
 dirname_stripped = strip_dirname(dirname)
 
 # allowed args + defaults
-kwargs_default = dict({'the_file': None})
-kwargs_default.update(make_figure_kwargs_default)
-#lineplot_kwargs_default['legfrac'] = 0.3
-lineplot_kwargs_default['plotleg'] = True
-lineplot_kwargs_default['ncolleg'] = 2
-lineplot_kwargs_default['logscale'] = True
-kwargs_default.update(lineplot_kwargs_default)
-kw = update_dict(kwargs_default, clas)
-kw_make_figure = update_dict(make_figure_kwargs_default, clas)
-kw_lineplot = update_dict(lineplot_kwargs_default, clas)
+kw_default = dict({'the_file': None})
+kw_default.update(kw_make_figure_default)
+#kw_lineplot_default['legfrac'] = 0.3
+kw_lineplot_default['plotleg'] = True
+kw_lineplot_default['ncolleg'] = 2
+kw_lineplot_default['logscale'] = True
+kw_default.update(kw_lineplot_default)
+kw = update_dict(kw_default, clas)
+kw_make_figure = update_dict(kw_make_figure_default, clas)
+kw_lineplot = update_dict(kw_lineplot_default, clas)
 
 di_ls = length_scales(dirname)
 rr = di_ls.rr

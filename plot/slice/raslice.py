@@ -37,7 +37,7 @@ from cla_util import *
 from slice_util import *
 from rayleigh_diagnostics import Equatorial_Slices, Meridional_Slices
 from rayleigh_diagnostics_alt import Shell_Slices
-from azav_util import plot_azav, plot_azav_kwargs_default, azav_fig_dimensions
+from azav_util import plot_azav, kw_plot_azav_default, azav_fig_dimensions
 #from get_slice import get_slice, get_label
 
 # Get CLAs
@@ -47,7 +47,7 @@ dirname = clas0.dirname
 dirname_stripped = strip_dirname(dirname)
 
 # SPECIFIC ARGS
-kwargs_default = dotdict(dict({'type': None, 'isamplevals': 0, 'samplevals': None, 'rvals': None, 'varnames': 'vr', 'clons': None, 'clats': None, 'clonrange': None, 'clatrange': None, 't0': False, 'movie': False, 'moviesampleval': False, 'movieclon': False, 'movieclat': False, 'shrink': False, 'prepend': False, 'dpi': 300, 'lonav': False}))
+kw_default = dotdict(dict({'type': None, 'isamplevals': 0, 'samplevals': None, 'rvals': None, 'varnames': 'vr', 'clons': None, 'clats': None, 'clonrange': None, 'clatrange': None, 't0': False, 'movie': False, 'moviesampleval': False, 'movieclon': False, 'movieclat': False, 'shrink': False, 'prepend': False, 'dpi': 300, 'lonav': False}))
 
 # these guys need to update right away to choose fig dimensions
 if clas.type is None:
@@ -55,8 +55,8 @@ if clas.type is None:
 else:
     plottype = clas.type
 if 'lonav'in clas:
-    kwargs_default.lonav = True
-lonav = kwargs_default.lonav
+    kw_default.lonav = True
+lonav = kw_default.lonav
 
 if plottype == 'moll':
     if lonav:
@@ -67,9 +67,9 @@ if plottype == 'ortho':
     fig_dimensions = ortho_fig_dimensions
 if plottype in ['moll', 'ortho']:
     plotting_func = plot_moll_or_ortho
-    plotting_func_kwargs_default = plot_moll_or_ortho_kwargs_default
+    kw_plotting_func_default = kw_plot_moll_or_ortho_default
     if plottype == 'ortho':
-        plotting_func_kwargs_default['ortho'] = True
+        kw_plotting_func_default['ortho'] = True
     dataname = 'Shell_Slices'
     reading_func = Shell_Slices
     samplelabel = 'rval'
@@ -77,14 +77,14 @@ if plottype in ['moll', 'ortho']:
 if plottype == 'eq':
     fig_dimensions = eq_fig_dimensions
     plotting_func = plot_eq
-    plotting_func_kwargs_default = plot_eq_kwargs_default
+    kw_plotting_func_default = kw_plot_eq_default
     dataname = 'Equatorial_Slices'
     reading_func = Equatorial_Slices
 if plottype == 'mer':
     fig_dimensions = azav_fig_dimensions
     plotting_func = plot_azav
-    plotting_func_kwargs_default = plot_azav_kwargs_default
-    plotting_func_kwargs_default['plotcontours'] = False
+    kw_plotting_func_default = kw_plot_azav_default
+    kw_plotting_func_default['plotcontours'] = False
     dataname = 'Meridional_Slices'
     reading_func = Meridional_Slices
     samplelabel = 'lonval'
@@ -93,21 +93,21 @@ if plottype == 'mer':
 # Rayleigh data dir
 radatadir = dirname + '/' + dataname + '/'
 
-# now we can update the default kwargs
-kwargs_default.update(plotting_func_kwargs_default)
-make_figure_kwargs_default.update(fig_dimensions)
-kwargs_default.update(make_figure_kwargs_default)
+# now we can update the default kw
+kw_default.update(kw_plotting_func_default)
+kw_make_figure_default.update(fig_dimensions)
+kw_default.update(kw_make_figure_default)
 if rank == 0:
     for key in range_options: # add the range options key
-        kwargs_default[key] = None
+        kw_default[key] = None
     print (buff_line)
     print ("plottype = " + plottype)
-    find_bad_keys(kwargs_default, clas, 'plot/slice/raslice', justwarn=True)
+    find_bad_keys(kw_default, clas, 'plot/slice/raslice', justwarn=True)
 
 # update relevant keyword args
-kw = update_dict(kwargs_default, clas)
-kw_plotting_func = update_dict(plotting_func_kwargs_default, clas)
-kw_make_figure = update_dict(make_figure_kwargs_default, clas)
+kw = update_dict(kw_default, clas)
+kw_plotting_func = update_dict(kw_plotting_func_default, clas)
+kw_make_figure = update_dict(kw_make_figure_default, clas)
 
 # figure out all the different plots we need
 if rank == 0:

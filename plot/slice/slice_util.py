@@ -194,17 +194,17 @@ def ortho_transform(costheta, clat=20., shrinkage=1.):
     return xx,yy,igood,ibad
 
 # Mollweide ortho ortho plotting routine
-plot_moll_or_ortho_kwargs_default = dict({'clon': 0., 'clat': 20., 'shrinkage': 1., 'plotlonlines': True, 'lonvals': np.arange(0., 360., 30.), 'plotlatlines': True, 'latvals': np.arange(-60., 90., 30.), 'linewidth': default_lw, 'plotboundary': True, 'ortho': False})
-plot_moll_or_ortho_kwargs_default.update(my_contourf_kwargs_default)
-plot_moll_or_ortho_kwargs_default['plotcontours'] = False
+kw_plot_moll_or_ortho_default = dict({'clon': 0., 'clat': 20., 'shrinkage': 1., 'plotlonlines': True, 'lonvals': np.arange(0., 360., 30.), 'plotlatlines': True, 'latvals': np.arange(-60., 90., 30.), 'linewidth': default_lw, 'plotboundary': True, 'ortho': False})
+kw_plot_moll_or_ortho_default.update(kw_my_contourf_default)
+kw_plot_moll_or_ortho_default['plotcontours'] = False
 
-def plot_moll_or_ortho(field, costheta, fig, ax, **kwargs):
-    kw = update_dict(plot_moll_or_ortho_kwargs_default, kwargs)
-    find_bad_keys(plot_moll_or_ortho_kwargs_default, kwargs, 'plot_moll_or_otho')
+def plot_moll_or_ortho(field, costheta, fig, ax, **kw):
+    kw = update_dict(kw_plot_moll_or_ortho_default, kw)
+    find_bad_keys(kw_plot_moll_or_ortho_default, kw, 'plot_moll_or_otho')
     # change default plotcontours --> False in my_contourf
-    tmp = my_contourf_kwargs_default.copy()
+    tmp = kw_my_contourf_default.copy()
     tmp['plotcontours'] = False
-    kw_my_contourf = update_dict(tmp, kwargs)
+    kw_my_contourf = update_dict(tmp, kw)
         
     # Shouldn't have to do this but Python is stupid with arrays
     field = np.copy(field)    
@@ -273,17 +273,17 @@ def plot_moll_or_ortho(field, costheta, fig, ax, **kwargs):
         ax.plot(xvals, yvals, 'k', linewidth=1.5*kw.linewidth)
 
 # equatorial slice plotting routine
-plot_eq_kwargs_default = dict({'clon': 0., 'plotlonlines': True, 'lonvals': np.arange(0., 360., 60.), 'linewidth': default_lw, 'plotboundary': True})
-plot_eq_kwargs_default.update(my_contourf_kwargs_default)
-plot_eq_kwargs_default['plotcontours'] = False
+kw_plot_eq_default = dict({'clon': 0., 'plotlonlines': True, 'lonvals': np.arange(0., 360., 60.), 'linewidth': default_lw, 'plotboundary': True})
+kw_plot_eq_default.update(kw_my_contourf_default)
+kw_plot_eq_default['plotcontours'] = False
 
-def plot_eq(field, rr, fig, ax, **kwargs):
-    kw = update_dict(plot_eq_kwargs_default, kwargs)
-    find_bad_keys(plot_eq_kwargs_default, kwargs, 'plot_eq')
+def plot_eq(field, rr, fig, ax, **kw):
+    kw = update_dict(kw_plot_eq_default, kw)
+    find_bad_keys(kw_plot_eq_default, kw, 'plot_eq')
     # change default plotcontours --> False in my_contourf
-    tmp = my_contourf_kwargs_default.copy()
+    tmp = kw_my_contourf_default.copy()
     tmp['plotcontours'] = False
-    kw_my_contourf = update_dict(tmp, kwargs)
+    kw_my_contourf = update_dict(tmp, kw)
         
     # Shouldn't have to do this but Python is stupid with arrays
     field = np.copy(field)    

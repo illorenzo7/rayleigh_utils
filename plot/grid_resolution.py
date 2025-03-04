@@ -21,10 +21,10 @@ dirname_stripped = strip_dirname(dirname)
 ncheby, domain_bounds = get_domain_bounds(dirname)
 
 # allowed args + defaults
-kwargs_default = dict({'ncheby': ncheby, 'dombounds': domain_bounds, 'nt': get_parameter(dirname, 'n_theta'), 'r0': 'rmid', 'rvals': None, 'latvals': None, 'lonvals': None, 'rminmax': None, 'latminmax': None, 'lonminmax': None, 'rnorm': None})
+kw_default = dict({'ncheby': ncheby, 'dombounds': domain_bounds, 'nt': get_parameter(dirname, 'n_theta'), 'r0': 'rmid', 'rvals': None, 'latvals': None, 'lonvals': None, 'rminmax': None, 'latminmax': None, 'lonminmax': None, 'rnorm': None})
 
 # overwrite defaults
-kw = update_dict(kwargs_default, clas)
+kw = update_dict(kw_default, clas)
 
 # interpret r0 and domain_bounds
 kw.r0 = interpret_rvals(dirname, kw.r0)[0]
@@ -40,7 +40,7 @@ print ("r0 = " + flt_fmt %kw.r0)
 print ("domain_bounds = " + arr_to_str(kw.dombounds, '%1.3e'))
 rr, rw, tt, tw = compute_grid_info(kw.ncheby, kw.dombounds, kw.nt)
 
-# adjust which portion of grid to look at (minmax kwargs)
+# adjust which portion of grid to look at (minmax kw)
 
 # radial
 if not kw.rminmax is None:

@@ -23,18 +23,18 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = clas0.magnetism
 
 # allowed args + defaults
-kwargs_default = dotdict()
-kwargs_default.fname = None
-kwargs_default.update(make_figure_kwargs_default)
-kwargs_default.update(lineplot_kwargs_default)
+kw_default = dotdict()
+kw_default.fname = None
+kw_default.update(kw_make_figure_default)
+kw_default.update(kw_lineplot_default)
 
-# change kwargs with clas
-kw = update_dict(kwargs_default, clas)
-kw_make_figure = update_dict(make_figure_kwargs_default, clas)
-kw_lineplot = update_dict(lineplot_kwargs_default, clas)
+# change kw with clas
+kw = update_dict(kw_default, clas)
+kw_make_figure = update_dict(kw_make_figure_default, clas)
+kw_lineplot = update_dict(kw_lineplot_default, clas)
 
 # find bad keys
-find_bad_keys(kwargs_default, clas, clas0['routinename'], justwarn=True)
+find_bad_keys(kw_default, clas, clas0['routinename'], justwarn=True)
 
 # read reference state
 eq = get_eq(dirname, kw.fname, verbose=True)
