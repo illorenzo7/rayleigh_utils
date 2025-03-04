@@ -94,11 +94,13 @@ for ishell in range(nshells):
     # print shell info first
     r1 = rvals[ishell]
     r2 = rvals[ishell+1]
+    r1_string = optimal_float_string(r1)
+    r2_string = optimal_float_string(r2)
 
     # then non-D numbers in shell
     diffrot = get_dr_contrast(dirname, r1, r2, the_file=kw.the_file, verbose=kw.verbose, ntheta=ntheta)
     maintitle += '\n' +\
-        ( '(' + flt_fmt + ', ' + flt_fmt + '):') %(r1, r2) +\
+        'from r = ' + r1_string + ' to ' + r2_string + ':' +\
         '\n' + (r'$\Delta\Omega\ =\ $' + flt_fmt) %diffrot
         #('(r_1, r_2) = (' + flt_fmt + ', ' + flt_fmt + '):') %(r1, r2)# +\
 

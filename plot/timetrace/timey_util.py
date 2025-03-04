@@ -20,8 +20,8 @@ kw_plot_timey_default = dict({'ycut': None, 'yminmax': None, 'ymin': None, 'ymax
 
 # need to change a few default my_contourf settings,
 # but don't change default kw dictionary directly
-tmp1 = my_contourf_kw_default.copy()
-tmp2 = my_pcolormesh_kw_default.copy()
+tmp1 = kw_my_contourf_default.copy()
+tmp2 = kw_my_pcolormesh_default.copy()
 tochange = {'plotcontours': False, 'cbar_pos': 'right', 'allticksoff': False}
 tmp1.update(tochange)
 tmp2.update(tochange)

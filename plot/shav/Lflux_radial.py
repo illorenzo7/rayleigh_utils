@@ -33,7 +33,7 @@ kw_default.update(kw_make_figure_default)
 
 kw = update_dict(kw_default, clas)
 kw_lineplot = update_dict(kw_lineplot_default, clas)
-kw_make_figure = update_dict(kw_make_figure_kw_default, clas)
+kw_make_figure = update_dict(kw_kw_make_figure_default, clas)
 
 if not kw.xcut is None: # make room for label on right
     kw_make_figure.sub_margin_right_inches = default_margin_xlabel
