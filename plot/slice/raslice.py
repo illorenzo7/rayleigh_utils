@@ -440,15 +440,7 @@ for ifigure in range(my_nfigures):
         ax_line.set_ylabel('latitude (degrees)')
 
 
-    # make title
-    if kw.t0:
-        iter0 = int(fname)
-        floatwidth = 6
-    else:
-        iter0 = None
-        floatwidth = None
-
-    time_string = get_time_string(dirname, a.iters[0], iter0=iter0, floatwidth=floatwidth)
+    time_string = get_time_string(dirname, a.iters[0])
 
     if plottype == 'moll':
         location_and_perspective =\
