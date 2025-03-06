@@ -253,6 +253,13 @@ def lineplot_minmax(xx, profiles, **kw):
     kw = update_dict(kw_lineplot_minmax_default, kw)
     find_bad_keys(kw_lineplot_minmax_default, kw, 'lineplot_minmax')
 
+    # first remove nans, possibly
+    nprofiles = len(profiles)
+    for iprof in range(nprofiles):
+        profile = profiles[iprof]
+        if detect_nans(profile):
+            profiles[iprof] = remove_nans(profile)
+
     # possibly ignore nastiness around domain bounds
     if not kw.buff_ignore is None:
         if kw.domain_bounds is None: # just look at the two ends
