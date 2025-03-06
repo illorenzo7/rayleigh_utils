@@ -24,7 +24,7 @@ for key, val in clas.items():
     translate_from = key
 
     iters = np.zeros(ntvals, dtype='int')
-    simt = np.zeros(ntvals, dtype='float')
+    times = np.zeros(ntvals, dtype='float')
     tkappa = np.zeros(ntvals, dtype='float')
     if clas0.rotation:
         tomega = np.zeros(ntvals, dtype='float')
@@ -33,13 +33,13 @@ for key, val in clas.items():
         tval = tvals[i] # we have multiple tvals
         di = translate_times(tval, dirname, translate_from=translate_from)
         iters[i] = di.iter
-        simt[i] = di.simt
+        times[i] = di.time
         tkappa[i] = di.tkappa
         if clas0.rotation:
             tomega[i] = di.tomega
 
-    print ("iter =", arr_to_str(iters, '%08i', nobra=True))
-    print ("simt =", arr_to_str(simt, '%.2f', nobra=True))
-    print ("tkappa =", arr_to_str(tkappa, '%.3f', nobra=True))
+    print ("iters =", arr_to_str(iters, '%08i', nobra=True))
+    print ("times =", arr_to_str(times, '%1.3e', nobra=True))
+    print ("tkappa =", arr_to_str(tkappa, '%1.3e', nobra=True))
     if clas0.rotation:
-        print ("tomega =", arr_to_str(tomega, '%.2f', nobra=True))
+        print ("tomega =", arr_to_str(tomega, '%1.3e', nobra=True))
