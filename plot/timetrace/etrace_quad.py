@@ -21,7 +21,7 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = get_parameter(dirname, 'magnetism')
 
 # SPECIFIC ARGS for etrace:
-kw_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'growth': False, 'growthfrac': 0.5, 'xvals': np.array([]), 'inte': False, 'nquadr': None, 'nquadlat': None, 'type': 'tot', 'legfrac': None, 'nomag': False, 'noke': False, 'tkappa': False, 'legloc': 'lower left'})
+kw_default = dict({'the_file': None, 'minmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'growth': False, 'growthfrac': 0.5, 'xvals': np.array([]), 'inte': False, 'nquadr': 1, 'nquadlat': 1, 'type': 'tot', 'justtot': False, 'legfrac': None, 'nomag': False, 'noke': False, 'tkappa': False, 'legloc': 'lower left'})
 
 # make figure kw
 nlines = get_num_lines(clas0.dirname_label)
@@ -35,50 +35,26 @@ kw_default.update(kw_make_figure_default)
 # update these defaults from command-line
 kw = update_dict(kw_default, clas)
 kw_make_figure = update_dict(kw_make_figure_default, clas)
-
-
 fontsize = default_titlesize
-the_file = kw.the_file
-xminmax = kw.xminmax
-xmin = kw.xmin
-xmax = kw.xmax
-minmax = kw.minmax
-ymin = kw.min
-ymax = kw.max
-coords = kw.coords
-ntot = kw.ntot
-xiter = kw.xiter
-logscale = kw.log
-growth = kw.growth
-growthfrac = kw.growthfrac
-xvals = make_array(kw.xvals)
-plot_inte = kw.inte
-nquadlat = kw.nquadlat
-nquadr = kw.nquadr
-etype = kw.type
-legfrac = kw.legfrac
-noke = kw.noke
-nomag = kw.nomag
 
-# deal with coords (if user wants minmax to only apply to certain subplots)
-if not coords is None:
-    numpanels = len(coords)//2
-    acopy = np.copy(coords)
-    coords = []
+# deal with kw.coords (if user wants kw.minmax to only apply to certain subplots)
+if not kw.coords is None:
+    numpanels = len(kw.coords)//2
+    acopy = np.copy(kw.coords)
+    kw.coords = []
     for i in range(numpanels):
-        coords.append((acopy[2*i], acopy[2*i + 1]))
+        kw.coords.append((acopy[2*i], acopy[2*i + 1]))
 
 # get desired data file
 dataname = 'G_Avgs_trace'
-if the_file is None:
-    if not nquadlat is None:
-        dataname += '_nquadlat%i' %nquadlat
-    if not nquadr is None:
-        dataname += '_nquadr%i' %nquadr
-    the_file = get_widest_range_file(clas0['datadir'], dataname)
+if kw.the_file is None:
+    # need to get widest range file
+    if not (kw.nquadlat == 1 and kw.nquadr == 1): # non-default, change dataname
+        dataname += '_nquadlat%i_nquadr%i' %(kw.nquadlat,kw.nquadr)
+    kw.the_file = get_widest_range_file(clas0['datadir'], dataname)
 
-print ('Getting data from ' + the_file)
-di = get_dict(the_file)
+print ('Getting data from ' + kw.the_file)
+di = get_dict(kw.the_file)
 vals = di['vals']
 rvals = di['rvals']
 latvals = di['latvals']
@@ -88,23 +64,23 @@ iters = di['iters']
 
 # get the x axis
 time_unit, time_label, rotation, simple_label = get_time_unit(dirname, tkappa=kw.tkappa)
-if not xiter:
+if not kw.xiter:
     xaxis = times/time_unit
 else:
     xaxis = iters
 
-# set xminmax if not set by user
-if xminmax is None:
-    # set xmin possibly
-    if xmin is None:
-        xmin = np.min(xaxis)
-    # set xmax possibly
-    if xmax is None:
-        xmax = np.max(xaxis)
-    xminmax = xmin, xmax
+# set kw.xminmax if not set by user
+if kw.xminmax is None:
+    # set kw.xmin possibly
+    if kw.xmin is None:
+        kw.xmin = np.min(xaxis)
+    # set kw.xmax possibly
+    if kw.xmax is None:
+        kw.xmax = np.max(xaxis)
+    kw.xminmax = kw.xmin, kw.xmax
 
-ixmin = np.argmin(np.abs(xaxis - xminmax[0]))
-ixmax = np.argmin(np.abs(xaxis - xminmax[1]))
+ixmin = np.argmin(np.abs(xaxis - kw.xminmax[0]))
+ixmax = np.argmin(np.abs(xaxis - kw.xminmax[1]))
 
 # Now shorten all the "x" arrays
 xaxis = xaxis[ixmin:ixmax+1]
@@ -114,24 +90,19 @@ tmin, tmax = times[0], times[-1]
 vals = vals[ixmin:ixmax+1, :]
 
 # deal with x axis, maybe thinning data
-if np.all(ntot == 'full'):
-    print ('ntot = full')
-    ntot = len(times)
-print ("ntot = %i" %ntot)
+if np.all(kw.ntot == 'full'):
+    print ('kw.ntot = full')
+    kw.ntot = len(times)
+print ("kw.ntot = %i" %kw.ntot)
 print ("before thin_data: len(xaxis) = %i" %len(xaxis))
-xaxis = thin_data(xaxis, ntot)
-times = thin_data(times, ntot)
-iters = thin_data(iters, ntot)
-vals = thin_data(vals, ntot)
+xaxis = thin_data(xaxis, kw.ntot)
+times = thin_data(times, kw.ntot)
+iters = thin_data(iters, kw.ntot)
+vals = thin_data(vals, kw.ntot)
 print ("after thin_data: len(xaxis) = %i" %len(xaxis))
 
 # now finally get the shape of the "vals" array
 ntimes, nq, nquadlat, nquadr = np.shape(vals)
-nplots = nquadlat*nquadr
-
-# now finally get the shape of the "vals" array
-ntimes, nq, nquadlat, nquadr = np.shape(vals)
-ntimes = len(xaxis)
 nplots = nquadlat*nquadr
 
 # create the figure dimensions
@@ -144,8 +115,8 @@ lw = 0.5
 lw_ke = 1. # bit thicker for KE to differentiate between ME
 
 # See if y-axis should be on log scale (must do this before setting limits)
-# Make all axes use scientific notation (except for y if logscale=True)
-if logscale:
+# Make all axes use scientific notation (except for y if kw.log=True)
+if kw.log:
     for ax in axs.flatten():
         ax.set_yscale('log')
         ax.ticklabel_format(axis='x', scilimits=(-3,4), useMathText=True)
@@ -160,22 +131,22 @@ for ilat in range(nquadlat):
         ax = axs[ilat, ir]
 
         all_e = [] # always need this for max val
-        # choose etype: tot, fluc, or mean of energies
+        # choose kw.type: tot, fluc, or mean of energies
 
         # KINETIC ENERGY
-        if etype == 'tot':
+        if kw.type == 'tot':
             rke = vals_loc[:, lut[402]]
             tke = vals_loc[:, lut[403]]
             pke = vals_loc[:, lut[404]]
             label_pre = ''
             label_app = ''
-        if etype == 'fluc':
+        if kw.type == 'fluc':
             rke = vals_loc[:, lut[410]]
             tke = vals_loc[:, lut[411]]
             pke = vals_loc[:, lut[412]]
             label_pre = ''
             label_app = '\''
-        if etype == 'mean':
+        if kw.type == 'mean':
             rke = vals_loc[:, lut[402]] - vals_loc[:, lut[410]]
             tke = vals_loc[:, lut[403]] - vals_loc[:, lut[411]]
             pke = vals_loc[:, lut[404]] - vals_loc[:, lut[412]]
@@ -184,23 +155,23 @@ for ilat in range(nquadlat):
         ke = rke + tke + pke
 
         # INTERNAL ENERGY
-        if plot_inte:
-            if etype == 'fluc': # no inte for fluctuating S'
+        if kw.inte:
+            if kw.type == 'fluc': # no inte for fluctuating S'
                 inte = np.zeros(len(xaxis))
             else:
                 inte = vals_loc[:, lut[701]]
         
         # MAGNETIC ENERGY
         if magnetism:
-            if etype == 'tot':
+            if kw.type == 'tot':
                 rme = vals_loc[:, lut[1102]]
                 tme = vals_loc[:, lut[1103]]
                 pme = vals_loc[:, lut[1104]]
-            if etype == 'fluc':
+            if kw.type == 'fluc':
                 rme = vals_loc[:, lut[1110]]
                 tme = vals_loc[:, lut[1111]]
                 pme = vals_loc[:, lut[1112]]
-            if etype == 'mean':
+            if kw.type == 'mean':
                 rme = vals_loc[:, lut[1102]] - vals_loc[:, lut[1110]]
                 tme = vals_loc[:, lut[1103]] - vals_loc[:, lut[1111]]
                 pme = vals_loc[:, lut[1104]] - vals_loc[:, lut[1112]]
@@ -211,17 +182,17 @@ for ilat in range(nquadlat):
         # KINETIC
         # collect all the total energies together for min/max vals
 
-        # see if we should plot the growth phase
-        if logscale: # only need to worry about this for log-scale
-            if growth:
+        # see if we should plot the kw.growth phase
+        if kw.log: # only need to worry about this for log-scale
+            if kw.growth:
                 itcut = 0
             else:
-                tcut = tmin + growthfrac*(tmax - tmin)
+                tcut = tmin + kw.kw.growthfrac*(tmax - tmin)
                 itcut = np.argmin(np.abs(times - tcut))
         else:
             itcut = 0
 
-        if not noke:
+        if not kw.noke:
             all_e += [rke, tke, pke, ke]
             
             ax.plot(xaxis, ke, color_order[0],\
@@ -234,13 +205,13 @@ for ilat in range(nquadlat):
                     linewidth=lw_ke, label=r'$\rm{KE_\phi}$')
 
         # INTERNAL
-        if plot_inte:
+        if kw.inte:
             all_e += [inte]
             ax.plot(xaxis, inte, color_order[4], linewidth=lw_ke,\
                     label='INTE')
 
         # MAGNETIC
-        if not nomag:
+        if not kw.nomag:
             if magnetism:
                 all_e += [rme, tme, pme, me]
 
@@ -260,21 +231,21 @@ for ilat in range(nquadlat):
             plotleg = False
 
         # set the y limits
-        minmax_loc = minmax
-        if not coords is None:
-            if not (ilat, ir) in coords: # reset minmax_loc to None
+        kw.minmax_loc = kw.minmax
+        if not kw.coords is None:
+            if not (ilat, ir) in kw.coords: # reset kw.minmax_loc to None
                 # (will become default) if not in desired coordinates
-                minmax_loc = None
-        if minmax_loc is None:
-            minmax_loc = lineplot_minmax(xaxis, all_e, logscale=logscale, legfrac=legfrac, plotleg=plotleg, ixcut=itcut)
-        if not ymin is None:
-            minmax_loc = ymin, minmax_loc[1]
-        if not ymax is None:
-            minmax_loc = minmax_loc[0], ymax
-        ax.set_ylim((minmax_loc[0], minmax_loc[1]))
+                kw.minmax_loc = None
+        if kw.minmax_loc is None:
+            kw.minmax_loc = lineplot_minmax(xaxis, all_e, log=kw.log, legfrac=kw.legfrac, plotleg=plotleg, ixcut=itcut)
+        if not kw.min is None:
+            kw.minmax_loc = kw.min, kw.minmax_loc[1]
+        if not kw.max is None:
+            kw.minmax_loc = kw.minmax_loc[0], kw.max
+        ax.set_ylim((kw.minmax_loc[0], kw.minmax_loc[1]))
 
-        ax.set_xlim((xminmax[0], xminmax[1]))
-if xiter:
+        ax.set_xlim((kw.xminmax[0], kw.xminmax[1]))
+if kw.xiter:
     axs[-1, 0].set_xlabel('iteration #')
 else:
     axs[-1, 0].set_xlabel('time [' + time_label + ']')
@@ -293,9 +264,9 @@ for it in range(nquadlat):
     axs[it, 0].set_ylabel('lat. range = [%.1f, %.1f]' %(lat1, lat2), fontsize=fontsize)
 
 # overall title 
-iter1, iter2 = get_iters_from_file(the_file)
+iter1, iter2 = get_iters_from_file(kw.the_file)
 time_string = get_time_string(dirname, iter1, iter2) 
-the_title = clas0.dirname_label + '\n' +  'energy trace (' + etype + ')' + '\n' + time_string
+the_title = clas0.dirname_label + '\n' +  'energy trace (' + kw.type + ')' + '\n' + time_string
 margin_x = fpar['margin_left'] + fpar['sub_margin_left']
 margin_y = default_margin/fpar['height_inches']
 fig.text(margin_x, 1 - margin_y, the_title,\
@@ -305,7 +276,7 @@ fig.text(margin_x, 1 - margin_y, the_title,\
 for ax in axs.flatten():
     y1, y2 = ax.get_ylim()
     yvals = np.linspace(y1, y2, 100)
-    for time in xvals:
+    for time in kw.xvals:
         ax.plot(time + np.zeros(100), yvals,'k--')
 
 # Get ticks everywhere
@@ -316,10 +287,10 @@ for ax in axs.flatten():
 
 # Save the plot
 tag = clas0['tag']
-if xiter and tag == '':
-    tag = '_xiter'
+if kw.xiter and tag == '':
+    tag = '_kw.xiter'
 plotdir = my_mkdir(clas0['plotdir']) 
-basename = dataname.replace('G_Avgs_trace', 'etrace' + '_' + etype)
+basename = dataname.replace('G_Avgs_trace', 'etrace' + '_' + kw.type)
 savename = basename + tag + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
 if clas0.prepend:
     savename = dirname_stripped + '_' + savename
