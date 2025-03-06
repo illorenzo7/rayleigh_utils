@@ -48,7 +48,7 @@ if plottype == 'speclm':
     plotting_func = my_pcolormesh
     kw_plotting_func_default = kw_my_pcolormesh_default
     # need to change some things for speclm
-    kw_plotting_func_default['logscale'] = True
+    kw_plotting_func_default['log'] = True
     kw_plotting_func_default['posdef'] = True
     #contourf_minmax_kw_default['buff_ignore1'] = None
     #contourf_minmax_kw_default['buff_ignore2'] = None

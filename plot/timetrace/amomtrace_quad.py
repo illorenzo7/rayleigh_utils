@@ -49,7 +49,7 @@ ymax = kw.max
 coords = kw.coords
 ntot = kw.ntot
 xiter = kw.xiter
-logscale = kw.log
+log = kw.log
 xvals = make_array(kw.xvals)
 plotall = kw.plotall
 vol = kw.vol
@@ -134,8 +134,8 @@ lw = 0.5
 lw_ke = 1. # bit thicker for KE to differentiate between ME
 
 # See if y-axis should be on log scale (must do this before setting limits)
-# Make all axes use scientific notation (except for y if logscale=True)
-if logscale:
+# Make all axes use scientific notation (except for y if log=True)
+if log:
     for ax in axs.flatten():
         ax.set_yscale('log')
         ax.ticklabel_format(axis='x', scilimits=(-3,4), useMathText=True)
@@ -210,7 +210,7 @@ for ilat in range(nquadlat):
                 # (will become default) if not in desired coordinates
                 minmax_loc = None
         if minmax_loc is None:
-            minmax_loc = lineplot_minmax(xaxis, all_L, logscale=logscale, legfrac=legfrac)
+            minmax_loc = lineplot_minmax(xaxis, all_L, log=log, legfrac=legfrac)
         if not ymin is None:
             minmax_loc = ymin, minmax_loc[1]
         if not ymax is None:

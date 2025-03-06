@@ -248,7 +248,7 @@ def make_figure(**kw_in):
 
     return fig, axs, fpar
 
-kw_lineplot_minmax_default = dict({'logscale': False, 'buff_ignore': None, 'plotleg': False, 'legfrac': None, 'symmetrize': False, 'domain_bounds': None, 'ixcut': 0})
+kw_lineplot_minmax_default = dict({'log': False, 'buff_ignore': None, 'plotleg': False, 'legfrac': None, 'symmetrize': False, 'domain_bounds': None, 'ixcut': 0})
 def lineplot_minmax(xx, profiles, **kw):
     kw = update_dict(kw_lineplot_minmax_default, kw)
     find_bad_keys(kw_lineplot_minmax_default, kw, 'lineplot_minmax')
@@ -287,7 +287,7 @@ def lineplot_minmax(xx, profiles, **kw):
     else:
         buff_frac_min = buff_frac
 
-    if kw.logscale:
+    if kw.log:
         yratio = mmax/mmin
         ymin = mmin/(yratio**buff_frac_min)
         ymax = mmax*(yratio**buff_frac)
@@ -346,7 +346,7 @@ def sci_format(num, ndec=1, compact=False, nomant=False):
         return ((r'$%1.' + (r'%i' %ndec) + r'f\times10^{%i}$')\
                 %(mantissa, exponent))
 
-kw_lineplot_default = dict({'xlabel': None, 'ylabel': None, 'title': None, 'xvals': np.array([]), 'yvals': np.array([]), 'labels': None, 'xlogscale': False, 'xminmax': None, 'minmax': None, 'xcut': None, 'minmax2': None, 'scatter': False, 'colors': color_order, 'linestyles': style_order[0], 'markers': marker_order[0], 'lw': default_lw, 's': default_s, 'ncolleg': 3, 'fontsize': default_labelsize, 'nosci': False, 'noscix': False, 'nosciy': False, 'legloc': 'lower left'})
+kw_lineplot_default = dict({'xlabel': None, 'ylabel': None, 'title': None, 'xvals': np.array([]), 'yvals': np.array([]), 'labels': None, 'xlog': False, 'xminmax': None, 'minmax': None, 'xcut': None, 'minmax2': None, 'scatter': False, 'colors': color_order, 'linestyles': style_order[0], 'markers': marker_order[0], 'lw': default_lw, 's': default_s, 'ncolleg': 3, 'fontsize': default_labelsize, 'nosci': False, 'noscix': False, 'nosciy': False, 'legloc': 'lower left'})
 kw_lineplot_default.update(kw_lineplot_minmax_default)
 
 def lineplot(xx, profiles, ax, **kw_in):
@@ -451,9 +451,9 @@ def lineplot(xx, profiles, ax, **kw_in):
             ax_left.yaxis.set_label_position('left')
         ax_left.yaxis.tick_left()
 
-    if kw.xlogscale:
+    if kw.xlog:
         ax.set_xscale('log')
-    if kw.logscale:
+    if kw.log:
         for ax in axs:
             ax.set_yscale('log')
 
@@ -502,17 +502,17 @@ def lineplot(xx, profiles, ax, **kw_in):
         # Get the non-log in scientific notation
         if not kw.nosci:
             if not kw.noscix:
-                if not kw.xlogscale:
+                if not kw.xlog:
                     plt.ticklabel_format(useMathText=True, axis='x', scilimits=(0,0))
             if not kw.nosciy:
-                if not kw.logscale:
+                if not kw.log:
                     plt.ticklabel_format(useMathText=True, axis='y', scilimits=(0,0))
 
     # make the legend
     if kw.plotleg:
         ax.legend(loc=kw.legloc, ncol=kw.ncolleg, fontsize=0.8*default_labelsize)
 
-kw_add_cbar_default = dict({'cbar_thick': 1/8, 'cbar_aspect': 1/20, 'cbar_prec': 2, 'cbar_no': 1, 'cbar_offset': None, 'cbar_pos': 'bottom', 'cbar_total_width': 1/2, 'units': '', 'nosci': False, 'cbar_fs': default_labelsize, 'tickvals': None, 'ticklabels': None, 'exp': 0, 'logscale': False, 'posdef': False, 'fullrange2': False, 'symlog': False, 'sgnlog': False, 'tol': 0.75, 'no0': False, 'cbar_label': None})
+kw_add_cbar_default = dict({'cbar_thick': 1/8, 'cbar_aspect': 1/20, 'cbar_prec': 2, 'cbar_no': 1, 'cbar_offset': None, 'cbar_pos': 'bottom', 'cbar_total_width': 1/2, 'units': '', 'nosci': False, 'cbar_fs': default_labelsize, 'tickvals': None, 'ticklabels': None, 'exp': 0, 'log': False, 'posdef': False, 'fullrange2': False, 'symlog': False, 'sgnlog': False, 'tol': 0.75, 'no0': False, 'cbar_label': None})
 def add_cbar(fig, ax, im, **kw_in):
     # deal with kwargs
     kw = update_dict(kw_add_cbar_default, kw_in)
@@ -563,7 +563,7 @@ def add_cbar(fig, ax, im, **kw_in):
 
     # deal with labels
     if kw.cbar_label is None:
-        if kw.nosci or kw.logscale or kw.symlog:
+        if kw.nosci or kw.log or kw.symlog:
             kw.cbar_label = kw.units
         else:
             kw.cbar_label = (r'$\times10^{%i}\ $' %kw.exp) + kw.units
@@ -573,7 +573,7 @@ def add_cbar(fig, ax, im, **kw_in):
     #cbar.ax.tick_params(labelsize=fontsize)   
 
     # ticklabel format
-    if kw.logscale: # set tickvals and labels through "smart locator"
+    if kw.log: # set tickvals and labels through "smart locator"
         locator = ticker.LogLocator(subs='all')
         cbar.set_ticks(locator)
     else: # set tickvals and ticklabels separately, depending on norm
@@ -653,11 +653,11 @@ def add_cbar(fig, ax, im, **kw_in):
         #        ha='left', va='center', fontsize=kw.fontsize) 
         cax.set_title(kw.cbar_label, ha='left', fontsize=kw.cbar_fs)
 
-kw_contourf_minmax_default = dict({'posdef': False, 'no0': False, 'logscale': False, 'symlog': False, 'sgnlog': False, 'fullrange': False, 'fullrange2': False, 'buff_ignore1': buff_frac, 'buff_ignore2': buff_frac}) 
+kw_contourf_minmax_default = dict({'posdef': False, 'no0': False, 'log': False, 'symlog': False, 'sgnlog': False, 'fullrange': False, 'fullrange2': False, 'buff_ignore1': buff_frac, 'buff_ignore2': buff_frac}) 
 
 def contourf_minmax(field, **kw_in):
     # Get good boundaries to saturate array [field], assuming either
-    # posdef (True or False) and/or logscale (True or False)
+    # posdef (True or False) and/or log (True or False)
     # first, possibly cut the array (ignore boundary vals)
     kw = update_dict(kw_contourf_minmax_default, kw_in)
     find_bad_keys(kw_contourf_minmax_default, kw_in, 'contourf_minmax')
@@ -679,7 +679,7 @@ def contourf_minmax(field, **kw_in):
         mmin = np.min(field[np.where(field != 0.0)])
         mmax = np.max(field[np.where(field != 0.0)])
         minmax = mmin, mmax
-    elif kw.logscale:
+    elif kw.log:
         logfield = np.log(field[np.where(field != 0)])
         meanlog = np.mean(logfield)
         stdlog = np.std(logfield)
@@ -713,7 +713,7 @@ kw_my_contourf_default = dict({
         # symlog stuff (again)
         'minmax': None, 'linthresh': None, 'linscale': None, 'scaleby': 1.0})
 
-# color map stuff: symlog, logscale, posdef, are here:
+# color map stuff: symlog, log, posdef, are here:
 kw_my_contourf_default.update(kw_contourf_minmax_default)
 kw_my_contourf_default.update(kw_add_cbar_default)
 
@@ -736,7 +736,7 @@ def my_contourf(xx, yy, field, fig, ax, **kw_in):
     # plot the field, maybe
     # Factor out the exponent on the field and put it on the color bar
     # can turn this behavior off with "nosci=True"
-    if not (kw.nosci or kw.logscale or kw.symlog):
+    if not (kw.nosci or kw.log or kw.symlog):
         maxabs = max(np.abs(kw.minmax[0]), np.abs(kw.minmax[1]))
         kw_add_cbar.exp = get_exp(maxabs)
         divisor = 10.0**kw_add_cbar.exp
@@ -747,7 +747,7 @@ def my_contourf(xx, yy, field, fig, ax, **kw_in):
     saturate_array(field, kw.minmax[0], kw.minmax[1])
 
     # deal with norm
-    if kw.norm is None and kw.logscale:
+    if kw.norm is None and kw.log:
         kw.norm = colors.LogNorm(vmin=kw.minmax[0], vmax=kw.minmax[1])
 
     if kw.symlog:
@@ -775,7 +775,7 @@ def my_contourf(xx, yy, field, fig, ax, **kw_in):
             levels_mid = np.linspace(-kw.linthresh, kw.linthresh, kw.nlevels, endpoint=False)
             levels_pos = np.logspace(log_thresh, log_max, kw.nlevels+1)
             levels = np.hstack((levels_neg, levels_mid, levels_pos))
-    elif kw.logscale:
+    elif kw.log:
         levels = np.logspace(np.log10(kw.minmax[0]), np.log10(kw.minmax[1]), 2*kw.nlevels+1)
     else:
         levels = np.linspace(kw.minmax[0], kw.minmax[1], 2*kw.nlevels+1)
@@ -785,7 +785,7 @@ def my_contourf(xx, yy, field, fig, ax, **kw_in):
     if kw.cmap is None:
         if kw.posdef:
             kw.cmap = 'plasma'
-        elif kw.logscale:
+        elif kw.log:
             kw.cmap = 'Greys'
         else:
             kw.cmap = 'RdYlBu_r'
@@ -900,7 +900,7 @@ def my_pcolormesh(field, fig, ax, **kw_in):
 
     # Factor out the exponent on the field and put it on the color bar
     # can turn this behavior off with "nosci=True"
-    if not (kw.nosci or kw.logscale):
+    if not (kw.nosci or kw.log):
         maxabs = max(np.abs(kw.minmax[0]), np.abs(kw.minmax[1]))
         kw_add_cbar.exp = get_exp(maxabs)
         divisor = 10**kw_add_cbar.exp
@@ -913,7 +913,7 @@ def my_pcolormesh(field, fig, ax, **kw_in):
     saturate_array(field, kw.minmax[0], kw.minmax[1])
   
     # deal with norm and colormap
-    if kw.norm is None and kw.logscale:
+    if kw.norm is None and kw.log:
         kw.norm = colors.LogNorm(vmin=kw.minmax[0], vmax=kw.minmax[1])
         vmin, vmax = None, None
     else:

@@ -24,7 +24,7 @@ kw_default.update(kw_make_figure_default)
 #kw_lineplot_default['legfrac'] = 0.3
 kw_lineplot_default['plotleg'] = True
 kw_lineplot_default['ncolleg'] = 2
-kw_lineplot_default['logscale'] = True
+kw_lineplot_default['log'] = True
 kw_default.update(kw_lineplot_default)
 kw = update_dict(kw_default, clas)
 kw_make_figure = update_dict(kw_make_figure_default, clas)
