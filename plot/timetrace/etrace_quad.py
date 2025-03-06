@@ -187,7 +187,7 @@ for ilat in range(nquadlat):
             if kw.growth:
                 itcut = 0
             else:
-                tcut = tmin + kw.kw.growthfrac*(tmax - tmin)
+                tcut = tmin + kw.growthfrac*(tmax - tmin)
                 itcut = np.argmin(np.abs(times - tcut))
         else:
             itcut = 0
@@ -231,18 +231,18 @@ for ilat in range(nquadlat):
             plotleg = False
 
         # set the y limits
-        kw.minmax_loc = kw.minmax
+        minmax_loc = kw.minmax
         if not kw.coords is None:
-            if not (ilat, ir) in kw.coords: # reset kw.minmax_loc to None
+            if not (ilat, ir) in kw.coords: # reset minmax_loc to None
                 # (will become default) if not in desired coordinates
-                kw.minmax_loc = None
-        if kw.minmax_loc is None:
-            kw.minmax_loc = lineplot_minmax(xaxis, all_e, log=kw.log, legfrac=kw.legfrac, plotleg=plotleg, ixcut=itcut)
+                minmax_loc = None
+        if minmax_loc is None:
+            minmax_loc = lineplot_minmax(xaxis, all_e, log=kw.log, legfrac=kw.legfrac, plotleg=plotleg, ixcut=itcut)
         if not kw.min is None:
-            kw.minmax_loc = kw.min, kw.minmax_loc[1]
+            minmax_loc = kw.min, minmax_loc[1]
         if not kw.max is None:
-            kw.minmax_loc = kw.minmax_loc[0], kw.max
-        ax.set_ylim((kw.minmax_loc[0], kw.minmax_loc[1]))
+            minmax_loc = minmax_loc[0], kw.max
+        ax.set_ylim((minmax_loc[0], minmax_loc[1]))
 
         ax.set_xlim((kw.xminmax[0], kw.xminmax[1]))
 if kw.xiter:
