@@ -277,7 +277,6 @@ def lineplot_minmax(xx, profiles, **kw):
     mmin = np.infty
     mmax = -np.infty
     for profile in profiles:
-        print("minm prof=", get_minmax(profile[kw.ixcut:]))
         mmin = min(np.min(profile[kw.ixcut:]), mmin)
         mmax = max(np.max(profile), mmax)
     if kw.plotleg:
