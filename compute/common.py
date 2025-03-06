@@ -2121,6 +2121,9 @@ def remove_nans(arr):
     return arr_out
 
 def issubset(arr1, arr2):
-    set1 = set(arr1)
-    set2 = set(arr2)
+    arr1 = make_array(arr1)
+    arr2 = make_array(arr2)
+
+    set1 = set(arr1.flatten())
+    set2 = set(arr2.flatten())
     return set1 <= set2
