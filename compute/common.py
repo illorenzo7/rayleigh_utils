@@ -2119,3 +2119,8 @@ def remove_nans(arr):
     arr_out[np.where(np.isnan(arr))] = 0
     arr_out[np.where(np.isinf(arr))] = 0
     return arr_out
+
+def issubset(arr1, arr2):
+    set1 = set(arr1)
+    set2 = set(arr2)
+    return set1 <= set2
