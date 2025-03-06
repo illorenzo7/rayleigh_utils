@@ -50,17 +50,18 @@ if rank == 0:
     clas0, clas = read_clas(args)
 
     # overwrite defaults
-    kw_default = dict({'radtype': 'azav'})
+    kw_default = dict({'radtype': 'azav', 'shape': False})
     kw = update_dict(kw_default, clas)
     radtype = kw.radtype
+    shape = kw.shape
 
     # get reading function and dataname from the di_radtypes container
     reading_func = di_radtypes[radtype].reading_func
     dataname = di_radtypes[radtype].dataname
-    meta = [radtype, reading_func, dataname]
+    meta = [radtype, reading_func, dataname, shape]
 else:
     meta = None
-radtype, reading_func, dataname = comm.bcast(meta, root=0)
+radtype, reading_func, dataname,shape = comm.bcast(meta, root=0)
 
 
 # proc 0 reads the file lists and distributes them
@@ -122,6 +123,9 @@ for i in range(my_nfiles):
     if np.size(np.where(np.isnan(a.vals))) > 0: # also tell if has nans
         print ('rank = %i here' %rank)
         print (radatadir + str(my_files[i]).zfill(8) + " has nans")
+
+    if shape:
+        print("shape(" + str(my_files[i]).zfill(8) + ") =", np.shape(a.vals))
 
     if rank == 0:
         pcnt_done = (i + 1)/my_nfiles*100.
