@@ -21,7 +21,7 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = get_parameter(dirname, 'magnetism')
 
 # SPECIFIC ARGS for etrace:
-kw_default = dict({'the_file': None, 'minmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'growth': False, 'growthfrac': 0.5, 'xvals': np.array([]), 'inte': False, 'nquadr': 1, 'nquadlat': 1, 'type': 'tot', 'justtot': False, 'legfrac': None, 'nomag': False, 'noke': False, 'tkappa': False, 'legloc': 'lower left'})
+kw_default = dict({'the_file': None, 'minmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'growth': False, 'growthfrac': 0.5, 'xvals': np.array([]), 'inte': False, 'nquadr': 1, 'nquadlat': 1, 'type': 'tot', 'legfrac': None, 'nomag': False, 'noke': False, 'tkappa': False, 'legloc': 'lower left'})
 
 # make figure kw
 nlines = get_num_lines(clas0.dirname_label)
@@ -61,6 +61,7 @@ vals = di['vals']
 rvals = di['rvals']
 latvals = di['latvals']
 lut = di['lut']
+qv = di['qv']
 times = di['times']
 iters = di['iters']
 
@@ -164,6 +165,8 @@ for ilat in range(nquadlat):
                 inte = vals_loc[:, lut[701]]
         
         # MAGNETIC ENERGY
+        # get what we can from component energies,
+        # otherwise try to get total energies directly (for Lydia's stuff)
         if magnetism:
             if kw.type == 'tot':
                 rme = vals_loc[:, lut[1102]]
