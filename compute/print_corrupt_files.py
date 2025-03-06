@@ -11,6 +11,7 @@
 
 # initialize communication
 from mpi4py import MPI
+import numpy as np
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 
@@ -116,7 +117,11 @@ for i in range(my_nfiles):
         a = reading_func(radatadir + str(my_files[i]).zfill(8), '')
     except:
         print ('rank = %i here' %rank)
-        print ('could not read ' + radatadir + str(my_files[i]).zfill(8))
+        print (radatadir + str(my_files[i]).zfill(8) + " can't be read")
+
+    if np.size(np.where(np.isnan(a.vals))) > 0: # also tell if has nans
+        print ('rank = %i here' %rank)
+        print (radatadir + str(my_files[i]).zfill(8) + " has nans")
 
     if rank == 0:
         pcnt_done = (i + 1)/my_nfiles*100.
