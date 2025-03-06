@@ -49,8 +49,10 @@ if not kw.coords is None:
 dataname = 'G_Avgs_trace'
 if kw.the_file is None:
     # need to get widest range file
-    if not (kw.nquadlat == 1 and kw.nquadr == 1): # non-default, change dataname
-        dataname += '_nquadlat%i_nquadr%i' %(kw.nquadlat,kw.nquadr)
+    if kw.nquadlat > 1:
+        dataname += '_nquadlat%i' %kw.nquadlat
+    if kw.nquadr > 1:
+        dataname += '_nquadr%i' %kw.nquadr
     kw.the_file = get_widest_range_file(clas0['datadir'], dataname)
 
 print ('Getting data from ' + kw.the_file)
