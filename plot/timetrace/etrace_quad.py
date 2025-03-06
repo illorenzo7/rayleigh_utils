@@ -169,18 +169,34 @@ for ilat in range(nquadlat):
         # otherwise try to get total energies directly (for Lydia's stuff)
         if magnetism:
             if kw.type == 'tot':
-                rme = vals_loc[:, lut[1102]]
-                tme = vals_loc[:, lut[1103]]
-                pme = vals_loc[:, lut[1104]]
+                if issubset([1102,1103,1104], qv): # get components
+                    have_comp = True
+                    rme = vals_loc[:, lut[1102]]
+                    tme = vals_loc[:, lut[1103]]
+                    pme = vals_loc[:, lut[1104]]
+                else:
+                    have_comp = False
+                    me = vals_loc[:, lut[1101]]
             if kw.type == 'fluc':
-                rme = vals_loc[:, lut[1110]]
-                tme = vals_loc[:, lut[1111]]
-                pme = vals_loc[:, lut[1112]]
+                if issubset([1110,1111,1112], qv): # get components
+                    have_comp = True
+                    rme = vals_loc[:, lut[1110]]
+                    tme = vals_loc[:, lut[1111]]
+                    pme = vals_loc[:, lut[1112]]
+                else:
+                    have_comp = False
+                    me = vals_loc[:, lut[1109]]
             if kw.type == 'mean':
-                rme = vals_loc[:, lut[1102]] - vals_loc[:, lut[1110]]
-                tme = vals_loc[:, lut[1103]] - vals_loc[:, lut[1111]]
-                pme = vals_loc[:, lut[1104]] - vals_loc[:, lut[1112]]
-            me = rme + tme + pme
+                if issubset([1102,1103,1104,1110,1111,1112], qv): # get components
+                    have_comp = True
+                    rme = vals_loc[:, lut[1102]] - vals_loc[:, lut[1110]]
+                    tme = vals_loc[:, lut[1103]] - vals_loc[:, lut[1111]]
+                    pme = vals_loc[:, lut[1104]] - vals_loc[:, lut[1112]]
+                else:
+                    have_comp = False
+                    me = vals_loc[:, lut[1105]]
+            if have_comp:
+                me = rme + tme + pme
 
         # make line plots
 
@@ -218,16 +234,19 @@ for ilat in range(nquadlat):
         # MAGNETIC
         if not kw.nomag:
             if magnetism:
-                all_e += [rme, tme, pme, me]
+                all_e += [me]
+                if have_comp:
+                    all_e += [rme, tme, pme]
 
                 ax.plot(xaxis, me, color=color_order[0], linestyle='--',\
                         linewidth=lw, label=r'$\rm{ME_{tot}}$')
-                ax.plot(xaxis, rme, color=color_order[1], linestyle='--',\
-                        linewidth=lw, label=r'$\rm{ME_r}$')
-                ax.plot(xaxis, tme, color=color_order[2], linestyle='--',\
-                        linewidth=lw, label=r'$\rm{ME_\theta}$')
-                ax.plot(xaxis, pme, color=color_order[3], linestyle='--',\
-                        linewidth=lw, label=r'$\rm{ME_\phi}$')
+                if have_comp:
+                    ax.plot(xaxis, rme, color=color_order[1], linestyle='--',\
+                            linewidth=lw, label=r'$\rm{ME_r}$')
+                    ax.plot(xaxis, tme, color=color_order[2], linestyle='--',\
+                            linewidth=lw, label=r'$\rm{ME_\theta}$')
+                    ax.plot(xaxis, pme, color=color_order[3], linestyle='--',\
+                            linewidth=lw, label=r'$\rm{ME_\phi}$')
 
         if ilat == 0 and ir == 0: # put a legend on the upper left axis
             plotleg = True
