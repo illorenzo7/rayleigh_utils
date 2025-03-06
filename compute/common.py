@@ -2105,3 +2105,9 @@ def get_term(dirname, vals, lut, quantity, verbose=False):
             if verbose:
                 print ("get_term(): getting 1479 from rho * T * dsdr * vr")
             return eq.rho*eq.tmp*c11*f14*vr
+
+def remove_nans(arr):
+    arr_out = np.copy(arr)
+    arr_out[np.where(np.isnan(arr))] = 0
+    arr_out[np.where(np.isinf(arr))] = 0
+    return arr_out
