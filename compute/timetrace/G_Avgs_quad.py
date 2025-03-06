@@ -307,7 +307,10 @@ if rank == 0:
     if dataname == 'Shell_Avgs':
         basename = 'G_Avgs_trace_nquadr%i' %nquadr
     if dataname == 'AZ_Avgs':
-        basename = 'G_Avgs_trace_nquadlat%i_nquadr%i' %(nquadlat, nquadr)
+        if nquadr == 1:
+            basename = 'G_Avgs_trace_nquadlat%i' %nquadlat
+        else:
+            basename = 'G_Avgs_trace_nquadlat%i_nquadr%i' %(nquadlat, nquadr)
     savename = basename + tag + '-' + file_list[0] + '_' + file_list[-1] + '.pkl'
     savefile = datadir + savename
 
