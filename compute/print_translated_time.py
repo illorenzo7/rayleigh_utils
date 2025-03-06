@@ -23,23 +23,23 @@ for key, val in clas.items():
     ntvals = len(tvals)
     translate_from = key
 
-    val_iter = np.zeros(ntvals, dtype='int')
-    val_simt = np.zeros(ntvals, dtype='float')
-    val_tkappa = np.zeros(ntvals, dtype='float')
+    iters = np.zeros(ntvals, dtype='int')
+    simt = np.zeros(ntvals, dtype='float')
+    tkappa = np.zeros(ntvals, dtype='float')
     if clas0.rotation:
-        val_tomega = np.zeros(ntvals, dtype='float')
+        tomega = np.zeros(ntvals, dtype='float')
 
     for i in range(ntvals):
         tval = tvals[i] # we have multiple tvals
         di = translate_times(tval, dirname, translate_from=translate_from)
-        val_iter[i] = di.val_iter
-        val_simt[i] = di.val_simt
-        val_tkappa[i] = di.val_tkappa
+        iters[i] = di.iter
+        simt[i] = di.simt
+        tkappa[i] = di.tkappa
         if clas0.rotation:
-            val_tomega[i] = di.val_tomega
+            tomega[i] = di.tomega
 
-    print ("val_iter =", arr_to_str(val_iter, '%08i', nobra=True))
-    print ("val_simt =", arr_to_str(val_simt, '%.2f', nobra=True))
-    print ("val_tkappa =", arr_to_str(val_tkappa, '%.3f', nobra=True))
+    print ("iter =", arr_to_str(iters, '%08i', nobra=True))
+    print ("simt =", arr_to_str(simt, '%.2f', nobra=True))
+    print ("tkappa =", arr_to_str(tkappa, '%.3f', nobra=True))
     if clas0.rotation:
-        print ("val_tomega =", arr_to_str(val_tomega, '%.2f', nobra=True))
+        print ("tomega =", arr_to_str(tomega, '%.2f', nobra=True))
