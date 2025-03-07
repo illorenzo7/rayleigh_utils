@@ -51,6 +51,7 @@ if kw.qvals is None: # it's a quantity group
     if kw.totsig is None:
         kw.totsig = qgroup['totsig']
 else:
+    kw.qvals = make_array(kw.qvals)
     kw.titles = parse_quantities(kw.qvals)[1]
     kw.groupname = input("choose a groupname to save your plot\n to not save it, enter 'nosave': ")
 
