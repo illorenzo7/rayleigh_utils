@@ -190,6 +190,7 @@ nquadr = len(rvals) - 1
 my_times = []
 my_iters = []
 my_vals = []
+the_qv = 0 # need this just as a place holder
 
 for i in range(my_nfiles):
     a = reading_func(radatadir + str(my_files[i]).zfill(8), '')
@@ -282,6 +283,7 @@ for i in range(my_nfiles):
         pcnt_done = i/my_nfiles*100.
         print(fill_str('computing') +\
                 ('rank 0 %5.1f%% done' %pcnt_done), end='\r')
+
 # Checkpoint and time
 comm.Barrier()
 if rank == 0:
