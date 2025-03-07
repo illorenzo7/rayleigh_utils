@@ -76,10 +76,10 @@ else:
 if kw.xminmax is None:
     # set kw.xmin possibly
     if kw.xmin is None:
-        kw.xmin = np.min(xaxis)
+        kw.xmin = xaxis[0]
     # set kw.xmax possibly
     if kw.xmax is None:
-        kw.xmax = np.max(xaxis)
+        kw.xmax = xaxis[-1]
     kw.xminmax = kw.xmin, kw.xmax
 
 ixmin = np.argmin(np.abs(xaxis - kw.xminmax[0]))
