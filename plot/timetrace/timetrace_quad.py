@@ -120,12 +120,11 @@ else:
 if xminmax is None:
     # set xmin possibly
     if xmin is None:
-        xmin = np.min(xaxis)
+        xmin = xaxis[0]
     # set xmax possibly
     if xmax is None:
-        xmax = np.max(xaxis)
+        xmax = xaxis[-1]
     xminmax = xmin, xmax
-
 ixmin = np.argmin(np.abs(xaxis - xminmax[0]))
 ixmax = np.argmin(np.abs(xaxis - xminmax[1]))
 
@@ -171,6 +170,8 @@ for ilat in range(nquadlat):
         for iterm in range(nterms):
             qval = kw.qvals[iterm]
             terms.append(vals_loc[:, lut[int(qval)]])
+            #plt.plot(terms[-1])
+            #plt.show()
             kw_lineplot.labels.append(kw.titles[iterm])
 
         # might also need the total of these terms (with some signature: totsig)
