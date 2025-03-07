@@ -218,12 +218,12 @@ for i in range(my_nfiles):
     irvals = inds_from_vals(rr, rvals)
     ilatvals = np.sort(inds_from_vals(tt_lat, latvals))
 
-
     for j in range(a.niter):
         if dataname == 'Shell_Avgs':
             vals_loc = a.vals[:, 0, :, :]
         else:
             vals_loc = a.vals
+
 
         # Get the values in the separate quadrants
         nq = a.nq
@@ -251,6 +251,30 @@ for i in range(my_nfiles):
                 gav = np.sum(tw_quad*vals_quad, axis=0)
                 gav = np.sum(rw_quad*gav, axis=0)
                 vals_gav[:, ilat, ir] = gav
+
+        # for each file after the first, only add the overlap of the values
+        # in all files
+        the_qv = a.qv # need this always, in case qv never changes
+        the_lut = a.lut # ditto
+        if i == 0: # don't do anything on first pass
+            qv1 = a.qv
+        else: # not on first file, qv1 holds qv from the last file
+            # qv2 will hold qv from this one
+            qv2 = a.qv
+
+            if not np.array_equal(qv1,qv2): # need to rearrange some quantities
+                # and update the_qv and the_lut
+                the_qv = np.intersect1d(qv1, qv2)
+                iq1 = inds_from_vals(qv1, the_qv)
+                iq2 = inds_from_vals(qv2, the_qv)
+                my_vals = np.array(my_vals)
+                my_vals = list(my_vals[:,iq1,...])
+                vals_gav = vals_gav[iq2, ...]
+                the_lut = np.zeros_like(the_lut) + 4000
+                the_lut[the_qv] = np.arange(len(the_qv))
+
+            qv1 = the_qv # now this is the old one
+
         my_vals.append(vals_gav)
         my_times.append(a.time[j])
         my_iters.append(a.iters[j])
@@ -276,18 +300,47 @@ if rank == 0:
 
     # Gather the results
     for j in range(nproc):
-        if j >= 1:
+        if j == 0:
+            qv1 = the_qv
+            # already have the_lut
+        else:
+            # for each process after the first, only add the overlap of the values
+            # from all processes
+
             # Get my_times, my_iters, my_vals from rank j
-            my_times, my_iters, my_vals = comm.recv(source=j)
+            my_times, my_iters, my_vals, the_qv = comm.recv(source=j)
+
+            if i == 0: # don't do anything on first pass
+                qv1 = the_qv
+            else: # not first process, qv1 holds qv from the last process
+                # qv2 will hold qv from this one
+                qv2 = the_qv
+                if not np.array_equal(qv1,qv2): # need to rearrange some quantities
+                    # and update the_qv and the_lut
+                    the_qv = np.intersect1d(qv1, qv2)
+                    iq1 = inds_from_vals(qv1, the_qv)
+                    iq2 = inds_from_vals(qv2, the_qv)
+                    vals = np.array(vals)
+                    vals = list(vals[:,iq1,...])
+
+                    my_vals = np.array(my_vals)
+                    my_vals = list(my_vals[:,iq2,...])
+
+                    the_lut = np.zeros_like(the_lut) + 4000
+                    the_lut[the_qv] = np.arange(len(the_qv))
+                qv1 = the_qv # now this is the old one
+
         times += my_times
         iters += my_iters
         vals += my_vals
+
+    print("shape vals=", np.shape(vals))
     # convert everything to arrays
     vals = np.array(vals)
     times = np.array(times)
     iters = np.array(iters)
 else: # other processes send their data
-    comm.send([my_times, my_iters, my_vals], dest=0)
+    comm.send([my_times, my_iters, my_vals, the_qv], dest=0)
 
 # Make sure proc 0 collects all data
 comm.Barrier()
