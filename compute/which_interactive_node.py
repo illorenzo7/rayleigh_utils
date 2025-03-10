@@ -5,9 +5,14 @@ from common import fill_str
 # see what type of interactive node we're after
 searchparameter = 'interactive_quote_unquote'
 args = sys.argv[1:]
+jobid = None
+i = 0
 for arg in args:
     if arg == '--stdin':
         searchparameter = 'STDIN'
+    elif arg == '--id':
+        jobid = args[i+1]
+    i += 1
 
 # first get the output of node_stats.sh as a string
 st=subprocess.check_output(['qstat', '-u', 'lmatilsk'])
@@ -15,9 +20,14 @@ st=st.decode('utf-8')
 
 lines = st.split('\n')
 the_line = None
+keep_searching = True
 for line in lines:
-    if searchparameter in line:
-        the_line = line
+    if keep_searching:
+        if searchparameter in line:
+            the_line = line
+    if not jobid is None:
+        if jobid in line:
+            keep_searching = False
 
 if the_line is None:
     print ("No interactive session is currently being run.")
