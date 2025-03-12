@@ -1230,6 +1230,15 @@ def get_grid_info(dirname, verbose=False, fname=None, ntheta=None):
     di['xx_3d'] = di['rr_3d']*di['sint_3d']
     di['zz_3d'] = di['rr_3d']*di['cost_3d']
 
+    # we might actually want to compute some integrals, instead of averages, so need alternate weights
+    rin, rout = np.min(di['rr']), np.max(di['rr'])
+
+    di['dr'] = (rout**3 - rin**3)/(3*di['rr']**2)*di['rw']
+    di['dt'] = 2./di['sint'] * di['tw']
+
+    di['dr_2d'] = di['dr'].reshape((1, di['nr']))
+    di['dt_2d'] = di['dt'].reshape((di['nt'], 1))
+
     return di
 
 def compute_axial_H(rr, sint, rmin=None, rmax=None):
