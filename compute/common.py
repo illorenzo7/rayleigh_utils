@@ -303,6 +303,8 @@ def make_array(arr, tolist=False, length=None):
         return None
     elif np.isscalar(arr):
         out = [arr]
+    elif isinstance(arr, dict):
+        out = list(arr.values())
     else:
         out = list(arr)
 
