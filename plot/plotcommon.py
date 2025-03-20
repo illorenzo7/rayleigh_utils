@@ -144,6 +144,9 @@ def make_figure(**kw_in):
     else: # all unspecified
         nplots = ncol = nrow = 1
 
+    # at the end of the day, we need to have
+    nplots = nrow*ncol
+
     # OK, now the subplot structure is specified
 
     # next we need two parameters to get the subplot size
