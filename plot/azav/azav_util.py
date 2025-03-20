@@ -90,7 +90,7 @@ def plot_azav(field, rr, cost, fig, ax,  **kw_in):
 
     # possibly plot a second (lower) field
     if not kw.rcut is None: 
-        # will need to change some contourf kwargs:
+        # will need to change some contourf kw:
         kw_my_contourf.minmax = kw.minmax2
         kw_my_contourf.allticksoff = False # no need to turn off ticks twice
         if kw.cmap2 is None:
@@ -269,7 +269,7 @@ kw_plot_azav_grid_default.update(kw_plot_azav_default)
 kw_make_figure_az = kw_make_figure_default.copy()
 kw_make_figure_az.update(azav_fig_dimensions)
 kw_plot_azav_grid_default.update(kw_make_figure_az)
-# need another make_figure_kwargs for the shav plot (possibly)
+# need another make_figure_kw for the shav plot (possibly)
 kw_make_figure_shav = kw_make_figure_az.copy()
 kw_make_figure_shav.update(lineplot_fig_dimensions)
 for key, val in kw_make_figure_shav.items():

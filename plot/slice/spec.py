@@ -50,8 +50,8 @@ if plottype == 'speclm':
     # need to change some things for speclm
     kw_plotting_func_default['log'] = True
     kw_plotting_func_default['posdef'] = True
-    #contourf_minmax_kw_default['buff_ignore1'] = None
-    #contourf_minmax_kw_default['buff_ignore2'] = None
+    #kw_contourf_minmax_default['buff_ignore1'] = None
+    #kw_contourf_minmax_default['buff_ignore2'] = None
     dataname = 'Shell_Spectra'
     reading_func = Shell_Spectra
 

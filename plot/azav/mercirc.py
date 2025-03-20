@@ -23,11 +23,11 @@ dirname_stripped = strip_dirname(dirname, wrap=True)
 # key unique to this script
 kw_default = dict({'the_file': None})
 
-# also need make figure kwargs
+# also need make figure kw
 kw_make_figure_default.update(azav_fig_dimensions)
 kw_default.update(kw_make_figure_default)
 
-# of course, plot_azav kwargs, but need to change a few
+# of course, plot_azav kw, but need to change a few
 kw_default.update(kw_plot_azav_default)
 
 # overwrite defaults

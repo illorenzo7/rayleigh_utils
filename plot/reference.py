@@ -26,12 +26,12 @@ kw_default = dotdict()
 kw_default.fname = None
 kw_default.sigma = None
 kw_default.nonsolar = False
-kw_default.update(make_figure_kw_default)
-kw_default.update(lineplot_kw_default)
+kw_default.update(kw_make_figure_default)
+kw_default.update(kw_lineplot_default)
 
 # change kw with clas
 kw = update_dict(kw_default, clas)
-kw_make_figure = update_dict(make_figure_kw_default, clas)
+kw_make_figure = update_dict(kw_make_figure_default, clas)
 kw_lineplot = update_dict(kw_lineplot_default, clas)
 
 # find bad keys

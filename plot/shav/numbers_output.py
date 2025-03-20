@@ -25,7 +25,7 @@ kw_default = dict({'the_file': None, 'the_file_az': None, 'sd': None})
 kw_default.update(kw_make_figure_default)
 kw_default.update(kw_lineplot_default)
 
-# change kwargs with clas
+# change kw with clas
 kw = update_dict(kw_default, clas)
 kw_make_figure = update_dict(kw_make_figure_default, clas)
 kw_lineplot = update_dict(kw_lineplot_default, clas)

@@ -36,9 +36,9 @@ dirname_stripped = strip_dirname(dirname)
 # key unique to this script
 kw_default = dict({'the_file': None, 'rel': False, 'sub': False, 'nrho': 3, 'beta': 0.759, 'gamma': gamma_ideal})
 
-# also need make figure kwargs
+# also need make figure kw
 
-# of course, plot_azav_grid kwargs
+# of course, plot_azav_grid kw
 kw_plot_azav_grid_default['margin_top_inches'] = 1
 kw_default.update(kw_plot_azav_grid_default)
 

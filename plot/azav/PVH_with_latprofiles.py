@@ -33,20 +33,20 @@ if rvals is None:
 # key unique to this script
 kw_default = dict({'the_file': None, 'verbose': False, 'absom': False})
 
-# also need make figure kwargs
+# also need make figure kw
 nlines = get_num_lines(clas0.dirname_label)
 azav_fig_dimensions['margin_top_inches'] += (nlines-1)*default_line_height
 kw_make_figure_default.update(azav_fig_dimensions)
 
 kw_default.update(kw_make_figure_default)
 
-# and of course need plot_azav kwargs
+# and of course need plot_azav kw
 kw_plot_azav_default['plotlatlines'] = False
 kw_plot_azav_default['rvals'] = rvals
 kw_plot_azav_default['no0'] = True
 kw_default.update(kw_plot_azav_default)
 
-# overwrite defaults, first main kwargs
+# overwrite defaults, first main kw
 kw = update_dict(kw_default, clas)
 kw_plot_azav = update_dict(kw_plot_azav_default, clas)
 kw_make_figure = update_dict(kw_make_figure_default, clas)

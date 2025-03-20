@@ -521,7 +521,7 @@ def lineplot(xx, profiles, ax, **kw_in):
 
 kw_add_cbar_default = dict({'cbar_thick': 1/8, 'cbar_aspect': 1/20, 'cbar_prec': 2, 'cbar_no': 1, 'cbar_offset': None, 'cbar_pos': 'bottom', 'cbar_total_width': 1/2, 'units': '', 'nosci': False, 'cbar_fs': default_labelsize, 'tickvals': None, 'ticklabels': None, 'exp': 0, 'log': False, 'posdef': False, 'fullrange2': False, 'symlog': False, 'sgnlog': False, 'tol': 0.75, 'no0': False, 'cbar_label': None})
 def add_cbar(fig, ax, im, **kw_in):
-    # deal with kwargs
+    # deal with kw
     kw = update_dict(kw_add_cbar_default, kw_in)
     find_bad_keys(kw_add_cbar_default, kw_in, 'add_cbar')
 

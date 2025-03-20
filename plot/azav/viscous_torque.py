@@ -27,13 +27,13 @@ dirname_stripped = strip_dirname(dirname, wrap=True)
 # key unique to this script
 kw_default = dict({'the_file': None})
 
-# also need make figure kwargs
+# also need make figure kw
 #azav_fig_dimensions['margin_top_inches'] += 1.5 
 # make room for subplot labels
-#plot_azav_grid_kwargs_default.update(azav_fig_dimensions)
+#kw_plot_azav_grid_default.update(azav_fig_dimensions)
 kw_default.update(kw_plot_azav_grid_default)
 
-# overwrite defaults, first main kwargs
+# overwrite defaults, first main kw
 kw = update_dict(kw_default, clas)
 kw_plot_azav_grid = update_dict(kw_plot_azav_grid_default, clas)
 

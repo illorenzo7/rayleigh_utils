@@ -33,7 +33,7 @@ nshells = len(rvals) - 1
 # key unique to this script
 kw_default = dict({'the_file': None, 'rel': True, 'sub': True, 'nrho': 3, 'beta': 0.759, 'gamma': gamma_ideal, 'verbose': False, 'verbose': False})
 
-# also need make figure kwargs
+# also need make figure kw
 azav_fig_dimensions['margin_top_inches'] += 0.5*nshells
 nlines = get_num_lines(clas0.dirname_label)
 azav_fig_dimensions['margin_top_inches'] += (nlines-1)*default_line_height
@@ -46,10 +46,10 @@ kw_make_figure['ncol'] = 3 # change the default
 
 kw_default.update(kw_make_figure)
 
-# and of course need plot_azav kwargs
+# and of course need plot_azav kw
 kw_default.update(kw_plot_azav_default)
 
-# overwrite defaults, first main kwargs
+# overwrite defaults, first main kw
 kw = update_dict(kw_default, clas)
 kw_plot_azav = update_dict(plot_azav_default, clas)
 kw_make_figure = update_dict(kw_make_figure, clas)

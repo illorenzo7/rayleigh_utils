@@ -29,12 +29,12 @@ magnetism = get_parameter(dirname, 'magnetism')
 # SPECIFIC ARGS for etrace:
 kw_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'xvals': np.array([]), 'nquadr': None, 'nquadlat': None, 'qvals': None, 'groupname': 'v', 'totsig': None, 'titles': None, 'justtot': False, 'notot': False, 'printerr': False, 'dpi': 300, 'vol': False, 'tint': False, 'tkappa': False})
 
-# make figure kwargs
+# make figure kw
 lineplot_fig_dimensions['margin_top_inches'] = 1.
 kw_make_figure_default.update(lineplot_fig_dimensions)
 kw_default.update(kw_make_figure_default)
 
-# lineplot kwargs
+# lineplot kw
 kw_default.update(kw_lineplot_default)
 
 # then override defaults

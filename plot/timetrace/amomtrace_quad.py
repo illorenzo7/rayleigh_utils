@@ -25,7 +25,7 @@ kw_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None
 # plots two more columns with energies in CZ and RZ separately 
 # update these defaults from command-line
 
-# make figure kwargs
+# make figure kw
 nlines = get_num_lines(clas0.dirname_label)
 lineplot_fig_dimensions['margin_top_inches'] = (nlines+2)*default_line_height
 kw_make_figure_default.update(lineplot_fig_dimensions)
