@@ -274,19 +274,26 @@ def compactify_float(num, fmt_type, SF=3):
 def optimal_float_string(num, SF=3):
     return compactify_float(num, float_or_sci(num, SF=SF), SF=SF)
 
-def arr_to_str_tab(a, SF=3, fmt=None, header='Row'): # ideal for latex tables
+def arr_to_str_tab(a, SF=3, fmt=None, header='Row', repeat=False, tol=1e-12): # ideal for latex tables
     starr = []
     buffst = ' & '
     st = header + buffst
 
+    count = 0
     for ele in a:
         if fmt is None:
             elest = optimal_float_string(ele, SF=SF)
         else:
             elest = fmt %ele
 
+        if count > 0:
+            if not repeat:
+                if np.abs(a[count] - a[count-1]) < tol: # it's repeated
+                    elest = '-'
+
         # add the element to the string 
         st += elest + buffst
+        count += 1
 
     # now remove the final buffst
     st = st[:-len(buffst)]
