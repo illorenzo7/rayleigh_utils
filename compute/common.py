@@ -274,7 +274,7 @@ def compactify_float(num, fmt_type, SF=3):
 def optimal_float_string(num, SF=3):
     return compactify_float(num, float_or_sci(num, SF=SF), SF=SF)
 
-def arr_to_str_tab(a, SF=3, fmt=None, header='Row', repeat=False, tol=1e-12): # ideal for latex tables
+def arr_to_str_tab(a, SF=3, fmt=None, header='Row', repeat=True, tol=1e-12): # ideal for latex tables
     starr = []
     buffst = ' & '
     st = header + buffst
