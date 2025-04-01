@@ -728,9 +728,12 @@ def my_infft(times, arr_fft, axis=0):
 # options for selecting a range of files (to average over, trace over, etc.)
 range_options = ['range', 'centerrange', 'leftrange', 'rightrange', 'iters', 'n', 'f', 'all']
 
-def my_mkdir(dirname):
+def my_mkdir(dirname, erase=False):
     if not os.path.isdir(dirname):
         os.makedirs(dirname)
+    if erase: # erase the directories contents, if any
+        for filename in os.listdir(dirname):
+            os.remove(dirname + '/' + filename)
     return dirname
 
 def get_file_lists_all(radatadir):
@@ -879,14 +882,14 @@ def get_file_lists(radatadir, clas):
         val = make_array(val)
         if key == 'skip':
             nskip = int(val[0])
-            file_list = file_list[::skip]
-            int_file_list = int_file_list[::skip]
+            file_list = file_list[::nskip]
+            int_file_list = int_file_list[::nskip]
             nfiles = len(int_file_list)
         if key == 'nfiles':
             ndesiredfiles = int(val[0])
-            skip = nfiles//ndesiredfiles
-            file_list = file_list[::skip]
-            int_file_list = int_file_list[::skip]
+            nskip = nfiles//ndesiredfiles
+            file_list = file_list[::nskip]
+            int_file_list = int_file_list[::nskip]
             nfiles = len(int_file_list)
 
     return file_list, int_file_list, nfiles

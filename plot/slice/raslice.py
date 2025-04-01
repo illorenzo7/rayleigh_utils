@@ -302,7 +302,7 @@ if rank == 0:
                             savename += '.png'
 
                         savefile = plotdir + '/' + savename
-                        plotdir = my_mkdir(plotdir)
+                        plotdir = my_mkdir(plotdir, erase=kw.movie)
 
                         plotting_instructions.append([fname,\
                                 varname,\
