@@ -1758,17 +1758,18 @@ def translate_times(time, dirname, translate_from='iter', verbose=False):
         di.tomega = times[ind]/eq.tomega
     return di
 
-def get_time_string(dirname, iter1, iter2=None, oneline=False, threelines=False, iter0=None, SF=3):
+def get_time_string(dirname, iter1=1000000000, iter2=None, oneline=False, threelines=False, iter0=None, SF=3, t0=None, t1=None, t2=None):
     # see if user wants to subtract off base time
     if not iter0 is None:
         t0 = translate_times(iter0, dirname, translate_from='iter')['time']
-    else:
-        t0 = None
+    # else t0 stays None
 
-    # Get the time range in sec
-    t1 = translate_times(iter1, dirname, translate_from='iter')['time']
+    # Get the time range in simulation units
+    if t1 is None:
+        t1 = translate_times(iter1, dirname, translate_from='iter')['time']
     if not t0 is None:
         t1 -= t0
+
     if not iter2 == None:
         t2 = translate_times(iter2, dirname, translate_from='iter')['time']
         if not t0 is None:
@@ -1779,12 +1780,12 @@ def get_time_string(dirname, iter1, iter2=None, oneline=False, threelines=False,
 
     # get individual float strings for critical times
     t1_string = optimal_float_string(t1/time_unit, SF=SF)
-    if not iter2 is None:
+    if not t2 is None:
         t2_string = optimal_float_string(t2/time_unit, SF=SF)
         dt_string = optimal_float_string((t2-t1)/time_unit, SF=SF)
 
     # make the label
-    if not iter2 is None:
+    if not t2 is None:
         if oneline:
             time_string = 't = ' + t1_string + ' ' + time_label + ' to t = ' + t2_string + ' ' + time_label + ' ' + r'$(\Delta t$' + ' = ' + dt_string  + ' ' + time_label + ')'
         elif threelines:

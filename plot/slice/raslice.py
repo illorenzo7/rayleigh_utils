@@ -439,8 +439,7 @@ for ifigure in range(my_nfigures):
         ax_line.set_title('lon. avg.')
         ax_line.set_ylabel('latitude (degrees)')
 
-
-    time_string = get_time_string(dirname, a.iters[0])
+    time_string = get_time_string(dirname, t1=a.time[0],SF=5)
 
     if plottype == 'moll':
         location_and_perspective =\
