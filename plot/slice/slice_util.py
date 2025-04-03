@@ -194,7 +194,7 @@ def ortho_transform(costheta, clat=20., shrinkage=1.):
     return xx,yy,igood,ibad
 
 # Mollweide ortho ortho plotting routine
-kw_plot_moll_or_ortho_default = dict({'clon': 0., 'clat': 20., 'shrinkage': 1., 'plotlonlines': True, 'lonvals': np.arange(0., 360., 30.), 'plotlatlines': True, 'latvals': np.arange(-60., 90., 30.), 'linewidth': default_lw, 'plotboundary': True, 'ortho': False})
+kw_plot_moll_or_ortho_default = dict({'clon': 0., 'clat': 20., 'shrinkage': 1., 'plotlonlines': True, 'lonvals': np.arange(0., 360., 30.), 'plotlatlines': True, 'latvals': np.arange(-60., 90., 30.), 'linewidth': 0.75*default_lw, 'plotboundary': True, 'ortho': False})
 kw_plot_moll_or_ortho_default.update(kw_my_contourf_default)
 kw_plot_moll_or_ortho_default['plotcontours'] = False
 
@@ -273,7 +273,7 @@ def plot_moll_or_ortho(field, costheta, fig, ax, **kw):
         ax.plot(xvals, yvals, 'k', linewidth=1.5*kw.linewidth)
 
 # equatorial slice plotting routine
-kw_plot_eq_default = dict({'clon': 0., 'plotlonlines': True, 'lonvals': np.arange(0., 360., 60.), 'linewidth': default_lw, 'plotboundary': True})
+kw_plot_eq_default = dict({'clon': 0., 'plotlonlines': True, 'lonvals': np.arange(0., 360., 60.), 'linewidth': 0.5*default_lw, 'plotboundary': True})
 kw_plot_eq_default.update(kw_my_contourf_default)
 kw_plot_eq_default['plotcontours'] = False
 
