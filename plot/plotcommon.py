@@ -663,7 +663,7 @@ def add_cbar(fig, ax, im, **kw_in):
         #        ha='left', va='center', fontsize=kw.fontsize) 
         cax.set_title(kw.cbar_label, ha='left', fontsize=kw.cbar_fs)
 
-kw_contourf_minmax_default = dict({'posdef': False, 'no0': False, 'log': False, 'symlog': False, 'sgnlog': False, 'fullrange': False, 'fullrange2': False, 'buff_ignore1': buff_frac, 'buff_ignore2': buff_frac, 'nsig': 3}) 
+kw_contourf_minmax_default = dict({'posdef': False, 'no0': False, 'log': False, 'symlog': False, 'sgnlog': False, 'fullrange': False, 'fullrange2': False, 'buff_ignore1': buff_frac, 'buff_ignore2': buff_frac, 'nstd': 3.}) 
 
 def contourf_minmax(field, **kw_in):
     # Get good boundaries to saturate array [field], assuming either
@@ -694,19 +694,19 @@ def contourf_minmax(field, **kw_in):
         meanlog = np.mean(logfield)
         stdlog = np.std(logfield)
 
-        minexp = meanlog - nsig*stdlog
-        maxexp = meanlog + nsig*stdlog
+        minexp = meanlog - kw.nstd*stdlog
+        maxexp = meanlog + kw.nstd*stdlog
         minmax = np.exp(minexp), np.exp(maxexp)        
     elif kw.posdef:
         sig = rms(field)
-        minmax = 0., nsig*sig        
+        minmax = 0., kw.nstd*sig        
     elif kw.no0:
         mean = np.mean(field)
         sig = np.std(field)
-        minmax = mean - nsig*sig, mean + nsig*sig
+        minmax = mean - kw.nstd*sig, mean + kw.nstd*sig
     else:
         sig = np.std(field)
-        minmax = -nsig*sig, nsig*sig
+        minmax = -kw.nstd*sig, kw.nstd*sig
     # Make sure minmax isn't 0, 0
     tinybit = 1.0e-100
     minmax = minmax[0] - tinybit, minmax[1] + tinybit
