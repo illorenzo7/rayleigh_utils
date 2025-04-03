@@ -117,6 +117,9 @@ if rank == 0:
     clas_mod.update(clas)
     file_list, int_file_list, nfiles = get_file_lists(radatadir, clas_mod)
 
+    # need to know if we're making a movie
+    plotting_a_movie = kw.movie or kw.movieclon or kw.movieclat or kw.moviesampleval
+
     # figure out what clons and clats we need
     kw.clons = make_array(kw.clons)
     if not kw.clonrange is None:
