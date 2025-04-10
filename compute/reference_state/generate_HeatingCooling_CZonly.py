@@ -13,8 +13,6 @@
 #
 # --fname: file to (maybe) read reference and save heating
 #    (default "customfile")
-# --delta : possible transition width between CZ and RZ via tanh matching
-#   (default quite sharp: 0.005)
 # --width : width of each the heating and cooling layers:
 #   (default 0.10)
 # --nr
@@ -22,12 +20,8 @@
 # Default 10,000 (very fine)
 
 # the following will have defaults set by [fname]_meta.txt, if it exists
-# --rbcz : bottom of CZ
-# --rtcz : top of CZ
-# --jup : (default False or what's in customfile) 
-#        if "jup" is True, there is RZ above CZ, use smoothing
-# --sun : (default False or what's in customfile) 
-#        if "sun" is True, there is RZ below CZ, use smoothing
+# --rmin : bottom of CZ
+# --rmax : top of CZ
 
 import numpy as np
 import sys, os
@@ -48,10 +42,9 @@ dirname = clas0['dirname']
 
 # Set default kwargs
 # start with filename, which may change
-kw_default = dotdict(dict({'fname': 'customfile', 'jup': False, 'sun': False, 'rbcz': None, 'rtcz': None}))
+kw_default = dotdict(dict({'fname': 'customfile', 'rmin': None, 'rmax': None}))
 
 # add in other default value, the transition width from CZ to RZ
-kw_default.delta = 0.005 # make it effectively very sharp, maybe 25 points
 kw_default.width = 0.1 # this is each heating/cooling layer width
 kw_default.nr = 10000
 
@@ -63,12 +56,6 @@ if os.path.isfile(the_file):
     f = open(meta_file, 'r')
     lines = f.readlines()
     for line in lines:
-        # see if geometry might be solar-like
-        if 'solar' in line:
-            kw_default.sun = True
-        elif 'Jovian' in line:
-            kw_default.jup = True
-
         # find the line containing rbrz, etc.
         alltrue = True
         for keyword in ['rbrz', 'rtrz', 'rbcz', 'rtcz']:

@@ -121,7 +121,7 @@ f.write("The CZ-only system has the folowing attributes:\n")
 
 f.write("nr         : %i\n" %kw.nr) 
 f.write("beta       : %1.5f\n" %kw.beta)
-f.write("   (rmin, rmax): (%1.2f, %1.2f)" %(rmin, rmax))
+f.write("   (rmin, rmax): (%1.2f, %1.2f)\n" %(rmin, rmax))
 
 # somehow these precisions are confusing me...anyway forget it for now
 f.write("gamma      : %1.16f\n" %kw.gamma)
