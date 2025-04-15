@@ -522,7 +522,7 @@ def lineplot(xx, profiles, ax, **kw_in):
     if kw.plotleg:
         ax.legend(loc=kw.legloc, ncol=kw.ncolleg, fontsize=0.8*default_labelsize)
 
-kw_add_cbar_default = dict({'cbar_thick': 1/8, 'cbar_aspect': 1/20, 'cbar_prec': 2, 'cbar_no': 1, 'cbar_offset': None, 'cbar_pos': 'bottom', 'cbar_total_width': 1/2, 'units': '', 'nosci': False, 'cbar_fs': default_labelsize, 'tickvals': None, 'ticklabels': None, 'exp': 0, 'log': False, 'posdef': False, 'fullrange2': False, 'symlog': False, 'sgnlog': False, 'tol': 0.75, 'no0': False, 'cbar_label': None})
+kw_add_cbar_default = dict({'cbar_thick': 1/8, 'cbar_aspect': 1/20, 'cbar_prec': 2, 'cbar_no': 1, 'cbar_offset': None, 'cbar_pos': 'bottom', 'cbar_total_width': 1/2, 'units': '', 'nosci': False, 'cbar_fs': default_labelsize, 'tickvals': None, 'ticklabels': None, 'exp': 0, 'log': False, 'posdef': False, 'fullrange2': False, 'symlog': False, 'sgnlog': False, 'tol': 0.75, 'no0': False, 'no0ticklabel': False, 'cbar_label': None})
 def add_cbar(fig, ax, im, **kw_in):
     # deal with kw
     kw = update_dict(kw_add_cbar_default, kw_in)
@@ -637,7 +637,7 @@ def add_cbar(fig, ax, im, **kw_in):
                     for ind in indvals:
                         kw.ticklabels[ind] = sci_format(kw.tickvals[ind], ndec=kw.cbar_prec, compact=True)
             else:
-                if kw.posdef or kw.no0:
+                if kw.posdef or kw.no0 or kw.no0ticklabel:
                     # just min/max
                     indvals = [0, nticks-1]
                 else:
