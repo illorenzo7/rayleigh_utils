@@ -637,7 +637,7 @@ def add_cbar(fig, ax, im, **kw_in):
                     for ind in indvals:
                         kw.ticklabels[ind] = sci_format(kw.tickvals[ind], ndec=kw.cbar_prec, compact=True)
             else:
-                if kw.posdef or kw.no0 or kw.no0ticklabel:
+                if kw.posdef or kw.no0ticklabel:
                     # just min/max
                     indvals = [0, nticks-1]
                 else:
