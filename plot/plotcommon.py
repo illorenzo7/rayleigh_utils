@@ -646,8 +646,11 @@ def add_cbar(fig, ax, im, **kw_in):
 
                 # loop over indices and set values
                 for ind in indvals:
-                    fmt = '%.' + str(kw.cbar_prec) + 'f'
-                    kw.ticklabels[ind] = fmt %kw.tickvals[ind]
+                    if np.abs(kw.tickvals[ind]) < 1e-12: # this is zero
+                        kw.ticklabels[ind] = '0'
+                    else:
+                        fmt = '%.' + str(kw.cbar_prec) + 'f'
+                        kw.ticklabels[ind] = fmt %kw.tickvals[ind]
                 if kw.fullrange2: # remove zero tick
                     kw.ticklabels[1] = ''
         cbar.set_ticks(kw.tickvals)
