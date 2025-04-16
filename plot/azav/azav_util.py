@@ -20,8 +20,8 @@ azav_fig_dimensions = dict({'sub_aspect': 2, 'sub_width_inches': 2, 'sub_margin_
 # plot_azav needs my_contourf args, then some
 kw_plot_azav_default = dict(
         {'rcut': None, 'minmax2': None, 'cmap2': None, 'rvals': None, 'plotlatlines': True, 'latvals': np.arange(-60., 90., 30.), 'plotboundary': True,
-        'linestyles1': np.array(['-']), 'linewidths1': np.array([default_lw]), 'linecolors1': np.array(['k']),
-       'linestyles2': np.array(['-']), 'linewidths2': np.array([default_lw]), 'linecolors2': np.array(['k']),
+        'linestyles1': np.array(['-']), 'linewidth': default_lw, 'linecolors1': np.array(['k']),
+       'linestyles2': np.array(['-']), 'linecolors2': np.array(['k']),
        'halfplane': False, 'fontsize': default_labelsize, 'plotaxis': True,\
         'modrms': False
        })
@@ -114,17 +114,14 @@ def plot_azav(field, rr, cost, fig, ax,  **kw_in):
             vals = make_array(kw.rvals, tolist=True)
             linecolors = kw.linecolors1
             linestyles = kw.linestyles1
-            linewidths = kw.linewidths1
         if ind == 2:
             vals = make_array(kw.latvals, tolist=True)
             linecolors = kw.linecolors2
             linestyles = kw.linestyles2
-            linewidths = kw.linewidths2
 
         # make lists from everything that needs to be
         linecolors = make_array(linecolors, tolist=True, length=len(vals))
         linestyles = make_array(linestyles, tolist=True, length=len(vals))
-        linewidths = make_array(linewidths, tolist=True, length=len(vals))
 
         if kw.plotboundary:
             if ind == 1:
@@ -132,7 +129,6 @@ def plot_azav(field, rr, cost, fig, ax,  **kw_in):
             if ind == 2:
                 to_add = [np.min(tt_lat), np.max(tt_lat)]
             vals = [to_add[0]] + vals + [to_add[1]]
-            linewidths = [default_lw] + linewidths + [default_lw] 
             linestyles = ['-'] + linestyles + ['-'] # make boundary lines solid
             linecolors = ['k'] + linecolors + ['k'] # make boundary lines black
 
@@ -145,7 +141,7 @@ def plot_azav(field, rr, cost, fig, ax,  **kw_in):
             if ind == 2:
                 ilatval = np.argmin(np.abs(tt_lat - val))
                 xline, yline = xx_full[ilatval, :], yy_full[ilatval, :]
-            ax.plot(xline, yline, linewidth=linewidths[i], linestyle=linestyles[i], color=linecolors[i])
+            ax.plot(xline, yline, linewidth=kw.linewidth, linestyle=linestyles[i], color=linecolors[i])
         
     if kw.plotaxis: # plot x and z coordinate axes
         ax.axis('on')
