@@ -249,9 +249,9 @@ def streamfunction(vr,vt,r,cost,order=0):
         dr[n_r-1]=0
         
         for i in range (n_r-2, -1, -1): 
-            psi[0:n_t-1,i] = psi[0:n_t-1,i+1] + dpsi_dr[0:n_t-1,i]*dr[i]
+            psi2[0:n_t-1,i] = psi2[0:n_t-1,i+1] + dpsi_dr[0:n_t-1,i]*dr[i]
         for i in range(n_t-2, -1, -1):
-            psi[i,0:n_r-1] = psi[i+1,0:n_r-1] + dpsi_dt[i,0:n_r-1]*dtheta[i]
+            psi2[i,0:n_r-1] = psi2[i+1,0:n_r-1] + dpsi_dt[i,0:n_r-1]*dtheta[i]
         
         if (order < 0):
             return psi2
