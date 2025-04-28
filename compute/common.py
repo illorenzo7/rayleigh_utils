@@ -571,53 +571,6 @@ def thin_data(vals, ntot=None):
             vals_new = vals
         return vals_new
 
-def sliding_average_fancy(vals, times, delta_t):
-    # more precise sliding average for non equally spaced times
-    ntimes = len(vals)
-    dt_over2 = delta_t/2.
-    tmin, tmax = times[0], times[-1]
-    # start the new array with enough room to average around the beginning and end
-    # i.e., the new times will occupy the interval [tmin + dt_over2, tmax - dt_over2]
-    
-    # get the point to the left of tmin + dt_over2
-    itmin_new = np.argmin(np.abs(times - (tmin + dt_over2)))
-    if times[itmin_new] > tmin + dt_over2:
-        itmin_new -= 1
-
-    itmax_new = np.argmin(np.abs(times - (tmax - dt_over2)))
-    if times[itmax_new] < tmin + dt_over2:
-        itmin_new += 1
-
-    times_new = np.copy(times[itmin_new:itmax_new+1])
-    navg = np.zeros_like(times_new)
-
-    vals_new = np.zeros_like(val)
-    intervals = np.zeros(nt)
-    total_time = times[-1] - times[0]
-    navg = int(nt*delta_t/total_time)
-    navg = over2*2 + 1
-
-    slider[0,...] = np.mean(vals[:over2, ...], axis=0)
-    for it in range(1, nt):
-        # begin with prior time's average
-        slider[it,...] = slider[it-1,...]
-
-        # calculate times to average over
-        it1 = it - over2
-        it2 = it + over2
-
-        if it1 >= 0: # subtract out the part of the mean we already have
-            slider[it, ...] -= vals[it1, ...]/navg
-        else:
-            it1 = 0 # need this to calculate interval
-        if it2 < nt: # add in the part of the mean we don't have
-            slider[it, ...] += vals[it2, ...]/navg
-        else:
-            it2 = nt - 1 # need this to calculate interval
-
-        intervals[it] = times[it2] - times[it1]
-    return slider, intervals
-
 
 def sliding_average(vals, times, delta_t):
     # simple sliding average
