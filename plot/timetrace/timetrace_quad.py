@@ -137,7 +137,7 @@ if kw.tavg is None:
     print (buff_line)
     print("No time average: tavg = None")
 else:
-    vals, intervals = sliding_average(vals, xaxis, kw.tavg)
+    vals, intervals = sliding_average_fancy(vals, xaxis, kw.tavg)
     print (buff_line)
     print ("Performing time average")
     print ("mean(tavg) = %1.3e" %np.mean(intervals))

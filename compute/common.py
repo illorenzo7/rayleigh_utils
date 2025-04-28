@@ -603,6 +603,26 @@ def sliding_average(vals, times, delta_t):
         intervals[it] = times[it2] - times[it1]
     return slider, intervals
 
+def sliding_average_fancy(vals, times, delta_t):
+    # like sliding_average, interpolate onto evenly spaced grid first
+    times_eq = np.linspace(-1/2, 1/2, len(times))
+    delta_t_tot = times[-1] - times[0]
+    delta_t_interp = delta_t/delta_t_tot
+
+    # shift the times to lie on the interval between -0.5 and 0.5
+    times = np.copy(times)
+    times -= times[0]
+    times /= delta_t_tot
+    times -= 0.5
+
+    interpolant = interp1d(times, vals, axis=0)
+    vals_interp = interpolant(times_eq)
+
+    slider_interp, intervals = sliding_average(vals_interp, times_eq, delta_t_interp)
+    interpolant = interp1d(times_eq, slider_interp, axis=0)
+    slider = interpolant(times)
+    return slider, intervals
+
 def sliding_average_bak(vals, times, delta_t):
     # simple sliding average
     nt = len(vals)
