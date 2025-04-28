@@ -116,7 +116,9 @@ ixmax = np.argmin(np.abs(xaxis - kw.xminmax[1]))
 
 # Now shorten all the "x" arrays
 xaxis = xaxis[ixmin:ixmax+1]
+times = times[ixmin:ixmax+1]
 iters = iters[ixmin:ixmax+1]
+vals = vals[ixmin:ixmax+1]
 
 # possibly time average data
 if kw.tavg is None:
@@ -235,7 +237,7 @@ for ilat in range(kw.nquadlat):
         # now thin the data on the terms and times
         #times = thin_data(times[ixmin:ixmax+1], ntot)
         for iterm in range(nterms):
-            terms[iterm] = thin_data(terms[iterm][ixmin:ixmax+1], kw.ntot)
+            terms[iterm] = thin_data(terms[iterm], kw.ntot)
 
         # now plot the terms
         if ilat == 0 and ir == 0:
