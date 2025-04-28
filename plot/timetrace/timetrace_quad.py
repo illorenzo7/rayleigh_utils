@@ -27,7 +27,7 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = get_parameter(dirname, 'magnetism')
 
 # SPECIFIC ARGS for etrace:
-kw_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'xvals': np.array([]), 'nquadr': None, 'nquadlat': None, 'qvals': None, 'groupname': 'v', 'totsig': None, 'titles': None, 'justtot': False, 'notot': False, 'printerr': False, 'dpi': 300, 'vol': False, 'tint': False, 'tkappa': False, 'tavg': None})
+kw_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'xvals': np.array([]), 'kw.nquadr': None, 'nquadlat': None, 'qvals': None, 'groupname': 'v', 'totsig': None, 'titles': None, 'justtot': False, 'notot': False, 'printerr': False, 'dpi': 300, 'vol': False, 'tint': False, 'tkappa': False, 'tavg': None})
 
 # make figure kw
 lineplot_fig_dimensions['margin_top_inches'] = 1.
@@ -56,20 +56,6 @@ else:
     kw.groupname = input("choose a groupname to save your plot\n to not save it, enter 'nosave': ")
 
 fontsize = default_titlesize
-the_file = kw.the_file
-xminmax = kw.xminmax
-xmin = kw.xmin
-xmax = kw.xmax
-minmax = kw.minmax
-ymin = kw.min
-ymax = kw.max
-coords = kw.coords
-ntot = kw.ntot
-xiter = kw.xiter
-log = kw.log
-xvals = make_array(kw.xvals)
-nquadlat = kw.nquadlat
-nquadr = kw.nquadr
 
 # state what we're plotting
 print ("plotting the following quantities:")
@@ -77,24 +63,24 @@ print ("qvals = ", kw.qvals)
 print ("totsig = ", kw.totsig)
 
 # deal with coords (if user wants minmax to only apply to certain subplots)
-if not coords is None:
-    numpanels = len(coords)//2
-    acopy = np.copy(coords)
-    coords = []
+if not kw.coords is None:
+    numpanels = len(kw.coords)//2
+    acopy = np.copy(kw.coords)
+    kw.coords = []
     for i in range(numpanels):
-        coords.append((acopy[2*i], acopy[2*i + 1]))
+        kw.coords.append((acopy[2*i], acopy[2*i + 1]))
 
 # get desired data file
 dataname = 'G_Avgs_trace'
-if the_file is None:
-    if not nquadlat is None:
-        dataname += '_nquadlat%i' %nquadlat
-    if not nquadr is None:
-        dataname += '_nquadr%i' %nquadr
-    the_file = get_widest_range_file(clas0['datadir'], dataname)
+if kw.the_file is None:
+    if not kw.nquadlat is None:
+        dataname += '_kw.nquadlat%i' %nquadlat
+    if not kw.nquadr is None:
+        dataname += '_kw.nquadr%i' %nquadr
+    kw.the_file = get_widest_range_file(clas0['datadir'], dataname)
 
-print ('Getting data from ' + the_file)
-di = get_dict(the_file)
+print ('Getting data from ' + kw.the_file)
+di = get_dict(kw.the_file)
 vals = di['vals']
 if kw.vol:
     vols = di['volumes']
@@ -102,31 +88,31 @@ if kw.vol:
     newshape = [1,1] + shapevols
     vals = vals*vols.reshape(newshape)
 rvals = di['rvals']
-nquadr = len(rvals) - 1
+kw.nquadr = len(rvals) - 1
 latvals = di['latvals']
-nquadlat = len(latvals) - 1
+kw.nquadlat = len(latvals) - 1
 lut = di['lut']
 times = di['times']
 iters = di['iters']
 
 # get the x axis
 time_unit, time_label, rotation, simple_label = get_time_unit(dirname, tkappa=kw.tkappa)
-if not xiter:
+if not kw.xiter:
     xaxis = np.copy(times)/time_unit
 else:
     xaxis = np.copy(iters)
 
 # set xminmax if not set by user
-if xminmax is None:
+if kw.xminmax is None:
     # set xmin possibly
-    if xmin is None:
-        xmin = xaxis[0]
+    if kw.xmin is None:
+        kw.xmin = xaxis[0]
     # set xmax possibly
-    if xmax is None:
-        xmax = xaxis[-1]
-    xminmax = xmin, xmax
-ixmin = np.argmin(np.abs(xaxis - xminmax[0]))
-ixmax = np.argmin(np.abs(xaxis - xminmax[1]))
+    if kw.xmax is None:
+        kw.xmax = xaxis[-1]
+    kw.xminmax = kw.xmin, kw.xmax
+ixmin = np.argmin(np.abs(xaxis - kw.xminmax[0]))
+ixmax = np.argmin(np.abs(xaxis - kw.xminmax[1]))
 
 # Now shorten all the "x" arrays
 xaxis = xaxis[ixmin:ixmax+1]
@@ -144,30 +130,30 @@ else:
     print ("std(tavg) = %1.3e" %np.std(intervals))
 
 # deal with x axis, maybe thinning data
-if np.all(ntot == 'full'):
+if np.all(kw.ntot == 'full'):
     print ('ntot = full')
-    ntot = len(times)
-print ("ntot = %i" %ntot)
+    kw.ntot = len(times)
+print ("ntot = %i" %kw.ntot)
 print ("before thin_data: len(xaxis) = %i" %len(xaxis))
-xaxis = thin_data(xaxis, ntot)
-#times = thin_data(times, ntot)
-iters = thin_data(iters, ntot)
-#vals = thin_data(vals, ntot) # don't thin the data quite yet for this guy
+xaxis = thin_data(xaxis, kw.ntot)
+#times = thin_data(times, kw.ntot)
+iters = thin_data(iters, kw.ntot)
+#vals = thin_data(vals, kw.ntot) # don't thin the data quite yet for this guy
 print ("after thin_data: len(xaxis) = %i" %len(xaxis))
 
 # now finally get the shape of the "vals" array
-ntimes, nq, nquadlat, nquadr = np.shape(vals)
+ntimes, nq, kw.nquadlat, nquadr = np.shape(vals)
 ntimes = len(xaxis)
-nplots = nquadlat*nquadr
+nplots = kw.nquadlat*nquadr
 
 # create the figure dimensions
 kw_make_figure.nplots = nplots
-kw_make_figure.ncol = nquadr
+kw_make_figure.ncol = kw.nquadr
 fig, axs, fpar = make_figure(**kw_make_figure)
 
 # loop over different domains
-for ilat in range(nquadlat):
-    for ir in range(nquadr):
+for ilat in range(kw.nquadlat):
+    for ir in range(kw.nquadr):
         vals_loc = vals[:, :, ilat, ir]
         ax = axs[ilat, ir]
 
@@ -249,7 +235,7 @@ for ilat in range(nquadlat):
         # now thin the data on the terms and times
         #times = thin_data(times[ixmin:ixmax+1], ntot)
         for iterm in range(nterms):
-            terms[iterm] = thin_data(terms[iterm][ixmin:ixmax+1], ntot)
+            terms[iterm] = thin_data(terms[iterm][ixmin:ixmax+1], kw.ntot)
 
         # now plot the terms
         if ilat == 0 and ir == 0:
@@ -272,27 +258,27 @@ for ilat in range(nquadlat):
 
 # Set some parameters defining all subplots
 # x limits and label
-axs[0, 0].set_xlim((xminmax[0], xminmax[1]))
-if xiter:
+axs[0, 0].set_xlim((kw.xminmax[0], kw.xminmax[1]))
+if kw.xiter:
     axs[-1, 0].set_xlabel('iteration #')
 else:
     axs[-1, 0].set_xlabel('time [' + time_label + ']')
 
 # x titles
-for ir in range(nquadr):
+for ir in range(kw.nquadr):
     r1 = rvals[ir]
     r2 = rvals[ir+1]
     title = 'rad. range = [%.3f, %.3f]' %(r1, r2)
     axs[0, ir].set_title(title, fontsize=fontsize)
 
 # y labels
-for it in range(nquadlat):
+for it in range(kw.nquadlat):
     lat1 = latvals[it]
     lat2 = latvals[it+1]
     axs[it, 0].set_ylabel('lat. range = [%.1f, %.1f]' %(lat1, lat2), fontsize=fontsize)
 
 # main title
-maintitle = dirname_stripped + '\nQuadrant traces'
+maintitle = dirname_stripped + '\nquadrant traces'
 if kw.vol:
     maintitle += ' (volume-integrated'
 else:
@@ -319,12 +305,12 @@ if len(clas0['tag']) > 0 or not kw.groupname is None:
     if kw.tint:
         basename += '_tint'
     basename += clas0['tag']
-    iter1, iter2 = get_iters_from_file(the_file)
+    iter1, iter2 = get_iters_from_file(kw.the_file)
     savename = basename + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
 
     plotdir = my_mkdir(clas0['plotdir'] + 'timetrace/')
 
-    iter1, iter2 = get_iters_from_file(the_file)
+    iter1, iter2 = get_iters_from_file(kw.the_file)
     savefile = plotdir + basename + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
     if clas0['saveplot']:
         print ('saving figure at ' + savefile)
