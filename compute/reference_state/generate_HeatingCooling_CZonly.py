@@ -131,8 +131,7 @@ print(buff_line)
 print("Computed heating/cooling layers for CZ-only system")
 print ("composed of quartics")
 print("(rmin, rmax): (%1.5f, %1.5f)" %(kw.rmin, kw.rmax))
-print("delta_heat : %1.5f" %kw.delta)
-print("heating/cooling layer width_heat : %1.5f" %kw.width)
+print("heating/cooling layer width: %1.5f" %kw.width)
 print(buff_line)
 
 # Now write to file using the equation_coefficients framework
@@ -156,8 +155,7 @@ lines_new = [firstline]
 lines_new.append("generate_HeatingCooling_in_CZ routine.\n")
 lines_new.append("heating has the folowing attributes:\n")
 lines_new.append("geometry : CZ only\n")
-lines_new.append("(rmin, rmax): (%1.5f, %1.5f)\n" %(rmin, rmax))
-lines_new.append("delta_heat : %1.5f\n" %kw.delta)
+lines_new.append("(rmin, rmax): (%1.5f, %1.5f)\n" %(kw.rmin, kw.rmax))
 lines_new.append("width : %1.5f\n" %kw.width)
 lastline = buff_line + '\n'
 lines_new.append(lastline)
