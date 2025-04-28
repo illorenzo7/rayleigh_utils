@@ -126,8 +126,8 @@ if kw.jup or kw.sun: # smooth both profiles although it will only matter
     shape2 *= smooth
 
 # normalize each profile to cancel each other out
-A1 = -1. / simps(r**2*shape1, r) # remember rr is in decreasing order
-A2 = -1. / simps(r**2*shape2, r)
+A1 = -1. / simpson(r**2*shape1, x=r) # remember rr is in decreasing order
+A2 = -1. / simpson(r**2*shape2, x=r)
 
 heat = A1*shape1 - A2*shape2 # this is overall (and smoothed) shape
 
