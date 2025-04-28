@@ -57,7 +57,7 @@ if os.path.isfile(the_file):
     f = open(meta_file, 'r')
     lines = f.readlines()
     for line in lines:
-        # find the line containing rbrz, etc.
+        # find the line containing rmin, rmax
         alltrue = True
         for keyword in ['rmin', 'rmax']:
             alltrue *= keyword in line
