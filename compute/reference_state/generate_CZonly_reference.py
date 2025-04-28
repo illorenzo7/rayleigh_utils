@@ -79,7 +79,7 @@ print(buff_line)
 print("Computed atmosphere for CZ only")
 print("nr         : %i" %kw.nr) 
 print("beta       : %1.5f" %kw.beta)
-print("   (rmin, rmax): (%1.2f, %1.2f)" %(rmin, rmax))
+print("   (rmin, rmax): (%1.5f, %1.5f)" %(rmin, rmax))
 print("gamma      : %1.5f" %kw.gamma)
 print("   n=1/(gamma-1)      : %1.5f" %(1./(kw.gamma-1.)))
 print("Nrho       : %1.5f" %kw.nrho)
@@ -121,7 +121,7 @@ f.write("The CZ-only system has the folowing attributes:\n")
 
 f.write("nr         : %i\n" %kw.nr) 
 f.write("beta       : %1.5f\n" %kw.beta)
-f.write("   (rmin, rmax): (%1.2f, %1.2f)\n" %(rmin, rmax))
+f.write("   (rmin, rmax): (%1.5f, %1.5f)\n" %(rmin, rmax))
 
 # somehow these precisions are confusing me...anyway forget it for now
 f.write("gamma      : %1.16f\n" %kw.gamma)
