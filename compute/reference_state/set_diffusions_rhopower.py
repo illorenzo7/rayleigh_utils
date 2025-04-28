@@ -15,7 +15,6 @@
 # --rmin : bottom of shell
 # --rmax : top of shell
 # --rt : radius of transition layer
-# --jup : if "jup" is specified, RZ lies above CZ
 
 import numpy as np
 import sys, os
@@ -36,27 +35,60 @@ dirname = clas0['dirname']
 # start with filename, which may change
 kw_default = dotdict(dict({'fname': 'customfile'}))
 kw_default = update_dict(kw_default, clas)
-# read in metadata (regarding radial structure) to put into keywords
+
+# get geometry
+jup = False
+sun = False
+czonly = True
+
 metafile = dirname + '/' + kw_default.fname + '_meta.txt'
 f = open(metafile, 'r')
 lines = f.readlines()
 for line in lines:
-    # find the line containing rbrz, etc.
+    # deal with grid geometry first
+
+    # see if geometry is not CZ only
     alltrue = True
     for keyword in ['rbrz', 'rtrz', 'rbcz', 'rtcz']:
         alltrue *= keyword in line
     if alltrue:
+        czonly = False
+        sun = True
         st = line.split(':')[1]
         for char in [',', '(', ')']:
             st = st.replace(char, '')
         rmin, rt, rmax = st2 = st.split()
 
-        kw_default.rmin = float(rmin)
-        kw_default.rt = float(rt)
-        kw_default.rmax = float(rmax)
-    elif 'Jovian' in line:
-        kw_default.jup = True
-f.close()
+        rmin = float(rmin)
+        rt = float(rt)
+        rmax = float(rmax)
+
+    if czonly:
+        # find the line containing rmin, rmax
+        alltrue = True
+        for keyword in ['rmin', 'rmax']:
+            alltrue *= keyword in line
+        if alltrue:
+            st = line.split(':')[1]
+            for char in [',', '(', ')']: # remove parentheses and comma
+                st = st.replace(char, '')
+
+            # get rmin and rmax
+            rmin, rmax = st.split()
+            rmin = float(rmin)
+            rmax = float(rmax)
+
+    if 'Jovian' in line:
+        sun = False
+        jup = True
+
+# get the top and bottom of CZ
+if czonly:
+    rbcz, rtcz = rmin, rmax
+elif jup:
+    rbcz, rtcz = rmin, rt
+elif sun:
+    rbcz, rtcz = rt, rmin
 
 # add in other default value
 kw_default.power = -0.5
@@ -66,14 +98,6 @@ kw = update_dict(kw_default, clas)
 
 # check for bad keys
 find_bad_keys(kw_default, clas, clas0['routinename'], justwarn=True)
-
-# compute geometry of grid
-if kw.jup: # RZ above CZ
-    rbcz, rtrz = kw.rmin, kw.rmax
-    rbrz = rtcz = kw.rt
-else: # CZ above RZ
-    rbrz, rtcz = kw.rmin, kw.rmax
-    rtrz = rbcz = kw.rt
 
 # Open and read the hopefully already existing reference file!
 eq = equation_coefficients()
@@ -97,11 +121,17 @@ print(buff_line)
 print("Computed diffusions (nu, kappa, and etea) for RZ-CZ system.")
 print("diffusion ~ rho^%0.3f" %kw.power)
 print("diffusion normalized by its CZ volume integral")
-if kw.jup:
+if jup:
     print ("geometry : Jovian (RZ atop CZ)")
-else:
+elif sun:
     print ("geometry : solar (CZ atop RZ)")
-print("(rmin, rt, rmax): (%1.2f, %1.2f, %1.2f)" %(kw.rmin, kw.rt, kw.rmax))
+elif czonly:
+    print ("geometry : CZ only")
+
+if czonly:
+    print("(rmin, rmax): (%1.5f, %1.5f)" %(rmin, rmax))
+else:
+    print("(rmin, rt, rmax): (%1.5f, %1.5f, %1.5f)" %(rmin, rt, rmax))
 print("power : %1.5f" %kw.power)
 print(buff_line)
 
@@ -124,12 +154,19 @@ f.write("Also added custom diffusion profiles using the\n")
 f.write("set_diffusions_rhopower routine.\n")
 f.write("diffusions have the folowing attributes:\n")
 f.write("diffusion ~ rho^%1.5f\n" %kw.power)
-f.write("normalized by CZ volume integral")
-if kw.jup:
+f.write("normalized by CZ volume integral\n")
+if jup:
      f.write("geometry : Jovian (RZ atop CZ)\n")
-else:
+elif sun:
      f.write("geometry : solar (CZ atop RZ)\n")
-f.write("(rmin, rt, rmax): (%1.2f, %1.2f, %1.2f)\n" %(kw.rmin, kw.rt, kw.rmax))
+elif czonly:
+     f.write("geometry : CZ only\n")
+
+if czonly:
+    f.write("(rmin, rmax): (%1.5f, %1.5f)\n" %(rmin, rmax))
+else:
+    f.write("(rmin, rt, rmax): (%1.5f, %1.5f, %1.5f)\n" %(rmin, rt, rmax))
+
 f.write("power : %1.5f\n" %kw.power)
 
 f.write(buff_line + '\n')

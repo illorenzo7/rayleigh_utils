@@ -112,9 +112,9 @@ iters = di['iters']
 # get the x axis
 time_unit, time_label, rotation, simple_label = get_time_unit(dirname, tkappa=kw.tkappa)
 if not xiter:
-    xaxis = times/time_unit
+    xaxis = np.copy(times)/time_unit
 else:
-    xaxis = iters
+    xaxis = np.copy(iters)
 
 # set xminmax if not set by user
 if xminmax is None:
@@ -130,10 +130,18 @@ ixmax = np.argmin(np.abs(xaxis - xminmax[1]))
 
 # Now shorten all the "x" arrays
 xaxis = xaxis[ixmin:ixmax+1]
-#times = times[ixmin:ixmax+1]
 iters = iters[ixmin:ixmax+1]
-#tmin, tmax = times[ixmin], times[ixmax]
-#vals = vals[ixmin:ixmax+1, :] # keep the full vals array for now
+
+# possibly time average data
+if kw.tavg is None:
+    print (buff_line)
+    print("No time average: tavg = None")
+else:
+    vals, intervals = sliding_average(vals, xaxis, kw.tavg)
+    print (buff_line)
+    print ("Performing time average")
+    print ("mean(tavg) = %1.3e" %np.mean(intervals))
+    print ("std(tavg) = %1.3e" %np.std(intervals))
 
 # deal with x axis, maybe thinning data
 if np.all(ntot == 'full'):
