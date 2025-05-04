@@ -1340,15 +1340,15 @@ def get_sliceinfo(dirname, dataname='Shell_Slices', fname=None):
     di = dotdict()
     if dataname in ['Shell_Slices', 'Shell_Spectra']:
         a = sliceinfo(fname, path=radatadir)
-        di.nsamplevals = a.nr
-        di.samplevals = a.radius
-        di.isamplevals = a.inds
+        di.nsamplevals = di.nr = a.nr
+        di.samplevals = di.rvals = a.radius
+        di.isamplevals = di.irvals = a.inds
     else:
         if dataname == 'Meridional_Slices':
             a = Meridional_Slices(radatadir + fname, '')
-            di.nsamplevals = a.nphi
-            di.samplevals = 180*a.phi/np.pi
-            di.isamplevals = a.phi_inds
+            di.nsamplevals = di.nlon = a.nphi
+            di.samplevals = di.lons = 180*a.phi/np.pi # measure in degrees
+            di.isamplevals = di.ilons = a.phi_inds
         elif dataname == 'Equatorial_Slices':
             a = Equatorial_Slices(radatadir + fname, '')
             # no sampling locations
