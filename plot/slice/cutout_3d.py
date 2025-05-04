@@ -105,7 +105,7 @@ if rank == 0:
     # and unpack it
     ntheta = gi.nt
     nphi = 2*ntheta
-    lon1d = np.linspace(-np.pi, np.pi, nphi, endpoint=False)
+    lon1d = gi.phi - np.pi
     lat1d = gi.tt_lat*np.pi/180.
 
     # choose spherical cutout parameters
@@ -119,6 +119,14 @@ if rank == 0:
     lon0 = lon1d[ilon0]
     lon1 += lon0
     lon2 += lon0 
+
+    # now put lon1, lon2 in the 0 to 2pi range for convenience
+    kw.lonvals = np.array([lon1, lon2])*180./np.pi
+    for i in range(2):
+        if kw.lonvals[i] < 0.:
+            kw.lonvals[i] += 360.
+        if kw.lonvals[i] >= 360.:
+            kw.lonvals[i] -= 360.
 
     # get indices and update chosen parameters to correspond to actual grid points
 
@@ -138,10 +146,11 @@ if rank == 0:
     ilat0 = np.argmin(np.abs(lat1d - lat0))
     lat0 = lat1d[ilat0]
 
-    ilon1_mer = np.argmin(np.abs(sliceinfo_mer.phi - lon1))
-    ilon2_mer = np.argmin(np.abs(mer.phi - lon2))
-    lon1 = mer.phi[ilon1_mer]
-    lon2 = mer.phi[ilon2_mer]
+    # need to shift 
+    ilon1_mer, ilon2_mer = inds_from_vals(sliceinfo_mer.lonvals, kw.lonvals)
+    kw.lonvals = sliceinfo_mer.lonvals[[ilon1_mer, ilon2_mer]]
+    lon1_deg, lon2_deg = kw.lonvals
+    lon1, lon2 = kw.lonvals*np.pi/180.
     ilon1 = np.argmin(np.abs(lon1d - lon1))
     ilon2 = np.argmin(np.abs(lon1d - lon2))
 

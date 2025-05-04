@@ -1347,8 +1347,8 @@ def get_sliceinfo(dirname, dataname='Shell_Slices', fname=None):
         if dataname == 'Meridional_Slices':
             a = Meridional_Slices(radatadir + fname, '')
             di.nsamplevals = di.nlon = a.nphi
-            di.samplevals = di.lons = 180*a.phi/np.pi # measure in degrees
-            di.isamplevals = di.ilons = a.phi_inds
+            di.samplevals = di.lonvals = 180*a.phi/np.pi # measure in degrees
+            di.isamplevals = di.ilonvals = a.phi_inds
         elif dataname == 'Equatorial_Slices':
             a = Equatorial_Slices(radatadir + fname, '')
             # no sampling locations
