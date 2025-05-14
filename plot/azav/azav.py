@@ -48,7 +48,7 @@ if kw.qvals is None: # it's a quantity group
     qgroup = get_quantity_group(kw.groupname, magnetism, advect_reference_state)
     kw.qvals = qgroup['qvals']
     kw_plot_azav_grid.titles = list(qgroup['titles'])
-    if not kw_plot_azav_grid.totsig is None:
+    if not qgroup['totsig'] is None:
         kw_plot_azav_grid.totsig = list(qgroup['totsig'])
     kw_plot_azav_grid.ncol = qgroup['ncol']
 else:
