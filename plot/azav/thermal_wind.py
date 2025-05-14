@@ -67,7 +67,6 @@ xx = di_grid['xx']
 # Coriolis term:
 eq = get_eq(dirname)
 vp = vals[:, :, lut[3]]
-omega = omega0 + vp/xx
 
 # get the zonal vorticity (ish, don't forget about the rho)
 vort_phi = vals[:, :, lut[303]]
