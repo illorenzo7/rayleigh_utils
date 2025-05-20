@@ -51,7 +51,7 @@ if kw.sslice:
     iter2 = a2.iters[-1]
     print ("simtime(): Got timing info from Shell_Slices/ directory")
     print ("iters:", f1, " to ", f2)
-    print ("times: %1.3e to %1.3e (simulation units)" %(t1, t2))
+    print ("times: %1.4e to %1.4e (simulation units)" %(t1, t2))
 
 elif kw.gtr:
     if kw.the_file == None:
@@ -64,7 +64,7 @@ elif kw.gtr:
     print ("simtime(): Got timing info from data/*trace_G_Avgs* file")
     print ("fname = ", kw.the_file)
     print ("iters:", str(iter1).zfill(8), " to ", str(iter2).zfill(8))
-    print ("times: %1.3e to %1.3e (simulation units)" %(t1, t2))
+    print ("times: %1.4e to %1.4e (simulation units)" %(t1, t2))
 
 elif kw.gav:
     gav_dir = dirname + '/G_Avgs/'
@@ -83,7 +83,7 @@ elif kw.gav:
     iter2 = a2.iters[-1]
     print ("simtime(): Got timing info from G_Avgs/ directory")
     print ("iters:", f1, " to ", f2)
-    print ("times: %1.3e to %1.3e (simulation units)" %(t1, t2))
+    print ("times: %1.4e to %1.4e (simulation units)" %(t1, t2))
 
 # calculate simulation time (sim units)
 simtime = t2 - t1
@@ -93,7 +93,7 @@ print (buff_line)
 print ('Delta_t = %7.3f M iter' %((iter2 - iter1)/1.0e6))
 
 # run time in thermal diffusion times
-fmt = "%1.3e"
+fmt = "%1.4e"
 print (buff_line)
 print (("Delta_t = " + fmt + " t_kappa") %(simtime/eq.tkappa))
 
