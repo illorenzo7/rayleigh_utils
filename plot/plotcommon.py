@@ -251,6 +251,35 @@ def make_figure(**kw_in):
 
     return fig, axs, fpar
 
+kw_make_figure2_default =\
+dict({'margin_left_inches': default_margin,\
+    'margin_right_inches': default_margin,\
+    'margin_bottom_inches': default_margin,\
+    'margin_top_inches': default_margin_title})
+
+def make_figure2(width_inches, height_inches, **kw_in):
+    kw = update_dict(kw_make_figure2_default, kw_in)
+    find_bad_keys(kw_make_figure_default, kw_in, 'make_figure2')
+
+    # collect all figure parameters in dictionary 
+    fpar = dotdict()
+    fpar.width_inches = width_inches
+    fpar.height_inches = height_inches
+    fpar.aspect = height_inches/width_inches
+    fpar.margin_left = kw.margin_left_inches/width_inches
+    fpar.margin_right = kw.margin_right_inches/width_inches
+    fpar.margin_bottom = kw.margin_bottom_inches/height_inches
+    fpar.margin_top = kw.margin_top_inches/height_inches
+
+    fpar.margin_x = default_margin/width_inches
+    fpar.margin_y = default_margin/height_inches
+    fpar.line_height = default_line_height/height_inches
+
+    # Generate the figure, but no axes
+    fig = plt.figure(figsize=(width_inches, height_inches))
+    return fig, fpar
+
+
 kw_lineplot_minmax_default = dict({'log': False, 'buff_ignore': None, 'plotleg': False, 'legfrac': None, 'symmetrize': False, 'domain_bounds': None, 'ixcut': 0})
 def lineplot_minmax(xx, profiles, **kw):
     kw = update_dict(kw_lineplot_minmax_default, kw)
