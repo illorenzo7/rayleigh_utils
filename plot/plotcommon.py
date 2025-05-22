@@ -551,7 +551,7 @@ def lineplot(xx, profiles, ax, **kw_in):
     if kw.plotleg:
         ax.legend(loc=kw.legloc, ncol=kw.ncolleg, fontsize=0.8*default_labelsize)
 
-kw_add_cbar_default = dict({'cbar_thick': 1/8, 'cbar_aspect': 1/20, 'cbar_prec': 2, 'cbar_no': 1, 'cbar_offset': None, 'cbar_pos': 'bottom', 'cbar_total_width': 1/2, 'units': '', 'nosci': False, 'cbar_fs': default_labelsize, 'tickvals': None, 'ticklabels': None, 'exp': 0, 'log': False, 'posdef': False, 'fullrange2': False, 'symlog': False, 'sgnlog': False, 'tol': 0.75, 'no0': False, 'no0ticklabel': False, 'cbar_label': None})
+kw_add_cbar_default = dict({'cbar_thick': 1/8, 'cbar_aspect': 1/20, 'cbar_prec': 2, 'cbar_no': 1, 'cbar_offset': None, 'cbar_pos': 'bottom', 'cbar_total_width': 1/2, 'units': '', 'nosci': False, 'cbar_fs': default_labelsize, 'tickvals': None, 'ticklabels': None, 'exp': 0, 'log': False, 'posdef': False, 'fullrange2': False, 'symlog': False, 'sgnlog': False, 'tol': 0.75, 'no0ticklabel': False, 'cbar_label': None, 'center_label': None})
 def add_cbar(fig, ax, im, **kw_in):
     # deal with kw
     kw = update_dict(kw_add_cbar_default, kw_in)
@@ -682,6 +682,8 @@ def add_cbar(fig, ax, im, **kw_in):
                         kw.ticklabels[ind] = fmt %kw.tickvals[ind]
                 if kw.fullrange2: # remove zero tick
                     kw.ticklabels[1] = ''
+                if not kw.center_label is None:
+                    kw.ticklabels[len(kw.ticklabels)//2] = kw.center_label
         cbar.set_ticks(kw.tickvals)
         cbar.set_ticklabels(kw.ticklabels)
 
@@ -695,7 +697,7 @@ def add_cbar(fig, ax, im, **kw_in):
         #        ha='left', va='center', fontsize=kw.fontsize) 
         cax.set_title(kw.cbar_label, ha='left', fontsize=kw.cbar_fs)
 
-kw_contourf_minmax_default = dict({'posdef': False, 'no0': False, 'log': False, 'symlog': False, 'sgnlog': False, 'fullrange': False, 'fullrange2': False, 'buff_ignore1': buff_frac, 'buff_ignore2': buff_frac, 'nstd': 3.}) 
+kw_contourf_minmax_default = dict({'posdef': False, 'no0': False, 'center_tick': None, 'log': False, 'symlog': False, 'sgnlog': False, 'fullrange': False, 'fullrange2': False, 'buff_ignore1': buff_frac, 'buff_ignore2': buff_frac, 'nstd': 3.}) 
 
 def contourf_minmax(field, **kw_in):
     # Get good boundaries to saturate array [field], assuming either
@@ -733,8 +735,11 @@ def contourf_minmax(field, **kw_in):
         sig = rms(field)
         minmax = 0., kw.nstd*sig        
     elif kw.no0:
-        mean = np.mean(field)
-        sig = np.std(field)
+        if not kw.center_tick is None:
+            mean = kw.center_tick
+        else:
+            mean = np.mean(field)
+        sig = rms(field - mean)
         minmax = mean - kw.nstd*sig, mean + kw.nstd*sig
     else:
         sig = np.std(field)
