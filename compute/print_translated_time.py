@@ -39,7 +39,7 @@ for key, val in clas.items():
             tomega[i] = di.tomega
 
     print ("iters =", arr_to_str(iters, '%08i', nobra=True))
-    print ("times =", arr_to_str(times, '%1.3e', nobra=True))
-    print ("tkappa =", arr_to_str(tkappa, '%1.3e', nobra=True))
+    print ("times =", arr_to_str(times, '%1.4e', nobra=True))
+    print ("tkappa =", arr_to_str(tkappa, '%1.4e', nobra=True))
     if clas0.rotation:
-        print ("tomega =", arr_to_str(tomega, '%1.3e', nobra=True))
+        print ("tomega =", arr_to_str(tomega, '%1.4e', nobra=True))
