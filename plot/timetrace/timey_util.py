@@ -14,8 +14,8 @@ from plotcommon import *
 timey_fig_dimensions = dict({'sub_width_inches': 7.5, 'sub_height_inches': 2.0, 'margin_top_inches': 1.25, 'sub_margin_left_inches': 5/8, 'sub_margin_right_inches': 7/8})
 
 # plot_timey needs my_contourf/my_pcolormesh args, then some
-kw_plot_timey_default = dict({'ycut': None, 'yminmax': None, 'ymin': None, 'ymax': None,'minmax2': None, 'xvals': np.array([]), 'yvals': np.array([]), 'plotboundary': True, 'linestyles1': np.array(['-']), 'linewidths1': np.array([default_lw]), 'linecolors1': np.array(['k']),\
-       'linestyles2': np.array(['-']), 'linewidths2': np.array([default_lw]), 'linecolors2': np.array(['k']),\
+kw_plot_timey_default = dict({'ycut': None, 'yminmax': None, 'ymin': None, 'ymax': None,'minmax2': None, 'xvals': np.array([]), 'yvals': np.array([]), 'plotboundary': True, 'linestyles1': np.array(['--']), 'linewidths1': np.array([default_lw]), 'linecolors1': np.array(['k']),\
+       'linestyles2': np.array(['--']), 'linewidths2': np.array([default_lw]), 'linecolors2': np.array(['k']),\
        'pcolormesh': False})
 
 # need to change a few default my_contourf settings,

@@ -254,7 +254,7 @@ def plot_moll_or_ortho(field, costheta, fig, ax, **kw):
                 lon_loc += 360.
             lon_loc *= (np.pi/180.)
             imer = np.argmin(np.abs(lon - lon_loc))
-            ax.plot(xx_masked[imer, :], yy_masked[imer, :], 'k', linewidth=linewidth)
+            ax.plot(xx_masked[imer, :], yy_masked[imer, :], 'k--', linewidth=linewidth)
     if kw.plotlatlines:
         for latval in kw.latvals:
             if latval == 0.: 
@@ -262,7 +262,7 @@ def plot_moll_or_ortho(field, costheta, fig, ax, **kw):
             else:
                 linewidth = kw.linewidth
             ilat = np.argmin(np.abs(lat - latval*np.pi/180.))
-            ax.plot(xx_masked[:, ilat], yy_masked[:, ilat], 'k', linewidth=linewidth)
+            ax.plot(xx_masked[:, ilat], yy_masked[:, ilat], 'k--', linewidth=linewidth)
 
     if kw.plotboundary:
         # Plot outer boundary
@@ -334,7 +334,7 @@ def plot_eq(field, rr, fig, ax, **kw):
             elif lon_loc < -180.:
                 lon_loc += 360.
             ilon = np.argmin(np.abs(lon - lon_loc))
-            ax.plot(xx[ilon, :], yy[ilon, :], 'k', linewidth=linewidth)
+            ax.plot(xx[ilon, :], yy[ilon, :], 'k--', linewidth=linewidth)
 
     if kw.plotboundary:
         # plot boundaries

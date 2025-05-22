@@ -20,8 +20,8 @@ azav_fig_dimensions = dict({'sub_aspect': 2, 'sub_width_inches': 2, 'sub_margin_
 # plot_azav needs my_contourf args, then some
 kw_plot_azav_default = dict(
         {'rcut': None, 'minmax2': None, 'cmap2': None, 'rvals': None, 'plotlatlines': True, 'latvals': np.arange(-60., 90., 30.), 'plotboundary': True,
-        'linestyles1': np.array(['-']), 'linewidth': default_lw, 'linecolors1': np.array(['k']),
-       'linestyles2': np.array(['-']), 'linecolors2': np.array(['k']),
+        'linestyles1': np.array(['--']), 'linewidth': default_lw, 'linecolors1': np.array(['k']),
+       'linestyles2': np.array(['--']), 'linecolors2': np.array(['k']),
        'halfplane': False, 'fontsize': default_labelsize, 'plotaxis': True,\
         'modrms': False
        })
