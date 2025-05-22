@@ -115,6 +115,15 @@ def plot_azav(field, rr, cost, fig, ax,  **kw_in):
             linecolors = kw.linecolors1
             linestyles = kw.linestyles1
         if ind == 2:
+            if kw.halfplane:
+                # exclude latvals close to boundary, which now includes equator
+                tol = 5. # exclude latvals within 5 degrees
+                latvals_new = []
+                for latval in kw.latvals:
+                    if latval > 5.:
+                        latvals_new.append(latval)
+                kw.latvals = np.array(latvals_new)
+
             vals = make_array(kw.latvals, tolist=True)
             linecolors = kw.linecolors2
             linestyles = kw.linestyles2
