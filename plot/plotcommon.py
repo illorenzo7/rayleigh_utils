@@ -706,25 +706,26 @@ def contourf_minmax(field, **kw_in):
     kw = update_dict(kw_contourf_minmax_default, kw_in)
     find_bad_keys(kw_contourf_minmax_default, kw_in, 'contourf_minmax')
 
+    field_loc = np.copy(field) # don't mess around with the real array
+    n1, n2 = np.shape(field_loc)
     if not kw.buff_ignore1 is None:
-        n1, dummy = np.shape(field)
-        icut = int(n1*kw.buff_ignore1)
-        field = np.copy(field[icut:n1-icut, :])
+        icut = int(n1*kw.buff_ignore1) # cut away the buff_ignore1 fraction of the array
+        field_loc = np.copy(field_loc[icut:n1-icut, :])
     if not kw.buff_ignore2 is None:
-        dummy, n2 = np.shape(field)
         icut = int(n2*kw.buff_ignore2)
-        field = np.copy(field[:, icut:n2-icut])
+        field_loc = np.copy(field[:, icut:n2-icut])
+
     # purge the field of nans
-    field = field[np.where(1 - np.isnan(field))]
+    field_loc = field_loc[np.where(1 - np.isnan(field_loc))]
     if kw.fullrange or kw.symlog:
-        maxabs = np.max(np.abs(field))
+        maxabs = np.max(np.abs(field_loc))
         minmax = -maxabs, maxabs       
     elif kw.fullrange2:
-        mmin = np.min(field[np.where(field != 0.0)])
-        mmax = np.max(field[np.where(field != 0.0)])
+        mmin = np.min(field_loc[np.where(field_loc != 0.0)])
+        mmax = np.max(field_loc[np.where(field_loc != 0.0)])
         minmax = mmin, mmax
     elif kw.log:
-        logfield = np.log(field[np.where(field != 0)])
+        logfield = np.log(field_loc[np.where(field_loc != 0)])
         meanlog = np.mean(logfield)
         stdlog = np.std(logfield)
 
@@ -732,17 +733,17 @@ def contourf_minmax(field, **kw_in):
         maxexp = meanlog + kw.nstd*stdlog
         minmax = np.exp(minexp), np.exp(maxexp)        
     elif kw.posdef:
-        sig = rms(field)
+        sig = rms(field_loc)
         minmax = 0., kw.nstd*sig        
     elif kw.no0:
         if not kw.center_tick is None:
             mean = kw.center_tick
         else:
-            mean = np.mean(field)
-        sig = rms(field - mean)
+            mean = np.mean(field_loc)
+        sig = rms(field_loc - mean)
         minmax = mean - kw.nstd*sig, mean + kw.nstd*sig
     else:
-        sig = np.std(field)
+        sig = np.std(field_loc)
         minmax = -kw.nstd*sig, kw.nstd*sig
     # Make sure minmax isn't 0, 0
     tinybit = 1.0e-100
