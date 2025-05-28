@@ -398,13 +398,19 @@ def dpsifunc(r, r0, delta): # might need the derivative
             arr[i] = 1.0
     return arr
 
-def inds_from_vals(arr, arrvals):
+def inds_from_vals(arr, arrvals, scalar=False):
     arrvals = make_array(arrvals)
     nind = len(arrvals)
     indarr = np.zeros(nind, 'int')
     for i in range(nind):
         indarr[i] = np.argmin(np.abs(arr - arrvals[i]))
-    return indarr
+    if scalar and nind==1:
+        return indarr[0]
+    else:
+        return indarr
+
+def iclosest(arr, arrval):
+    return inds_from_vals(arr, arrval, scalar=True)
 
 def is_an_int(string):
     # obviously, first check if it's actually an int
