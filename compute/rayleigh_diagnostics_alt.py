@@ -2146,6 +2146,8 @@ class sliceinfo:
         
         qv = np.reshape(swapread(fd,dtype='int32',count=nq,swap=bs),(nq), order = 'F')
 
+        self.nphi = 2*ntheta
+        self.ntheta = ntheta
         self.nr = nr
         self.nq = nq
         self.radius = self.rvals = np.reshape(swapread(fd,dtype='float64',count=nr,swap=bs),(nr), order = 'F')

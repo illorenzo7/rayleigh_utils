@@ -1360,9 +1360,13 @@ def get_sliceinfo(dirname, dataname='Shell_Slices', fname=None):
             di.nsamplevals = di.nlon = a.nphi
             di.samplevals = di.lonvals = 180*a.phi/np.pi # measure in degrees
             di.isamplevals = di.ilonvals = a.phi_inds
+            di.nr = a.nr
+            di.ntheta = mer.ntheta
         elif dataname == 'Equatorial_Slices':
             a = Equatorial_Slices(radatadir + fname, '')
             # no sampling locations
+            di.nr = a.nr
+            di.nphi = a.nphi
     di.qv = a.qv
     return di
 
