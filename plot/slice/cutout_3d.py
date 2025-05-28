@@ -47,7 +47,7 @@ dirname = clas0.dirname
 dirname_stripped = strip_dirname(dirname)
 
 # SPECIFIC ARGS
-kw_default = dotdict(dict({'rvals': ['rmin', 'rmax'], 'irvals': None, 'lonvals': [-30., 60.], 'eq': True, 'varnames': 'vr', 'clon': 0., 'clat': 20., 't0': False, 'movie': False, 'prepend': False, 'dpi': 300}))
+kw_default = dotdict(dict({'r1': 'rmin', 'r2': 'rmax', 'dlon1': -30., 'dlon2': 60., 'eq': True, 'varnames': 'vr', 'clon': 0., 'clat': 20., 't0': False, 'movie': False, 'prepend': False, 'dpi': 300}))
 
 kw_make_figure = kw_make_figure_default.copy()
 kw_make_figure.update(ortho_fig_dimensions)
@@ -55,30 +55,27 @@ kw_make_figure.update(ortho_fig_dimensions)
 kw_my_contourf = kw_my_contourf_default.copy()
 kw_my_contourf.plotcontours = False
 
-kw_range_options = dict({})
-for key in range_options: # add the range options key
-    kw_range_options[key] = None
-kw_range_options.iters = dict({'iters': 'last'})
-
 kw_default.update(kw_make_figure)
 kw_default.update(kw_my_contourf)
-kw_default.update(kw_range_options)
+kw_default.update(kw_range_options_default)
 
 # now we can update the default kw
 if rank == 0:
     print (buff_line)
     find_bad_keys(kw_default, clas, 'plot/slice/cutout_3d', justwarn=True)
 
-# Rayleigh data dirs
-ssdir = dirname + '/Shell_Slices/'
-merdir = dirname + '/Meridional_Slices/'
-eqdir = dirname + '/Equatorial_Slices/'
-
 # update relevant keyword args
 kw = update_dict(kw_default, clas)
 kw_my_contourf = update_dict(kw_my_contourf, clas)
 kw_make_figure = update_dict(kw_make_figure_default, clas)
-kw_range_options = update_dict(kw_range_options, clas)
+kw_range_options = update_dict(kw_range_options_default, clas)
+
+# Rayleigh data dirs
+ssdir = dirname + '/Shell_Slices/'
+merdir = dirname + '/Meridional_Slices/'
+if kw.eq:
+    eqdir = dirname + '/Equatorial_Slices/'
+
 
 # figure out all the different plots we need
 if rank == 0:
@@ -90,7 +87,7 @@ if rank == 0:
 
     # get desired varnames
     # again assume that the quantity list between Shell_Slices and
-    # everything is identical
+    # everything else is identical
     sliceinfo_ss = get_sliceinfo(dirname, 'Shell_Slices')
     sliceinfo_mer = get_sliceinfo(dirname, 'Meridional_Slices')
     if isall(kw.varnames):
@@ -100,76 +97,63 @@ if rank == 0:
     nq = len(kw.varnames)
 
     # get gridinfo
-    gi = get_grid_info('.')
+    gi = get_grid_info(dirname)
 
     # and unpack it
     ntheta = gi.nt
-    nphi = 2*ntheta
+    nphi = gi.nphi
     lon1d = gi.phi - np.pi
     lat1d = gi.tt_lat*np.pi/180.
 
     # choose spherical cutout parameters
 
     # get radian versions of stuff
-    kw.lonvals = make_array(kw.lonvals)
-    lon1_deg, lon2_deg = kw.lonvals
-    lon0, lon1, lon2, lat0 = np.array([kw.clon, lon1_deg, lon2_deg, kw.clat])*np.pi/180.
-    # lon1 and lon2 are chosen centered at lon0
-    ilon0 = np.argmin(np.abs(lon1d - lon0))
-    lon0 = lon1d[ilon0]
-    lon1 += lon0
-    lon2 += lon0 
+    clon, clat, dlon1, dlon2 = np.array([kw.clon, kw.clat, kw.dlon1, kw.dlon2])*np.pi/180.
 
-    # now put lon1, lon2 in the 0 to 2pi range for convenience
-    kw.lonvals = np.array([lon1, lon2])*180./np.pi
-    for i in range(2):
-        if kw.lonvals[i] < 0.:
-            kw.lonvals[i] += 360.
-        if kw.lonvals[i] >= 360.:
-            kw.lonvals[i] -= 360.
+    # the actual lon1 and lon2 are chosen centered at clon
+    iclon = np.argmin(np.abs(lon1d - clon))
+    clon = lon1d[iclon]
+    lon1 = clon + dlon1
+    lon2 = clon + dlon2
 
     # get indices and update chosen parameters to correspond to actual grid points
 
     # radii
-    kw.rvals = interpret_rvals(dirname, kw.rvals)
-    # get irvals from rvals (default)
-    # if irvals were already set, then use those
-    if kw.irvals is None:
-        kw.irvals = inds_from_vals(sliceinfo_ss.rvals, kw.rvals)
-    kw.rvals = sliceinfo_ss.rvals[kw.irvals]
-    ir1_ss, ir2_ss = kw.irvals
-    r1, r2 = kw.rvals
-    ir1 = np.argmin(np.abs(gi.rr - r1))
-    ir2 = np.argmin(np.abs(gi.rr - r2))
+    r1, r2 = interpret_rvals(np.array([kw.r1, kw.r2]))
+    rvals_ss = sliceinfo_ss.rvals
+    ir1_ss, ir2_ss = inds_from_vals(rvals_ss, np.array([r1, r2]))
+    r1, r2 = rvals_ss[[ir1_ss, ir2_ss]]
+    ir1, ir2 = inds_from_vals(gi.rr, np.array([r1, r2]))
 
     # longitudes and latitudes
-    ilat0 = np.argmin(np.abs(lat1d - lat0))
-    lat0 = lat1d[ilat0]
+    iclat = np.argmin(np.abs(lat1d - clat))
+    clat = lat1d[iclat]
 
-    # need to shift 
-    ilon1_mer, ilon2_mer = inds_from_vals(sliceinfo_mer.lonvals, kw.lonvals)
-    kw.lonvals = sliceinfo_mer.lonvals[[ilon1_mer, ilon2_mer]]
-    lon1_deg, lon2_deg = kw.lonvals
-    lon1, lon2 = kw.lonvals*np.pi/180.
-    ilon1 = np.argmin(np.abs(lon1d - lon1))
-    ilon2 = np.argmin(np.abs(lon1d - lon2))
+    # need to shift available lons
+    lonvals_mer = sliceinfo_mer.lonvals - np.pi
+    idlon1_mer, idlon2_mer = inds_from_vals(, np.array([)
+    kw.lonvals = sliceinfo_mer.lonvals[[idlon1_mer, idlon2_mer]]
+    dlon1_deg, dlon2_deg = kw.lonvals
+    dlon1, dlon2 = kw.lonvals*np.pi/180.
+    idlon1 = np.argmin(np.abs(lon1d - dlon1))
+    idlon2 = np.argmin(np.abs(lon1d - dlon2))
 
     # recompute some other parameters
     beta0 = r2/r1
-    lon0_deg, lon1_deg, lon2_deg, lat0_deg  = np.array([lon0, lon1, lon2, lat0])*180./np.pi
+    clon_deg, dlon1_deg, dlon2_deg, clat_deg  = np.array([clon, dlon1, dlon2, clat])*180./np.pi
 
     print("r1 =", r1)
     print("r2 =", r2)
     print("(beta0 = " + str(beta0) + ")")
-    print("lon0 =", lon0_deg)
-    print("lat0 =", lat0_deg)
-    print("lon1 =", lon1_deg)
-    print("lon2 =", lon2_deg)
+    print("clon =", clon_deg)
+    print("clat =", clat_deg)
+    print("dlon1 =", dlon1_deg)
+    print("dlon2 =", dlon2_deg)
     # get desired sampling locations
     # we need 
     # r1, r2 = kw.rvals
-    # lon1, lon2 = kw.lonvals
-    # lon0 from clon
+    # dlon1, dlon2 = kw.lonvals
+    # clon from clon
 
     kw.ilonvals = inds_from_vals(sliceinfo_ss.rvals, kw.rvals)
 
@@ -435,24 +419,24 @@ ax = axs[0,0]
 # get the first spherical slice
 field = np.copy(ss.vals[:, :, ir1_ss, ss.lut[qval], 0])
 # shift the field so that the clon is in the ~center of the array
-difflon = np.pi - lon0 # basically difflon is the amount the clon
+difflon = np.pi - clon # basically difflon is the amount the clon
 # must be shifted to arrive at 180, which is near the center of array
 iphi_shift = int(difflon/(2*np.pi)*nphi)
 field = np.roll(field, iphi_shift, axis=0)
 
-# shift the vals in longitude so ilon0 is at lon = 0
+# shift the vals in longitude so iclon is at lon = 0
 
 
 # get a "meshgrid" from 1D arrays
-lon2d, lat2d = np.meshgrid(lon1d, lat1d, indexing='ij')
+dlon2d, lat2d = np.meshgrid(lon1d, lat1d, indexing='ij')
 
 # do ortho projection
-xx = np.cos(lat2d)*np.sin(lon2d)
-yy = np.cos(lat0)*np.sin(lat2d) - np.sin(lat0)*np.cos(lat2d)*np.cos(lon2d)
+xx = np.cos(lat2d)*np.sin(dlon2d)
+yy = np.cos(clat)*np.sin(lat2d) - np.sin(clat)*np.cos(lat2d)*np.cos(dlon2d)
 
 # mask xx and yy
-cond1 = np.sin(lat0)*np.sin(lat2d)+np.cos(lat0)*np.cos(lat2d)*np.cos(lon2d) < 0 
-cond2 = (lon2d > lon1 - lon0) & (lon2d < lon2 - lon0) & (lat2d > 0)
+cond1 = np.sin(clat)*np.sin(lat2d)+np.cos(clat)*np.cos(lat2d)*np.cos(dlon2d) < 0 
+cond2 = (dlon2d > dlon1 - clon) & (dlon2d < dlon2 - clon) & (lat2d > 0)
 
 field[cond1] = np.nan
 field[cond2] = np.nan
@@ -465,20 +449,20 @@ my_contourf(xx, yy, field, fig, ax, **kw_my_contourf)
 # ORTHO 2
 field = np.copy(ss.vals[:, :, ir2_ss, ss.lut[qval], 0])
 # shift the field so that the clon is in the ~center of the array
-difflon = np.pi - lon0 # basically difflon is the amount the clon
+difflon = np.pi - clon # basically difflon is the amount the clon
 # must be shifted to arrive at 180, which is near the center of array
 iphi_shift = int(difflon/(2*np.pi)*nphi)
 field = np.roll(field, iphi_shift, axis=0)
 
-# shift the vals in longitude so ilon0 is at lon = 0
+# shift the vals in longitude so iclon is at lon = 0
 
 # do ortho projection
-xx = beta0*np.cos(lat2d)*np.sin(lon2d)
-yy = beta0*(np.cos(lat0)*np.sin(lat2d) - np.sin(lat0)*np.cos(lat2d)*np.cos(lon2d))
+xx = beta0*np.cos(lat2d)*np.sin(dlon2d)
+yy = beta0*(np.cos(clat)*np.sin(lat2d) - np.sin(clat)*np.cos(lat2d)*np.cos(dlon2d))
 
 # mask xx and yy
-cond1 = np.sin(lat0)*np.sin(lat2d)+np.cos(lat0)*np.cos(lat2d)*np.cos(lon2d) < 0 
-cond2 = (lon2d < lon1 - lon0) | (lon2d > lon2 - lon0) | (lat2d < 0)
+cond1 = np.sin(clat)*np.sin(lat2d)+np.cos(clat)*np.cos(lat2d)*np.cos(dlon2d) < 0 
+cond2 = (dlon2d < dlon1 - clon) | (dlon2d > dlon2 - clon) | (lat2d < 0)
 
 field[cond1] = np.nan
 field[cond2] = np.nan
@@ -489,26 +473,26 @@ my_contourf(xx, yy, field, fig, ax, **kw_my_contourf)
 
 
 # MERIDIAN 1
-field = np.copy(mer.vals[ilon1_mer, :, :, mer.lut[qval], 0]).T
+field = np.copy(mer.vals[idlon1_mer, :, :, mer.lut[qval], 0]).T
 
 rad1d = np.copy(rr)/r1
 rad2d, lat2d = np.meshgrid(rad1d, lat1d, indexing='ij')
 
-xx = - rad2d * np.cos(lat2d) * np.sin(lon0 - lon1)
-yy = rad2d * (np.cos(lat0)*np.sin(lat2d) - np.cos(lon0 - lon1)*np.sin(lat0)*np.cos(lat2d))
+xx = - rad2d * np.cos(lat2d) * np.sin(clon - dlon1)
+yy = rad2d * (np.cos(clat)*np.sin(lat2d) - np.cos(clon - dlon1)*np.sin(clat)*np.cos(lat2d))
 cond1 = (lat2d < 0) | (rad2d < beta0)  | (rad2d > 1.)
 field[cond1] = np.nan
 
 my_contourf(xx, yy, field, fig, ax, **kw_my_contourf)
 
 # MERIDIAN 2
-field = np.copy(mer.vals[ilon2_mer, :, ::-1, mer.lut[qval], 0]).T
+field = np.copy(mer.vals[idlon2_mer, :, ::-1, mer.lut[qval], 0]).T
 
 rad1d = np.copy(rr[::-1])/r1
 rad2d, lat2d = np.meshgrid(rad1d, lat1d, indexing='ij')
 
-xx = rad2d * np.cos(lat2d) * np.sin(lon2 - lon0)
-yy = rad2d * (np.cos(lat0)*np.sin(lat2d) - np.cos(lon2 - lon0)*np.sin(lat0)*np.cos(lat2d))
+xx = rad2d * np.cos(lat2d) * np.sin(dlon2 - clon)
+yy = rad2d * (np.cos(clat)*np.sin(lat2d) - np.cos(dlon2 - clon)*np.sin(clat)*np.cos(lat2d))
 cond1 = (lat2d < 0) | (rad2d < beta0)  | (rad2d > 1.)
 field[cond1] = np.nan
 
@@ -518,11 +502,11 @@ my_contourf(xx, yy, field, fig, ax, **kw_my_contourf)
 field = np.copy(eq.vals[:, :, ss.lut[qval], 0])
 field = np.roll(field, iphi_shift, axis=0)
 rad1d = np.copy(rr)/r1
-lon2d, rad2d = np.meshgrid(lon1d, rad1d, indexing='ij')
+dlon2d, rad2d = np.meshgrid(lon1d, rad1d, indexing='ij')
 
-xx = rad2d*np.sin(lon2d)
-yy = -rad2d*np.sin(lat0)*np.cos(lon2d)
-cond = (lon2d < lon1 - lon0) | (lon2d > lon2 - lon0) | (rad2d < beta0)  | (rad2d > 1.)
+xx = rad2d*np.sin(dlon2d)
+yy = -rad2d*np.sin(clat)*np.cos(dlon2d)
+cond = (dlon2d < dlon1 - clon) | (dlon2d > dlon2 - clon) | (rad2d < beta0)  | (rad2d > 1.)
 field[cond] = np.nan
 
 my_contourf(xx, yy, field, fig, ax, **kw_my_contourf)
@@ -538,35 +522,35 @@ svals = np.linspace(0, 2*np.pi, nsvals)
 ax.plot(np.cos(svals), np.sin(svals), 'k-', linewidth=linewidth)
 
 svals = np.linspace(0., np.pi/2.)
-ax.plot(np.cos(svals)*np.sin(lon1-lon0),\
-        np.cos(lat0)*np.sin(svals) - np.sin(lat0)*np.cos(svals)*np.cos(lon1-lon0),\
+ax.plot(np.cos(svals)*np.sin(dlon1-clon),\
+        np.cos(clat)*np.sin(svals) - np.sin(clat)*np.cos(svals)*np.cos(dlon1-clon),\
         'k-', linewidth=linewidth)
 
-ax.plot(beta0*np.cos(svals)*np.sin(lon1-lon0),\
-        beta0*(np.cos(lat0)*np.sin(svals) - np.sin(lat0)*np.cos(svals)*np.cos(lon1-lon0)),\
+ax.plot(beta0*np.cos(svals)*np.sin(dlon1-clon),\
+        beta0*(np.cos(clat)*np.sin(svals) - np.sin(clat)*np.cos(svals)*np.cos(dlon1-clon)),\
         'k-', linewidth=linewidth)
 
-ax.plot(np.cos(svals)*np.sin(lon2-lon0),\
-        np.cos(lat0)*np.sin(svals) - np.sin(lat0)*np.cos(svals)*np.cos(lon2-lon0),\
+ax.plot(np.cos(svals)*np.sin(dlon2-clon),\
+        np.cos(clat)*np.sin(svals) - np.sin(clat)*np.cos(svals)*np.cos(dlon2-clon),\
         'k-', linewidth=linewidth)
 
-ax.plot(beta0*np.cos(svals)*np.sin(lon2-lon0),\
-        beta0*(np.cos(lat0)*np.sin(svals) - np.sin(lat0)*np.cos(svals)*np.cos(lon2-lon0)),\
+ax.plot(beta0*np.cos(svals)*np.sin(dlon2-clon),\
+        beta0*(np.cos(clat)*np.sin(svals) - np.sin(clat)*np.cos(svals)*np.cos(dlon2-clon)),\
         'k-', linewidth=linewidth)
 
 svals = np.linspace(beta0, 1, nsvals)
 
-ax.plot(svals*np.sin(lon1-lon0), -svals*np.sin(lat0)*np.cos(lon1-lon0),\
+ax.plot(svals*np.sin(dlon1-clon), -svals*np.sin(clat)*np.cos(dlon1-clon),\
         'k-', linewidth=linewidth)
 
-ax.plot(svals*np.sin(lon2-lon0), -svals*np.sin(lat0)*np.cos(lon2-lon0),\
+ax.plot(svals*np.sin(dlon2-clon), -svals*np.sin(clat)*np.cos(dlon2-clon),\
         'k-', linewidth=linewidth)
 
-ax.plot(0*svals, svals*np.cos(lat0), 'k-', linewidth=linewidth)
+ax.plot(0*svals, svals*np.cos(clat), 'k-', linewidth=linewidth)
 
-svals = np.linspace(lon1 - lon0, lon2 - lon0, nsvals)
-ax.plot(np.sin(svals), -np.sin(lat0)*np.cos(svals), 'k-', linewidth=linewidth)
-ax.plot(beta0*np.sin(svals), -beta0*np.sin(lat0)*np.cos(svals), 'k-', linewidth=linewidth)
+svals = np.linspace(dlon1 - clon, dlon2 - clon, nsvals)
+ax.plot(np.sin(svals), -np.sin(clat)*np.cos(svals), 'k-', linewidth=linewidth)
+ax.plot(beta0*np.sin(svals), -beta0*np.sin(clat)*np.cos(svals), 'k-', linewidth=linewidth)
 
 
 plt.show()

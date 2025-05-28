@@ -749,6 +749,10 @@ def my_infft(times, arr_fft, axis=0):
 
 # options for selecting a range of files (to average over, trace over, etc.)
 range_options = ['range', 'centerrange', 'leftrange', 'rightrange', 'iters', 'n', 'f', 'all']
+kw_range_options_default = dotdict({})
+for key in range_options: # add the range options key
+    kw_range_options_default.key = None
+kw_range_options_default.iters = 'last'
 
 def my_mkdir(dirname, erase=False):
     if not os.path.isdir(dirname):
