@@ -326,21 +326,14 @@ kw__default = dict({'clon': 0., 'clat': 20., 'shrinkage': 1., 'plotlonlines': Tr
 kw_plot_moll_or_ortho_default.update(kw_my_contourf_default)
 
 dict({'clon': 0., 'clat': 20., 'shrinkage': 1., 'plotlonlines': True, 'lonvals': np.arange(0., 360., 30.), 'plotlatlines': True, 'latvals': np.arange(-60., 90., 30.), 'linewidth': 0.75*default_lw, 'plotboundary': True, 'ortho': False})
-kw_plot_moll_or_ortho_default.update(kw_my_contourf_default)
-kw_plot_moll_or_ortho_default['plotcontours'] = False
+kw_plot_cutout_3d_default = dotdict(dict({'r1': 'rmin', 'r2': 'rmax', 'lon1': -30., 'lon2': 60., 'dlon1': None, 'dlon2': None, 'eq': True, 'varnames': 'vr', 'clon': 0., 'clat': 20., 't0': False}))
+kw_plot_cutout3d_default.update(kw_my_contourf_default)
+kw_plot_cutout3d_default.plotcontours = False
 
+def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw):
 
-def plot_cutout_3d(field, costheta, fig, ax, **kw):
-
-
-    linewidth = 1.
-
-
-    kw_make_figure = update_dict(kw_make_figure_default, ortho_fig_dimensions)
-
-    plt.close()
-    fig, axs, fpar = make_figure(**kw_make_figure)
-    ax = axs[0,0]
+    # get the Shell_Slice data
+    ss 
 
     # ORTHO 1
     # get the first spherical slice
