@@ -1358,7 +1358,7 @@ def get_sliceinfo(dirname, dataname='Shell_Slices', fname=None):
         if dataname == 'Meridional_Slices':
             a = Meridional_Slices(radatadir + fname, '')
             di.nsamplevals = di.nlon = a.nphi
-            di.samplevals = di.lonvals = 180*a.phi/np.pi # measure in degrees
+            di.samplevals = di.lonvals = a.phi 
             di.isamplevals = di.ilonvals = a.phi_inds
             di.nr = a.nr
             di.ntheta = mer.ntheta
