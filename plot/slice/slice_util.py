@@ -343,7 +343,7 @@ def plot_eq(field, rr, fig, ax, **kw):
 
 kw_plot_cutout_3d_default = dotdict(dict({'r1': 'rmin', 'r2': 'rmax', 'lon1': -30., 'lon2': 60., 'dlon1': None, 'dlon2': None,\
                                           'eq': True, 'varnames': 'vr', 'clon': 0., 'clat': 20., 't0': None, 'verbose': False, 'linewidth': default_lw,\
-                                         'satsep': False, 'rvals': [], 'lonvals': [], 'latvals': []}))
+                                         'nocbar': False, 'rvals': [], 'lonvals': [], 'latvals': []}))
 kw_plot_cutout_3d_default.update(kw_my_contourf_default)
 kw_plot_cutout_3d_default.plotcontours = False
 
@@ -446,7 +446,7 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
     lon2d, lat2d = np.meshgrid(lon1d, lat1d, indexing='ij')
     # get the field
     field = np.copy(field_ss[..., ir2_ss])
-    if kw.satsep:
+    if kw.nocbar:
         field /= np.std(field)
     # do ortho projection
     xx = np.cos(lat2d)*np.sin(lon2d)
@@ -482,7 +482,7 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
     # PLOT MERIDIAN 1 (left one)
     # get the field
     field = np.copy(field_mer[ilon1_mer]).T
-    if kw.satsep: # saturate each radius separately
+    if kw.nocbar: # saturate each radius separately
         for ir in range(gi.nr):
             field[ir, :] /= np.std(field[ir, :])
     # make mesh grid
@@ -505,7 +505,7 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
     # PLOT MERIDIAN 2 (right one)
     # get the field
     field = np.copy(field_mer[ilon2_mer, :, ::-1]).T
-    if kw.satsep: # saturate each radius separately
+    if kw.nocbar: # saturate each radius separately
         for ir in range(gi.nr):
             field[ir, :] /= np.std(field[ir, :])
     # make mesh grid
@@ -550,7 +550,7 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
     lon2d, lat2d = np.meshgrid(lon1d, lat1d, indexing='ij')
     # get the field
     field = np.copy(field_ss[..., ir1_ss])
-    if kw.satsep: # "saturate separately"
+    if kw.nocbar: # "saturate separately"
         field /= np.std(field)
 
     # do ortho projection
@@ -588,7 +588,7 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
     if kw.eq:
         # get field
         field = np.copy(field_eq)
-        if kw.satsep: # saturate each radius separately
+        if kw.nocbar: # saturate each radius separately
             for ir in range(gi.nr):
                 field[:, ir] /= np.std(field[:, ir])
         # make mesh grid
