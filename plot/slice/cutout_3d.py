@@ -47,7 +47,7 @@ dirname = clas0.dirname
 dirname_stripped = strip_dirname(dirname)
 
 # SPECIFIC ARGS
-kw_default = dotdict(dict({'r1': 'rmin', 'r2': 'rmax', 'lon1': -30., 'lon2': 60., 'dlon1': None, 'dlon2': None, 'eq': True, 'varnames': 'vr', 'clon': 0., 'clat': 20., 't0': False, 'movie': False, 'prepend': False, 'dpi': 300}))
+kw_default = dotdict(dict({'t0': False, 'movie': False, 'prepend': False, 'dpi': 300}))
 
 kw_make_figure = kw_make_figure_default.copy()
 kw_make_figure.update(ortho_fig_dimensions)
@@ -55,6 +55,7 @@ kw_make_figure.update(ortho_fig_dimensions)
 kw_my_contourf = kw_my_contourf_default.copy()
 kw_my_contourf.plotcontours = False
 
+kw_default.update(kw_plot_cutout_3d_default)
 kw_default.update(kw_make_figure)
 kw_default.update(kw_my_contourf)
 kw_default.update(kw_range_options_default)
@@ -66,6 +67,7 @@ if rank == 0:
 
 # update relevant keyword args
 kw = update_dict(kw_default, clas)
+kw_plot_cutout_3d = update_dict(kw_plot_cutout_3d_default, clas)
 kw_my_contourf = update_dict(kw_my_contourf, clas)
 kw_make_figure = update_dict(kw_make_figure_default, clas)
 kw_range_options = update_dict(kw_range_options_default, clas)
