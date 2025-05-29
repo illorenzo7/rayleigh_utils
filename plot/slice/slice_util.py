@@ -340,3 +340,320 @@ def plot_eq(field, rr, fig, ax, **kw):
         # plot boundaries
         ax.plot(xx[:, 0], yy[:, 0], 'k', linewidth=1.5*kw.linewidth)
         ax.plot(xx[:, -1], yy[:, -1], 'k', linewidth=1.5*kw.linewidth)
+
+kw_plot_cutout_3d_default = dotdict(dict({'r1': 'rmin', 'r2': 'rmax', 'lon1': -30., 'lon2': 60., 'dlon1': None, 'dlon2': None,\
+                                          'eq': True, 'varnames': 'vr', 'clon': 0., 'clat': 20., 't0': None, 'verbose': False, 'linewidth': default_lw,\
+                                         'satsep': False, 'rvals': [], 'lonvals': [], 'latvals': []}))
+kw_plot_cutout_3d_default.update(kw_my_contourf_default)
+kw_plot_cutout_3d_default.plotcontours = False
+
+def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
+    kw = update_dict(kw_plot_cutout_3d_default, kw_in)
+    kw_my_contourf = dotdict(kw_my_contourf_default.copy())
+    kw_my_contourf.plotcontours = False
+    kw_my_contourf.plotcbar = False
+    kw_my_contourf = update_dict(kw_my_contourf, kw_in)
+    find_bad_keys(kw_plot_cutout_3d_default, kw_in, 'plot_cutout_3d()')
+
+    # get the Shell_Slice data
+    ss = Shell_Slices(dirname + '/Shell_Slices/' + fname, '')
+    mer = Meridional_Slices(dirname + '/Meridional_Slices/' + fname, '')
+    if kw.eq:
+        eq = Equatorial_Slices(dirname + '/Equatorial_Slices/' + fname, '')
+
+    # unpack the actual data
+    field_ss = get_slice(ss, varname, dirname=dirname)
+    field_mer = get_slice(mer, varname, dirname=dirname)
+    if kw.eq:
+        field_eq = get_slice(eq, varname, dirname=dirname)
+
+    # get gridinfo (do this individually for the particular instant,
+    # in case resolution is changing)
+    sliceinfo_ss = get_sliceinfo(dirname, 'Shell_Slices', fname=fname)
+    sliceinfo_mer = get_sliceinfo(dirname, 'Meridional_Slices', fname=fname)
+    gi = get_grid_info(dirname, ntheta=sliceinfo_mer.ntheta)
+
+    # and unpack it
+    ntheta = gi.nt
+    nphi = gi.nphi
+    lon1d = gi.phi - np.pi
+    lat1d = gi.tt_lat*np.pi/180.
+
+    # choose spherical cutout parameters
+
+    # get radian versions of stuff
+    clon, clat = np.array([kw.clon, kw.clat])*np.pi/180.
+
+    # get indices and recompute values
+    # longitudes and latitudes
+    iclat = iclosest(lat1d, clat)
+    clat = lat1d[iclat]
+    iclon = iclosest(lon1d, clon)
+    clon = lon1d[iclon]
+
+    # shift the field_ss and field_eq so that the clon is in the ~center of the array
+    # in Rayleigh, the ~center of the array is occupied by phi = pi
+    difflon = np.pi - clon
+    iphi_shift = int(difflon/(2*np.pi)*nphi)
+    field_ss = np.roll(field_ss, iphi_shift, axis=0)
+    if kw.eq:
+        field_eq = np.roll(field_eq, iphi_shift, axis=0)
+
+    # user might specify lon1 and lon2 via dlon1 and dlon2
+    # (the distance from clon)
+    if not kw.dlon1 is None:
+        kw.lon1 = clon + kw.dlon1
+    if not kw.dlon2 is None:
+        kw.lon2 = clon + kw.dlon2
+
+    # get indices and recompute values for r1, r2, lon1, lon2
+    r1, r2 = interpret_rvals(dirname, [kw.r1, kw.r2])
+    rvals_ss = sliceinfo_ss.rvals
+    ir1_ss, ir2_ss = inds_from_vals(rvals_ss, [r1, r2])
+    r1, r2 = rvals_ss[[ir1_ss, ir2_ss]]
+    ir1, ir2 = inds_from_vals(gi.rr, np.array([r1, r2]))
+    beta = r1/r2 # this is the aspect ratio of the spherical cutout
+
+    # need to shift available lons from Meridional Slices
+    # to lie in range [-pi, pi)
+    lonvals_mer = np.copy(sliceinfo_mer.lonvals)
+    for ilon in range(len(lonvals_mer)):
+        if lonvals_mer[ilon] >= np.pi:
+            lonvals_mer[ilon] -= 2*np.pi
+
+    lon1, lon2 = np.array([kw.lon1, kw.lon2])*np.pi/180.
+    ilon1_mer, ilon2_mer = inds_from_vals(lonvals_mer, [lon1, lon2])
+    lon1, lon2 = lonvals_mer[[ilon1_mer, ilon2_mer]]
+    ilon1, ilon2 = inds_from_vals(lon1d, [lon1, lon2])
+    dlon1, dlon2 = lon1 - clon, lon2 - clon
+
+    if kw.verbose:
+        # get degree versions of things
+        clon_deg, clat_deg, lon1_deg, lon2_deg = np.array([clon, clat, lon1, lon2])*180./np.pi
+        # print the parameters of the cutouts
+        print(buff_line)
+        print("PLOTTING SPHERICAL CUTOUTS!")
+        print("clon =", clon_deg)
+        print("clat =", clat_deg)
+        print("r1 =", r1)
+        print("r2 =", r2)
+        print("(beta = " + str(beta) + ")")
+        print("lon1 =", lon1_deg)
+        print("lon2 =", lon2_deg)
+
+    # Plot ORTHO 2 (the outer one)
+    # get a "meshgrid" from 1D arrays
+    lon2d, lat2d = np.meshgrid(lon1d, lat1d, indexing='ij')
+    # get the field
+    field = np.copy(field_ss[..., ir2_ss])
+    if kw.satsep:
+        field /= np.std(field)
+    # do ortho projection
+    xx = np.cos(lat2d)*np.sin(lon2d)
+    yy = np.cos(clat)*np.sin(lat2d) - np.sin(clat)*np.cos(lat2d)*np.cos(lon2d)
+    # mask xx and yy to not plot INTERIOR triangle
+    #don't plot the far side of the sphere
+    cond1 = np.sin(clat)*np.sin(lat2d)+np.cos(clat)*np.cos(lat2d)*np.cos(lon2d) < 0
+    # don't plot inside the meridional planes
+    cond2 = (lon2d > lon1) & (lon2d < lon2)
+    if kw.eq:
+        # only don't plot inside the planes above the equator
+        cond2 = cond2 & (lat2d > 0)
+    field[cond1] = np.nan
+    field[cond2] = np.nan
+
+    # make the plot
+    my_contourf(xx, yy, field, fig, ax, **kw_my_contourf)
+
+    # plot the boundary
+    nsvals = 1000 # s is "a parameter"
+
+    # outer sphere
+    svals = np.linspace(0, 2*np.pi, nsvals)
+    xx, yy = np.cos(svals), np.sin(svals)
+    if not kw.eq:
+        # ignore the part of the boundary between the two meridional planes
+        oldlon = np.arctan2(np.cos(svals), -np.sin(clat)*np.sin(svals))
+        cond = (oldlon > dlon1) & (oldlon < dlon2)
+        xx[cond] = np.nan
+        yy[cond] = np.nan
+    ax.plot(xx, yy, 'k-', linewidth=kw.linewidth)
+
+    # PLOT MERIDIAN 1 (left one)
+    # get the field
+    field = np.copy(field_mer[ilon1_mer]).T
+    if kw.satsep: # saturate each radius separately
+        for ir in range(gi.nr):
+            field[ir, :] /= np.std(field[ir, :])
+    # make mesh grid
+    rad1d = np.copy(gi.rr)/r2
+    rad2d, lat2d = np.meshgrid(rad1d, lat1d, indexing='ij')
+    # make projection
+    xx = rad2d * np.cos(lat2d) * np.sin(dlon1)
+    yy = rad2d * (np.cos(clat)*np.sin(lat2d) - np.cos(dlon1)*np.sin(clat)*np.cos(lat2d))
+    # mask outside the projection
+    # don't plot outside the shell slices
+    cond = (rad2d < beta)  | (rad2d > 1.)
+    if kw.eq:
+        # also don't plot below the equatorial plane
+        cond = cond | (lat2d < 0)
+
+    field[cond] = np.nan
+    # make plot
+    my_contourf(xx, yy, field, fig, ax, **kw_my_contourf)
+
+    # PLOT MERIDIAN 2 (right one)
+    # get the field
+    field = np.copy(field_mer[ilon2_mer, :, ::-1]).T
+    if kw.satsep: # saturate each radius separately
+        for ir in range(gi.nr):
+            field[ir, :] /= np.std(field[ir, :])
+    # make mesh grid
+    rad1d = np.copy(gi.rr[::-1])/r2
+    rad2d, lat2d = np.meshgrid(rad1d, lat1d, indexing='ij')
+    # make projection
+    xx = rad2d * np.cos(lat2d) * np.sin(dlon2)
+    yy = rad2d * (np.cos(clat)*np.sin(lat2d) - np.cos(dlon2)*np.sin(clat)*np.cos(lat2d))
+    # mask outside the projection
+    # don't plot outside the shell slices
+    cond = (rad2d < beta)  | (rad2d > 1.)
+    if kw.eq:
+        # also don't plot below the equatorial plane
+        cond = cond | (lat2d < 0)
+    field[cond] = np.nan
+    # make plot
+    my_contourf(xx, yy, field, fig, ax, **kw_my_contourf)
+
+    # plot meridional boundaries
+    # meridians 1 then 2, inner inner to outer
+    rvals_extra = (make_array(kw.rvals)/r2).tolist()
+    n_extra = len(rvals_extra)
+    rvals = [beta, 1] + rvals_extra
+    linestyles = 2*['-'] + n_extra*['--']
+    nrvals = len(rvals)
+
+    for dlonval in [dlon1, dlon2]:
+        for irval in range(nrvals):
+            if kw.eq:
+                svals = np.linspace(0., np.pi/2., nsvals) # is is latitude now
+            elif irval == 0: # this is the inner sphere
+                svals = np.linspace(-np.pi/2 + clat, np.pi/2., nsvals)
+            else:
+                svals = np.linspace(-np.pi/2, np.pi/2., nsvals)
+            rval = rvals[irval]
+            ax.plot(rval*np.cos(svals)*np.sin(dlonval),\
+                    rval*(np.cos(clat)*np.sin(svals) - np.sin(clat)*np.cos(svals)*np.cos(dlonval)),\
+                    'k', linewidth=kw.linewidth, linestyle=linestyles[irval])
+
+    # Plot the ORTHO 1 (the inner one)
+    # get a "meshgrid" from 1D arrays
+    lon2d, lat2d = np.meshgrid(lon1d, lat1d, indexing='ij')
+    # get the field
+    field = np.copy(field_ss[..., ir1_ss])
+    if kw.satsep: # "saturate separately"
+        field /= np.std(field)
+
+    # do ortho projection
+    xx = beta*np.cos(lat2d)*np.sin(lon2d)
+    yy = beta*(np.cos(clat)*np.sin(lat2d) - np.sin(clat)*np.cos(lat2d)*np.cos(lon2d))
+    # mask xx and yy such that only the INNER TRIANGLE is visible
+    #don't plot the far side of the sphere
+    cond1 = np.sin(clat)*np.sin(lat2d)+np.cos(clat)*np.cos(lat2d)*np.cos(lon2d) < 0
+     # don't plot outside the meridional planes
+    cond2 = (lon2d < lon1) | (lon2d > lon2)
+    if kw.eq:
+        # also don't plot below the equatorial plane
+        cond2 = cond2 | (lat2d < 0)
+    field[cond1] = np.nan
+    field[cond2] = np.nan
+    if kw.eq:
+        # only don't plot inside the planes above the equatorial plane
+        cond2 = cond2 & (lat2d > 0)
+    my_contourf(xx, yy, field, fig, ax, **kw_my_contourf)
+
+    if not kw.eq:
+        # plot the boundary
+        # inner sphere
+        svals = np.linspace(0, 2*np.pi, nsvals)
+        xx, yy = beta*np.cos(svals), beta*np.sin(svals)
+        if not kw.eq:
+            # ignore the part of the boundary outside the two meridional planes
+            oldlon = np.arctan2(np.cos(svals), -np.sin(clat)*np.sin(svals))
+            cond = (oldlon < dlon1) | (oldlon > dlon2)
+            xx[cond] = np.nan
+            yy[cond] = np.nan
+        ax.plot(xx, yy, 'k-', linewidth=kw.linewidth)
+
+    # PLOT EQUATORIAL SLICE
+    if kw.eq:
+        # get field
+        field = np.copy(field_eq)
+        if kw.satsep: # saturate each radius separately
+            for ir in range(gi.nr):
+                field[:, ir] /= np.std(field[:, ir])
+        # make mesh grid
+        rad1d = np.copy(gi.rr)/r2
+        lon2d, rad2d = np.meshgrid(lon1d, rad1d, indexing='ij')
+        # make projection
+        xx = rad2d*np.sin(lon2d)
+        yy = -rad2d*np.sin(clat)*np.cos(lon2d)
+        # mask outside the projection
+        cond = (lon2d < dlon1) | (lon2d > dlon2) | (rad2d < beta)  | (rad2d > 1.)
+        field[cond] = np.nan
+        # make plot
+        my_contourf(xx, yy, field, fig, ax, **kw_my_contourf)
+
+    # don't obscure the boundary
+    lilbit = 0.01
+    ax.set_xlim(-1-lilbit, 1 + lilbit)
+    ax.set_ylim(-1-lilbit, 1+lilbit)
+
+    # then finish outer meridians with dashed lines
+
+    count = 0
+    for dlonval in [dlon1, dlon2, dlon2-np.pi, dlon1+np.pi]:
+        if count < 2:
+            svals = np.linspace(-np.pi/2., 0., nsvals)
+        else:
+            svals = np.linspace(0., np.pi/2., nsvals)
+        xx, yy = np.cos(svals)*np.sin(dlonval), np.cos(clat)*np.sin(svals) - np.sin(clat)*np.cos(svals)*np.cos(dlonval)
+        cond = np.sin(clat)*np.sin(svals)+np.cos(clat)*np.cos(svals)*np.cos(dlonval) < 0
+        xx[cond] = np.nan
+        yy[cond] = np.nan
+        ax.plot(xx, yy, 'k--', linewidth=kw.linewidth)
+        count += 1
+
+    # and the "far" meridians
+    #svals = np.linspace(0., np.pi/2., nsvals)
+    #for dlonval in [dlon2-np.pi, dlon1+np.pi]:
+    #    xx, yy = np.cos(svals)*np.sin(dlonval), np.cos(clat)*np.sin(svals) - np.sin(clat)*np.cos(svals)*np.cos(dlonval)
+    #    ax.plot(xx, yy, 'k--', linewidth=kw.linewidth)
+
+    # equatorial slice, inner then outer
+    if kw.eq:
+        svals = np.linspace(dlon1, dlon2, nsvals)
+        for irval in range(nrvals):
+            rval = rvals[irval]
+            ax.plot(rval*np.sin(svals), -rval*np.sin(clat)*np.cos(svals), 'k', linewidth=kw.linewidth, linestyle=linestyles[irval])
+        # finish the equator with a dashed line
+        svals = np.linspace(dlon1, dlon2, nsvals)
+        xx, yy = np.sin(lon1d), -np.sin(clat)*np.cos(lon1d)
+        # mask outside the projection
+        cond1 = np.cos(clat)*np.cos(lon1d) < 0
+        cond2 = (lon1d > dlon1) & (lon1d < dlon2)
+        xx[cond1] = np.nan; xx[cond2] = np.nan
+        yy[cond1] = np.nan; yy[cond2] = np.nan
+        ax.plot(xx, yy, 'k--', linewidth=kw.linewidth)
+
+        # constant longitude lines
+        svals = np.linspace(beta, 1, nsvals)
+        for lonval in [dlon1, dlon2]:
+            ax.plot(svals*np.sin(lonval), -svals*np.sin(clat)*np.cos(lonval),\
+                    'k-', linewidth=kw.linewidth)
+
+    # upper rotation axis
+    svals = np.linspace(beta, 1, nsvals)
+    ax.plot(0*svals, svals*np.cos(clat), 'k-', linewidth=kw.linewidth)
+    if not kw.eq: # lower rotation axis too
+        svals = np.linspace(-1, -beta/np.cos(clat), nsvals)
+        ax.plot(0*svals, svals*np.cos(clat), 'k-', linewidth=kw.linewidth)
