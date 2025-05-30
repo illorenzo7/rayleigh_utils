@@ -341,13 +341,26 @@ def plot_eq(field, rr, fig, ax, **kw):
         ax.plot(xx[:, 0], yy[:, 0], 'k', linewidth=1.5*kw.linewidth)
         ax.plot(xx[:, -1], yy[:, -1], 'k', linewidth=1.5*kw.linewidth)
 
-kw_plot_cutout_3d_default = dotdict(dict({'r1': 'rmin', 'r2': 'rmax', 'lon1': -30., 'lon2': 60., 'dlon1': None, 'dlon2': None,\
+kw_plot_cutout_3d_default = dotdict(dict({'r1': 'rmin', 'r2': 'rmax', 'dlon1': -30., 'dlon2': 60., 'lon1': None, 'lon2': None,\
                                           'eq': True, 'varnames': 'vr', 'clon': 0., 'clat': 20., 't0': None, 'verbose': False, 'linewidth': default_lw,\
                                          'nocbar': False, 'rvals': [], 'lonvals': [], 'latvals': []}))
 kw_plot_cutout_3d_default.update(kw_my_contourf_default)
 kw_plot_cutout_3d_default.plotcontours = False
 
 def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
+    # to make things simpler (yes, I'm serious)
+    # all input longitudes shall: 
+    # be in degrees
+    # be measured w.r.t. longitude = 0 (irrespective of the
+        # central longitude clon, but user can get
+        # around this by specifying dlon1, dlon2 instead of lon1, lon2)
+    # be specified at any angle from -np.infty to np.infty
+
+    # all longitudes internal to this routine shall:
+    # be in radians
+    # be measured w.r.t. clon
+    # be restricted to the range [np.pi, np.pi)
+
     kw = update_dict(kw_plot_cutout_3d_default, kw_in)
     kw_my_contourf = dotdict(kw_my_contourf_default.copy())
     kw_my_contourf.plotcontours = False
@@ -382,31 +395,37 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
     # choose spherical cutout parameters
 
     # get radian versions of stuff
-    clon, clat = np.array([kw.clon, kw.clat])*np.pi/180.
+    clon, clat, dlon1, dlon2 = np.array([kw.clon, kw.clat, kw.dlon1, kw.dlon2])*np.pi/180.
+
+    # compute desired dlon1, dlon2 (may be specified via lon1, lon2)
+    # these must be in order (lon1, clon, lon2)
+    if not kw.lon1 is None:
+        dlon1 = kw.lon1*np.pi/180. - clon
+    if not kw.lon2 is None:
+        dlon2 = kw.lon2*np.pi/180. - clon
+
+    # now these are desired longitudes
+    lon1, lon2 = clon + dlon1, clon + dlon2
+
+    # get these in range [-pi, pi)
+    lon1, lon2, clon =\
+            (np.array([lon1, lon2, clon]) + np.pi)%(2*np.pi) - np.pi
 
     # get indices and recompute values
-    # longitudes and latitudes
+    # clat and clon
     iclat = iclosest(lat1d, clat)
     clat = lat1d[iclat]
     iclon = iclosest(lon1d, clon)
     clon = lon1d[iclon]
 
-    # shift the field_ss and field_eq so that the clon is in the ~center of the array
-    # in Rayleigh, the ~center of the array is occupied by phi = pi
-    difflon = np.pi - clon
-    iphi_shift = int(difflon/(2*np.pi)*nphi)
-    field_ss = np.roll(field_ss, iphi_shift, axis=0)
+    # shift the field_ss and field_eq so that the clon is in the 
+    # just-right-of-center of the array (for [...) )
+    # recall that ntheta = nphi/2, just-right-of-center is index ntheta
+    field_ss = np.roll(field_ss, gi.nt - iclon, axis=0)
     if kw.eq:
-        field_eq = np.roll(field_eq, iphi_shift, axis=0)
+        field_eq = np.roll(field_eq, gi.nt - iclon, axis=0)
 
-    # user might specify lon1 and lon2 via dlon1 and dlon2
-    # (the distance from clon)
-    if not kw.dlon1 is None:
-        kw.lon1 = clon + kw.dlon1
-    if not kw.dlon2 is None:
-        kw.lon2 = clon + kw.dlon2
-
-    # get indices and recompute values for r1, r2, lon1, lon2
+    # get indices and recompute values for r1, r2, dlon1, dlon2
     r1, r2 = interpret_rvals(dirname, [kw.r1, kw.r2])
     rvals_ss = sliceinfo_ss.rvals
     ir1_ss, ir2_ss = inds_from_vals(rvals_ss, [r1, r2])
@@ -416,17 +435,31 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
 
     # need to shift available lons from Meridional Slices
     # to lie in range [-pi, pi)
-    lonvals_mer = np.copy(sliceinfo_mer.lonvals)
-    for ilon in range(len(lonvals_mer)):
-        if lonvals_mer[ilon] >= np.pi:
-            lonvals_mer[ilon] -= 2*np.pi
-
-    lon1, lon2 = np.array([kw.lon1, kw.lon2])*np.pi/180.
+    lonvals_mer = (sliceinfo_mer.lonvals + np.pi)%(2*np.pi) - np.pi
     ilon1_mer, ilon2_mer = inds_from_vals(lonvals_mer, [lon1, lon2])
     lon1, lon2 = lonvals_mer[[ilon1_mer, ilon2_mer]]
-    ilon1, ilon2 = inds_from_vals(lon1d, [lon1, lon2])
     dlon1, dlon2 = lon1 - clon, lon2 - clon
 
+    # these are the near-final dlon1, dlon2 we end up 
+    # now must check these are in the right range
+    if dlon1 < -np.pi/2 or dlon1 > 0.:
+        print("dlon1 = %.1f" %(dlon1*180./np.pi) + " is not allowed.")
+        print("resetting to default dlon1 = -30.0")
+        dlon1 = -np.pi/6
+        ilon1 = iclosest(lonvals_mer, clon+dlon1)
+        lon1 = lonvals_mer[ilon1]
+        dlon1 = lon1 - clon
+    if dlon2 < 0. or dlon1 > np.pi/2:
+        print("dlon2 = %.1f" %(dlon2*180./np.pi) + " is not allowed.")
+        print("resetting to default dlon2 = 60.0")
+        dlon2 = np.pi/3
+        ilon2 = iclosest(lonvals_mer, clon+dlon2)
+        lon2 = lonvals_mer[ilon2]
+        dlon2 = lon2 - clon
+
+    # OK, finally done with getting correct longitudes
+
+    # maybe print these in degrees
     if kw.verbose:
         # get degree versions of things
         clon_deg, clat_deg, lon1_deg, lon2_deg = np.array([clon, clat, lon1, lon2])*180./np.pi
@@ -438,8 +471,11 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
         print("r1 =", r1)
         print("r2 =", r2)
         print("(beta = " + str(beta) + ")")
-        print("lon1 =", lon1_deg)
-        print("lon2 =", lon2_deg)
+        print("dlon1 =", lon1_deg - clon_deg)
+        print("dlon2 =", lon2_deg - clon_deg)
+        print("(lon1 =", lon1_deg, ")")
+        print("(lon2 =", lon2_deg, ")")
+
 
     # Plot ORTHO 2 (the outer one)
     # get a "meshgrid" from 1D arrays
