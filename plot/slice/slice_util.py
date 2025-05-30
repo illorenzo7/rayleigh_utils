@@ -536,14 +536,21 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
         for irval in range(nrvals):
             if kw.eq:
                 svals = np.linspace(0., np.pi/2., nsvals) # is is latitude now
-            elif irval == 0: # this is the inner sphere
-                svals = np.linspace(-np.pi/2 + clat, np.pi/2., nsvals)
             else:
                 svals = np.linspace(-np.pi/2, np.pi/2., nsvals)
             rval = rvals[irval]
-            ax.plot(rval*np.cos(svals)*np.sin(dlonval),\
-                    rval*(np.cos(clat)*np.sin(svals) - np.sin(clat)*np.cos(svals)*np.cos(dlonval)),\
-                    'k', linewidth=kw.linewidth, linestyle=linestyles[irval])
+
+            # get the xx and yy points
+            xx = rval*np.cos(svals)*np.sin(dlonval)
+            yy = rval*(np.cos(clat)*np.sin(svals) - np.sin(clat)*np.cos(svals)*np.cos(dlonval))
+        
+            # don't plot anything behind the inner sphere (i.e., same condition for ortho masks)
+            if rval < beta/np.cos(clat):
+                cond = np.sin(clat)*np.sin(svals)+np.cos(clat)*np.cos(svals)*np.cos(dlonval) < 0
+                xx[cond] = np.nan
+                yy[cond] = np.nan
+
+            ax.plot(xx, yy, 'k', linewidth=kw.linewidth, linestyle=linestyles[irval])
 
     # Plot the ORTHO 1 (the inner one)
     # get a "meshgrid" from 1D arrays
