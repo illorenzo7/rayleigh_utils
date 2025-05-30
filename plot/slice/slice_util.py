@@ -455,7 +455,7 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
     #don't plot the far side of the sphere
     cond1 = np.sin(clat)*np.sin(lat2d)+np.cos(clat)*np.cos(lat2d)*np.cos(lon2d) < 0
     # don't plot inside the meridional planes
-    cond2 = (lon2d > lon1) & (lon2d < lon2)
+    cond2 = (lon2d > dlon1) & (lon2d < dlon2)
     if kw.eq:
         # only don't plot inside the planes above the equator
         cond2 = cond2 & (lat2d > 0)
@@ -560,7 +560,7 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
     #don't plot the far side of the sphere
     cond1 = np.sin(clat)*np.sin(lat2d)+np.cos(clat)*np.cos(lat2d)*np.cos(lon2d) < 0
      # don't plot outside the meridional planes
-    cond2 = (lon2d < lon1) | (lon2d > lon2)
+    cond2 = (lon2d < dlon1) | (lon2d > dlon2)
     if kw.eq:
         # also don't plot below the equatorial plane
         cond2 = cond2 | (lat2d < 0)
