@@ -629,27 +629,41 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
     #    xx, yy = np.cos(svals)*np.sin(dlonval), np.cos(clat)*np.sin(svals) - np.sin(clat)*np.cos(svals)*np.cos(dlonval)
     #    ax.plot(xx, yy, 'k--', linewidth=kw.linewidth)
 
-    # equatorial slice, inner then outer
-    if kw.eq:
-        svals = np.linspace(dlon1, dlon2, nsvals)
-        for irval in range(nrvals):
-            rval = rvals[irval]
-            ax.plot(rval*np.sin(svals), -rval*np.sin(clat)*np.cos(svals), 'k', linewidth=kw.linewidth, linestyle=linestyles[irval])
-        # finish the equator with a dashed line
-        svals = np.linspace(dlon1, dlon2, nsvals)
-        xx, yy = np.sin(lon1d), -np.sin(clat)*np.cos(lon1d)
-        # mask outside the projection
-        cond1 = np.cos(clat)*np.cos(lon1d) < 0
-        cond2 = (lon1d > dlon1) & (lon1d < dlon2)
-        xx[cond1] = np.nan; xx[cond2] = np.nan
-        yy[cond1] = np.nan; yy[cond2] = np.nan
-        ax.plot(xx, yy, 'k--', linewidth=kw.linewidth)
+    # plot equatorial plane boundaries
 
-        # constant longitude lines
-        svals = np.linspace(beta, 1, nsvals)
-        for lonval in [dlon1, dlon2]:
-            ax.plot(svals*np.sin(lonval), -svals*np.sin(clat)*np.cos(lonval),\
-                    'k-', linewidth=kw.linewidth)
+    # constant longitude lines in equatorial plane
+    if kw.eq:
+        linestyle = '-'
+    else:
+        linestyle = '--'
+    svals = np.linspace(beta, 1, nsvals)
+    for lonval in [dlon1, dlon2]:
+        ax.plot(svals*np.sin(lonval), -svals*np.sin(clat)*np.cos(lonval),\
+                'k', linewidth=kw.linewidth, linestyle=linestyle)
+
+    # equatorial slice, inner to outer
+    if kw.eq:
+        irvals = np.arange(nrvals)
+        linestyles_loc = np.copy(linestyles)
+    else: # just plot outer and inner boundaries
+        irvals = [0]
+        linestyles_loc = ['--']
+    svals = np.linspace(dlon1, dlon2, nsvals)
+    for irval in irvals:
+        rval = rvals[irval]
+        ax.plot(rval*np.sin(svals), -rval*np.sin(clat)*np.cos(svals), 'k',\
+                linewidth=kw.linewidth, linestyle=linestyles_loc[irval])
+        
+    # finish the equator with a dashed line 
+    # (this happens no matter if the equatorial plane is there or not)
+    svals = np.linspace(dlon1, dlon2, nsvals)
+    xx, yy = np.sin(lon1d), -np.sin(clat)*np.cos(lon1d)
+    # mask outside the projection
+    cond1 = np.cos(clat)*np.cos(lon1d) < 0
+    cond2 = (lon1d > dlon1) & (lon1d < dlon2)
+    xx[cond1] = np.nan; xx[cond2] = np.nan
+    yy[cond1] = np.nan; yy[cond2] = np.nan
+    ax.plot(xx, yy, 'k--', linewidth=kw.linewidth)
 
     # upper rotation axis
     svals = np.linspace(beta, 1, nsvals)
