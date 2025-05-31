@@ -205,11 +205,11 @@ def plot_moll_or_ortho(field, costheta, fig, ax, **kw):
     kw_my_contourf = dotdict(kw_my_contourf_default.copy())
     kw_my_contourf.plotcontours = False
     if kw.ortho: # make colorbar a bit shorter
-        kw_my_contourf.tol = 0.6
+        kw_my_contourf.cbar_length_tol = 0.6
 
-    print("my cf tol=", kw_my_contourf.tol)
+    print("my cf cbar_length_tol=", kw_my_contourf.cbar_length_tol)
     kw_my_contourf = update_dict(kw_my_contourf, kw)
-    print("my cf tol=", kw_my_contourf.tol)
+    print("my cf cbar_length_tol=", kw_my_contourf.cbar_length_tol)
         
     # Shouldn't have to do this but Python is stupid with arrays
     field = np.copy(field)    
