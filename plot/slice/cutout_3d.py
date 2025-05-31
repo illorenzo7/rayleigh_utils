@@ -47,10 +47,11 @@ dirname = clas0.dirname
 dirname_stripped = strip_dirname(dirname)
 
 # SPECIFIC ARGS
-kw_default = dotdict(dict({'t0': False, 'movie': False, 'prepend': False, 'dpi': 300}))
+kw_default = dotdict({'t0': False, 'movie': False, 'prepend': False, 'dpi': 300})
 
-kw_make_figure = kw_make_figure_default.copy()
+kw_make_figure = dotdict(kw_make_figure_default)
 kw_make_figure.update(ortho_fig_dimensions)
+kw_make_figure.sub_margin_top_inches = 1.25 # more room for labels
 
 kw_default.update(kw_plot_cutout_3d_default)
 kw_default.update(kw_make_figure)
@@ -141,6 +142,16 @@ if rank == 0:
             else:
                 meta_label += '_noeq'
 
+            # meta data, for titling the plots
+            location_and_perspective =\
+                    (r'$\phi_0$' + ' = ' + lat_fmt_tex) %kw.clon +\
+                    ('    ' + r'$\chi_0$' + ' = ' + lat_fmt_tex) %kw.clat +\
+                    ('\n' + r'$r_1=%0.3f$' %r1) +\
+                    ('    ' + r'$r_2=%0.3f$' %r2) +\
+                    ('\n' + r'$\Delta\phi_1$' + ' = ' + lat_fmt_tex) %kw.dlon1 +\
+                    ('    ' + r'$\Delta\phi_2$' + ' = ' + lat_fmt_tex) %np.abs(kw.dlon2)
+
+
             # get plot directory and image name to save the file
             if kw.movie:
                 plotdir = 'movie_cut3d/' + meta_label
@@ -187,9 +198,9 @@ if rank == 0:
         my_instructions = plotting_instructions[istart:iend]
         # send  my_files, my_nfigures if nproc > 1
         if k >= 1:
-            comm.send([my_instructions, my_nfigures], dest=k)
+            comm.send([my_instructions, my_nfigures, location_and_perspective], dest=k)
 else: # recieve my_files, my_nfigures
-    my_instructions, my_nfigures = comm.recv(source=0)
+    my_instructions, my_nfigures, location_and_perspective = comm.recv(source=0)
 
 # Checkpoint and time
 comm.Barrier()
@@ -215,16 +226,10 @@ for ifigure in range(my_nfigures):
     
     time_string = get_time_string(dirname, t1=the_time,SF=5)
 
-    location_and_perspective =\
-            ('\n' + r'$\phi_0$' + ' = ' + lat_fmt_tex) %kw.clon +\
-            ('    ' + r'$\chi_0$' + ' = ' + lat_fmt_tex) %kw.clat +\
-            ('\n' + r'$\Delta\phi_1$' + ' = ' + lat_fmt_tex) %np.abs(kw.dlon1) +\
-            ('    ' + r'$\Delta\phi_2$' + ' = ' + lat_fmt_tex) %np.abs(kw.dlon2)
-
     title = dirname_stripped + '\n' +\
             varlabel + '\n' +\
-            location_and_perspective + '\n' +\
-            time_string
+            time_string + '\n' +\
+            location_and_perspective 
     ax.set_title(title, va='bottom', fontsize=default_titlesize)
 
     # save by default

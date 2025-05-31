@@ -70,7 +70,7 @@ def testtex(label):
     plt.show()
 
 kw_make_figure_default =\
-dict({'nplots': None, 'nrow': None, 'ncol': None,\
+dotdict({'nplots': None, 'nrow': None, 'ncol': None,\
 
     'sub_width_inches': None,\
     'sub_height_inches': None,\
