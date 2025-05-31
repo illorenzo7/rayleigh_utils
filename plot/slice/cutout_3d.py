@@ -52,7 +52,7 @@ kw_default = dotdict(dict({'t0': False, 'movie': False, 'prepend': False, 'dpi':
 kw_make_figure = kw_make_figure_default.copy()
 kw_make_figure.update(ortho_fig_dimensions)
 
-kw_my_contourf = kw_my_contourf_default.copy()
+kw_my_contourf = dotdict(kw_my_contourf_default.copy())
 kw_my_contourf.plotcontours = False
 
 kw_default.update(kw_plot_cutout_3d_default)
@@ -85,7 +85,7 @@ if rank == 0:
     # by default, read in last available file
     # For now just work with Shell_Slices files only and assume
     # that Equatorial_Slices and Meridional_Slices overlap
-    file_lists, int_file_lists, nfiles = get_file_lists(ssdir, kw_range_options)
+    file_list, int_file_list, nfiles = get_file_lists(ssdir, kw_range_options)
 
     # get desired varnames
     # again assume that the quantity list between Shell_Slices and
@@ -118,75 +118,15 @@ if rank == 0:
 
     # prepare the epic loop!
     plotting_instructions = []
-    count = 0
+    if kw.movie:
+        count = 0
     for fname in file_list:
-        # get gridinfo (do this individually for each slice, in case
-        # resolution changes)
-        sliceinfo_ss = get_sliceinfo(dirname, 'Shell_Slices', fname=fname)
-        sliceinfo_mer = get_sliceinfo(dirname, 'Meridional_Slices', fname=fname)
-        gi = get_grid_info(dirname)
+        if kw.movie:
+            count += 1
 
-        # and unpack it
-        ntheta = gi.nt
-        nphi = gi.nphi
-        lon1d = gi.phi - np.pi
-        lat1d = gi.tt_lat*np.pi/180.
-
-        # choose spherical cutout parameters
-
-        # get radian versions of stuff
-        clon, clat = np.array([kw.clon, kw.clat])*np.pi/180.
-
-        # get indices and recompute values
-        # longitudes and latitudes
-        iclat = iclosest(lat1d, clat)
-        clat = lat1d[iclat]
-        iclon = iclosest(lon1d, clon)
-        clon = lon1d[iclon]
-
-        # user might specify lon1 and lon2 via dlon1 and dlon2
-        # (the distance from clon)
-        if not kw.dlon1 is None:
-            kw.lon1 = clon + kw.dlon1
-        if not kw.dlon2 is None:
-            kw.lon2 = clon + kw.dlon2
-
-        # get indices and recompute values for r1, r2, lon1, lon2
-        r1, r2 = interpret_rvals(dirname, np.array([kw.r1, kw.r2]))
-        rvals_ss = sliceinfo_ss.rvals
-        ir1_ss, ir2_ss = inds_from_vals(rvals_ss, [r1, r2])
-        r1, r2 = rvals_ss[[ir1_ss, ir2_ss]]
-        ir1, ir2 = inds_from_vals(gi.rr, np.array([r1, r2]))
-        beta = r1/r2 # this is the aspect ratio of the spherical cutout 
-
-        # need to shift available lons from Meridional Slices
-        # to lie in range [-pi, pi)
-        lonvals_mer = np.copy(sliceinfo_mer.lonvals)
-        for ilon in range(len(lonvals_mer)):
-            if lonvals_mer[ilon] >= np.pi:
-                lonvals_mer[ilon] -= 2*np.pi
-        ilon1_mer, ilon2_mer = inds_from_vals(lonvals_mer, [lon1, lon2])
-        lon1, lon2 = lonvals_mer[ilon1_mer, ilon2_mer]
-        ilon1, ilon2 = inds_from_vals(lon1d, [lon1, lon2])
-
-        # get degree versions of things
-        clon_deg, clat_deg, lon1_deg, lon2_deg = np.array([clon, clat, lon1, lon2])*180./np.pi
-
-        if count == 0:
-            # print the parameters of the cutouts
-            print(buff_line)
-            print("PLOTTING SPHERICAL CUTOUTS!")
-            print("clon =", clon_deg)
-            print("clat =", clat_deg)
-            print("r1 =", r1)
-            print("r2 =", r2)
-            print("(beta = " + str(beta) + ")")
-            print("lon1 =", lon1_deg)
-            print("lon2 =", lon2_deg)
-
-        # loop over the variable names and get plotting instructions
         for varname in kw.varnames:
-            if is_basic(varname):
+            basic = is_basic(varname)
+            if basic:
                 varlabel = get_label(varname)
                 simple_label = varname
             else:
@@ -194,18 +134,17 @@ if rank == 0:
 
             # get metadata labels
             meta_label = simple_label +\
-                ('_ccolat' + lon_fmt) %(90. - clat_deg) +\
-                ('_clon' + lon_fmt) %clon_deg +\
-                ('_lon1' + lon_fmt) %lon1_deg +\
-                ('_lon2' + lon_fmt) %lon2_deg +\
-                ('_r1' + flt_fmt) %r1 +\
-                ('_r2' + flt_fmt) %r2
+                ('_clat' + lat_fmt) %kw.clat +\
+                ('_clon' + lat_fmt) %kw.clon +\
+                ('_dlon1-' + lat_fmt) %kw.dlon1 +\
+                ('_dlon2-' + lat_fmt) %kw.dlon2 +\
+                ('_r1-' + flt_fmt) %kw.r1 +\
+                ('_r2-' + flt_fmt) %kw.r2
             if kw.eq:
-                    meta_label += '_witheq'
-                else:
-                    meta_label += '_noeq'
+                meta_label += '_witheq'
+            else:
+                meta_label += '_noeq'
 
-            # now we're in the big loop
             # get plot directory and image name to save the file
             if kw.movie:
                 plotdir = 'movie_cut3d/' + meta_label
@@ -223,18 +162,8 @@ if rank == 0:
 
             plotting_instructions.append([fname,\
                     varname,\
-                    iclon,\
-                    clat,\
-                    ilon1_mer,\
-                    ilon2_mer,\
-                    ilon1,\
-                    ilon2,\
-                    beta,\
-                    isampleval,\
-                    sampleval,\
                     savefile,\
                     varlabel])
-
 
 # Checkpoint
 comm.Barrier()
@@ -278,201 +207,53 @@ if rank == 0:
 # now loop over and plot figures
 for ifigure in range(my_nfigures):
     # local instructions for this plot
-    fname, varname, clon, clat, isampleval, sampleval, savefile, varlabel =\
-            my_instructions[ifigure]
-
-    if not plottype == 'mer':
-        kw_plotting_func.clon = clon        
-    if not plottype in ['mer', 'eq']:
-        kw_plotting_func.clat = clat
-
-    # get the slice
-    if plottype in ['moll', 'ortho']:
-        varname_root, deriv, primevar, sphvar = get_varprops(varname)
-        qvals = None # by default, but update
-        if varname_root in var_indices:
-            qvals = var_indices[varname_root]
-        elif varname_root == 'omz':
-            qvals = [301, 302]
-        a = reading_func(radatadir + fname, '', irvals=isampleval, qvals=qvals)
-    else:
-        a = reading_func(radatadir + fname, '')
-
-    # get the variable
-    vals = get_slice(a, varname, dirname=dirname)
-
-    # get sample location
-    if dataname == 'Shell_Slices':
-        field = vals[:, :, 0] # only read in one sample val
-    elif dataname == 'Meridional_Slices':
-        field = vals[isampleval, :, :]
-    else: # equatorial slices
-        field = vals
+    fname, varname, savefile, varlabel = my_instructions[ifigure]
 
     # make plot
     fig, axs, fpar = make_figure(**kw_make_figure)
     ax = axs[0, 0]
-    if plottype in ['moll', 'ortho']:
-        plotting_args = field, a.costheta, fig, ax
-    elif plottype == 'mer':
-        plotting_args = field, a.radius, a.costheta, fig, ax
-    elif plottype == 'eq':
-        plotting_args = field, a.radius, fig, ax
 
-    plotting_func(*plotting_args, **kw_plotting_func)
+    plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_plot_cutout_3d)
 
-# start making plots
+    # label the plot
+    the_time = translate_times(int(fname), dirname).time
+    
+    time_string = get_time_string(dirname, t1=the_time,SF=5)
 
-# spherical cutout plotting routine
-kw__default = dict({'clon': 0., 'clat': 20., 'shrinkage': 1., 'plotlonlines': True, 'lonvals': np.arange(0., 360., 30.), 'plotlatlines': True, 'latvals': np.arange(-60., 90., 30.), 'linewidth': 0.75*default_lw, 'plotboundary': True, 'ortho': False})
-kw_plot_moll_or_ortho_default.update(kw_my_contourf_default)
+    location_and_perspective =\
+            ('\n' + r'$\phi_0$' + ' = ' + lat_fmt_tex) %kw.clon +\
+            ('    ' + r'$\chi_0$' + ' = ' + lat_fmt_tex) %kw.clat +\
+            ('    ' + r'$\Delta\phi_2$' + ' = ' + lat_fmt_tex) %np.abs(kw.dlon2) +\
+            ('    ' + r'$\Delta\phi_1$' + ' = ' + lat_fmt_tex) %np.abs(kw.dlon1) +\
+            ('    ' + r'$\Delta\phi_2$' + ' = ' + lat_fmt_tex) %np.abs(kw.dlon2)
 
-dict({'clon': 0., 'clat': 20., 'shrinkage': 1., 'plotlonlines': True, 'lonvals': np.arange(0., 360., 30.), 'plotlatlines': True, 'latvals': np.arange(-60., 90., 30.), 'linewidth': 0.75*default_lw, 'plotboundary': True, 'ortho': False})
-kw_plot_cutout_3d_default = dotdict(dict({'r1': 'rmin', 'r2': 'rmax', 'lon1': -30., 'lon2': 60., 'dlon1': None, 'dlon2': None, 'eq': True, 'varnames': 'vr', 'clon': 0., 'clat': 20., 't0': False}))
-kw_plot_cutout3d_default.update(kw_my_contourf_default)
-kw_plot_cutout3d_default.plotcontours = False
+    title = dirname_stripped + '\n' +\
+            varlabel + '\n' +\
+            location_and_perspective + '\n' +\
+            time_string
+    ax.set_title(title, va='bottom', fontsize=default_titlesize)
 
-def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw):
+    # save by default
+    if clas0['saveplot']:
+        plt.savefig(savefile, dpi=kw.dpi)
+    if rank == 0:
+        pcnt_done = (ifigure+1)/my_nfigures*100.
+        # print what we saved and how far along we are
+        if clas0['saveplot']:
+            print(fill_str("saved " + savefile + " (dpi=%i)" %kw.dpi) + '\n' +\
+                    ('rank 0 %5.1f%% done' %pcnt_done), end='\r')
+        # always show if nfigures is 1
+        if nfigures == 1 and clas0['showplot']:
+            plt.show()   
+    # close figure at end of loop
+    plt.close()
 
-    # get the Shell_Slice data
-    ss 
-
-    # ORTHO 1
-    # get the first spherical slice
-    field = np.copy(ss.vals[:, :, ir1_ss, ss.lut[qval], 0])
-    # shift the field so that the clon is in the ~center of the array
-    difflon = np.pi - clon # basically difflon is the amount the clon
-    # must be shifted to arrive at 180, which is near the center of array
-    iphi_shift = int(difflon/(2*np.pi)*nphi)
-    field = np.roll(field, iphi_shift, axis=0)
-
-    # shift the vals in longitude so iclon is at lon = 0
-
-
-    # get a "meshgrid" from 1D arrays
-    dlon2d, lat2d = np.meshgrid(lon1d, lat1d, indexing='ij')
-
-    # do ortho projection
-    xx = np.cos(lat2d)*np.sin(dlon2d)
-    yy = np.cos(clat)*np.sin(lat2d) - np.sin(clat)*np.cos(lat2d)*np.cos(dlon2d)
-
-    # mask xx and yy
-    cond1 = np.sin(clat)*np.sin(lat2d)+np.cos(clat)*np.cos(lat2d)*np.cos(dlon2d) < 0 
-    cond2 = (dlon2d > dlon1 - clon) & (dlon2d < dlon2 - clon) & (lat2d > 0)
-
-    field[cond1] = np.nan
-    field[cond2] = np.nan
-
-    kw_my_contourf = dotdict(kw_my_contourf_default.copy())
-    kw_my_contourf.plotcontours = False
-
-    my_contourf(xx, yy, field, fig, ax, **kw_my_contourf)
-
-    # ORTHO 2
-    field = np.copy(ss.vals[:, :, ir2_ss, ss.lut[qval], 0])
-    # shift the field so that the clon is in the ~center of the array
-    difflon = np.pi - clon # basically difflon is the amount the clon
-    # must be shifted to arrive at 180, which is near the center of array
-    iphi_shift = int(difflon/(2*np.pi)*nphi)
-    field = np.roll(field, iphi_shift, axis=0)
-
-    # shift the vals in longitude so iclon is at lon = 0
-
-    # do ortho projection
-    xx = beta*np.cos(lat2d)*np.sin(dlon2d)
-    yy = beta*(np.cos(clat)*np.sin(lat2d) - np.sin(clat)*np.cos(lat2d)*np.cos(dlon2d))
-
-    # mask xx and yy
-    cond1 = np.sin(clat)*np.sin(lat2d)+np.cos(clat)*np.cos(lat2d)*np.cos(dlon2d) < 0 
-    cond2 = (dlon2d < dlon1 - clon) | (dlon2d > dlon2 - clon) | (lat2d < 0)
-
-    field[cond1] = np.nan
-    field[cond2] = np.nan
-
-    kw_my_contourf.plotcbar = False
-
-    my_contourf(xx, yy, field, fig, ax, **kw_my_contourf)
-
-
-    # MERIDIAN 1
-    field = np.copy(mer.vals[idlon1_mer, :, :, mer.lut[qval], 0]).T
-
-    rad1d = np.copy(rr)/r1
-    rad2d, lat2d = np.meshgrid(rad1d, lat1d, indexing='ij')
-
-    xx = - rad2d * np.cos(lat2d) * np.sin(clon - dlon1)
-    yy = rad2d * (np.cos(clat)*np.sin(lat2d) - np.cos(clon - dlon1)*np.sin(clat)*np.cos(lat2d))
-    cond1 = (lat2d < 0) | (rad2d < beta)  | (rad2d > 1.)
-    field[cond1] = np.nan
-
-    my_contourf(xx, yy, field, fig, ax, **kw_my_contourf)
-
-    # MERIDIAN 2
-    field = np.copy(mer.vals[idlon2_mer, :, ::-1, mer.lut[qval], 0]).T
-
-    rad1d = np.copy(rr[::-1])/r1
-    rad2d, lat2d = np.meshgrid(rad1d, lat1d, indexing='ij')
-
-    xx = rad2d * np.cos(lat2d) * np.sin(dlon2 - clon)
-    yy = rad2d * (np.cos(clat)*np.sin(lat2d) - np.cos(dlon2 - clon)*np.sin(clat)*np.cos(lat2d))
-    cond1 = (lat2d < 0) | (rad2d < beta)  | (rad2d > 1.)
-    field[cond1] = np.nan
-
-    my_contourf(xx, yy, field, fig, ax, **kw_my_contourf)
-
-    # EQUATOR
-    field = np.copy(eq.vals[:, :, ss.lut[qval], 0])
-    field = np.roll(field, iphi_shift, axis=0)
-    rad1d = np.copy(rr)/r1
-    dlon2d, rad2d = np.meshgrid(lon1d, rad1d, indexing='ij')
-
-    xx = rad2d*np.sin(dlon2d)
-    yy = -rad2d*np.sin(clat)*np.cos(dlon2d)
-    cond = (dlon2d < dlon1 - clon) | (dlon2d > dlon2 - clon) | (rad2d < beta)  | (rad2d > 1.)
-    field[cond] = np.nan
-
-    my_contourf(xx, yy, field, fig, ax, **kw_my_contourf)
-
-
-    lilbit = 0.01
-    ax.set_xlim(-1-lilbit, 1 + lilbit)
-    ax.set_ylim(-1-lilbit, 1+lilbit)
-
-    # plot the boundary
-    nsvals = 1000
-    svals = np.linspace(0, 2*np.pi, nsvals)
-    ax.plot(np.cos(svals), np.sin(svals), 'k-', linewidth=linewidth)
-
-    svals = np.linspace(0., np.pi/2.)
-    ax.plot(np.cos(svals)*np.sin(dlon1-clon),\
-            np.cos(clat)*np.sin(svals) - np.sin(clat)*np.cos(svals)*np.cos(dlon1-clon),\
-            'k-', linewidth=linewidth)
-
-    ax.plot(beta*np.cos(svals)*np.sin(dlon1-clon),\
-            beta*(np.cos(clat)*np.sin(svals) - np.sin(clat)*np.cos(svals)*np.cos(dlon1-clon)),\
-            'k-', linewidth=linewidth)
-
-    ax.plot(np.cos(svals)*np.sin(dlon2-clon),\
-            np.cos(clat)*np.sin(svals) - np.sin(clat)*np.cos(svals)*np.cos(dlon2-clon),\
-            'k-', linewidth=linewidth)
-
-    ax.plot(beta*np.cos(svals)*np.sin(dlon2-clon),\
-            beta*(np.cos(clat)*np.sin(svals) - np.sin(clat)*np.cos(svals)*np.cos(dlon2-clon)),\
-            'k-', linewidth=linewidth)
-
-    svals = np.linspace(beta, 1, nsvals)
-
-    ax.plot(svals*np.sin(dlon1-clon), -svals*np.sin(clat)*np.cos(dlon1-clon),\
-            'k-', linewidth=linewidth)
-
-    ax.plot(svals*np.sin(dlon2-clon), -svals*np.sin(clat)*np.cos(dlon2-clon),\
-            'k-', linewidth=linewidth)
-
-    ax.plot(0*svals, svals*np.cos(clat), 'k-', linewidth=linewidth)
-
-    svals = np.linspace(dlon1 - clon, dlon2 - clon, nsvals)
-    ax.plot(np.sin(svals), -np.sin(clat)*np.cos(svals), 'k-', linewidth=linewidth)
-    ax.plot(beta*np.sin(svals), -beta*np.sin(clat)*np.cos(svals), 'k-', linewidth=linewidth)
-
-
-    plt.show()
+# Checkpoint and time
+comm.Barrier()
+if rank == 0:
+    t2 = time.time()
+    print('\n' + fill_str('plotting time'), end='')
+    print (format_time(t2 - t1))
+    print(make_bold(fill_str('total time')), end='')
+    print (make_bold(format_time(t2 - t1_glob)))
+    print (buff_line)
