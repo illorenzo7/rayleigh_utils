@@ -65,6 +65,14 @@ if rank == 0:
 # update relevant keyword args
 kw = update_dict(kw_default, clas)
 kw_plot_cutout_3d = update_dict(kw_plot_cutout_3d_default, clas)
+# need to adjust bottom margin depending on number of colorbars
+if kw_plot_cutout_3d.nocbar:
+    kw_make_figure.sub_margin_bottom_inches = 0.
+elif kw_plot_cutout_3d.onecbar:
+    kw_make_figure.sub_margin_bottom_inches = 1/4
+elif kw_plot_cutout_3d.twocbar:
+    kw_make_figure.sub_margin_bottom_inches = 1/2
+
 kw_make_figure = update_dict(kw_make_figure, clas)
 kw_range_options = update_dict(kw_range_options_default, clas)
 
