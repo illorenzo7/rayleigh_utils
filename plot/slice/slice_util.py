@@ -369,7 +369,8 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
     # and unpack it
     ntheta = gi.nt
     nphi = gi.nphi
-    lon1d = gi.phi - np.pi
+    lon1d = gi.phi - np.pi # this range is better for plotting
+    # will need to shift eq and ss arrays because of it
     lat1d = gi.tt_lat*np.pi/180.
 
     # choose spherical cutout parameters
@@ -380,16 +381,15 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
     # these are desired longitudes
     lon1, lon2 = clon + dlon1, clon + dlon2
 
-    # get these in range [-pi, pi)
-    lon1, lon2, clon =\
-            (np.array([lon1, lon2, clon]))%(2*np.pi) - np.pi
+    # get these in range [0, 2pi)
+    lon1, lon2, clon = (np.array([lon1, lon2, clon]))%(2*np.pi)
 
     # get indices and recompute values
     # clat and clon
     iclat = iclosest(lat1d, clat)
     clat = lat1d[iclat]
-    iclon = iclosest(lon1d, clon)
-    clon = lon1d[iclon]
+    iclon = iclosest(gi.phi, clon)
+    clon = gi.phi[iclon]
 
     # get indices and recompute values for r1, r2, dlon1, dlon2
     r1, r2 = interpret_rvals(dirname, [kw.r1, kw.r2])
@@ -399,28 +399,23 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
     ir1, ir2 = inds_from_vals(gi.rr, np.array([r1, r2]))
     beta = r1/r2 # this is the aspect ratio of the spherical cutout
 
-    # need to shift available lons from Meridional Slices
-    # to lie in range [-pi, pi)
-    # apparently there is a mismatch between mer slices phi vals
-    # and shell slice phivals - the indexing is different
-    lonvals_mer = (sliceinfo_mer.lonvals + 0*np.pi)%(2*np.pi) - np.pi
-
     # now get the actual longitudes of the meridional slices we will use
+    lonvals_mer = sliceinfo_mer.lonvals
     ilon1_mer, ilon2_mer = inds_from_vals(lonvals_mer, [lon1, lon2])
     # these are the actual longitudes we get
     lon1, lon2 = lonvals_mer[[ilon1_mer, ilon2_mer]]
 
     # now recompute dlon1, dlon2
-    # in shifting everything around, they might not be in the correct range
     dlon1, dlon2 = lon1 - clon, lon2 - clon
-    # make sure dlon1, dlon2 are negative and positive
+    # because of the periodicity, these might not be in the correct range
+    # make sure dlon1, dlon2 are negative and positive, respectively
     if dlon1 > 0.:
         dlon1 -= 2*np.pi
     if dlon2 < 0.:
         dlon2 += 2*np.pi
 
     # these are the near-final dlon1, dlon2 we end up 
-    # now must check these are in the right range
+    # but we must check these are in the right range
     # if not, everything was for naught and we return to defaults!
     if dlon1 < -np.pi/2 or dlon1 > 0.:
         print("dlon1 = %.1f" %(dlon1*180./np.pi) + " is not allowed.")
