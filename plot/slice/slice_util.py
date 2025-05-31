@@ -344,7 +344,7 @@ def plot_eq(field, rr, fig, ax, **kw):
 kw_plot_cutout_3d_default =\
         dotdict(dict({'r1': 'rmin', 'r2': 'rmax', 'dlon1': -30., 'dlon2': 60.,\
         'eq': True, 'varnames': 'vr', 'clon': 0., 'clat': 20., 't0': None, 'verbose': False, 'linewidth': default_lw, 'plotboundary': True,\
-    'nocbar': False, 'rvals': [], 'lonvals': [], 'latvals': []}))
+    'nocbar': True, 'rvals': [], 'lonvals': [], 'latvals': []}))
 kw_plot_cutout_3d_default.update(kw_my_contourf_default)
 kw_plot_cutout_3d_default.plotcontours = False
 
@@ -352,7 +352,6 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
     kw = update_dict(kw_plot_cutout_3d_default, kw_in)
     kw_my_contourf = dotdict(kw_my_contourf_default.copy())
     kw_my_contourf.plotcontours = False
-    kw_my_contourf.plotcbar = False
     kw_my_contourf = update_dict(kw_my_contourf, kw_in)
     find_bad_keys(kw_plot_cutout_3d_default, kw_in, 'plot_cutout_3d()')
 
@@ -500,6 +499,8 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
     field[cond2] = np.nan
 
     # make the plot
+    if kw.nocbar: # resolve this inconsistency
+        kw_my_contourf.plotcbar = False
     my_contourf(xx, yy, field, fig, ax, **kw_my_contourf)
 
     if kw.plotboundary:

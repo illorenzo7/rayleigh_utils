@@ -52,12 +52,8 @@ kw_default = dotdict(dict({'t0': False, 'movie': False, 'prepend': False, 'dpi':
 kw_make_figure = kw_make_figure_default.copy()
 kw_make_figure.update(ortho_fig_dimensions)
 
-kw_my_contourf = dotdict(kw_my_contourf_default.copy())
-kw_my_contourf.plotcontours = False
-
 kw_default.update(kw_plot_cutout_3d_default)
 kw_default.update(kw_make_figure)
-kw_default.update(kw_my_contourf)
 kw_default.update(kw_range_options_default)
 
 # now we can update the default kw
@@ -68,8 +64,7 @@ if rank == 0:
 # update relevant keyword args
 kw = update_dict(kw_default, clas)
 kw_plot_cutout_3d = update_dict(kw_plot_cutout_3d_default, clas)
-kw_my_contourf = update_dict(kw_my_contourf, clas)
-kw_make_figure = update_dict(kw_make_figure_default, clas)
+kw_make_figure = update_dict(kw_make_figure, clas)
 kw_range_options = update_dict(kw_range_options_default, clas)
 
 # Rayleigh data dirs
@@ -133,13 +128,14 @@ if rank == 0:
                 varlabel, simple_label = get_label(varname)
 
             # get metadata labels
+            r1, r2 = interpret_rvals(dirname, [kw.r1, kw.r2])
             meta_label = simple_label +\
                 ('_clat' + lat_fmt) %kw.clat +\
                 ('_clon' + lat_fmt) %kw.clon +\
-                ('_dlon1-' + lat_fmt) %kw.dlon1 +\
-                ('_dlon2-' + lat_fmt) %kw.dlon2 +\
-                ('_r1-' + flt_fmt) %kw.r1 +\
-                ('_r2-' + flt_fmt) %kw.r2
+                '_r1_%.3f' %r1 +\
+                '_r2_%.3f' %r2 +\
+                ('_dlon1' + lat_fmt) %kw.dlon1 +\
+                ('_dlon2' + lat_fmt) %kw.dlon2
             if kw.eq:
                 meta_label += '_witheq'
             else:
@@ -154,7 +150,6 @@ if rank == 0:
                 savename = 'cut3d_' + fname + '_' + meta_label + '.png'
                 if kw.prepend:
                     savename = dirname_stripped + '_' + savename
-                savename += '.png'
 
             savefile = plotdir + '/' + savename
 
@@ -223,8 +218,7 @@ for ifigure in range(my_nfigures):
     location_and_perspective =\
             ('\n' + r'$\phi_0$' + ' = ' + lat_fmt_tex) %kw.clon +\
             ('    ' + r'$\chi_0$' + ' = ' + lat_fmt_tex) %kw.clat +\
-            ('    ' + r'$\Delta\phi_2$' + ' = ' + lat_fmt_tex) %np.abs(kw.dlon2) +\
-            ('    ' + r'$\Delta\phi_1$' + ' = ' + lat_fmt_tex) %np.abs(kw.dlon1) +\
+            ('\n' + r'$\Delta\phi_1$' + ' = ' + lat_fmt_tex) %np.abs(kw.dlon1) +\
             ('    ' + r'$\Delta\phi_2$' + ' = ' + lat_fmt_tex) %np.abs(kw.dlon2)
 
     title = dirname_stripped + '\n' +\
