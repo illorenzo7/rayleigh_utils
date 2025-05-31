@@ -573,6 +573,7 @@ def add_cbar(fig, ax, im, **kw_in):
         cbar_height = kw.cbar_thick/fig_height_inches
         cbar_width = cbar_height/kw.cbar_aspect*fig_aspect
         cbar_width = min(cbar_width, kw.tol*ax_width) # don't let cbar be thicker than plot!
+        print("tol=", kw.tol)
         # centrally position colorbar underneath the axes
         cbar_total_height = kw.cbar_total_width/fig_height_inches 
         # needs to contain

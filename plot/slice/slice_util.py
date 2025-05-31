@@ -12,7 +12,7 @@ from plotcommon import *
 from rayleigh_diagnostics import GridInfo # for doing averages
 
 # default fig dimensions
-generic_slice_fig_dimensions = dict({'sub_height_inches': 3., 'sub_margin_left_inches': 1/4, 'sub_margin_right_inches': 1/4, 'sub_margin_top_inches': 1, 'sub_margin_bottom_inches': 1/2, 'margin_top_inches': default_margin})
+generic_slice_fig_dimensions = dict({'sub_height_inches': 3., 'sub_margin_left_inches': default_margin, 'sub_margin_right_inches': default_margin, 'margin_left_inches': 0., 'margin_right_inches': 0.,'sub_margin_top_inches': 1, 'sub_margin_bottom_inches': 3/8, 'margin_top_inches': default_margin})
 
 moll_fig_dimensions = dict({'sub_aspect': 1/2})
 molllonav_fig_dimensions = dict({'sub_aspect': 1/2, 'sub_margin_right_inches': 2.})
@@ -202,9 +202,14 @@ def plot_moll_or_ortho(field, costheta, fig, ax, **kw):
     kw = update_dict(kw_plot_moll_or_ortho_default, kw)
     find_bad_keys(kw_plot_moll_or_ortho_default, kw, 'plot_moll_or_otho')
     # change default plotcontours --> False in my_contourf
-    tmp = kw_my_contourf_default.copy()
-    tmp['plotcontours'] = False
-    kw_my_contourf = update_dict(tmp, kw)
+    kw_my_contourf = dotdict(kw_my_contourf_default.copy())
+    kw_my_contourf.plotcontours = False
+    if kw.ortho: # make colorbar a bit shorter
+        kw_my_contourf.tol = 0.6
+
+    print("my cf tol=", kw_my_contourf.tol)
+    kw_my_contourf = update_dict(kw_my_contourf, kw)
+    print("my cf tol=", kw_my_contourf.tol)
         
     # Shouldn't have to do this but Python is stupid with arrays
     field = np.copy(field)    
