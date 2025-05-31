@@ -342,26 +342,13 @@ def plot_eq(field, rr, fig, ax, **kw):
         ax.plot(xx[:, -1], yy[:, -1], 'k', linewidth=1.5*kw.linewidth)
 
 kw_plot_cutout_3d_default =\
-        dotdict(dict({'r1': 'rmin', 'r2': 'rmax', 'dlon1': -30., 'dlon2': 60., 'lon1': None, 'lon2': None,\
+        dotdict(dict({'r1': 'rmin', 'r2': 'rmax', 'dlon1': -30., 'dlon2': 60.,\
         'eq': True, 'varnames': 'vr', 'clon': 0., 'clat': 20., 't0': None, 'verbose': False, 'linewidth': default_lw, 'plotboundary': True,\
     'nocbar': False, 'rvals': [], 'lonvals': [], 'latvals': []}))
 kw_plot_cutout_3d_default.update(kw_my_contourf_default)
 kw_plot_cutout_3d_default.plotcontours = False
 
 def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
-    # to make things simpler (yes, I'm serious)
-    # all input longitudes shall: 
-    # be in degrees
-    # be measured w.r.t. longitude = 0 (irrespective of the
-        # central longitude clon, but user can get
-        # around this by specifying dlon1, dlon2 instead of lon1, lon2)
-    # be specified at any angle from -np.infty to np.infty
-
-    # all longitudes internal to this routine shall:
-    # be in radians
-    # be measured w.r.t. clon
-    # be restricted to the range [np.pi, np.pi)
-
     kw = update_dict(kw_plot_cutout_3d_default, kw_in)
     kw_my_contourf = dotdict(kw_my_contourf_default.copy())
     kw_my_contourf.plotcontours = False
@@ -398,19 +385,12 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
     # get radian versions of stuff
     clon, clat, dlon1, dlon2 = np.array([kw.clon, kw.clat, kw.dlon1, kw.dlon2])*np.pi/180.
 
-    # compute desired dlon1, dlon2 (may be specified via lon1, lon2)
-    # these must be in order (lon1, clon, lon2)
-    if not kw.lon1 is None:
-        dlon1 = kw.lon1*np.pi/180. - clon
-    if not kw.lon2 is None:
-        dlon2 = kw.lon2*np.pi/180. - clon
-
-    # now these are desired longitudes
+    # these are desired longitudes
     lon1, lon2 = clon + dlon1, clon + dlon2
 
     # get these in range [-pi, pi)
     lon1, lon2, clon =\
-            (np.array([lon1, lon2, clon]) + np.pi)%(2*np.pi) - np.pi
+            (np.array([lon1, lon2, clon]))%(2*np.pi) - np.pi
 
     # get indices and recompute values
     # clat and clon
@@ -436,12 +416,17 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
 
     # need to shift available lons from Meridional Slices
     # to lie in range [-pi, pi)
-    lonvals_mer = (sliceinfo_mer.lonvals + np.pi)%(2*np.pi) - np.pi
+    # apparently there is a mismatch between mer slices phi vals
+    # and shell slice phivals - the indexing is different
+    lonvals_mer = (sliceinfo_mer.lonvals + 0*np.pi)%(2*np.pi) - np.pi
 
     # now get the actual longitudes of the meridional slices we will use
     ilon1_mer, ilon2_mer = inds_from_vals(lonvals_mer, [lon1, lon2])
+    # these are the actual longitudes we get
     lon1, lon2 = lonvals_mer[[ilon1_mer, ilon2_mer]]
-    lon1, lon2 = (np.array([lon1, lon2]) + np.pi)%(2*np.pi) - np.pi
+
+    # now recompute dlon1, dlon2
+    # in shifting everything around, they might not be in the correct range
     dlon1, dlon2 = lon1 - clon, lon2 - clon
     # make sure dlon1, dlon2 are negative and positive
     if dlon1 > 0.:
@@ -451,6 +436,7 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
 
     # these are the near-final dlon1, dlon2 we end up 
     # now must check these are in the right range
+    # if not, everything was for naught and we return to defaults!
     if dlon1 < -np.pi/2 or dlon1 > 0.:
         print("dlon1 = %.1f" %(dlon1*180./np.pi) + " is not allowed.")
         print("resetting to default dlon1 = -30.0")
@@ -465,6 +451,12 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
         ilon2 = iclosest(lonvals_mer, clon+dlon2)
         lon2 = lonvals_mer[ilon2]
         dlon2 = lon2 - clon
+
+    # make sure dlon1, dlon2 are negative and positive (again)
+    if dlon1 > 0.:
+        dlon1 -= 2*np.pi
+    if dlon2 < 0.:
+        dlon2 += 2*np.pi
 
     # OK, finally done with getting correct longitudes
 
