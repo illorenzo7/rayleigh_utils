@@ -9,7 +9,8 @@ sys.path.append(os.environ['rapl'])
 from common import *
 from varprops import *
 from plotcommon import *
-from rayleigh_diagnostics import GridInfo # for doing averages
+#from rayleigh_diagnostics import GridInfo # for doing averages
+from rayleigh_diagnostics_alt import Shell_Slices 
 
 # default fig dimensions
 generic_slice_fig_dimensions = dict({'sub_height_inches': 3., 'sub_margin_left_inches': default_margin, 'sub_margin_right_inches': default_margin, 'margin_left_inches': 0., 'margin_right_inches': 0.,'sub_margin_top_inches': 1, 'sub_margin_bottom_inches': 3/8, 'margin_top_inches': default_margin})
@@ -359,18 +360,6 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
     kw_my_contourf = update_dict(kw_my_contourf, kw_in)
     find_bad_keys(kw_plot_cutout_3d_default, kw_in, 'plot_cutout_3d()')
 
-    # get the Shell_Slice data
-    ss = Shell_Slices(dirname + '/Shell_Slices/' + fname, '')
-    mer = Meridional_Slices(dirname + '/Meridional_Slices/' + fname, '')
-    if kw.eq:
-        eq = Equatorial_Slices(dirname + '/Equatorial_Slices/' + fname, '')
-
-    # unpack the actual data
-    field_ss = get_slice(ss, varname, dirname=dirname)
-    field_mer = get_slice(mer, varname, dirname=dirname)
-    if kw.eq:
-        field_eq = get_slice(eq, varname, dirname=dirname)
-
     # get gridinfo (do this individually for the particular instant,
     # in case resolution is changing)
     sliceinfo_ss = get_sliceinfo(dirname, 'Shell_Slices', fname=fname)
@@ -401,13 +390,6 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
     clat = lat1d[iclat]
     iclon = iclosest(lon1d, clon)
     clon = lon1d[iclon]
-
-    # shift the field_ss and field_eq so that the clon is in the 
-    # just-right-of-center of the array (for [...) )
-    # recall that ntheta = nphi/2, just-right-of-center is index ntheta
-    field_ss = np.roll(field_ss, gi.nt - iclon, axis=0)
-    if kw.eq:
-        field_eq = np.roll(field_eq, gi.nt - iclon, axis=0)
 
     # get indices and recompute values for r1, r2, dlon1, dlon2
     r1, r2 = interpret_rvals(dirname, [kw.r1, kw.r2])
@@ -480,12 +462,39 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
         print("(lon1 =", lon1_deg, ")")
         print("(lon2 =", lon2_deg, ")")
 
+    # get the Shell_Slice data, only what we need
+    varname_root, deriv, primevar, sphvar = get_varprops(varname)
+    qvals = None # by default, but update
+    if varname_root in var_indices:
+        qvals = var_indices[varname_root]
+    elif varname_root == 'omz':
+        qvals = [301, 302]
+
+    ss = Shell_Slices(dirname + '/Shell_Slices/' + fname, '', irvals=[ir1_ss, ir2_ss], qvals=qvals)
+    mer = Meridional_Slices(dirname + '/Meridional_Slices/' + fname, '')
+    if kw.eq:
+        eq = Equatorial_Slices(dirname + '/Equatorial_Slices/' + fname, '')
+
+    # unpack the actual data
+    field_ss = get_slice(ss, varname, dirname=dirname)
+    field_mer = get_slice(mer, varname, dirname=dirname)
+    if kw.eq:
+        field_eq = get_slice(eq, varname, dirname=dirname)
+
+    # shift the field_ss and field_eq so that the clon is in the 
+    # just-right-of-center of the array (for [...) )
+    # recall that ntheta = nphi/2, just-right-of-center is index ntheta
+    field_ss = np.roll(field_ss, gi.nt - iclon, axis=0)
+    if kw.eq:
+        field_eq = np.roll(field_eq, gi.nt - iclon, axis=0)
+
+    # plot all the projections
 
     # Plot ORTHO 2 (the outer one)
     # get a "meshgrid" from 1D arrays
     lon2d, lat2d = np.meshgrid(lon1d, lat1d, indexing='ij')
     # get the field
-    field = np.copy(field_ss[..., ir2_ss])
+    field = np.copy(field_ss[..., 0])
     if kw.nocbar:
         field /= np.std(field)
     # do ortho projection
@@ -600,7 +609,7 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
     # get a "meshgrid" from 1D arrays
     lon2d, lat2d = np.meshgrid(lon1d, lat1d, indexing='ij')
     # get the field
-    field = np.copy(field_ss[..., ir1_ss])
+    field = np.copy(field_ss[..., 1])
     if kw.nocbar: # "saturate separately"
         field /= np.std(field)
 
