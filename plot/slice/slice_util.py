@@ -201,15 +201,14 @@ kw_plot_moll_or_ortho_default['plotcontours'] = False
 def plot_moll_or_ortho(field, costheta, fig, ax, **kw):
     kw = update_dict(kw_plot_moll_or_ortho_default, kw)
     find_bad_keys(kw_plot_moll_or_ortho_default, kw, 'plot_moll_or_otho')
-    # change default plotcontours --> False in my_contourf
     kw_my_contourf = dotdict(kw_my_contourf_default.copy())
-    kw_my_contourf.plotcontours = False
-    if kw.ortho: # make colorbar a bit shorter
-        kw_my_contourf.cbar_length_tol = 0.6
-
-    print("my cf cbar_length_tol=", kw_my_contourf.cbar_length_tol)
+    # need to change default behavior of cbar_length_tol here:
+    if kw.cbar_length_tol is None:
+        if kw.ortho: # make colorbar a bit shorter
+            kw.cbar_length_tol = 0.6
+        else:
+            kw.cbar_length_tol = 0.75
     kw_my_contourf = update_dict(kw_my_contourf, kw)
-    print("my cf cbar_length_tol=", kw_my_contourf.cbar_length_tol)
         
     # Shouldn't have to do this but Python is stupid with arrays
     field = np.copy(field)    

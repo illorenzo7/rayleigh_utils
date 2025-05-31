@@ -551,11 +551,15 @@ def lineplot(xx, profiles, ax, **kw_in):
     if kw.plotleg:
         ax.legend(loc=kw.legloc, ncol=kw.ncolleg, fontsize=0.8*default_labelsize)
 
-kw_add_cbar_default = dict({'cbar_thick': 1/8, 'cbar_aspect': 1/20, 'cbar_prec': 2, 'cbar_no': 1, 'cbar_offset': None, 'cbar_pos': 'bottom', 'cbar_total_width': 1/2, 'cbar_length_tol': 0.75, 'units': '', 'nosci': False, 'cbar_fs': default_labelsize, 'tickvals': None, 'ticklabels': None, 'exp': 0, 'log': False, 'posdef': False, 'fullrange2': False, 'symlog': False, 'sgnlog': False, 'no0ticklabel': False, 'cbar_label': None, 'center_label': None})
+kw_add_cbar_default = dict({'cbar_thick': 1/8, 'cbar_aspect': 1/20, 'cbar_prec': 2, 'cbar_no': 1, 'cbar_offset': None, 'cbar_pos': 'bottom', 'cbar_total_width': 1/2, 'cbar_length_tol': None, 'units': '', 'nosci': False, 'cbar_fs': default_labelsize, 'tickvals': None, 'ticklabels': None, 'exp': 0, 'log': False, 'posdef': False, 'fullrange2': False, 'symlog': False, 'sgnlog': False, 'no0ticklabel': False, 'cbar_label': None, 'center_label': None})
 def add_cbar(fig, ax, im, **kw_in):
     # deal with kw
     kw = update_dict(kw_add_cbar_default, kw_in)
     find_bad_keys(kw_add_cbar_default, kw_in, 'add_cbar')
+
+    # change cbar_length_tol if it wasn't set
+    if kw.cbar_length_tol is None:
+        kw.cbar_length_tol = 0.75
 
     # get fig dimensions
     fig_width_inches, fig_height_inches = fig.get_size_inches()
