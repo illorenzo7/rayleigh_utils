@@ -349,7 +349,7 @@ def plot_eq(field, rr, fig, ax, **kw):
 kw_plot_cutout_3d_default =\
         dotdict(dict({'r1': 'rmin', 'r2': 'rmax', 'dlon1': -30., 'dlon2': 60.,\
         'eq': True, 'varnames': 'vr', 'clon': 0., 'clat': 20., 't0': None, 'verbose': False, 'linewidth': default_lw, 'plotboundary': True,\
-    'nocbar': True, 'rvals': [], 'lonvals': [], 'latvals': []}))
+    'numcbar': 0, 'rvals': [], 'lonvals': [], 'latvals': []}))
 kw_plot_cutout_3d_default.update(kw_my_contourf_default)
 kw_plot_cutout_3d_default.plotcontours = False
 
@@ -358,7 +358,7 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
     kw_my_contourf = dotdict(kw_my_contourf_default.copy())
     kw_my_contourf.plotcontours = False
     kw_my_contourf = update_dict(kw_my_contourf, kw_in)
-    find_bad_keys(kw_plot_cutout_3d_default, kw_in, 'plot_cutout_3d()')
+    find_bad_keys(kw_plot_cutout_3d_default, kw_in, 'plot_cutout_3d')
 
     # get gridinfo (do this individually for the particular instant,
     # in case resolution is changing)
@@ -490,7 +490,7 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
     lon2d, lat2d = np.meshgrid(lon1d, lat1d, indexing='ij')
     # get the field
     field = np.copy(field_ss[..., 0])
-    if kw.nocbar:
+    if kw.numcbar == 0:
         field /= np.std(field)
     # do ortho projection
     xx = np.cos(lat2d)*np.sin(lon2d)
@@ -507,7 +507,7 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
     field[cond2] = np.nan
 
     # make the plot
-    if kw.nocbar: # resolve this inconsistency
+    if kw.numcbar == 0: # resolve this inconsistency
         kw_my_contourf.plotcbar = False
     my_contourf(xx, yy, field, fig, ax, **kw_my_contourf)
 
@@ -529,7 +529,7 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
     # PLOT MERIDIAN 1 (left one)
     # get the field
     field = np.copy(field_mer[ilon1_mer]).T
-    if kw.nocbar: # saturate each radius separately
+    if kw.numcbar == 0: # saturate each radius separately
         for ir in range(gi.nr):
             field[ir, :] /= np.std(field[ir, :])
     # make mesh grid
@@ -552,7 +552,7 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
     # PLOT MERIDIAN 2 (right one)
     # get the field
     field = np.copy(field_mer[ilon2_mer, :, ::-1]).T
-    if kw.nocbar: # saturate each radius separately
+    if kw.numcbar == 0: # saturate each radius separately
         for ir in range(gi.nr):
             field[ir, :] /= np.std(field[ir, :])
     # make mesh grid
@@ -605,7 +605,7 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
     lon2d, lat2d = np.meshgrid(lon1d, lat1d, indexing='ij')
     # get the field
     field = np.copy(field_ss[..., 1])
-    if kw.nocbar: # "saturate separately"
+    if kw.numcbar == 0: # "saturate separately"
         field /= np.std(field)
 
     # do ortho projection
@@ -643,7 +643,7 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
     if kw.eq:
         # get field
         field = np.copy(field_eq)
-        if kw.nocbar: # saturate each radius separately
+        if kw.numcbar == 0: # saturate each radius separately
             for ir in range(gi.nr):
                 field[:, ir] /= np.std(field[:, ir])
         # make mesh grid
