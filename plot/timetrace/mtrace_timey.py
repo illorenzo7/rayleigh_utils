@@ -23,7 +23,7 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = clas0['magnetism']
 
 # defaults
-kw_default = dict({'rad': False, 'groupname': 'v', 'sampletag': '', 'the_file': None, 'isamplevals': np.array([0]), 'samplevals': None, 'rvals': None, 'qvals': 'all', 'ntot': 500, 'mval': 1, 'imag': False, 'abs': False, 'prepend': False, 'ntheta': None, 'xminmax': None, 'xmin': None, 'xmax': None})
+kw_default = dict({'rad': False, 'groupname': 'v', 'sampletag': '', 'the_file': None, 'isamplevals': np.array([0]), 'samplevals': None, 'rvals': None, 'qvals': 'all', 'ntot': 500, 'tavg': None, 'mval': 1, 'imag': False, 'sub': False, 'abs': False, 'prepend': False, 'ntheta': None, 'xminmax': None, 'xmin': None, 'xmax': None})
 
 # also need make figure kw
 kw_make_figure_default.update(timey_fig_dimensions)
@@ -140,6 +140,7 @@ if kw.titles is None:
     kw.titles = parse_quantities(kw.qvals)[1]
 
 # Loop over the desired levels and save plots
+firsttime = True # keep track if we've plotted any panels yet
 for isampleval in kw.isamplevals:
     sampleval = samplevals_avail[isampleval]
 
@@ -164,6 +165,34 @@ for isampleval in kw.isamplevals:
             field = terms[iplot][:, isampleval, :]
         else:
             field = terms[iplot][:, :, isampleval]
+
+        # possibly time average data
+        if kw.tavg is None:
+            if firsttime:
+                print (buff_line)
+                print("No time average: tavg = None")
+        else:
+            field, intervals = sliding_average(field, times, kw.tavg)
+            if firsttime:
+                print (buff_line)
+                print ("Performing time average, tavg = %.2f t_omega" %np.mean(intervals))
+                print ("sigma(tavg) = %.3f t_omega" %np.std(intervals))
+
+        # possibly subtract temporal mean
+        if kw.sub: # full field (no subtraction)
+            nx, ny = np.shape(field)
+            tempmean = np.mean(field, axis=0).reshape((1, ny))
+            field -= tempmean
+            if firsttime:
+                print ("Subtracting temporal mean from data")
+        else:
+            if firsttime:
+                print ("Full data: no subtraction of temporal mean")
+
+        # probably thin data
+        if not kw.ntot == 'full':
+            field = thin_data(field, kw.ntot)
+
         plot_timey(field, times, yaxis, fig, ax, **kw_plot_timey)
                 
         #  title the plot
@@ -179,16 +208,19 @@ for isampleval in kw.isamplevals:
         if iplot == nplots//2:
             ax.set_ylabel(axislabel, fontsize=fontsize)
 
+        # Only do the print messages once
+        firsttime = False
+
     # Put some useful information on the title
     maintitle = dirname_stripped + '\n' +\
             plotlabel + '\n' +\
             'groupname = ' + kw.groupname + '\n' +\
             samplelabel
-    if kw.navg is None:
-        maintitle += '\nt_avg = none'
+    if kw.tavg is None:
+        maintitle += '\ntavg = none'
     else:
-        averaging_time = (times[-1] - times[0])/len(times)*kw.navg
-        maintitle += '\n' + ('t_avg = %.1f t_rot' %averaging_time)
+        maintitle += '\n' + ("tavg = %.2f t_omega, sigma(tavg) = %.3f t_omega"\
+                %(np.mean(intervals), np.std(intervals)))
 
     maintitle += '\nm=%i' %kw.mval
     if not kw.ycut is None:

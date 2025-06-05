@@ -224,8 +224,8 @@ for isampleval in kw.isamplevals:
             field, intervals = sliding_average(field, times, kw.tavg)
             if firsttime:
                 print (buff_line)
-                print ("Performing time average, tavg = %.2f t_rot" %np.mean(intervals))
-                print ("sigma(tavg) = %.3f t_rot" %np.std(intervals))
+                print ("Performing time average, tavg = %.2f t_omega" %np.mean(intervals))
+                print ("sigma(tavg) = %.3f t_omega" %np.std(intervals))
 
         # possibly subtract temporal mean
         if kw.sub: # full Omega (no subtraction)
@@ -276,7 +276,7 @@ for isampleval in kw.isamplevals:
     if kw.tavg is None:
         maintitle += '\ntavg = none'
     else:
-        maintitle += '\n' + ("tavg = %.2f t_rot, sigma(tavg) = %.3f t_rot"\
+        maintitle += '\n' + ("tavg = %.2f t_omega, sigma(tavg) = %.3f t_omega"\
                 %(np.mean(intervals), np.std(intervals)))
 
     maintitle += '\nm=0 (lon. avg.)'
