@@ -245,14 +245,17 @@ for ifigure in range(my_nfigures):
     fname, varnames_to_plot, savefile, varlabel = my_instructions[ifigure]
     if len(varnames_to_plot) == 1:
         varname = varnames_to_plot[0]
+        twovars = False
     elif len(varnames_to_plot) == 2:
         varname, varname2 = varnames_to_plot
-
+        twovars = True
 
     # make plot
     fig, axs, fpar = make_figure(**kw_make_figure)
     ax = axs[0, 0]
 
+    if twovars:
+        kw_plot_cutout_3d.varname2 = varname2
     plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_plot_cutout_3d)
 
     # label the plot
