@@ -348,8 +348,8 @@ def plot_eq(field, rr, fig, ax, **kw):
 
 kw_plot_cutout_3d_default =\
         dotdict(dict({'r1': 'rmin', 'r2': 'rmax', 'dlon1': -30., 'dlon2': 60.,\
-        'eq': True, 'varnames': 'vr', 'clon': 0., 'clat': 20., 't0': None, 'verbose': False, 'linewidth': default_lw, 'plotboundary': True,\
-    'numcbar': 0, 'rvals': [], 'lonvals': [], 'latvals': []}))
+        'eq': True, 'clon': 0., 'clat': 20., 't0': None, 'verbose': False, 'linewidth': default_lw, 'plotboundary': True,\
+        'numcbar': 0, 'rvals': [], 'lonvals': [], 'latvals': [], 'varname2': None, 'twovars': False, 'rcut': None}))
 kw_plot_cutout_3d_default.update(kw_my_contourf_default)
 kw_plot_cutout_3d_default.plotcontours = False
 

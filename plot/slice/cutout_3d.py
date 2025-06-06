@@ -47,7 +47,7 @@ dirname = clas0.dirname
 dirname_stripped = strip_dirname(dirname)
 
 # SPECIFIC ARGS
-kw_default = dotdict({'t0': False, 'movie': False, 'prepend': False, 'dpi': 300})
+kw_default = dotdict({'t0': False, 'movie': False, 'prepend': False, 'dpi': 300, 'varnames': 'vr', 'varnames2': 'sprime'})
 
 kw_make_figure = dotdict(kw_make_figure_default)
 kw_make_figure.update(ortho_fig_dimensions)
