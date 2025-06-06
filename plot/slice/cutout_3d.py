@@ -47,7 +47,7 @@ dirname = clas0.dirname
 dirname_stripped = strip_dirname(dirname)
 
 # SPECIFIC ARGS
-kw_default = dotdict({'t0': False, 'movie': False, 'prepend': False, 'dpi': 300, 'varnames': 'vr', 'varnames2': 'sprime'})
+kw_default = dotdict({'t0': False, 'movie': False, 'prepend': False, 'dpi': 300, 'varnames': 'vr', 'varnames2': 'omzprime'})
 
 kw_make_figure = dotdict(kw_make_figure_default)
 kw_make_figure.update(ortho_fig_dimensions)
@@ -100,6 +100,9 @@ if rank == 0:
     # no matter what, this needs to be an array of strings
     kw.varnames = array_of_strings(make_array(kw.varnames))
     nq = len(kw.varnames)
+    if kw.twovars:
+        kw.varnames2 = array_of_strings(make_array(kw.varnames2))
+
 
     # print file list
     print(buff_line)
@@ -115,7 +118,7 @@ if rank == 0:
             arr_to_str(kw.varnames, "%s"))
     if kw.twovars:
         print ("with different variables in the inner part:" +\
-                arr_to_str(kw.varnames, "%s"))
+                arr_to_str(kw.varnames2, "%s"))
 
     # calculate total number of figures
     nfigures = nq*nfiles
@@ -142,12 +145,13 @@ if rank == 0:
 
             if kw.twovars:
                 varname2 = kw.varnames2[ivar]
+                basic = is_basic(varname2)
                 if basic:
                     varlabel2 = get_label(varname2)
-                    simple_label2= varname2
+                    simple_label2 = varname2
                 else:
                     varlabel2, simple_label2 = get_label(varname2)
-                varlabel2 = varlabel + ' and ' + varlabel2
+                varlabel = varlabel + ' and ' + varlabel2
                 simple_label = simple_label + '_and_' + simple_label2
 
 
