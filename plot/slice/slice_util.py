@@ -461,9 +461,15 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
     varname_root, deriv, primevar, sphvar = get_varprops(varname)
     qvals = None # by default, but update
     if varname_root in var_indices:
-        qvals = var_indices[varname_root]
+        qvals = [var_indices[varname_root]]
     elif varname_root == 'omz':
         qvals = [301, 302]
+    if kw.twovars:
+        varname_root, deriv, primevar, sphvar = get_varprops(kw.varname2)
+        if varname_root in var_indices:
+            qvals += [var_indices[varname_root]]
+        elif varname_root == 'omz':
+            qvals += [301, 302]
 
     ss = Shell_Slices(dirname + '/Shell_Slices/' + fname, '', irvals=[ir1_ss, ir2_ss], qvals=qvals)
     mer = Meridional_Slices(dirname + '/Meridional_Slices/' + fname, '')
@@ -476,12 +482,22 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
     if kw.eq:
         field_eq = get_slice(eq, varname, dirname=dirname)
 
+    if kw.twovars:
+        field_ss2 = get_slice(ss, kw.varname2, dirname=dirname)
+        field_mer2 = get_slice(mer, kw.varname2, dirname=dirname)
+        if kw.eq:
+            field_eq2 = get_slice(eq, kw.varname2, dirname=dirname)
+
     # shift the field_ss and field_eq so that the clon is in the 
     # just-right-of-center of the array (for [...) )
     # recall that ntheta = nphi/2, just-right-of-center is index ntheta
     field_ss = np.roll(field_ss, gi.nt - iclon, axis=0)
     if kw.eq:
         field_eq = np.roll(field_eq, gi.nt - iclon, axis=0)
+    if kw.twovars:
+        field_ss2 = np.roll(field_ss2, gi.nt - iclon, axis=0)
+        if kw.eq:
+            field_eq2 = np.roll(field_eq2, gi.nt - iclon, axis=0)
 
     # plot all the projections
 
@@ -529,6 +545,10 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
     # PLOT MERIDIAN 1 (left one)
     # get the field
     field = np.copy(field_mer[ilon1_mer]).T
+    if kw.twovars:
+        ircut = inds_from_vals(gi.rr, kw.rcut, scalar=True)
+        field[ircut:,:] = np.copy(field_mer2[ilon1_mer]).T[ircut:,:]
+
     if kw.numcbar == 0: # saturate each radius separately
         for ir in range(gi.nr):
             field[ir, :] /= np.std(field[ir, :])

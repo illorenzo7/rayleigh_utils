@@ -113,6 +113,9 @@ if rank == 0:
     print (buff_line)
     print (("plotting %i variables:\nvarnames = " %nq) +\
             arr_to_str(kw.varnames, "%s"))
+    if kw.twovars:
+        print ("with different variables in the inner part:" +\
+                arr_to_str(kw.varnames, "%s"))
 
     # calculate total number of figures
     nfigures = nq*nfiles
@@ -127,7 +130,8 @@ if rank == 0:
     for fname in file_list:
         if kw.movie:
             count += 1
-
+        
+        ivar = 0
         for varname in kw.varnames:
             basic = is_basic(varname)
             if basic:
@@ -135,6 +139,17 @@ if rank == 0:
                 simple_label = varname
             else:
                 varlabel, simple_label = get_label(varname)
+
+            if kw.twovars:
+                varname2 = kw.varnames2[ivar]
+                if basic:
+                    varlabel2 = get_label(varname2)
+                    simple_label2= varname2
+                else:
+                    varlabel2, simple_label2 = get_label(varname2)
+                varlabel2 = varlabel + ' and ' + varlabel2
+                simple_label = simple_label + '_and_' + simple_label2
+
 
             # get metadata labels
             r1, r2 = interpret_rvals(dirname, [kw.r1, kw.r2])
@@ -174,10 +189,16 @@ if rank == 0:
 
             plotdir = my_mkdir(plotdir, erase=kw.movie)
 
+            varnames_to_plot = [varname]
+            if kw.twovars:
+                varnames_to_plot += [varname2]
+
             plotting_instructions.append([fname,\
-                    varname,\
+                    varnames_to_plot,\
                     savefile,\
                     varlabel])
+
+            ivar += 1
 
 # Checkpoint
 comm.Barrier()
@@ -221,7 +242,12 @@ if rank == 0:
 # now loop over and plot figures
 for ifigure in range(my_nfigures):
     # local instructions for this plot
-    fname, varname, savefile, varlabel = my_instructions[ifigure]
+    fname, varnames_to_plot, savefile, varlabel = my_instructions[ifigure]
+    if len(varnames_to_plot) == 1:
+        varname = varnames_to_plot[0]
+    elif len(varnames_to_plot) == 2:
+        varname, varname2 = varnames_to_plot
+
 
     # make plot
     fig, axs, fpar = make_figure(**kw_make_figure)
