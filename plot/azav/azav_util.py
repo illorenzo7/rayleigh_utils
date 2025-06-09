@@ -22,7 +22,7 @@ kw_plot_azav_default = dict(
         {'rcut': None, 'minmax2': None, 'cmap2': None, 'rvals': None, 'plotlatlines': True, 'latvals': np.arange(-60., 90., 30.), 'plotboundary': True,
         'linestyles1': np.array(['--']), 'linewidth': default_lw, 'linecolors1': np.array(['k']),
        'linestyles2': np.array(['--']), 'linecolors2': np.array(['k']),
-       'halfplane': False, 'fontsize': default_labelsize, 'plotaxis': True,\
+       'halfplane': False, 'sym': False, 'antisym': False, 'fontsize': default_labelsize, 'plotaxis': True,\
         'modrms': False
        })
 
@@ -41,8 +41,14 @@ def plot_azav(field, rr, cost, fig, ax,  **kw_in):
 
     # if "half plane" only plot northern hemisphere
     if kw.halfplane:
-        iteq = np.argmin(np.abs(cost))
-        field = field[iteq:, :]
+        iteq = len(cost)//2
+        if kw.sym:
+            field = 0.5*(field[iteq:, :] + field[:iteq, :][::-1, :])
+        elif kw.antisym:
+            field = 0.5*(field[iteq:, :] - field[:iteq, :][::-1, :])
+        else:
+            field = field[iteq:, :]
+
         cost = cost[iteq:]
 
     if kw.plotaxis: # make cbar offset bigger
