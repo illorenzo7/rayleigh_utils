@@ -572,9 +572,12 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
 
     # PLOT MERIDIAN 2 (right one)
     # get the field
-    field = np.copy(field_mer[ilon2_mer, :, ::-1]).T
+    field = np.copy(field_mer[ilon2_mer, ...]).T
     if kw.twovars:
-        field[ircut:,:] = np.copy(field_mer2[ilon2_mer, :, ::-1]).T[ircut:,:]
+        #print("got here")
+        field[ircut:,:] = np.copy(field_mer2[ilon2_mer]).T[ircut:,:]
+    # reverse the radial direction now
+    field = field[::-1, :]
 
     if kw.numcbar == 0: # saturate each radius separately
         for ir in range(gi.nr):
