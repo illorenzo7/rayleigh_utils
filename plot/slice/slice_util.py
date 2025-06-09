@@ -470,6 +470,7 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
             qvals += [var_indices[varname_root]]
         elif varname_root == 'omz':
             qvals += [301, 302]
+    qvals = np.unique(qvals)
 
     ss = Shell_Slices(dirname + '/Shell_Slices/' + fname, '', irvals=[ir1_ss, ir2_ss], qvals=qvals)
     mer = Meridional_Slices(dirname + '/Meridional_Slices/' + fname, '')
