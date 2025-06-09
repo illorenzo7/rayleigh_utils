@@ -572,6 +572,9 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
     # PLOT MERIDIAN 2 (right one)
     # get the field
     field = np.copy(field_mer[ilon2_mer, :, ::-1]).T
+    if kw.twovars:
+        field[ircut:,:] = np.copy(field_mer2[ilon2_mer, :, ::-1]).T[ircut:,:]
+
     if kw.numcbar == 0: # saturate each radius separately
         for ir in range(gi.nr):
             field[ir, :] /= np.std(field[ir, :])
@@ -595,6 +598,8 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
         # plot meridional boundaries
         # meridians 1 then 2, inner inner to outer
         rvals_extra = (make_array(kw.rvals)/r2).tolist()
+        if kw.twovars:
+            rvals_extra += [kw.rcut/r2]
         n_extra = len(rvals_extra)
         rvals = [beta, 1] + rvals_extra
         linestyles = 2*['-'] + n_extra*['--']
@@ -625,6 +630,8 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
     lon2d, lat2d = np.meshgrid(lon1d, lat1d, indexing='ij')
     # get the field
     field = np.copy(field_ss[..., 1])
+    if kw.twovars:
+        field = np.copy(field_ss2[..., 1])
     if kw.numcbar == 0: # "saturate separately"
         field /= np.std(field)
 
@@ -663,6 +670,9 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
     if kw.eq:
         # get field
         field = np.copy(field_eq)
+        if kw.twovars:
+            field[:, ircut:] = np.copy(field_eq2[:, ircut:])
+
         if kw.numcbar == 0: # saturate each radius separately
             for ir in range(gi.nr):
                 field[:, ir] /= np.std(field[:, ir])

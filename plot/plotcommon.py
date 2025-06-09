@@ -255,17 +255,21 @@ kw_make_figure2_default =\
 dict({'margin_left_inches': default_margin,\
     'margin_right_inches': default_margin,\
     'margin_bottom_inches': default_margin,\
-    'margin_top_inches': default_margin_title})
+    'margin_top_inches': default_margin_title,\
+    'margin_all': None})
 
 def make_figure2(width_inches, height_inches, **kw_in):
     kw = update_dict(kw_make_figure2_default, kw_in)
-    find_bad_keys(kw_make_figure_default, kw_in, 'make_figure2')
+    find_bad_keys(kw_make_figure2_default, kw_in, 'make_figure2')
 
     # collect all figure parameters in dictionary 
     fpar = dotdict()
     fpar.width_inches = width_inches
     fpar.height_inches = height_inches
     fpar.aspect = height_inches/width_inches
+    if not kw.margin_all is None:
+        kw.margin_left_inches = kw.margin_right_inches = kw.margin_bottom_inches = kw.margin_top_inches = kw.margin_all
+
     fpar.margin_left = kw.margin_left_inches/width_inches
     fpar.margin_right = kw.margin_right_inches/width_inches
     fpar.margin_bottom = kw.margin_bottom_inches/height_inches
