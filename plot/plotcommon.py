@@ -704,6 +704,8 @@ def add_cbar(fig, ax, im, **kw_in):
         #        cbar_bottom + 0.5*cbar_height, kw.cbar_label,\
         #        ha='left', va='center', fontsize=kw.fontsize) 
         cax.set_title(kw.cbar_label, ha='left', fontsize=kw.cbar_fs)
+    
+    return cbar
 
 kw_contourf_minmax_default = dict({'posdef': False, 'no0': False, 'center_tick': None, 'log': False, 'symlog': False, 'sgnlog': False, 'fullrange': False, 'fullrange2': False, 'buff_ignore1': buff_frac, 'buff_ignore2': buff_frac, 'nstd': 3.}) 
 
@@ -850,11 +852,7 @@ def my_contourf(xx, yy, field, fig, ax, **kw_in):
     if kw.plotfield:
         im = ax.contourf(xx, yy, field, cmap=kw.cmap, levels=levels, norm=kw.norm)
 
-    # now deal with color bar, if one is desired
-    if kw.plotfield and kw.plotcbar:
-        add_cbar(fig, ax, im, **kw_add_cbar)
-
-    # Plot contours if desired
+   # Plot contours if desired
     if kw.plotcontours:
         # Determine the contour levels
         if kw.contourlevels is None:
@@ -871,6 +869,9 @@ def my_contourf(xx, yy, field, fig, ax, **kw_in):
         ax.contour(xx, yy, field, kw.contourlevels, norm=kw.norm,\
                 colors=kw.contourcolors, linewidths=kw.contourwidths, linestyles=kw.contourstyles)
 
+    # now deal with color bar, if one is desired
+    if kw.plotfield and kw.plotcbar:
+        cbar = add_cbar(fig, ax, im, **kw_add_cbar)
 
     if kw.allticksoff:
         # Set ax ranges to be just outside the boundary lines
