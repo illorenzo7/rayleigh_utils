@@ -555,7 +555,7 @@ def lineplot(xx, profiles, ax, **kw_in):
     if kw.plotleg:
         ax.legend(loc=kw.legloc, ncol=kw.ncolleg, fontsize=0.8*default_labelsize)
 
-kw_add_cbar_default = dict({'cbar_thick': 1/8, 'cbar_aspect': 1/20, 'cbar_prec': 2, 'cbar_no': 1, 'cbar_offset': None, 'cbar_pos': 'bottom', 'cbar_total_width': 1/2, 'cbar_length_tol': None, 'units': '', 'nosci': False, 'cbar_fs': default_labelsize, 'tickvals': None, 'ticklabels': None, 'exp': 0, 'log': False, 'posdef': False, 'fullrange2': False, 'symlog': False, 'sgnlog': False, 'no0ticklabel': False, 'cbar_label': None, 'center_label': None})
+kw_add_cbar_default = dict({'cbar_thick': 1/8, 'cbar_aspect': 1/20, 'cbar_prec': 2, 'cbar_no': 1, 'cbar_offset': None, 'cbar_pos': 'bottom', 'cbar_total_width': 1/2, 'cbar_length_tol': None, 'units': '', 'nosci': False, 'cbar_fs': default_labelsize, 'tickvals': None, 'ticklabels': None, 'exp': 0, 'log': False, 'posdef': False, 'fullrange2': False, 'symlog': False, 'sgnlog': False, 'no0ticklabel': False, 'cbar_label': None, 'center_label': None, 'cbar_mark0': False})
 def add_cbar(fig, ax, im, **kw_in):
     # deal with kw
     kw = update_dict(kw_add_cbar_default, kw_in)
@@ -704,7 +704,18 @@ def add_cbar(fig, ax, im, **kw_in):
         #        cbar_bottom + 0.5*cbar_height, kw.cbar_label,\
         #        ha='left', va='center', fontsize=kw.fontsize) 
         cax.set_title(kw.cbar_label, ha='left', fontsize=kw.cbar_fs)
-    
+   
+    # put dashed line to mark zero
+    if kw.cbar_mark0:
+        if orientation == 'horizontal': 
+            ymin, ymax = cax.get_ylim()
+            yrange = np.linspace(ymin, ymax, 10)
+            cax.plot(np.zeros(10), yrange, 'k:')
+        else:
+            xmin, xmax = cax.get_xlim()
+            xxrange = np.linspace(xmin, xmax, 10)
+            cax.plot(xxrange, np.zeros(10), 'k:')
+
     return cbar
 
 kw_contourf_minmax_default = dict({'posdef': False, 'no0': False, 'center_tick': None, 'log': False, 'symlog': False, 'sgnlog': False, 'fullrange': False, 'fullrange2': False, 'buff_ignore1': buff_frac, 'buff_ignore2': buff_frac, 'nstd': 3.}) 
