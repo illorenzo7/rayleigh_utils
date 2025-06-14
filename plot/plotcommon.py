@@ -256,6 +256,8 @@ dict({'margin_left_inches': default_margin,\
     'margin_right_inches': default_margin,\
     'margin_bottom_inches': default_margin,\
     'margin_top_inches': default_margin_title,\
+    'margin_x_inches': default_margin,\
+    'margin_x_inches': default_margin,\
     'margin_all': None})
 
 def make_figure2(width_inches, height_inches, **kw_in):
@@ -268,15 +270,15 @@ def make_figure2(width_inches, height_inches, **kw_in):
     fpar.height_inches = height_inches
     fpar.aspect = height_inches/width_inches
     if not kw.margin_all is None:
-        kw.margin_left_inches = kw.margin_right_inches = kw.margin_bottom_inches = kw.margin_top_inches = kw.margin_all
+        kw.margin_left_inches = kw.margin_right_inches = kw.margin_bottom_inches = kw.margin_top_inches = kw.margin_x_inches = kw.margin_y_inches = kw.margin_all
 
     fpar.margin_left = kw.margin_left_inches/width_inches
     fpar.margin_right = kw.margin_right_inches/width_inches
     fpar.margin_bottom = kw.margin_bottom_inches/height_inches
     fpar.margin_top = kw.margin_top_inches/height_inches
 
-    fpar.margin_x = default_margin/width_inches
-    fpar.margin_y = default_margin/height_inches
+    fpar.margin_x = kw.margin_x_inches/width_inches
+    fpar.margin_y = kw.margin_y_inches/height_inches
     fpar.line_height = default_line_height/height_inches
 
     # Generate the figure, but no axes
