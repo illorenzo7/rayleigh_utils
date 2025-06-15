@@ -72,9 +72,16 @@ def testtex(label):
 kw_make_figure_default =\
 dotdict({'nplots': None, 'nrow': None, 'ncol': None,\
 
+    'width_inches': None,\
+    'height_inches': None,\
+    'aspect': None,\
+
     'sub_width_inches': None,\
     'sub_height_inches': None,\
     'sub_aspect': None,\
+    
+    'margin_all': None,
+    'sub_margin_all': None,
     
     'sub_margin_left_inches': default_margin_ylabel, \
     'sub_margin_right_inches': default_margin,\
@@ -84,15 +91,20 @@ dotdict({'nplots': None, 'nrow': None, 'ncol': None,\
     'margin_left_inches': default_margin,\
     'margin_right_inches': default_margin,\
     'margin_bottom_inches': default_margin,\
-    'margin_top_inches': default_margin_title,\
+    'margin_top_inches': default_margin_title
 
-    'width_inches': None,\
-    'height_inches': None,\
-    'aspect': None})
+})
 
 def make_figure(**kw_in):
     kw = update_dict(kw_make_figure_default, kw_in)
     find_bad_keys(kw_make_figure_default, kw_in, 'make_figure')
+
+    # check for the special margin_all keywords
+    if not kw.margin_all is None:
+        kw.margin_left_inches = kw.margin_right_inches = kw.margin_bottom_inches = kw.margin_top_inches = kw.margin_x_inches = kw.margin_y_inches = kw.margin_all
+    if not kw.sub_margin_all is None:
+        kw.sub_margin_left_inches = kw.sub_margin_right_inches = kw.sub_margin_bottom_inches = kw.sub_margin_top_inches = kw.sub_margin_x_inches = kw.sub_margin_y_inches = kw.sub_margin_all
+
 
     # unpack everything (annoying)
     nplots = kw.nplots; nrow = kw.nrow; ncol = kw.ncol
