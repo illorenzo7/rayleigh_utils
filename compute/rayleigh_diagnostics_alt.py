@@ -2283,7 +2283,8 @@ class Shell_Slices:
         # loop over everything, in Fortran/Rayleigh order
         # indices must all be in order
         # skip over the slices (size nphi*ntheta at least) we don't care about
-        offset = 0
+        offset = np.int64(0)
+        count=0
         for iiter in range(len(iitervals)):
             for iqval in range(nq):
                 for irval in range(nr):
@@ -2295,9 +2296,10 @@ class Shell_Slices:
                         self.vals[:, :, irval_new, iqval_new, iiter] =\
                             np.reshape(swapread(fd,dtype='float64',count=nphi*ntheta,swap=bs,offset=offset),
                                 (nphi, ntheta), order='F')
-                        offset = 0 # always reset offset after reading
+                        offset = np.int64(0) # always reset offset after reading
                     else: # don't read this part of file; increase offset
                         offset += 8*nphi*ntheta
+                        count += 1
 
             self.time[iiter] = swapread(fd,dtype='float64',count=1,swap=bs, offset=offset)
             self.iters[iiter] = swapread(fd,dtype='int32',count=1,swap=bs)
