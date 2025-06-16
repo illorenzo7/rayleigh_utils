@@ -462,7 +462,7 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
     qvals = None # by default, but update
     if varname_root in var_indices:
         qvals = [var_indices[varname_root]]
-    elif varname_root == 'omz':
+    elif varname_root == 'omz' or 'pv' in varname_root:
         qvals = [301, 302]
     if kw.twovars:
         varname_root, deriv, primevar, sphvar = get_varprops(kw.varname2)
