@@ -16,7 +16,7 @@ default_s = 0.2 # markersize
 default_labelsize = 12
 default_titlesize = 12
 default_ticksize = 12
-default_margin = 1/8
+default_margin = 1/16
 default_line_height = 1/4 # height of a line of text
 default_margin_xlabel = 1/2
 default_margin_ylabel = 3/4
@@ -269,7 +269,7 @@ dict({'margin_left_inches': default_margin,\
     'margin_bottom_inches': default_margin,\
     'margin_top_inches': default_margin_title,\
     'margin_x_inches': default_margin,\
-    'margin_x_inches': default_margin,\
+    'margin_y_inches': default_margin,\
     'margin_all': None})
 
 def make_figure2(width_inches, height_inches, **kw_in):
