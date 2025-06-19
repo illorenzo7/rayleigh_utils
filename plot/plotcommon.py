@@ -618,6 +618,18 @@ def add_cbar(fig, ax, im, **kw_in):
         lilbit = 1/16/fig_width_inches
         cbar_bottom = ax_bottom + 0.5*ax_height - 0.5*cbar_height
         cbar_left = ax_right + lilbit + (kw.cbar_no - 1)*(label_buff + cbar_width)
+    elif kw.cbar_pos == 'left':
+        orientation = 'vertical'
+        cbar_width = kw.cbar_thick/fig_width_inches
+        cbar_height = cbar_width/kw.cbar_aspect/fig_aspect
+        cbar_height = min(cbar_height, kw.cbar_length_tol*ax_height) # don't let cbar be longer than plot!
+
+        # centrally position colorbar to right of axes
+        label_buff = 3/4/fig_width_inches # needs to contain
+        # the colorbar ticklabels and little buffer space
+        lilbit = 1/16/fig_width_inches
+        cbar_bottom = ax_bottom + 0.5*ax_height - 0.5*cbar_height
+        cbar_left = ax_left + lilbit + (kw.cbar_no - 1)*(label_buff + cbar_width)
     cax = fig.add_axes((cbar_left, cbar_bottom, cbar_width, cbar_height))
 
     cbar = plt.colorbar(im, cax=cax, orientation=orientation)
@@ -788,7 +800,7 @@ def contourf_minmax(field, **kw_in):
 kw_my_contourf_default = dict({
         # basic flags:
          'plotfield': True,
-         'plotcontours': True, 'ncontours': 8, 'contourlevels': None, 'contourstyles': '--', 'contourcolors': 'k', 'contourwidths': default_lw, 
+         'plotcontours': True, 'ncontours': 8, 'contourlevels': None, 'contourstyles': '--', 'contourcolors': 'k', 'contourwidths': default_lw, 'zerodashed': False,
         # colorbar stuff
         'plotcbar': True, 'cmap': None, 'norm': None, 'units': '', 'nlevels': 64,       
         # only need this for time-lat plots or such, since need ticks there
@@ -891,6 +903,13 @@ def my_contourf(xx, yy, field, fig, ax, **kw_in):
                 kw.contourlevels = np.hstack((levels_neg, levels_pos))
 
         # plot the contours
+        if kw.zerodashed: # look for the contour closest to zero and make it dashed
+            # and other contours solid
+            icont = inds_from_vals(kw.contourlevels, 0, scalar=True)
+            # make into the length of contourlevels with '-' 
+            kw.contourstyles = ['-']*len(kw.contourlevels)
+            kw.contourstyles[icont] = '--'
+            print(kw.contourstyles[icont])
         ax.contour(xx, yy, field, kw.contourlevels, norm=kw.norm,\
                 colors=kw.contourcolors, linewidths=kw.contourwidths, linestyles=kw.contourstyles)
 
