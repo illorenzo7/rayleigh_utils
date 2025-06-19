@@ -246,6 +246,8 @@ def make_figure(**kw_in):
     fpar['margin_x'] = default_margin/width_inches
     fpar['margin_y'] = default_margin/height_inches
     fpar['line_height'] = default_line_height/height_inches
+    fpar.plotwidth = 1. - fpar.margin_left - fpar.margin_right
+    fpar.plotheight = 1. - fpar.margin_bottom - fpar.margin_top
 
     # Generate the figure + axes
     fig = plt.figure(figsize=(width_inches, height_inches))
@@ -292,6 +294,8 @@ def make_figure2(width_inches, height_inches, **kw_in):
     fpar.margin_x = kw.margin_x_inches/width_inches
     fpar.margin_y = kw.margin_y_inches/height_inches
     fpar.line_height = default_line_height/height_inches
+    fpar.plotwidth = 1. - fpar.margin_left - fpar.margin_right
+    fpar.plotheight = 1. - fpar.margin_bottom - fpar.margin_top
 
     # Generate the figure, but no axes
     fig = plt.figure(figsize=(width_inches, height_inches))
