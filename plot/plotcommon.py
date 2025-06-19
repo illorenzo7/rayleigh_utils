@@ -909,7 +909,6 @@ def my_contourf(xx, yy, field, fig, ax, **kw_in):
             # make into the length of contourlevels with '-' 
             kw.contourstyles = ['-']*len(kw.contourlevels)
             kw.contourstyles[icont] = '--'
-            print(kw.contourstyles[icont])
         ax.contour(xx, yy, field, kw.contourlevels, norm=kw.norm,\
                 colors=kw.contourcolors, linewidths=kw.contourwidths, linestyles=kw.contourstyles)
 
