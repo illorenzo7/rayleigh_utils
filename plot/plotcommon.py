@@ -615,7 +615,9 @@ def add_cbar(fig, ax, im, **kw_in):
         # centrally position colorbar to right of axes
         label_buff = 3/4/fig_width_inches # needs to contain
         # the colorbar ticklabels and little buffer space
-        lilbit = 1/16/fig_width_inches
+        if kw.cbar_offset is None:
+            kw.cbar_offset = 1/16
+        lilbit = kw.cbar_offset/fig_width_inches
         cbar_bottom = ax_bottom + 0.5*ax_height - 0.5*cbar_height
         cbar_left = ax_right + lilbit + (kw.cbar_no - 1)*(label_buff + cbar_width)
     elif kw.cbar_pos == 'left':
@@ -627,7 +629,9 @@ def add_cbar(fig, ax, im, **kw_in):
         # centrally position colorbar to right of axes
         label_buff = 3/4/fig_width_inches # needs to contain
         # the colorbar ticklabels and little buffer space
-        lilbit = 1/16/fig_width_inches
+        if kw.cbar_offset is None:
+            kw.cbar_offset = 1/16
+        lilbit = kw.cbar_offset/fig_width_inches
         cbar_bottom = ax_bottom + 0.5*ax_height - 0.5*cbar_height
         cbar_left = ax_left + lilbit + (kw.cbar_no - 1)*(label_buff + cbar_width)
     cax = fig.add_axes((cbar_left, cbar_bottom, cbar_width, cbar_height))
@@ -714,8 +718,8 @@ def add_cbar(fig, ax, im, **kw_in):
                     else:
                         fmt = '%.' + str(kw.cbar_prec) + 'f'
                         kw.ticklabels[ind] = fmt %kw.tickvals[ind]
-                if kw.fullrange2: # remove zero tick
-                    kw.ticklabels[1] = ''
+                #if kw.fullrange2: # remove zero tick by default
+                #    kw.ticklabels[1] = ''
                 if not kw.center_label is None:
                     kw.ticklabels[len(kw.ticklabels)//2] = kw.center_label
         cbar.set_ticks(kw.tickvals)
