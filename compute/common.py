@@ -1306,6 +1306,27 @@ def compute_axial_H(rr, sint, rmin=None, rmax=None):
     H = H_flat.reshape(np.shape(xx))
     return H
 
+def compute_beta_topo(rr, sint, rmin=None, rmax=None):
+    # compute the axial distance H between the spheres r_min and r_max
+    # assumes rr and sint are two arrays of compatible shape
+    xx = rr*sint
+    if rmin is None:
+        rmin = np.min(rr)
+    if rmax is None:
+        rmax = np.max(rr)
+
+    d = rmax - rmin
+    xx_flat = xx.flatten()
+    beta_flat = np.zeros_like(xx_flat)
+    for ix in range(len(xx_flat)):
+        xx_loc = xx_flat[ix]
+        if xx_loc > rmin: # outside tangent cylinder
+            beta_flat[ix] = -xx_loc/(rmax**2. - xx_loc**2.)
+        else:
+            beta_flat[ix] = xx_loc/( np.sqrt(rmax**2 - xx_loc**2)*np.sqrt(rmin**2 - xx_loc**2) )
+    beta_topo = beta_flat.reshape(np.shape(xx))
+    return beta_topo
+
 def interpret_rvals(dirname, rvals):
     # interpret array of rvals (array of strings), some could have the special keywords, rmin, rmid, rmax
     # but otherwise assumed to be float
