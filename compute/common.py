@@ -515,9 +515,9 @@ def indefinite_integral(integrand, x, x0):
     integral = np.zeros(nx)
     for ix in range(nx):
         if ix >= ix0:
-            integral[ix] = simps(integrand[ix0:ix+1], x[ix0:ix+1])
+            integral[ix] = simpson(integrand[ix0:ix+1], x[ix0:ix+1])
         else:
-            integral[ix] = -simps(integrand[ix:ix0+1], x[ix:ix0+1])
+            integral[ix] = -simpson(integrand[ix:ix0+1], x[ix:ix0+1])
     if reverse:
         integral = integral[::-1]
 
@@ -540,7 +540,7 @@ def definite_integral(integrand, x, x1, x2):
     ix2 = np.argmin(np.abs(x - x2))
    
     # compute definite integral
-    return simps(integrand[ix1:ix2+1], x[ix1:ix2+1])
+    return simpson(integrand[ix1:ix2+1], x[ix1:ix2+1])
 
 def opt_workload(n, nproc):
     # optimally distributes workload (n tasks) over processes (n workers)

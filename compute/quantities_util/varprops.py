@@ -224,8 +224,16 @@ def get_quantity_group(groupname, magnetism, advect_reference_state=False):
         qvals = [1, 2, 3]            
         ncol = 3
 
+    if groupname == 'om':
+        qvals = [301, 302, 303]            
+        ncol = 3
+
     if groupname == 'b':
         qvals = [801, 802, 803]            
+        ncol = 3
+
+    if groupname == 'j':
+        qvals = [1001, 1004, 1007]
         ncol = 3
 
     if groupname == 'forcer': # linear forces, radial
