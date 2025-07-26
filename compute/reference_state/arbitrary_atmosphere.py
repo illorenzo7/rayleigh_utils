@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.integrate import simps
+from scipy.integrate import simpson
 import sys, os
 sys.path.append(os.environ['raco'])
 from common import indefinite_integral, definite_integral
@@ -30,9 +30,9 @@ def arbitrary_atmosphere(r, s, dsdr, d2sdr2, g, dgdr, r0, T0, p0, cp, gamma):
     integral = np.zeros_like(r)
     for ir in range(len(r)):
         if ir <= ir0:
-            integral[ir] = -simps(integrand[ir:ir0 + 1], r[ir:ir0 + 1])
+            integral[ir] = -simpson(integrand[ir:ir0 + 1], r[ir:ir0 + 1])
         else:
-            integral[ir] = simps(integrand[ir0:ir + 1], r[ir0:ir + 1])
+            integral[ir] = simpson(integrand[ir0:ir + 1], r[ir0:ir + 1])
             
     T = -(1.0/cp)*np.exp(s/cp)*integral + T0*np.exp((s - s0)/cp)   
     p = p0*np.exp(-(s - s0)/R)*(T/T0)**(gamma/(gamma - 1.0))
