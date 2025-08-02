@@ -149,30 +149,48 @@ if os.path.isfile(meta_file):
         print("1/r^2 int_r^(Rbcz + H/2) Q(x)x^2dx")
         f = open(meta_file, 'r')
         lines = f.readlines()
+        solar, jup, czonly = False, False, False
         for line in lines:
-            # see if geometry might be solar-like
+            # see what the geometry is
             if 'solar' in line:
-                sun = True
+                solar = True
             elif 'Jovian' in line:
                 jup = True
+            elif 'CZ only' in line:
+                czonly = True
 
-            # find the line containing rbrz, etc.
-            alltrue = True
-            for keyword in ['rbrz', 'rtrz', 'rbcz', 'rtcz']:
-                alltrue *= keyword in line
-            if alltrue:
-                st = line.split(':')[1]
-                for char in [',', '(', ')']:
-                    st = st.replace(char, '')
-                rmin, rt, rmax = st2 = st.split()
+            if solar or jup:
+                # find the line containing rbrz, etc.
+                alltrue = True
+                for keyword in ['rbrz', 'rtrz', 'rbcz', 'rtcz']:
+                    alltrue *= keyword in line
+                if alltrue:
+                    st = line.split(':')[1]
+                    for char in [',', '(', ')']:
+                        st = st.replace(char, '')
+                    rmin, rt, rmax = st.split()
 
-                rmin = float(rmin)
-                rt = float(rt)
-                rmax = float(rmax)
-                if sun:
-                    rbcz, rtcz = rt, rmax
-                if jup:
-                    rbcz, rtcz = rmin, rt
+                    rmin = float(rmin)
+                    rt = float(rt)
+                    rmax = float(rmax)
+                    if solar:
+                        rbcz, rtcz = rt, rmax
+                    if jup:
+                        rbcz, rtcz = rmin, rt
+            elif czonly:
+                alltrue = True
+                for keyword in ['rmin', 'rmax']:
+                    alltrue *= keyword in line
+                if alltrue:
+                    st = line.split(':')[1]
+                    for char in [',', '(', ')']:
+                        st = st.replace(char, '')
+                    rmin, rmax = st.split()
+
+                    rmin = float(rmin)
+                    rmax = float(rmax)
+                    rbcz, rtcz = rmin, rmax
+
         f.close() # now we have the critical radii...must be better way tho
         rmidcz = rbcz + (rtcz - rbcz)/2.
         print("Rbcz + H/2 =", rmidcz)
