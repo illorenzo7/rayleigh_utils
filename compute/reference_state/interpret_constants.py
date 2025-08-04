@@ -119,18 +119,26 @@ for line in lines:
 print ("(gamma, beta, Nrho) = (%1.16f, %1.5f, %1.5f)" %(gamma, beta, nrho))
 print ("   ----> Di = %1.5f" %di)
 
-# "unpack" pr and ra
+# "unpack" pr and ra (or supercrit)
 pr = di_par.pr
-raf = di_par.raf
 
-# if model is rotating, user will have set Ro_c
-# must compute ekman number in that case
-if 'roc' in di_par.keys():
+if 'supercrit' in di_par.keys():
+    supercrit = di_par.supercrit
     rotation = True
+    raf = supercrit**3/pr**2/di_par.roc**4
     ek = di_par.roc * np.sqrt(pr/raf)
-    rafmod = di_par.roc**2.
 else:
-    rotation = False
+    raf = di_par.raf
+
+    # if model is rotating, user will have set Ro_c
+    # must compute ekman number in that case
+    if 'roc' in di_par.keys():
+        rotation = True
+        ek = di_par.roc * np.sqrt(pr/raf)
+        rafmod = di_par.roc**2.
+        supercrit = raf*ek**(4/3)
+    else:
+        rotation = False
 
 # if model has stable layer 
 # user will have set sigma or bu
@@ -157,12 +165,15 @@ else:
 if kw.tau == 'rot':
     timescale_msg = "timescale chosen: %s, tau = 1/(2 omega_0)" %kw.tau
     tau_over_taunu = ek
+    print ("convective Rossby number = %1.5e" %di_par.roc)
     print ("Ekman number = %1.5e" %ek)
+    print ("Rayleigh number = %1.5e" %raf)
+    print ("supercriticality = %1.5e" %supercrit)
 elif kw.tau == 'visc':
-    timescale_msg ="timescale chosen: %s, tau = H^2/nu" %kw.tau
+    timescale_msg ="timescale chosen: %s; tau = H^2/nu" %kw.tau
     tau_over_taunu = 1.
 elif kw.tau == 'kappa':
-    timescale_msg = "timescale chosen: %s, tau = H^2/kappa" %kw.tau
+    timescale_msg = "timescale chosen: %s; tau = H^2/kappa" %kw.tau
     tau_over_taunu = pr
 print(timescale_msg)
 
@@ -234,7 +245,10 @@ f.write("with the interpret_constants routine.\n")
 f.write(timescale_msg + '\n')
 f.write("Di: %1.5f\n" %di)
 if kw.tau == 'rot':
+    f.write("convective Rossby number: %1.5e\n" %di_par.roc)
     f.write("Ekman number: %1.5e\n" %ek)
+    f.write("Rayleigh number = %1.5e\n" %raf)
+    f.write("supercritcality: %1.5e\n" %supercrit)
 
 f.write(buff_line + '\n')
 f.close()
