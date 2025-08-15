@@ -496,6 +496,13 @@ def curlphi(arr_r, arr_t, rr, tt):
     rr_2d = rr.reshape((1, nr))
     return ( drad(rr_2d*arr_t, rr) - dth(arr_r, tt) )/rr_2d
 
+def divphi(arr_r, arr_t, rr, tt):
+    nt, nr = np.shape(arr_r)
+    rr_2d = rr.reshape((1, nr))
+    cott = np.cos(tt)/np.sin(tt)
+    cott = cott.reshape((nt, 1))
+    return ( drad(arr_r, rr) + 2*arr_r/rr_2d +  (dth(arr_t, tt) + cott*arr_t)/rr_2d )
+
 def indefinite_integral(integrand, x, x0):
     # check on the order of x
     # if x is descending, reverse both arrays for the integration,
