@@ -106,7 +106,7 @@ else:
     eq = equation_coefficients(r)
 nr = len(r)
 
-heat = eq.rho*eq.tmp # used to subtract off "top" value in dimensional
+heat = eq.functions[0]*eq.functions[3] # used to subtract off "top" value in dimensional
     # version. But now realize that top value was at 6.887 x 10^10 cm,
     # way higher than I actually used (so effectively zero). Second
     # paper reported it right. 
@@ -133,7 +133,7 @@ print(buff_line)
 eq.write(the_file)
 
 # record what we did in the meta file
-f = open(dirname + '/' + metafile, 'a')
+f = open(dirname + '/' + meta_file, 'a')
 
 f.write("Also added custom heating profile using the\n")
 f.write("generate_CZonly_heating routine.\n")
@@ -142,5 +142,5 @@ f.write("heating has the folowing attributes:\n")
 f.write("(rmin,  rmax): (%1.2f, %1.2f)\n" %(kw.rmin, kw.rmax))
 f.write(buff_line + '\n')
 f.close()
-print("Writing the heating metadata to %s" %metafile)
+print("Writing the heating metadata to %s" %meta_file)
 print(buff_line)
