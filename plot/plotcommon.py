@@ -752,7 +752,7 @@ def add_cbar(fig, ax, im, **kw_in):
 
     return cbar
 
-kw_contourf_minmax_default = dict({'posdef': False, 'no0': False, 'center_tick': None, 'log': False, 'symlog': False, 'sgnlog': False, 'fullrange': False, 'fullrange2': False, 'buff_ignore1': buff_frac, 'buff_ignore2': buff_frac, 'nstd': 3.}) 
+kw_contourf_minmax_default = dict({'posdef': False, 'no0': False, 'center_tick': None, 'log': False, 'symlog': False, 'sgnlog': False, 'fullrange': False, 'fullrange2': False, 'buff_ignore1': buff_frac, 'buff_ignore2': buff_frac, 'nstd': 3., 'x1': None, 'x2': None}) 
 
 def contourf_minmax(field, **kw_in):
     # Get good boundaries to saturate array [field], assuming either
@@ -764,11 +764,30 @@ def contourf_minmax(field, **kw_in):
     field_loc = np.copy(field) # don't mess around with the real array
     n1, n2 = np.shape(field_loc)
     if not kw.buff_ignore1 is None:
-        icut = int(n1*kw.buff_ignore1) # cut away the buff_ignore1 fraction of the array
-        field_loc = np.copy(field_loc[icut:n1-icut, :])
+        if kw.x1 is None:
+            icut = int(n1*kw.buff_ignore1) # cut away the buff_ignore1 fraction of the array
+            icut1, icut2 = icut, n1-icut
+        else:
+            xmin, xmax = np.min(kw.x1), np.max(kw.x1)
+            Dx = xmax - xmin
+            icut1, icut2 = inds_from_vals(kw.x1,\
+                    [xmin + kw.buff_ignore1*Dx, xmax - kw.buff_ignore1*Dx])
+            if icut1 >= icut2:
+                icut1, icut2 = icut2, icut1
+        field_loc = np.copy(field_loc[icut1:icut2, :])
     if not kw.buff_ignore2 is None:
-        icut = int(n2*kw.buff_ignore2)
-        field_loc = np.copy(field[:, icut:n2-icut])
+        if kw.x2 is None:
+            icut = int(n2*kw.buff_ignore2) # cut away the buff_ignore1 fraction of the array
+            icut1, icut2 = icut, n2-icut
+        else:
+            xmin, xmax = np.min(kw.x2), np.max(kw.x2)
+            Dx = xmax - xmin
+            icut1, icut2 = inds_from_vals(kw.x2,\
+                    [xmin + kw.buff_ignore2*Dx, xmax - kw.buff_ignore2*Dx])
+            if icut1 >= icut2:
+                icut1, icut2 = icut2, icut1
+        field_loc = np.copy(field_loc[:, icut1:icut2])
+        print("shape field_loc =", np.shape(field_loc))
 
     # purge the field of nans
     field_loc = field_loc[np.where(1 - np.isnan(field_loc))]
