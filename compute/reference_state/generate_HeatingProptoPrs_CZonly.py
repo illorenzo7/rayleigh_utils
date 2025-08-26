@@ -133,7 +133,7 @@ print(buff_line)
 eq.write(the_file)
 
 # record what we did in the meta file
-f = open(dirname + '/' + meta_file, 'a')
+f = open(meta_file, 'a')
 
 f.write("Also added custom heating profile using the\n")
 f.write("generate_CZonly_heating routine.\n")

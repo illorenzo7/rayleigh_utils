@@ -38,30 +38,7 @@ dirname = clas0['dirname']
 
 # Set default kwargs
 # start with filename, which may change
-kw_default = dotdict(dict({'fname': 'customfile'}))
-kw_default = update_dict(kw_default, clas)
-
-# read in metadata (regarding radial structure) to put into keywords
-metafile = dirname + '/' + kw_default.fname + '_meta.txt'
-f = open(metafile, 'r')
-lines = f.readlines()
-for line in lines:
-    # find the line containing rbrz, etc.
-    alltrue = True
-    for keyword in ['rmin', 'rt', 'rmax']:
-        alltrue *= keyword in line
-    if alltrue:
-        st = line.split(':')[1]
-        for char in [',', '(', ')']:
-            st = st.replace(char, '')
-        rmin, rt, rmax = st2 = st.split()
-
-        kw_default.rmin = float(rmin)
-        kw_default.rt = float(rt)
-        kw_default.rmax = float(rmax)
-    if 'Jovian' in line:
-        kw_default.jup = True
-f.close()
+kw_default = dotdict(dict({'fname': 'customfile', 'rmin': None, 'rmax': None}))
 
 # overwrite defaults
 kw = update_dict(kw_default, clas)
@@ -69,12 +46,15 @@ kw = update_dict(kw_default, clas)
 # check for bad keys
 find_bad_keys(kw_default, clas, clas0['routinename'], justwarn=True)
 
-
 # Open and read the hopefully already existing reference file!
 eq = equation_coefficients()
 the_file = dirname + '/' + kw.fname
 eq.read(the_file)
 r = eq.radius
+if kw.rmin is None:
+    kw.rmin = np.min(r)
+if kw.rmax is None: 
+    kw.rmax = np.max(r)
 nr = eq.nr
 rho = eq.functions[0]
 tmp = eq.functions[3]
@@ -90,10 +70,6 @@ irmax = np.argmin(np.abs(r - kw.rmax))
 dtdr_out = -lum/4./np.pi/kw.rmax**2/(rho*tmp*kappa)[irmax]
 
 print ("for lum = int_CZ f_6 dv =  %1.6e" %lum)
-print ("where (rmin, rt, rmax) =", kw.rmin, kw.rt, kw.rmax)
-if kw.jup:
-    print ("and the CZ is the bottom layer (rmin, rt)")
-else:
-    print ("and the CZ is the top layer (rt, rmax)")
+print ("where (rmin, rmax) =", kw.rmin, kw.rmax)
 print ("set dtdr_top to")
 print ("%1.16e" %dtdr_out)
