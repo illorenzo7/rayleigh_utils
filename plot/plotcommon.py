@@ -787,7 +787,6 @@ def contourf_minmax(field, **kw_in):
             if icut1 >= icut2:
                 icut1, icut2 = icut2, icut1
         field_loc = np.copy(field_loc[:, icut1:icut2])
-        print("shape field_loc =", np.shape(field_loc))
 
     # purge the field of nans
     field_loc = field_loc[np.where(1 - np.isnan(field_loc))]
