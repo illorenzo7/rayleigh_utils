@@ -192,14 +192,17 @@ def array_of_strings(arr):
         li.append(str(ele))
     return np.array(li)
 
-def arr_to_str(a, fmt, nobra=False):
+def arr_to_str(a, fmt, nobra=False, commas=True, detectscalar=False):
     st = ''
-    for ele in a:
-        st += (fmt + ' ') %ele
-    if nobra:
-        return st[:-1]
+    if detectscalar and len(a) == 1:
+        return fmt %a[0]
     else:
-        return '[' + st[:-1] + ']'
+        for ele in a:
+            st += (fmt + ', ') %ele
+        if nobra:
+            return st[:-2]
+        else:
+            return '(' + st[:-2] + ')'
 
 def float_or_sci(num, SF=3):
     # determine the format (float or sci) for minimal spacing of a number
@@ -271,6 +274,20 @@ def compactify_float(num, fmt_type, SF=3):
         st = fmt_f %num
 
     return st
+
+def compactify_array(arr, fmt_type, SF=3):
+    if isinstance(arr, np.ndarray):
+        if len(arr) == 1:
+            return compactify_float(arr[0])
+        else:
+            st = '('
+            for i in range(len(arr)):
+                st += compactify_float(arr[i])
+                if i < len(arr) - 1:
+                    st += ', '
+            return st + ')'
+    else:
+        return compactify_float(arr)
 
 def optimal_float_string(num, SF=3):
     return compactify_float(num, float_or_sci(num, SF=SF), SF=SF)
