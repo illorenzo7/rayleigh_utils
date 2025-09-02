@@ -687,11 +687,12 @@ def add_cbar(fig, ax, im, **kw_in):
                         np.linspace(-maxabs, -linthresh, 4, endpoint=False),
                         np.linspace(-linthresh, linthresh, 4, endpoint=False),
                         np.linspace(linthresh, maxabs, 5) ))
-            elif kw.fullrange2:
-                kw.tickvals = np.array([levelsfield[0], 0., levelsfield[-1]])
+            #elif kw.fullrange2:
             else:
-                nskip = nlevelsfield//8
-                kw.tickvals = levelsfield[::nskip]
+                kw.tickvals = np.array([levelsfield[0], 0., levelsfield[-1]])
+            #else:
+            #    nskip = nlevelsfield//8
+            #    kw.tickvals = levelsfield[::nskip]
         # then, ticklabels
         if kw.ticklabels is None:
             nticks = len(kw.tickvals)
