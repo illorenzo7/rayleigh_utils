@@ -733,8 +733,8 @@ def interp_nd(arr, x_old, x_new, axis=0):
     new_shapeish = (nx_new,) + old_shape[:axis] + old_shape[axis+1:] 
     rest_of_shape = old_shape[:axis] + old_shape[axis+1:] 
     nrest = np.prod(rest_of_shape)
-    arr_flattish = np.zeros((nx_old, nrest))
-    arr_interp_flattish = np.zeros((nx_new, nrest))
+    arr_flattish = np.zeros((nx_old, nrest), dtype=arr.dtype)
+    arr_interp_flattish = np.zeros((nx_new, nrest), dtype=arr.dtype)
     for ix in range(nx_old):
         arr_flattish[ix, :] = np.take(arr, indices=ix, axis=axis).flatten()
     for irest in range(nrest):
