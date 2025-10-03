@@ -198,11 +198,16 @@ def arr_to_str(a, fmt, nobra=False, commas=True, detectscalar=False):
         return fmt %a[0]
     else:
         for ele in a:
-            st += (fmt + ', ') %ele
+            if commas:
+                the_insert = ', '
+            else:
+                the_insert = ' '
+            n_to_delete = len(the_insert)
+            st += (fmt + the_insert) %ele
         if nobra:
-            return st[:-2]
+            return st[:-n_to_delete]
         else:
-            return '(' + st[:-2] + ')'
+            return '(' + st[:-n_to_delete] + ')'
 
 def float_or_sci(num, SF=3):
     # determine the format (float or sci) for minimal spacing of a number
