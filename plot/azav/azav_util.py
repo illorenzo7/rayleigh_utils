@@ -19,7 +19,7 @@ azav_fig_dimensions = dict({'sub_aspect': 2, 'sub_width_inches': 2, 'sub_margin_
 
 # plot_azav needs my_contourf args, then some
 kw_plot_azav_default = dict(
-        {'rcut': None, 'minmax2': None, 'cmap2': None, 'rvals': None, 'plotlatlines': True, 'latvals': np.arange(-60., 90., 30.), 'plotboundary': True,
+        {'rcut': None, 'order': 'down', 'minmax2': None, 'cmap2': None, 'rvals': None, 'plotlatlines': True, 'latvals': np.arange(-60., 90., 30.), 'plotboundary': True,
         'linestyles1': np.array(['--']), 'linewidth': default_lw, 'linecolors1': np.array(['k']),
        'linestyles2': np.array(['--']), 'linecolors2': np.array(['k']),
        'halfplane': False, 'sym': False, 'antisym': False, 'fontsize': default_labelsize, 'plotaxis': True,\
@@ -82,13 +82,24 @@ def plot_azav(field, rr, cost, fig, ax,  **kw_in):
 
         field_full = np.copy(field)
 
-        field = field_full[:, :ircut+1]
-        xx = (rr_2d*sint_2d)[:, :ircut+1]/rmax
-        yy = (rr_2d*cost_2d)[:, :ircut+1]/rmax
+        if kw.order == 'down':
+            field = field_full[:, :ircut+1]
+            xx = (rr_2d*sint_2d)[:, :ircut+1]/rmax
+            yy = (rr_2d*cost_2d)[:, :ircut+1]/rmax
 
-        field2 = field_full[:, ircut+1:]
-        xx2 = (rr_2d*sint_2d)[:, ircut+1:]/rmax
-        yy2 = (rr_2d*cost_2d)[:, ircut+1:]/rmax
+            field2 = field_full[:, ircut+1:]
+            xx2 = (rr_2d*sint_2d)[:, ircut+1:]/rmax
+            yy2 = (rr_2d*cost_2d)[:, ircut+1:]/rmax
+
+        else:
+            field = field_full[:, ircut+1:]
+            xx = (rr_2d*sint_2d)[:, ircut+1:]/rmax
+            yy = (rr_2d*cost_2d)[:, ircut+1:]/rmax
+
+            field2 = field_full[:, :ircut+1]
+            xx2 = (rr_2d*sint_2d)[:, :ircut+1]/rmax
+            yy2 = (rr_2d*cost_2d)[:, :ircut+1]/rmax
+
 
     # plot the first (upper) field
     kw_my_contourf.cbar_no = 1
