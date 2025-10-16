@@ -923,11 +923,15 @@ def my_contourf(xx, yy, field, fig, ax, **kw_in):
             # just thin out the field levels
             nskip = kw.nlevels//kw.ncontours
             kw.contourlevels = levels[::nskip]
-            if kw.fullrange2: # need equally spaced levels on 
-                # each side of zero separately
-                levels_neg = np.linspace(kw.minmax[0], 0, kw.ncontours//2 - 1, endpoint=False)
-                levels_pos = np.linspace(0, kw.minmax[1], kw.ncontours//2, endpoint=False)
-                kw.contourlevels = np.hstack((levels_neg, levels_pos))
+            if kw.fullrange2: 
+                if kw.ncontours > 1:
+                    # need equally spaced levels on
+                    # each side of zero separately
+                    levels_neg = np.linspace(kw.minmax[0], 0, kw.ncontours//2 - 1, endpoint=False)
+                    levels_pos = np.linspace(0, kw.minmax[1], kw.ncontours//2, endpoint=False)
+                    kw.contourlevels = np.hstack((levels_neg, levels_pos))
+                else: # ncontours = 1
+                    kw.contourlevels = np.array([0.])
 
         # plot the contours
         if kw.zerodashed: # look for the contour closest to zero and make it dashed
