@@ -54,6 +54,10 @@ if not kw.rcut is None:
     kw_make_figure.margin_top_inches += 1/4
     kw_make_figure.sub_margin_bottom_inches *= 2
 
+# need to adjust aspect ratio if halfplane is true
+if kw.halfplane:
+    kw_make_figure.sub_aspect = 1.
+
 # get data
 if kw.the_file is None:
     kw.the_file = get_widest_range_file(clas0['datadir'], 'AZ_Avgs')
