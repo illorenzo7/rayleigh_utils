@@ -171,7 +171,7 @@ if kw.groupname in ['torque']: # add two more terms at the top
 # "thinned" times and iters
 if kw.ntot == 'full':
     print(buff_line)
-    print ("ntot = %i (full time series)" %kw.ntot)
+    print ("ntot = %i (full time series)" %len(times))
     times_thin = times
     iters_thin = iters
 else:
