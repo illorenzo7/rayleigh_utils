@@ -724,7 +724,7 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
         if kw.eq:
             linestyle = '-'
         else:
-            linestyle = '--'
+            linestyle = '-'
         svals = np.linspace(beta, 1, nsvals)
         for lonval in [dlon1, dlon2]:
             ax.plot(svals*np.sin(lonval), -svals*np.sin(clat)*np.cos(lonval),\
@@ -736,7 +736,7 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
             linestyles_loc = np.copy(linestyles)
         else: # just plot outer and inner boundaries
             irvals = [0]
-            linestyles_loc = ['--']
+            linestyles_loc = ['-']
         svals = np.linspace(dlon1, dlon2, nsvals)
         for irval in irvals:
             rval = rvals[irval]
@@ -752,7 +752,7 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
         cond2 = (lon1d > dlon1) & (lon1d < dlon2)
         xx[cond1] = np.nan; xx[cond2] = np.nan
         yy[cond1] = np.nan; yy[cond2] = np.nan
-        ax.plot(xx, yy, 'k--', linewidth=kw.linewidth)
+        ax.plot(xx, yy, 'k-', linewidth=kw.linewidth)
 
         # upper rotation axis
         svals = np.linspace(beta, 1, nsvals)
