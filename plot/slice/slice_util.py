@@ -275,7 +275,7 @@ def plot_moll_or_ortho(field, costheta, fig, ax, **kw):
         xvals, yvals = 2.*np.cos(psivals), np.sin(psivals)
         if kw.ortho:
             xvals /= 2.
-        ax.plot(xvals, yvals, 'k', linewidth=1.5*kw.linewidth)
+        ax.plot(xvals*kw.shrinkage, yvals*kw.shrinkage, 'k', linewidth=1.5*kw.linewidth)
 
 # equatorial slice plotting routine
 kw_plot_eq_default = dict({'clon': 0., 'plotlonlines': True, 'lonvals': np.arange(0., 360., 60.), 'linewidth': 0.5*default_lw, 'plotboundary': True})
@@ -348,7 +348,7 @@ def plot_eq(field, rr, fig, ax, **kw):
 
 kw_plot_cutout_3d_default =\
         dotdict(dict({'r1': 'rmin', 'r2': 'rmax', 'dlon1': -30., 'dlon2': 60.,\
-        'eq': True, 'clon': 0., 'clat': 20., 't0': None, 'verbose': False, 'linewidth': default_lw, 'plotboundary': True,\
+        'eq': True, 'clon': 0., 'clat': 20., 't0': None, 'verbose': False, 'linewidth': default_lw, 'plotboundary': True, 'shrinkage': 1.0,\
         'numcbar': 0, 'rvals': [], 'lonvals': [], 'latvals': [], 'varname2': None, 'twovars': False, 'rcut': None}))
 kw_plot_cutout_3d_default.update(kw_my_contourf_default)
 kw_plot_cutout_3d_default.plotcontours = False
@@ -526,7 +526,7 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
     # make the plot
     if kw.numcbar == 0: # resolve this inconsistency
         kw_my_contourf.plotcbar = False
-    my_contourf(xx, yy, field, fig, ax, **kw_my_contourf)
+    my_contourf(xx*kw.shrinkage, yy*kw.shrinkage, field, fig, ax, **kw_my_contourf)
 
     if kw.plotboundary:
         # plot the boundary
@@ -541,7 +541,7 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
             cond = (oldlon > dlon1) & (oldlon < dlon2)
             xx[cond] = np.nan
             yy[cond] = np.nan
-        ax.plot(xx, yy, 'k-', linewidth=kw.linewidth)
+        ax.plot(xx*kw.shrinkage, yy*kw.shrinkage, 'k-', linewidth=kw.linewidth)
 
     # PLOT MERIDIAN 1 (left one)
     # get the field
@@ -568,7 +568,7 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
 
     field[cond] = np.nan
     # make plot
-    my_contourf(xx, yy, field, fig, ax, **kw_my_contourf)
+    my_contourf(xx*kw.shrinkage, yy*kw.shrinkage, field, fig, ax, **kw_my_contourf)
 
     # PLOT MERIDIAN 2 (right one)
     # get the field
@@ -596,7 +596,7 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
         cond = cond | (lat2d < 0)
     field[cond] = np.nan
     # make plot
-    my_contourf(xx, yy, field, fig, ax, **kw_my_contourf)
+    my_contourf(xx*kw.shrinkage, yy*kw.shrinkage, field, fig, ax, **kw_my_contourf)
 
     if kw.plotboundary:
         # plot meridional boundaries
@@ -627,7 +627,7 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
                     xx[cond] = np.nan
                     yy[cond] = np.nan
 
-                ax.plot(xx, yy, 'k', linewidth=kw.linewidth, linestyle=linestyles[irval])
+                ax.plot(xx*kw.shrinkage, yy*kw.shrinkage, 'k', linewidth=kw.linewidth, linestyle=linestyles[irval])
 
     # Plot the ORTHO 1 (the inner one)
     # get a "meshgrid" from 1D arrays
@@ -655,7 +655,7 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
     if kw.eq:
         # only don't plot inside the planes above the equatorial plane
         cond2 = cond2 & (lat2d > 0)
-    my_contourf(xx, yy, field, fig, ax, **kw_my_contourf)
+    my_contourf(xx*kw.shrinkage, yy*kw.shrinkage, field, fig, ax, **kw_my_contourf)
 
     if not kw.eq and kw.plotboundary:
         # plot the boundary
@@ -668,7 +668,7 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
             cond = (oldlon < dlon1) | (oldlon > dlon2)
             xx[cond] = np.nan
             yy[cond] = np.nan
-        ax.plot(xx, yy, 'k-', linewidth=kw.linewidth)
+        ax.plot(xx*kw.shrinkage, yy*kw.shrinkage, 'k-', linewidth=kw.linewidth)
 
     # PLOT EQUATORIAL SLICE
     if kw.eq:
@@ -690,7 +690,7 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
         cond = (lon2d < dlon1) | (lon2d > dlon2) | (rad2d < beta)  | (rad2d > 1.)
         field[cond] = np.nan
         # make plot
-        my_contourf(xx, yy, field, fig, ax, **kw_my_contourf)
+        my_contourf(xx*kw.shrinkage, yy*kw.shrinkage, field, fig, ax, **kw_my_contourf)
 
     # don't obscure the boundary
     lilbit = 0.01
@@ -709,7 +709,7 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
             cond = np.sin(clat)*np.sin(svals)+np.cos(clat)*np.cos(svals)*np.cos(dlonval) < 0
             xx[cond] = np.nan
             yy[cond] = np.nan
-            ax.plot(xx, yy, 'k-', linewidth=kw.linewidth)
+            ax.plot(xx*kw.shrinkage, yy*kw.shrinkage, 'k-', linewidth=kw.linewidth)
             count += 1
 
         # and the "far" meridians
@@ -727,7 +727,7 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
             linestyle = '-'
         svals = np.linspace(beta, 1, nsvals)
         for lonval in [dlon1, dlon2]:
-            ax.plot(svals*np.sin(lonval), -svals*np.sin(clat)*np.cos(lonval),\
+            ax.plot(svals*np.sin(lonval)*kw.shrinkage, -svals*np.sin(clat)*np.cos(lonval)*kw.shrinkage,\
                     'k', linewidth=kw.linewidth, linestyle=linestyle)
 
         # equatorial slice, inner to outer
@@ -740,7 +740,7 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
         svals = np.linspace(dlon1, dlon2, nsvals)
         for irval in irvals:
             rval = rvals[irval]
-            ax.plot(rval*np.sin(svals), -rval*np.sin(clat)*np.cos(svals), 'k',\
+            ax.plot(rval*np.sin(svals)*kw.shrinkage, -rval*np.sin(clat)*np.cos(svals)*kw.shrinkage, 'k',\
                     linewidth=kw.linewidth, linestyle=linestyles_loc[irval])
             
         # finish the equator with a dashed line 
@@ -752,11 +752,11 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
         cond2 = (lon1d > dlon1) & (lon1d < dlon2)
         xx[cond1] = np.nan; xx[cond2] = np.nan
         yy[cond1] = np.nan; yy[cond2] = np.nan
-        ax.plot(xx, yy, 'k-', linewidth=kw.linewidth)
+        ax.plot(xx*kw.shrinkage, yy*kw.shrinkage, 'k-', linewidth=kw.linewidth)
 
         # upper rotation axis
         svals = np.linspace(beta, 1, nsvals)
-        ax.plot(0*svals, svals*np.cos(clat), 'k-', linewidth=kw.linewidth)
+        ax.plot(0*svals*kw.shrinkage, svals*np.cos(clat)*kw.shrinkage, 'k-', linewidth=kw.linewidth)
         if not kw.eq: # lower rotation axis too
             svals = np.linspace(-1, -beta/np.cos(clat), nsvals)
-            ax.plot(0*svals, svals*np.cos(clat), 'k-', linewidth=kw.linewidth)
+            ax.plot(0*svals*kw.shrinkage, svals*np.cos(clat)*kw.shrinkage, 'k-', linewidth=kw.linewidth)
