@@ -23,7 +23,7 @@ kw_plot_azav_default = dict(
         'linestyles1': np.array(['--']), 'linewidth': default_lw, 'linecolors1': np.array(['k']),
        'linestyles2': np.array(['--']), 'linecolors2': np.array(['k']),
        'halfplane': False, 'sym': False, 'antisym': False, 'fontsize': default_labelsize, 'plotaxis': True,\
-        'modrms': False
+               'modrms': False, 'shrinkage': 1.0
        })
 
 # add in my_contourf stuff
@@ -103,7 +103,7 @@ def plot_azav(field, rr, cost, fig, ax,  **kw_in):
 
     # plot the first (upper) field
     kw_my_contourf.cbar_no = 1
-    my_contourf(xx, yy, field, fig, ax, **kw_my_contourf)
+    my_contourf(xx*kw.shrinkage, yy*kw.shrinkage, field, fig, ax, **kw_my_contourf)
 
     # possibly plot a second (lower) field
     if not kw.rcut is None: 
@@ -118,7 +118,7 @@ def plot_azav(field, rr, cost, fig, ax,  **kw_in):
         else:
             kw_my_contourf.cmap = kw.cmap2
         kw_my_contourf.cbar_no = 2
-        my_contourf(xx2, yy2, field2, fig, ax, **kw_my_contourf)
+        my_contourf(xx2*kw.shrinkage, yy2*kw.shrinkage, field2, fig, ax, **kw_my_contourf)
 
     # potentially plot coordinate lines
     if not kw.plotlatlines:
@@ -167,7 +167,7 @@ def plot_azav(field, rr, cost, fig, ax,  **kw_in):
             if ind == 2:
                 ilatval = np.argmin(np.abs(tt_lat - val))
                 xline, yline = xx_full[ilatval, :], yy_full[ilatval, :]
-            ax.plot(xline, yline, linewidth=kw.linewidth, linestyle=linestyles[i], color=linecolors[i])
+            ax.plot(xline*kw.shrinkage, yline*kw.shrinkage, linewidth=kw.linewidth, linestyle=linestyles[i], color=linecolors[i])
         
     if kw.plotaxis: # plot x and z coordinate axes
         ax.axis('on')
