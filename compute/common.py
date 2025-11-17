@@ -1314,7 +1314,7 @@ def get_grid_info(dirname, verbose=False, fname=None, ntheta=None):
 
     return di
 
-def compute_axial_H(rr, sint, rmin=None, rmax=None):
+def compute_axial_H(rr, sint, rmin=None, rmax=None, discontinuous=False):
     # compute the axial distance H between the spheres r_min and r_max
     # assumes rr and sint are two arrays of compatible shape
     xx = rr*sint
@@ -1331,11 +1331,14 @@ def compute_axial_H(rr, sint, rmin=None, rmax=None):
         if xx_loc > rmin: # outside tangent cylinder
             H_flat[ix] = 2*np.sqrt(rmax**2 - xx_loc**2)
         else:
-            H_flat[ix] = np.sqrt(rmax**2 - xx_loc**2) - np.sqrt(rmin**2 - xx_loc**2)
+            H_flat[ix] = 2*(np.sqrt(rmax**2 - xx_loc**2) - np.sqrt(rmin**2 - xx_loc**2) )
+            if discontinuous:
+                H_flat[ix] /= 2
+
     H = H_flat.reshape(np.shape(xx))
     return H
 
-def compute_beta_topo(rr, sint, rmin=None, rmax=None):
+def compute_beta_topo(rr, sint, rmin=None, rmax=None, discontinuous=False):
     # compute the axial distance H between the spheres r_min and r_max
     # assumes rr and sint are two arrays of compatible shape
     xx = rr*sint
@@ -1352,7 +1355,9 @@ def compute_beta_topo(rr, sint, rmin=None, rmax=None):
         if xx_loc > rmin: # outside tangent cylinder
             beta_flat[ix] = -xx_loc/(rmax**2. - xx_loc**2.)
         else:
-            beta_flat[ix] = xx_loc/( np.sqrt(rmax**2 - xx_loc**2)*np.sqrt(rmin**2 - xx_loc**2) )
+            beta_flat[ix] = 2*xx_loc/( np.sqrt(rmax**2 - xx_loc**2)*np.sqrt(rmin**2 - xx_loc**2) )
+            if discontinuous:
+                beta_flat[ix] /= 2
     beta_topo = beta_flat.reshape(np.shape(xx))
     return beta_topo
 
