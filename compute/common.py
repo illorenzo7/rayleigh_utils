@@ -1437,6 +1437,29 @@ def volav_in_radius(dirname, arr, r1='rmin', r2='rmax'):
     ir1, ir2 = np.argmin(np.abs(rr - r1)), np.argmin(np.abs(rr - r2))
     return np.sum((arr*rw)[ir2:ir1+1])/np.sum(rw[ir2:ir1+1])
 
+def average_in_z(dirname, vals, npoints, ntheta=None):
+    '''
+    routine to average vals (ntheta, nr) in z, 
+    interpolating onto llambda array
+    returns (llambda, vals_avz)
+    '''
+    # set up grid stuff
+    gi = get_grid_info(dirname, ntheta=ntheta)
+    rmax = np.max(gi.rr)
+    areas = gi.rw_2d*gi.tw_2d
+    llambda_bdy = np.linspace(0,rmax, npoints+1)
+    llambda = 0.5*(llambda_bdy[:-1] + llambda_bdy[1:])
+
+    # do the average
+    vals_avz  = np.zeros(npoints)
+    for i in range(npoints):
+        llambda1, llambda2 = llambda_bdy[i:i+2]
+        areas_strip = np.copy(areas)[np.where((gi.xx >= llambda1) & (gi.xx <= llambda2))]
+        vals_strip = np.copy(vals)[np.where((gi.xx >= llambda1) & (gi.xx <= llambda2))]
+        vals_avz[i] = np.sum(vals_strip*areas_strip)/np.sum(areas_strip)
+
+    return llambda, vals_avz
+
 def indefinite_radial_integral(dirname, arr, r0='rmin'):
     gi = get_grid_info(dirname)
     rr, rw = gi.rr, gi.rw
@@ -2240,3 +2263,5 @@ def issubset(arr1, arr2):
     set1 = set(arr1.flatten())
     set2 = set(arr2.flatten())
     return set1 <= set2
+
+
