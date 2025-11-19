@@ -1071,12 +1071,19 @@ def get_datadir_from_file(filename):
     return datadir_rel
 
 def get_iters_from_file(filename):
-    # route does what it's named to do...
+    # routine does what it's named to do...
     filename_end = filename.split('-')[-1][:-4] 
     # (gets the [iter1]_[iter2].pkl and removes the trailing .ext)
     iters_st = filename_end.split('_')
     iter1, iter2 = int(iters_st[0]), int(iters_st[1])
     return iter1, iter2
+
+def get_times_from_file(dirname, filename):
+    # routine does what it's named to do...
+    iter1, iter2 = get_iters_from_file(filename)
+    t1 = translate_times(iter1, dirname).time
+    t2 = translate_times(iter2, dirname).time
+    return t1, t2
  
 ##################################################################################
 # ROUTINES TO GET BASIC INFO ABOUT A RAYLEIGH SIMULATION, GIVEN THE SIM. DIRECTORY
