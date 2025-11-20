@@ -74,13 +74,13 @@ elif kw.type == 'mean':
     tke_use = tke_mean
     pke_use = pke_mean
 elif kw.type == 'rat': # compute a bunch of ratios
-    vsq = (rke + tke + pke)/eq.rho # total
-    vsq_fluc = (rke_fluc + tke_fluc + pke_fluc)/eq.rho # convect.
-    vsq_fluc_r = rke_fluc/eq.rho # vertical convect.
-    vsq_fluc_h = (tke_fluc + pke_fluc)/eq.rho # horizontal convect.
-    vsq_dr = (pke_mean)/eq.rho # diff. rot.
-    vsq_mean_r = rke_mean/eq.rho # <v_r>
-    vsq_mean_t = tke_mean/eq.rho # <v_theta>
+    vsq = 2*(rke + tke + pke)/eq.rho # total
+    vsq_fluc = 2*(rke_fluc + tke_fluc + pke_fluc)/eq.rho # convect.
+    vsq_fluc_r = 2*rke_fluc/eq.rho # vertical convect.
+    vsq_fluc_h = 2*(tke_fluc + pke_fluc)/eq.rho # horizontal convect.
+    vsq_dr = 2*(pke_mean)/eq.rho # diff. rot.
+    vsq_mean_r = 2*rke_mean/eq.rho # <v_r>
+    vsq_mean_t = 2*tke_mean/eq.rho # <v_theta>
     vsq_mc = vsq_mean_r + vsq_mean_t # mer. circ.
 
     amp_v = np.sqrt(vsq)
@@ -103,9 +103,9 @@ if kw.type == 'rat':
     profiles = [amp_fluc/amp_v, amp_dr/amp_v, amp_mc/amp_v, amp_fluc_r/amp_fluc_h, amp_mean_r/amp_mean_t]
     kw_lineplot.labels = [r'$|\mathbf{u}^\prime|/|\mathbf{u}|$', r'$|\mathbf{u}_{DR}|/|\mathbf{u}|$', r'$|\mathbf{u}_{MC}|/|\mathbf{u}|$', r'$|u_r^\prime|/|\mathbf{u}_h^\prime|$', r'$\langle u_r\rangle/\langle u_\theta\rangle$']
 else:
-    vsq_r = rke_use/eq.rho
-    vsq_t = tke_use/eq.rho
-    vsq_p = pke_use/eq.rho
+    vsq_r = 2*rke_use/eq.rho
+    vsq_t = 2*tke_use/eq.rho
+    vsq_p = 2*pke_use/eq.rho
     vsq = vsq_r + vsq_t + vsq_p
 
     amp_v = np.sqrt(vsq)
