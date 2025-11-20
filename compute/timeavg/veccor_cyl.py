@@ -209,15 +209,16 @@ for i in range(my_nfiles):
         my_vals[:, :, ind_off + 4] += np.mean(vecl_m*vecz_m, axis=0)*my_weight 
         my_vals[:, :, ind_off + 5] += np.mean(vecp_m*vecz_m, axis=0)*my_weight
 
-        # fluc terms
-        ind_off += 6
-        for k in range(6):
-            my_vals[:, :, ind_off + k] += my_vals[:, :, k] - my_vals[:, :, 6 + k]
-
         if rank == 0:
             pcnt_done = (i + 1)/my_nfiles*100.
             print(fill_str('computing', lent, char) +\
                     ('rank 0 %5.1f%% done' %pcnt_done), end='\r')
+
+# easily compute the flucuating terms
+# fluc terms
+for k in range(6):
+    my_vals[:, :, 12 + k] = my_vals[:, :, k] - my_vals[:, :, 6 + k]
+
 
 # Checkpoint and time
 comm.Barrier()
