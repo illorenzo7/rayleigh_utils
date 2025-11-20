@@ -348,7 +348,7 @@ def plot_eq(field, rr, fig, ax, **kw):
 
 kw_plot_cutout_3d_default =\
         dotdict(dict({'r1': 'rmin', 'r2': 'rmax', 'dlon1': -30., 'dlon2': 60.,\
-        'eq': True, 'clon': 0., 'clat': 20., 't0': None, 'verbose': False, 'linewidth': default_lw, 'plotboundary': True, 'shrinkage': 1.0,\
+        'eq': True, 'clon': 0., 'clat': 20., 't0': None, 'verbose': False, 'linewidth': default_lw, 'linestyle': '--', 'plotboundary': True, 'shrinkage': 1.0,\
         'numcbar': 0, 'rvals': [], 'lonvals': [], 'latvals': [], 'varname2': None, 'twovars': False, 'rcut': None}))
 kw_plot_cutout_3d_default.update(kw_my_contourf_default)
 kw_plot_cutout_3d_default.plotcontours = False
@@ -606,7 +606,7 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
             rvals_extra += [kw.rcut/r2]
         n_extra = len(rvals_extra)
         rvals = [beta, 1] + rvals_extra
-        linestyles = 2*['-'] + n_extra*['--']
+        linestyles = 2*['-'] + n_extra*[kw.linestyle]
         nrvals = len(rvals)
 
         for dlonval in [dlon1, dlon2]:
@@ -721,14 +721,10 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
         # plot equatorial plane boundaries
 
         # constant longitude lines in equatorial plane
-        if kw.eq:
-            linestyle = '-'
-        else:
-            linestyle = '-'
         svals = np.linspace(beta, 1, nsvals)
         for lonval in [dlon1, dlon2]:
             ax.plot(svals*np.sin(lonval)*kw.shrinkage, -svals*np.sin(clat)*np.cos(lonval)*kw.shrinkage,\
-                    'k', linewidth=kw.linewidth, linestyle=linestyle)
+                    'k-', linewidth=kw.linewidth)
 
         # equatorial slice, inner to outer
         if kw.eq:
@@ -743,7 +739,7 @@ def plot_cutout_3d(dirname, fname, varname, fig, ax, **kw_in):
             ax.plot(rval*np.sin(svals)*kw.shrinkage, -rval*np.sin(clat)*np.cos(svals)*kw.shrinkage, 'k',\
                     linewidth=kw.linewidth, linestyle=linestyles_loc[irval])
             
-        # finish the equator with a dashed line 
+        # finish the equator with a  solid line
         # (this happens no matter if the equatorial plane is there or not)
         svals = np.linspace(dlon1, dlon2, nsvals)
         xx, yy = np.sin(lon1d), -np.sin(clat)*np.cos(lon1d)
