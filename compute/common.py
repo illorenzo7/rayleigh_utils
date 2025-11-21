@@ -1437,12 +1437,20 @@ def get_vol(dirname, r1='rmin', r2='rmax'):
     r1, r2 = interpret_rvals(dirname, np.array([r1, r2]))
     return 4./3.*np.pi*(r2**3 - r1**3)
 
-def volav_in_radius(dirname, arr, r1='rmin', r2='rmax'):
-    gi = get_grid_info(dirname)
+def volav_in_radius(dirname, arr, r1='rmin', r2='rmax', twod=False):
+    if twod:
+        ntheta = np.shape(arr)[0]
+    else:
+        ntheta = None
+    gi = get_grid_info(dirname, ntheta=ntheta)
     rr, rw = gi.rr, gi.rw
     r1, r2 = interpret_rvals(dirname, np.array([r1, r2]))
     ir1, ir2 = np.argmin(np.abs(rr - r1)), np.argmin(np.abs(rr - r2))
-    return np.sum((arr*rw)[ir2:ir1+1])/np.sum(rw[ir2:ir1+1])
+    if twod:
+        arr_vsr = np.sum(arr*gi.tw_2d, axis=0)
+    else:
+        arr_vsr = np.copy(arr)
+    return np.sum((arr_vsr*rw)[ir2:ir1+1])/np.sum(rw[ir2:ir1+1])
 
 def average_in_z(dirname, vals, npoints, ntheta=None):
     '''
