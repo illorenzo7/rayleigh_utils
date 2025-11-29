@@ -786,7 +786,7 @@ def my_infft(times, arr_fft, axis=0):
 range_options = ['range', 'centerrange', 'leftrange', 'rightrange', 'iters', 'n', 'f', 'all']
 kw_range_options_default = dotdict({})
 for key in range_options: # add the range options key
-    kw_range_options_default.key = None
+    kw_range_options_default[key] = None
 kw_range_options_default.iters = 'last'
 
 def my_mkdir(dirname, erase=False):
@@ -825,6 +825,7 @@ def get_file_lists_all(radatadir):
 
 def get_desired_range(int_file_list, clas):
     # Get first and last index (within the int_file_list) associated with the desired range
+    print("get des range: clas= ", clas)
 
     # By default, the range will always be the last 100 files:
     nfiles = len(int_file_list)
@@ -1890,7 +1891,7 @@ def translate_times(time, dirname, translate_from='iter', verbose=False):
         di.tomega = times[ind]/eq.tomega
     return di
 
-def get_time_string(dirname, iter1=1000000000, iter2=None, oneline=False, threelines=False, iter0=None, SF=3, t0=None, t1=None, t2=None):
+def get_time_string(dirname, iter1=1000000000, iter2=None, oneline=False, threelines=False, iter0=None, SF=3, t0=None, t1=None, t2=None, nolabel=False):
     # see if user wants to subtract off base time
     if not iter0 is None:
         t0 = translate_times(iter0, dirname, translate_from='iter')['time']
@@ -1909,6 +1910,9 @@ def get_time_string(dirname, iter1=1000000000, iter2=None, oneline=False, threel
 
     # Get the baseline time unit
     time_unit, time_label, rotation, simple_label = get_time_unit(dirname)
+
+    if nolabel:
+        time_label = ''
 
     # get individual float strings for critical times
     t1_string = optimal_float_string(t1/time_unit, SF=SF)

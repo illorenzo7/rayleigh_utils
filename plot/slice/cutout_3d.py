@@ -47,15 +47,21 @@ dirname = clas0.dirname
 dirname_stripped = strip_dirname(dirname)
 
 # SPECIFIC ARGS
-kw_default = dotdict({'t0': False, 'movie': False, 'prepend': False, 'dpi': 300, 'varnames': 'vr', 'varnames2': 'omzprime'})
+kw_default = dotdict({'t0': False, 'prepend': False, 'dpi': 300, 'varnames': 'vr', 'varnames2': 'omzprime', 'movie': False})
 
 kw_make_figure = dotdict(kw_make_figure_default)
 kw_make_figure.update(ortho_fig_dimensions)
 kw_make_figure.sub_margin_top_inches = 1.25 # more room for labels
+if 'movie' in clas.keys():
+    movie = kw_default.movie = True
+else:
+    movie = kw_default.movie = False # movie is now a global parameter for all processes
+    kw_make_figure.sub_margin_top_inches = 3/8 # more room for labels
+
 
 kw_default.update(kw_plot_cutout_3d_default)
 kw_default.update(kw_make_figure)
-kw_default.update(kw_range_options_default)
+kw_default.update(kw_range_options_default) # this is only to suppress the keyword warning
 
 # now we can update the default kw
 if rank == 0:
@@ -74,7 +80,6 @@ elif kw_plot_cutout_3d.twocbar:
     kw_make_figure.sub_margin_bottom_inches = 1/2
 
 kw_make_figure = update_dict(kw_make_figure, clas)
-kw_range_options = update_dict(kw_range_options_default, clas)
 
 # Rayleigh data dirs
 ssdir = dirname + '/Shell_Slices/'
@@ -89,7 +94,7 @@ if rank == 0:
     # by default, read in last available file
     # For now just work with Shell_Slices files only and assume
     # that Equatorial_Slices and Meridional_Slices overlap
-    file_list, int_file_list, nfiles = get_file_lists(ssdir, kw_range_options)
+    file_list, int_file_list, nfiles = get_file_lists(ssdir, clas)
 
     # get desired varnames
     # again assume that the quantity list between Shell_Slices and
@@ -126,10 +131,15 @@ if rank == 0:
     print ("nfigures = %i x %i = %i" %(nq, nfiles, nfigures))
     print (buff_line)
 
+    # check if we need to store the first time, 
+    if movie:
+        t0 = translate_times(int_file_list[0], dirname).time
+
     # prepare the epic loop!
     plotting_instructions = []
     if kw.movie:
         count = 0
+    print("flist=", file_list)
     for fname in file_list:
         if kw.movie:
             count += 1
@@ -197,10 +207,12 @@ if rank == 0:
             if kw.twovars:
                 varnames_to_plot += [varname2]
 
-            plotting_instructions.append([fname,\
-                    varnames_to_plot,\
-                    savefile,\
-                    varlabel])
+            to_append = [fname, varnames_to_plot, savefile,\
+                    varlabel, kw.movie]
+            if kw.movie:
+                to_append += [t0]
+
+            plotting_instructions.append(to_append)
 
             ivar += 1
 
@@ -246,7 +258,12 @@ if rank == 0:
 # now loop over and plot figures
 for ifigure in range(my_nfigures):
     # local instructions for this plot
-    fname, varnames_to_plot, savefile, varlabel = my_instructions[ifigure]
+    the_instructions = my_instructions[ifigure]
+    if len(the_instructions) == 5:
+        fname, varnames_to_plot, savefile, varlabel, movie = the_instructions
+    elif len(the_instructions) == 6:
+        fname, varnames_to_plot, savefile, varlabel, movie, t0 = the_instructions
+
     if len(varnames_to_plot) == 1:
         varname = varnames_to_plot[0]
         twovars = False
@@ -264,10 +281,19 @@ for ifigure in range(my_nfigures):
 
     # label the plot
     the_time = translate_times(int(fname), dirname).time
-    
-    time_string = get_time_string(dirname, t1=the_time,SF=5)
+    SF = 5
+    nolabel = False
+    if movie:
+        the_time -= t0
+        SF = 3
+        nolabel = True
 
-    title = dirname_stripped + '\n' +\
+    time_string = get_time_string(dirname, t1=the_time,SF=SF, nolabel=nolabel)
+
+    if movie:
+        title = varlabel + ' '*5 + time_string
+    else:
+        title = dirname_stripped + '\n' +\
             varlabel + '\n' +\
             time_string + '\n' +\
             location_and_perspective 

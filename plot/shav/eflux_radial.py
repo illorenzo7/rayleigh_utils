@@ -254,18 +254,9 @@ if kw.mark_bcz:
     kw_lineplot.xvals.append(rbcz_est)
 
     # also mark depth of overshoot
-    # see where eflux goes positive
-    mineflux = np.min(eflux)
-    tol = 0.05*mineflux # tol is negative
-    irbcz = np.copy(irneg)
-    irpos = np.argmin(eflux[irbcz:] < tol) + irbcz
-    irneg = np.argmin(eflux[irbcz:] < tol) + irbcz - 1
-    rrneg = rr[irneg]
-    rrpos = rr[irpos]
-    efluxneg = eflux[irneg]
-    efluxpos = eflux[irpos]
-    slope =  (efluxpos - efluxneg)/(rrpos - rrneg)
-    rov_est = rrneg - efluxneg/slope # remember rrneg is above now
+    # see where eflux is at minimum
+    irmin = np.argmin(eflux)
+    rov_est = rr[irmin]
     kw_lineplot.xvals.append(rov_est)
 
 lineplot(rr, profiles_int, ax, **kw_lineplot)
