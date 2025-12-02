@@ -78,24 +78,24 @@ def get_numbers_input(dirname, r1='rmin', r2='rmax', verbose=False, diman=False,
         di.pr = nu_volav/kappa_volav
 
         # flux rayleigh number
-        shell_depth = r2 - r1
-        di.raf = grav_volav*flux_volav*shell_depth**4/(rho_volav*tmp_volav*nu_volav*kappa_volav**2)
+        shelldepth = r2 - r1
+        di.raf = grav_volav*flux_volav*shelldepth**4/(rho_volav*tmp_volav*nu_volav*kappa_volav**2)
 
         # dissipation number
-        di.di = grav_volav*shell_depth/(tmp_volav)
+        di.di = grav_volav*shelldepth/(tmp_volav)
 
         # buoyancy number (viscous)
         if advect_reference_state:
-            di.bvisc = nsq_volav*shell_depth**4/nu_volav**2
+            di.bvisc = nsq_volav*shelldepth**4/nu_volav**2
         else:
             di.bvisc = 0.0
 
         if rotation:
             # Ekman and Taylor
             if use2:
-                di.ek = nu_volav/(2*eq.omega0*shell_depth**2)
+                di.ek = nu_volav/(2*eq.omega0*shelldepth**2)
             else:
-                di.ek = nu_volav/(eq.omega0*shell_depth**2)
+                di.ek = nu_volav/(eq.omega0*shelldepth**2)
             di.ta = 1.0/di.ek**2
 
             # modified Rayleigh
@@ -113,7 +113,7 @@ def get_numbers_input(dirname, r1='rmin', r2='rmax', verbose=False, diman=False,
 
             if rotation:
                 # "magnetic Ekman number"
-                di.ekm = eta_volav/(eq.omega0*shell_depth**2)
+                di.ekm = eta_volav/(eq.omega0*shelldepth**2)
 
     elif eq.reference_type == 1: # Boussinesq, get nonD from c's
         di.pr = 1./eq.constants[5]
@@ -228,14 +228,14 @@ def get_dr_contrast(dirname, r1='rmin', r2='rmax', lat1=0., lat2=60., the_file=N
         out = volav_in_radius(dirname, dr_contrast**2, r1, r2)**0.5/eq.omega0
     return out
 
-def get_numbers_output(dirname, r1='rmin', r2='rmax', the_file=None, the_file_az=None, verbose=False, shell_depth=None):
+def get_numbers_output(dirname, r1='rmin', r2='rmax', the_file=None, the_file_az=None, verbose=False, shelldepth=None):
     # get diagnostic numbers (e.g., Re and Ro), quantities vol. avg.'d 
     # between r1 and r2
    
     # desired shell
     r1, r2 = interpret_rvals(dirname, np.array([r1, r2]))
-    if shell_depth is None:
-        shell_depth = r2 - r1
+    if shelldepth is None:
+        shelldepth = r2 - r1
 
     # dictionary for output, rotation, magnetism
     di = dotdict()
@@ -285,9 +285,9 @@ def get_numbers_output(dirname, r1='rmin', r2='rmax', the_file=None, the_file_az
 
     # get the system Reynolds numbers
     nu_volav = volav_in_radius(dirname, eq.nu, r1, r2)
-    di.re = di_amp.v*shell_depth/nu_volav
-    di.remean = di_amp.vmean*shell_depth/nu_volav
-    di.refluc = di_amp.vfluc*shell_depth/nu_volav
+    di.re = di_amp.v*shelldepth/nu_volav
+    di.remean = di_amp.vmean*shelldepth/nu_volav
+    di.refluc = di_amp.vfluc*shelldepth/nu_volav
 
     # get the vorticity ("real") Reynolds numbers
     di.revort = di_amp.v**2/di_amp.om/nu_volav
@@ -321,9 +321,9 @@ def get_numbers_output(dirname, r1='rmin', r2='rmax', the_file=None, the_file_az
         omega0 = eq.omega0
         
         # get the system Rossby numbers
-        di.ro = di_amp.v/(2.0*omega0*shell_depth)
-        di.romean = di_amp.vmean/(2.0*omega0*shell_depth)
-        di.rofluc = di_amp.vfluc/(2.0*omega0*shell_depth)
+        di.ro = di_amp.v/(2.0*omega0*shelldepth)
+        di.romean = di_amp.vmean/(2.0*omega0*shelldepth)
+        di.rofluc = di_amp.vfluc/(2.0*omega0*shelldepth)
 
         # get the vorticity ("real") Rossby numbers
         di.rovort = di_amp.om/(2.0*omega0)
@@ -336,9 +336,9 @@ def get_numbers_output(dirname, r1='rmin', r2='rmax', the_file=None, the_file_az
     if magnetism:
         # system magnetic Reynolds numbers
         eta_volav = volav_in_radius(dirname, eq.eta, r1, r2)
-        di.rem = di_amp.v*shell_depth/eta_volav
-        di.remmean = di_amp.vmean*shell_depth/eta_volav
-        di.remfluc = di_amp.vfluc*shell_depth/eta_volav
+        di.rem = di_amp.v*shelldepth/eta_volav
+        di.remmean = di_amp.vmean*shelldepth/eta_volav
+        di.remfluc = di_amp.vfluc*shelldepth/eta_volav
 
         # current ("real") magnetic Reynolds numbers
         di.remcur = di_amp.v*(di_amp.b/di_amp.j)/eta_volav

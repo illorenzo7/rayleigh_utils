@@ -80,7 +80,7 @@ for print_func in print_funcs:
         print_func (buff_line_loc)
 
         # then non-D numbers in shell
-        di = get_numbers_output(dirname, r1, r2, verbose=kw.verbose, the_file=kw.the_file, shell_depth=kw.shelldepth)
+        di = get_numbers_output(dirname, r1, r2, verbose=kw.verbose, the_file=kw.the_file, shelldepth=kw.shelldepth)
         count = 0
         for key in di.keys():
             print_func (fill_str(numbers_output_def[key][0], lendef1, ' ') +\
