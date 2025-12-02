@@ -54,9 +54,9 @@ kw_make_figure.update(ortho_fig_dimensions)
 kw_make_figure.sub_margin_top_inches = 1.25 # more room for labels
 if 'movie' in clas.keys():
     movie = kw_default.movie = True
+    kw_make_figure.sub_margin_top_inches = 3/8 # less room for labels
 else:
     movie = kw_default.movie = False # movie is now a global parameter for all processes
-    kw_make_figure.sub_margin_top_inches = 3/8 # more room for labels
 
 
 kw_default.update(kw_plot_cutout_3d_default)
@@ -114,8 +114,8 @@ if rank == 0:
     if len(file_list) == 1:
         print ('plotting 1 temporal slice:', arr_to_str(file_list, '%s'))
     else:
-        print ('plotting %i %s temporal slices:\n%s through %s'\
-            %(nfiles, dataname, file_list[0], file_list[-1]))
+        print ('plotting %i temporal slices:\n%s through %s'\
+            %(nfiles, file_list[0], file_list[-1]))
 
     # print varnames
     print (buff_line)
@@ -192,7 +192,7 @@ if rank == 0:
             # get plot directory and image name to save the file
             if kw.movie:
                 plotdir = 'movie_cut3d/' + meta_label
-                savename = 'img%04i.png' %(count+1)
+                savename = 'img%04i.png' %count
             else:
                 plotdir = clas0['plotdir'] + '/cut3d' + clas0['tag']
                 savename = 'cut3d_' + fname + '_' + meta_label + '.png'
