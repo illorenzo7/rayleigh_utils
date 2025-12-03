@@ -157,7 +157,7 @@ def get_numbers_input(dirname, r1='rmin', r2='rmax', verbose=False, diman=False,
     return di
 
 # header info for output numbers
-linebreaks_output = [3, 6, 8, 11, 14, 15, 18, 21, 22]
+linebreaks_output = [3, 6, 9, 12, 15, 16, 19, 22, 23, 24]
 numbers_output_def = dotdict({
     "re": ("Re", "v*H/nu"),
     "remean": ("Re_mean", "<v>*H/nu"),
@@ -167,8 +167,9 @@ numbers_output_def = dotdict({
     "revortmean": ("Re_vort,mean", "<v>^2/(<om>*nu)"),
     "revortfluc": ("Re_vort,fluc", "v'^2/(om'*nu)"),
 
-    "kemean": ("KE_mean", "rho<v>^2/(rho v^2)"),
-    "kefluc": ("KE_fluc", "rho v'^2/(rho v^2)"),
+    "kedr": ("KE_DR", "rho<v_phi>^2"),
+    "kemc": ("KE_MC", "rho<v_m>^2"),
+    "kefluc": ("KE_fluc", "rho v'^2"),
 
     "ro": ("Ro", "v/(2*H*Om_0)"),
     "romean": ("Ro_mean", "<v>/(2*H*Om_0)"),
@@ -189,7 +190,9 @@ numbers_output_def = dotdict({
     "remcurmean": ("Re_m,cur,mean", "<v>*(<B>/<J>)/eta"),
     "remcurfluc": ("Re_m,cur,fluc", "v'*(B'/J')/eta"),
 
-    "me": ("ME", "(B^2/(8*pi)) / (rho*v^2/2)") })
+    "me": ("ME", "(B^2/(8*pi)) / (rho*v^2/2)"),
+
+    "dtmp": ("Delta S", "S(r_1) - S(r_2)") })
 
 def get_dr_contrast(dirname, r1='rmin', r2='rmax', lat1=0., lat2=60., the_file=None, verbose=False, alt=False, norms=False, ntheta=None):
     # rotation contrast
@@ -237,6 +240,7 @@ def get_numbers_output(dirname, r1='rmin', r2='rmax', the_file=None, the_file_az
     if shelldepth is None:
         shelldepth = r2 - r1
 
+
     # dictionary for output, rotation, magnetism
     di = dotdict()
     rotation = get_parameter(dirname, 'rotation')
@@ -248,6 +252,8 @@ def get_numbers_output(dirname, r1='rmin', r2='rmax', the_file=None, the_file_az
     # get reference state
     eq = get_eq(dirname, verbose=verbose)
     rr = eq.rr
+
+    ir1, ir2 = inds_from_vals(rr, [r1, r2])
 
     # get shell averaged data for some things
     datadir = dirname + '/data/'
@@ -296,7 +302,7 @@ def get_numbers_output(dirname, r1='rmin', r2='rmax', the_file=None, the_file_az
 
     # get estimated (and real) potential energy
     tmp_vsr = vals[:, 0, lut[501]]
-    dtmp = tmp_vsr[-1] - tmp_vsr[0] # achieved temperature difference across shell
+    dtmp = tmp_vsr[ir1] - tmp_vsr[ir2] # achieved temperature difference across shell
 
     # achieved potential energy across shell
     grav_volav = volav_in_radius(dirname, eq.grav, r1, r2)
@@ -306,15 +312,19 @@ def get_numbers_output(dirname, r1='rmin', r2='rmax', the_file=None, the_file_az
 
     # get ratios of KE in mean vs. fluc flows
     ke = eq.rho*di_amp_vsr.v**2/2
-    kemean = eq.rho*di_amp_vsr.vmean**2/2
+    kedr = eq.rho*di_amp_vsr.vpmean**2/2
+    kemc = eq.rho*di_amp_vsr.vpolmean**2/2
     kefluc = eq.rho*di_amp_vsr.vfluc**2/2
 
     ke_volav = volav_in_radius(dirname, ke, r1, r2)
-    kemean_volav = volav_in_radius(dirname, kemean, r1, r2)
+    kedr_volav = volav_in_radius(dirname, kedr, r1, r2)
+    kemc_volav = volav_in_radius(dirname, kemc, r1, r2)
     kefluc_volav = volav_in_radius(dirname, kefluc, r1, r2)
 
-    di.kemean = kemean_volav/ke_volav
-    di.kefluc = kefluc_volav/ke_volav
+    di.kedr = kedr_volav#%/ke_volav
+    di.kemc = kemc_volav#%/ke_volav
+    di.kefluc = kefluc_volav#/ke_volav
+
 
     # rotational numbers
     if rotation:
@@ -347,11 +357,13 @@ def get_numbers_output(dirname, r1='rmin', r2='rmax', the_file=None, the_file_az
 
         # plasma beta
         pgas_volav = volav_in_radius(dirname, eq.prs, r1, r2)
-        pmag = di_amp_vsr.b**2/(8*np.pi)
+        pmag = di_amp_vsr.b**2/2#(8*np.pi)
         pmag_volav = volav_in_radius(dirname, pmag, r1, r2)
         #di.beta = pgas_volav/pmag_volav
 
         # ratio of mag. energy to kin. energy
-        di.me = pmag_volav/ke_volav
+        di.me = pmag_volav#/ke_volav
+
+    di.dtmp = dtmp
 
     return di
