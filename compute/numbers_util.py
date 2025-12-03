@@ -290,7 +290,7 @@ def get_numbers_output(dirname, r1='rmin', r2='rmax', the_file=None, the_file_az
     # get non-rotating, non-magnetic numbers first:
 
     # get the system Reynolds numbers
-    nu_volav = volav_in_radius(dirname, eq.nu, r1, r2)
+    nu_volav = volav_in_radius(dirname, eq.constants[4]*eq.functions[2,:], r1, r2)
     di.re = di_amp.v*shelldepth/nu_volav
     di.remean = di_amp.vmean*shelldepth/nu_volav
     di.refluc = di_amp.vfluc*shelldepth/nu_volav
