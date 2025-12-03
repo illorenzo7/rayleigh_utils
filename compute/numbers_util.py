@@ -357,7 +357,7 @@ def get_numbers_output(dirname, r1='rmin', r2='rmax', the_file=None, the_file_az
 
         # plasma beta
         pgas_volav = volav_in_radius(dirname, eq.prs, r1, r2)
-        pmag = di_amp_vsr.b**2/2#(8*np.pi)
+        pmag = di_amp_vsr.b**2/(8*np.pi)
         pmag_volav = volav_in_radius(dirname, pmag, r1, r2)
         #di.beta = pgas_volav/pmag_volav
 
