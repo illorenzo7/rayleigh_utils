@@ -28,6 +28,7 @@ if rank == 0:
 
 # additional modules needed
 import matplotlib.pyplot as plt
+plt.rcParams['mathtext.fontset'] = 'stix'
 import numpy as np
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['rapl'])
@@ -134,6 +135,7 @@ if rank == 0:
     # check if we need to store the first time, 
     if movie:
         t0 = translate_times(int_file_list[0], dirname).time
+        tf = translate_times(int_file_list[-1], dirname).time
 
     # prepare the epic loop!
     plotting_instructions = []
@@ -210,7 +212,7 @@ if rank == 0:
             to_append = [fname, varnames_to_plot, savefile,\
                     varlabel, kw.movie]
             if kw.movie:
-                to_append += [t0]
+                to_append += [t0, tf]
 
             plotting_instructions.append(to_append)
 
@@ -261,8 +263,8 @@ for ifigure in range(my_nfigures):
     the_instructions = my_instructions[ifigure]
     if len(the_instructions) == 5:
         fname, varnames_to_plot, savefile, varlabel, movie = the_instructions
-    elif len(the_instructions) == 6:
-        fname, varnames_to_plot, savefile, varlabel, movie, t0 = the_instructions
+    elif len(the_instructions) == 7:
+        fname, varnames_to_plot, savefile, varlabel, movie, t0, tf = the_instructions
 
     if len(varnames_to_plot) == 1:
         varname = varnames_to_plot[0]
@@ -285,7 +287,11 @@ for ifigure in range(my_nfigures):
     time_string = get_time_string(dirname, t1=the_time,SF=SF)
 
     if movie:
-        title = varlabel + ' '*5 + r'$t=%05.1f$' %(the_time - t0)
+        #title = varlabel + ' '*5 + r'$t=%05.1f$' %(the_time - t0)
+        # figure out width based on tf
+        ndigits = int(np.ceil(np.log10(tf)))
+        fmt = r'$t = \mathtt{%%0%i.1f}$' %(ndigits + 2)
+        title = varlabel + r'     ' + (fmt %(the_time - t0))
     else:
         title = dirname_stripped + '\n' +\
             varlabel + '\n' +\
