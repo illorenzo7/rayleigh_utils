@@ -282,16 +282,10 @@ for ifigure in range(my_nfigures):
     # label the plot
     the_time = translate_times(int(fname), dirname).time
     SF = 5
-    nolabel = False
-    if movie:
-        the_time -= t0
-        SF = 3
-        nolabel = True
-
-    time_string = get_time_string(dirname, t1=the_time,SF=SF, nolabel=nolabel)
+    time_string = get_time_string(dirname, t1=the_time,SF=SF)
 
     if movie:
-        title = varlabel + ' '*5 + time_string
+        title = varlabel + ' '*5 + r'$t=%05.1f$' %(the_time - t0)
     else:
         title = dirname_stripped + '\n' +\
             varlabel + '\n' +\
