@@ -48,7 +48,7 @@ dirname = clas0.dirname
 dirname_stripped = strip_dirname(dirname)
 
 # SPECIFIC ARGS
-kw_default = dotdict({'t0': False, 'prepend': False, 'dpi': 300, 'varnames': 'vr', 'varnames2': 'omzprime', 'movie': False})
+kw_default = dotdict({'subt0': False, 't0': None, 'prepend': False, 'dpi': 300, 'varnames': 'vr', 'varnames2': 'omzprime', 'movie': False})
 
 kw_make_figure = dotdict(kw_make_figure_default)
 kw_make_figure.update(ortho_fig_dimensions)
@@ -134,7 +134,11 @@ if rank == 0:
 
     # check if we need to store the first time, 
     if movie:
-        t0 = translate_times(int_file_list[0], dirname).time
+        if kw.t0 is None:
+            t0 = translate_times(int_file_list[0], dirname).time
+        else:
+            t0 = kw.t0
+
         tf = translate_times(int_file_list[-1], dirname).time
 
     # prepare the epic loop!
@@ -289,9 +293,13 @@ for ifigure in range(my_nfigures):
     if movie:
         #title = varlabel + ' '*5 + r'$t=%05.1f$' %(the_time - t0)
         # figure out width based on tf
-        ndigits = int(np.ceil(np.log10(tf)))
+        if kw.subt0:
+            ndigits = int(np.ceil(np.log10(tf - t0)))
+            the_time -= t0
+        else:
+            ndigits = int(np.ceil(np.log10(tf)))
         fmt = r'$t = \mathtt{%%0%i.1f}$' %(ndigits + 2)
-        title = varlabel + r'     ' + (fmt %(the_time - t0))
+        title = varlabel + r'     ' + (fmt %the_time)
     else:
         title = dirname_stripped + '\n' +\
             varlabel + '\n' +\
