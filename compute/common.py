@@ -242,7 +242,6 @@ def compactify_float(num, fmt_type, SF=3):
     fmt_e = ('%1.') + ('%i' %(SF-1)) + 'e'
     st_e = fmt_e %num
     num = float(st_e)
-    st_e = fmt_e %num
 
     # get mantissa, exp (as strings)
     mant, exp = st_e.split('e')
