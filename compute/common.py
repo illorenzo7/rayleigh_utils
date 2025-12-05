@@ -256,7 +256,7 @@ def compactify_float(num, fmt_type, SF=3):
             exp = exp[1:]
 
         # then remove leading zeros
-        while exp[0] == '0':
+        while exp[0] == '0' and not exp == '0': 
             exp = exp[1:]
         # I feel like I might be left with a "-" for things close to zero. If so, remove the exponent completely
         if exp == '-':

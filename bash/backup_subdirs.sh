@@ -37,7 +37,7 @@ do
     #mkdir $backupdir/$subdir
     #cd $fullpath/$subdir
     #ls | tr "\n" " " >> ~/transfer_instructions_tmp
-    #shiftc --create-tar --index-tar --hosts=6 * $backupdir/$subdir/$subdir.tar
+    #shiftc --create-tar --index-tar --hosts=2 * $backupdir/$subdir/$subdir.tar
     echo -n $subdir >> $thefile
     echo -n ' ' >> $thefile
     echo $backupdir/$subdir.tar >> $thefile
@@ -45,11 +45,11 @@ done
 
 # now the actual transfer
 echo $bufferstring
-echo "running shiftc --create-tar --index-tar --hosts=6"
+echo "running shiftc --create-tar --index-tar --hosts=2"
 echo "on $thefile, which is"
 cat $thefile
 echo $bufferstring
-shiftc --create-tar --index-tar --hosts=6 < $thefile
+shiftc --create-tar --index-tar --hosts=2 < $thefile
 cd $currentdir
 echo $bufferstring
 echo -n "I returned here: "
