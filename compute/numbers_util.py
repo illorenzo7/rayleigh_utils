@@ -310,22 +310,6 @@ def get_numbers_output(dirname, r1='rmin', r2='rmax', the_file=None, the_file_az
     rho_volav = volav_in_radius(dirname, eq.rho, r1, r2)
     kappa_volav = volav_in_radius(dirname, eq.kappa, r1, r2)
 
-    # get ratios of KE in mean vs. fluc flows
-    ke = eq.rho*di_amp_vsr.v**2/2
-    kedr = eq.rho*di_amp_vsr.vpmean**2/2
-    kemc = eq.rho*di_amp_vsr.vpolmean**2/2
-    kefluc = eq.rho*di_amp_vsr.vfluc**2/2
-
-    ke_volav = volav_in_radius(dirname, ke, r1, r2)
-    kedr_volav = volav_in_radius(dirname, kedr, r1, r2)
-    kemc_volav = volav_in_radius(dirname, kemc, r1, r2)
-    kefluc_volav = volav_in_radius(dirname, kefluc, r1, r2)
-
-    di.kedr = kedr_volav#%/ke_volav
-    di.kemc = kemc_volav#%/ke_volav
-    di.kefluc = kefluc_volav#/ke_volav
-
-
     # rotational numbers
     if rotation:
         omega0 = eq.omega0
@@ -342,6 +326,25 @@ def get_numbers_output(dirname, r1='rmin', r2='rmax', the_file=None, the_file_az
 
         di.diffrot = get_dr_contrast(dirname, r1=r1, r2=r2, the_file=the_file_az, verbose=verbose, norms=True)
 
+    # get (ratios or not) of KE in mean vs. fluc flows
+    if rotation: # nondimensionalize KE by (2*omega0)**2
+        factor = 1./4./omega0**2
+    else:
+        factor = 1.
+    ke = eq.rho*di_amp_vsr.v**2/2*factor
+    kedr = eq.rho*di_amp_vsr.vpmean**2/2*factor
+    kemc = eq.rho*di_amp_vsr.vpolmean**2/2*factor
+    kefluc = eq.rho*di_amp_vsr.vfluc**2/2*factor
+
+    ke_volav = volav_in_radius(dirname, ke, r1, r2)
+    kedr_volav = volav_in_radius(dirname, kedr, r1, r2)
+    kemc_volav = volav_in_radius(dirname, kemc, r1, r2)
+    kefluc_volav = volav_in_radius(dirname, kefluc, r1, r2)
+
+    di.kedr = kedr_volav#%/ke_volav
+    di.kemc = kemc_volav#%/ke_volav
+    di.kefluc = kefluc_volav#/ke_volav
+
     # magnetic numbers
     if magnetism:
         # system magnetic Reynolds numbers
@@ -356,8 +359,8 @@ def get_numbers_output(dirname, r1='rmin', r2='rmax', the_file=None, the_file_az
         di.remcurfluc = di_amp.vfluc*(di_amp.bfluc/di_amp.jfluc)/eta_volav
 
         # plasma beta
-        pgas_volav = volav_in_radius(dirname, eq.prs, r1, r2)
-        pmag = di_amp_vsr.b**2/(8*np.pi)
+        pgas_volav = volav_in_radius(dirname, eq.prs, r1, r2)*factor
+        pmag = di_amp_vsr.b**2/(8*np.pi)*factor
         pmag_volav = volav_in_radius(dirname, pmag, r1, r2)
         #di.beta = pgas_volav/pmag_volav
 
