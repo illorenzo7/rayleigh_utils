@@ -1836,6 +1836,12 @@ def get_time_unit(dirname, tkappa=False):
     else:
         time_unit = eq.tkappa
         time_label = simple_label = 't_kappa'
+    if time_unit is None: # guard against old reference files --- at some point remember how to read
+        # reference and transport files
+        time_unit = 1.
+        time_label = r'$1$'
+        simple_label = '1'
+
     return time_unit, time_label, rotation, simple_label
 
 def translate_times(time, dirname, translate_from='iter', verbose=False):
