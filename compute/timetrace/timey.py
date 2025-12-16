@@ -70,6 +70,13 @@ if rank == 0:
     kw_default = dict({'rad': False, 'samplevals': None, 'rvals': None, 'qvals': None, 'groupname': 'v'})
     kw = update_dict(kw_default, clas)
 
+    # get the Rayleigh data directory
+    dataname = 'AZ_Avgs'
+    radatadir = dirname + '/' + dataname + '/'
+
+    # get desired analysis range
+    file_list, int_file_list, nfiles = get_file_lists(radatadir, clas)
+
     # can control samplevals with rvals directly:
     if not kw.rad and not kw.rvals is None:
         kw.samplevals = kw.rvals
@@ -86,6 +93,10 @@ if rank == 0:
     elif clas.rzones: # treat this as a (tag-free) default for now
         samplevals = clas['rvals']
         sampletag = ''
+    elif isall(kw.samplevals):
+        a = AZ_Avgs(radatadir + file_list[0], '')
+        samplevals = a.radius
+        sampletag = ''
     else:
         samplevals = kw.samplevals
         sampletag = '_' + input("choose a tag name for your chosen sampling locations: ")
@@ -96,15 +107,8 @@ if rank == 0:
         qgroup = get_quantity_group(groupname, magnetism)
         qvals = qgroup['qvals']
     else:
-        qvals = kw.qvals
+        qvals = make_array(kw.qvals)
         groupname = input("choose a groupname to save your data: ")
-
-    # get the Rayleigh data directory
-    dataname = 'AZ_Avgs'
-    radatadir = dirname + '/' + dataname + '/'
-
-    # get desired analysis range
-    file_list, int_file_list, nfiles = get_file_lists(radatadir, clas)
 
     # get the problem size
     nproc_min, nproc_max, n_per_proc_min, n_per_proc_max =\
