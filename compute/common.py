@@ -231,7 +231,7 @@ def float_or_sci(num, SF=3):
     else:
         return 'sci'
 
-def compactify_float(num, fmt_type, SF=3):
+def compactify_float(num, fmt_type, SF=3, scinot=False):
     ''' returns a string with minimal width of the chosen type
     fmt_type in ['float', 'sci'] and number of sig. figs (SF)'''
     if not fmt_type in ['float', 'sci']:
@@ -264,8 +264,12 @@ def compactify_float(num, fmt_type, SF=3):
         # now rebuild the element
         if exp == '':
             st = mant + 'e0'
+            if scinot:
+                st = mant
         else:
             st = mant + 'e' + exp
+            if scinot:
+                st = mant + r'$\times10^{%i}$' %exp
 
     if fmt_type == 'float':
         if E >= 0 and not num == 0.: # number is >= 1
@@ -293,8 +297,8 @@ def compactify_array(arr, fmt_type, SF=3):
     else:
         return compactify_float(arr)
 
-def optimal_float_string(num, SF=3):
-    return compactify_float(num, float_or_sci(num, SF=SF), SF=SF)
+def optimal_float_string(num, SF=3, scinot=False):
+    return compactify_float(num, float_or_sci(num, SF=SF), SF=SF, scinot=scinot)
 
 def arr_to_str_tab(a, SF=3, fmt=None, header='Row', repeat=True, tol=1e-12): # ideal for latex tables
     starr = []
