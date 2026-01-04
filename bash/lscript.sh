@@ -14,11 +14,11 @@ then
 elif [ $modeltype == 'rom_ait' ] 
 then
     ncpus=128
-    execext='.rome.2.28'
+    execext='.rome2.28'
 elif [ $modeltype == 'mil_ait' ] 
 then
     ncpus=128
-    execext='.milan.2.28'
+    execext='.milan2.30'
 else
     echo "unknown model type $modeltype"
 fi
@@ -52,9 +52,16 @@ if [ $modeltype == 'bro_ele' ] || [ $modeltype == 'sky_ele' ] || [ $modeltype ==
 then
     echo "module load mpi-hpe" >> $fname
     echo "module load comp-intel" >> $fname
-elif [ $modeltype == 'rom_ait' ] || [ $modeltype == 'mil_ait' ] 
+elif [ $modeltype == 'rom_ait' ] 
+then
+    echo "module load gcc/13.2 mpi-hpe/mpt.2.28_25Apr23_rhel87" >> $fname
+elif [ $modeltype == 'mil_ait' ] 
 then
     echo "module load gcc/13.2 mpi-hpe/mpt" >> $fname
+fi
+
+if [ $modeltype == 'rom_ait' ] || [ $modeltype == 'mil_ait' ] 
+then
     echo "fftwlib=/home4/nfeather/software/fftw-3.3.10-Rome/" >> $fname
     echo "blaslib=/home4/nfeather/software/OpenBLAS-0.3.27-Rome/" >> $fname
     echo 'export LD_LIBRARY_PATH=$blaslib\lib:$fftwlib\lib:$LD_LIBRARY_PATH' >> $fname
