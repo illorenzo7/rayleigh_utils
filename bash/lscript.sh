@@ -1,7 +1,8 @@
-echo "#PBS -S /bin/bash" > lscript
-echo "#PBS -N $1" >> lscript
+fname=$1
+echo "#PBS -S /bin/bash" > $fname
+echo "#PBS -N $2" >> $fname
 
-modeltype=$2
+modeltype=$3
 if [ $modeltype == 'bro_ele' ]
 then
     ncpus=28
@@ -22,7 +23,7 @@ else
     echo "unknown model type $modeltype"
 fi
 
-nprocs=$3
+nprocs=$4
 
 select=$(($nprocs/$ncpus + 1))
 if [ $(($nprocs%$ncpus)) == 0 ]
@@ -33,44 +34,44 @@ fi
 nprow=`python $rau/bash/nprow.py $nprocs`
 npcol=`python $rau/bash/npcol.py $nprocs`
 
-group=${4:-s7614} # charge it to s7614 by default
+group=${5:-s7614} # charge it to s7614 by default
 
-echo "#PBS -l select=$select:ncpus=$ncpus:model=$modeltype" >> lscript
-echo "#PBS -q long" >> lscript
-echo "#PBS -l walltime=120:00:00" >> lscript
-echo "#PBS -j oe" >> lscript
-echo "#PBS -W group_list=$group" >> lscript
-echo "#PBS -m e" >> lscript
-echo "#PBS -l site=needed=/home1+/nobackupp17" >> lscript
+echo "#PBS -l select=$select:ncpus=$ncpus:model=$modeltype" >> $fname
+echo "#PBS -q long" >> $fname
+echo "#PBS -l walltime=120:00:00" >> $fname
+echo "#PBS -j oe" >> $fname
+echo "#PBS -W group_list=$group" >> $fname
+echo "#PBS -m e" >> $fname
+echo "#PBS -l site=needed=/home1+/nobackupp17" >> $fname
 
-echo >> lscript
+echo >> $fname
 
-echo "module purge" >> lscript
+echo "module purge" >> $fname
 
 if [ $modeltype == 'bro_ele' ] || [ $modeltype == 'sky_ele' ] || [ $modeltype == 'cas_ait' ] 
 then
-    echo "module load mpi-hpe" >> lscript
-    echo "module load comp-intel" >> lscript
-elif [ $modeltype == 'sky_ele' ] || [ $modeltype == 'sky_ele' ] 
+    echo "module load mpi-hpe" >> $fname
+    echo "module load comp-intel" >> $fname
+elif [ $modeltype == 'rom_ait' ] || [ $modeltype == 'mil_ait' ] 
 then
-    echo "module load gcc/13.2 mpi-hpe/mpt" >> lscript
-    echo "fftwlib=/home4/nfeather/software/fftw-3.3.10-Rome/" >> lscript
-    echo "blaslib=/home4/nfeather/software/OpenBLAS-0.3.27-Rome/" >> lscript
-    echo "export LD_LIBRARY_PATH=$blaslib\lib:$fftwlib\lib:$LD_LIBRARY_PATH" >> lscript
-    echo "export OMP_NUM_THREADS=1" >> lscript
+    echo "module load gcc/13.2 mpi-hpe/mpt" >> $fname
+    echo "fftwlib=/home4/nfeather/software/fftw-3.3.10-Rome/" >> $fname
+    echo "blaslib=/home4/nfeather/software/OpenBLAS-0.3.27-Rome/" >> $fname
+    echo 'export LD_LIBRARY_PATH=$blaslib\lib:$fftwlib\lib:$LD_LIBRARY_PATH' >> $fname
+    echo "export OMP_NUM_THREADS=1" >> $fname
 fi
 
-echo >> lscript
+echo >> $fname
 
-echo "export MPI_LAUNCH_TIMEOUT=40" >> lscript
-echo "export PATH=\$PATH:/u/scicon/tools/bin" >> lscript
-echo "export MPI_BUFS_PER_PROC=256" >> lscript
-echo "export MPI_CHECK_ARGS=1" >> lscript
+echo "export MPI_LAUNCH_TIMEOUT=40" >> $fname
+echo "export PATH=\$PATH:/u/scicon/tools/bin" >> $fname
+echo "export MPI_BUFS_PER_PROC=256" >> $fname
+echo "export MPI_CHECK_ARGS=1" >> $fname
 
-echo >> lscript
+echo >> $fname
 
-echo "cd \$PBS_O_WORKDIR" >> lscript
+echo "cd \$PBS_O_WORKDIR" >> $fname
 
-echo >> lscript
+echo >> $fname
 
-echo "/u/scicon/tools/bin/several_tries mpiexec -np $nprocs ./rayleigh$execext -nprow $nprow -npcol $npcol >> logfile2" >> lscript
+echo "/u/scicon/tools/bin/several_tries mpiexec -np $nprocs ./rayleigh$execext -nprow $nprow -npcol $npcol >> logfile2" >> $fname
