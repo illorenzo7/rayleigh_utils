@@ -11,34 +11,18 @@ i2 = st.find('GPUs used')
 st = st[i1:i2]
 
 keys =\
-   ['Broadwell in Pleiades',\
-    'Broadwell in Electra',\
+   ['Broadwell in Electra',\
     'Cascadelake in Aitken',\
-    'Cascadelake in Pleiades',\
-    'Haswell',\
-    'Ivybridge',\
-    'Milan in Cabeus',\
     'Milan in Aitken',\
     'Rome in Aitken',\
-    'Rome in Pleiades',\
-    #'Sandybridge',\
-    'Skylake in Electra',\
-    'Skylake in Pleiades']
+    'Skylake in Electra']
 
 keys_alt =\
-   ['bro',\
-    'bro_ele',\
+   ['bro_ele',\
     'cas_ait',\
-    'cas_gpu',\
-    'has',\
-    'ivy',\
-    'mil_a100',\
     'mil_ait',\
     'rom_ait',\
-    'rom_gpu',\
-    #'san',\
-    'sky_ele',\
-    'sky_gpu']
+    'sky_ele']
 
 headers = \
     ['Cores',\
@@ -87,15 +71,6 @@ for key in keys_alt:
 
 #for key in keys_alt:
 #    print(key, node_info[key])
-
-# combine the broadwells 
-node_info['bro_tot'] = dict({})
-keys.insert(2, 'Broadwell (Total)')
-keys_alt.insert(2, 'bro_tot')
-
-for key in node_info['bro'].keys():
-    node_info['bro_tot'][key] = \
-            node_info['bro'][key] + node_info['bro_ele'][key]
 
 # now print the ratios in a table
 char = ' '
