@@ -1183,8 +1183,10 @@ def get_parameter(dirname, parameter):
 
         # these parameters still have a value
         # if they weren't specified
-        if parameter in ['magnetism', 'rotation', 'advect_reference_state']:
+        if parameter in ['magnetism', 'rotation']:
             return False # if these weren't specified, they are false
+        elif parameter == 'advect_reference_state':
+            return True # set to True by default
         elif parameter in ['nu_type', 'kappa_type', 'eta_type']:
             return 1
         else: # or finally, the parameter might just not be there
