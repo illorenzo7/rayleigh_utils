@@ -916,8 +916,13 @@ def my_contourf(xx, yy, field, fig, ax, **kw_in):
     if kw.plotfield:
         im = ax.contourf(xx, yy, field, cmap=kw.cmap, levels=levels, norm=kw.norm)
         # avoid problems when saving .pdfs
-        for collection in im.collections:
-            collection.set_edgecolor('face')
+        # Check if collections exists (for backward compatibility)
+        if hasattr(im, 'collections'):
+            for collection in im.collections:
+                collection.set_edgecolor('face')
+        else:
+            # For Matplotlib 3.8+
+            im.set_edgecolor('face')
 
    # Plot contours if desired
     if kw.plotcontours:
