@@ -1465,20 +1465,42 @@ def average_in_z(dirname, vals, npoints, ntheta=None):
     '''
     # set up grid stuff
     gi = get_grid_info(dirname, ntheta=ntheta)
+    rmin = np.min(gi.rr)
     rmax = np.max(gi.rr)
     areas = gi.rw_2d*gi.tw_2d
-    llambda_bdy = np.linspace(0,rmax, npoints+1)
-    llambda = 0.5*(llambda_bdy[:-1] + llambda_bdy[1:])
+    tt_2d = 0*gi.xx + gi.tt_2d # make this have the right shape
+    llambda_bdy = np.linspace(0,rmax, npoints//2+1)
+    llambda_south = (0.5*(llambda_bdy[:-1] + llambda_bdy[1:])).tolist()
+    llambda_north = llambda_south[::-1]
+    llambda = np.array(llambda_south + llambda_north)
+    llambda_bdy = np.array(llambda_bdy.tolist() + llambda_bdy.tolist()[::-1][1:])
 
     # do the average
     vals_avz  = np.zeros(npoints)
     for i in range(npoints):
-        llambda1, llambda2 = llambda_bdy[i:i+2]
-        areas_strip = np.copy(areas)[np.where((gi.xx >= llambda1) & (gi.xx <= llambda2))]
-        vals_strip = np.copy(vals)[np.where((gi.xx >= llambda1) & (gi.xx <= llambda2))]
+        bdy_vals = llambda_bdy[i:i+2]
+        llambda1, llambda2 = np.min(bdy_vals), np.max(bdy_vals)
+
+        llambda_val = llambda[i]
+        if llambda_val >= rmin: # outside TC
+            areas_strip = np.copy(areas)[np.where((gi.xx >= llambda1) & (gi.xx <= llambda2))]
+            vals_strip = np.copy(vals)[np.where((gi.xx >= llambda1) & (gi.xx <= llambda2))]
+        else:
+            if i < npoints//2: # southern hemisphere only
+                areas_strip = np.copy(areas)[np.where((gi.xx >= llambda1) & (gi.xx <= llambda2) & (tt_2d > np.pi/2))]
+                vals_strip = np.copy(vals)[np.where((gi.xx >= llambda1) & (gi.xx <= llambda2) & (tt_2d > np.pi/2))]
+            else: # northern hemisphere only
+                areas_strip = np.copy(areas)[np.where((gi.xx >= llambda1) & (gi.xx <= llambda2) & (tt_2d < np.pi/2))]
+                vals_strip = np.copy(vals)[np.where((gi.xx >= llambda1) & (gi.xx <= llambda2) & (tt_2d < np.pi/2))]
+
         vals_avz[i] = np.sum(vals_strip*areas_strip)/np.sum(areas_strip)
 
-    return llambda, vals_avz
+    # we need llambda to be separated in its values
+    # do this in a quick and dirty way
+    llambda_ext_bdy = np.linspace(0, 2*rmax, npoints+1)
+    llambda_ext = 0.5*(llambda_ext_bdy[:-1] + llambda_ext_bdy[1:])
+
+    return llambda_ext, vals_avz
 
 def indefinite_radial_integral(dirname, arr, r0='rmin'):
     gi = get_grid_info(dirname)
