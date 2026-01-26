@@ -4,7 +4,6 @@
 
 import numpy as np
 from scipy.interpolate import interp1d
-#from scipy.integrate import simps, simpson
 from scipy.integrate import simpson
 import sys, os, pickle
 from string_to_num import string_to_number_or_array
@@ -1464,6 +1463,8 @@ def average_in_z(dirname, vals, npoints, ntheta=None):
     returns (llambda, vals_avz)
     '''
     # set up grid stuff
+    if ntheta is None:
+        ntheta, dummy = np.shape(vals)
     gi = get_grid_info(dirname, ntheta=ntheta)
     rmin = np.min(gi.rr)
     rmax = np.max(gi.rr)
