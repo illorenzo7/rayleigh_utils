@@ -510,6 +510,24 @@ def dth(arr, tt): # assumes theta falls along the second-to-last axis
     else:
         return np.gradient(arr, tt, axis=arr.ndim-2)
 
+def dlambda(arr, rr, tt):
+    nr = len(rr)
+    nt = len(tt)
+    cost_2d = np.cos(tt).reshape((nt, 1))
+    sint_2d = np.sin(tt).reshape((nt, 1))
+    sign_tt = np.sign(sint_2d)
+    rr_2d = rr.reshape((1, nr))
+    return sint_2d*drad(arr, rr) + cost_2d/rr_2d*dth(arr, tt)
+
+def dzed(arr, rr, tt):
+    nr = len(rr)
+    nt = len(tt)
+    cost_2d = np.cos(tt).reshape((nt, 1))
+    sint_2d = np.sin(tt).reshape((nt, 1))
+    sign_tt = np.sign(sint_2d)
+    rr_2d = rr.reshape((1, nr))
+    return cost_2d*drad(arr, rr) - sint_2d/rr_2d*dth(arr, tt)
+
 def dph(arr): # assumes phi falls along first axis
     nphi = np.shape(arr)[0]
     dphi = 2.*np.pi/nphi
@@ -1349,7 +1367,28 @@ def compute_axial_H(rr, sint, rmin=None, rmax=None, discontinuous=False):
     H = H_flat.reshape(np.shape(xx))
     return H
 
-def compute_beta_topo(rr, sint, rmin=None, rmax=None, discontinuous=False):
+def compute_axial_H_1d(llambda, rmin=None, rmax=None, discontinuous=False):
+    # compute the axial distance H between the spheres r_min and r_max
+    # assumes rr and sint are two arrays of compatible shape
+    if rmin is None:
+        rmin = np.min(llambda)
+    if rmax is None:
+        rmax = np.max(llambda)
+
+    d = rmax - rmin
+    nl = len(llambda)
+    H = np.zeros(nl)
+    for i in range(nl):
+        if llambda[i] > rmin: # outside tangent cylinder
+            H[i] = 2*np.sqrt(rmax**2 - llambda[i]**2)
+        else:
+            H[i] = 2*(np.sqrt(rmax**2 - llambda[i]**2) - np.sqrt(rmin**2 - llambda[i]**2) )
+            if discontinuous:
+                H[i] /= 2
+    return H
+
+# discontinuous choice doesn't affect beta_topo = (1/H) dH/dlambda
+def compute_beta_topo(rr, sint, rmin=None, rmax=None):
     # compute the axial distance H between the spheres r_min and r_max
     # assumes rr and sint are two arrays of compatible shape
     xx = rr*sint
@@ -1358,7 +1397,6 @@ def compute_beta_topo(rr, sint, rmin=None, rmax=None, discontinuous=False):
     if rmax is None:
         rmax = np.max(rr)
 
-    d = rmax - rmin
     xx_flat = xx.flatten()
     beta_flat = np.zeros_like(xx_flat)
     for ix in range(len(xx_flat)):
@@ -1366,11 +1404,27 @@ def compute_beta_topo(rr, sint, rmin=None, rmax=None, discontinuous=False):
         if xx_loc > rmin: # outside tangent cylinder
             beta_flat[ix] = -xx_loc/(rmax**2. - xx_loc**2.)
         else:
-            beta_flat[ix] = 2*xx_loc/( np.sqrt(rmax**2 - xx_loc**2)*np.sqrt(rmin**2 - xx_loc**2) )
-            if discontinuous:
-                beta_flat[ix] /= 2
+            beta_flat[ix] = xx_loc/( np.sqrt(rmax**2 - xx_loc**2)*np.sqrt(rmin**2 - xx_loc**2) )
     beta_topo = beta_flat.reshape(np.shape(xx))
     return beta_topo
+
+def compute_beta_topo_1d(llambda, rmin=None, rmax=None):
+    # compute the axial distance H between the spheres r_min and r_max
+    # assumes rr and sint are two arrays of compatible shape
+    if rmin is None:
+        rmin = np.min(llambda)
+    if rmax is None:
+        rmax = np.max(llambda)
+
+    nl = len(llambda)
+    beta = np.zeros(nl)
+    for i in range(nl):
+        if llambda[i] > rmin: # outside tangent cylinder
+            beta[i] = -llambda[i]/(rmax**2 - llambda[i]**2)
+        else:
+            beta[i] = llambda[i]/(np.sqrt(rmax**2-llambda[i]**2)*np.sqrt(rmin**2-llambda[i]**2))
+    return beta
+
 
 def interpret_rvals(dirname, rvals):
     # interpret array of rvals (array of strings), some could have the special keywords, rmin, rmid, rmax
@@ -1461,6 +1515,9 @@ def average_in_z(dirname, vals, npoints, ntheta=None):
     routine to average vals (ntheta, nr) in z, 
     interpolating onto llambda array
     returns (llambda, vals_avz)
+    averages over different hemispheres separately
+    returns llambda, avz, where llambda is really 
+    sign(theta)(rmax - llambda), ranging from (-rmax, rmax)
     '''
     # set up grid stuff
     if ntheta is None:
@@ -1470,23 +1527,22 @@ def average_in_z(dirname, vals, npoints, ntheta=None):
     rmax = np.max(gi.rr)
     areas = gi.rw_2d*gi.tw_2d
     tt_2d = 0*gi.xx + gi.tt_2d # make this have the right shape
-    llambda_bdy = np.linspace(0,rmax, npoints//2+1)
-    llambda_south = (0.5*(llambda_bdy[:-1] + llambda_bdy[1:])).tolist()
-    llambda_north = llambda_south[::-1]
-    llambda = np.array(llambda_south + llambda_north)
-    llambda_bdy = np.array(llambda_bdy.tolist() + llambda_bdy.tolist()[::-1][1:])
-
+    llambda_bdy = np.linspace(-rmax,rmax, npoints + 1)
+    llambda = 0.5*(llambda_bdy[1:] + llambda_bdy[:-1])
+    
     # do the average
     vals_avz  = np.zeros(npoints)
     for i in range(npoints):
-        bdy_vals = llambda_bdy[i:i+2]
-        llambda1, llambda2 = np.min(bdy_vals), np.max(bdy_vals)
+        # compute the "true lambda" (positive) values associated with
+        # llambda
+        endpoints = rmax - np.abs(llambda_bdy)[i:i+2]
+        llambda1, llambda2 = np.min(endpoints), np.max(endpoints)
+        llambda_val = rmax - np.abs(llambda)[i]
 
-        llambda_val = llambda[i]
         if llambda_val >= rmin: # outside TC
             areas_strip = np.copy(areas)[np.where((gi.xx >= llambda1) & (gi.xx <= llambda2))]
             vals_strip = np.copy(vals)[np.where((gi.xx >= llambda1) & (gi.xx <= llambda2))]
-        else:
+        else: # inside TC, two regions
             if i < npoints//2: # southern hemisphere only
                 areas_strip = np.copy(areas)[np.where((gi.xx >= llambda1) & (gi.xx <= llambda2) & (tt_2d > np.pi/2))]
                 vals_strip = np.copy(vals)[np.where((gi.xx >= llambda1) & (gi.xx <= llambda2) & (tt_2d > np.pi/2))]
@@ -1494,14 +1550,10 @@ def average_in_z(dirname, vals, npoints, ntheta=None):
                 areas_strip = np.copy(areas)[np.where((gi.xx >= llambda1) & (gi.xx <= llambda2) & (tt_2d < np.pi/2))]
                 vals_strip = np.copy(vals)[np.where((gi.xx >= llambda1) & (gi.xx <= llambda2) & (tt_2d < np.pi/2))]
 
+        # average the strips
         vals_avz[i] = np.sum(vals_strip*areas_strip)/np.sum(areas_strip)
 
-    # we need llambda to be separated in its values
-    # do this in a quick and dirty way
-    llambda_ext_bdy = np.linspace(0, 2*rmax, npoints+1)
-    llambda_ext = 0.5*(llambda_ext_bdy[:-1] + llambda_ext_bdy[1:])
-
-    return llambda_ext, vals_avz
+    return llambda, vals_avz
 
 def indefinite_radial_integral(dirname, arr, r0='rmin'):
     gi = get_grid_info(dirname)
