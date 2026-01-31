@@ -335,8 +335,8 @@ def lineplot_minmax(xx, profiles, **kw):
                     tmp.append(profile_old[ix])
             profiles.append(np.array(tmp))
                 
-    mmin = np.infty
-    mmax = -np.infty
+    mmin = np.inf
+    mmax = -np.inf
     for profile in profiles:
         mmin = min(np.min(profile[kw.ixcut:]), mmin)
         mmax = max(np.max(profile), mmax)
