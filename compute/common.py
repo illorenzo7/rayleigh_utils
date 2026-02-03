@@ -1510,7 +1510,7 @@ def volav_in_radius(dirname, arr, r1='rmin', r2='rmax', twod=False):
         arr_vsr = np.copy(arr)
     return np.sum((arr_vsr*rw)[ir2:ir1+1])/np.sum(rw[ir2:ir1+1])
 
-def average_in_z(dirname, vals, npoints, ntheta=None):
+def average_in_z(dirname, vals, npoints, ntheta=None, rmin=None, rmax=None):
     '''
     routine to average vals (ntheta, nr) in z, 
     interpolating onto llambda array
@@ -1523,12 +1523,16 @@ def average_in_z(dirname, vals, npoints, ntheta=None):
     if ntheta is None:
         ntheta, dummy = np.shape(vals)
     gi = get_grid_info(dirname, ntheta=ntheta)
-    rmin = np.min(gi.rr)
-    rmax = np.max(gi.rr)
-    areas = gi.rw_2d*gi.tw_2d
-    tt_2d = 0*gi.xx + gi.tt_2d # make this have the right shape
+    if rmin is None:
+        rmin = np.min(gi.rr)
+    if rmax is None:
+        rmax = np.max(gi.rr)
+    irmin, irmax = inds_from_vals(gi.rr, [rmin, rmax])
+    areas = gi.rw_2d[:, irmax:irmin+1]*gi.tw_2d
+    tt_2d = 0*areas + gi.tt_2d # make this have the right shape
     llambda_bdy = np.linspace(-rmax,rmax, npoints + 1)
     llambda = 0.5*(llambda_bdy[1:] + llambda_bdy[:-1])
+    xx_loc = np.copy(gi.xx[:, irmax:irmin+1])
     
     # do the average
     vals_avz  = np.zeros(npoints)
@@ -1540,15 +1544,15 @@ def average_in_z(dirname, vals, npoints, ntheta=None):
         llambda_val = rmax - np.abs(llambda)[i]
 
         if llambda_val >= rmin: # outside TC
-            areas_strip = np.copy(areas)[np.where((gi.xx >= llambda1) & (gi.xx <= llambda2))]
-            vals_strip = np.copy(vals)[np.where((gi.xx >= llambda1) & (gi.xx <= llambda2))]
+            areas_strip = np.copy(areas)[np.where((xx_loc >= llambda1) & (xx_loc <= llambda2))]
+            vals_strip = np.copy(vals)[np.where((xx_loc >= llambda1) & (xx_loc <= llambda2))]
         else: # inside TC, two regions
             if i < npoints//2: # southern hemisphere only
-                areas_strip = np.copy(areas)[np.where((gi.xx >= llambda1) & (gi.xx <= llambda2) & (tt_2d > np.pi/2))]
-                vals_strip = np.copy(vals)[np.where((gi.xx >= llambda1) & (gi.xx <= llambda2) & (tt_2d > np.pi/2))]
+                areas_strip = np.copy(areas)[np.where((xx_loc >= llambda1) & (xx_loc <= llambda2) & (tt_2d > np.pi/2))]
+                vals_strip = np.copy(vals)[np.where((xx_loc >= llambda1) & (xx_loc <= llambda2) & (tt_2d > np.pi/2))]
             else: # northern hemisphere only
-                areas_strip = np.copy(areas)[np.where((gi.xx >= llambda1) & (gi.xx <= llambda2) & (tt_2d < np.pi/2))]
-                vals_strip = np.copy(vals)[np.where((gi.xx >= llambda1) & (gi.xx <= llambda2) & (tt_2d < np.pi/2))]
+                areas_strip = np.copy(areas)[np.where((xx_loc >= llambda1) & (xx_loc <= llambda2) & (tt_2d < np.pi/2))]
+                vals_strip = np.copy(vals)[np.where((xx_loc >= llambda1) & (xx_loc <= llambda2) & (tt_2d < np.pi/2))]
 
         # average the strips
         vals_avz[i] = np.sum(vals_strip*areas_strip)/np.sum(areas_strip)
