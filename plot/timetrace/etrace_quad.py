@@ -21,7 +21,7 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = get_parameter(dirname, 'magnetism')
 
 # SPECIFIC ARGS for etrace:
-kw_default = dict({'the_file': None, 'minmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'growth': False, 'growthfrac': 0.5, 'xvals': np.array([]), 'inte': False, 'nquadr': 1, 'nquadlat': 1, 'type': 'tot', 'legfrac': None, 'nomag': False, 'noke': False, 'tkappa': False, 'legloc': 'lower left'})
+kw_default = dict({'the_file': None, 'minmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'growth': False, 'growthfrac': 0.5, 'xvals': np.array([]), 'inte': False, 'nquadr': 1, 'nquadlat': 1,  'legfrac': None, 'nomag': False, 'noke': False, 'tkappa': False, 'legloc': 'lower left'})
 
 # make figure kw
 nlines = get_num_lines(clas0.dirname_label)
@@ -137,66 +137,44 @@ for ilat in range(nquadlat):
         # choose kw.type: tot, fluc, or mean of energies
 
         # KINETIC ENERGY
-        if kw.type == 'tot':
-            rke = vals_loc[:, lut[402]]
-            tke = vals_loc[:, lut[403]]
-            pke = vals_loc[:, lut[404]]
-            label_pre = ''
-            label_app = ''
-        if kw.type == 'fluc':
-            rke = vals_loc[:, lut[410]]
-            tke = vals_loc[:, lut[411]]
-            pke = vals_loc[:, lut[412]]
-            label_pre = ''
-            label_app = '\''
-        if kw.type == 'mean':
-            rke = vals_loc[:, lut[402]] - vals_loc[:, lut[410]]
-            tke = vals_loc[:, lut[403]] - vals_loc[:, lut[411]]
-            pke = vals_loc[:, lut[404]] - vals_loc[:, lut[412]]
-            label_pre = '<'
-            label_app = '>'
-        ke = rke + tke + pke
+        rke_tot = vals_loc[:, lut[402]]
+        tke_tot = vals_loc[:, lut[403]]
+        pke_tot = vals_loc[:, lut[404]]
+        rke_fluc = vals_loc[:, lut[410]]
+        tke_fluc = vals_loc[:, lut[411]]
+        pke_fluc = vals_loc[:, lut[412]]
+        rke_mean = vals_loc[:, lut[402]] - vals_loc[:, lut[410]]
+        tke_mean = vals_loc[:, lut[403]] - vals_loc[:, lut[411]]
+        pke_mean = vals_loc[:, lut[404]] - vals_loc[:, lut[412]]
+
+        ke_tot = rke_tot + tke_tot + pke_tot
+        ke_fluc = rke_fluc + tke_fluc + pke_fluc
+        drke = pke_mean
+        mcke = rke_mean + tke_mean
 
         # INTERNAL ENERGY
         if kw.inte:
-            if kw.type == 'fluc': # no inte for fluctuating S'
-                inte = np.zeros(len(xaxis))
-            else:
-                inte = vals_loc[:, lut[701]]
+            inte = vals_loc[:, lut[701]]
         
         # MAGNETIC ENERGY
         # get what we can from component energies,
         # otherwise try to get total energies directly (for Lydia's stuff)
         if magnetism:
-            if kw.type == 'tot':
-                if issubset([1102,1103,1104], qv): # get components
-                    have_comp = True
-                    rme = vals_loc[:, lut[1102]]
-                    tme = vals_loc[:, lut[1103]]
-                    pme = vals_loc[:, lut[1104]]
-                else:
-                    have_comp = False
-                    me = vals_loc[:, lut[1101]]
-            if kw.type == 'fluc':
-                if issubset([1110,1111,1112], qv): # get components
-                    have_comp = True
-                    rme = vals_loc[:, lut[1110]]
-                    tme = vals_loc[:, lut[1111]]
-                    pme = vals_loc[:, lut[1112]]
-                else:
-                    have_comp = False
-                    me = vals_loc[:, lut[1109]]
-            if kw.type == 'mean':
-                if issubset([1102,1103,1104,1110,1111,1112], qv): # get components
-                    have_comp = True
-                    rme = vals_loc[:, lut[1102]] - vals_loc[:, lut[1110]]
-                    tme = vals_loc[:, lut[1103]] - vals_loc[:, lut[1111]]
-                    pme = vals_loc[:, lut[1104]] - vals_loc[:, lut[1112]]
-                else:
-                    have_comp = False
-                    me = vals_loc[:, lut[1105]]
-            if have_comp:
-                me = rme + tme + pme
+            rme_tot = vals_loc[:, lut[1102]]
+            tme_tot = vals_loc[:, lut[1103]]
+            pme_tot = vals_loc[:, lut[1104]]
+            me_tot = rme_tot + tme_tot + pme_tot
+            rme_fluc = vals_loc[:, lut[1110]]
+            tme_fluc = vals_loc[:, lut[1111]]
+            pme_fluc = vals_loc[:, lut[1112]]
+            me_fluc = rme_fluc + tme_fluc + pme_fluc
+            rme_mean = vals_loc[:, lut[1102]] - vals_loc[:, lut[1110]]
+            tme_mean = vals_loc[:, lut[1103]] - vals_loc[:, lut[1111]]
+            pme_mean = vals_loc[:, lut[1104]] - vals_loc[:, lut[1112]]
+            me_mean = rme_mean + tme_mean + pme_mean
+
+            torme = pme_mean
+            polme = rme_mean + tme_mean
 
         # make line plots
 
@@ -214,16 +192,16 @@ for ilat in range(nquadlat):
             itcut = 0
 
         if not kw.noke:
-            all_e += [rke, tke, pke, ke]
+            all_e += [ke_fluc, drke, mcke, ke_tot]
             
-            ax.plot(xaxis, ke, color_order[0],\
+            ax.plot(xaxis, ke_tot, color_order[0],\
                     linewidth=lw_ke, label=r'$\rm{KE_{tot}}$')
-            ax.plot(xaxis, rke, color_order[1],\
-                    linewidth=lw_ke, label=r'$\rm{KE_r}$')
-            ax.plot(xaxis, tke, color_order[2],\
-                    linewidth=lw_ke, label=r'$\rm{KE_\theta}$')
-            ax.plot(xaxis, pke, color_order[3],\
-                    linewidth=lw_ke, label=r'$\rm{KE_\phi}$')
+            ax.plot(xaxis, drke, color_order[1],\
+                    linewidth=lw_ke, label=r'$\rm{DRKE}$')
+            ax.plot(xaxis, mcke, color_order[2],\
+                    linewidth=lw_ke, label=r'$\rm{MCKE}$')
+            ax.plot(xaxis, ke_fluc, color_order[3],\
+                    linewidth=lw_ke, label=r'$\rm{KE_{fluc}}$')
 
         # INTERNAL
         if kw.inte:
@@ -234,19 +212,16 @@ for ilat in range(nquadlat):
         # MAGNETIC
         if not kw.nomag:
             if magnetism:
-                all_e += [me]
-                if have_comp:
-                    all_e += [rme, tme, pme]
+                all_e += [me_tot, torme, polme, me_fluc]
 
-                ax.plot(xaxis, me, color=color_order[0], linestyle='--',\
+                ax.plot(xaxis, me_tot, color=color_order[0], linestyle='--',\
                         linewidth=lw, label=r'$\rm{ME_{tot}}$')
-                if have_comp:
-                    ax.plot(xaxis, rme, color=color_order[1], linestyle='--',\
-                            linewidth=lw, label=r'$\rm{ME_r}$')
-                    ax.plot(xaxis, tme, color=color_order[2], linestyle='--',\
-                            linewidth=lw, label=r'$\rm{ME_\theta}$')
-                    ax.plot(xaxis, pme, color=color_order[3], linestyle='--',\
-                            linewidth=lw, label=r'$\rm{ME_\phi}$')
+                ax.plot(xaxis, torme, color=color_order[1], linestyle='--',\
+                        linewidth=lw, label=r'$\rm{ME_{tor}}$')
+                ax.plot(xaxis, polme, color=color_order[2], linestyle='--',\
+                        linewidth=lw, label=r'$\rm{ME_{pol}}$')
+                ax.plot(xaxis, me_fluc, color=color_order[3], linestyle='--',\
+                        linewidth=lw, label=r'$\rm{ME_{fluc}}$')
 
         if ilat == 0 and ir == 0: # put a legend on the upper left axis
             plotleg = True
@@ -290,7 +265,7 @@ for it in range(nquadlat):
 # overall title 
 iter1, iter2 = get_iters_from_file(kw.the_file)
 time_string = get_time_string(dirname, iter1, iter2) 
-the_title = clas0.dirname_label + '\n' +  'energy trace (' + kw.type + ')' + '\n' + time_string
+the_title = clas0.dirname_label + '\n' +  'energy trace\n' + time_string
 margin_x = fpar['margin_left'] + fpar['sub_margin_left']
 margin_y = default_margin/fpar['height_inches']
 fig.text(margin_x, 1 - margin_y, the_title,\
@@ -314,7 +289,7 @@ tag = clas0['tag']
 if kw.xiter and tag == '':
     tag = '_kw.xiter'
 plotdir = my_mkdir(clas0['plotdir']) 
-basename = dataname.replace('G_Avgs_trace', 'etrace' + '_' + kw.type)
+basename = dataname.replace('G_Avgs_trace', 'etrace')
 savename = basename + tag + '-' + str(iter1).zfill(8) + '_' + str(iter2).zfill(8) + '.png'
 if clas0.prepend:
     savename = dirname_stripped + '_' + savename
