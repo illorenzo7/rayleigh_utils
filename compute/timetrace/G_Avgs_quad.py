@@ -27,16 +27,17 @@ from mpi4py import MPI
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 
+import sys, os
+sys.path.append(os.environ['raco'])
+# import common here
+from common import *
+ 
 # Start timing immediately
 comm.Barrier()
 if rank == 0:
     # timing module
     import time
     # info for print messages
-    import sys, os
-    sys.path.append(os.environ['raco'])
-    # import common here
-    from common import *
     from cla_util import *
     nproc = comm.Get_size()
     t1_glob = time.time()
@@ -194,6 +195,22 @@ the_qv = 0 # need this just as a place holder
 
 for i in range(my_nfiles):
     a = reading_func(radatadir + str(my_files[i]).zfill(8), '')
+
+    if not 1479 in a.qv and dataname == 'AZ_Avgs': # always add 1479 (advec ref heating) anyway if it's nonzero (it's easy)
+        if rank == 0 and i == 0:
+            print('1479 not output; computing it manually')
+
+        a.nq += 1
+        a.qv = np.append(a.qv, 1479)
+        a.lut[1479] = a.nq - 1
+
+        eq = get_eq(dirname)
+        prefactor = -eq.constants[10]*eq.functions[13]*eq.rho*eq.tmp
+        ntheta, nr, nq_old, nrec = a.vals.shape
+        prefactor = prefactor.reshape((1, nr, 1, 1))
+        urad = a.vals[:, :, [a.lut[1]], :]
+        to_add = prefactor*urad
+        a.vals = np.concatenate([a.vals, to_add], axis=2) 
 
     # want to deal here with the possibility of a changing grid
     # (changing n_theta, ncheby)
