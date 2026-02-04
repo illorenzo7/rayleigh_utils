@@ -24,7 +24,7 @@ magnetism = clas0['magnetism']
 advect_reference_state = clas0['advect_reference_state']
 
 # defaults
-kw_default = dict({'the_file': None, 'qvals': None, 'groupname': None})
+kw_default = dict({'the_file': None, 'qvals': None, 'groupname': None, 'noc11': False})
 kw_default.update(kw_plot_azav_grid_default)
 
 # overwrite defaults
@@ -73,7 +73,7 @@ print ("qvals = ", kw.qvals)
 
 terms = []
 for qval in kw.qvals:
-    the_term = get_term(dirname, vals, lut, qval, verbose=True)
+    the_term = get_term(dirname, vals, lut, qval, verbose=True, noc11=kw.noc11)
     terms.append(the_term)
 
 # for teq, make some modifications to the terms
