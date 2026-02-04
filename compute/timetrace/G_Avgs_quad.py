@@ -205,7 +205,7 @@ for i in range(my_nfiles):
         a.lut[1479] = a.nq - 1
 
         eq = get_eq(dirname)
-        prefactor = -eq.constants[10]*eq.functions[13]*eq.rho*eq.tmp
+        prefactor = eq.constants[10]*eq.functions[13]*eq.rho*eq.tmp
         ntheta, nr, nq_old, nrec = a.vals.shape
         prefactor = prefactor.reshape((1, nr, 1, 1))
         urad = a.vals[:, :, [a.lut[1]], :]
