@@ -2332,26 +2332,26 @@ def length_scales(dirname, the_file=None, verbose=False):
 def get_term(dirname, vals, lut, quantity, verbose=False, noc11=False):
     if is_an_int(quantity):
         quantity = int(float(quantity))
+        eq = get_eq(dirname)
+        c11 = eq.constants[10]
         if lut[quantity] < 4000: # it's easy
-            return vals[..., lut[quantity]]
+            the_term = vals[..., lut[quantity]]
         # for some quantities, we can do contingencies
         elif quantity == 1404:
             adv_tot = vals[..., lut[1401]]
             adv_fluc = vals[..., lut[1402]]
             if verbose:
                 print ("get_term(): getting 1404 from 1401 - 1402")
-            return adv_tot - adv_fluc
+            the_term = adv_tot - adv_fluc
         elif quantity == 1479:
             vr = vals[..., lut[1]]
-            eq = get_eq(dirname)
-            c11 = eq.constants[10]
             f14 = eq.functions[13]
             if verbose:
                 print ("get_term(): getting 1479 from rho * T * dsdr * vr")
-            the_term = eq.rho*eq.tmp*f14*vr
-            if not noc11:
-                the_term *= c11
-            return the_term
+            the_term = eq.rho*eq.tmp*c11*f14*vr
+        if noc11 and quantity == 1479:
+            the_term /= c11
+        return the_term
 
 def detect_nans(arr):
     has_nans = False

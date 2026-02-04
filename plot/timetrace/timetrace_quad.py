@@ -25,6 +25,7 @@ dirname_stripped = strip_dirname(dirname)
 
 # See if magnetism is "on"
 magnetism = get_parameter(dirname, 'magnetism')
+advect_reference_state = clas0['advect_reference_state']
 
 # SPECIFIC ARGS for etrace:
 kw_default = dict({'the_file': None, 'xminmax': None, 'xmin': None, 'xmax': None, 'minmax': None, 'min': None, 'max': None, 'coords': None, 'ntot': 500, 'xiter': False, 'log': False, 'xvals': np.array([]), 'nquadr': None, 'nquadlat': None, 'qvals': None, 'groupname': 'v', 'totsig': None, 'titles': None, 'justtot': False, 'notot': False, 'printerr': False, 'dpi': 300, 'vol': False, 'tint': False, 'tkappa': False, 'tavg': None, 'noc11': False})
@@ -44,7 +45,7 @@ kw_lineplot = update_dict(kw_lineplot_default, clas)
 
 # deal with desired quantities
 if kw.qvals is None: # it's a quantity group
-    qgroup = get_quantity_group(kw.groupname, magnetism)
+    qgroup = get_quantity_group(kw.groupname, magnetism, advect_reference_state)
     kw.qvals = qgroup['qvals']
     if kw.titles is None:
         kw.titles = qgroup['titles']
