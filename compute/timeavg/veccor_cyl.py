@@ -90,6 +90,10 @@ if rank == 0:
     # Make sure you put same number of slices in AZ_Avgs and 
     # Meridional_Slices, or this won't work
 
+    # update ntheta unless told otherwise
+    if kw.ntheta is None:
+        kw.ntheta, dummy, dummy, dummy = a0.vals.shape
+
     # get grid information
     di_grid = get_grid_info(dirname, ntheta=kw.ntheta)
     nt = di_grid['nt']
