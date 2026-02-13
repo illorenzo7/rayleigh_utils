@@ -362,10 +362,21 @@ def plot_eq(field, rr, fig, ax, **kw):
             if ind == 1:
                 irval = np.argmin(np.abs(rr - val))
                 xline, yline = xx[:, irval], yy[:, irval]
+                lw_factor = 1.
             if ind == 2:
+                if val > 180.:
+                    val -= 360. # need to put these in the same range
                 ilonval = np.argmin(np.abs(lon - val))
                 xline, yline = xx[ilonval, :], yy[ilonval, :]
-            ax.plot(xline*kw.shrinkage, yline*kw.shrinkage, linewidth=kw.linewidth, linestyle=linestyles[i], color=linecolors[i])
+                lw_factor = 1.
+                if close_to_zero(val):
+                    lw_factor = 2.
+            ax.plot(xline*kw.shrinkage, yline*kw.shrinkage, linewidth=lw_factor*kw.linewidth, linestyle=linestyles[i], color=linecolors[i])
+
+    # don't obscure the boundary
+    lilbit = 0.01
+    ax.set_xlim(-1-lilbit, 1 + lilbit)
+    ax.set_ylim(-1-lilbit, 1+lilbit)
 
 
 kw_plot_cutout_3d_default =\
