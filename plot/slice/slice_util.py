@@ -278,7 +278,8 @@ def plot_moll_or_ortho(field, costheta, fig, ax, **kw):
         ax.plot(xvals*kw.shrinkage, yvals*kw.shrinkage, 'k', linewidth=1.5*kw.linewidth)
 
 # equatorial slice plotting routine
-kw_plot_eq_default = dict({'clon': 0., 'plotlonlines': True, 'lonvals': np.arange(0., 360., 60.), 'linewidth': 0.5*default_lw, 'plotboundary': True})
+kw_plot_eq_default = dict({'clon': 0., 'plotlonlines': True, 'linestyles1': np.array(['--']), 'linecolors1': np.array(['k']),
+    'linestyles2': np.array(['--']), 'linecolors2': np.array(['k']),'lonvals': np.arange(0., 360., 60.), 'rvals': None, 'linewidth': 0.5*default_lw, 'plotboundary': True, 'normalize': False, 'shrinkage': 1.0})
 kw_plot_eq_default.update(kw_my_contourf_default)
 kw_plot_eq_default['plotcontours'] = False
 
@@ -292,6 +293,11 @@ def plot_eq(field, rr, fig, ax, **kw):
         
     # Shouldn't have to do this but Python is stupid with arrays
     field = np.copy(field)    
+
+    if kw.normalize:
+        nphi, nr = field.shape
+        for ir in range(nr):
+            field[:, ir] /= rms(field[:, ir])
 
     # shift the field so that the clon is in the ~center of the array
     difflon = 180. - kw.clon # basically difflon is the amount the clon
@@ -321,30 +327,46 @@ def plot_eq(field, rr, fig, ax, **kw):
     yy = -rr_2d*np.cos(phi_2d)/rmax
 
     # make the color plot
-    my_contourf(xx, yy, field, fig, ax, **kw_my_contourf)
+    my_contourf(xx*kw.shrinkage, yy*kw.shrinkage, field, fig, ax, **kw_my_contourf)
 
-    # longitude lines
-    npoints = 100
-    if kw.plotlonlines:
-        for lonval in kw.lonvals:
-            if lonval == 0.:
-                linewidth = 2*kw.linewidth
-            else:
-                linewidth = kw.linewidth
-            # Make sure the plotted meridians are with respect to the clon
-            # keep everything in the -180, 180 range
-            lon_loc = lonval - kw.clon
-            if lon_loc > 180.:
-                lon_loc -= 360.
-            elif lon_loc < -180.:
-                lon_loc += 360.
-            ilon = np.argmin(np.abs(lon - lon_loc))
-            ax.plot(xx[ilon, :], yy[ilon, :], 'k--', linewidth=linewidth)
+    # potentially plot coordinate lines
+    if not kw.plotlonlines:
+        kw.lonvals = np.array([])
+    if kw.rvals is None:
+        kw.rvals = np.array([])
 
-    if kw.plotboundary:
-        # plot boundaries
-        ax.plot(xx[:, 0], yy[:, 0], 'k', linewidth=1.5*kw.linewidth)
-        ax.plot(xx[:, -1], yy[:, -1], 'k', linewidth=1.5*kw.linewidth)
+    for ind in [1, 2]:
+        if ind == 1:
+            vals = make_array(kw.rvals, tolist=True)
+            linecolors = kw.linecolors1
+            linestyles = kw.linestyles1
+        if ind == 2:
+            vals = make_array(kw.lonvals, tolist=True)
+            linecolors = kw.linecolors2
+            linestyles = kw.linestyles2
+
+        # make lists from everything that needs to be
+        linecolors = make_array(linecolors, tolist=True, length=len(vals))
+        linestyles = make_array(linestyles, tolist=True, length=len(vals))
+
+        if kw.plotboundary:
+            if ind == 1:
+                to_add = [np.min(rr), np.max(rr)]
+                vals = [to_add[0]] + vals + [to_add[1]] 
+                linestyles = ['-'] + linestyles + ['-'] # make boundary lines solid
+                linecolors = ['k'] + linecolors + ['k'] # make boundary lines black
+
+        # make vals an array again
+        for i in range(len(vals)):
+            val = vals[i]
+            if ind == 1:
+                irval = np.argmin(np.abs(rr - val))
+                xline, yline = xx[:, irval], yy[:, irval]
+            if ind == 2:
+                ilonval = np.argmin(np.abs(lon - val))
+                xline, yline = xx[ilonval, :], yy[ilonval, :]
+            ax.plot(xline*kw.shrinkage, yline*kw.shrinkage, linewidth=kw.linewidth, linestyle=linestyles[i], color=linecolors[i])
+
 
 kw_plot_cutout_3d_default =\
         dotdict(dict({'r1': 'rmin', 'r2': 'rmax', 'dlon1': -30., 'dlon2': 60.,\
