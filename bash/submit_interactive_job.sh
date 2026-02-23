@@ -3,26 +3,18 @@ echo "#PBS -S /bin/bash" > $thescript
 echo "#PBS -N interactive_quote_unquote" >> $thescript
 
 modeltype=$1
-if [ $modeltype == 'bro' ]
+if [ $modeltype == 'bro_ele' ]
 then
     ncpus=28
-    execext='.avx2'
-elif [ $modeltype == 'has' ]
-then
-    ncpus=24
-    execext='.avx2'
-elif [ $modeltype == 'ivy' ] 
-then
-    ncpus=20
-    execext='.avx'
-elif [ $modeltype == 'san' ] 
-then
-    ncpus=16
-    execext='.avx'
 elif [ $modeltype == 'sky_ele' ] || [ $modeltype == 'cas_ait' ] 
 then
     ncpus=40
-    execext='.avx512'
+elif [ $modeltype == 'rom_ait' ] 
+then
+    ncpus=128
+elif [ $modeltype == 'mil_ait' ] 
+then
+    ncpus=128
 else
     echo "unknown model type $modeltype"
 fi
@@ -46,7 +38,7 @@ else
 fi
 
 echo "#PBS -j oe" >> $thescript
-echo "#PBS -W group_list=s2328" >> $thescript
+echo "#PBS -W group_list=s7614" >> $thescript
 echo "#PBS -m e" >> $thescript
 echo "#PBS -l site=needed=/home1+/nobackupp17" >> $thescript
 
