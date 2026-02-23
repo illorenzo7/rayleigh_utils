@@ -1,0 +1,17 @@
+#PBS -S /bin/bash
+#PBS -N interactive_quote_unquote
+#PBS -l select=1:ncpus=40:model=sky_ele
+#PBS -q long
+#PBS -l walltime=120:00:00
+#PBS -j oe
+#PBS -W group_list=s2328
+#PBS -m e
+#PBS -l site=needed=/home1+/nobackupp17
+
+module purge
+module load mpi-hpe
+module load comp-intel
+
+cat $PBS_NODEFILE > /nobackup/lmatilsk/nodefile_$PBS_JOBID
+
+sleep 432000

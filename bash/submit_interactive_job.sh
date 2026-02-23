@@ -1,6 +1,6 @@
-lscript="/home1/lmatilsk/rayleigh/utils/bash/lscript_interactive"
-echo "#PBS -S /bin/bash" > $lscript
-echo "#PBS -N interactive_quote_unquote" >> $lscript
+thescript="/home1/lmatilsk/rayleigh/utils/bash/the_script_interactive"
+echo "#PBS -S /bin/bash" > $thescript
+echo "#PBS -N interactive_quote_unquote" >> $thescript
 
 modeltype=$1
 if [ $modeltype == 'bro' ]
@@ -28,25 +28,38 @@ else
 fi
 
 select=$2
+thequeue=${3:-vlong}
 
-echo "#PBS -l select=$select:ncpus=$ncpus:model=$modeltype" >> $lscript
-echo "#PBS -q long" >> $lscript
-echo "#PBS -l walltime=120:00:00" >> $lscript
-echo "#PBS -j oe" >> $lscript
-echo "#PBS -W group_list=s2328" >> $lscript
-echo "#PBS -m e" >> $lscript
-echo "#PBS -l site=needed=/home1+/nobackupp17" >> $lscript
+echo "#PBS -l select=$select:ncpus=$ncpus:model=$modeltype" >> $thescript
+echo "#PBS -q $thequeue" >> $thescript
+if [[ "$thequeue" == "vlong" ]]; then
+    echo "#PBS -l walltime=384:00:00" >> $thescript
+elif [[ "$thequeue" == "long" ]]; then
+    echo "#PBS -l walltime=120:00:00" >> $thescript
+elif [[ "$thequeue" == "devel" ]]; then
+    echo "#PBS -l walltime=2:00:00" >> $thescript
+elif [[ "$thequeue" == "normal" ]]; then
+    echo "#PBS -l walltime=2:00:00" >> $thescript
+else
+    echo "$thequeue is not a valid queue name. Aborting..."
+    exit 1
+fi
 
-echo >> $lscript
+echo "#PBS -j oe" >> $thescript
+echo "#PBS -W group_list=s2328" >> $thescript
+echo "#PBS -m e" >> $thescript
+echo "#PBS -l site=needed=/home1+/nobackupp17" >> $thescript
 
-echo "module purge" >> $lscript
-echo "module load mpi-hpe" >> $lscript
-echo "module load comp-intel" >> $lscript
+echo >> $thescript
 
-echo >> $lscript
-echo "cat \$PBS_NODEFILE > /nobackup/lmatilsk/nodefile_\$PBS_JOBID" >> $lscript
-echo >> $lscript
+echo "module purge" >> $thescript
+echo "module load mpi-hpe" >> $thescript
+echo "module load comp-intel" >> $thescript
 
-echo "sleep 432000" >> $lscript
+echo >> $thescript
+echo "cat \$PBS_NODEFILE > /nobackup/lmatilsk/nodefile_\$PBS_JOBID" >> $thescript
+echo >> $thescript
 
-qsub $lscript
+echo "sleep 432000" >> $thescript
+
+qsub $thescript
