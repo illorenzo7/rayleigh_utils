@@ -4,6 +4,8 @@
 # Description: Module for routines common to many plotting scripts
 
 import numpy as np
+from scipy.ndimage import zoom
+import matplotlib.path as mpath
 from matplotlib import colors, ticker
 import matplotlib.pyplot as plt
 from common import *
@@ -831,7 +833,7 @@ kw_my_contourf_default = dict({
         # colorbar stuff
         'plotcbar': True, 'cmap': None, 'norm': None, 'units': '', 'nlevels': 64,       
         # only need this for time-lat plots or such, since need ticks there
-        'allticksoff': True,\
+        'allticksoff': True, 'guardboundary': False,\
         # symlog stuff (again)
         'minmax': None, 'linthresh': None, 'linscale': None, 'scaleby': 1.0})
 
@@ -914,7 +916,21 @@ def my_contourf(xx, yy, field, fig, ax, **kw_in):
 
     # finally we make the contour plot!
     if kw.plotfield:
-        im = ax.contourf(xx, yy, field, cmap=kw.cmap, levels=levels, norm=kw.norm)
+        # make sure the boundary of the data is masked to avoid bleeding over the boundaries
+        #field[0,:] = field[-1,:] = field[:,0] = field[:,-1] = np.nan
+        im = ax.contourf(xx, yy, field, cmap=kw.cmap, levels=levels, norm=kw.norm, antialiased=True)
+        if kw.guardboundary:
+            # apply the boundary clip if desired
+            # define the field boundary
+            boundary = np.vstack([
+                np.column_stack((xx[0, :], yy[0, :])),      # Bottom edge
+                np.column_stack((xx[:, -1], yy[:, -1])),    # Right edge
+                np.column_stack((xx[-1, ::-1], yy[-1, ::-1])), # Top edge
+                np.column_stack((xx[::-1, 0], yy[::-1, 0]))  # Left edge
+            ])
+            clip_path = mpath.Path(boundary)
+
+            im.set_clip_path(clip_path, transform=ax.transData)
         # avoid problems when saving .pdfs
         # Check if collections exists (for backward compatibility)
         if hasattr(im, 'collections'):
