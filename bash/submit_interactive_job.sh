@@ -30,8 +30,10 @@ elif [[ "$thequeue" == "long" ]]; then
     echo "#PBS -l walltime=120:00:00" >> $thescript
 elif [[ "$thequeue" == "devel" ]]; then
     echo "#PBS -l walltime=2:00:00" >> $thescript
-elif [[ "$thequeue" == "normal" ]]; then
+elif [[ "$thequeue" == "debug" ]]; then
     echo "#PBS -l walltime=2:00:00" >> $thescript
+elif [[ "$thequeue" == "normal" ]]; then
+    echo "#PBS -l walltime=4:00:00" >> $thescript
 else
     echo "$thequeue is not a valid queue name. Aborting..."
     exit 1
