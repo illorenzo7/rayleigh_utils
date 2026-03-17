@@ -7,6 +7,6 @@ group=${3:-s7614} # charge it to s7614 by default
 
 for modeltype in "${arr[@]}"
 do 
-    fname="dscript_$modeltype"
-    bash /home1/lmatilsk/rayleigh/utils/bash/dscript.sh $fname $runname $modeltype $nprocs $group
+    fname="dbscript_$modeltype"
+    bash /home1/lmatilsk/rayleigh/utils/bash/dbscript.sh $fname $runname $modeltype $nprocs $group
 done
