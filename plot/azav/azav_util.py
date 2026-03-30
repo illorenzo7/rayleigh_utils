@@ -19,7 +19,7 @@ azav_fig_dimensions = dict({'sub_aspect': 2, 'sub_width_inches': 2, 'sub_margin_
 
 # plot_azav needs my_contourf args, then some
 kw_plot_azav_default = dict(
-        {'rcut': None, 'order': 'down', 'minmax2': None, 'cmap2': None, 'rvals': None, 'plotlatlines': True, 'latvals': np.arange(-60., 90., 30.), 'plotboundary': True,
+        {'rcut': None, 'order': 'down', 'minmax2': None, 'cmap2': None, 'cbar2': True, 'rvals': None, 'plotlatlines': True, 'latvals': np.arange(-60., 90., 30.), 'plotboundary': True,
         'linestyles1': np.array(['--']), 'linewidth': default_lw, 'linecolors1': np.array(['k']),
        'linestyles2': np.array(['--']), 'linecolors2': np.array(['k']),
        'halfplane': False, 'sym': False, 'antisym': False, 'fontsize': default_labelsize, 'plotaxis': True,\
@@ -118,6 +118,8 @@ def plot_azav(field, rr, cost, fig, ax,  **kw_in):
         else:
             kw_my_contourf.cmap = kw.cmap2
         kw_my_contourf.cbar_no = 2
+        if not kw.cbar2:
+            kw_my_contourf.plotcbar = False
         my_contourf(xx2*kw.shrinkage, yy2*kw.shrinkage, field2, fig, ax, **kw_my_contourf)
 
     # potentially plot coordinate lines
