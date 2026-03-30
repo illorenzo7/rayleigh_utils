@@ -732,11 +732,11 @@ def add_cbar(fig, ax, im, **kw_in):
         cbar.set_ticks(kw.tickvals)
         cbar.set_ticklabels(kw.ticklabels)
 
-    if kw.cbar_pos == 'bottom':
+    if kw.cbar_pos in ['bottom', 'top']:
         fig.text(cbar_left + cbar_width + 1/16/fig_width_inches,\
                 cbar_bottom + 0.5*cbar_height, kw.cbar_label,\
                 ha='left', va='center', fontsize=kw.cbar_fs) 
-    elif kw.cbar_pos == 'right':
+    elif kw.cbar_pos in ['right', 'left']:
         #fig.text(cbar_left + cbar_width + lilbit/fig_aspect,\
         #        cbar_bottom + 0.5*cbar_height, kw.cbar_label,\
         #        ha='left', va='center', fontsize=kw.fontsize) 
