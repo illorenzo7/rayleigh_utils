@@ -93,8 +93,10 @@ dotdict({'nplots': None, 'nrow': None, 'ncol': None,\
     'margin_left_inches': default_margin,\
     'margin_right_inches': default_margin,\
     'margin_bottom_inches': default_margin,\
-    'margin_top_inches': default_margin_title
+    'margin_top_inches': default_margin_title,\
 
+    'xoverlap': 0.,\
+    'yoverlap': 0.
 })
 
 def make_figure(**kw_in):
@@ -173,17 +175,17 @@ def make_figure(**kw_in):
         # the corresponding "sub_" length is specified
         if not width_inches is None:
             sub_width_inches = (width_inches - margin_left_inches - margin_right_inches -\
-                    ncol*(sub_margin_left_inches + sub_margin_right_inches))/ncol
+                    ncol*(sub_margin_left_inches + sub_margin_right_inches))/(ncol*(1-kw.xoverlap))
         elif not sub_width_inches is None:
             width_inches = margin_left_inches + margin_right_inches +\
-                    ncol*(sub_margin_left_inches + sub_width_inches + sub_margin_right_inches)
+                    ncol*(sub_margin_left_inches + sub_width_inches*(1-kw.xoverlap) + sub_margin_right_inches)
 
         if not height_inches is None:
             sub_height_inches = (height_inches - margin_bottom_inches - margin_top_inches -\
-                    nrow*(sub_margin_bottom_inches + sub_margin_top_inches))/nrow
+                    nrow*(sub_margin_bottom_inches + sub_margin_top_inches))/(nrow*(1-kw.yoverlap))
         elif not sub_height_inches is None:
             height_inches = margin_bottom_inches + margin_top_inches +\
-                    nrow*(sub_margin_bottom_inches + sub_height_inches + sub_margin_top_inches)
+                    nrow*(sub_margin_bottom_inches + sub_height_inches*(1-kw.yoverlap) + sub_margin_top_inches)
 
         # maybe get the aspects from the lengths
         if not width_inches is None and not height_inches is None: 
@@ -193,33 +195,33 @@ def make_figure(**kw_in):
             if not aspect is None:
                 height_inches = aspect*width_inches
                 sub_height_inches = (height_inches - margin_bottom_inches - margin_top_inches -\
-                        nrow*(sub_margin_bottom_inches + sub_margin_top_inches))/nrow
+                        nrow*(sub_margin_bottom_inches + sub_margin_top_inches))/(nrow*(1-kw.yoverlap))
                 sub_aspect = sub_height_inches/sub_width_inches
             else:
                 sub_height_inches = sub_aspect*sub_width_inches
                 height_inches = margin_bottom_inches + margin_top_inches +\
-                    nrow*(sub_margin_bottom_inches + sub_height_inches + sub_margin_top_inches)
+                    nrow*(sub_margin_bottom_inches + sub_height_inches*(1-kw.xoverlap) + sub_margin_top_inches)
                 aspect = height_inches/width_inches
         else: # width_inches is None
             if not aspect is None:
                 width_inches = height_inches/aspect
                 sub_aspect = sub_height_inches/sub_width_inches
                 sub_width_inches = (width_inches - margin_left_inches - margin_right_inches -\
-                    ncol*(sub_margin_left_inches + sub_margin_right_inches))/ncol
+                    ncol*(sub_margin_left_inches + sub_margin_right_inches))/(ncol*(1-kw.xoverlap))
 
             else:
                 sub_width_inches = sub_height_inches/sub_aspect
                 width_inches = margin_left_inches + margin_right_inches +\
-                    ncol*(sub_margin_left_inches + sub_width_inches + sub_margin_right_inches)
+                    ncol*(sub_margin_left_inches + sub_width_inches*(1-kw.xoverlap)+ sub_margin_right_inches)
                 aspect = height_inches/width_inches
     else: # use the default
         sub_width_inches = sub_width_inches_default
         sub_height_inches = sub_height_inches_default
         sub_aspect = sub_height_inches/sub_width_inches
         width_inches = margin_left_inches + margin_right_inches +\
-                ncol*(sub_margin_left_inches + sub_width_inches + sub_margin_right_inches)
+                ncol*(sub_margin_left_inches + sub_width_inches*(1-kw.xoverlap) + sub_margin_right_inches)
         height_inches = margin_bottom_inches + margin_top_inches +\
-                nrow*(sub_margin_bottom_inches + sub_height_inches + sub_margin_top_inches)
+                nrow*(sub_margin_bottom_inches + sub_height_inches*(1-kw.yoverlap) + sub_margin_top_inches)
         sub_aspect = sub_height_inches/sub_width_inches
 
     #  now we're totally specified
@@ -258,8 +260,8 @@ def make_figure(**kw_in):
     for iplot in range(fpar['nplots']):
         icol = iplot%fpar['ncol']
         irow = iplot//fpar['ncol']
-        ax_left = fpar['margin_left'] + fpar['sub_margin_left'] + icol*(fpar['sub_width'] + fpar['sub_margin_left'] + fpar['sub_margin_right'])
-        ax_bottom = 1.0 - fpar['margin_top'] - fpar['sub_margin_top'] - fpar['sub_height'] - irow*(fpar['sub_height'] + fpar['sub_margin_top'] + fpar['sub_margin_bottom'])
+        ax_left = fpar['margin_left'] + fpar['sub_margin_left'] + icol*(fpar['sub_width']*(1-kw.xoverlap) + fpar['sub_margin_left'] + fpar['sub_margin_right'])
+        ax_bottom = 1.0 - fpar['margin_top'] - fpar['sub_margin_top'] - fpar['sub_height']*(1-kw.yoverlap) - irow*(fpar['sub_height']*(1-kw.yoverlap) + fpar['sub_margin_top'] + fpar['sub_margin_bottom'])
         axs.append(fig.add_axes((ax_left, ax_bottom, fpar['sub_width'], fpar['sub_height'])))
 
         #axs[irow,icol] = fig.add_axes((ax_left, ax_bottom, fpar['sub_width'], fpar['sub_height']))
