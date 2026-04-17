@@ -48,10 +48,14 @@ echo >> $fname
 
 echo "module purge" >> $fname
 
-if [ $modeltype == 'bro_ele' ] || [ $modeltype == 'sky_ele' ] || [ $modeltype == 'cas_ait' ] 
+if [ $modeltype == 'bro_ele' ] || [ $modeltype == 'cas_ait' ] 
 then
     echo "module load mpi-hpe" >> $fname
     echo "module load comp-intel" >> $fname
+elif [ $modeltype == 'sky_ele' ] 
+then
+    echo "module load mpi-hpe" >> $fname
+    echo "module load comp-intel/2020.4.304" >> $fname
 elif [ $modeltype == 'rom_ait' ] 
 then
     echo "module load gcc/13.2 mpi-hpe/mpt.2.28_25Apr23_rhel87" >> $fname
