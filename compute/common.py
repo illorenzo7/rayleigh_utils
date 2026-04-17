@@ -104,7 +104,7 @@ def get_dict(fname):
         f = open(fname, 'rb')
         di = pickle.load(f)
         f.close()
-    return di
+    return dotdict(di)
 
 # might as well get model S now
 dir_modelS = os.environ['notes'] + '/Model_S/'

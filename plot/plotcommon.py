@@ -200,7 +200,7 @@ def make_figure(**kw_in):
             else:
                 sub_height_inches = sub_aspect*sub_width_inches
                 height_inches = margin_bottom_inches + margin_top_inches +\
-                    nrow*(sub_margin_bottom_inches + sub_height_inches*(1-kw.xoverlap) + sub_margin_top_inches)
+                    nrow*(sub_margin_bottom_inches + sub_height_inches*(1-kw.yoverlap) + sub_margin_top_inches)
                 aspect = height_inches/width_inches
         else: # width_inches is None
             if not aspect is None:
