@@ -95,7 +95,9 @@ if rank == 0:
     # by default, read in last available file
     # For now just work with Shell_Slices files only and assume
     # that Equatorial_Slices and Meridional_Slices overlap
-    file_list, int_file_list, nfiles = get_file_lists(ssdir, clas)
+    clas_mod = dict({'iters': 'last'})
+    clas_mod.update(clas)
+    file_list, int_file_list, nfiles = get_file_lists(radatadir, clas_mod)
 
     # get desired varnames
     # again assume that the quantity list between Shell_Slices and
