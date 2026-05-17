@@ -25,7 +25,7 @@ dirname_stripped = strip_dirname(dirname)
 magnetism = clas0['magnetism']
 
 # defaults
-kw_default = dict({'rad': False, 'groupname': 'v', 'sampletag': '', 'the_file': None, 'isamplevals': np.array([0]), 'samplevals': None, 'rvals': None, 'qvals': 'all', 'ntot': 500, 'tavg': None, 'prepend': False, 'sub': False, 'xminmax': None, 'xmin': None, 'xmax': None, 'ntheta': None, 'tkappa': False, 'minmaxs': None, 'iplots': None})
+kw_default = dict({'rad': False, 'groupname': 'v', 'sampletag': '', 'the_file': None, 'isamplevals': np.array([0]), 'samplevals': None, 'rvals': None, 'qvals': 'all', 'ntot': 500, 'tavg': None, 'prepend': False, 'sub': False, 'xminmax': None, 'xmin': None, 'xmax': None, 'tkappa': False, 'minmaxs': None, 'iplots': None})
 
 # also need make figure kw
 kw_make_figure_default.update(timey_fig_dimensions)
@@ -50,23 +50,11 @@ if not kw.ycut is None:  # need room for two colorbars
 # baseline time unit
 time_unit, time_label, rotation, simple_label = get_time_unit(dirname, tkappa=kw.tkappa)
 
-# get grid info
-di_grid = get_grid_info(dirname, ntheta=kw.ntheta)
-
+# data file
 if kw.rad:
     datatype = 'timerad'
-    plotlabel = 'time-radius trace'
-    yaxis = di_grid['rr']
-    axislabel = 'radius'
-    samplefmt = lat_fmt
-    samplename = 'latval'
 else:
     datatype = 'timelat'
-    plotlabel = 'time-latitude trace'
-    yaxis = di_grid['tt_lat']
-    axislabel = 'latitude (deg)'
-    samplefmt = '%1.3e'
-    samplename = 'rval'
 
 dataname = datatype + '_' + kw.groupname
 if len(kw.sampletag) > 0:
@@ -85,6 +73,25 @@ times = di['times']
 iters = di['iters']
 qvals_avail = np.array(di['qvals'])
 samplevals_avail = di['samplevals']
+
+# get grid info
+ntheta = np.shape(vals)[1]
+di_grid = get_grid_info(dirname, ntheta=ntheta)
+
+if kw.rad:
+    plotlabel = 'time-radius trace'
+    yaxis = di_grid['rr']
+    axislabel = 'radius'
+    samplefmt = lat_fmt
+    samplename = 'latval'
+else:
+    plotlabel = 'time-latitude trace'
+    yaxis = di_grid['tt_lat']
+    axislabel = 'latitude (deg)'
+    samplefmt = '%1.3e'
+    samplename = 'rval'
+
+
 
 # time unit
 times /= time_unit
