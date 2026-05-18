@@ -34,7 +34,7 @@ fi
 nprow=`python $rau/bash/nprow.py $nprocs`
 npcol=`python $rau/bash/npcol.py $nprocs`
 
-group=${5:-s7614} # charge it to s7614 by default
+group=${5:-s3058} # charge it here by default
 
 echo "#PBS -l select=$select:ncpus=$ncpus:model=$modeltype" >> $fname
 echo "#PBS -q debug" >> $fname
@@ -48,10 +48,14 @@ echo >> $fname
 
 echo "module purge" >> $fname
 
-if [ $modeltype == 'bro_ele' ] || [ $modeltype == 'sky_ele' ] || [ $modeltype == 'cas_ait' ] 
+if [ $modeltype == 'bro_ele' ] || [ $modeltype == 'cas_ait' ] 
 then
     echo "module load mpi-hpe" >> $fname
     echo "module load comp-intel" >> $fname
+elif [ $modeltype == 'sky_ele' ] 
+then
+    echo "module load mpi-hpe" >> $fname
+    echo "module load comp-intel/2020.4.304" >> $fname
 elif [ $modeltype == 'rom_ait' ] 
 then
     echo "module load gcc/13.2 mpi-hpe/mpt.2.28_25Apr23_rhel87" >> $fname

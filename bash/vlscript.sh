@@ -34,7 +34,7 @@ fi
 nprow=`python $rau/bash/nprow.py $nprocs`
 npcol=`python $rau/bash/npcol.py $nprocs`
 
-group=${5:-s7614} # charge it to s7614 by default
+group=${5:-s3058} # charge it here by default
 
 echo "#PBS -l select=$select:ncpus=$ncpus:model=$modeltype" >> $fname
 echo "#PBS -q vlong" >> $fname
