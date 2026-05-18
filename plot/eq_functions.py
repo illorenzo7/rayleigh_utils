@@ -39,6 +39,7 @@ find_bad_keys(kw_default, clas, clas0['routinename'], justwarn=True)
 if kw.fname is None:
     kw.fname = 'equation_coefficients'
 eq = equation_coefficients()
+print("reading", dirname + '/' + kw.fname)
 eq.read(dirname + '/' + kw.fname)
 
 # things to plot and ylabels
