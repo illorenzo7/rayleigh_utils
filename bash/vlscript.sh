@@ -1,8 +1,10 @@
-fname=$1
-echo "#PBS -S /bin/bash" > $fname
-echo "#PBS -N $2" >> $fname
+qtype=${1:-vlong} # create the vlong scripts by default
 
-modeltype=$3
+fname=$2
+echo "#PBS -S /bin/bash" > $fname
+echo "#PBS -N $3" >> $fname
+
+modeltype=$4
 if [ $modeltype == 'bro_ele' ]
 then
     ncpus=28
@@ -23,7 +25,7 @@ else
     echo "unknown model type $modeltype"
 fi
 
-nprocs=$4
+nprocs=$5
 
 select=$(($nprocs/$ncpus + 1))
 if [ $(($nprocs%$ncpus)) == 0 ]
@@ -34,11 +36,24 @@ fi
 nprow=`python $rau/bash/nprow.py $nprocs`
 npcol=`python $rau/bash/npcol.py $nprocs`
 
-group=${5:-s3058} # charge it here by default
+group=${6:-s3058} # charge it here by default
 
 echo "#PBS -l select=$select:ncpus=$ncpus:model=$modeltype" >> $fname
-echo "#PBS -q vlong" >> $fname
-echo "#PBS -l walltime=384:00:00" >> $fname
+echo "#PBS -q $qtype" >> $fname
+if [ $qtype == 'vlong' ]
+then 
+    echo "#PBS -l walltime=384:00:00" >> $fname
+elif [ $qtype == 'long' ]
+then
+    echo "#PBS -l walltime=120:00:00" >> $fname
+elif [ $qtype == 'normal' ]
+then
+    echo "#PBS -l walltime=8:00:00" >> $fname
+elif [ $qtype == 'devel' ] || [ $qtype == 'debug' ]
+then
+    echo "#PBS -l walltime=2:00:00" >> $fname
+fi
+
 echo "#PBS -j oe" >> $fname
 echo "#PBS -W group_list=$group" >> $fname
 echo "#PBS -m e" >> $fname
@@ -48,11 +63,7 @@ echo >> $fname
 
 echo "module purge" >> $fname
 
-if [ $modeltype == 'bro_ele' ] || [ $modeltype == 'cas_ait' ] 
-then
-    echo "module load mpi-hpe" >> $fname
-    echo "module load comp-intel" >> $fname
-elif [ $modeltype == 'sky_ele' ] 
+if [ $modeltype == 'bro_ele' ] || [ $modeltype == 'cas_ait' ] || [ $modeltype == 'sky_ele' ]
 then
     echo "module load mpi-hpe" >> $fname
     echo "module load comp-intel/2020.4.304" >> $fname
