@@ -1,10 +1,8 @@
-qtype=${1:-vlong} # create the vlong scripts by default
-
-fname=$2
+fname=$1
 echo "#PBS -S /bin/bash" > $fname
-echo "#PBS -N $3" >> $fname
+echo "#PBS -N $2" >> $fname
 
-modeltype=$4
+modeltype=$3
 if [ $modeltype == 'bro_ele' ]
 then
     ncpus=28
@@ -25,7 +23,7 @@ else
     echo "unknown model type $modeltype"
 fi
 
-nprocs=$5
+nprocs=$4
 
 select=$(($nprocs/$ncpus + 1))
 if [ $(($nprocs%$ncpus)) == 0 ]
@@ -36,6 +34,7 @@ fi
 nprow=`python $rau/bash/nprow.py $nprocs`
 npcol=`python $rau/bash/npcol.py $nprocs`
 
+qtype=${5:-vlong} # create the vlong scripts by default
 group=${6:-s3058} # charge it here by default
 
 echo "#PBS -l select=$select:ncpus=$ncpus:model=$modeltype" >> $fname
