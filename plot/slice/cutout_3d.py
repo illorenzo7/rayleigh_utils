@@ -28,7 +28,7 @@ if rank == 0:
 
 # additional modules needed
 import matplotlib.pyplot as plt
-plt.rcParams['mathtext.fontset'] = 'stix'
+#plt.rcParams['mathtext.fontset'] = 'stix'
 import numpy as np
 sys.path.append(os.environ['rapp'])
 sys.path.append(os.environ['rapl'])
@@ -48,7 +48,7 @@ dirname = clas0.dirname
 dirname_stripped = strip_dirname(dirname)
 
 # SPECIFIC ARGS
-kw_default = dotdict({'subt0': False, 't0': None, 'prepend': False, 'dpi': 300, 'varnames': 'vr', 'varnames2': 'omzprime', 'movie': False})
+kw_default = dotdict({'subt0': False, 't0': None, 'prepend': False, 'dpi': 300, 'varnames': 'vr', 'varnames2': 'omzprime', 'movie': False, 'title': None})
 
 kw_make_figure = dotdict(kw_make_figure_default)
 kw_make_figure.update(ortho_fig_dimensions)
@@ -296,12 +296,17 @@ for ifigure in range(my_nfigures):
         #title = varlabel + ' '*5 + r'$t=%05.1f$' %(the_time - t0)
         # figure out width based on tf
         if kw.subt0:
-            ndigits = int(np.ceil(np.log10(tf - t0)))
+            if tf - t0 == 0:
+                ndigits = 1
+            else:
+                ndigits = int(np.ceil(np.log10(tf - t0)))
             the_time -= t0
         else:
             ndigits = int(np.ceil(np.log10(tf)))
         fmt = r'$t = \mathtt{%%0%i.1f}$' %(ndigits + 2)
         title = varlabel + r'     ' + (fmt %the_time)
+        if not kw.title is None:
+            title = kw.title + r'     ' + title
     else:
         title = dirname_stripped + '\n' +\
             varlabel + '\n' +\
