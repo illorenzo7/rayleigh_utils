@@ -45,11 +45,11 @@ done
 
 # now the actual transfer
 echo $bufferstring
-echo "running shiftc --create-tar --index-tar --hosts=2"
+echo "running shiftc --create-tar --index-tar"
 echo "on $thefile, which is"
 cat $thefile
 echo $bufferstring
-shiftc --create-tar --index-tar --hosts=2 < $thefile
+shiftc --create-tar --index-tar < $thefile
 cd $currentdir
 echo $bufferstring
 echo -n "I returned here: "
