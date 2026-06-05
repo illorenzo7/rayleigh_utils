@@ -1,21 +1,11 @@
 # Author: Loren Matilsky
-# Created: 09/12/2019
+# Created: 05/22/2026
 # This script generates powerspectra (amplitude-squared power) vs spherical-
-# harmonic modes l,m for all l, m at 
-# a given radius, from the Shell_Spectra data in
-# the Rayleigh run directory indicated by [dirname]. To use  time-averaged 
-# Shell_Spectra file different than the one associated with the 
-# longest averaging range, use -usefile [complete path-name of desired vavg 
-# file]
-# Saves plot in
-# [dirname]/plots/specav_lm/rvals_sample/[varname]_[first iter]_[last iter]_[rval].png
+# harmonic modes l,m for all l,m 
+# also bar graphs of power vs l and m separately
 
-import matplotlib as mpl
-mpl.use('TkAgg')
 from matplotlib import ticker, colors
 import matplotlib.pyplot as plt
-plt.rcParams['mathtext.fontset'] = 'dejavuserif'
-csfont = {'fontname':'DejaVu Serif'}
 import numpy as np
 import sys, os
 sys.path.append(os.environ['raco'])
