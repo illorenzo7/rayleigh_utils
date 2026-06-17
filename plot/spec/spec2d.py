@@ -14,6 +14,9 @@ from plotcommon import *
 from cla_util import *
 #from get_slice import get_slice, get_label
 
+# set fontsize
+fontsize = 14
+
 # Get CLAs
 args = sys.argv
 clas0, clas = read_clas(args)
@@ -84,15 +87,15 @@ if kw.groupname is None: # it's a simple variable
     varlabel = kw.varname
     print ("plotting varname = " + kw.varname)
     qval = var_indices[kw.varname]
-    field_all_radii = vals[..., qval]
+    field_all_radii = vals[..., lut[qval]]
 else:
     varlabel = kw.groupname
     print ("plotting sum(" + kw.varname + ")^2")
-    the_group = get_quantity_group(kw.groupname)
+    the_group = get_quantity_group(kw.groupname, clas0['magnetism'])
     qvals = the_group['qvals']
     field_all_radii = np.zeros_like(vals[...,0])
     for qval in qvals:
-        field_all_radii += vals[..., qval]
+        field_all_radii += vals[..., lut[qval]]
 
 # make the plotting directory
 iter1, iter2 = get_iters_from_file(kw.the_file)
@@ -127,11 +130,21 @@ for irval in range(nrvals):
 
     # now make the plot
     fig, axs, fpar = make_figure(**kw_make_figure)
-
     field = field_all_radii[..., irval]
+
+    # make 2D power spectrum
     ax = axs[0, 0]
     my_pcolormesh(field, fig, ax, **kw_my_pcolormesh)
+    ax.set_xlabel(r'$\ell$', fontsize=fontsize)
+    ax.set_ylabel(r'$m$', fontsize=fontsize)
+    ax.set_title('2D power spectrum', fontsize=fontsize)
 
+    # make power spectrum vs ell
+    ax = axs[0, 1]
+    spec_l = np.sum(field, axis=1)
+    ax.bar(lvals, spec_l, width=1)
+
+    print ("saving", savefile)
     plt.savefig(savefile, dpi=300)
 
 # close figure at end of loop
