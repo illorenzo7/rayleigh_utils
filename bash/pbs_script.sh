@@ -35,7 +35,7 @@ nprow=`python $rau/bash/nprow.py $nprocs`
 npcol=`python $rau/bash/npcol.py $nprocs`
 
 qtype=${5:-vlong} # create the vlong scripts by default
-group=${6:-s3058} # charge it here by default
+group=${6:-s7614} # charge it here by default
 
 echo "#PBS -l select=$select:ncpus=$ncpus:model=$modeltype" >> $fname
 echo "#PBS -q $qtype" >> $fname

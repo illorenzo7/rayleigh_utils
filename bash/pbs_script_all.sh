@@ -4,7 +4,7 @@ declare -a arr=('bro_ele' 'sky_ele' 'cas_ait' 'rom_ait' 'mil_ait')
 runname=$1
 nprocs=$2
 qtype=${3:-vlong} # create the vlong scripts by default
-group=${4:-s3058} # charge it here by default
+group=${4:-s7614} # charge it here by default
 if [ $qtype == 'vlong' ]
 then 
     basename="vlscript"
