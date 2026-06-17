@@ -31,7 +31,8 @@ fig_dimensions = dotdict({'width_inches': 10., 'sub_aspect': 1, 'sub_margin_righ
 radatadir = dirname + '/Shell_Spectra/'
 
 # now we can update the default kw
-kw_default.update(kw_plotting_func_default)
+kw_my_pcolormesh_default['cbar_pos'] = 'right'
+kw_my_pcolormesh_default['posdef'] = True
 kw_default.update(kw_my_pcolormesh_default)
 kw_make_figure_default.update(fig_dimensions)
 kw_default.update(kw_make_figure_default)
@@ -41,7 +42,6 @@ find_bad_keys(kw_default, clas, 'plot/spec/spec2d.py', justwarn=True)
 
 # update relevant keyword args
 kw = update_dict(kw_default, clas)
-kw_plotting_func = update_dict(kw_plotting_func_default, clas)
 kw_make_figure = update_dict(kw_make_figure_default, clas)
 kw_my_pcolormesh = update_dict(kw_my_pcolormesh_default, clas)
 
@@ -83,7 +83,7 @@ print (buff_line)
 if kw.groupname is None: # it's a simple variable
     varlabel = kw.varname
     print ("plotting varname = " + kw.varname)
-    qval = var_indices[varname]
+    qval = var_indices[kw.varname]
     field_all_radii = vals[..., qval]
 else:
     varlabel = kw.groupname
@@ -95,14 +95,20 @@ else:
         field_all_radii += vals[..., qval]
 
 # make the plotting directory
-iter1, iter2 = get_iters_from_file(the_file)
+iter1, iter2 = get_iters_from_file(kw.the_file)
 plotdir = clas0['plotdir'] + '/spec2d_' + clas0['tag']
 plotdir = my_mkdir(plotdir)
 
+# prepare the grid
+nell = nm = vals.shape[0]
+lvals = np.arange(nell)
+mvals = np.arange(nm)
+xx, yy = np.meshgrid(lvals, mvals, indexing='ij')
+
 # loop over r-values and make plots
-for irval in kw.irvals:
+for irval in range(nrvals):
     rval = sliceinfo.rvals[irval]
-    savename = 'spec2d_' + fname + '_' + str(iter1).zfill(8) +\
+    savename = 'spec2d_' + str(iter1).zfill(8) +\
             '_' + str(iter2).zfill(8) + '_' + varlabel
 
     # figure out the r-label
@@ -120,6 +126,15 @@ for irval in kw.irvals:
     print("plotting...")
 
     # now make the plot
+    fig, axs, fpar = make_figure(**kw_make_figure)
+
+    field = field_all_radii[..., irval]
+    ax = axs[0, 0]
+    my_pcolormesh(field, fig, ax, **kw_my_pcolormesh)
+
+    plt.savefig(savefile, dpi=300)
 
 # close figure at end of loop
+if nrvals == 1:
+    plt.show()
 plt.close()
