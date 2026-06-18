@@ -139,10 +139,26 @@ for irval in range(nrvals):
     ax.set_ylabel(r'$m$', fontsize=fontsize)
     ax.set_title('2D power spectrum', fontsize=fontsize)
 
+    lmin, lmax = ax.get_xlim()
+    mmin, mmax = ax.get_ylim()
+
     # make power spectrum vs ell
     ax = axs[0, 1]
     spec_l = np.sum(field, axis=1)
     ax.bar(lvals, spec_l, width=1)
+    ax.set_xlim(lmin, lmax)
+    ax.set_xlabel(r'$\ell$', fontsize=fontsize)
+    ax.set_ylabel('Power', fontsize=fontsize)
+    ax.set_title(r'$\Sigma_m$' + ' Power', fontsize=fontsize)
+
+    # make power spectrum vs m
+    ax = axs[0, 2]
+    spec_m = np.sum(field, axis=0)
+    ax.bar(mvals, spec_m, width=1)
+    ax.set_xlim(mmin, mmax)
+    ax.set_xlabel(r'$m$', fontsize=fontsize)
+    ax.set_ylabel('Power', fontsize=fontsize)
+    ax.set_title(r'$\Sigma_\ell$' + ' Power', fontsize=fontsize)
 
     print ("saving", savefile)
     plt.savefig(savefile, dpi=300)
