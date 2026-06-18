@@ -15,7 +15,7 @@ from cla_util import *
 #from get_slice import get_slice, get_label
 
 # set fontsize
-fontsize = 14
+fontsize = 12
 
 # Get CLAs
 args = sys.argv
@@ -28,7 +28,7 @@ kw_default = dotdict(dict({'irvals': 0, 'rvals': None, 'rav': True, 'varname': '
 
 # fig dimensions
 # 1 row of 3 figures side by side: Power vs lm, Power vs l, Power vs m
-fig_dimensions = dotdict({'width_inches': 10., 'sub_aspect': 1, 'sub_margin_right_inches': 1/2, 'nrow': 1, 'ncol': 3})
+fig_dimensions = dotdict({'width_inches': 10., 'sub_aspect': 1, 'sub_margin_right_inches': 1/2, 'nrow': 1, 'ncol': 3, 'margin_top_inches': 1})
 
 # Rayleigh data dir
 radatadir = dirname + '/Shell_Spectra/'
@@ -159,6 +159,15 @@ for irval in range(nrvals):
     ax.set_xlabel(r'$m$', fontsize=fontsize)
     ax.set_ylabel('Power', fontsize=fontsize)
     ax.set_title(r'$\Sigma_\ell$' + ' Power', fontsize=fontsize)
+
+    # now set main title
+    t1, t2 = get_times_from_file(dirname, kw.the_file)
+    time_string = get_time_string(dirname, t1=t1,t2=t2,SF=5)
+
+    maintitle = dirname_stripped + '\n' +\
+            varlabel + '\n' +\
+            time_string
+    fig.text(0.5, 1 - 1/8/fpar['height_inches'], maintitle, ha='center', va='top', fontsize=fontsize)
 
     print ("saving", savefile)
     plt.savefig(savefile, dpi=300)
