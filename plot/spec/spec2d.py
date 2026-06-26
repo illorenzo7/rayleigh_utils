@@ -35,7 +35,6 @@ radatadir = dirname + '/Shell_Spectra/'
 
 # now we can update the default kw
 kw_my_pcolormesh_default['cbar_pos'] = 'right'
-kw_my_pcolormesh_default['posdef'] = True
 kw_default.update(kw_my_pcolormesh_default)
 kw_make_figure_default.update(fig_dimensions)
 kw_default.update(kw_make_figure_default)
@@ -87,13 +86,13 @@ texlabels = dotdict({'v': r'$\mathbf{v}$', 'b': r'$\mathbf{B}$', 'om': r'$\mathb
 
 if kw.groupname is None: # it's a simple variable
     varlabel_title, varlabel = get_label(kw.varname)
-    print ("plotting sum(" + kw.varname + ")^2")
+    print ("plotting var = (" + kw.varname + ")^2")
     qval = var_indices[kw.varname]
     field_all_radii = vals[..., lut[qval]]
 else:
     varlabel = kw.groupname
     varlabel_title = texlabels[kw.groupname]    
-    print ("plotting sum(" + kw.groupname + ")^2")
+    print ("plotting var = sum(" + kw.groupname + ")^2")
     the_group = get_quantity_group(kw.groupname, clas0['magnetism'])
     qvals = the_group['qvals']
     field_all_radii = np.zeros_like(vals[...,0])

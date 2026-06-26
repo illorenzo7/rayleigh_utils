@@ -993,8 +993,10 @@ kw_my_pcolormesh_default = dict({'x': None, 'y': None, 'xvals': [], 'yvals': [],
     # more cbar stuff
     'plotcbar': True, 'cmap': None, 'norm': None, 'units': '', 'scaleby': 1., 'fontsize': default_labelsize})
 
+# color map stuff: symlog, log, posdef, are here:
 kw_my_pcolormesh_default.update(kw_contourf_minmax_default)
 kw_my_pcolormesh_default.update(kw_add_cbar_default)
+
 def my_pcolormesh(field, fig, ax, **kw_in):
     kw = update_dict(kw_my_pcolormesh_default, kw_in)
     kw_add_cbar = update_dict(kw_add_cbar_default, kw_in)
@@ -1068,23 +1070,25 @@ def my_pcolormesh(field, fig, ax, **kw_in):
 
     # Saturate the array (otherwise contourf will show white areas)
     saturate_array(field, kw.minmax[0], kw.minmax[1])
-  
-    # deal with norm and colormap
+
+    # deal with norm
     if kw.norm is None and kw.log:
         kw.norm = colors.LogNorm(vmin=kw.minmax[0], vmax=kw.minmax[1])
-        vmin, vmax = None, None
-    else:
-        vmin, vmax = kw.minmax
 
     if kw.fullrange2: # need equally spaced levels on each side of zero
         kw.norm = colors.TwoSlopeNorm(vmin=kw.minmax[0], vcenter=0, vmax=kw.minmax[1])
 
     if kw.cmap is None:
-        #kw.cmap = 'jet'
-        kw.cmap = 'RdYlBu_r'
+        if kw.posdef:
+            kw.cmap = 'plasma'
+        elif kw.log:
+            kw.cmap = 'Greys'
+        else:
+            kw.cmap = 'RdYlBu_r'
+
 
     # make color plot
-    im = ax.pcolormesh(xx, yy, field, cmap=kw.cmap, norm=kw.norm, vmin=vmin, vmax=vmax)  
+    im = ax.pcolormesh(xx, yy, field, cmap=kw.cmap, norm=kw.norm) 
 
     # now deal with color bar, if one is desired
     if kw.plotcbar:
