@@ -85,7 +85,11 @@ print (buff_line)
 texlabels = dotdict({'v': r'$\mathbf{v}$', 'b': r'$\mathbf{B}$', 'om': r'$\mathbf{\omega}$', 'j': r'$\mathbf{\mathcal{J}}$'})
 
 if kw.groupname is None: # it's a simple variable
-    varlabel_title, varlabel = get_label(kw.varname)
+    if is_basic(kw.varname):
+        varlabel_title = get_label(kw.varname)
+        varlabel = kw.varname
+    else:
+        varlabel_title, varlabel = get_label(kw.varname)
     print ("plotting var = (" + kw.varname + ")^2")
     qval = var_indices[kw.varname]
     field_all_radii = vals[..., lut[qval]]
@@ -200,6 +204,11 @@ for irval in range(nrvals):
     ax.set_ylabel('power', fontsize=fontsize)
     the_title = 'nonsectoral ' + r'$m$' + '-power: ' + r'$\Sigma_{\ell=m+1}^{\ell_{\rm max}}|$' + varlabel_title + r'$|^2$'
     ax.set_title(the_title, fontsize=fontsize)
+
+    if kw.log:
+        for ax in axs.flatten()[1:]:
+            ax.set_yscale('log')
+
 
     # now set main title
     t1, t2 = get_times_from_file(dirname, kw.the_file)
