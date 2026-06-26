@@ -1117,7 +1117,7 @@ def my_pcolormesh(field, fig, ax, **kw_in):
                 xline, yline = kw.x, axisval + np.zeros_like(kw.x)
             ax.plot(xline, yline, 'k--')
         count += 1
-    return kw.minmax[0]*divisor, kw.minmax[1]*divisor
+    return im
 
 def mark_axis_vals(ax, which='x', vals=[0.], style='k-', lw=0.5):
     n = 100

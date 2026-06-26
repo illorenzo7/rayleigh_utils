@@ -155,6 +155,11 @@ for irval in range(nrvals):
     spec_l = np.sum(field, axis=1)
     ax.bar(lvals, spec_l, width=1)
     ax.set_xlim(lmin, lmax)
+    # set y limits
+    if kw.log:
+        ymin, ymax = lineplot_minmax(lvals, [spec_l], log=kw.log, buff_ignore=0.05)
+        ax.set_ylim(ymin, ymax)
+    
     ax.set_xlabel(r'$\ell$', fontsize=fontsize)
     ax.set_ylabel('power', fontsize=fontsize)
     the_title = r'$\ell$' + '-power: ' + r'$\Sigma_{m=0}^\ell|$' + varlabel_title + r'$|^2$'
@@ -165,6 +170,11 @@ for irval in range(nrvals):
     spec_m = np.sum(field, axis=0)
     ax.bar(mvals, spec_m, width=1)
     ax.set_xlim(mmin, mmax)
+    # set y limits
+    if kw.log:
+        ymin, ymax = lineplot_minmax(lvals, [spec_m], log=kw.log, buff_ignore=0.05)
+        ax.set_ylim(ymin, ymax)
+
     ax.set_xlabel(r'$m$', fontsize=fontsize)
     ax.set_ylabel('power', fontsize=fontsize)
     the_title = r'$m$' + '-power: ' + r'$\Sigma_{\ell=m}^{\ell_{\rm max}}|$' + varlabel_title + r'$|^2$'
@@ -176,6 +186,10 @@ for irval in range(nrvals):
     spec_sectoral = np.diag(field)
     ax.bar(lvals, spec_sectoral, width=1)
     ax.set_xlim(lmin, lmax)
+    # set y limits
+    if kw.log:
+        ymin, ymax = lineplot_minmax(lvals, [spec_sectoral], log=kw.log, buff_ignore=0.05)
+        ax.set_ylim(ymin, ymax)
     ax.set_xlabel(r'$\ell=m$', fontsize=fontsize)
     ax.set_ylabel('power', fontsize=fontsize)
     the_title = 'sectoral power: ' + r'$|$' + varlabel_title + r'$|^2(\ell=m)$'
@@ -190,6 +204,10 @@ for irval in range(nrvals):
     spec_l = np.sum(field_sectoral_removed, axis=1)
     ax.bar(lvals, spec_l, width=1)
     ax.set_xlim(lmin, lmax)
+    # set y limits
+    if kw.log:
+        ymin, ymax = lineplot_minmax(lvals, [spec_l], log=kw.log, buff_ignore=0.05)
+        ax.set_ylim(ymin, ymax)
     ax.set_xlabel(r'$\ell$', fontsize=fontsize)
     ax.set_ylabel('power', fontsize=fontsize)
     the_title = 'nonsectoral ' + r'$\ell$' + '-power: ' + r'$\Sigma_{m=0}^{\ell-1}|$' + varlabel_title + r'$|^2$'
@@ -200,15 +218,19 @@ for irval in range(nrvals):
     spec_m = np.sum(field_sectoral_removed, axis=0)
     ax.bar(mvals, spec_m, width=1)
     ax.set_xlim(mmin, mmax)
+    # set y limits
+    if kw.log:
+        ymin, ymax = lineplot_minmax(lvals, [spec_m], log=kw.log, buff_ignore=0.05)
+        ax.set_ylim(ymin, ymax)
     ax.set_xlabel(r'$m$', fontsize=fontsize)
     ax.set_ylabel('power', fontsize=fontsize)
     the_title = 'nonsectoral ' + r'$m$' + '-power: ' + r'$\Sigma_{\ell=m+1}^{\ell_{\rm max}}|$' + varlabel_title + r'$|^2$'
     ax.set_title(the_title, fontsize=fontsize)
 
-    if kw.log:
-        for ax in axs.flatten()[1:]:
+    # possibly set y scale to log
+    for ax in axs.flatten()[1:]:
+        if kw.log:
             ax.set_yscale('log')
-
 
     # now set main title
     t1, t2 = get_times_from_file(dirname, kw.the_file)

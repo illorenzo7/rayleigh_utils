@@ -2354,6 +2354,7 @@ def get_term(dirname, vals, lut, quantity, verbose=False, noc11=False):
         return the_term
 
 def detect_nans(arr):
+    arr = np.copy(make_array(arr))
     has_nans = False
     if np.size(np.where(np.isnan(arr))) > 0:
         has_nans = True
