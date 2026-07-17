@@ -150,9 +150,9 @@ for irval in range(nrvals):
     lmin, lmax = ax.get_xlim()
     mmin, mmax = ax.get_ylim()
 
-    # make power spectrum vs ell
+    # make power spectrum vs ell (m=0)
     ax = axs[0, 1]
-    spec_l = np.sum(field, axis=1)
+    spec_l = field[:,0]
     ax.bar(lvals, spec_l, width=1)
     ax.set_xlim(lmin, lmax)
     # set y limits
@@ -162,45 +162,65 @@ for irval in range(nrvals):
     
     ax.set_xlabel(r'$\ell$', fontsize=fontsize)
     ax.set_ylabel('power', fontsize=fontsize)
-    the_title = r'$\ell$' + '-power: ' + r'$\Sigma_{m=0}^\ell|$' + varlabel_title + r'$|^2$'
+    the_title = r'$(m=0)\ \ell$' + '-power: ' + varlabel_title + r'$|^2(m=0)$'
     ax.set_title(the_title, fontsize=fontsize)
 
-    # make power spectrum vs m
+    # make power spectrum vs l (m>0)
     ax = axs[0, 2]
+    spec_l = np.sum(field[:,1:], axis=1)
+    ax.bar(lvals, spec_l, width=1)
+    ax.set_xlim(lmin, lmax)
+    # set y limits
+    if kw.log:
+        ymin, ymax = lineplot_minmax(lvals, [spec_l], log=kw.log, buff_ignore=0.05)
+        ax.set_ylim(ymin, ymax)
+
+    ax.set_xlabel(r'$\ell$', fontsize=fontsize)
+    ax.set_ylabel('power', fontsize=fontsize)
+    the_title = r'$(m>0)\ \ell$' + '-power: ' + r'$\Sigma_{m=1}^{\ell}|$' + varlabel_title + r'$|^2$'
+
+    ax.set_title(the_title, fontsize=fontsize)
+
+    # make power spectrum vs m (all l)
+    ax = axs[1, 0]
     spec_m = np.sum(field, axis=0)
     ax.bar(mvals, spec_m, width=1)
     ax.set_xlim(mmin, mmax)
     # set y limits
     if kw.log:
-        ymin, ymax = lineplot_minmax(lvals, [spec_m], log=kw.log, buff_ignore=0.05)
+        ymin, ymax = lineplot_minmax(mvals, [spec_m], log=kw.log, buff_ignore=0.05)
         ax.set_ylim(ymin, ymax)
 
     ax.set_xlabel(r'$m$', fontsize=fontsize)
     ax.set_ylabel('power', fontsize=fontsize)
-    the_title = r'$m$' + '-power: ' + r'$\Sigma_{\ell=m}^{\ell_{\rm max}}|$' + varlabel_title + r'$|^2$'
+    the_title = r'$m$' + '-power: ' + r'$\Sigma_{\ell=0}^{\ell_{\rm max}}|$' + varlabel_title + r'$|^2$'
 
     ax.set_title(the_title, fontsize=fontsize)
 
-    # find ell = m power
-    ax = axs[1, 0]
+    # find ell = m (sectoral) power
+    ax = axs[1, 1]
     spec_sectoral = np.diag(field)
-    ax.bar(lvals, spec_sectoral, width=1)
+    spec_sectoral_nom0 = np.copy(spec_sectoral)
+    spec_sectoral_nom0[0] = 0.0
+    ax.bar(lvals, spec_sectoral_nom0, width=1)
     ax.set_xlim(lmin, lmax)
     # set y limits
     if kw.log:
-        ymin, ymax = lineplot_minmax(lvals, [spec_sectoral], log=kw.log, buff_ignore=0.05)
+        ymin, ymax = lineplot_minmax(lvals, [spec_sectoral_nom0], log=kw.log, buff_ignore=0.05)
         ax.set_ylim(ymin, ymax)
     ax.set_xlabel(r'$\ell=m$', fontsize=fontsize)
     ax.set_ylabel('power', fontsize=fontsize)
-    the_title = 'sectoral power: ' + r'$|$' + varlabel_title + r'$|^2(\ell=m)$'
+    the_title = 'sectoral power: ' + r'$|$' + varlabel_title + r'$|^2(\ell=m>0)$'
     ax.set_title(the_title, fontsize=fontsize)
 
     # make sectoral power spectrum vs ell
     field_sectoral_removed = np.copy(field)
     for lmval in lvals:
         field_sectoral_removed[lmval, lmval] = 0.
+    # also get rid of the m=0 power
+    field_sectoral_removed[:,0] = 0.
 
-    ax = axs[1, 1]
+    ax = axs[1, 2]
     spec_l = np.sum(field_sectoral_removed, axis=1)
     ax.bar(lvals, spec_l, width=1)
     ax.set_xlim(lmin, lmax)
@@ -210,21 +230,7 @@ for irval in range(nrvals):
         ax.set_ylim(ymin, ymax)
     ax.set_xlabel(r'$\ell$', fontsize=fontsize)
     ax.set_ylabel('power', fontsize=fontsize)
-    the_title = 'nonsectoral ' + r'$\ell$' + '-power: ' + r'$\Sigma_{m=0}^{\ell-1}|$' + varlabel_title + r'$|^2$'
-    ax.set_title(the_title, fontsize=fontsize)
-
-    # make power spectrum vs m
-    ax = axs[1, 2]
-    spec_m = np.sum(field_sectoral_removed, axis=0)
-    ax.bar(mvals, spec_m, width=1)
-    ax.set_xlim(mmin, mmax)
-    # set y limits
-    if kw.log:
-        ymin, ymax = lineplot_minmax(lvals, [spec_m], log=kw.log, buff_ignore=0.05)
-        ax.set_ylim(ymin, ymax)
-    ax.set_xlabel(r'$m$', fontsize=fontsize)
-    ax.set_ylabel('power', fontsize=fontsize)
-    the_title = 'nonsectoral ' + r'$m$' + '-power: ' + r'$\Sigma_{\ell=m+1}^{\ell_{\rm max}}|$' + varlabel_title + r'$|^2$'
+    the_title = 'nonsectoral ' + r'$\ell$' + '-power: ' + r'$\Sigma_{m=1}^{\ell-1}|$' + varlabel_title + r'$|^2$'
     ax.set_title(the_title, fontsize=fontsize)
 
     # possibly set y scale to log
