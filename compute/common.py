@@ -454,10 +454,50 @@ def frac_nonzero(arr):
     num_total = np.size(arr)
     return (num_nonzero/num_total)
 
-def rms(array, axis=None):
+def trim_fraction(arr, buff_ignore=0.05, axes=None):
+    '''Trims a fixed fraction (buff_ignore) from both ends of every dimension.
+    if axes is specified (a tuple or list of axes with the correct length, the
+    buff_fraction corresponds to the physical distance along each axis'''
+    if buff_ignore is None:
+        return arr
+    else:
+        slices = []
+        idim = 0
+        for size in arr.shape:
+            if axes is None:
+                # Calculate how many elements to chop off each end
+                cut = int(size * buff_ignore)
+
+                # Define slice from 'cut' up to '-cut' (handling edge cases where cut = 0)
+                start = cut
+                end = size - cut 
+            else:
+                axis = axes[idim]
+                physical_length = np.abs(axis[0] - axis[-1])
+                if axis[0] < axis[-1]: # ascending order
+                    phys_start = axis[0] + buff_ignore*physical_length
+                    phys_end = axis[0] + (1-buff_ignore)*physical_length
+                else: # descending order
+                    phys_end = axis[-1] + buff_ignore*physical_length
+                    phys_start = axis[-1] + (1-buff_ignore)*physical_length
+                start, end = inds_from_vals(axis, [phys_start, phys_end])
+
+            slices.append(slice(start, end))
+            idim += 1
+
+        return arr[tuple(slices)]
+
+def rms(array, axis=None, buff_ignore=None, axes=None):
+    '''buff_ignore is the fraction of the array to ignore, by default will ignore 
+    the fraction buff_ignore of the array at each endpoint in each dimension
+    in computing the rms
+    if 'axes' (tuple or list of length array.dim) are specified 
+    buff_ignore will correspond to the physical distance ignored along each axis
+    '''
     if np.size(array) == 0:
         return 0
     else:
+        array = trim_fraction(array, buff_ignore=buff_ignore, axes=axes)
         return np.sqrt(np.mean(array**2, axis=axis))
 
 def minabs(array):
