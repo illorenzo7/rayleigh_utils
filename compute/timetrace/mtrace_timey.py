@@ -188,7 +188,8 @@ for i in range(my_nfiles):
     a = reading_func(radatadir + str(my_files[i]).zfill(8), '', qvals=qvals)
     for j in range(a.niter):
         vals_loc = a.vals[..., j]
-        vals_loc = np.fft.rfft(vals_loc, axis=0)
+        nphi = vals_loc.shape[0]
+        vals_loc = np.fft.rfft(vals_loc, axis=0)/nphi # normalize so averages align
         vals_loc = vals_loc[:mmax+1, ...]
 
         if rad:
