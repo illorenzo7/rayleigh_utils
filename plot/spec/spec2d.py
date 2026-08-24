@@ -147,17 +147,28 @@ for irval in range(nrvals):
     the_title = '2D ' + r'$(\ell,m)$' + ' power: |' + varlabel_title + r'$|^2$'
     ax.set_title(the_title, fontsize=fontsize)
 
+    # now reduce the field to contain only the l,m values we need
     lmin, lmax = ax.get_xlim()
     mmin, mmax = ax.get_ylim()
 
+    # these are from the pcolormesh grid and will be shifted by +/- 0.5 
+    # compared to actual ilmin, ilmax, etc.
+    ilmin, ilmax = int(lmin+0.5), int(lmax-0.5)
+    immin, immax = int(mmin+0.5), int(mmax-0.5)
+
+    # now snip the l and m values we don't need
+    lvals = lvals[ilmin:ilmax+1]
+    mvals = mvals[immin:immax+1]
+
     # make power spectrum vs ell (m=0)
     ax = axs[0, 1]
-    spec_l = field[:,0]
+    spec_l = np.copy(field[:,0])[ilmin:ilmax+1]
+    # make the bar plot
     ax.bar(lvals, spec_l, width=1)
     ax.set_xlim(lmin, lmax)
     # set y limits
     if kw.log:
-        ymin, ymax = lineplot_minmax(lvals, [spec_l], log=kw.log, buff_ignore=0.05)
+        ymin, ymax = lineplot_minmax(lvals, [spec_l], log=kw.log)
         ax.set_ylim(ymin, ymax)
     
     ax.set_xlabel(r'$\ell$', fontsize=fontsize)
@@ -167,12 +178,12 @@ for irval in range(nrvals):
 
     # make power spectrum vs l (m>0)
     ax = axs[0, 2]
-    spec_l = np.sum(field[:,1:], axis=1)
+    spec_l = np.sum(field[:,1:], axis=1)[ilmin:ilmax+1]
     ax.bar(lvals, spec_l, width=1)
     ax.set_xlim(lmin, lmax)
     # set y limits
     if kw.log:
-        ymin, ymax = lineplot_minmax(lvals, [spec_l], log=kw.log, buff_ignore=0.05)
+        ymin, ymax = lineplot_minmax(lvals, [spec_l], log=kw.log)
         ax.set_ylim(ymin, ymax)
 
     ax.set_xlabel(r'$\ell$', fontsize=fontsize)
@@ -183,12 +194,12 @@ for irval in range(nrvals):
 
     # make power spectrum vs m (all l)
     ax = axs[1, 0]
-    spec_m = np.sum(field, axis=0)
+    spec_m = np.sum(field, axis=0)[immin:immax+1]
     ax.bar(mvals, spec_m, width=1)
     ax.set_xlim(mmin, mmax)
     # set y limits
     if kw.log:
-        ymin, ymax = lineplot_minmax(mvals, [spec_m], log=kw.log, buff_ignore=0.05)
+        ymin, ymax = lineplot_minmax(mvals, [spec_m], log=kw.log)
         ax.set_ylim(ymin, ymax)
 
     ax.set_xlabel(r'$m$', fontsize=fontsize)
@@ -199,14 +210,14 @@ for irval in range(nrvals):
 
     # find ell = m (sectoral) power
     ax = axs[1, 1]
-    spec_sectoral = np.diag(field)
+    spec_sectoral = np.copy(np.diag(field))[ilmin:ilmax+1]
     #spec_sectoral_nom0 = np.copy(spec_sectoral)
     #spec_sectoral_nom0[0] = 0.0
     ax.bar(lvals, spec_sectoral, width=1)
     ax.set_xlim(lmin, lmax)
     # set y limits
     if kw.log:
-        ymin, ymax = lineplot_minmax(lvals, [spec_sectoral], log=kw.log, buff_ignore=0.05)
+        ymin, ymax = lineplot_minmax(lvals, [spec_sectoral], log=kw.log)
         ax.set_ylim(ymin, ymax)
     ax.set_xlabel(r'$\ell=m$', fontsize=fontsize)
     ax.set_ylabel('power', fontsize=fontsize)
@@ -221,12 +232,12 @@ for irval in range(nrvals):
     field_sectoral_removed[:,0] = 0.
 
     ax = axs[1, 2]
-    spec_l = np.sum(field_sectoral_removed, axis=1)
+    spec_l = np.sum(field_sectoral_removed, axis=1)[ilmin:ilmax+1]
     ax.bar(lvals, spec_l, width=1)
     ax.set_xlim(lmin, lmax)
     # set y limits
     if kw.log:
-        ymin, ymax = lineplot_minmax(lvals, [spec_l], log=kw.log, buff_ignore=0.05)
+        ymin, ymax = lineplot_minmax(lvals, [spec_l], log=kw.log)
         ax.set_ylim(ymin, ymax)
     ax.set_xlabel(r'$\ell$', fontsize=fontsize)
     ax.set_ylabel('power', fontsize=fontsize)
