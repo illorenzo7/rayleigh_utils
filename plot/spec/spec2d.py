@@ -144,7 +144,7 @@ for irval in range(nrvals):
     my_pcolormesh(field, fig, ax, **kw_my_pcolormesh)
     ax.set_xlabel(r'$\ell$', fontsize=fontsize)
     ax.set_ylabel(r'$m$', fontsize=fontsize)
-    the_title = '2D power spectrum of |' + varlabel_title + r'$|^2$'
+    the_title = '2D ' + r'$(\ell,m)$' + ' power: |' + varlabel_title + r'$|^2$'
     ax.set_title(the_title, fontsize=fontsize)
 
     lmin, lmax = ax.get_xlim()
@@ -162,7 +162,7 @@ for irval in range(nrvals):
     
     ax.set_xlabel(r'$\ell$', fontsize=fontsize)
     ax.set_ylabel('power', fontsize=fontsize)
-    the_title = r'$(m=0)\ \ell$' + '-power: ' + varlabel_title + r'$|^2(m=0)$'
+    the_title = r'$\ell$' + '-power ' + r'$(m=0):|$' + varlabel_title + r'$|^2$'
     ax.set_title(the_title, fontsize=fontsize)
 
     # make power spectrum vs l (m>0)
@@ -177,7 +177,7 @@ for irval in range(nrvals):
 
     ax.set_xlabel(r'$\ell$', fontsize=fontsize)
     ax.set_ylabel('power', fontsize=fontsize)
-    the_title = r'$(m>0)\ \ell$' + '-power: ' + r'$\Sigma_{m=1}^{\ell}|$' + varlabel_title + r'$|^2$'
+    the_title = r'$\ell$' + '-power ' + r'$(m>0):\ \Sigma_{m=1}^{\ell}|$' + varlabel_title + r'$|^2$'
 
     ax.set_title(the_title, fontsize=fontsize)
 
@@ -200,17 +200,17 @@ for irval in range(nrvals):
     # find ell = m (sectoral) power
     ax = axs[1, 1]
     spec_sectoral = np.diag(field)
-    spec_sectoral_nom0 = np.copy(spec_sectoral)
-    spec_sectoral_nom0[0] = 0.0
-    ax.bar(lvals, spec_sectoral_nom0, width=1)
+    #spec_sectoral_nom0 = np.copy(spec_sectoral)
+    #spec_sectoral_nom0[0] = 0.0
+    ax.bar(lvals, spec_sectoral, width=1)
     ax.set_xlim(lmin, lmax)
     # set y limits
     if kw.log:
-        ymin, ymax = lineplot_minmax(lvals, [spec_sectoral_nom0], log=kw.log, buff_ignore=0.05)
+        ymin, ymax = lineplot_minmax(lvals, [spec_sectoral], log=kw.log, buff_ignore=0.05)
         ax.set_ylim(ymin, ymax)
     ax.set_xlabel(r'$\ell=m$', fontsize=fontsize)
     ax.set_ylabel('power', fontsize=fontsize)
-    the_title = 'sectoral power: ' + r'$|$' + varlabel_title + r'$|^2(\ell=m>0)$'
+    the_title = 'sectoral power ' + r'$(\ell=m):\ |$' + varlabel_title + r'$|^2$'
     ax.set_title(the_title, fontsize=fontsize)
 
     # make sectoral power spectrum vs ell
