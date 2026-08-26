@@ -55,6 +55,11 @@ di = get_dict(kw.the_file)
 vals = di['vals']
 lut = di['lut']
 
+# normalize vals appropriately; want the squared sum over ell (say) to 
+# equal the horizontal average of the field^2 and there is factor of 4pi
+vals /= (4*np.pi)
+
+
 # get desired sampling locations
 sliceinfo = get_sliceinfo(dirname, 'Shell_Spectra')
 if kw.rav: # just average over radial direction (simple)
