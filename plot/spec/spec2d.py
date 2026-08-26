@@ -24,7 +24,7 @@ dirname = clas0.dirname
 dirname_stripped = strip_dirname(dirname)
 
 # SPECIFIC ARGS
-kw_default = dotdict(dict({'irvals': 0, 'rvals': None, 'rav': True, 'varname': 'vr', 'groupname': None, 'prepend': False, 'dpi': 300, 'minmaxlm': None, 'minmaxl': None, 'minmaxm': None, 'minmax': None, 'log': False}))
+kw_default = dotdict(dict({'irvals': -1, 'rvals': None, 'rav': False, 'varname': 'vr', 'groupname': None, 'prepend': False, 'dpi': 300, 'minmaxlm': None, 'minmaxl': None, 'minmaxm': None, 'minmax': None, 'log': False}))
 
 # fig dimensions
 # 1 row of 3 figures side by side: Power vs lm, Power vs l, Power vs m
@@ -75,6 +75,7 @@ else: # plotting specific level
             kw.irvals = inds_from_vals(sliceinfo.rvals, kw.rvals)
 
     # these are the r vals we end up with
+    kw.rvals = sliceinfo.rvals[kw.irvals]
     nrvals = len(kw.rvals)
 
 # say what we are plotting
@@ -115,7 +116,7 @@ mvals = np.arange(nm)
 xx, yy = np.meshgrid(lvals, mvals, indexing='ij')
 
 # loop over r-values and make plots
-for irval in range(nrvals):
+for irval in kw.irvals:
     rval = sliceinfo.rvals[irval]
     savename = 'spec2d_' + str(iter1).zfill(8) +\
             '_' + str(iter2).zfill(8) + '_' + varlabel
