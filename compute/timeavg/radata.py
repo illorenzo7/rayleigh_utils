@@ -218,7 +218,7 @@ if rank == 0:
     if radtype == 'spec':
         di_sav['lpower'] = lpower
     if radtype in ['spec', 'sslice']:
-        di_sav['rvals'] = a.radius/rsun
+        di_sav['rvals'] = a.radius
     pickle.dump(di_sav, f, protocol=4)
     f.close()
     t2 = time.time()
