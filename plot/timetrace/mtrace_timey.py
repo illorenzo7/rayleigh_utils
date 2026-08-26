@@ -104,6 +104,25 @@ samplevals_avail = di['samplevals']
 # time range
 times /= time_unit
 
+# set xminmax if not set by user
+if kw.xminmax is None:
+    # set xmin possibly
+    if kw.xmin is None:
+        kw.xmin = np.min(times)
+    # set xmax possibly
+    if kw.xmax is None:
+        kw.xmax = np.max(times)
+    kw.xminmax = kw.xmin, kw.xmax
+
+ixmin = np.argmin(np.abs(times - kw.xminmax[0]))
+ixmax = np.argmin(np.abs(times - kw.xminmax[1]))
+
+# Now shorten all the "x" arrays
+times = times[ixmin:ixmax + 1]
+iters = iters[ixmin:ixmax + 1]
+vals = vals[ixmin:ixmax + 1]
+
+
 # maybe thin data
 if not kw.ntot == 'full':
     print ("ntot = %i" %kw.ntot)
