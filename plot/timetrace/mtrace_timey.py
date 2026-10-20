@@ -260,7 +260,7 @@ for isampleval in kw.isamplevals:
         plotdir = my_mkdir(clas0['plotdir'] + '/' + datatype + clas0['tag'])
         if kw.lon and not om is None:
             basename += '_om%.0f' %om
-        savename = basename + position_tag + '.png'
+        savename = basename + position_tag + '_' + part + '.png'
         if kw.prepend:
             savename = dirname_stripped + '_' + savename
         print ("saving", plotdir + '/' + savename)

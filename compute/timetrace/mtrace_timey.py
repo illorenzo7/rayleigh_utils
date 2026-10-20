@@ -190,7 +190,8 @@ for i in range(my_nfiles):
         vals_loc = a.vals[..., j]
         nphi = vals_loc.shape[0]
         vals_loc = np.fft.rfft(vals_loc, axis=0)/nphi # normalize so averages align
-        vals_loc = vals_loc[:mmax+1, ...]
+        vals_loc = vals_loc[:mmax+1, ...] # throw away high-order terms (dealias)
+        vals_loc[1:,...] *= np.sqrt(2) # modes with m>0 need this to be properly normalized (rfft)
 
         if rad:
             my_vals.append(vals_loc[:, isamplevals, :,  :][:, :, :, a.lut[qvals]])
