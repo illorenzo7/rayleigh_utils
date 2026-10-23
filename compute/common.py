@@ -2408,6 +2408,22 @@ def remove_nans(arr):
     arr_out[np.where(np.isinf(arr))] = 0
     return arr_out
 
+def detect_zeros(arr):
+    tol = 1.0e-50
+    arr = np.copy(make_array(arr))
+    has_zeros = False
+    mmax = np.max(np.abs(arr))
+    if np.size(np.where(np.abs(arr)/mmax < tol)) > 0:
+        has_zeros = True
+    return has_zeros
+
+def remove_zeros(arr):
+    tol = 1.0e-50
+    arr_out = np.copy(arr)
+    mmax = np.max(np.abs(arr_out))
+    arr_out[np.where(np.abs(arr)/mmax < tol)] = mmax
+    return arr_out
+
 def issubset(arr1, arr2):
     arr1 = make_array(arr1)
     arr2 = make_array(arr2)
