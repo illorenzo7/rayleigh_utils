@@ -66,6 +66,7 @@ if kw.rav: # just average over radial direction (simple)
     rvals_nd = sliceinfo.rvals.reshape((1, 1, sliceinfo.nr, 1))
     vals = np.mean(vals*rvals_nd**2, axis=2, keepdims=True)/np.mean(sliceinfo.rvals**2)
     nrvals = 1
+    kw.irvals = make_array(kw.irvals)
 else: # plotting specific level
     # first the indices must be an array
     kw.irvals = make_array(kw.irvals)
